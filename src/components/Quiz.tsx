@@ -159,9 +159,10 @@ export default function Quiz({ questions, scope, showTopic = false }: QuizProps)
     const onKey = (event: KeyboardEvent) => {
       if (event.defaultPrevented || event.altKey || event.ctrlKey || event.metaKey) return;
       const target = event.target as HTMLElement | null;
-      if (target?.closest("textarea, select, [contenteditable], [data-quiz-settings]")) return;
+      if (target?.closest("textarea, select, [contenteditable]")) return;
       const typing = target instanceof HTMLInputElement && target.type === "text";
       if (typing) return; // the short-answer form handles Enter itself
+      // Buttons and links handle Enter natively; checkboxes and radios have no Enter action.
       const interactive = target?.closest("button, a, summary");
 
       if (event.key === "Enter") {
@@ -212,7 +213,7 @@ export default function Quiz({ questions, scope, showTopic = false }: QuizProps)
             style={{ width: `${score.total ? (score.answered / score.total) * 100 : 0}%` }}
           />
         </div>
-        <div data-quiz-settings className="flex flex-wrap gap-x-5 gap-y-2 text-sm text-muted">
+        <div className="flex flex-wrap gap-x-5 gap-y-2 text-sm text-muted">
           <label className="inline-flex cursor-pointer items-center gap-2">
             <input
               type="checkbox"
