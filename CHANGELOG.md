@@ -5,21 +5,34 @@ versioning: [SemVer](https://semver.org) as defined in [docs/conventions.md](doc
 
 ## [Unreleased]
 
+## [0.2.0] — 2026-10-10
+
 ### Added
 
-- 51 draft questions paraphrased from CE6146 Exercises 1–3 (`ncu-intro-dl`; tags `ce6146`,
-  `ce6146-ex01`…`ex03`), each citing lecture slides and *Dive into Deep Learning*. The answer key of
-  Exercise 2 Q1 is corrected (regression, not clustering). New topic file `dl/frameworks.yaml`.
+- Quiz website (Astro 7 + React + Tailwind), live at <https://mtoan651.github.io/ml-recall/>:
+  topic and tag practice pages, all four question types (short answers auto- or self-graded),
+  option shuffling that respects `shuffle: false`, per-option feedback, explanations with
+  footnoted references and source/license, reviewed-only filter, end-of-session summary with
+  "retry missed", keyboard shortcuts, progress in the browser. Build-time Markdown + KaTeX + Shiki;
+  the build fails on schema, reference or LaTeX errors (Zod mirror of the pydantic schema).
+- CI builds and tests the web app; a `deploy` job publishes `main` to GitHub Pages.
+- 51 questions paraphrased from CE6146 Exercises 1–3 (`ncu-intro-dl`; tags `ce6146`,
+  `ce6146-ex01`…`ex03`), each citing lecture slides and *Dive into Deep Learning*, reviewed by the
+  maintainer. The answer key of Exercise 2 Q1 is corrected (regression, not clustering).
+- `docs/web-app.md`; new topic file `dl/frameworks.yaml`.
+
+### Changed
+
+- Published as `github.com/mtoan651/ml-recall`; `main` is protected (PR + CI required, squash only).
+- Course materials are kept outside the repository (`../materials/`); upstream downloads are
+  cached in the git-ignored `.cache/upstream/` instead of `materials/external/`.
 
 ### Fixed
 
 - Stray escaped quotes (`\"`) in the `ncu-intro-dl` notes in `sources.yaml`.
 
-### Changed
-
-- The 51 CE6146 exercise questions are reviewed by the maintainer (`status: reviewed`).
-- Course materials are kept outside the repository (`../materials/`); upstream downloads are
-  cached in the git-ignored `.cache/upstream/` instead of `materials/external/`.
+Bank: 384 questions (56 reviewed, 328 draft) — ml 111, dl 104, nlp 47, practice 27, math 22, ai 21,
+llm 20, rl 12, cv 10, gen 10.
 
 ## [0.1.0] — 2026-10-09
 
@@ -40,5 +53,6 @@ versioning: [SemVer](https://semver.org) as defined in [docs/conventions.md](doc
 Bank: 333 questions (328 draft, 5 reviewed) — ml 97, dl 77, nlp 47, practice 27, ai 20, llm 20,
 math 13, rl 12, cv 10, gen 10.
 
-[Unreleased]: https://github.com/mtoan651/ml-recall/compare/v0.1.0...HEAD
+[Unreleased]: https://github.com/mtoan651/ml-recall/compare/v0.2.0...HEAD
+[0.2.0]: https://github.com/mtoan651/ml-recall/releases/tag/v0.2.0
 [0.1.0]: https://github.com/mtoan651/ml-recall/releases/tag/v0.1.0
