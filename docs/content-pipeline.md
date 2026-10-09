@@ -63,6 +63,10 @@ scripted in v0.3; the manual flow works today:
    ```
 
    Extracted text/images go to `.cache/extracted/<source-id>/` (git-ignored).
+
+   **Answer keys marked by colour** (CE6146 exercises mark the correct option in red) are lost by
+   plain-text extraction. Read the pages visually or with a colour-aware extractor (PyMuPDF
+   spans), cross-check both, and verify every key — Exercise 2 Q1's key was wrong in the PDF.
 2. **Extract** to Markdown — `markitdown` for PDF/PPTX/DOCX; `docling` when slides are
    formula/table heavy; render pages to PNG (PyMuPDF) when diagrams matter (Claude can read images).
 3. **Generate** with Claude Code using [`prompts/generate-questions.md`](../prompts/generate-questions.md):
