@@ -35,7 +35,7 @@ explanations. Fixed here:
 - **Name:** `ml-recall` — *recall* is both an ML metric and the active-recall study technique.
 - **Description:** Active-recall quiz bank for AI/ML/DL: exam-style questions with LaTeX, cited
   explanations, timed mock exams and spaced repetition. Free static site on GitHub Pages.
-- **Homepage:** `https://mtoan65.github.io/ml-recall`
+- **Homepage:** `https://mtoan651.github.io/ml-recall`
 - **GitHub topics (20):** machine-learning, deep-learning, artificial-intelligence,
   neural-networks, llm, transformers, quiz, quiz-app, mcq, exam-preparation,
   interview-preparation, active-recall, spaced-repetition, flashcards, study-tool, education,
