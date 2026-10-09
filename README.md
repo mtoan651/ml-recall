@@ -33,7 +33,7 @@ Sources so far: Hugging Face LLM Course, Microsoft AI/ML for Beginners, MMLU-Red
 
 ## Quick start
 
-Requires [uv](https://docs.astral.sh/uv/).
+Data tooling — requires [uv](https://docs.astral.sh/uv/):
 
 ```bash
 uv sync
@@ -41,6 +41,17 @@ uv run mlr check                  # validate the bank + quality report
 uv run mlr import all --dry-run   # re-run importers (idempotent)
 uv run mlr stats --topics         # per-topic counts
 ```
+
+Quiz website — requires Node 24 and [pnpm](https://pnpm.io/):
+
+```bash
+pnpm install
+pnpm dev                          # http://localhost:4321/ml-recall/
+pnpm build                        # static site in dist/
+pnpm lint && pnpm test && pnpm check
+```
+
+See [docs/web-app.md](docs/web-app.md) for how the YAML becomes pages and how answers are graded.
 
 A question looks like this (`src/content/quizzes/dl/cnn.yaml`):
 
@@ -66,6 +77,8 @@ A question looks like this (`src/content/quizzes/dl/cnn.yaml`):
 
 ```text
 src/content/            question bank: taxonomy.yaml, sources.yaml, quizzes/<domain>/<topic>.yaml
+src/pages, components/  Astro pages and the React quiz island
+src/lib/                build-time data loading + Markdown, quiz logic (grading, shuffle, storage)
 schema/                 JSON Schemas exported from the pydantic model (editor autocompletion)
 tools/mlrecall/         `mlr` CLI: schema, validation, importers
 tools/curation/         per-source curation decisions
@@ -81,6 +94,7 @@ docs/                   project handbook
 | [overview](docs/overview.md) | goals, lessons from the reference project, branding, decision log |
 | [tech-stack](docs/tech-stack.md) | stack and rationale |
 | [data-format](docs/data-format.md) | YAML schema, question types, citations, statuses, math |
+| [web-app](docs/web-app.md) | the Astro site: data flow, rendering, grading rules, deploy |
 | [content-pipeline](docs/content-pipeline.md) | importing, generating, curation, quality bar, review checklist |
 | [sources](docs/sources.md) | 20 exercise sources with licenses and plans |
 | [figures](docs/figures.md) | diagrams and plots |

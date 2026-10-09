@@ -1,7 +1,7 @@
 # CLAUDE.md
 
-ml-recall: an active-recall question bank for AI/ML/DL (YAML in git) with Python data tooling;
-a static Astro quiz site comes in v0.2. Start with `docs/overview.md`.
+ml-recall: an active-recall question bank for AI/ML/DL (YAML in git) with Python data tooling
+and a static Astro quiz site (`docs/web-app.md`). Start with `docs/overview.md`.
 
 ## Commands
 
@@ -12,12 +12,17 @@ uv run mlr import <source|all> [--dry-run]
 uv run mlr stats                 # Markdown stats table (README)
 uv run mlr schema                # re-export schema/*.schema.json after editing schema.py
 uv run pytest && uv run ruff check . && uv run ruff format --check .
+
+pnpm install && pnpm dev         # web app at http://localhost:4321/ml-recall/ (Node 24 + pnpm)
+pnpm lint && pnpm test && pnpm check && pnpm build   # must pass before committing web changes
 ```
 
 ## Where things are
 
 - Questions: `src/content/quizzes/<domain>/<topic>.yaml`; taxonomy and source registry next to them.
-- Schema (source of truth): `tools/mlrecall/schema.py` → spec in `docs/data-format.md`.
+- Schema (source of truth): `tools/mlrecall/schema.py` → spec in `docs/data-format.md`;
+  mirrored in Zod for the web build (`src/lib/schema.ts`) — change both together.
+- Web app: `src/pages/`, `src/components/` (React quiz island), pure logic in `src/lib/`.
 - Importers: `tools/mlrecall/importers/`; per-item curation: `tools/curation/<source>.yaml`.
 - Raw course materials: `../materials/` (outside the repo — never commit or quote verbatim).
   Upstream downloads and extracted text: `.cache/` (git-ignored).

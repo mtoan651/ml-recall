@@ -1,0 +1,42 @@
+---
+import Quiz from "../../components/Quiz";
+import Base from "../../layouts/Base.astro";
+import { getBank, toQuizQuestions } from "../../lib/bank";
+import { url } from "../../lib/url";
+
+export async function getStaticPaths() {
+  const bank = await getBank();
+  return [...bank.topics.values()]
+    .filter((topic) => topic.questionIds.length > 0)
+    .map((topic) => ({ params: { topic: topic.id } }));
+}
+
+const bank = await getBank();
+const topic = bank.topics.get(Astro.params.topic);
+if (!topic) throw new Error(`Unknown topic ${Astro.params.topic}`);
+const questions = await toQuizQuestions(
+  bank.questions.filter((q) => q.topic.id === topic.id),
+  bank,
+);
+const total = questions.length;
+---
+
+<Base
+  title={topic.title}
+  description={`${total} practice questions on ${topic.title} (${topic.domainTitle}) with instant feedback and cited explanations.`}
+>
+  <nav aria-label="Breadcrumb" class="text-sm text-muted">
+    <a href={url()} class="hover:text-ink">Topics</a>
+    <span aria-hidden="true" class="mx-1.5">/</span>
+    <span>{topic.domainTitle}</span>
+  </nav>
+  <h1 class="mt-2 text-2xl font-semibold tracking-tight sm:text-3xl">{topic.title}</h1>
+  {topic.description && <p class="mt-2 text-muted">{topic.description}</p>}
+  <p class="mt-2 text-sm text-muted">
+    {total} {total === 1 ? "question" : "questions"} · {topic.reviewed} reviewed
+  </p>
+
+  <div class="mt-6">
+    <Quiz client:load questions={questions} scope={topic.title} />
+  </div>
+</Base>

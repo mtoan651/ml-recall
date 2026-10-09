@@ -13,13 +13,15 @@ Versions follow [conventions.md#versioning](conventions.md#versioning).
 
 ## v0.2.0 — Web MVP
 
-- [ ] Astro + React + Tailwind scaffold, Zod mirror of the schema, GitHub Pages deploy
-- [ ] Topic pages; **practice** mode (instant feedback) and **exam** mode (timer ≈ 1 min/question)
-- [ ] Shuffle questions and options (respect `shuffle: false`)
-- [ ] All four question types incl. short-answer grading (normalized text, numeric tolerance, self-grade)
-- [ ] KaTeX + code highlighting at build time; references rendered as footnotes
-- [ ] Figures (`figure`, `explanation_figure`), white card in dark mode
-- [ ] Results page with explanations; "unreviewed" badge + filter; dark mode; mobile
+- [x] Astro + React + Tailwind scaffold, Zod mirror of the schema, GitHub Pages deploy
+- [x] Topic pages and tag pages; **practice** mode (instant feedback) — see [web-app](web-app.md)
+- [ ] **Exam** mode (timer ≈ 1 min/question) with a results page and explanations
+- [x] Shuffle questions and options (respect `shuffle: false`)
+- [x] All four question types incl. short-answer grading (normalized text, numeric tolerance, self-grade)
+- [x] KaTeX + code highlighting at build time; references rendered as footnotes
+- [x] Figures (`figure`, `explanation_figure`, option `image`), white card in dark mode
+- [x] End-of-session summary (score, missed questions, retry missed); "unreviewed" badge + filter; dark mode; mobile
+- [x] Progress per question id in `localStorage`; answered / total per topic on the index
 
 ## v0.3.0 — Content I
 
@@ -31,7 +33,7 @@ Versions follow [conventions.md#versioning](conventions.md#versioning).
 ## v0.4.0 — Review features
 
 - [ ] Mixed exams: N random questions across topics/difficulty/tags
-- [ ] "My mistakes" deck, score history per topic, keyboard shortcuts (1–4, Enter)
+- [ ] "My mistakes" deck, score history per topic (keyboard shortcuts 1–9 / Enter shipped in v0.2)
 - [ ] Image options (2×2 grid), zoomable figures
 - [ ] Code-reading questions from Tensor Puzzles / LLMs-from-scratch / numpy-100
 
