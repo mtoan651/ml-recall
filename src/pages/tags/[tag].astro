@@ -1,0 +1,42 @@
+---
+import Quiz from "../../components/Quiz";
+import Base from "../../layouts/Base.astro";
+import { getBank, toQuizQuestions } from "../../lib/bank";
+import { url } from "../../lib/url";
+
+export async function getStaticPaths() {
+  const bank = await getBank();
+  return [...bank.tags.keys()].map((tag) => ({ params: { tag } }));
+}
+
+const bank = await getBank();
+const tag = Astro.params.tag;
+const tagged = bank.tags.get(tag) ?? [];
+const questions = await toQuizQuestions(tagged, bank);
+const topics = [...new Map(tagged.map((q) => [q.topic.id, q.topic])).values()];
+const total = questions.length;
+---
+
+<Base title={`#${tag}`} description={`${total} practice questions tagged ${tag}.`}>
+  <nav aria-label="Breadcrumb" class="text-sm text-muted">
+    <a href={url()} class="hover:text-ink">Topics</a>
+    <span aria-hidden="true" class="mx-1.5">/</span>
+    <a href={url("tags/")} class="hover:text-ink">Tags</a>
+  </nav>
+  <h1 class="mt-2 text-2xl font-semibold tracking-tight sm:text-3xl">#{tag}</h1>
+  <p class="mt-2 text-sm text-muted">
+    {total} {total === 1 ? "question" : "questions"} from
+    {
+      topics.map((t, i) => (
+        <>
+          {i > 0 && ", "}
+          <a href={t.url} class="underline underline-offset-2 hover:text-ink">{t.title}</a>
+        </>
+      ))
+    }
+  </p>
+
+  <div class="mt-6">
+    <Quiz client:load questions={questions} scope={`#${tag}`} showTopic />
+  </div>
+</Base>
