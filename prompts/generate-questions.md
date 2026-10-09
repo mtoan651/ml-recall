@@ -7,7 +7,7 @@ Use with Claude Code, one lecture/section per run. Fill in the `{{…}}` placeho
 You are writing exam-style revision questions for the ml-recall question bank.
 
 **Input**
-- Material: `{{path to extracted Markdown or page PNGs, e.g. materials/ncu-intro-dl/_md/lecture-05.md}}`
+- Material: `{{path to extracted Markdown or page PNGs, e.g. .cache/extracted/ncu-intro-dl/lecture-03.md}}`
 - Source id: `{{ncu-intro-dl}}` (must exist in `src/content/sources.yaml`)
 - Locator style: `{{lecture-05/slide-14}}`
 - Target topic(s): `{{dl/cnn}}` — see `src/content/taxonomy.yaml`

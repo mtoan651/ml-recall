@@ -40,7 +40,7 @@ class Item:
 
 
 def fetch(source_id: str, pinned: str, name: str, url: str) -> Path:
-    """Download `url` once into materials/external/<source>/<pinned>/<name>."""
+    """Download `url` once into .cache/upstream/<source>/<pinned>/<name>."""
     dest = paths.CACHE / source_id / pinned / name
     if not dest.exists():
         dest.parent.mkdir(parents=True, exist_ok=True)

@@ -19,7 +19,8 @@ uv run pytest && uv run ruff check . && uv run ruff format --check .
 - Questions: `src/content/quizzes/<domain>/<topic>.yaml`; taxonomy and source registry next to them.
 - Schema (source of truth): `tools/mlrecall/schema.py` → spec in `docs/data-format.md`.
 - Importers: `tools/mlrecall/importers/`; per-item curation: `tools/curation/<source>.yaml`.
-- Raw/private materials: `materials/` (git-ignored — never commit or quote it verbatim).
+- Raw course materials: `../materials/` (outside the repo — never commit or quote verbatim).
+  Upstream downloads and extracted text: `.cache/` (git-ignored).
 
 ## Rules
 

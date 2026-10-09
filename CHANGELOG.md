@@ -5,6 +5,11 @@ versioning: [SemVer](https://semver.org) as defined in [docs/conventions.md](doc
 
 ## [Unreleased]
 
+### Changed
+
+- Course materials are kept outside the repository (`../materials/`); upstream downloads are
+  cached in the git-ignored `.cache/upstream/` instead of `materials/external/`.
+
 ## [0.1.0] — 2026-10-09
 
 ### Added

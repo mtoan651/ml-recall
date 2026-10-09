@@ -5,7 +5,7 @@ How questions get into the bank, and the quality bar they must meet.
 ```text
                        ┌─ open-licensed quiz sets ──▶ mlr import <source> ─▶ curation ─┐
 sources.yaml ──────────┤                                                               ├─▶ draft ─▶ review ─▶ reviewed
-                       └─ materials/ (slides, PDFs) ─▶ extract ─▶ generate (Claude) ───┘      (mlr check at every step)
+                       └─ course materials ───────▶ extract ─▶ generate (Claude) ───┘      (mlr check at every step)
 ```
 
 ## Path A — import an open-licensed quiz set
@@ -15,7 +15,7 @@ Microsoft AI/ML for Beginners, MMLU-Redux).
 
 1. **Pin** the upstream revision in `sources.yaml` (`pinned:` commit SHA / dataset revision).
 2. **Importer** in `tools/mlrecall/importers/` turns upstream data into items with a stable
-   `ref` and a default topic. Downloads are cached in `materials/external/<source>/<pinned>/`.
+   `ref` and a default topic. Downloads are cached in `.cache/upstream/<source>/<pinned>/` (git-ignored).
 3. **Curation** in `tools/curation/<source>.yaml` decides per item (see below).
 4. **Merge**: `uv run mlr import <source> [--dry-run]` appends new items to topic files, allocates
    ids and sets `status: draft`. Re-running is idempotent (existing `source.ref`s are skipped).
@@ -54,7 +54,15 @@ MMLU-Redux 90/100).
 For lecture slides, PDFs and notes (`ncu-intro-dl`, and `adapt` books such as d2l). Planned to be
 scripted in v0.3; the manual flow works today:
 
-1. Put files in `materials/<source-id>/` (git-ignored).
+1. Keep the raw files **outside the repository** — locally next to it:
+
+   ```text
+   intro_dl/
+   ├── materials/        # CE6146 lecture slides and exercises (never committed)
+   └── ml-recall/        # this repository
+   ```
+
+   Extracted text/images go to `.cache/extracted/<source-id>/` (git-ignored).
 2. **Extract** to Markdown — `markitdown` for PDF/PPTX/DOCX; `docling` when slides are
    formula/table heavy; render pages to PNG (PyMuPDF) when diagrams matter (Claude can read images).
 3. **Generate** with Claude Code using [`prompts/generate-questions.md`](../prompts/generate-questions.md):
@@ -64,7 +72,7 @@ scripted in v0.3; the manual flow works today:
 5. **Review** (below), then PR.
 
 Private materials (`usage: private`) are paraphrased into original questions — never copied
-verbatim, never committed.
+verbatim, never committed (neither the files nor their extracted text).
 
 ## Writing good questions
 
