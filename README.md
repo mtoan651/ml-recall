@@ -3,12 +3,13 @@
 Active-recall quiz bank for AI/ML/DL: exam-style questions with LaTeX, cited explanations, timed
 mock exams and spaced repetition. Free static site on GitHub Pages.
 
-> **Status: v0.1.0 — data foundation.** The question bank, its schema and tooling are in place;
-> the quiz website arrives in v0.2 ([roadmap](docs/roadmap.md)).
+> **Status: v0.2.0 — the quiz site is live at <https://mtoan651.github.io/ml-recall/>.**
+> Next: explanations for the imported drafts, more course material, exam mode ([roadmap](docs/roadmap.md)).
 
 ## What's inside
 
-- **333 questions** across 10 domains — 328 curated from open-licensed sources, 5 original examples.
+- **384 questions** across 10 domains — 328 curated from open-licensed sources, 51 paraphrased from
+  CE6146 course exercises, 5 original examples; 56 reviewed.
 - Four question types: `single`, `multiple` (select all), `true_false`, `short_answer`
   (auto-graded text/numeric, or self-graded against a model answer).
 - Every question records its **source**; reviewed explanations **cite** references (`[^1]`).
@@ -16,19 +17,20 @@ mock exams and spaced repetition. Free static site on GitHub Pages.
 
 | Domain | Topics | Questions | Reviewed |
 | --- | ---: | ---: | ---: |
-| Artificial Intelligence | 5 | 20 | 0 |
-| Mathematics for ML | 5 | 13 | 0 |
-| Machine Learning | 14 | 97 | 0 |
-| Deep Learning | 7 | 77 | 5 |
+| Artificial Intelligence | 5 | 21 | 1 |
+| Mathematics for ML | 5 | 22 | 9 |
+| Machine Learning | 14 | 111 | 14 |
+| Deep Learning | 8 | 104 | 32 |
 | Computer Vision | 3 | 10 | 0 |
 | Natural Language Processing | 5 | 47 | 0 |
 | Generative Models | 2 | 10 | 0 |
 | Large Language Models | 3 | 20 | 0 |
 | Reinforcement Learning | 2 | 12 | 0 |
 | Practical Tools | 2 | 27 | 0 |
-| **Total** | | **333** | **5** |
+| **Total** | | **384** | **56** |
 
-Sources so far: Hugging Face LLM Course, Microsoft AI/ML for Beginners, MMLU-Redux — see
+Sources so far: Hugging Face LLM Course, Microsoft AI/ML for Beginners, MMLU-Redux and the CE6146
+course exercises — see
 [docs/sources.md](docs/sources.md) for all 20 registered sources and their licenses.
 
 ## Quick start
