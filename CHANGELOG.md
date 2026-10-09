@@ -17,6 +17,7 @@ versioning: [SemVer](https://semver.org) as defined in [docs/conventions.md](doc
 
 ### Changed
 
+- The 51 CE6146 exercise questions are reviewed by the maintainer (`status: reviewed`).
 - Course materials are kept outside the repository (`../materials/`); upstream downloads are
   cached in the git-ignored `.cache/upstream/` instead of `materials/external/`.
 
