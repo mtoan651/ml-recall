@@ -166,7 +166,8 @@ export default function Quiz({ questions, scope, showTopic = false }: QuizProps)
       const interactive = target?.closest("button, a, summary");
 
       if (event.key === "Enter") {
-        if (interactive) return; // let the focused button or link do its own thing
+        // Native for focused buttons and links; a held key must not race through questions.
+        if (interactive || event.repeat) return;
         event.preventDefault();
         primary();
         return;
@@ -262,8 +263,14 @@ export default function Quiz({ questions, scope, showTopic = false }: QuizProps)
             ref={focusRef}
             score={score}
             missed={missedIds(session).flatMap((id) => byId.get(id) ?? [])}
-            onRetryMissed={() => start(settings, new Set(missedIds(session)))}
-            onRestart={() => start(settings)}
+            onRetryMissed={() => {
+              moved.current = true;
+              start(settings, new Set(missedIds(session)));
+            }}
+            onRestart={() => {
+              moved.current = true;
+              start(settings);
+            }}
           />
         ) : (
           item &&

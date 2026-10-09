@@ -68,6 +68,9 @@ gh repo edit $REPO --enable-squash-merge --enable-merge-commit=false \
   --homepage "https://mtoan651.github.io/ml-recall"
 gh repo edit $REPO --add-topic machine-learning,deep-learning,artificial-intelligence,neural-networks,llm,transformers,quiz,quiz-app,mcq,exam-preparation,interview-preparation,active-recall,spaced-repetition,flashcards,study-tool,education,astro,typescript,github-pages,katex
 
+# GitHub Pages, published by the `deploy` job of the CI workflow
+gh api -X POST repos/$REPO/pages -f build_type=workflow
+
 # protect main: PR required, CI job "check" must pass, no force-push / deletion
 gh api -X POST repos/$REPO/rulesets --input - <<'EOF'
 {
@@ -93,5 +96,7 @@ EOF
 ## CI
 
 `.github/workflows/ci.yml`, job **`check`** (name referenced by the ruleset), on every PR and push
-to `main`: `uv sync` → `ruff check` → `ruff format --check` → `pytest` → `mlr check`.
-From v0.2 it also builds the web app, and a `deploy` job publishes to GitHub Pages on `main`.
+to `main`: `uv sync` → `ruff check` → `ruff format --check` → `pytest` → `mlr check`, then the
+web app: `pnpm install --frozen-lockfile` → `pnpm lint` → `pnpm test` → `pnpm check` →
+`pnpm build`. On pushes to `main` the checked `dist/` is uploaded and the `deploy` job publishes
+it to GitHub Pages ([web-app](web-app.md#deploy)).

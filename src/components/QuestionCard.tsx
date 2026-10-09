@@ -235,8 +235,13 @@ function ShortAnswerInput({
   const inputId = `q-${q.id}-answer`;
   const hintId = `${inputId}-hint`;
   const locked = Boolean(answer.outcome || answer.revealed);
-  const field =
-    "w-full rounded-xl border border-line-strong bg-canvas px-3.5 py-2.5 text-base text-ink placeholder:text-muted/70 focus:border-accent focus:outline-none read-only:bg-subtle";
+  const tone =
+    answer.outcome === "correct"
+      ? "border-good bg-good-soft"
+      : answer.outcome === "incorrect"
+        ? "border-bad bg-bad-soft"
+        : "border-line-strong bg-canvas read-only:bg-subtle focus:border-accent";
+  const field = `w-full rounded-xl border px-3.5 py-2.5 text-base text-ink placeholder:text-muted/70 focus:outline-none ${tone}`;
 
   return (
     <form
