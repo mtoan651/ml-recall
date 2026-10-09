@@ -1,0 +1,446 @@
+{
+  "$defs": {
+    "Figure": {
+      "additionalProperties": false,
+      "properties": {
+        "src": {
+          "description": "Path relative to the YAML file, e.g. ./cnn/cnn-007.svg",
+          "minLength": 1,
+          "title": "Src",
+          "type": "string"
+        },
+        "alt": {
+          "description": "Describe what is visible, never the conclusion/answer.",
+          "minLength": 10,
+          "title": "Alt",
+          "type": "string"
+        },
+        "caption": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Caption"
+        }
+      },
+      "required": [
+        "src",
+        "alt"
+      ],
+      "title": "Figure",
+      "type": "object"
+    },
+    "Option": {
+      "additionalProperties": false,
+      "properties": {
+        "text": {
+          "minLength": 1,
+          "title": "Text",
+          "type": "string"
+        },
+        "correct": {
+          "default": false,
+          "title": "Correct",
+          "type": "boolean"
+        },
+        "why": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "description": "Feedback shown for this option after answering.",
+          "title": "Why"
+        },
+        "image": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/Figure"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null
+        }
+      },
+      "required": [
+        "text"
+      ],
+      "title": "Option",
+      "type": "object"
+    },
+    "Provenance": {
+      "additionalProperties": false,
+      "description": "Where the question itself comes from.",
+      "properties": {
+        "id": {
+          "description": "Source id in src/content/sources.yaml",
+          "pattern": "^[a-z0-9]+(?:-[a-z0-9]+)*$",
+          "title": "Id",
+          "type": "string"
+        },
+        "ref": {
+          "description": "Stable locator inside the source; unique per source",
+          "minLength": 1,
+          "title": "Ref",
+          "type": "string"
+        },
+        "url": {
+          "anyOf": [
+            {
+              "format": "uri",
+              "maxLength": 2083,
+              "minLength": 1,
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Url"
+        }
+      },
+      "required": [
+        "id",
+        "ref"
+      ],
+      "title": "Provenance",
+      "type": "object"
+    },
+    "Question": {
+      "additionalProperties": false,
+      "properties": {
+        "id": {
+          "pattern": "^[a-z0-9]+(?:-[a-z0-9]+)*-\\d{3}$",
+          "title": "Id",
+          "type": "string"
+        },
+        "type": {
+          "description": "single: one correct option; multiple: one or more correct options (select all); true_false: two options; short_answer: typed answer, see `answer`",
+          "enum": [
+            "single",
+            "multiple",
+            "true_false",
+            "short_answer"
+          ],
+          "title": "Type",
+          "type": "string"
+        },
+        "difficulty": {
+          "anyOf": [
+            {
+              "enum": [
+                "easy",
+                "medium",
+                "hard"
+              ],
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Difficulty"
+        },
+        "tags": {
+          "default": [],
+          "items": {
+            "pattern": "^[a-z0-9]+(?:-[a-z0-9]+)*$",
+            "type": "string"
+          },
+          "title": "Tags",
+          "type": "array"
+        },
+        "shuffle": {
+          "default": true,
+          "description": "false keeps option order (e.g. 'both of the above' options)",
+          "title": "Shuffle",
+          "type": "boolean"
+        },
+        "question": {
+          "minLength": 1,
+          "title": "Question",
+          "type": "string"
+        },
+        "figure": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/Figure"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null
+        },
+        "options": {
+          "anyOf": [
+            {
+              "items": {
+                "$ref": "#/$defs/Option"
+              },
+              "maxItems": 8,
+              "minItems": 2,
+              "type": "array"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Options"
+        },
+        "answer": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/ShortAnswer"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null
+        },
+        "explanation": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Explanation"
+        },
+        "explanation_figure": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/Figure"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null
+        },
+        "references": {
+          "default": [],
+          "items": {
+            "$ref": "#/$defs/Reference"
+          },
+          "title": "References",
+          "type": "array"
+        },
+        "source": {
+          "$ref": "#/$defs/Provenance"
+        },
+        "status": {
+          "enum": [
+            "draft",
+            "reviewed"
+          ],
+          "title": "Status",
+          "type": "string"
+        }
+      },
+      "required": [
+        "id",
+        "type",
+        "question",
+        "source",
+        "status"
+      ],
+      "title": "Question",
+      "type": "object"
+    },
+    "Reference": {
+      "additionalProperties": false,
+      "description": "A citation supporting the question or explanation, referenced as [^n] (1-based).",
+      "properties": {
+        "source": {
+          "anyOf": [
+            {
+              "pattern": "^[a-z0-9]+(?:-[a-z0-9]+)*$",
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "description": "Id in src/content/sources.yaml",
+          "title": "Source"
+        },
+        "title": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "description": "For works not in the registry (e.g. a paper)",
+          "title": "Title"
+        },
+        "url": {
+          "anyOf": [
+            {
+              "format": "uri",
+              "maxLength": 2083,
+              "minLength": 1,
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Url"
+        },
+        "locator": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "description": "Chapter/section/page/slide, e.g. 'Sec. 4.3'",
+          "title": "Locator"
+        },
+        "quote": {
+          "anyOf": [
+            {
+              "maxLength": 300,
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "description": "Short verbatim excerpt (keep it brief).",
+          "title": "Quote"
+        }
+      },
+      "title": "Reference",
+      "type": "object"
+    },
+    "ShortAnswer": {
+      "additionalProperties": false,
+      "description": "Answer key of a `short_answer` question.\n\nAuto-graded when `accept` or `numeric` is set; otherwise the learner self-grades\nagainst `model`.",
+      "properties": {
+        "accept": {
+          "default": [],
+          "description": "Accepted answers, matched ignoring case, spaces and punctuation",
+          "items": {
+            "minLength": 1,
+            "type": "string"
+          },
+          "title": "Accept",
+          "type": "array"
+        },
+        "numeric": {
+          "anyOf": [
+            {
+              "type": "number"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "description": "Numeric answer",
+          "title": "Numeric"
+        },
+        "tolerance": {
+          "default": 0,
+          "description": "Absolute tolerance for `numeric`",
+          "minimum": 0,
+          "title": "Tolerance",
+          "type": "number"
+        },
+        "model": {
+          "description": "Model answer shown after answering (Markdown)",
+          "minLength": 1,
+          "title": "Model",
+          "type": "string"
+        }
+      },
+      "required": [
+        "model"
+      ],
+      "title": "ShortAnswer",
+      "type": "object"
+    }
+  },
+  "additionalProperties": false,
+  "description": "One YAML file = one topic: src/content/quizzes/<domain>/<topic>.yaml",
+  "properties": {
+    "schema_version": {
+      "const": 1,
+      "default": 1,
+      "title": "Schema Version",
+      "type": "integer"
+    },
+    "domain": {
+      "pattern": "^[a-z0-9]+(?:-[a-z0-9]+)*$",
+      "title": "Domain",
+      "type": "string"
+    },
+    "topic": {
+      "pattern": "^[a-z0-9]+(?:-[a-z0-9]+)*$",
+      "title": "Topic",
+      "type": "string"
+    },
+    "title": {
+      "minLength": 1,
+      "title": "Title",
+      "type": "string"
+    },
+    "description": {
+      "anyOf": [
+        {
+          "type": "string"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null,
+      "title": "Description"
+    },
+    "questions": {
+      "default": [],
+      "items": {
+        "$ref": "#/$defs/Question"
+      },
+      "title": "Questions",
+      "type": "array"
+    }
+  },
+  "required": [
+    "domain",
+    "topic",
+    "title"
+  ],
+  "title": "QuizFile",
+  "type": "object"
+}
