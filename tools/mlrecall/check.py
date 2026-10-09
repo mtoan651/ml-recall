@@ -117,7 +117,11 @@ def _normalize(text: str) -> str:
 
 
 def _check_near_duplicates(r: Report) -> None:
-    items = [(q.id, _normalize(q.question)) for _, q in r.questions]
+    def fingerprint(q: Question) -> str:
+        options = " ".join(o.text for o in q.options or [])
+        return _normalize(f"{q.question} {options} {q.answer.model if q.answer else ''}")
+
+    items = [(q.id, fingerprint(q)) for _, q in r.questions]
     for i, (id_a, a) in enumerate(items):
         for id_b, b in items[i + 1 :]:
             if abs(len(a) - len(b)) > 0.2 * max(len(a), len(b), 1):
