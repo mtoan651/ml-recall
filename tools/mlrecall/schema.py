@@ -115,7 +115,9 @@ class Question(_Strict):
     explanation_figure: Figure | None = None
     references: list[Reference] = []
     source: Provenance
-    status: Literal["draft", "reviewed"]
+    status: Literal["draft", "reviewed", "retired"] = Field(
+        description="draft: unreviewed; reviewed: checked + cited; retired: hidden, id kept forever"
+    )
 
     @model_validator(mode="after")
     def _consistent(self) -> Question:

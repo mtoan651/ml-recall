@@ -22,7 +22,8 @@ def main(argv: list[str] | None = None) -> int:
     p_import.add_argument("source", help="source id, or 'all'")
     p_import.add_argument("--dry-run", action="store_true", help="report without writing")
 
-    sub.add_parser("stats", help="print bank statistics as a Markdown table")
+    p_stats = sub.add_parser("stats", help="print bank statistics as a Markdown table")
+    p_stats.add_argument("--topics", action="store_true", help="one row per topic")
 
     args = parser.parse_args(argv)
     if args.command == "check":
@@ -36,7 +37,7 @@ def main(argv: list[str] | None = None) -> int:
     if args.command == "stats":
         from .stats import markdown_table
 
-        print(markdown_table())
+        print(markdown_table(by_topic=args.topics))
         return 0
     return 2
 
