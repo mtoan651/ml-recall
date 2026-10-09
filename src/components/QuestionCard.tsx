@@ -121,7 +121,7 @@ function OptionList({
     : null;
 
   return (
-    <fieldset>
+    <fieldset className="min-w-0">
       <legend className="sr-only">
         {multiple ? "Select all options that apply" : "Choose one option"}
       </legend>
