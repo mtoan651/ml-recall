@@ -5,6 +5,12 @@ versioning: [SemVer](https://semver.org) as defined in [docs/conventions.md](doc
 
 ## [Unreleased]
 
+### Added
+
+- 51 draft questions paraphrased from CE6146 Exercises 1–3 (`ncu-intro-dl`; tags `ce6146`,
+  `ce6146-ex01`…`ex03`), each citing lecture slides and *Dive into Deep Learning*. The answer key of
+  Exercise 2 Q1 is corrected (regression, not clustering). New topic file `dl/frameworks.yaml`.
+
 ### Changed
 
 - Course materials are kept outside the repository (`../materials/`); upstream downloads are
