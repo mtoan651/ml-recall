@@ -1,0 +1,399 @@
+schema_version: 1
+domain: dl
+topic: training
+title: Training Deep Networks
+questions:
+  - id: training-001
+    type: single
+    question: What does `fp16=True` in TrainingArguments enable?
+    options:
+      - text: 16-bit integer precision for faster training.
+        why: fp16 refers to floating-point precision, not integer precision.
+      - text: Mixed precision training with 16-bit floating-point numbers for faster training and reduced memory usage.
+        correct: true
+      - text: Training for exactly 16 epochs.
+        why: fp16 has nothing to do with the number of epochs.
+      - text: Using 16 GPUs for distributed training.
+        why: The number of GPUs is not controlled by the fp16 parameter.
+    explanation: Mixed precision training uses 16-bit floats for forward pass and 32-bit for gradients, improving speed and reducing memory usage. [^1]
+    references:
+      - source: hf-llm-course
+        locator: 'Chapter 3: Fine-tuning a pretrained model'
+        url: https://huggingface.co/learn/llm-course/chapter3/1
+    source:
+      id: hf-llm-course
+      ref: chapter3/3#q3
+      url: https://huggingface.co/learn/llm-course/chapter3/3
+    status: draft
+  - id: training-002
+    type: single
+    question: What is gradient accumulation and how do you enable it?
+    options:
+      - text: It saves gradients to disk, enabled with save_gradients=True.
+        why: Gradient accumulation doesn't involve saving gradients to disk.
+      - text: It accumulates gradients over multiple batches before updating, enabled with gradient_accumulation_steps.
+        correct: true
+      - text: It speeds up gradient computation, enabled automatically with fp16.
+        why: While fp16 can speed up training, gradient accumulation is a separate technique.
+      - text: It prevents gradient overflow, enabled with gradient_clipping=True.
+        why: That describes gradient clipping, not gradient accumulation.
+    explanation: This allows you to simulate larger batch sizes by accumulating gradients over multiple forward passes. [^1]
+    references:
+      - source: hf-llm-course
+        locator: 'Chapter 3: Fine-tuning a pretrained model'
+        url: https://huggingface.co/learn/llm-course/chapter3/1
+    source:
+      id: hf-llm-course
+      ref: chapter3/3#q6
+      url: https://huggingface.co/learn/llm-course/chapter3/3
+    status: draft
+  - id: training-003
+    type: single
+    question: What is the main difference between Adam and AdamW optimizers?
+    options:
+      - text: AdamW uses a different learning rate schedule.
+        why: Learning rate scheduling is separate from the optimizer choice.
+      - text: AdamW includes decoupled weight decay regularization.
+        correct: true
+      - text: AdamW only works with transformer models.
+        why: AdamW can be used with any model architecture, not just transformers.
+      - text: AdamW requires less memory than Adam.
+        why: Both optimizers have similar memory requirements.
+    explanation: Correct! AdamW separates weight decay from the gradient-based parameter updates, leading to better regularization. [^1]
+    references:
+      - source: hf-llm-course
+        locator: 'Chapter 3: Fine-tuning a pretrained model'
+        url: https://huggingface.co/learn/llm-course/chapter3/1
+    source:
+      id: hf-llm-course
+      ref: chapter3/4#q1
+      url: https://huggingface.co/learn/llm-course/chapter3/4
+    status: draft
+  - id: training-004
+    type: single
+    question: In a training loop, what is the correct order of operations?
+    options:
+      - text: Forward pass → Backward pass → Optimizer step → Zero gradients
+        why: Close, but you should zero gradients before the next forward pass to avoid accumulating old gradients.
+      - text: Forward pass → Backward pass → Optimizer step → Scheduler step → Zero gradients
+        correct: true
+      - text: Zero gradients → Forward pass → Optimizer step → Backward pass
+        why: The backward pass must come after the forward pass to compute gradients from the loss.
+      - text: Forward pass → Zero gradients → Backward pass → Optimizer step
+        why: Zeroing gradients before backward pass would eliminate the gradients you just computed.
+    explanation: 'Correct! This is the proper order: compute loss, compute gradients, update parameters, update learning rate, then clear gradients. [^1]'
+    references:
+      - source: hf-llm-course
+        locator: 'Chapter 3: Fine-tuning a pretrained model'
+        url: https://huggingface.co/learn/llm-course/chapter3/1
+    source:
+      id: hf-llm-course
+      ref: chapter3/4#q2
+      url: https://huggingface.co/learn/llm-course/chapter3/4
+    status: draft
+  - id: training-005
+    type: single
+    question: What does it typically mean when training loss decreases but validation loss starts increasing?
+    options:
+      - text: The model is learning successfully and will continue to improve.
+        why: If validation loss is increasing while training loss decreases, this indicates a problem, not success.
+      - text: The model is overfitting to the training data.
+        correct: true
+      - text: The learning rate is too low.
+        why: A low learning rate would cause slow learning, not the divergence between training and validation performance.
+      - text: The dataset is too small.
+        why: While small datasets can contribute to overfitting, this specific pattern is the definition of overfitting regardless of dataset size.
+    explanation: Correct! This is a classic sign of overfitting - the model performs well on training data but poorly on unseen validation data. [^1]
+    references:
+      - source: hf-llm-course
+        locator: 'Chapter 3: Fine-tuning a pretrained model'
+        url: https://huggingface.co/learn/llm-course/chapter3/1
+    source:
+      id: hf-llm-course
+      ref: chapter3/5#q1
+      url: https://huggingface.co/learn/llm-course/chapter3/5
+    status: draft
+  - id: training-006
+    type: single
+    question: Why do accuracy curves often show a "steppy" or plateau-like pattern rather than smooth increases?
+    options:
+      - text: There's an error in the accuracy calculation.
+        why: The steppy pattern is normal and expected, not an error.
+      - text: Accuracy is a discrete metric that only changes when predictions cross decision boundaries.
+        correct: true
+      - text: The model is not learning effectively.
+        why: Steppy accuracy curves are normal even when the model is learning well.
+      - text: The batch size is too small.
+        why: Batch size affects training stability but doesn't explain the inherently discrete nature of accuracy metrics.
+    explanation: Correct! Unlike loss, accuracy depends on discrete prediction decisions, so small improvements in confidence may not change the final accuracy until a threshold is crossed. [^1]
+    references:
+      - source: hf-llm-course
+        locator: 'Chapter 3: Fine-tuning a pretrained model'
+        url: https://huggingface.co/learn/llm-course/chapter3/1
+    source:
+      id: hf-llm-course
+      ref: chapter3/5#q2
+      url: https://huggingface.co/learn/llm-course/chapter3/5
+    status: draft
+  - id: training-007
+    type: single
+    question: What is the best approach when you observe erratic, highly fluctuating learning curves?
+    options:
+      - text: Increase the learning rate to speed up convergence.
+        why: Increasing the learning rate would likely make the fluctuations worse.
+      - text: Reduce the learning rate and possibly increase the batch size.
+        correct: true
+      - text: Stop training immediately as the model won't improve.
+        why: Erratic curves can often be fixed with hyperparameter adjustments.
+      - text: Switch to a completely different model architecture.
+        why: This is premature - erratic curves are usually fixable with hyperparameter tuning.
+    explanation: Correct! Lower learning rates and larger batch sizes typically lead to more stable training. [^1]
+    references:
+      - source: hf-llm-course
+        locator: 'Chapter 3: Fine-tuning a pretrained model'
+        url: https://huggingface.co/learn/llm-course/chapter3/1
+    source:
+      id: hf-llm-course
+      ref: chapter3/5#q3
+      url: https://huggingface.co/learn/llm-course/chapter3/5
+    status: draft
+  - id: training-008
+    type: single
+    question: When should you consider using early stopping?
+    options:
+      - text: Always, as it prevents any form of overfitting.
+        why: Early stopping is useful but not always necessary, especially if other regularization methods are working.
+      - text: When validation performance stops improving or starts degrading.
+        correct: true
+      - text: Only when training loss is still decreasing rapidly.
+        why: If training loss is decreasing rapidly and validation performance is good, you might want to continue training.
+      - text: Never, as it prevents the model from reaching its full potential.
+        why: Early stopping is a valuable technique that often improves final model performance by preventing overfitting.
+    explanation: Correct! Early stopping helps prevent overfitting by stopping training when the model no longer generalizes better. [^1]
+    references:
+      - source: hf-llm-course
+        locator: 'Chapter 3: Fine-tuning a pretrained model'
+        url: https://huggingface.co/learn/llm-course/chapter3/1
+    source:
+      id: hf-llm-course
+      ref: chapter3/5#q4
+      url: https://huggingface.co/learn/llm-course/chapter3/5
+    status: draft
+  - id: training-009
+    type: single
+    question: What indicates that your model might be underfitting?
+    options:
+      - text: Training accuracy is much higher than validation accuracy.
+        why: This describes overfitting, not underfitting.
+      - text: Both training and validation performance are poor and plateau early.
+        correct: true
+      - text: The learning curves are very smooth with no fluctuations.
+        why: Smooth curves are generally good and don't indicate underfitting.
+      - text: Validation loss is decreasing faster than training loss.
+        why: This would actually be a positive sign, not a problem.
+    explanation: Correct! Underfitting occurs when the model lacks capacity to learn the patterns, resulting in poor performance on both training and validation data. [^1]
+    references:
+      - source: hf-llm-course
+        locator: 'Chapter 3: Fine-tuning a pretrained model'
+        url: https://huggingface.co/learn/llm-course/chapter3/1
+    source:
+      id: hf-llm-course
+      ref: chapter3/5#q5
+      url: https://huggingface.co/learn/llm-course/chapter3/5
+    status: draft
+  - id: training-010
+    type: single
+    question: Which pattern in the loss curves indicates potential overfitting?
+    options:
+      - text: Validation loss increases while training loss continues to decrease
+        correct: true
+      - text: Both training and validation loss decrease steadily
+        why: This pattern actually indicates healthy training.
+      - text: Training loss remains constant while validation loss decreases
+        why: This would be an unusual pattern and doesn't indicate overfitting.
+    explanation: Correct! This divergence between training and validation loss is a classic sign of overfitting. [^1]
+    references:
+      - source: hf-llm-course
+        locator: 'Chapter 11: Fine-tune Large Language Models'
+        url: https://huggingface.co/learn/llm-course/chapter11/1
+    source:
+      id: hf-llm-course
+      ref: chapter11/3#q2
+      url: https://huggingface.co/learn/llm-course/chapter11/3
+    status: draft
+  - id: training-011
+    type: single
+    question: What is gradient_accumulation_steps used for?
+    options:
+      - text: To increase effective batch size without using more memory
+        correct: true
+      - text: To save checkpoints during training
+        why: This is handled by save_steps and save_strategy parameters.
+      - text: To control the learning rate schedule
+        why: Learning rate scheduling is controlled by learning_rate and warmup_ratio.
+    explanation: Correct! It accumulates gradients across multiple forward passes before updating weights. [^1]
+    references:
+      - source: hf-llm-course
+        locator: 'Chapter 11: Fine-tune Large Language Models'
+        url: https://huggingface.co/learn/llm-course/chapter11/1
+    source:
+      id: hf-llm-course
+      ref: chapter11/3#q3
+      url: https://huggingface.co/learn/llm-course/chapter11/3
+    status: draft
+  - id: training-012
+    type: single
+    question: What indicates healthy convergence during training?
+    options:
+      - text: A small gap between training and validation loss
+        correct: true
+      - text: Training loss reaching zero
+        why: Extremely low loss values might indicate memorization rather than learning.
+      - text: Validation loss being lower than training loss
+        why: This would be unusual and might indicate problems with the validation set.
+    explanation: Correct! This indicates the model is learning generalizable patterns. [^1]
+    references:
+      - source: hf-llm-course
+        locator: 'Chapter 11: Fine-tune Large Language Models'
+        url: https://huggingface.co/learn/llm-course/chapter11/1
+    source:
+      id: hf-llm-course
+      ref: chapter11/3#q5
+      url: https://huggingface.co/learn/llm-course/chapter11/3
+    status: draft
+  - id: training-013
+    type: single
+    question: Overfitting occurs because of ____
+    options:
+      - text: Not enough testing data
+      - text: Too powerful model
+        correct: true
+      - text: Too much noise in output data
+    references:
+      - source: ms-ai-for-beginners
+        locator: 'Lesson: Frameworks'
+        url: https://github.com/microsoft/AI-For-Beginners/blob/392d0df1b2647cbee104942390551f1ed9e072c8/lessons/3-NeuralNetworks/05-Frameworks/README.md
+    source:
+      id: ms-ai-for-beginners
+      ref: quiz-105/q2
+      url: https://github.com/microsoft/AI-For-Beginners/blob/392d0df1b2647cbee104942390551f1ed9e072c8/etc/quiz-app/src/assets/translations/en/lesson-5.json
+    status: draft
+  - id: training-014
+    type: single
+    question: One of these is not a normalization technique?
+    options:
+      - text: height normalization
+        correct: true
+      - text: weight normalization
+      - text: layer normalization
+    references:
+      - source: ms-ai-for-beginners
+        locator: 'Lesson: Pre-trained Networks and Transfer Learning'
+        url: https://github.com/microsoft/AI-For-Beginners/blob/392d0df1b2647cbee104942390551f1ed9e072c8/lessons/4-ComputerVision/08-TransferLearning/README.md
+    source:
+      id: ms-ai-for-beginners
+      ref: quiz-108/q2
+      url: https://github.com/microsoft/AI-For-Beginners/blob/392d0df1b2647cbee104942390551f1ed9e072c8/etc/quiz-app/src/assets/translations/en/lesson-8.json
+    status: draft
+  - id: training-015
+    type: single
+    question: We choose Stochastic Gradient Descent(SGD) in deep learning because classical gradient descent can be ____
+    options:
+      - text: fast
+      - text: slow
+        correct: true
+    references:
+      - source: ms-ai-for-beginners
+        locator: 'Lesson: Pre-trained Networks and Transfer Learning'
+        url: https://github.com/microsoft/AI-For-Beginners/blob/392d0df1b2647cbee104942390551f1ed9e072c8/lessons/4-ComputerVision/08-TransferLearning/README.md
+    source:
+      id: ms-ai-for-beginners
+      ref: quiz-108/q3
+      url: https://github.com/microsoft/AI-For-Beginners/blob/392d0df1b2647cbee104942390551f1ed9e072c8/etc/quiz-app/src/assets/translations/en/lesson-8.json
+    status: draft
+  - id: training-016
+    type: single
+    question: Dropout layers act as a ____ technique
+    options:
+      - text: gradient boosting
+      - text: training
+      - text: regularization
+        correct: true
+    references:
+      - source: ms-ai-for-beginners
+        locator: 'Lesson: Pre-trained Networks and Transfer Learning'
+        url: https://github.com/microsoft/AI-For-Beginners/blob/392d0df1b2647cbee104942390551f1ed9e072c8/lessons/4-ComputerVision/08-TransferLearning/README.md
+    source:
+      id: ms-ai-for-beginners
+      ref: quiz-208/q1
+      url: https://github.com/microsoft/AI-For-Beginners/blob/392d0df1b2647cbee104942390551f1ed9e072c8/etc/quiz-app/src/assets/translations/en/lesson-8.json
+    status: draft
+  - id: training-017
+    type: single
+    question: |
+      Evaluate both statements.
+
+      **Statement 1.** A neural network's convergence depends on the learning rate.
+
+      **Statement 2.** Dropout multiplies randomly chosen activation values by zero.
+    options:
+      - text: True, True
+        correct: true
+      - text: False, False
+      - text: True, False
+      - text: False, True
+    source:
+      id: mmlu-redux
+      ref: machine_learning/4
+      url: https://huggingface.co/datasets/edinburgh-dawg/mmlu-redux-2.0/viewer/machine_learning/test?row=4
+    status: draft
+  - id: training-018
+    type: single
+    question: Which is true about Batch Normalization?
+    options:
+      - text: After applying batch normalization, the layer’s activations will follow a standard Gaussian distribution.
+      - text: The bias parameter of affine layers becomes redundant if a batch normalization layer follows immediately afterward.
+        correct: true
+      - text: The standard weight initialization must be changed when using Batch Normalization.
+      - text: Batch Normalization is equivalent to Layer Normalization for convolutional neural networks.
+    source:
+      id: mmlu-redux
+      ref: machine_learning/30
+      url: https://huggingface.co/datasets/edinburgh-dawg/mmlu-redux-2.0/viewer/machine_learning/test?row=30
+    status: draft
+  - id: training-019
+    type: single
+    question: If your training loss increases with number of epochs, which of the following could be a possible issue with the learning process?
+    options:
+      - text: Regularization is too low and model is overfitting
+      - text: Regularization is too high and model is underfitting
+      - text: Step size is too large
+        correct: true
+      - text: Step size is too small
+    source:
+      id: mmlu-redux
+      ref: machine_learning/95
+      url: https://huggingface.co/datasets/edinburgh-dawg/mmlu-redux-2.0/viewer/machine_learning/test?row=95
+    status: draft
+  - id: training-020
+    type: short_answer
+    difficulty: easy
+    tags:
+      - normalization
+    question: Name the technique that standardizes a layer's inputs using the mean and variance of the current minibatch and then applies a learnable scale and shift.
+    answer:
+      accept:
+        - batch normalization
+        - batch normalisation
+        - batchnorm
+        - BN
+      model: Batch normalization
+    explanation: Batch normalization normalizes each feature with minibatch statistics, then rescales it with a learnable scale $\gamma$ and shift $\beta$ so the layer keeps its expressiveness [^1].
+    references:
+      - source: d2l
+        locator: Sec. 8.5 Batch Normalization
+        url: https://d2l.ai/chapter_convolutional-modern/batch-norm.html
+    source:
+      id: original
+      ref: training-020
+    status: reviewed
