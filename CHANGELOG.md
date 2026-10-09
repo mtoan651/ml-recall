@@ -11,6 +11,10 @@ versioning: [SemVer](https://semver.org) as defined in [docs/conventions.md](doc
   `ce6146-ex01`…`ex03`), each citing lecture slides and *Dive into Deep Learning*. The answer key of
   Exercise 2 Q1 is corrected (regression, not clustering). New topic file `dl/frameworks.yaml`.
 
+### Fixed
+
+- Stray escaped quotes (`\"`) in the `ncu-intro-dl` notes in `sources.yaml`.
+
 ### Changed
 
 - Course materials are kept outside the repository (`../materials/`); upstream downloads are
