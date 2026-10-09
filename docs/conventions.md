@@ -84,7 +84,8 @@ release. Additive optional fields do not bump it.
 
 ## Repository rules
 
-1. Never commit raw course materials or upstream downloads — they live in git-ignored `materials/`.
+1. Never commit raw course materials (kept outside the repo) or anything derived from them;
+   upstream downloads and extracted text live in git-ignored `.cache/`.
 2. Every question has a `source`; every reviewed question has a cited explanation.
 3. AI-generated questions start as `draft` and are reviewed by a human before `reviewed`.
 4. `main` is always releasable: `uv run mlr check` and `uv run pytest` pass.

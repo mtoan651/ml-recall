@@ -71,7 +71,7 @@ tools/mlrecall/         `mlr` CLI: schema, validation, importers
 tools/curation/         per-source curation decisions
 prompts/                prompt templates for generating questions with Claude Code
 docs/                   project handbook
-materials/              git-ignored: course slides and upstream downloads
+.cache/                 git-ignored: upstream downloads, extracted course material
 ```
 
 ## Documentation

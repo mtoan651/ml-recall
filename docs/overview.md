@@ -59,4 +59,4 @@ explanations. Fixed here:
 | 2026-10-09 | pinned upstream revisions + per-item curation files | reproducible, auditable imports |
 | 2026-10-09 | code MIT; each question under its source's license, originals CC BY-SA 4.0 | compatible with d2l (CC BY-SA) adaptations |
 | 2026-10-09 | GitHub Flow with squash merges | simplest flow for one maintainer |
-| 2026-10-09 | repository root is the local `intro_dl/` folder | keeps course materials (`materials/`, git-ignored) next to the tooling |
+| 2026-10-10 | local layout `intro_dl/{materials,ml-recall}`: course files outside the repo, derived data in `.cache/` | copyrighted slides can never be committed by accident |
