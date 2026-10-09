@@ -7,7 +7,7 @@ rule here and the tooling disagree, fix one of them in the same PR.
 
 | Thing | Convention | Example |
 | --- | --- | --- |
-| Repository | `ml-recall` (the local folder name may differ) | `github.com/mtoan65/ml-recall` |
+| Repository | `ml-recall` (the local folder name may differ) | `github.com/mtoan651/ml-recall` |
 | Directories, data files, docs | `kebab-case` | `docs/content-pipeline.md` |
 | Python modules | `snake_case` (PEP 8) | `tools/mlrecall/hf_course.py` |
 | TypeScript (web app) | components `PascalCase.tsx`, everything else `kebab-case.ts` | `QuestionCard.tsx`, `shuffle.ts` |

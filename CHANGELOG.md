@@ -29,5 +29,5 @@ versioning: [SemVer](https://semver.org) as defined in [docs/conventions.md](doc
 Bank: 333 questions (328 draft, 5 reviewed) — ml 97, dl 77, nlp 47, practice 27, ai 20, llm 20,
 math 13, rl 12, cv 10, gen 10.
 
-[Unreleased]: https://github.com/mtoan65/ml-recall/compare/v0.1.0...HEAD
-[0.1.0]: https://github.com/mtoan65/ml-recall/releases/tag/v0.1.0
+[Unreleased]: https://github.com/mtoan651/ml-recall/compare/v0.1.0...HEAD
+[0.1.0]: https://github.com/mtoan651/ml-recall/releases/tag/v0.1.0

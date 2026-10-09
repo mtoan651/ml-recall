@@ -61,11 +61,11 @@ See the [release checklist](conventions.md#release-checklist). Tag `vX.Y.Z` on `
 After the first push of `main`:
 
 ```bash
-REPO=mtoan65/ml-recall
+REPO=mtoan651/ml-recall
 gh repo edit $REPO --enable-squash-merge --enable-merge-commit=false \
   --enable-rebase-merge=false --delete-branch-on-merge --enable-auto-merge \
   --description "Active-recall quiz bank for AI/ML/DL: exam-style questions with LaTeX, cited explanations, timed mock exams and spaced repetition." \
-  --homepage "https://mtoan65.github.io/ml-recall"
+  --homepage "https://mtoan651.github.io/ml-recall"
 gh repo edit $REPO --add-topic machine-learning,deep-learning,artificial-intelligence,neural-networks,llm,transformers,quiz,quiz-app,mcq,exam-preparation,interview-preparation,active-recall,spaced-repetition,flashcards,study-tool,education,astro,typescript,github-pages,katex
 
 # protect main: PR required, CI job "check" must pass, no force-push / deletion
