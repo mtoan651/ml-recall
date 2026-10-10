@@ -39,15 +39,22 @@ items:
 
 Fix keys: `question`, `options` (`{index: new text}`), `correct`, `type`, `shuffle`,
 `explanation`, `references`. Unlisted items are kept with the default topic; items flagged upstream
-(e.g. MMLU-Redux error labels) are dropped unless they get a `fix`.
+(MMLU-Redux error labels, or `image` when the text relies on a picture) are dropped unless they get
+a `fix` or `keep: true`.
+
+Keep-lists: `default_drop: <reason>` drops every item not listed (so `"quiz-7/q1": {}` keeps one
+item with its default topic), and a per-item decision overrides `exclude_prefixes`, which gives a
+keep-list inside one group (e.g. `college_mathematics/`).
 
 **Drop reasons:** `trivial` (obvious answer, joke distractors) · `lesson-specific` (needs the
 lesson's code/dataset) · `tool-trivia` / `tool-specific` (library API trivia) · `inaccurate`
 (wrong or misleading key) · `ambiguous` (several defensible answers, vague wording) ·
-`off-scope` · `dated-trivia` (facts about specific papers/datasets) · `upstream-error`.
+`off-scope` · `dated-trivia` (facts about specific papers/datasets) · `upstream-error` ·
+`image-only` (the answer is only a picture) · `duplicate`.
 
 v0.1 result: 533 upstream questions → 328 kept (HF 86/132, AI4B 92/145, ML4B 60/156,
-MMLU-Redux 90/100).
+MMLU-Redux 90/100). v0.3 adds 607 upstream → 178 kept (Deep RL 36/48, Agents 19/39,
+DS4B 15/120, MMLU-Redux statistics 75/100 and college math 33/100).
 
 ## Path B — generate from course materials
 

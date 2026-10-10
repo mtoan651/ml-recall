@@ -99,14 +99,21 @@ def curate(source_id: str, items: list[Item]) -> tuple[list[Item], Counter]:
 
     kept, dropped = [], Counter()
     for item in items:
-        prefix_reason = next(
-            (r for p, r in cur["exclude_prefixes"].items() if item.ref.startswith(p)), None
+        # An explicit per-item decision overrides a group exclusion (keep-list inside a group).
+        prefix_reason = (
+            None
+            if item.ref in decisions
+            else next(
+                (r for p, r in cur["exclude_prefixes"].items() if item.ref.startswith(p)), None
+            )
         )
+        if item.ref not in decisions and cur.get("default_drop"):
+            prefix_reason = prefix_reason or cur["default_drop"]
         d = decisions.get(item.ref, {})
         if prefix_reason or "drop" in d:
             dropped[d.get("drop") or prefix_reason] += 1
             continue
-        if item.flag and "fix" not in d:
+        if item.flag and "fix" not in d and not d.get("keep"):
             dropped[f"upstream-error ({item.flag})"] += 1
             continue
         item.topic = d.get("topic", item.topic)

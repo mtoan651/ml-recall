@@ -11,6 +11,12 @@ End-of-chapter quizzes from <https://github.com/huggingface/course>.
 Licensed under the Apache License, Version 2.0 — full text in
 [LICENSES/Apache-2.0.txt](LICENSES/Apache-2.0.txt).
 
+## Hugging Face Deep RL Course — `hf-deep-rl-course` and AI Agents Course — `hf-agents-course`
+
+Quizzes from <https://github.com/huggingface/deep-rl-class> and
+<https://github.com/huggingface/agents-course>. Licensed under the Apache License, Version 2.0 —
+full text in [LICENSES/Apache-2.0.txt](LICENSES/Apache-2.0.txt).
+
 ## AI for Beginners — `ms-ai-for-beginners`
 
 Quizzes from <https://github.com/microsoft/AI-For-Beginners>.
@@ -19,7 +25,11 @@ Quizzes from <https://github.com/microsoft/AI-For-Beginners>.
 
 Quizzes from <https://github.com/microsoft/ML-For-Beginners>.
 
-Both Microsoft repositories are licensed as follows:
+## Data Science for Beginners — `ms-ds-for-beginners`
+
+Quizzes from <https://github.com/microsoft/Data-Science-For-Beginners>.
+
+These Microsoft repositories are licensed as follows:
 
 ```text
 MIT License
@@ -47,7 +57,7 @@ SOFTWARE
 
 ## MMLU-Redux 2.0 and MMLU — `mmlu-redux`
 
-`machine_learning` subset of MMLU-Redux 2.0 (<https://huggingface.co/datasets/edinburgh-dawg/mmlu-redux-2.0>),
+`machine_learning`, `high_school_statistics` and `college_mathematics` subsets of MMLU-Redux 2.0 (<https://huggingface.co/datasets/edinburgh-dawg/mmlu-redux-2.0>),
 Gema et al., *Are We Done with MMLU?* (2024), licensed under
 [CC BY 4.0](https://creativecommons.org/licenses/by/4.0/). Its error annotations were used to
 correct or drop questions.

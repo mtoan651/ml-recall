@@ -31,7 +31,7 @@ mock exams and spaced repetition. Free static site on GitHub Pages.
 
 Sources so far: Hugging Face LLM Course, Microsoft AI/ML for Beginners, MMLU-Redux and the CE6146
 course exercises — see
-[docs/sources.md](docs/sources.md) for all 20 registered sources and their licenses.
+[docs/sources.md](docs/sources.md) for all 25 registered sources and their licenses.
 
 ## Quick start
 

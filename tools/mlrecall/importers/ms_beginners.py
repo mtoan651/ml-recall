@@ -66,6 +66,30 @@ AI_LESSONS = {
     24: ("lessons/7-Ethics", "ai-ethics"),
 }
 
+# lesson number (= quiz id // 2 + 1) -> (lesson folder, default topic)
+DS_LESSONS = {
+    1: ("1-Introduction/01-defining-data-science", "data-prep"),
+    2: ("1-Introduction/02-ethics", "ai-ethics"),
+    3: ("1-Introduction/03-defining-data", "data-prep"),
+    4: ("1-Introduction/04-stats-and-probability", "probability"),
+    5: ("2-Working-With-Data/05-relational-databases", "data-prep"),
+    6: ("2-Working-With-Data/06-non-relational", "data-prep"),
+    7: ("2-Working-With-Data/07-python", "data-prep"),
+    8: ("2-Working-With-Data/08-data-preparation", "data-prep"),
+    9: ("3-Data-Visualization/09-visualization-quantities", "statistics"),
+    10: ("3-Data-Visualization/10-visualization-distributions", "statistics"),
+    11: ("3-Data-Visualization/11-visualization-proportions", "statistics"),
+    12: ("3-Data-Visualization/12-visualization-relationships", "statistics"),
+    13: ("3-Data-Visualization/13-meaningful-visualizations", "statistics"),
+    14: ("4-Data-Science-Lifecycle/14-Introduction", "data-prep"),
+    15: ("4-Data-Science-Lifecycle/15-analyzing", "statistics"),
+    16: ("4-Data-Science-Lifecycle/16-communication", "data-prep"),
+    17: ("5-Data-Science-In-Cloud/17-Introduction", "frameworks"),
+    18: ("5-Data-Science-In-Cloud/18-Low-Code", "frameworks"),
+    19: ("5-Data-Science-In-Cloud/19-Azure", "frameworks"),
+    20: ("6-Data-Science-In-Wild/20-Real-World-Examples", "ml-basics"),
+}
+
 _QUIZ_SUFFIX_RE = re.compile(r":\s*(pre|post)[- ]?(lecture )?[- ]?quiz\s*$", re.IGNORECASE)
 
 
@@ -94,6 +118,20 @@ def load_ai(pinned: str) -> list[Item]:
         items += _items(
             "ms-ai-for-beginners", repo, pinned, path, quizzes, lambda qid: AI_LESSONS[qid % 100]
         )
+    return items
+
+
+def load_ds(pinned: str) -> list[Item]:
+    repo = "microsoft/Data-Science-For-Beginners"
+    items = []
+    for n in range(1, 7):
+        path = f"quiz-app/src/assets/translations/en/group-{n}.json"
+        raw = fetch("ms-ds-for-beginners", pinned, f"group-{n}.json", _raw(repo, pinned, path))
+        doc = json.loads(raw.read_text())
+        blocks = doc if isinstance(doc, list) else [doc]
+        quizzes = [q for block in blocks for q in block["quizzes"]]
+        lesson_of = lambda qid: DS_LESSONS[qid // 2 + 1]  # noqa: E731
+        items += _items("ms-ds-for-beginners", repo, pinned, path, quizzes, lesson_of)
     return items
 
 
