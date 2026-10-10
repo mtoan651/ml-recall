@@ -92,6 +92,16 @@ def _check_question(r: Report, f: bank.BankFile, q: Question, sources: dict) -> 
         if not (f.path.parent / fig.src).is_file():
             r.errors.append(f"{where}: figure not found: {fig.src}")
 
+    answer = q.answer
+    if answer is not None and answer.pattern is not None:
+        misses = [a for a in answer.accept if not answer.matches_pattern(a)]
+        if misses:
+            r.errors.append(f"{where}: accepted answers don't match `pattern`: {misses}")
+        if not answer.accept:
+            r.warnings.append(
+                f"{where}: `pattern` without examples — add the canonical answer to `accept`"
+            )
+
     if q.shuffle and any(POSITIONAL_OPTION_RE.search(o.text) for o in options):
         r.warnings.append(f"{where}: option refers to other options — set `shuffle: false`")
 

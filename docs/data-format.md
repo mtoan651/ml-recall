@@ -51,7 +51,7 @@ questions:
 | `single` | exactly one option `correct: true` | auto |
 | `multiple` | one or more options `correct: true` ("select all that apply") | auto, all-or-nothing |
 | `true_false` | two options (True/False), one correct | auto |
-| `short_answer` | `answer:` block, no `options` | auto if `accept`/`numeric` set, otherwise self-graded against `model` |
+| `short_answer` | `answer:` block, no `options` | auto if `numeric`, `accept` or `pattern` is set, otherwise self-graded against `model` |
 
 ```yaml
 # numeric, auto-graded
@@ -66,11 +66,30 @@ answer:
   accept: [batch normalization, batchnorm, BN]
   model: Batch normalization
 
+# several valid spellings, auto-graded by a regex + format guidance under the input
+answer:
+  accept: ["(32, 3, 64, 64)"]          # canonical answer; must match the pattern (mlr check)
+  pattern: \(?\s*32\s*[,x×]\s*3\s*[,x×]\s*64\s*[,x×]\s*64\s*\)?
+  hint: Four dimensions in order, e.g. (8, 1, 28, 28) or 8×1×28×28
+  model: $(32, 3, 64, 64)$ — (batch size, channels, height, width)
+
 # open question, self-graded: the learner compares with the model answer
 answer:
   model: |
     Softmax is invariant to adding a constant to all logits ...
 ```
+
+Grading of a typed answer — correct if **any** key matches:
+
+1. `numeric`: the input parses as a number (`42`, `-0.5`, `1/3`, `2.5e-3`) within `tolerance`.
+2. `accept`: equal after normalization (case, Unicode NFKC, whitespace and punctuation ignored).
+3. `pattern`: full match of the trimmed, NFKC-normalized input, case-insensitive. Write patterns
+   that are valid in both Python and JavaScript (no `(?P<…>)`, `\A`, `\Z`, inline flags); don't
+   add `^`/`$`, the whole answer is matched. Every `accept` entry must match the pattern.
+
+`hint` is shown under the input in practice and test mode. Without it the app shows a default:
+"Enter a number, e.g. …" for `numeric`, "A word or short phrase" otherwise. Self-graded questions
+are practice-only — timed tests use auto-graded questions only.
 
 ### Citations
 
