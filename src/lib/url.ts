@@ -11,3 +11,6 @@ export function url(path = ""): string {
 
 export const topicUrl = (topicId: string): string => url(`topics/${topicId}/`);
 export const tagUrl = (tag: string): string => url(`tags/${tag}/`);
+/** Timed test of a topic or tag (docs/web-app.md#timed-tests). */
+export const topicExamUrl = (topicId: string): string => url(`topics/${topicId}/exam/`);
+export const tagExamUrl = (tag: string): string => url(`tags/${tag}/exam/`);

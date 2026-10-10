@@ -3,7 +3,7 @@ import type { Answer } from "../lib/session";
 import type { QuizQuestion } from "../lib/types";
 import { Figure } from "./Figure";
 import { Html } from "./Html";
-import { CheckIcon, CrossIcon } from "./Icons";
+import { CheckIcon, CrossIcon, MinusIcon } from "./Icons";
 
 /** Shown once a question is answered: verdict, model answer, explanation, references, source. */
 export function Feedback({ question: q, answer }: { question: QuizQuestion; answer: Answer }) {
@@ -22,11 +22,13 @@ export function Feedback({ question: q, answer }: { question: QuizQuestion; answ
         </section>
       )}
 
-      {q.explanationHtml && (
+      {q.explanationHtml ? (
         <section aria-label="Explanation">
           <h3 className="text-xs font-semibold tracking-wide text-muted uppercase">Explanation</h3>
           <Html html={q.explanationHtml} className="mt-1.5" />
         </section>
+      ) : (
+        !q.answer && <MissingExplanation question={q} />
       )}
       {q.explanationFigure && <Figure figure={q.explanationFigure} />}
 
@@ -92,8 +94,10 @@ export function Feedback({ question: q, answer }: { question: QuizQuestion; answ
 function Verdict({ question: q, answer }: { question: QuizQuestion; answer: Answer }) {
   const correct = answer.outcome === "correct";
   const selfGraded = q.type === "short_answer" && answer.revealed;
+  // Only a timed test grades a blank answer (practice needs an answer before "Check").
+  const blank = !selfGraded && answer.selected.length === 0 && answer.text.trim() === "";
   let detail: string | null = null;
-  if (!correct && q.type === "multiple" && q.options) {
+  if (!correct && !blank && q.type === "multiple" && q.options) {
     const { missed, wrong } = gradeChoice(
       q.options.map((o) => o.correct),
       answer.selected,
@@ -110,7 +114,13 @@ function Verdict({ question: q, answer }: { question: QuizQuestion; answer: Answ
         correct ? "bg-good-soft text-good" : "bg-bad-soft text-bad"
       }`}
     >
-      {correct ? <CheckIcon className="mt-0.5 size-5" /> : <CrossIcon className="mt-0.5 size-5" />}
+      {correct ? (
+        <CheckIcon className="mt-0.5 size-5" />
+      ) : blank ? (
+        <MinusIcon className="mt-0.5 size-5" />
+      ) : (
+        <CrossIcon className="mt-0.5 size-5" />
+      )}
       <div>
         <p className="font-semibold">
           {selfGraded
@@ -119,11 +129,43 @@ function Verdict({ question: q, answer }: { question: QuizQuestion; answer: Answ
               : "Marked for another round"
             : correct
               ? "Correct"
-              : "Not quite"}
+              : blank
+                ? "Not answered"
+                : "Not quite"}
         </p>
         {detail && <p className="mt-0.5 text-sm">{detail}</p>}
       </div>
     </div>
+  );
+}
+
+/** An imported question without a written explanation yet: say so, and point to where to read up. */
+function MissingExplanation({ question: q }: { question: QuizQuestion }) {
+  return (
+    <section
+      aria-label="Explanation"
+      className="rounded-xl border border-dashed border-line-strong px-4 py-3 text-sm text-muted"
+    >
+      <h3 className="text-xs font-semibold tracking-wide uppercase">Explanation</h3>
+      <p className="mt-1.5">
+        No explanation has been written for this question yet.{" "}
+        {q.references.length > 0 ? (
+          "The reference below covers the topic."
+        ) : q.provenance.url ? (
+          <>
+            See the original question in{" "}
+            <a
+              href={q.provenance.url}
+              rel="noopener"
+              className="text-accent underline underline-offset-2"
+            >
+              {q.provenance.title}
+            </a>
+            .
+          </>
+        ) : null}
+      </p>
+    </section>
   );
 }
 
@@ -139,6 +181,7 @@ function AcceptedAnswers({ question: q }: { question: QuizQuestion }) {
   return (
     <p className="mt-2 text-sm text-muted">
       Accepted: {accepted.join(" · ")}
+      {key.pattern && " and equivalent spellings"}
       <span className="sr-only"> (case, spaces and punctuation are ignored)</span>
     </p>
   );

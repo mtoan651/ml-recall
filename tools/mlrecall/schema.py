@@ -8,6 +8,7 @@ See docs/data-format.md for the human-readable spec.
 from __future__ import annotations
 
 import re
+import unicodedata
 from typing import Annotated, Literal
 
 from pydantic import BaseModel, ConfigDict, Field, HttpUrl, StringConstraints, model_validator
@@ -79,8 +80,8 @@ class Provenance(_Strict):
 class ShortAnswer(_Strict):
     """Answer key of a `short_answer` question.
 
-    Auto-graded when `accept` or `numeric` is set; otherwise the learner self-grades
-    against `model`.
+    Auto-graded when `numeric`, `accept` or `pattern` is set (an answer is correct if any of
+    them matches); otherwise the learner self-grades against `model`.
     """
 
     accept: list[Text] = Field(
@@ -88,7 +89,42 @@ class ShortAnswer(_Strict):
     )
     numeric: float | None = Field(None, description="Numeric answer")
     tolerance: float = Field(0, ge=0, description="Absolute tolerance for `numeric`")
+    pattern: Text | None = Field(
+        None,
+        description=(
+            "Regex for answers with several valid spellings, e.g. '\\(?5\\s*[x×,]\\s*4\\)?'. "
+            "Matched case-insensitively against the whole trimmed answer; use syntax valid in "
+            "both Python and JavaScript"
+        ),
+    )
+    hint: Text | None = Field(
+        None, description="Format guidance shown under the input, e.g. 'rows×cols, e.g. 3×4'"
+    )
     model: Text = Field(description="Model answer shown after answering (Markdown)")
+
+    @model_validator(mode="after")
+    def _valid_pattern(self) -> ShortAnswer:
+        if self.pattern is None:
+            return self
+        for token in ("(?P", "\\A", "\\Z", "(?#", "(?i", "(?x", "(?s", "(?m"):
+            if token in self.pattern:
+                raise ValueError(f"pattern: '{token}' is not valid JavaScript regex syntax")
+        try:
+            re.compile(self.pattern)
+        except re.error as e:
+            raise ValueError(f"pattern does not compile: {e}") from e
+        return self
+
+    @property
+    def auto_graded(self) -> bool:
+        return self.numeric is not None or bool(self.accept) or self.pattern is not None
+
+    def matches_pattern(self, text: str) -> bool:
+        """Same rule as the web app: full match, case-insensitive, NFKC-normalized, trimmed."""
+        if self.pattern is None:
+            return False
+        normalized = unicodedata.normalize("NFKC", text).strip()
+        return re.fullmatch(self.pattern, normalized, re.IGNORECASE) is not None
 
 
 CHOICE_TYPES = ("single", "multiple", "true_false")

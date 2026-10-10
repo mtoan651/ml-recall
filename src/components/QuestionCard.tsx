@@ -1,5 +1,5 @@
 import type { Ref } from "react";
-import { gradeChoice, isAutoGraded } from "../lib/grading";
+import { answerHint, gradeChoice, isAutoGraded, isNumericOnly } from "../lib/grading";
 import type { Answer, SessionItem } from "../lib/session";
 import type { QuestionType, QuizQuestion } from "../lib/types";
 import { Feedback } from "./Feedback";
@@ -21,8 +21,11 @@ interface QuestionCardProps {
   /** 1-based position in the session. */
   number: number;
   showTopic: boolean;
-  /** Message under the short-answer input, e.g. "Enter a number". */
-  hint: string | null;
+  /**
+   * Problem with the typed answer, shown in red under the input (e.g. "Type an answer first").
+   * The format hint from the answer key is shown separately, always.
+   */
+  inputError: string | null;
   onSelect: (option: number) => void;
   onText: (text: string) => void;
   onSubmitText: () => void;
@@ -36,7 +39,7 @@ export function QuestionCard({
   answer,
   number,
   showTopic,
-  hint,
+  inputError,
   onSelect,
   onText,
   onSubmitText,
@@ -87,7 +90,7 @@ export function QuestionCard({
           <ShortAnswerInput
             question={q}
             answer={answer}
-            hint={hint}
+            inputError={inputError}
             onText={onText}
             onSubmit={onSubmitText}
           />
@@ -218,22 +221,28 @@ function OptionVerdict({
 function ShortAnswerInput({
   question: q,
   answer,
-  hint,
+  inputError,
   onText,
   onSubmit,
 }: {
   question: QuizQuestion;
   answer: Answer;
-  hint: string | null;
+  inputError: string | null;
   onText: (text: string) => void;
   onSubmit: () => void;
 }) {
   const key = q.answer;
   if (!key) return null;
   const auto = isAutoGraded(key);
-  const numericOnly = typeof key.numeric === "number" && key.accept.length === 0;
+  const numericOnly = isNumericOnly(key);
+  // How to write the answer: always shown for auto-graded inputs (a default when the key has
+  // no `hint`); for open questions only when the author wrote one.
+  const format = auto ? answerHint(key) : (key.hint ?? null);
   const inputId = `q-${q.id}-answer`;
-  const hintId = `${inputId}-hint`;
+  const formatId = `${inputId}-format`;
+  const errorId = `${inputId}-error`;
+  const describedBy =
+    [format ? formatId : "", inputError ? errorId : ""].filter(Boolean).join(" ") || undefined;
   const locked = Boolean(answer.outcome || answer.revealed);
   const tone =
     answer.outcome === "correct"
@@ -264,9 +273,9 @@ function ShortAnswerInput({
           spellCheck={false}
           value={answer.text}
           readOnly={locked}
-          aria-describedby={hint ? hintId : undefined}
-          aria-invalid={hint ? true : undefined}
-          placeholder={numericOnly ? "A number, e.g. 42 or 0.5" : "Type your answer"}
+          aria-describedby={describedBy}
+          aria-invalid={inputError ? true : undefined}
+          placeholder={numericOnly ? "Type a number" : "Type your answer"}
           onChange={(event) => onText(event.target.value)}
           className={field}
         />
@@ -276,14 +285,20 @@ function ShortAnswerInput({
           rows={3}
           value={answer.text}
           readOnly={locked}
+          aria-describedby={describedBy}
           placeholder="Write down your answer before revealing the model answer"
           onChange={(event) => onText(event.target.value)}
           className={`${field} resize-y`}
         />
       )}
-      {hint && (
-        <p id={hintId} className="mt-1.5 text-sm text-bad">
-          {hint}
+      {format && (
+        <p id={formatId} className="mt-1.5 text-sm text-muted">
+          {format}
+        </p>
+      )}
+      {inputError && (
+        <p id={errorId} className="mt-1 text-sm text-bad">
+          {inputError}
         </p>
       )}
     </form>

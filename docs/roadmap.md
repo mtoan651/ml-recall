@@ -15,7 +15,7 @@ Versions follow [conventions.md#versioning](conventions.md#versioning).
 
 - [x] Astro + React + Tailwind scaffold, Zod mirror of the schema, GitHub Pages deploy
 - [x] Topic pages and tag pages; **practice** mode (instant feedback) — see [web-app](web-app.md)
-- [ ] **Exam** mode (timer ≈ 1 min/question) with a results page and explanations
+- [ ] **Exam** mode (timer ≈ 1 min/question) with a results page and explanations → moved to v0.3.0 (timed tests)
 - [x] Shuffle questions and options (respect `shuffle: false`)
 - [x] All four question types incl. short-answer grading (normalized text, numeric tolerance, self-grade)
 - [x] KaTeX + code highlighting at build time; references rendered as footnotes
@@ -25,6 +25,7 @@ Versions follow [conventions.md#versioning](conventions.md#versioning).
 
 ## v0.3.0 — Content I
 
+- [x] Timed tests per topic and tag (N questions, 1 min/question, max 20) — see [web-app](web-app.md#timed-tests)
 - [ ] Explanations with citations for imported drafts; review the first topics → `reviewed`
 - [ ] NCU Intro to DL lecture questions (Path B: extract → generate → review)
 - [ ] d2l exercises → MCQ / short answer; Deep Learning Interviews; Google MLCC

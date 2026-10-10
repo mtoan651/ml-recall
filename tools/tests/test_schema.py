@@ -75,3 +75,22 @@ def test_positional_options_detected(text):
 @pytest.mark.parametrize("text", ["Bias increase ; Variance decrease", "Both text generation"])
 def test_regular_options_not_flagged(text):
     assert not POSITIONAL_OPTION_RE.search(text)
+
+
+def test_short_answer_pattern_is_auto_graded_and_matches_like_the_web_app():
+    q = make(
+        type="short_answer",
+        options=None,
+        answer={"pattern": r"\(?\s*5\s*[x×,*]\s*4\s*\)?", "accept": ["5x4"], "model": "5 × 4"},
+    )
+    assert q.answer.auto_graded
+    for text in ["5x4", " 5 × 4 ", "(5, 4)", "5X4", "５x４"]:
+        assert q.answer.matches_pattern(text), text
+    assert not q.answer.matches_pattern("4x5")
+
+
+def test_pattern_must_compile_and_be_js_compatible():
+    with pytest.raises(ValidationError, match="does not compile"):
+        make(type="short_answer", options=None, answer={"pattern": "(", "model": "m"})
+    with pytest.raises(ValidationError, match="JavaScript"):
+        make(type="short_answer", options=None, answer={"pattern": r"(?P<n>\d+)", "model": "m"})
