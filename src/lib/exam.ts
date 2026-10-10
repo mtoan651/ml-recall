@@ -86,6 +86,18 @@ export interface ExamAnswer {
   text: string;
 }
 
+/**
+ * How a test is shown: one question at a time with Previous / Next, or every question on one
+ * page like a paper exam.
+ */
+export type ExamLayout = "one" | "all";
+
+export const DEFAULT_EXAM_LAYOUT: ExamLayout = "one";
+
+export function isExamLayout(value: unknown): value is ExamLayout {
+  return value === "one" || value === "all";
+}
+
 /** A test in progress. Everything needed to resume it after a reload is in here. */
 export interface ExamState {
   /** What the test is about: `topic:<id>` or `tag:<tag>` (see `examScope`). */
@@ -94,12 +106,16 @@ export interface ExamState {
   answers: Record<string, ExamAnswer>;
   /** Ids flagged for review, in the order they were flagged. */
   flagged: string[];
-  /** Index into `items` of the question on screen. */
+  /**
+   * Index into `items` of the question on screen ("one") or scrolled into view ("all"); a
+   * reload comes back to it.
+   */
   position: number;
   /** Epoch milliseconds when the test started; the timer is derived from it. */
   startedAt: number;
   durationMs: number;
   reviewedOnly: boolean;
+  layout: ExamLayout;
 }
 
 export type ScopeKind = "topic" | "tag";
@@ -114,6 +130,7 @@ export interface CreateExamOptions {
   reviewedOnly: boolean;
   /** Start time in epoch milliseconds. */
   now: number;
+  layout?: ExamLayout;
   rng?: Rng;
   max?: number;
 }
@@ -130,6 +147,7 @@ export function createExam(pool: readonly SessionInput[], options: CreateExamOpt
     startedAt: options.now,
     durationMs: items.length * EXAM_MS_PER_QUESTION,
     reviewedOnly: options.reviewedOnly,
+    layout: options.layout ?? DEFAULT_EXAM_LAYOUT,
   };
 }
 
@@ -156,17 +174,24 @@ export function unansweredCount(state: ExamState): number {
   return state.items.length - answeredCount(state);
 }
 
+/**
+ * Answer and flag actions apply to the question `id` (all questions on one page), or to the
+ * current question when `id` is left out.
+ */
 export type ExamAction =
-  /** Select an option (original index) of the current question; toggles for multiple. */
-  | { type: "select"; option: number; multiple: boolean }
-  | { type: "type"; text: string }
-  | { type: "toggleFlag" }
+  /** Select an option (original index); toggles for multiple. */
+  | { type: "select"; option: number; multiple: boolean; id?: string }
+  | { type: "type"; text: string; id?: string }
+  | { type: "toggleFlag"; id?: string }
   | { type: "goto"; position: number }
   | { type: "next" }
   | { type: "previous" };
 
 export function examReducer(state: ExamState, action: ExamAction): ExamState {
-  const item = currentExamItem(state);
+  const item =
+    "id" in action && action.id !== undefined
+      ? state.items.find(({ id }) => id === action.id)
+      : currentExamItem(state);
   switch (action.type) {
     case "select": {
       if (!item) return state;
@@ -398,6 +423,8 @@ export function parseExam(
     startedAt,
     durationMs,
     reviewedOnly: data.reviewedOnly === true,
+    // Tests saved before layouts existed are one-at-a-time.
+    layout: isExamLayout(data.layout) ? data.layout : DEFAULT_EXAM_LAYOUT,
   };
 }
 

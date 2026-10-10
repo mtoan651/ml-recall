@@ -103,6 +103,11 @@ shows `source` title, license (linked to `license_url`) and the question id.
   again**.
 - Keyboard: `1`–`9` select the n-th option (toggle for "select all that apply"), `Enter`
   checks, then goes to the next question. Keys are ignored while typing in a text field.
+- Under an auto-graded short-answer input a muted line says how to write the answer: the
+  key's `hint`, else "Enter a number, e.g. 42, -0.5, 1/3 or 2.5e-3." for `numeric` keys and "A
+  word or short phrase" otherwise (`answerHint()`). It is the input's `aria-describedby`;
+  problems such as "Type an answer first" appear in red below it. Self-graded questions show
+  a `hint` only when the YAML has one.
 
 ### Grading rules (`src/lib/grading.ts`)
 
@@ -111,17 +116,21 @@ shows `source` title, license (linked to `license_url`) and the question id.
 | `single`, `true_false` | correct iff exactly the correct option is selected |
 | `multiple` | all-or-nothing: the selected set must equal the set of correct options; the feedback says how many were missed / wrong |
 | `short_answer` + `accept` | correct iff the input equals an accepted answer after normalization: Unicode NFKC, lowercase, whitespace and punctuation (`\p{P}`) removed — math symbols such as `+ ^ =` are kept |
-| `short_answer` + `numeric` | correct iff \|x − value\| ≤ `tolerance` (plus 1e-9 relative slack for float noise). Input may be `760`, `-0.5`, `7.6e2`, `1,000`, `0,5`, `1/3`; anything else asks for a number instead of grading |
+| `short_answer` + `numeric` | correct iff \|x − value\| ≤ `tolerance` (plus 1e-9 relative slack for float noise). Input may be `760`, `-0.5`, `7.6e2`, `1,000`, `0,5`, `1/3`; anything else asks for a number instead of grading (numeric-only keys) |
+| `short_answer` + `pattern` | correct iff the trimmed, NFKC-normalized input fully matches the regex, ignoring case: `new RegExp("^(?:" + pattern + ")$", "i")`, no `u` flag so identity escapes such as `\-` work as in Python (`ShortAnswer.matches_pattern`). NFKC makes full-width `（32，3）` match `\(32,3\)` |
 | `short_answer`, model only | self-graded: **Show answer** reveals the model answer, then **I got it** / **I missed it** |
 
-When a key has both `accept` and `numeric`, either match counts.
+A key may combine `numeric`, `accept` and `pattern`: they are tried in that order and any
+match counts. The build fails on a `pattern` that does not compile in JavaScript, uses
+Python-only syntax (`(?P<…>`, `\A`, `\Z`, inline flags), or rejects one of the key's `accept`
+entries (the Zod mirror in `src/lib/schema.ts`; `mlr check` checks the same in Python).
 
 ### Progress storage (`src/lib/storage.ts`)
 
 | Key | Value |
 | --- | --- |
 | `ml-recall:results:v1` | question id → `{ correct, at }`, the latest result (practice and tests) |
-| `ml-recall:settings:v1` | `{ shuffleQuestions, reviewedOnly }`; "Reviewed only" is shared with tests |
+| `ml-recall:settings:v1` | `{ shuffleQuestions, reviewedOnly, examLayout }`; "Reviewed only" is shared with tests; `examLayout` (`"one"` · `"all"`, default `"one"`) is the test layout last chosen — settings saved without it get the default |
 | `ml-recall:exam:v1:<scope>` | the [test in progress](#timed-tests) of one topic or tag |
 | `ml-recall:exam-history:v1` | scope → `{ attempts, best }`: the last 10 tests and the best one |
 
@@ -137,30 +146,41 @@ N random questions in N minutes, no feedback until the test is submitted. Pages 
 the random draw happens in the browser from the questions embedded at build time.
 
 - **Pool.** Non-retired questions of the topic or tag, except `short_answer` questions
-  without `accept` / `numeric` (self-graded, so practice-only; the start screen says how many
-  were left out). A test page and the "Take a test" box exist only when the pool is not empty.
+  without `numeric` / `accept` / `pattern` (self-graded, so practice-only; the start screen
+  says how many were left out). A test page and the "Take a test" box exist only when the pool is not empty.
   **Reviewed questions only** on the start screen (shared with practice) restricts the pool to
   `reviewed`.
 - **Size and time.** N = min(20, pool); time limit = N minutes. A smaller pool says so on the
   start screen ("This topic has 8 questions, so this test has 8 questions · 8 minutes").
 - **Draw.** A uniformly random subset in random order; options shuffled with the practice
   rules (`shuffle: false` and true/false keep file order). Each test is a new draw.
-- **During the test.** One question at a time (the practice `QuestionCard`, without
-  feedback), Previous / Next, a navigator grid (answered / unanswered / flagged / current),
-  **Flag for review**. The sticky status bar shows the countdown (`mm:ss`; amber at ≤ 5:00,
-  red at ≤ 1:00, announced once at each threshold through an `aria-live` region), "answered
-  k / N" and **Submit**. Submitting with unanswered or flagged questions asks for
-  confirmation.
+- **Layout.** The start screen offers **One at a time** (default) and **All on one page**;
+  the choice is remembered (`examLayout` in the settings) and saved in the test in progress,
+  so a reload resumes in the same layout. Results look the same either way.
+- **During the test.** The practice `QuestionCard` without feedback (the short-answer format
+  hint is shown; nothing about correctness), **Flag for review** per question, a navigator
+  grid (answered / unanswered / flagged / current). The sticky status bar shows the
+  countdown (`mm:ss`; amber at ≤ 5:00, red at ≤ 1:00, announced once at each threshold
+  through an `aria-live` region), "answered k / N" and **Submit**. Submitting with unanswered
+  or flagged questions asks for confirmation.
+  - *One at a time:* Previous / Next (the last question has **Submit test**), the grid below.
+  - *All on one page:* every question stacked and numbered like a paper exam; the status bar
+    adds a row of question numbers that stays in reach while scrolling; the grid and **Submit
+    test** are at the bottom. Clicking a number scrolls to that question (just below the
+    status bar) and focuses it. The question in view — the last one whose top is above a
+    line a third of the way down the window, or the one just jumped to — is "current": it is
+    highlighted, saved as the position, and scrolled back to after a reload.
 - **Timer.** Derived from the start timestamp (`remainingMs(startedAt, durationMs, now)`), so
   it stays right when the tab sleeps or the page reloads; at 00:00 the test submits itself.
 - **Resume.** The test in progress (question ids, option orders, answers, flags, position,
-  start time) is saved after every change. A reload resumes it; a test whose time ran out
+  start time, layout) is saved after every change. A reload resumes it; a test whose time ran out
   while the page was closed is submitted on load (dated at its deadline). A stored test that
   no longer matches the page (a question or its options changed after a deploy) is
   discarded. The topic / tag page then offers **Resume test**.
 - **Keyboard.** `1`–`9` select the n-th option (toggle for "select all that apply"), `←` / `→`
-  previous / next, `F` flag, `Enter` in a short-answer field goes to the next question. Keys
-  are ignored while typing in a text field.
+  previous / next question, `F` flag, `Enter` in a short-answer field goes to the next
+  question. Keys are ignored while typing in a text field. On one page they act on the
+  focused question if it is visible, otherwise on the question in view.
 - **Scoring.** The [grading rules](#grading-rules-srclibgradingts) of practice mode:
   `multiple` is all-or-nothing; a numeric-only answer that is not a number is wrong (a test
   cannot ask again); unanswered counts as wrong.
@@ -213,7 +233,8 @@ Actions**.
 | Session flow (select, check, next, score) | `src/lib/session.ts`; UI in `src/components/Quiz.tsx` |
 | Question / feedback / summary UI | `src/components/QuestionCard.tsx`, `Feedback.tsx`, `Summary.tsx` |
 | Timed tests: pool, size, timer, scoring, stored test, history | `src/lib/exam.ts` (+ `exam.test.ts`); keys in `src/lib/storage.ts` |
-| Timed test UI | `src/components/Exam.tsx` (flow), `ExamStart.tsx`, `ExamRunner.tsx`, `ExamResults.tsx`; "Take a test" box: `ExamCallout.astro` |
+| Timed test UI | `src/components/Exam.tsx` (flow), `ExamStart.tsx`, `ExamRunner.tsx` (both layouts, timer, keys), `ExamNavigator.tsx`, `ConfirmSubmit.tsx`, `ExamResults.tsx`; "Take a test" box: `ExamCallout.astro` |
+| Short-answer format hints | `answerHint()` in `src/lib/grading.ts`; shown by `QuestionCard.tsx` |
 | Colours, dark mode | tokens at the top of `src/styles/global.css` |
 | Header, footer, `<head>` | `src/layouts/Base.astro` |
 | Pages | `src/pages/` |

@@ -165,8 +165,35 @@ describe("createExam and examReducer", () => {
     expect(s.durationMs).toBe(5 * MIN);
     expect(s.startedAt).toBe(1_000);
     expect(s.position).toBe(0);
+    expect(s.layout).toBe("one");
     expect(answeredCount(s)).toBe(0);
     expect(unansweredCount(s)).toBe(5);
+  });
+
+  it("keeps the chosen layout", () => {
+    const s = createExam(pool(3), { scope: "tag:x", reviewedOnly: false, now: 1, layout: "all" });
+    expect(s.layout).toBe("all");
+  });
+
+  it("answers and flags any question by id (all questions on one page)", () => {
+    const s = fresh();
+    const [a, b, c] = s.items.map((i) => i.id) as [string, string, string];
+    const t = run(
+      s,
+      { type: "select", option: 2, multiple: false, id: c },
+      { type: "type", text: "760", id: b },
+      { type: "toggleFlag", id: c },
+      { type: "select", option: 1, multiple: false },
+      { type: "select", option: 0, multiple: false, id: "not-in-test" },
+      { type: "toggleFlag", id: "not-in-test" },
+    );
+    expect(t.position).toBe(0); // answering does not move
+    expect(t.answers[c]?.selected).toEqual([2]);
+    expect(t.answers[b]?.text).toBe("760");
+    expect(t.answers[a]?.selected).toEqual([1]); // no id: the current question
+    expect(t.flagged).toEqual([c]);
+    expect(answeredCount(t)).toBe(3);
+    expect(t.answers["not-in-test"]).toBeUndefined();
   });
 
   it("records answers for the current question, toggling for multiple", () => {
@@ -373,12 +400,19 @@ describe("persistence", () => {
     startedAt: 1_700_000_000_000,
     durationMs: 3 * MIN,
     reviewedOnly: true,
+    layout: "all",
   };
   const roundTrip = (s: unknown) => parseExam(JSON.parse(JSON.stringify(s)), scope, info);
   const stored = () => JSON.parse(serializeExam(state)) as Record<string, unknown>;
 
-  it("round-trips a test in progress", () => {
+  it("round-trips a test in progress, including its layout", () => {
     expect(parseExam(JSON.parse(serializeExam(state)), scope, info)).toEqual(state);
+  });
+
+  it("resumes tests saved without a layout (or a bad one) one question at a time", () => {
+    const { layout: _, ...old } = stored();
+    expect(roundTrip(old)?.layout).toBe("one");
+    expect(roundTrip({ ...stored(), layout: "grid" })?.layout).toBe("one");
   });
 
   it("rejects other versions, scopes and malformed data", () => {

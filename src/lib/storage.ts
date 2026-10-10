@@ -8,11 +8,14 @@
 
 import {
   addAttempt,
+  DEFAULT_EXAM_LAYOUT,
   EMPTY_HISTORY,
   EXAM_STATE_VERSION,
   type ExamAttempt,
   type ExamHistory,
+  type ExamLayout,
   type ExamState,
+  isExamLayout,
   parseExam,
   parseHistory,
   remainingMs,
@@ -39,11 +42,17 @@ export type Results = Record<string, QuestionResult>;
 export interface QuizSettings {
   /** Shuffle question order (otherwise file order). */
   shuffleQuestions: boolean;
-  /** Hide `draft` questions. */
+  /** Hide `draft` questions (practice and tests). */
   reviewedOnly: boolean;
+  /** Timed tests: one question at a time, or all on one page. */
+  examLayout: ExamLayout;
 }
 
-export const DEFAULT_SETTINGS: QuizSettings = { shuffleQuestions: true, reviewedOnly: false };
+export const DEFAULT_SETTINGS: QuizSettings = {
+  shuffleQuestions: true,
+  reviewedOnly: false,
+  examLayout: DEFAULT_EXAM_LAYOUT,
+};
 
 /** The subset of the Web Storage API we use (lets tests pass an in-memory store). */
 export interface KeyValueStore {
@@ -145,6 +154,8 @@ export function loadSettings(store: KeyValueStore | null = browserStore()): Quiz
         : DEFAULT_SETTINGS.shuffleQuestions,
     reviewedOnly:
       typeof s.reviewedOnly === "boolean" ? s.reviewedOnly : DEFAULT_SETTINGS.reviewedOnly,
+    // Added in v0.3: settings saved before have no layout and get the default.
+    examLayout: isExamLayout(s.examLayout) ? s.examLayout : DEFAULT_SETTINGS.examLayout,
   };
 }
 

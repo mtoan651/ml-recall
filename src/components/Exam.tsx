@@ -1,10 +1,12 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import {
   createExam,
+  DEFAULT_EXAM_LAYOUT,
   EMPTY_HISTORY,
   type ExamAction,
   type ExamAttempt,
   type ExamHistory,
+  type ExamLayout,
   type ExamState,
   examPool,
   examReducer,
@@ -71,6 +73,7 @@ export default function Exam({ questions, scope, excluded = 0, showTopic = false
   const [ready, setReady] = useState(false);
   const [reviewedOnlySetting, setReviewedOnlySetting] = useState(false);
   const reviewedOnly = reviewedOnlySetting && reviewedCount > 0;
+  const [layout, setLayout] = useState<ExamLayout>(DEFAULT_EXAM_LAYOUT);
   const [history, setHistory] = useState<ExamHistory>(EMPTY_HISTORY);
   const [exam, setExam] = useState<ExamState | null>(null);
   const [finished, setFinished] = useState<FinishedExam | null>(null);
@@ -140,7 +143,9 @@ export default function Exam({ questions, scope, excluded = 0, showTopic = false
 
   // Restore settings, history and a test in progress; an expired test is submitted now.
   useEffect(() => {
-    setReviewedOnlySetting(loadSettings().reviewedOnly);
+    const settings = loadSettings();
+    setReviewedOnlySetting(settings.reviewedOnly);
+    setLayout(settings.examLayout);
     setHistory(loadExamHistory(scopeKey));
     const stored = loadExam(scopeKey, storedInfo);
     if (stored && isExpired(stored, Date.now())) {
@@ -172,7 +177,7 @@ export default function Exam({ questions, scope, excluded = 0, showTopic = false
 
   const start = useCallback(() => {
     const pool = examPool(questions, reviewedOnly).map(toInput);
-    const state = createExam(pool, { scope: scopeKey, reviewedOnly, now: Date.now() });
+    const state = createExam(pool, { scope: scopeKey, reviewedOnly, layout, now: Date.now() });
     if (state.items.length === 0) return;
     setFinished(null);
     setAnnouncement("");
@@ -180,12 +185,17 @@ export default function Exam({ questions, scope, excluded = 0, showTopic = false
     setExam(state);
     const top = rootRef.current?.getBoundingClientRect().top ?? 0;
     if (top < 0) rootRef.current?.scrollIntoView({ block: "start" });
-  }, [questions, reviewedOnly, scopeKey]);
+  }, [questions, reviewedOnly, layout, scopeKey]);
 
   const changeReviewedOnly = (value: boolean) => {
     setReviewedOnlySetting(value);
     // Shared with practice mode: "Reviewed only" means the same thing on both pages.
     saveSettings({ ...loadSettings(), reviewedOnly: value });
+  };
+
+  const changeLayout = (value: ExamLayout) => {
+    setLayout(value);
+    saveSettings({ ...loadSettings(), examLayout: value });
   };
 
   return (
@@ -231,8 +241,10 @@ export default function Exam({ questions, scope, excluded = 0, showTopic = false
             reviewedCount={reviewedCount}
             draftCount={eligibleCount - reviewedCount}
             excluded={excluded}
+            layout={layout}
             history={history}
             onReviewedOnly={changeReviewedOnly}
+            onLayout={changeLayout}
             onStart={start}
           />
         )}

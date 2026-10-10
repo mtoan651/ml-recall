@@ -1,19 +1,20 @@
 import { useCallback, useEffect, useRef, useState } from "react";
 import {
   answeredCount,
-  currentExamItem,
   type ExamAction,
   type ExamState,
   examAnswerOf,
   formatClock,
-  isAnswered,
   remainingMs,
   type TimerLevel,
   timerAnnouncement,
   timerLevel,
 } from "../lib/exam";
-import { parseNumber } from "../lib/grading";
+import { isNumericOnly, parseNumber } from "../lib/grading";
+import type { SessionItem } from "../lib/session";
 import type { QuizQuestion } from "../lib/types";
+import { ConfirmSubmit } from "./ConfirmSubmit";
+import { Navigator, QuestionStrip } from "./ExamNavigator";
 import { ClockIcon, FlagIcon } from "./Icons";
 import { QuestionCard } from "./QuestionCard";
 
@@ -34,7 +35,8 @@ const TIMER_TONE: Record<TimerLevel, string> = {
   critical: "bg-bad-soft text-bad",
 };
 
-const NUMBER_HINT = "Enter a number, e.g. 42, -0.5, 1/3 or 2.5e-3 — anything else is marked wrong.";
+/** Shown on Enter when a numeric-only answer cannot be read. About the format, not the answer. */
+const NOT_A_NUMBER = "This does not read as a number.";
 
 /** Keys go to the page unless the learner is typing (or scrolling wide code / math). */
 function ignoresShortcuts(target: EventTarget | null): boolean {
@@ -47,7 +49,16 @@ function ignoresShortcuts(target: EventTarget | null): boolean {
   );
 }
 
-/** The test itself: status bar with the countdown, one question at a time, navigator. */
+/** True when some of `el` shows in the window below the sticky status bar. */
+function inView(el: Element, barBottom: number): boolean {
+  const rect = el.getBoundingClientRect();
+  return rect.bottom > barBottom && rect.top < window.innerHeight;
+}
+
+/**
+ * The test itself: sticky status bar with the countdown, then either one question at a time
+ * (Previous / Next) or every question on one page ("all"), the navigator, Submit.
+ */
 export function ExamRunner({
   exam,
   questions,
@@ -56,30 +67,36 @@ export function ExamRunner({
   dispatch,
   onSubmit,
 }: ExamRunnerProps) {
-  const item = currentExamItem(exam);
-  const question = item ? questions.get(item.id) : undefined;
-  const answer = item ? examAnswerOf(exam, item.id) : undefined;
-  const total = exam.items.length;
+  const all = exam.layout === "all";
+  const { items, startedAt, durationMs } = exam;
+  const total = items.length;
   const answered = answeredCount(exam);
   const unanswered = total - answered;
   const flaggedCount = exam.flagged.length;
-  const isFlagged = item ? exam.flagged.includes(item.id) : false;
-  const isFirst = exam.position === 0;
-  const isLast = exam.position === total - 1;
 
-  const { startedAt, durationMs } = exam;
   const [secondsLeft, setSecondsLeft] = useState(() =>
     Math.ceil(remainingMs(startedAt, durationMs, Date.now()) / 1000),
   );
   const [timerAlert, setTimerAlert] = useState("");
   const [confirming, setConfirming] = useState(false);
-  const [hint, setHint] = useState<string | null>(null);
-  const cardRef = useRef<HTMLElement>(null);
+  const [inputError, setInputError] = useState<{ id: string; message: string } | null>(null);
   const barRef = useRef<HTMLDivElement>(null);
+  /** Question elements by id: the card ("one") or each question block ("all"). */
+  const blocks = useRef(new Map<string, HTMLElement>());
+  /** One at a time: focus the new question after a move. */
   const moved = useRef(focusOnMount);
+  /** Latest position, for the scroll tracking of "all". */
+  const position = useRef(exam.position);
+  /**
+   * After jumping to question k the page sits at scroll offset y: k stays the current question
+   * until the learner scrolls away from there (a short question would otherwise hand "current"
+   * to the next one, whose top is also near the top of the window).
+   */
+  const pin = useRef<{ k: number; y: number } | null>(null);
   const submitRef = useRef(onSubmit);
   useEffect(() => {
     submitRef.current = onSubmit;
+    position.current = exam.position;
   });
 
   // The clock is derived from the start timestamp, so it is right after the tab slept; ticks
@@ -103,34 +120,107 @@ export function ExamRunner({
     };
   }, [startedAt, durationMs]);
 
-  // Focus the question after moving to it, keeping it clear of the sticky status bar.
-  // biome-ignore lint/correctness/useExhaustiveDependencies: runs when the position changes.
-  useEffect(() => {
-    if (!moved.current) return;
-    moved.current = false;
-    const card = cardRef.current;
-    if (!card) return;
-    card.focus({ preventScroll: true });
-    const barBottom = barRef.current?.getBoundingClientRect().bottom ?? 0;
-    const top = card.getBoundingClientRect().top;
-    if (top < barBottom || top > window.innerHeight * 0.6) {
-      window.scrollBy({ top: top - barBottom - 12 });
-    }
-  }, [exam.position]);
-
-  const go = useCallback(
-    (action: ExamAction) => {
-      moved.current = true;
-      setHint(null);
-      dispatch(action);
+  /** Scrolls question k just below the status bar if needed, and focuses it. */
+  const reveal = useCallback(
+    (k: number, focus: boolean) => {
+      const id = items[k]?.id;
+      const block = id === undefined ? undefined : blocks.current.get(id);
+      if (!block) return;
+      const bar = barRef.current;
+      const top = block.getBoundingClientRect().top;
+      const barBottom = bar?.getBoundingClientRect().bottom ?? 0;
+      if (all || top < barBottom || top > window.innerHeight * 0.6) {
+        window.scrollTo({ top: top + window.scrollY - (bar?.offsetHeight ?? 0) - 12 });
+        // Read back: near the end of the page the browser stops short of the target.
+        pin.current = { k, y: window.scrollY };
+      }
+      if (focus) {
+        const card = block.tagName === "ARTICLE" ? block : block.querySelector("article");
+        card?.focus({ preventScroll: true });
+      }
     },
-    [dispatch],
+    [all, items],
   );
 
+  const goTo = useCallback(
+    (k: number) => {
+      if (k < 0 || k >= total) return;
+      setInputError(null);
+      if (all) {
+        reveal(k, true);
+        position.current = k;
+      } else {
+        moved.current = true;
+      }
+      dispatch({ type: "goto", position: k });
+    },
+    [all, total, reveal, dispatch],
+  );
+
+  // One at a time: show and focus the question after moving to it.
+  // biome-ignore lint/correctness/useExhaustiveDependencies: runs when the position changes.
+  useEffect(() => {
+    if (all || !moved.current) return;
+    moved.current = false;
+    reveal(exam.position, true);
+  }, [exam.position]);
+
+  // All on one page: after "Start test" focus the first question; on resume scroll back to the
+  // question that was in view.
+  // biome-ignore lint/correctness/useExhaustiveDependencies: once, when the runner appears.
+  useEffect(() => {
+    if (!all) return;
+    if (focusOnMount) reveal(exam.position, true);
+    else if (exam.position > 0) reveal(exam.position, false);
+  }, []);
+
+  // All on one page: the question in view is the current one (navigator, keys, resume).
+  useEffect(() => {
+    if (!all) return;
+    let frame = 0;
+    const questionInView = (): number => {
+      const pinned = pin.current;
+      if (pinned && Math.abs(window.scrollY - pinned.y) < 24) return pinned.k;
+      pin.current = null;
+      const barBottom = barRef.current?.getBoundingClientRect().bottom ?? 0;
+      // The reading line: a third of the way down the visible area. At the end of the page the
+      // last questions may never reach it, so take the last one whose top shows.
+      const line = barBottom + (window.innerHeight - barBottom) * 0.3;
+      const atEnd =
+        window.innerHeight + window.scrollY >= document.documentElement.scrollHeight - 4;
+      let current = 0;
+      items.forEach(({ id }, k) => {
+        const top = blocks.current.get(id)?.getBoundingClientRect().top;
+        if (top !== undefined && (top <= line || (atEnd && top < window.innerHeight))) {
+          current = k;
+        }
+      });
+      return current;
+    };
+    const track = () => {
+      frame = 0;
+      const current = questionInView();
+      if (current !== position.current) {
+        position.current = current;
+        dispatch({ type: "goto", position: current });
+      }
+    };
+    const onScroll = () => {
+      if (!frame) frame = requestAnimationFrame(track);
+    };
+    window.addEventListener("scroll", onScroll, { passive: true });
+    window.addEventListener("resize", onScroll);
+    return () => {
+      window.removeEventListener("scroll", onScroll);
+      window.removeEventListener("resize", onScroll);
+      cancelAnimationFrame(frame);
+    };
+  }, [all, items, dispatch]);
+
   const select = useCallback(
-    (option: number) =>
-      dispatch({ type: "select", option, multiple: question?.type === "multiple" }),
-    [dispatch, question],
+    (id: string, option: number) =>
+      dispatch({ type: "select", option, multiple: questions.get(id)?.type === "multiple", id }),
+    [dispatch, questions],
   );
 
   const requestSubmit = useCallback(() => {
@@ -138,48 +228,119 @@ export function ExamRunner({
     else onSubmit(false);
   }, [unanswered, flaggedCount, onSubmit]);
 
-  // Keyboard: 1–9 pick the n-th shown option, ←/→ move, F flags.
+  // Keyboard: 1–9 pick the n-th shown option, ←/→ previous / next question, F flags. On one
+  // page they act on the focused question if it shows, else on the question in view.
   useEffect(() => {
+    const activeIndex = (): number => {
+      if (!all) return position.current;
+      const focused = document.activeElement?.closest<HTMLElement>("[data-exam-index]");
+      const barBottom = barRef.current?.getBoundingClientRect().bottom ?? 0;
+      return focused && inView(focused, barBottom)
+        ? Number(focused.dataset.examIndex)
+        : position.current;
+    };
     const onKey = (event: KeyboardEvent) => {
       if (confirming || event.defaultPrevented || event.altKey || event.ctrlKey || event.metaKey) {
         return;
       }
       if (ignoresShortcuts(event.target)) return;
+      const k = activeIndex();
+      const item = items[k];
+      if (!item) return;
       if (event.key === "ArrowLeft" || event.key === "ArrowRight") {
         // Also stops a focused radio from changing its selection.
         event.preventDefault();
-        if (!event.repeat) go({ type: event.key === "ArrowLeft" ? "previous" : "next" });
+        if (!event.repeat) goTo(event.key === "ArrowLeft" ? k - 1 : k + 1);
         return;
       }
       if (event.repeat) return;
       if (event.key === "f" || event.key === "F") {
         event.preventDefault();
-        dispatch({ type: "toggleFlag" });
+        dispatch({ type: "toggleFlag", id: item.id });
         return;
       }
-      if (/^[1-9]$/.test(event.key) && item && question?.options) {
+      if (/^[1-9]$/.test(event.key) && questions.get(item.id)?.options) {
         const original = item.optionOrder[Number(event.key) - 1];
         if (original === undefined) return;
         event.preventDefault();
-        select(original);
+        select(item.id, original);
       }
     };
     window.addEventListener("keydown", onKey);
     return () => window.removeEventListener("keydown", onKey);
-  }, [confirming, go, dispatch, select, item, question]);
+  }, [all, confirming, items, questions, goTo, dispatch, select]);
 
   /** Enter in a short-answer field: next question, unless the number cannot be read. */
-  const submitText = () => {
-    const key = question?.answer;
-    const numericOnly = key && typeof key.numeric === "number" && key.accept.length === 0;
-    if (numericOnly && answer && answer.text.trim() !== "" && parseNumber(answer.text) === null) {
-      setHint(NUMBER_HINT);
+  const submitText = (id: string) => {
+    const key = questions.get(id)?.answer;
+    const text = examAnswerOf(exam, id).text;
+    if (key && isNumericOnly(key) && text.trim() !== "" && parseNumber(text) === null) {
+      setInputError({ id, message: NOT_A_NUMBER });
       return;
     }
-    if (!isLast) go({ type: "next" });
+    const k = items.findIndex((item) => item.id === id);
+    if (k < total - 1) goTo(k + 1);
+  };
+
+  const register = (id: string) => (el: HTMLElement | null) => {
+    if (el) blocks.current.set(id, el);
+    else blocks.current.delete(id);
+  };
+
+  /** "Question k of N", the flag toggle and the card. */
+  const renderQuestion = (
+    item: SessionItem,
+    k: number,
+    cardRef?: (el: HTMLElement | null) => void,
+  ) => {
+    const question = questions.get(item.id);
+    if (!question) return null;
+    const answer = examAnswerOf(exam, item.id);
+    const flagged = exam.flagged.includes(item.id);
+    return (
+      <>
+        <div className="mb-2 flex items-center justify-between gap-3">
+          <p className="text-sm font-medium tabular-nums">
+            Question {k + 1} <span className="text-muted">of {total}</span>
+          </p>
+          <button
+            type="button"
+            aria-pressed={flagged}
+            onClick={() => dispatch({ type: "toggleFlag", id: item.id })}
+            className={`inline-flex items-center gap-1.5 rounded-lg border px-3 py-1.5 text-sm font-medium transition-colors ${
+              flagged
+                ? "border-note/50 bg-note-soft text-note"
+                : "border-line text-muted hover:border-line-strong hover:text-ink"
+            }`}
+          >
+            <FlagIcon filled={flagged} />
+            Flag for review
+            {all && <span className="sr-only">: question {k + 1}</span>}
+          </button>
+        </div>
+        <QuestionCard
+          ref={cardRef}
+          question={question}
+          item={item}
+          answer={{ ...answer, revealed: false }}
+          number={k + 1}
+          showTopic={showTopic}
+          inputError={inputError?.id === item.id ? inputError.message : null}
+          onSelect={(option) => select(item.id, option)}
+          onText={(text) => {
+            if (inputError?.id === item.id) setInputError(null);
+            dispatch({ type: "type", text, id: item.id });
+          }}
+          onSubmitText={() => submitText(item.id)}
+        />
+      </>
+    );
   };
 
   const level = timerLevel(secondsLeft * 1000);
+  const current = items[exam.position];
+  const currentQuestion = current ? questions.get(current.id) : undefined;
+  const isLast = exam.position === total - 1;
 
   return (
     <div>
@@ -215,85 +376,85 @@ export function ExamRunner({
             style={{ width: `${total ? (answered / total) * 100 : 0}%` }}
           />
         </div>
+        {all && <QuestionStrip exam={exam} onGo={goTo} />}
       </div>
       <p className="sr-only" aria-live="assertive">
         {timerAlert}
       </p>
 
-      {item && question && answer && (
+      {all ? (
         <>
-          <div className="mt-4 mb-2 flex items-center justify-between gap-3">
-            <p className="text-sm font-medium tabular-nums">
-              Question {exam.position + 1} <span className="text-muted">of {total}</span>
+          <p className="mt-3 hidden text-xs text-muted md:block">
+            Keys act on the question in view: 1–9 select · ←/→ previous / next question · F flag
+          </p>
+          <ol className="mt-4 space-y-10">
+            {items.map((item, k) => (
+              <li key={item.id} ref={register(item.id)} data-exam-index={k}>
+                {renderQuestion(item, k)}
+              </li>
+            ))}
+          </ol>
+
+          <Navigator exam={exam} onGo={goTo} />
+          <div className="mt-4 flex flex-wrap items-center justify-between gap-3 rounded-2xl border border-line bg-surface px-4 py-3.5 shadow-xs sm:px-5">
+            <p className="text-sm text-muted tabular-nums">
+              Answered {answered} of {total}
+              {flaggedCount > 0 && ` · ${flaggedCount} flagged`}
             </p>
             <button
               type="button"
-              aria-pressed={isFlagged}
-              onClick={() => dispatch({ type: "toggleFlag" })}
-              className={`inline-flex items-center gap-1.5 rounded-lg border px-3 py-1.5 text-sm font-medium transition-colors ${
-                isFlagged
-                  ? "border-note/50 bg-note-soft text-note"
-                  : "border-line text-muted hover:border-line-strong hover:text-ink"
-              }`}
+              onClick={requestSubmit}
+              className="rounded-lg bg-accent px-5 py-2 font-medium text-accent-ink hover:bg-accent-hover"
             >
-              <FlagIcon filled={isFlagged} />
-              Flag for review
+              Submit test
             </button>
           </div>
-
-          <QuestionCard
-            key={item.id}
-            ref={cardRef}
-            question={question}
-            item={item}
-            answer={{ ...answer, revealed: false }}
-            number={exam.position + 1}
-            showTopic={showTopic}
-            hint={hint}
-            onSelect={select}
-            onText={(text) => {
-              setHint(null);
-              dispatch({ type: "type", text });
-            }}
-            onSubmitText={submitText}
-          />
-
-          <div className="sticky bottom-0 z-10 -mx-4 mt-4 border-t border-line bg-canvas/90 px-4 py-3 backdrop-blur sm:mx-0 sm:border-t-0 sm:px-0">
-            <div className="flex items-center gap-2">
-              <button
-                type="button"
-                onClick={() => go({ type: "previous" })}
-                disabled={isFirst}
-                className="rounded-lg border border-line-strong bg-surface px-4 py-2 font-medium hover:bg-subtle disabled:cursor-not-allowed disabled:opacity-50"
-              >
-                <span aria-hidden="true">← </span>Previous
-              </button>
-              <span className="mx-auto hidden text-center text-xs text-muted md:inline">
-                Keys: {question.options ? "1–9 select · " : ""}←/→ move · F flag
-              </span>
-              {isLast ? (
-                <button
-                  type="button"
-                  onClick={requestSubmit}
-                  className="ml-auto rounded-lg bg-accent px-5 py-2 font-medium text-accent-ink hover:bg-accent-hover md:ml-0"
-                >
-                  Submit test
-                </button>
-              ) : (
-                <button
-                  type="button"
-                  onClick={() => go({ type: "next" })}
-                  className="ml-auto rounded-lg bg-accent px-5 py-2 font-medium text-accent-ink hover:bg-accent-hover md:ml-0"
-                >
-                  Next<span aria-hidden="true"> →</span>
-                </button>
-              )}
-            </div>
-          </div>
         </>
-      )}
+      ) : (
+        current &&
+        currentQuestion && (
+          <>
+            <div className="mt-4" key={current.id}>
+              {renderQuestion(current, exam.position, register(current.id))}
+            </div>
 
-      <Navigator exam={exam} onGo={(position) => go({ type: "goto", position })} />
+            <div className="sticky bottom-0 z-10 -mx-4 mt-4 border-t border-line bg-canvas/90 px-4 py-3 backdrop-blur sm:mx-0 sm:border-t-0 sm:px-0">
+              <div className="flex items-center gap-2">
+                <button
+                  type="button"
+                  onClick={() => goTo(exam.position - 1)}
+                  disabled={exam.position === 0}
+                  className="rounded-lg border border-line-strong bg-surface px-4 py-2 font-medium hover:bg-subtle disabled:cursor-not-allowed disabled:opacity-50"
+                >
+                  <span aria-hidden="true">← </span>Previous
+                </button>
+                <span className="mx-auto hidden text-center text-xs text-muted md:inline">
+                  Keys: {currentQuestion.options ? "1–9 select · " : ""}←/→ move · F flag
+                </span>
+                {isLast ? (
+                  <button
+                    type="button"
+                    onClick={requestSubmit}
+                    className="ml-auto rounded-lg bg-accent px-5 py-2 font-medium text-accent-ink hover:bg-accent-hover md:ml-0"
+                  >
+                    Submit test
+                  </button>
+                ) : (
+                  <button
+                    type="button"
+                    onClick={() => goTo(exam.position + 1)}
+                    className="ml-auto rounded-lg bg-accent px-5 py-2 font-medium text-accent-ink hover:bg-accent-hover md:ml-0"
+                  >
+                    Next<span aria-hidden="true"> →</span>
+                  </button>
+                )}
+              </div>
+            </div>
+
+            <Navigator exam={exam} onGo={goTo} />
+          </>
+        )
+      )}
 
       <ConfirmSubmit
         open={confirming}
@@ -307,141 +468,4 @@ export function ExamRunner({
       />
     </div>
   );
-}
-
-/** Grid of question numbers: answered / unanswered / flagged, click to jump. */
-function Navigator({ exam, onGo }: { exam: ExamState; onGo: (position: number) => void }) {
-  const answered = answeredCount(exam);
-  return (
-    <nav
-      aria-label="Questions"
-      className="mt-8 rounded-2xl border border-line bg-surface p-4 shadow-xs sm:p-5"
-    >
-      <div className="flex flex-wrap items-baseline justify-between gap-x-4 gap-y-1">
-        <h2 className="text-xs font-semibold tracking-wide text-muted uppercase">Questions</h2>
-        <p className="text-xs text-muted tabular-nums">
-          {answered} answered · {exam.items.length - answered} unanswered · {exam.flagged.length}{" "}
-          flagged
-        </p>
-      </div>
-      <ol className="mt-3 grid grid-cols-[repeat(auto-fill,minmax(2.5rem,1fr))] gap-1.5">
-        {exam.items.map(({ id }, k) => {
-          const done = isAnswered(exam.answers[id]);
-          const flagged = exam.flagged.includes(id);
-          const current = k === exam.position;
-          const state = [done ? "answered" : "not answered", flagged ? "flagged" : ""]
-            .filter(Boolean)
-            .join(", ");
-          return (
-            <li key={id}>
-              <button
-                type="button"
-                onClick={() => onGo(k)}
-                aria-current={current ? "step" : undefined}
-                aria-label={`Question ${k + 1}, ${state}`}
-                className={`relative flex h-10 w-full items-center justify-center rounded-lg border text-sm tabular-nums transition-colors ${
-                  done
-                    ? "border-accent/60 bg-accent-soft font-semibold text-ink"
-                    : "border-line bg-canvas text-muted hover:border-line-strong hover:text-ink"
-                } ${current ? "ring-2 ring-accent ring-offset-2 ring-offset-surface" : ""}`}
-              >
-                {k + 1}
-                {flagged && (
-                  <FlagIcon filled className="absolute top-0.5 right-0.5 size-3.5 text-note" />
-                )}
-              </button>
-            </li>
-          );
-        })}
-      </ol>
-      <ul className="mt-3 flex flex-wrap gap-x-4 gap-y-1.5 text-xs text-muted" aria-label="Legend">
-        <li className="inline-flex items-center gap-1.5">
-          <span className="size-3 rounded border border-accent/60 bg-accent-soft" />
-          Answered
-        </li>
-        <li className="inline-flex items-center gap-1.5">
-          <span className="size-3 rounded border border-line bg-canvas" />
-          Unanswered
-        </li>
-        <li className="inline-flex items-center gap-1.5">
-          <FlagIcon filled className="size-3.5 text-note" />
-          Flagged
-        </li>
-        <li className="inline-flex items-center gap-1.5">
-          <span className="size-3 rounded ring-2 ring-accent ring-offset-1 ring-offset-surface" />
-          Current
-        </li>
-      </ul>
-    </nav>
-  );
-}
-
-function ConfirmSubmit({
-  open,
-  unanswered,
-  flagged,
-  onCancel,
-  onConfirm,
-}: {
-  open: boolean;
-  unanswered: number;
-  flagged: number;
-  onCancel: () => void;
-  onConfirm: () => void;
-}) {
-  const ref = useRef<HTMLDialogElement>(null);
-  useEffect(() => {
-    const dialog = ref.current;
-    if (!dialog) return;
-    if (open && !dialog.open) dialog.showModal();
-    else if (!open && dialog.open) dialog.close();
-  }, [open]);
-
-  const parts = [];
-  if (unanswered > 0) {
-    parts.push(`${unanswered} ${unanswered === 1 ? "question is" : "questions are"} unanswered`);
-  }
-  if (flagged > 0) {
-    parts.push(`${flagged} ${flagged === 1 ? "is" : "are"} flagged for review`);
-  }
-  return (
-    <dialog
-      ref={ref}
-      onClose={onCancel}
-      aria-labelledby="exam-confirm-title"
-      aria-describedby="exam-confirm-text"
-      className="m-auto w-[min(28rem,calc(100%-2rem))] rounded-2xl border border-line bg-surface p-5 text-ink shadow-xl backdrop:bg-black/50 sm:p-6"
-    >
-      <h2 id="exam-confirm-title" className="text-lg font-semibold">
-        Submit the test?
-      </h2>
-      <p id="exam-confirm-text" className="mt-2 text-muted">
-        {parts.length > 0 && `${capitalize(parts.join(" and "))}. `}
-        {unanswered > 0 ? "Unanswered questions count as wrong. " : ""}
-        Answers cannot be changed after submitting.
-      </p>
-      <div className="mt-5 flex flex-wrap justify-end gap-2">
-        <button
-          type="button"
-          // biome-ignore lint/a11y/noAutofocus: the safe choice gets focus when the dialog opens.
-          autoFocus
-          onClick={onCancel}
-          className="rounded-lg border border-line-strong bg-surface px-4 py-2 font-medium hover:bg-subtle"
-        >
-          Keep working
-        </button>
-        <button
-          type="button"
-          onClick={onConfirm}
-          className="rounded-lg bg-accent px-4 py-2 font-medium text-accent-ink hover:bg-accent-hover"
-        >
-          Submit test
-        </button>
-      </div>
-    </dialog>
-  );
-}
-
-function capitalize(text: string): string {
-  return text.charAt(0).toUpperCase() + text.slice(1);
 }

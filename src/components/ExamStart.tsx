@@ -3,6 +3,7 @@ import {
   describeAttempt,
   type ExamAttempt,
   type ExamHistory,
+  type ExamLayout,
   type ExamPlan,
   formatAttemptDate,
   lastAttempt,
@@ -20,15 +21,30 @@ interface ExamStartProps {
   draftCount: number;
   /** Open short answers left out of tests. */
   excluded: number;
+  layout: ExamLayout;
   history: ExamHistory;
   onReviewedOnly: (value: boolean) => void;
+  onLayout: (value: ExamLayout) => void;
   onStart: () => void;
   ref?: Ref<HTMLElement>;
 }
 
 const plural = (n: number, word: string) => `${n} ${n === 1 ? word : `${word}s`}`;
 
-/** Before the clock starts: size, time limit, rules, last and best score. */
+const LAYOUTS: Array<{ value: ExamLayout; title: string; description: string }> = [
+  {
+    value: "one",
+    title: "One at a time",
+    description: "One question per screen, with Previous / Next.",
+  },
+  {
+    value: "all",
+    title: "All on one page",
+    description: "Every question on one page, like a paper exam. Submit at the bottom.",
+  },
+];
+
+/** Before the clock starts: size, time limit, rules, layout, last and best score. */
 export function ExamStart({
   scope,
   plan,
@@ -36,8 +52,10 @@ export function ExamStart({
   reviewedCount,
   draftCount,
   excluded,
+  layout,
   history,
   onReviewedOnly,
+  onLayout,
   onStart,
   ref,
 }: ExamStartProps) {
@@ -95,6 +113,35 @@ export function ExamStart({
           automatically when it reaches 00:00.
         </li>
       </ul>
+
+      <fieldset className="mt-5 min-w-0">
+        <legend className="text-xs font-semibold tracking-wide text-muted uppercase">Layout</legend>
+        <div className="mt-2 grid gap-2 sm:grid-cols-2">
+          {LAYOUTS.map(({ value, title, description }) => (
+            <label
+              key={value}
+              className={`flex cursor-pointer items-start gap-3 rounded-xl border px-3.5 py-3 transition-colors ${
+                layout === value
+                  ? "border-accent bg-accent-soft"
+                  : "border-line hover:border-line-strong hover:bg-subtle"
+              }`}
+            >
+              <input
+                type="radio"
+                name="exam-layout"
+                value={value}
+                checked={layout === value}
+                onChange={() => onLayout(value)}
+                className="mt-1 size-4 shrink-0"
+              />
+              <span className="min-w-0">
+                <span className="block font-medium">{title}</span>
+                <span className="block text-sm text-muted">{description}</span>
+              </span>
+            </label>
+          ))}
+        </div>
+      </fieldset>
 
       {draftCount > 0 && (
         <label

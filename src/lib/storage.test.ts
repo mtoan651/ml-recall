@@ -108,12 +108,26 @@ describe("settings", () => {
   it("round-trips and falls back to defaults", () => {
     const store = memoryStore();
     expect(loadSettings(store)).toEqual(DEFAULT_SETTINGS);
-    saveSettings({ shuffleQuestions: false, reviewedOnly: true }, store);
-    expect(loadSettings(store)).toEqual({ shuffleQuestions: false, reviewedOnly: true });
+    const custom = { shuffleQuestions: false, reviewedOnly: true, examLayout: "all" } as const;
+    saveSettings(custom, store);
+    expect(loadSettings(store)).toEqual(custom);
     expect(loadSettings(memoryStore({ [SETTINGS_KEY]: '{"reviewedOnly":"x"}' }))).toEqual(
       DEFAULT_SETTINGS,
     );
     expect(loadSettings(brokenStore)).toEqual(DEFAULT_SETTINGS);
+  });
+
+  it("defaults the test layout to one question at a time", () => {
+    expect(DEFAULT_SETTINGS.examLayout).toBe("one");
+    // Settings saved before the layout existed keep their other values.
+    const old = memoryStore({ [SETTINGS_KEY]: '{"shuffleQuestions":false,"reviewedOnly":true}' });
+    expect(loadSettings(old)).toEqual({
+      shuffleQuestions: false,
+      reviewedOnly: true,
+      examLayout: "one",
+    });
+    const bad = memoryStore({ [SETTINGS_KEY]: '{"examLayout":"grid"}' });
+    expect(loadSettings(bad).examLayout).toBe("one");
   });
 });
 
@@ -135,6 +149,7 @@ describe("timed tests", () => {
     startedAt: 1_000_000,
     durationMs: 120_000,
     reviewedOnly: false,
+    layout: "all",
   };
 
   it("saves, resumes and clears the test in progress per scope", () => {
