@@ -44,6 +44,8 @@ export function ExamStart({
   const n = plan.count;
   const size = `${plural(n, "question")} · ${plural(n, "minute")}`;
   const last = lastAttempt(history);
+  // "8 questions", or "8 auto-graded questions" when open short answers were left out.
+  const poolWord = `${reviewedOnly ? "reviewed " : ""}${excluded > 0 ? "auto-graded " : ""}question`;
   return (
     <section
       ref={ref}
@@ -65,7 +67,14 @@ export function ExamStart({
 
       {plan.short && n > 0 && (
         <p className="mt-4 rounded-xl bg-subtle px-3.5 py-2.5 text-sm">
-          {`This ${scope.kind} has ${plural(plan.available, reviewedOnly ? "reviewed question" : "question")}, so this test has ${size}.`}
+          {`This ${scope.kind} has ${plural(plan.available, poolWord)}, so this test has ${size}.`}
+        </p>
+      )}
+      {excluded > 0 && (
+        <p className="mt-2 text-sm text-muted">
+          {plural(excluded, "open short-answer question")} {excluded === 1 ? "is" : "are"} left out:{" "}
+          {excluded === 1 ? "it needs" : "they need"} self-grading, so{" "}
+          {excluded === 1 ? "it stays" : "they stay"} in practice mode.
         </p>
       )}
       {n === 0 && (
@@ -86,13 +95,6 @@ export function ExamStart({
           automatically when it reaches 00:00.
         </li>
       </ul>
-      {excluded > 0 && (
-        <p className="mt-3 text-sm text-muted">
-          {plural(excluded, "open short-answer question")} {excluded === 1 ? "is" : "are"} left out:{" "}
-          {excluded === 1 ? "it needs" : "they need"} self-grading, so{" "}
-          {excluded === 1 ? "it stays" : "they stay"} in practice mode.
-        </p>
-      )}
 
       {draftCount > 0 && (
         <label

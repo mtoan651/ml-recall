@@ -137,10 +137,10 @@ N random questions in N minutes, no feedback until the test is submitted. Pages 
 the random draw happens in the browser from the questions embedded at build time.
 
 - **Pool.** Non-retired questions of the topic or tag, except `short_answer` questions
-  without `accept` / `numeric` (self-graded, so practice-only). A page is built only when the
-  pool is not empty (today every topic with questions, and every tag but
-  `numerical-stability`). **Reviewed questions only** on the start screen (shared with
-  practice) restricts the pool to `reviewed`.
+  without `accept` / `numeric` (self-graded, so practice-only; the start screen says how many
+  were left out). A test page and the "Take a test" box exist only when the pool is not empty.
+  **Reviewed questions only** on the start screen (shared with practice) restricts the pool to
+  `reviewed`.
 - **Size and time.** N = min(20, pool); time limit = N minutes. A smaller pool says so on the
   start screen ("This topic has 8 questions, so this test has 8 questions · 8 minutes").
 - **Draw.** A uniformly random subset in random order; options shuffled with the practice
