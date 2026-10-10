@@ -71,3 +71,14 @@ export interface QuizQuestion {
   references: ReferenceView[];
   provenance: ProvenanceView;
 }
+
+/** The topic or tag a timed test is about. */
+export interface ExamScopeView {
+  kind: "topic" | "tag";
+  /** Topic id or tag. */
+  id: string;
+  /** For headings: the topic title or `#tag`. */
+  title: string;
+  /** Practice page of the same topic or tag. */
+  practiceUrl: string;
+}

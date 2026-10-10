@@ -1,0 +1,80 @@
+---
+/**
+ * "Take a test" call-to-action on topic and tag pages. Size and time are known at build time;
+ * the last / best score and a test in progress are filled in from localStorage.
+ */
+import { examScope, planExam, type ScopeKind } from "../lib/exam";
+import { ClockIcon } from "./Icons";
+
+interface Props {
+  kind: ScopeKind;
+  id: string;
+  /** URL of the test page. */
+  href: string;
+  /** Questions that can be in a test. */
+  available: number;
+}
+
+const { kind, id, href, available } = Astro.props;
+const { count } = planExam(available);
+---
+
+{
+  count > 0 && (
+    <section
+      aria-labelledby="exam-callout-heading"
+      class="mt-6 flex flex-wrap items-center gap-x-6 gap-y-3 rounded-2xl border border-line bg-surface px-4 py-3.5 shadow-xs sm:px-5"
+      data-exam-callout
+      data-scope={examScope(kind, id)}
+    >
+      <div class="min-w-0 flex-1 basis-56">
+        <h2 id="exam-callout-heading" class="flex items-center gap-2 font-semibold">
+          <ClockIcon className="size-5 shrink-0 text-accent" />
+          Timed test
+        </h2>
+        <p class="mt-0.5 text-sm text-muted tabular-nums">
+          {count} {count === 1 ? "question" : "questions"} · {count} min · score and explanations at
+          the end
+        </p>
+        <p class="mt-1 hidden text-sm tabular-nums" data-exam-status />
+      </div>
+      <a
+        href={href}
+        class="shrink-0 rounded-lg bg-accent px-4 py-2 font-medium text-accent-ink hover:bg-accent-hover"
+        data-exam-link
+      >
+        Take a test
+      </a>
+    </section>
+  )
+}
+
+<script>
+  import { describeAttempt, lastAttempt } from "../lib/exam";
+  import { examTimeLeft, loadExamHistory } from "../lib/storage";
+
+  for (const el of document.querySelectorAll<HTMLElement>("[data-exam-callout]")) {
+    const scope = el.dataset.scope ?? "";
+    const status = el.querySelector<HTMLElement>("[data-exam-status]");
+    const link = el.querySelector<HTMLElement>("[data-exam-link]");
+    if (!status || !link) continue;
+
+    const left = examTimeLeft(scope);
+    if (left !== null) {
+      const minutes = Math.ceil(left / 60_000);
+      link.textContent = "Resume test";
+      status.textContent = `Test in progress · ${minutes} min left`;
+      status.classList.add("font-medium", "text-note");
+      status.classList.remove("hidden");
+      continue;
+    }
+
+    const history = loadExamHistory(scope);
+    const last = lastAttempt(history);
+    if (!last) continue;
+    const best = history.best;
+    status.textContent = `Last ${describeAttempt(last)}${best ? ` · Best ${describeAttempt(best)}` : ""}`;
+    status.classList.add("text-muted");
+    status.classList.remove("hidden");
+  }
+</script>

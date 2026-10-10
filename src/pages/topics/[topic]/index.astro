@@ -1,8 +1,9 @@
 ---
-import Quiz from "../../components/Quiz";
-import Base from "../../layouts/Base.astro";
-import { getBank, toQuizQuestions } from "../../lib/bank";
-import { url } from "../../lib/url";
+import ExamCallout from "../../../components/ExamCallout.astro";
+import Quiz from "../../../components/Quiz";
+import Base from "../../../layouts/Base.astro";
+import { examQuestions, getBank, toQuizQuestions } from "../../../lib/bank";
+import { topicExamUrl, url } from "../../../lib/url";
 
 export async function getStaticPaths() {
   const bank = await getBank();
@@ -14,10 +15,8 @@ export async function getStaticPaths() {
 const bank = await getBank();
 const topic = bank.topics.get(Astro.params.topic);
 if (!topic) throw new Error(`Unknown topic ${Astro.params.topic}`);
-const questions = await toQuizQuestions(
-  bank.questions.filter((q) => q.topic.id === topic.id),
-  bank,
-);
+const topicQuestions = bank.questions.filter((q) => q.topic.id === topic.id);
+const questions = await toQuizQuestions(topicQuestions, bank);
 const total = questions.length;
 ---
 
@@ -35,6 +34,13 @@ const total = questions.length;
   <p class="mt-2 text-sm text-muted">
     {total} {total === 1 ? "question" : "questions"} · {topic.reviewed} reviewed
   </p>
+
+  <ExamCallout
+    kind="topic"
+    id={topic.id}
+    href={topicExamUrl(topic.id)}
+    available={examQuestions(topicQuestions).length}
+  />
 
   <div class="mt-6">
     <Quiz client:load questions={questions} scope={topic.title} />

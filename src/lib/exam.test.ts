@@ -27,6 +27,7 @@ import {
   scoreExam,
   selectExamItems,
   serializeExam,
+  timerAnnouncement,
   timerLevel,
   timeUsedMs,
   unansweredCount,
@@ -262,6 +263,18 @@ describe("timer", () => {
     expect(timerLevel(MIN + 1)).toBe("warning"); // shows 01:01
     expect(timerLevel(MIN)).toBe("critical"); // shows 01:00
     expect(timerLevel(0)).toBe("critical");
+  });
+
+  it("announces only when the countdown turns amber or red", () => {
+    expect(timerAnnouncement(20 * MIN, 20 * MIN - 1_000)).toBeNull();
+    expect(timerAnnouncement(5 * MIN + 1_000, 5 * MIN)).toBe("5 minutes left.");
+    expect(timerAnnouncement(5 * MIN, 5 * MIN - 1_000)).toBeNull(); // still amber
+    expect(timerAnnouncement(MIN + 1_000, MIN)).toBe("1 minute left.");
+    expect(timerAnnouncement(MIN, MIN - 1_000)).toBeNull(); // still red
+    expect(timerAnnouncement(MIN, 0)).toBeNull(); // time up: the test submits itself
+    // The tab slept from 10:00 to 0:30: say what is actually left.
+    expect(timerAnnouncement(10 * MIN, 30_000)).toBe("30 seconds left.");
+    expect(timerAnnouncement(10 * MIN, 4 * MIN + 59_000)).toBe("4 minutes left.");
   });
 });
 
