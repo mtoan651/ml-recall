@@ -211,7 +211,7 @@ export function ExamResults({
                   }}
                   number={k + 1}
                   showTopic={showTopic}
-                  hint={null}
+                  inputError={null}
                   onSelect={noop}
                   onText={noop}
                   onSubmitText={noop}

@@ -24,6 +24,10 @@ export interface AnswerKeyView {
   accept: string[];
   numeric?: number;
   tolerance: number;
+  /** Regex source, matched in full and case-insensitively (src/lib/grading.ts). */
+  pattern?: string;
+  /** Format guidance under the input (plain text). */
+  hint?: string;
   modelHtml: string;
 }
 

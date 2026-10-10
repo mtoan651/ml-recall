@@ -288,6 +288,8 @@ async function renderQuestion(
             accept: q.answer.accept,
             ...(typeof q.answer.numeric === "number" ? { numeric: q.answer.numeric } : {}),
             tolerance: q.answer.tolerance,
+            ...(q.answer.pattern ? { pattern: q.answer.pattern } : {}),
+            ...(q.answer.hint ? { hint: q.answer.hint } : {}),
             modelHtml,
           },
         }

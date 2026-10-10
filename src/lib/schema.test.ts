@@ -178,6 +178,47 @@ describe("question rules (Question._consistent)", () => {
     expect(referenceSchema.safeParse({ url: "javascript:alert(1)" }).success).toBe(false);
     expect(referenceSchema.safeParse({ url: "https://d2l.ai" }).success).toBe(true);
   });
+
+  it("validates the answer key of a short answer", () => {
+    const answer = { model: "x", accept: ["relu"], pattern: "gelu" };
+    expect(ok({ type: "short_answer", answer })).toBe(false);
+    expect(ok({ type: "short_answer", answer: { ...answer, pattern: "relu|gelu" } })).toBe(true);
+  });
+});
+
+describe("short-answer pattern and hint (ShortAnswer._valid_pattern + mlr check)", () => {
+  const shape = String.raw`\(?\s*32\s*[,x×]\s*3\s*[,x×]\s*64\s*[,x×]\s*64\s*\)?`;
+  const key = (answer: object) => shortAnswerSchema.safeParse({ model: "x", ...answer });
+
+  it("accepts a valid pattern with a hint and matching accepted answers", () => {
+    const result = key({ accept: ["(32, 3, 64, 64)"], pattern: shape, hint: "e.g. 8×1×28×28" });
+    expect(result.success).toBe(true);
+    expect(result.data).toMatchObject({ pattern: shape, hint: "e.g. 8×1×28×28" });
+    expect(key({ pattern: "relu|gelu" }).success).toBe(true);
+  });
+
+  it("rejects a pattern that does not compile", () => {
+    expect(key({ pattern: "(32, 3" }).success).toBe(false);
+    expect(key({ pattern: "[a-" }).success).toBe(false);
+    expect(key({ pattern: "a)|(b" }).success).toBe(false);
+  });
+
+  it("rejects Python-only syntax", () => {
+    expect(key({ pattern: "(?P<n>\\d+)" }).success).toBe(false);
+    expect(key({ pattern: "(?i)relu" }).success).toBe(false);
+    expect(key({ pattern: "\\Arelu\\Z" }).success).toBe(false);
+  });
+
+  it("requires every accepted answer to match the pattern", () => {
+    const result = key({ accept: ["(32, 3, 64, 64)", "(3, 32, 64, 64)"], pattern: shape });
+    expect(result.success).toBe(false);
+    expect(result.error?.issues[0]?.message).toContain("(3, 32, 64, 64)");
+  });
+
+  it("rejects empty pattern and hint strings", () => {
+    expect(key({ pattern: "" }).success).toBe(false);
+    expect(key({ accept: ["relu"], hint: "" }).success).toBe(false);
+  });
 });
 
 describe("the question bank in src/content", () => {

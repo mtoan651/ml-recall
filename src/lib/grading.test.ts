@@ -1,11 +1,17 @@
 import { describe, expect, it } from "vitest";
 import {
+  answerHint,
+  compilePattern,
   gradeChoice,
   gradeShortAnswer,
   isAutoGraded,
+  isNumericOnly,
+  matchesPattern,
   matchesText,
+  NUMBER_HINT,
   normalizeAnswer,
   parseNumber,
+  TEXT_HINT,
   withinTolerance,
 } from "./grading";
 
@@ -115,6 +121,77 @@ describe("gradeShortAnswer", () => {
     const key = { accept: [], numeric: null };
     expect(isAutoGraded(key)).toBe(false);
     expect(gradeShortAnswer("anything", key)).toEqual({ kind: "self-graded" });
+  });
+
+  it("grades pattern-only keys (and they count as auto-graded)", () => {
+    const key = { accept: [], pattern: SHAPE };
+    expect(isAutoGraded(key)).toBe(true);
+    expect(isNumericOnly(key)).toBe(false);
+    expect(gradeShortAnswer("32x3x64x64", key)).toEqual({ kind: "graded", correct: true });
+    expect(gradeShortAnswer("(3, 32, 64, 64)", key)).toEqual({ kind: "graded", correct: false });
+    expect(gradeShortAnswer(" ", key)).toEqual({ kind: "empty" });
+  });
+
+  it("is correct when any of numeric, accept or pattern matches", () => {
+    const key = {
+      accept: ["seven hundred sixty"],
+      numeric: 760,
+      pattern: "7\\s*6\\s*0\\s*params?",
+    };
+    expect(gradeShortAnswer("760", key)).toEqual({ kind: "graded", correct: true });
+    expect(gradeShortAnswer("Seven hundred sixty", key)).toEqual({ kind: "graded", correct: true });
+    expect(gradeShortAnswer("760 params", key)).toEqual({ kind: "graded", correct: true });
+    // With a pattern a non-number is graded, not refused.
+    expect(gradeShortAnswer("many", key)).toEqual({ kind: "graded", correct: false });
+  });
+});
+
+/** The shape question pytorch-005: (batch, channels, height, width) in several spellings. */
+const SHAPE = String.raw`\(?\s*32\s*[,x×]\s*3\s*[,x×]\s*64\s*[,x×]\s*64\s*\)?`;
+
+describe("matchesPattern", () => {
+  it.each([
+    "(32, 3, 64, 64)",
+    "32x3x64x64",
+    "32 × 3 × 64 × 64",
+    "（32，3，64，64）",
+    " 32X3X64X64 ",
+  ])("accepts %j", (input) => {
+    expect(matchesPattern(input, SHAPE)).toBe(true);
+  });
+
+  it.each(["(3, 32, 64, 64)", "(32, 3, 64)", "32x3x64x64x1", "shape (32, 3, 64, 64)", ""])(
+    "rejects %j",
+    (input) => {
+      expect(matchesPattern(input, SHAPE)).toBe(false);
+    },
+  );
+
+  it("matches the whole answer, even across alternatives", () => {
+    expect(matchesPattern("relu", "relu|gelu")).toBe(true);
+    expect(matchesPattern("relu6", "relu|gelu")).toBe(false);
+    expect(matchesPattern("leaky relu", "relu|gelu")).toBe(false);
+  });
+
+  it("keeps identity escapes working (no `u` flag)", () => {
+    expect(matchesPattern("t-sne", String.raw`t\-sne`)).toBe(true);
+  });
+
+  it("never matches with an invalid pattern", () => {
+    expect(compilePattern("(32, 3")).toBeNull();
+    expect(compilePattern("a)|(b")).toBeNull();
+    expect(matchesPattern("a", "a)|(b")).toBe(false);
+  });
+});
+
+describe("answerHint", () => {
+  it("uses the key's hint, else a default for numbers or text", () => {
+    expect(answerHint({ accept: [], pattern: SHAPE, hint: "e.g. 8×1×28×28" })).toBe(
+      "e.g. 8×1×28×28",
+    );
+    expect(answerHint({ accept: [], numeric: 760 })).toBe(NUMBER_HINT);
+    expect(answerHint({ accept: ["relu"], numeric: 1 })).toBe(NUMBER_HINT);
+    expect(answerHint({ accept: ["batchnorm"] })).toBe(TEXT_HINT);
   });
 });
 

@@ -149,6 +149,7 @@ function AcceptedAnswers({ question: q }: { question: QuizQuestion }) {
   return (
     <p className="mt-2 text-sm text-muted">
       Accepted: {accepted.join(" · ")}
+      {key.pattern && " and equivalent spellings"}
       <span className="sr-only"> (case, spaces and punctuation are ignored)</span>
     </p>
   );
