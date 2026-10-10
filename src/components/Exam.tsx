@@ -77,7 +77,7 @@ export default function Exam({ questions, scope, excluded = 0, showTopic = false
   const [announcement, setAnnouncement] = useState("");
   const [startedHere, setStartedHere] = useState(false);
   /** `startedAt` of the last finished test: the timer and a click must not submit twice. */
-  const finishedAt = useRef<number | null>(null);
+  const submittedStart = useRef<number | null>(null);
   const viewRef = useRef<HTMLElement>(null);
   const rootRef = useRef<HTMLElement>(null);
   /** Move focus to the new view (start screen or results) after a user action. */
@@ -92,8 +92,8 @@ export default function Exam({ questions, scope, excluded = 0, showTopic = false
 
   const finish = useCallback(
     (state: ExamState, timedOut: boolean) => {
-      if (finishedAt.current === state.startedAt) return;
-      finishedAt.current = state.startedAt;
+      if (submittedStart.current === state.startedAt) return;
+      submittedStart.current = state.startedAt;
       const end = Math.min(Date.now(), state.startedAt + state.durationMs);
       const score = scoreExam(state, byId);
       const usedMs = timeUsedMs(state.startedAt, state.durationMs, end);
@@ -124,6 +124,7 @@ export default function Exam({ questions, scope, excluded = 0, showTopic = false
       setFinished({
         state,
         score,
+        finishedAt: end,
         usedMs,
         timedOut,
         newBest: previousBest !== undefined && isBetterAttempt(attempt, previousBest),

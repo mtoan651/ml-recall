@@ -17,6 +17,8 @@ import { QuestionCard } from "./QuestionCard";
 export interface FinishedExam {
   state: ExamState;
   score: ExamScore;
+  /** When the test ended, in epoch milliseconds. */
+  finishedAt: number;
   /** Time used in milliseconds. */
   usedMs: number;
   /** Submitted automatically when the clock reached 00:00. */
@@ -57,7 +59,9 @@ export function ExamResults({
   onNewTest,
   ref,
 }: ExamResultsProps) {
-  const { state, score, usedMs, timedOut, newBest } = result;
+  const { state, score, finishedAt, usedMs, timedOut, newBest } = result;
+  // The best score so far, unless it is this very test.
+  const otherBest = history.best && history.best.at !== finishedAt ? history.best : undefined;
   const [onlyIncorrect, setOnlyIncorrect] = useState(false);
   const [jumpTo, setJumpTo] = useState<string | null>(null);
   const wrongCount = score.incorrect + score.unanswered;
@@ -106,7 +110,7 @@ export function ExamResults({
           Time used {formatClock(usedMs, "floor")} of {formatClock(state.durationMs)}
           {score.unanswered > 0 && ` · ${score.unanswered} not answered`}
           {state.reviewedOnly && " · reviewed questions only"}
-          {history.best && !newBest && ` · best ${describeAttempt(history.best)}`}
+          {otherBest && ` · best ${describeAttempt(otherBest)}`}
         </p>
 
         <div className="mt-5 flex flex-wrap gap-2">
@@ -158,7 +162,7 @@ export function ExamResults({
           <h2 id="exam-review-heading" className="text-lg font-semibold">
             Review
           </h2>
-          {wrongCount > 0 && wrongCount < score.total && (
+          {wrongCount > 0 && (
             <label className="inline-flex cursor-pointer items-center gap-2 text-sm text-muted">
               <input
                 type="checkbox"

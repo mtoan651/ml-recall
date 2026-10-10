@@ -53,28 +53,40 @@ const { count } = planExam(available);
   import { describeAttempt, lastAttempt } from "../lib/exam";
   import { examTimeLeft, loadExamHistory } from "../lib/storage";
 
-  for (const el of document.querySelectorAll<HTMLElement>("[data-exam-callout]")) {
+  /** "Resume test" while a test runs, otherwise the last and best score, if any. */
+  function update(el: HTMLElement) {
     const scope = el.dataset.scope ?? "";
     const status = el.querySelector<HTMLElement>("[data-exam-status]");
     const link = el.querySelector<HTMLElement>("[data-exam-link]");
-    if (!status || !link) continue;
+    if (!status || !link) return;
+    status.classList.remove("font-medium", "text-note", "text-muted");
 
     const left = examTimeLeft(scope);
     if (left !== null) {
-      const minutes = Math.ceil(left / 60_000);
       link.textContent = "Resume test";
-      status.textContent = `Test in progress · ${minutes} min left`;
+      status.textContent = `Test in progress · ${Math.ceil(left / 60_000)} min left`;
       status.classList.add("font-medium", "text-note");
       status.classList.remove("hidden");
-      continue;
+      return;
     }
 
+    link.textContent = "Take a test";
     const history = loadExamHistory(scope);
     const last = lastAttempt(history);
-    if (!last) continue;
     const best = history.best;
-    status.textContent = `Last ${describeAttempt(last)}${best ? ` · Best ${describeAttempt(best)}` : ""}`;
+    status.textContent = last
+      ? `Last ${describeAttempt(last)}${best ? ` · Best ${describeAttempt(best)}` : ""}`
+      : "";
     status.classList.add("text-muted");
-    status.classList.remove("hidden");
+    status.classList.toggle("hidden", !last);
   }
+
+  const updateAll = () => {
+    for (const el of document.querySelectorAll<HTMLElement>("[data-exam-callout]")) update(el);
+  };
+  updateAll();
+  // Coming back with the Back button restores the page from cache: refresh what it shows.
+  window.addEventListener("pageshow", (event) => {
+    if (event.persisted) updateAll();
+  });
 </script>
