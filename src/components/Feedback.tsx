@@ -22,11 +22,13 @@ export function Feedback({ question: q, answer }: { question: QuizQuestion; answ
         </section>
       )}
 
-      {q.explanationHtml && (
+      {q.explanationHtml ? (
         <section aria-label="Explanation">
           <h3 className="text-xs font-semibold tracking-wide text-muted uppercase">Explanation</h3>
           <Html html={q.explanationHtml} className="mt-1.5" />
         </section>
+      ) : (
+        !q.answer && <MissingExplanation question={q} />
       )}
       {q.explanationFigure && <Figure figure={q.explanationFigure} />}
 
@@ -134,6 +136,36 @@ function Verdict({ question: q, answer }: { question: QuizQuestion; answer: Answ
         {detail && <p className="mt-0.5 text-sm">{detail}</p>}
       </div>
     </div>
+  );
+}
+
+/** An imported question without a written explanation yet: say so, and point to where to read up. */
+function MissingExplanation({ question: q }: { question: QuizQuestion }) {
+  return (
+    <section
+      aria-label="Explanation"
+      className="rounded-xl border border-dashed border-line-strong px-4 py-3 text-sm text-muted"
+    >
+      <h3 className="text-xs font-semibold tracking-wide uppercase">Explanation</h3>
+      <p className="mt-1.5">
+        No explanation has been written for this question yet.{" "}
+        {q.references.length > 0 ? (
+          "The reference below covers the topic."
+        ) : q.provenance.url ? (
+          <>
+            See the original question in{" "}
+            <a
+              href={q.provenance.url}
+              rel="noopener"
+              className="text-accent underline underline-offset-2"
+            >
+              {q.provenance.title}
+            </a>
+            .
+          </>
+        ) : null}
+      </p>
+    </section>
   );
 }
 
