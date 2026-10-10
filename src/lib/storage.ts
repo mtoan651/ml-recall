@@ -6,8 +6,26 @@
  * Changing the stored format is a breaking change: bump the key version and migrate.
  */
 
+import {
+  addAttempt,
+  EMPTY_HISTORY,
+  EXAM_STATE_VERSION,
+  type ExamAttempt,
+  type ExamHistory,
+  type ExamState,
+  parseExam,
+  parseHistory,
+  remainingMs,
+  type StoredQuestionInfo,
+  serializeExam,
+} from "./exam";
+
 export const RESULTS_KEY = "ml-recall:results:v1";
 export const SETTINGS_KEY = "ml-recall:settings:v1";
+/** Test in progress for one topic or tag: `ml-recall:exam:v1:topic:cnn`. */
+export const EXAM_KEY_PREFIX = "ml-recall:exam:v1:";
+/** Scope (`topic:cnn`, `tag:softmax`) → past tests. */
+export const EXAM_HISTORY_KEY = "ml-recall:exam-history:v1";
 
 /** Last result of one question. */
 export interface QuestionResult {
@@ -31,6 +49,7 @@ export const DEFAULT_SETTINGS: QuizSettings = { shuffleQuestions: true, reviewed
 export interface KeyValueStore {
   getItem(key: string): string | null;
   setItem(key: string, value: string): void;
+  removeItem(key: string): void;
 }
 
 /** `window.localStorage`, or null when unavailable (SSR, blocked storage). */
@@ -85,7 +104,17 @@ export function saveResult(
   store: KeyValueStore | null = browserStore(),
   now: number = Date.now(),
 ): Results {
-  const results = { ...loadResults(store), [id]: { correct, at: now } };
+  return saveResults([[id, correct]], store, now);
+}
+
+/** Records several results at once (one read and one write), e.g. a submitted test. */
+export function saveResults(
+  entries: Iterable<readonly [id: string, correct: boolean]>,
+  store: KeyValueStore | null = browserStore(),
+  now: number = Date.now(),
+): Results {
+  const results = loadResults(store);
+  for (const [id, correct] of entries) results[id] = { correct, at: now };
   writeJson(store, RESULTS_KEY, results);
   return results;
 }
@@ -124,4 +153,80 @@ export function saveSettings(
   store: KeyValueStore | null = browserStore(),
 ): void {
   writeJson(store, SETTINGS_KEY, settings);
+}
+
+// --------------------------------------------------------------------------- timed tests
+
+export const examKey = (scope: string): string => `${EXAM_KEY_PREFIX}${scope}`;
+
+/** The test in progress for `scope`, or null if there is none or it cannot be resumed. */
+export function loadExam(
+  scope: string,
+  questions: ReadonlyMap<string, StoredQuestionInfo>,
+  store: KeyValueStore | null = browserStore(),
+): ExamState | null {
+  return parseExam(readJson(store, examKey(scope)), scope, questions);
+}
+
+export function saveExam(state: ExamState, store: KeyValueStore | null = browserStore()): void {
+  if (!store) return;
+  try {
+    store.setItem(examKey(state.scope), serializeExam(state));
+  } catch {
+    // Quota exceeded or storage blocked: the test still runs, it just cannot be resumed.
+  }
+}
+
+export function clearExam(scope: string, store: KeyValueStore | null = browserStore()): void {
+  if (!store) return;
+  try {
+    store.removeItem(examKey(scope));
+  } catch {
+    // Storage blocked: nothing to clear.
+  }
+}
+
+/**
+ * Time left on the stored test of `scope`, without validating its questions (for links such
+ * as "Resume test" on the topic page). Null when there is no running test.
+ */
+export function examTimeLeft(
+  scope: string,
+  store: KeyValueStore | null = browserStore(),
+  now: number = Date.now(),
+): number | null {
+  const data = readJson(store, examKey(scope));
+  if (typeof data !== "object" || data === null) return null;
+  const { v, startedAt, durationMs } = data as Record<string, unknown>;
+  if (v !== EXAM_STATE_VERSION) return null;
+  if (typeof startedAt !== "number" || typeof durationMs !== "number") return null;
+  const left = remainingMs(startedAt, durationMs, now);
+  return Number.isFinite(left) && left > 0 ? left : null;
+}
+
+function loadAllHistory(store: KeyValueStore | null): Record<string, unknown> {
+  const data = readJson(store, EXAM_HISTORY_KEY);
+  return typeof data === "object" && data !== null && !Array.isArray(data)
+    ? (data as Record<string, unknown>)
+    : {};
+}
+
+export function loadExamHistory(
+  scope: string,
+  store: KeyValueStore | null = browserStore(),
+): ExamHistory {
+  const raw = loadAllHistory(store)[scope];
+  return raw === undefined ? EMPTY_HISTORY : parseHistory(raw);
+}
+
+/** Adds a finished test to the history of `scope` and returns the updated history. */
+export function saveExamAttempt(
+  scope: string,
+  attempt: ExamAttempt,
+  store: KeyValueStore | null = browserStore(),
+): ExamHistory {
+  const all = loadAllHistory(store);
+  const history = addAttempt(parseHistory(all[scope]), attempt);
+  writeJson(store, EXAM_HISTORY_KEY, { ...all, [scope]: history });
+  return history;
 }
