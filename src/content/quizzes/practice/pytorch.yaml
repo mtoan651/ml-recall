@@ -2586,3 +2586,134 @@ questions:
       ref: mit6_7960_f24_hw4#q8a
       url: https://ocw.mit.edu/courses/6-7960-deep-learning-fall-2024/resources/mit6_7960_f24_hw4_pdf/
     status: draft
+  - id: pytorch-065
+    type: single
+    difficulty: easy
+    tags:
+      - cross-entropy
+      - labels
+      - classification
+    question: |
+      A skin-lesion classifier has seven classes (MEL, NV, BCC, AKIEC, BKL, DF, VASC) and is trained
+      with `nn.CrossEntropyLoss` on logits of shape `(N, 7)`. Which target tensor is the standard
+      choice?
+    options:
+      - text: A LongTensor of shape `(N,)` holding class indices from 0 to 6
+        correct: true
+      - text: A LongTensor of shape `(N,)` holding class indices from 1 to 7
+        why: Class indices must lie in $[0, C)$; index 7 is out of range for 7 classes [^2].
+      - text: A Python list with the class names, such as `'MEL'`
+        why: The loss works on tensors of numbers, so the names must first be mapped to indices [^1].
+      - text: A FloatTensor of shape `(N,)` holding $k/6$ for class $k$
+        why: A single number per example is read neither as a class index nor as a probability vector of shape `(N, 7)` [^2].
+    explanation: |
+      The categories have to be represented numerically, for example `{'MEL': 0, 'NV': 1, ...,
+      'VASC': 6}` [^1]. `nn.CrossEntropyLoss` expects the raw logits of shape $(N, C)$ and, as target,
+      either class indices in $[0, C)$ of shape $(N,)$ or class probabilities of shape $(N, C)$ [^2].
+      Integer indices from 0 to 6 are the usual choice.
+    references:
+      - source: dl-interviews
+        locator: Ch. 7 (CNN Feature Extraction), Problem PRB-171 part 1, p. 213; Solution SOL-171, Code 7.1, p. 223
+        url: https://arxiv.org/abs/2201.00650v2
+      - title: torch.nn.CrossEntropyLoss (PyTorch documentation)
+        url: https://docs.pytorch.org/docs/stable/generated/torch.nn.CrossEntropyLoss.html
+        locator: Shape (Target)
+    source:
+      id: dl-interviews
+      ref: ch7#prb171
+      url: https://arxiv.org/abs/2201.00650v2
+    status: draft
+  - id: pytorch-066
+    type: multiple
+    difficulty: medium
+    tags:
+      - autograd
+      - custom-function
+      - tanh
+    question: |
+      A custom autograd function implements tanh:
+
+      ```python
+      class TanhFunction(torch.autograd.Function):
+          @staticmethod
+          def forward(ctx, x):
+              ctx.save_for_backward(x)
+              return x.tanh()
+
+          @staticmethod
+          def backward(ctx, grad_output):
+              x, = ctx.saved_tensors
+              return ...
+      ```
+
+      Which expressions are correct return values for `backward`? Select all that apply.
+    options:
+      - text: '`grad_output * (1 - x.tanh() ** 2)`'
+        correct: true
+      - text: '`grad_output / x.cosh() ** 2`'
+        correct: true
+      - text: '`1 - x.tanh() ** 2`'
+        why: '`backward` must return the gradient of the loss, so the local derivative has to be multiplied by `grad_output` (chain rule) [^2].'
+      - text: '`grad_output * (1 - x ** 2)`'
+        why: $1 - y^2$ is the derivative written in terms of the *output* $y = \tanh x$; the saved tensor here is the input $x$ [^3].
+    explanation: |
+      `backward` receives $\partial L / \partial y$ and must return $\partial L / \partial x =
+      \partial L / \partial y \cdot \tanh'(x)$ [^2]. The derivative of tanh is
+      $1 - \tanh^2 x = 1/\cosh^2 x$ [^3], so both the first and the second expression are correct; the
+      book's solution uses the cosh form [^1]. Saving the output $y$ instead of $x$ would allow the
+      cheaper `grad_output * (1 - y ** 2)`.
+    references:
+      - source: dl-interviews
+        locator: Ch. 8 (Deep Learning), Problem PRB-218, p. 256; Solution SOL-218, Fig. 8.69, p. 312
+        url: https://arxiv.org/abs/2201.00650v2
+      - title: Extending torch.autograd (PyTorch documentation)
+        url: https://docs.pytorch.org/docs/stable/notes/extending.html
+        locator: Extending torch.autograd (backward returns one gradient per input)
+      - source: d2l
+        locator: Sec. 5.1.2.3 Tanh Function
+        url: https://d2l.ai/chapter_multilayer-perceptrons/mlp.html#tanh-function
+    source:
+      id: dl-interviews
+      ref: ch8#prb218
+      url: https://arxiv.org/abs/2201.00650v2
+    status: draft
+  - id: pytorch-067
+    type: short_answer
+    difficulty: easy
+    tags:
+      - distance
+      - tensors
+      - code-reading
+    question: |
+      This snippet was meant to compute the Manhattan distance between two vectors:
+
+      ```python
+      x1 = torch.tensor([6., 1., 4., 5.])
+      x2 = torch.tensor([2., 8., 3., -1.])
+      dist = torch.sqrt(torch.pow(x1 - x2, 2).sum())
+      print(dist)
+      ```
+
+      What does it print? Round to 2 decimals.
+    answer:
+      numeric: 10.10
+      tolerance: 0.01
+      hint: a number, 2 decimals
+      model: $\sqrt{4^2 + 7^2 + 1^2 + 6^2} = \sqrt{102} \approx 10.10$
+    explanation: |
+      The code squares the differences, sums them and takes the square root, so it computes the
+      Euclidean ($L_2$) distance $\sqrt{16 + 49 + 1 + 36} = \sqrt{102} \approx 10.10$ [^1]. The Manhattan
+      ($L_1$) distance adds absolute differences, `(x1 - x2).abs().sum()`, which gives
+      $4 + 7 + 1 + 6 = 18$ [^2].
+    references:
+      - source: dl-interviews
+        locator: Ch. 8 (Deep Learning), Problems PRB-264 and PRB-265, pp. 288–289; Solutions SOL-264 and SOL-265, pp. 333–334
+        url: https://arxiv.org/abs/2201.00650v2
+      - title: 'Wikipedia: Taxicab geometry'
+        url: https://en.wikipedia.org/wiki/Taxicab_geometry
+        locator: Formal definition
+    source:
+      id: dl-interviews
+      ref: ch8#prb265
+      url: https://arxiv.org/abs/2201.00650v2
+    status: draft

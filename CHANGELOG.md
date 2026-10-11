@@ -39,6 +39,12 @@ versioning: [SemVer](https://semver.org) as defined in [docs/conventions.md](doc
 
 ### Added
 
+- 114 questions from *Deep Learning Interviews* (Kashani & Ivry), arXiv v2 only, under the CC BY
+  4.0 licence arXiv lists for it (the book's copyright page conflicts; the owner chose the arXiv
+  licence for this non-commercial study project). Every key re-derived by script: ~22 printed
+  solutions were wrong and are corrected (e.g. an odds ratio, a cross-entropy, a VGG output
+  size). Trees/ensembles +15, transfer learning +13, optimization +10, logistic regression +10,
+  CNNs +9, neural networks +9, probabilistic models +8, information theory +7, and others.
 - 879 more questions (1641 → 2520), all drafts with cited explanations; numbers re-computed by
   script, search/game/logic/graph keys by simulators and brute force:
   - **Non-commercial course material** (new licence policy, CC BY-NC-SA, 374): MIT

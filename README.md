@@ -8,10 +8,10 @@ mock exams and spaced repetition. Free static site on GitHub Pages.
 
 ## What's inside
 
-- **2520 questions** across 10 domains — 993 imported from open-licensed quiz sets, 964 adapted
-  from open-licensed exercises and courses (d2l, Gutmann, UBC, Neuromatch, Kaggle Learn, forall x,
-  …), 374 adapted from non-commercial course material (MIT OpenCourseWare, NPTEL), 51
-  paraphrased from CE6146 course exercises, 138 original; 56 reviewed.
+- **2634 questions** across 10 domains — 993 imported from open-licensed quiz sets, 1078 adapted
+  from open-licensed exercises, courses and books (d2l, Gutmann, Deep Learning Interviews, UBC,
+  Neuromatch, Kaggle Learn, forall x, …), 374 adapted from non-commercial course material (MIT
+  OpenCourseWare, NPTEL), 51 paraphrased from CE6146 course exercises, 138 original; 56 reviewed.
 - Four question types: `single`, `multiple` (select all), `true_false`, `short_answer`
   (auto-graded fill-in: a number, a word or phrase, or a gap-fill with several blanks).
 - **Timed tests** for every topic and tag: up to 20 random questions, one minute each, scored and
@@ -22,16 +22,16 @@ mock exams and spaced repetition. Free static site on GitHub Pages.
 | Domain | Topics | Questions | Reviewed |
 | --- | ---: | ---: | ---: |
 | Artificial Intelligence | 6 | 281 | 1 |
-| Mathematics for ML | 5 | 329 | 9 |
-| Machine Learning | 14 | 809 | 14 |
-| Deep Learning | 8 | 377 | 32 |
-| Computer Vision | 3 | 49 | 0 |
+| Mathematics for ML | 5 | 351 | 9 |
+| Machine Learning | 14 | 851 | 14 |
+| Deep Learning | 8 | 419 | 32 |
+| Computer Vision | 3 | 51 | 0 |
 | Natural Language Processing | 5 | 162 | 0 |
-| Generative Models | 3 | 89 | 0 |
+| Generative Models | 3 | 92 | 0 |
 | Large Language Models | 4 | 132 | 0 |
 | Reinforcement Learning | 3 | 93 | 0 |
-| Practical Tools | 3 | 199 | 0 |
-| **Total** | | **2520** | **56** |
+| Practical Tools | 3 | 202 | 0 |
+| **Total** | | **2634** | **56** |
 
 Imported so far: Hugging Face LLM, Deep RL and AI Agents courses; Microsoft AI, ML and Data
 Science for Beginners; Google's ML Crash Course and ML courses; MMLU-Redux; 100 NumPy exercises;

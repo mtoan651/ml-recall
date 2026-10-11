@@ -2439,3 +2439,193 @@ questions:
       ref: mit6_7960_f24_hw2#q11
       url: https://ocw.mit.edu/courses/6-7960-deep-learning-fall-2024/resources/mit6_7960_f24_hw2_pdf/
     status: draft
+  - id: training-074
+    type: short_answer
+    difficulty: medium
+    tags:
+      - dropout
+      - inverted-dropout
+    question: |
+      `nn.Dropout(p=0.1)` is followed directly by `nn.Dropout(p=0.2)`. Both use inverted dropout, as in
+      PyTorch: an element is zeroed with probability $p$ and otherwise scaled by $1 / (1 - p)$. The pair
+      behaves exactly like a single `nn.Dropout(p)`. What is $p$? Give 2 decimals.
+    answer:
+      numeric: 0.28
+      tolerance: 0.005
+      hint: a probability, 2 decimals
+      model: $1 - (1 - 0.1)(1 - 0.2) = 1 - 0.72 = 0.28$
+    explanation: |
+      The two masks are independent, so an element survives both layers with probability
+      $0.9 \cdot 0.8 = 0.72$ and is zeroed with probability 0.28 [^1]. A survivor is scaled by
+      $\frac{1}{0.9} \cdot \frac{1}{0.8} = \frac{1}{0.72}$, which is exactly the scaling of a single
+      inverted dropout with $p = 0.28$ [^2][^3]. In general two dropout layers with rates $p$ and $q$
+      equal one with rate $1 - (1 - p)(1 - q)$ [^1].
+    references:
+      - source: dl-interviews
+        locator: Ch. 8 (Deep Learning), Problem PRB-235, pp. 267–268; Solution SOL-235, Eq. (8.75), p. 321
+        url: https://arxiv.org/abs/2201.00650v2
+      - source: d2l
+        locator: Sec. 5.6 Dropout (introduction, definition of $h'$)
+        url: https://d2l.ai/chapter_multilayer-perceptrons/dropout.html
+      - title: torch.nn.Dropout (PyTorch documentation)
+        url: https://docs.pytorch.org/docs/stable/generated/torch.nn.Dropout.html
+        locator: Class description (outputs scaled by 1/(1-p) during training)
+    source:
+      id: dl-interviews
+      ref: ch8#prb235
+      url: https://arxiv.org/abs/2201.00650v2
+    status: draft
+  - id: training-075
+    type: multiple
+    difficulty: hard
+    tags:
+      - dropout
+      - activation-functions
+    question: |
+      With inverted dropout, a unit $h$ becomes 0 with probability $p$ and $h / (1 - p)$ otherwise. For
+      which activation functions $\varphi$ does applying dropout before $\varphi$ always give the same
+      result as applying it after $\varphi$ (with the same random mask)? Select all that apply.
+    options:
+      - text: ReLU, $\max(0, x)$
+        correct: true
+      - text: Leaky ReLU, $\max(0.01x, x)$
+        correct: true
+      - text: Sigmoid, $1 / (1 + e^{-x})$
+        why: A dropped unit gives $\sigma(0) = 0.5$ when dropout comes first, but 0 when it comes after the sigmoid [^3].
+      - text: Hyperbolic tangent, $\tanh x$
+        why: $\tanh 0 = 0$ handles dropped units, but $\tanh\!\big(h / (1 - p)\big) \ne \tanh(h) / (1 - p)$ for kept ones [^3].
+    explanation: |
+      The two orders agree for every mask exactly when $\varphi(0) = 0$ (dropped units) and
+      $\varphi(c h) = c\,\varphi(h)$ for $c = 1 / (1 - p) > 0$ (kept units) [^2]. Piecewise-linear
+      functions through the origin, such as ReLU and leaky ReLU, are positively homogeneous and satisfy
+      both, so the book's claim that the order does not matter holds for them [^1]. Saturating functions
+      such as sigmoid and tanh are not homogeneous, and for them the order changes the output [^3].
+    references:
+      - source: dl-interviews
+        locator: Ch. 8 (Deep Learning), Problem PRB-244, p. 276; Solution SOL-244, p. 326
+        url: https://arxiv.org/abs/2201.00650v2
+      - source: d2l
+        locator: Sec. 5.6 Dropout (introduction, definition of $h'$)
+        url: https://d2l.ai/chapter_multilayer-perceptrons/dropout.html
+      - source: d2l
+        locator: Sec. 5.1.2 Activation Functions
+        url: https://d2l.ai/chapter_multilayer-perceptrons/mlp.html#activation-functions
+    source:
+      id: dl-interviews
+      ref: ch8#prb244
+      url: https://arxiv.org/abs/2201.00650v2
+    status: draft
+  - id: training-076
+    type: single
+    difficulty: medium
+    tags:
+      - dropout
+      - inference
+    question: |
+      In the original form of dropout, units are dropped with probability $p = 0.2$ during training and
+      the kept units are *not* rescaled. At test time all units are kept. What must be done then?
+    options:
+      - text: Scale each unit's outgoing weights by 0.8, its retention probability
+        correct: true
+      - text: Multiply each unit's outgoing weights by 0.2, the dropout probability
+        why: On average a fraction $1 - p = 0.8$ of the units was active during training, not $p$ [^2].
+      - text: Multiply each unit's outgoing weights by 1.25, which is $1/(1 - p)$
+        why: $1 / (1 - p) = 1.25$ is the training-time scaling of *inverted* dropout; at test time it would inflate the outputs [^3].
+      - text: Nothing, since the expected input to the next layer already matches
+        why: Without rescaling, the next layer sees all units at test time but only 80% of them on average during training [^2].
+    explanation: |
+      Each unit was present with probability $1 - p = 0.8$ during training, so the next layer learned to
+      expect 80% of its inputs on average. Scaling the outgoing weights by the retention probability at
+      test time keeps the expected input the same and approximates averaging the predictions of all
+      thinned networks [^2]. Modern libraries use inverted dropout instead: they scale by $1 / (1 - p)$
+      during training and leave the network untouched at test time [^3]. Both views connect dropout to
+      model averaging, as in bagging [^1].
+    references:
+      - source: dl-interviews
+        locator: Ch. 8 (Deep Learning), Problem PRB-234 part 2, p. 267; Solution SOL-234 part 2, p. 320
+        url: https://arxiv.org/abs/2201.00650v2
+      - title: Srivastava et al. (2014), Dropout, a Simple Way to Prevent Neural Networks from Overfitting (JMLR)
+        locator: Sec. 1 Introduction and Fig. 2
+        url: https://jmlr.org/papers/v15/srivastava14a.html
+      - source: d2l
+        locator: Sec. 5.6 Dropout (introduction) and 5.6.1 Dropout in Practice
+        url: https://d2l.ai/chapter_multilayer-perceptrons/dropout.html#dropout-in-practice
+    source:
+      id: dl-interviews
+      ref: ch8#prb234
+      url: https://arxiv.org/abs/2201.00650v2
+    status: draft
+  - id: training-077
+    type: short_answer
+    difficulty: easy
+    tags:
+      - memory
+      - batch-size
+      - out-of-memory
+    question: |
+      A pipeline trains on $1024 \times 1024$ RGB images with batch size 1024, stored as 32-bit floats.
+      How much memory does one input batch alone take, in GiB ($2^{30}$ bytes)?
+    answer:
+      numeric: 12
+      tolerance: 0.01
+      hint: a number of GiB
+      model: $1024 \cdot 3 \cdot 1024 \cdot 1024 \cdot 4 \text{ bytes} = 12 \cdot 2^{30}$ bytes $= 12$ GiB
+    explanation: |
+      The batch holds $2^{10} \cdot 3 \cdot 2^{20} = 3 \cdot 2^{30}$ numbers of 4 bytes each, i.e.
+      12 GiB, before the network has computed anything [^1][^2]. Every layer then stores activations of a
+      similar size for backpropagation, so such a pipeline fails with an out-of-memory error on typical
+      GPUs [^1]. Smaller batches with gradient accumulation, lower resolution or mixed precision fix it.
+    references:
+      - source: dl-interviews
+        locator: Ch. 8 (Deep Learning), Problem PRB-251, pp. 280–281; Solution SOL-251, pp. 327–328
+        url: https://arxiv.org/abs/2201.00650v2
+      - title: 'Wikipedia: Single-precision floating-point format'
+        url: https://en.wikipedia.org/wiki/Single-precision_floating-point_format
+    source:
+      id: dl-interviews
+      ref: ch8#prb251
+      url: https://arxiv.org/abs/2201.00650v2
+    status: draft
+  - id: training-078
+    type: single
+    difficulty: hard
+    tags:
+      - initialization
+      - symmetry
+      - tanh
+    shuffle: false
+    question: |
+      A network computes $\hat y = \mathbf{w}_2^\top \tanh(\mathbf{W}_1\mathbf{x} + \mathbf{b}_1) + b_2$
+      and is trained by gradient descent on the squared error. All weights and biases start at 0. Which
+      parameters ever change during training?
+    options:
+      - text: Only $b_2$, so the network learns a constant output
+        correct: true
+      - text: All of them, but the hidden units stay identical to each other
+        why: That happens for a nonzero constant initialization; here $\tanh 0 = 0$ also blocks the gradients of $\mathbf{w}_2$, $\mathbf{W}_1$ and $\mathbf{b}_1$ [^2].
+      - text: $\mathbf{w}_2$ and $b_2$, but not $\mathbf{W}_1$ and $\mathbf{b}_1$
+        why: The gradient for $\mathbf{w}_2$ is the output error times the hidden activations, which are $\tanh 0 = 0$ [^3].
+      - text: None, so the loss never changes
+        why: The gradient for $b_2$ is the output error itself, which is nonzero as long as the targets are not all 0 [^3].
+    explanation: |
+      With zero weights the hidden activations are $\mathbf{h} = \tanh(\mathbf{0}) = \mathbf{0}$, so the
+      gradient $\partial L / \partial \mathbf{w}_2 = \delta\,\mathbf{h}$ vanishes, and the error passed
+      back to the hidden layer, $\delta\,\mathbf{w}_2$, is zero as well, so $\mathbf{W}_1$ and
+      $\mathbf{b}_1$ get no gradient [^1][^3]. Only $\partial L / \partial b_2 = \delta$ is nonzero, and
+      since $\mathbf{h}$ stays 0 forever, nothing else ever starts to move. Random initialization breaks
+      this symmetry [^2].
+    references:
+      - source: dl-interviews
+        locator: Ch. 8 (Deep Learning), Problem PRB-222, p. 258; Solution SOL-222, p. 314
+        url: https://arxiv.org/abs/2201.00650v2
+      - source: d2l
+        locator: Sec. 5.4.1.3 Breaking the Symmetry
+        url: https://d2l.ai/chapter_multilayer-perceptrons/numerical-stability-and-init.html#breaking-the-symmetry
+      - source: d2l
+        locator: Sec. 5.3.3 Backpropagation
+        url: https://d2l.ai/chapter_multilayer-perceptrons/backprop.html#backpropagation
+    source:
+      id: dl-interviews
+      ref: ch8#prb222
+      url: https://arxiv.org/abs/2201.00650v2
+    status: draft

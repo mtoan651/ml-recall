@@ -204,3 +204,13 @@ non-commercial purposes (see `LICENSE-CONTENT.md`):
   and NPTEL (IITs and IISc), <https://nptel.ac.in>.
 - **UBC MDS DSCI 571 Supervised Learning I** — `ubc-dsci571` — its licence file names CC BY 4.0
   but links to CC BY-NC-SA 4.0; the stricter licence is applied.
+
+## Deep Learning Interviews — `dl-interviews`
+
+Problems and solutions adapted from *Deep Learning Interviews: Hundreds of fully solved job
+interview questions* by Shlomo Kashani and Amir Ivry, arXiv:2201.00650**v2**
+(<https://arxiv.org/abs/2201.00650v2>), used under the
+[CC BY 4.0](https://creativecommons.org/licenses/by/4.0/) licence listed for that version on
+arXiv. Changes: problems rewritten as self-contained choice or numeric questions, numbers changed
+in some, answers re-derived and errors in the printed solutions corrected, explanations and open
+references added. The book's own copyright page states different terms; see `docs/sources.md`.

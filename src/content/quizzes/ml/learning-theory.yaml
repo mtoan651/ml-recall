@@ -1487,3 +1487,93 @@ questions:
       ref: final_f02soln#q4.2
       url: https://ocw.mit.edu/courses/6-867-machine-learning-fall-2006/resources/final_f02soln/
     status: draft
+  - id: learning-theory-040
+    type: single
+    difficulty: medium
+    tags:
+      - cross-validation
+      - data-leakage
+      - model-instances
+    question: |
+      What is wrong with this 5-fold cross-validation of a PyTorch network? (`train` runs some epochs of
+      SGD on the given data, starting from the model's current weights.)
+
+      ```python
+      model = make_model()
+      scores = []
+      for train_idx, val_idx in KFold(n_splits=5, shuffle=True).split(X):
+          train(model, X[train_idx], y[train_idx])
+          scores.append(evaluate(model, X[val_idx], y[val_idx]))
+      print(sum(scores) / len(scores))
+      ```
+    options:
+      - text: One model keeps training across folds and has seen later validation folds
+        correct: true
+      - text: The scores should not be averaged; report the score of the best fold instead
+        why: The cross-validation estimate is the mean over the $K$ folds; the best fold is an optimistic outlier [^1][^2].
+      - text: Shuffling before splitting leaks validation examples into the training folds
+        why: Shuffling only randomizes which examples go to which fold; each fold is still disjoint from its training part [^3].
+      - text: Five folds are too few for a valid cross-validation estimate of the error
+        why: Five or ten folds are standard choices; the number of folds trades off bias against cost [^2].
+    explanation: |
+      $K$-fold cross-validation fits $K$ different model instances, each trained from scratch on $K - 1$
+      folds and evaluated on the remaining one [^1]. Here the model is created once, so from the second
+      fold on it starts from weights that were trained on the current validation fold, and the averaged
+      score is too optimistic. Creating a fresh model inside the loop fixes it, which is what
+      scikit-learn does by cloning the estimator for each split [^3].
+    references:
+      - source: dl-interviews
+        locator: Ch. 8 (Deep Learning), Problems PRB-181 and PRB-182, p. 233; Solutions SOL-181 and SOL-182, p. 290
+        url: https://arxiv.org/abs/2201.00650v2
+      - source: d2l
+        locator: Sec. 3.6.3.1 Cross-Validation
+        url: https://d2l.ai/chapter_linear-regression/generalization.html#cross-validation
+      - title: scikit-learn User Guide
+        url: https://scikit-learn.org/stable/modules/cross_validation.html
+        locator: 3.1 Cross-validation, evaluating estimator performance
+    source:
+      id: dl-interviews
+      ref: ch8#prb181
+      url: https://arxiv.org/abs/2201.00650v2
+    status: draft
+  - id: learning-theory-041
+    type: single
+    difficulty: easy
+    tags:
+      - cross-validation
+      - loocv
+      - k-fold
+    question: |
+      The figure shows two cross-validation schemes on a data set of 10 examples. Each row is one training
+      run, and the dark cells are the examples held out for validation in that run. What are the schemes,
+      and how many models does each one fit?
+    figure:
+      src: ./learning-theory/learning-theory-041.svg
+      alt: Two grids of 10 columns, numbered 1 to 10. Scheme 1 has 10 rows, and row i has only cell i dark. Scheme 2 has 5 rows, and row k has the two cells 2k−1 and 2k dark. Dark means validation, light means training.
+    options:
+      - text: Scheme 1 is leave-one-out (10 models), scheme 2 is 5-fold (5 models)
+        correct: true
+      - text: Scheme 1 is 10-fold and scheme 2 is 5-fold, each refitting one model
+        why: Every fold gets a new model trained from scratch on the other folds; reusing one model would leak the validation data [^1].
+      - text: Scheme 1 is leave-one-out (1 model), scheme 2 is 2-fold (5 models)
+        why: Leave-one-out fits one model per held-out example, and scheme 2 splits the data into 5 folds of 2, not 2 folds of 5 [^2].
+      - text: Scheme 1 is a bootstrap (10 models), scheme 2 is stratified (5 models)
+        why: A bootstrap samples training sets with replacement; here each example is held out exactly once, as in $K$-fold [^2].
+    explanation: |
+      In $K$-fold cross-validation the data are split into $K$ folds, and $K$ models are trained, each on
+      $K - 1$ folds and validated on the remaining one [^2]. Scheme 2 has $K = 5$ folds of two examples.
+      Scheme 1 holds out one example at a time: that is leave-one-out cross-validation, the special case
+      $K = N$, which fits $N = 10$ models [^1]. The cross-validation estimate is the average of the $K$
+      validation scores [^1].
+    references:
+      - source: dl-interviews
+        locator: Ch. 8 (Deep Learning), Problems PRB-177, PRB-181 and PRB-184, pp. 231–234; Solutions SOL-177, SOL-181 and SOL-184, pp. 289–291
+        url: https://arxiv.org/abs/2201.00650v2
+      - source: d2l
+        locator: Sec. 3.6.3.1 Cross-Validation
+        url: https://d2l.ai/chapter_linear-regression/generalization.html#cross-validation
+    source:
+      id: dl-interviews
+      ref: ch8#prb177
+      url: https://arxiv.org/abs/2201.00650v2
+    status: draft

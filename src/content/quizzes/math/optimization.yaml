@@ -2891,3 +2891,356 @@ questions:
       ref: assignment-3#q3.1c
       url: https://ocw.mit.edu/courses/18-657-mathematics-of-machine-learning-fall-2015/resources/assignment-3-solution/
     status: draft
+  - id: optimization-088
+    type: true_false
+    difficulty: easy
+    tags:
+      - sgd
+      - minibatch
+      - randomness
+    question: |
+      True or false: the word "stochastic" in stochastic gradient descent refers only to the use of
+      minibatches; SGD needs no random numbers.
+    options:
+      - text: 'True'
+        why: SGD draws its examples or minibatches at random, which is what makes each gradient a random estimate [^2].
+      - text: 'False'
+        correct: true
+    explanation: |
+      False. Each SGD step samples an example index (or a minibatch) uniformly at random, so the update
+      uses a random but unbiased estimate of the full gradient [^2]. In practice the data are reshuffled
+      with a random number generator before every pass, so that each epoch visits the examples in a
+      different random order [^3]. Using a subset per step is what makes SGD cheap; the random choice of
+      that subset is what makes it stochastic [^1].
+    references:
+      - source: dl-interviews
+        locator: Ch. 8 (Deep Learning), Problem PRB-259, pp. 286–287; Solution SOL-259, p. 331
+        url: https://arxiv.org/abs/2201.00650v2
+      - source: d2l
+        locator: Sec. 12.4.1 Stochastic Gradient Updates
+        url: https://d2l.ai/chapter_optimization/sgd.html#stochastic-gradient-updates
+      - source: d2l
+        locator: Sec. 12.4.4 Stochastic Gradients and Finite Samples
+        url: https://d2l.ai/chapter_optimization/sgd.html#stochastic-gradients-and-finite-samples
+    source:
+      id: dl-interviews
+      ref: ch8#prb259
+      url: https://arxiv.org/abs/2201.00650v2
+    status: draft
+  - id: optimization-089
+    type: short_answer
+    difficulty: medium
+    tags:
+      - automatic-differentiation
+      - forward-mode
+      - tangent
+    question: |
+      Forward-mode automatic differentiation evaluates $f(x_1, x_2) = \ln x_1 + x_1 x_2$ at
+      $(x_1, x_2) = (e^2, \pi)$ through the trace $v_1 = \ln x_1$, $v_2 = x_1 x_2$, $f = v_1 + v_2$,
+      carrying a tangent $\dot v$ along with every value. With the seeds $\dot x_1 = 1$ and
+      $\dot x_2 = 0$, what tangent $\dot f$ comes out? Round to 3 decimals.
+    answer:
+      numeric: 3.277
+      tolerance: 0.002
+      hint: a number, 3 decimals
+      model: $\dot v_1 = \dot x_1 / x_1 = e^{-2}$, $\dot v_2 = \dot x_1 x_2 + x_1 \dot x_2 = \pi$, $\dot f = e^{-2} + \pi \approx 3.277$
+    explanation: |
+      Each step of the trace applies the derivative rule of its operation to the incoming tangents:
+      $\dot v_1 = \dot x_1 / x_1 = e^{-2} \approx 0.135$ and $\dot v_2 = \dot x_1 x_2 + x_1 \dot x_2 = \pi$,
+      so $\dot f = \dot v_1 + \dot v_2 \approx 3.277$ [^1][^2]. The seed $(\dot x_1, \dot x_2) = (1, 0)$
+      selects the partial derivative $\partial f / \partial x_1 = 1/x_1 + x_2$; seeding $(0, 1)$ in a second
+      pass would give $\partial f / \partial x_2 = x_1 = e^2$ [^2].
+    references:
+      - source: dl-interviews
+        locator: Ch. 5 (Calculus, Algorithmic Differentiation), Problem PRB-131, pp. 142–143; Solution SOL-131, Table 5.3, pp. 168–172
+        url: https://arxiv.org/abs/2201.00650v2
+      - title: Baydin et al. (2018), Automatic Differentiation in Machine Learning, a Survey (JMLR)
+        locator: Sec. 3.1 Forward Mode and Table 2
+        url: https://arxiv.org/abs/1502.05767
+    source:
+      id: dl-interviews
+      ref: ch5#prb131
+      url: https://arxiv.org/abs/2201.00650v2
+    status: draft
+  - id: optimization-090
+    type: short_answer
+    difficulty: medium
+    tags:
+      - automatic-differentiation
+      - dual-numbers
+    question: |
+      Dual numbers $a + b\varepsilon$ with $\varepsilon^2 = 0$ carry a value and a derivative together.
+      Evaluate $g(x) = 5x^2 + 4x + 1$ at the dual number $5 + \varepsilon$ and write the result as
+      $a + b\varepsilon$: $a$ = {{1}} and $b$ = {{2}}.
+    answer:
+      blanks:
+        - numeric: 146
+          tolerance: 0
+          hint: a whole number
+        - numeric: 54
+          tolerance: 0
+          hint: a whole number
+      model: $g(5 + \varepsilon) = 5(25 + 10\varepsilon) + 4(5 + \varepsilon) + 1 = 146 + 54\varepsilon$
+    explanation: |
+      $(5 + \varepsilon)^2 = 25 + 10\varepsilon + \varepsilon^2 = 25 + 10\varepsilon$, so
+      $g(5 + \varepsilon) = 125 + 50\varepsilon + 20 + 4\varepsilon + 1 = 146 + 54\varepsilon$ [^1]. In
+      general $g(x + \dot x\varepsilon) = g(x) + g'(x)\dot x\,\varepsilon$: the real part is $g(5) = 146$ and
+      the $\varepsilon$ part is $g'(5) = 10 \cdot 5 + 4 = 54$ [^2]. This is how forward-mode AD obtains
+      exact derivatives with ordinary arithmetic, without symbolic manipulation or finite differences.
+    references:
+      - source: dl-interviews
+        locator: Ch. 5 (Calculus, Algorithmic Differentiation), Problem PRB-127, p. 140; Solution SOL-127, Eqs. (5.65)–(5.72), pp. 165–166
+        url: https://arxiv.org/abs/2201.00650v2
+      - title: Baydin et al. (2018), Automatic Differentiation in Machine Learning, a Survey (JMLR)
+        locator: Sec. 3.1.1 Dual Numbers, Eq. (5)
+        url: https://arxiv.org/abs/1502.05767
+    source:
+      id: dl-interviews
+      ref: ch5#prb127
+      url: https://arxiv.org/abs/2201.00650v2
+    status: draft
+  - id: optimization-091
+    type: multiple
+    difficulty: medium
+    tags:
+      - automatic-differentiation
+      - forward-mode
+      - reverse-mode
+      - jacobian
+    question: |
+      A program computes $f: \mathbb{R}^N \to \mathbb{R}^M$, and you want its full $M \times N$ Jacobian by
+      automatic differentiation. Which statements are correct? Select all that apply.
+    options:
+      - text: Forward and reverse mode give the same derivatives, up to floating-point rounding
+        correct: true
+      - text: Forward mode needs one pass per input, so its cost grows with $N$
+        correct: true
+      - text: Reverse mode needs one pass per output, so its cost grows with $M$
+        correct: true
+      - text: Reverse mode always needs less time and less memory than forward mode
+        why: Reverse mode must store the intermediate values of the forward pass, and it is faster only when $M$ is smaller than $N$ [^2].
+    explanation: |
+      Both modes apply the chain rule to the same elementary operations and differ only in the order of
+      the products, so they compute the same exact derivatives [^1][^2]. Forward mode builds the Jacobian
+      one column per pass ($N$ passes), reverse mode one row per pass ($M$ passes), at a few times the cost
+      of evaluating $f$ each; that is why reverse mode (backpropagation) suits a scalar loss of millions
+      of parameters [^2]. Its price is memory: storage grows with the number of operations in the
+      evaluated function, unless checkpointing is used [^2].
+    references:
+      - source: dl-interviews
+        locator: Ch. 5 (Calculus, Algorithmic Differentiation), Problem PRB-129, p. 141; Solution SOL-129, p. 167
+        url: https://arxiv.org/abs/2201.00650v2
+      - title: Baydin et al. (2018), Automatic Differentiation in Machine Learning, a Survey (JMLR)
+        locator: Sec. 3.1 Forward Mode and Sec. 3.2 Reverse Mode
+        url: https://arxiv.org/abs/1502.05767
+    source:
+      id: dl-interviews
+      ref: ch5#prb129
+      url: https://arxiv.org/abs/2201.00650v2
+    status: draft
+  - id: optimization-092
+    type: short_answer
+    difficulty: easy
+    tags:
+      - derivatives
+      - chain-rule
+    question: An expression graph computes $g(x) = 1 / \sqrt{x}$. What is $g'(9)$? Round to 4 decimals.
+    answer:
+      numeric: -0.0185
+      tolerance: 0.0001
+      hint: a number, 4 decimals
+      model: $g'(x) = -\tfrac12 x^{-3/2}$, so $g'(9) = -\tfrac{1}{54} \approx -0.0185$
+    explanation: |
+      Writing $g(x) = x^{-1/2}$, the power rule gives $g'(x) = -\tfrac12 x^{-3/2}$ [^2]. At $x = 9$,
+      $x^{3/2} = 27$, so $g'(9) = -1/54 \approx -0.0185$. The book reaches the same value from the limit
+      definition $\lim_{h \to 0} (g(9 + h) - g(9))/h$ [^1].
+    references:
+      - source: dl-interviews
+        locator: Ch. 5 (Calculus, Algorithmic Differentiation), Problem PRB-102, pp. 126–127; Solution SOL-102, Eq. (5.30), p. 148
+        url: https://arxiv.org/abs/2201.00650v2
+      - source: d2l
+        locator: Sec. 2.4.1 Derivatives and Differentiation
+        url: https://d2l.ai/chapter_preliminaries/calculus.html#derivatives-and-differentiation
+    source:
+      id: dl-interviews
+      ref: ch5#prb102
+      url: https://arxiv.org/abs/2201.00650v2
+    status: draft
+  - id: optimization-093
+    type: short_answer
+    difficulty: medium
+    tags:
+      - taylor-series
+      - maclaurin
+    question: How many nonzero terms does the Taylor polynomial of degree 101 of $\cos x$, centred at $x = 0$, have?
+    answer:
+      numeric: 51
+      tolerance: 0
+      hint: a whole number
+      model: The even powers $x^0, x^2, \ldots, x^{100}$, that is 51 terms
+    explanation: |
+      $\cos x = \sum_{n \ge 0} (-1)^n x^{2n} / (2n)!$ contains only even powers, because the odd
+      derivatives of $\cos$ at 0 are $\pm\sin 0 = 0$ [^1][^2]. Up to degree 101 the even powers are
+      $0, 2, \ldots, 100$, i.e. 51 nonzero terms, and the degree-101 polynomial equals the degree-100 one.
+    references:
+      - source: dl-interviews
+        locator: Ch. 5 (Calculus, Algorithmic Differentiation), Problems PRB-105 and PRB-108, pp. 128–129; Solution SOL-105, Eq. (5.36), p. 150
+        url: https://arxiv.org/abs/2201.00650v2
+      - source: d2l
+        locator: Sec. 22.3.2.5 Taylor Series
+        url: https://d2l.ai/chapter_appendix-mathematics-for-deep-learning/single-variable-calculus.html#taylor-series
+    source:
+      id: dl-interviews
+      ref: ch5#prb108
+      url: https://arxiv.org/abs/2201.00650v2
+    status: draft
+  - id: optimization-094
+    type: short_answer
+    difficulty: easy
+    tags:
+      - taylor-series
+      - polynomials
+    question: |
+      Rewrite $f(x) = 5x^2 - 11x + 1$ as its Taylor expansion centred at $x = -3$,
+      $f(x) = a + b(x + 3) + c(x + 3)^2$. Fill in $a$ = {{1}}, $b$ = {{2}} and $c$ = {{3}}.
+    answer:
+      blanks:
+        - numeric: 79
+          tolerance: 0
+          hint: a whole number
+        - numeric: -41
+          tolerance: 0
+          hint: a whole number
+        - numeric: 5
+          tolerance: 0
+          hint: a whole number
+      model: $f(-3) = 79$, $f'(-3) = 10 \cdot (-3) - 11 = -41$, $f''/2 = 5$
+    explanation: |
+      The Taylor coefficients are $f^{(n)}(-3)/n!$ [^2]: $f(-3) = 45 + 33 + 1 = 79$,
+      $f'(x) = 10x - 11$ gives $-41$, and $f''(x) = 10$ gives $c = 10/2 = 5$; all higher derivatives
+      vanish, so the expansion is exact [^1]. Expanding $79 - 41(x + 3) + 5(x + 3)^2$ gives back
+      $5x^2 - 11x + 1$.
+    references:
+      - source: dl-interviews
+        locator: Ch. 5 (Calculus, Algorithmic Differentiation), Problem PRB-107, p. 129; Solution SOL-107, Eq. (5.38), p. 151
+        url: https://arxiv.org/abs/2201.00650v2
+      - source: d2l
+        locator: Sec. 22.3.2.5 Taylor Series
+        url: https://d2l.ai/chapter_appendix-mathematics-for-deep-learning/single-variable-calculus.html#taylor-series
+    source:
+      id: dl-interviews
+      ref: ch5#prb107
+      url: https://arxiv.org/abs/2201.00650v2
+    status: draft
+  - id: optimization-095
+    type: single
+    difficulty: medium
+    tags:
+      - derivatives
+      - monotonicity
+      - critical-points
+    question: On which intervals is $f(x) = \dfrac{x^2 + 1}{(x + 2)^2}$ increasing?
+    options:
+      - text: On $(-\infty, -2)$ and on $(\tfrac12, \infty)$
+        correct: true
+      - text: Only on $(\tfrac12, \infty)$
+        why: For $x < -2$ both $2x - 1$ and $(x + 2)^3$ are negative, so $f'(x) > 0$ there too.
+      - text: On $(-2, \tfrac12)$
+        why: There $2x - 1 < 0$ and $(x + 2)^3 > 0$, so $f'(x) < 0$ and $f$ decreases.
+      - text: On $(-\infty, \tfrac12)$, with a minimum at $x = -2$
+        why: $f$ is not defined at $x = -2$ and tends to $+\infty$ on both sides of it.
+    explanation: |
+      By the quotient rule, $f'(x) = \dfrac{2x(x + 2)^2 - 2(x^2 + 1)(x + 2)}{(x + 2)^4}
+      = \dfrac{2(2x - 1)}{(x + 2)^3}$ for $x \ne -2$ [^1][^2]. The sign is positive where $2x - 1$ and
+      $x + 2$ have the same sign: for $x > \tfrac12$ and for $x < -2$. The only critical point,
+      $x = \tfrac12$, is the global minimum $f(\tfrac12) = 0.2$, since $f \to 1$ as $x \to -\infty$ and
+      $f \to \infty$ near $x = -2$.
+    references:
+      - source: dl-interviews
+        locator: Ch. 5 (Calculus, Algorithmic Differentiation), Problem PRB-115, pp. 131–132; Solution SOL-115, Eq. (5.44), p. 154
+        url: https://arxiv.org/abs/2201.00650v2
+      - source: d2l
+        locator: Sec. 22.3.2.2 Derivative Rules
+        url: https://d2l.ai/chapter_appendix-mathematics-for-deep-learning/single-variable-calculus.html#derivative-rules
+    source:
+      id: dl-interviews
+      ref: ch5#prb115
+      url: https://arxiv.org/abs/2201.00650v2
+    status: draft
+  - id: optimization-096
+    type: short_answer
+    difficulty: hard
+    tags:
+      - numerical-differentiation
+      - floating-point
+      - rounding-error
+    question: |
+      In float64, the forward difference $\big((1 + h)^2 - 1^2\big)/h$ estimates the derivative of $x^2$ at
+      $x = 1$, which is 2. What does it return for $h = 10^{-15}$? Round to 2 decimals.
+    answer:
+      numeric: 2.22
+      tolerance: 0.01
+      hint: a number, 2 decimals
+      model: $1 + 10^{-15}$ is stored as $1 + 5 \cdot 2^{-52} \approx 1 + 1.11 \times 10^{-15}$, so the result is $\approx 2.22 \times 10^{-15} / 10^{-15} = 2.22$
+    explanation: |
+      Near 1, float64 numbers are spaced $2^{-52} \approx 2.22 \times 10^{-16}$ apart, so $1 + 10^{-15}$
+      is rounded to $1 + 5 \cdot 2^{-52} \approx 1 + 1.11 \times 10^{-15}$ [^2]. Squaring and subtracting 1
+      leaves about $2.22 \times 10^{-15}$, and dividing by the *intended* step $10^{-15}$ gives 2.22, an
+      11% error. The truncation error of the forward difference shrinks with $h$, but the rounding error
+      grows like $\epsilon / h$, which is why the formula is numerically unstable for small $h$ [^1] and
+      why steps near $\sqrt{\epsilon} \approx 10^{-8}$ work best [^2].
+    references:
+      - source: dl-interviews
+        locator: Ch. 5 (Calculus, Algorithmic Differentiation), Problem PRB-100, pp. 125–126; Solution SOL-100, Eq. (5.28), p. 146
+        url: https://arxiv.org/abs/2201.00650v2
+      - title: 'Wikipedia: Numerical differentiation'
+        url: https://en.wikipedia.org/wiki/Numerical_differentiation
+        locator: Step size
+    source:
+      id: dl-interviews
+      ref: ch5#prb100
+      url: https://arxiv.org/abs/2201.00650v2
+    status: draft
+  - id: optimization-097
+    type: short_answer
+    difficulty: easy
+    tags:
+      - partial-derivatives
+      - gradient
+      - reverse-mode
+    question: |
+      An expression graph computes $g(A, B, C) = A + B \ln C$. At $(A, B, C) = (1, 3, 2)$ its partial
+      derivatives are $\partial g / \partial A$ = {{1}}, $\partial g / \partial B$ = {{2}} and
+      $\partial g / \partial C$ = {{3}}. Round to 3 decimals where needed.
+    answer:
+      blanks:
+        - numeric: 1
+          tolerance: 0.001
+          hint: a number
+        - numeric: 0.693
+          tolerance: 0.001
+          hint: 3 decimals
+        - numeric: 1.5
+          tolerance: 0.001
+          hint: a number
+      model: $\partial g/\partial A = 1$, $\partial g/\partial B = \ln C = \ln 2 \approx 0.693$, $\partial g/\partial C = B/C = 1.5$
+    explanation: |
+      Treating the other variables as constants: $A$ enters linearly, so its partial derivative is 1;
+      $\partial(B \ln C)/\partial B = \ln C = \ln 2 \approx 0.693$; and $\partial(B \ln C)/\partial C = B/C = 1.5$
+      [^1][^2]. Reverse-mode AD obtains all three from one backward pass through the graph, starting with
+      $\bar g = 1$ and multiplying by the local derivative at each node [^3].
+    references:
+      - source: dl-interviews
+        locator: Ch. 5 (Calculus, Algorithmic Differentiation), Problem PRB-128, Fig. 5.11, p. 141; Solution SOL-128, Eq. (5.75), p. 167
+        url: https://arxiv.org/abs/2201.00650v2
+      - source: d2l
+        locator: Sec. 2.4.3 Partial Derivatives and Gradients
+        url: https://d2l.ai/chapter_preliminaries/calculus.html#partial-derivatives-and-gradients
+      - title: Baydin et al. (2018), Automatic Differentiation in Machine Learning, a Survey (JMLR)
+        locator: Sec. 3.2 Reverse Mode
+        url: https://arxiv.org/abs/1502.05767
+    source:
+      id: dl-interviews
+      ref: ch5#prb128
+      url: https://arxiv.org/abs/2201.00650v2
+    status: draft

@@ -1179,3 +1179,541 @@ questions:
       id: original
       ref: transfer-learning-030
     status: draft
+  - id: transfer-learning-031
+    type: multiple
+    difficulty: medium
+    tags:
+      - feature-extraction
+      - vgg
+      - feature-vector
+    question: |
+      A pretrained VGG-19 receives $224 \times 224$ RGB images. Its convolutional part ends with a
+      max-pooling layer that outputs a $512 \times 7 \times 7$ map, which is flattened and fed to fc6
+      (4096 units), fc7 (4096 units) and a 1000-way output layer. The convolution conv4_3 sits in the
+      fourth block, where the feature maps are $28 \times 28$ and have 512 channels. You want fixed
+      feature vectors for a new classifier. Which statements are correct? Select all that apply.
+    options:
+      - text: The fc7 activations give a 4096-dimensional feature vector
+        correct: true
+      - text: The 1000 class scores of the output layer can serve as a 1000-dimensional feature vector
+        correct: true
+      - text: Flattening the last pooled map gives a 25,088-dimensional feature vector
+        correct: true
+      - text: The conv4_3 output is a 512-dimensional feature vector as it stands
+        why: conv4_3 outputs $512 \times 28 \times 28 = 401{,}408$ values. You get 512 numbers only after pooling each channel, for example with global average pooling [^2].
+      - text: The fc6 output is a 25,088-dimensional feature vector
+        why: 25,088 is the size of fc6's input, the flattened $512 \times 7 \times 7$ map; fc6 itself has 4096 outputs [^2].
+    explanation: |
+      Fixed feature extraction runs the pretrained network and reads the activations of a chosen layer
+      instead of its ImageNet prediction [^1]. Any layer works, and the vector length is the number of
+      values that layer produces: 4096 for fc6 or fc7, 1000 for the output layer, and
+      $512 \cdot 7 \cdot 7 = 25{,}088$ for the last pooled map [^2]. A convolutional layer inside the
+      network produces a whole feature map, so conv4_3 gives $512 \times 28 \times 28$ values unless
+      you pool them; which layer works best for the new task has to be found by experiment [^1].
+    references:
+      - source: dl-interviews
+        locator: Ch. 7 (CNN Feature Extraction), Problem PRB-164, p. 208; Solution SOL-164, p. 218
+        url: https://arxiv.org/abs/2201.00650v2
+      - title: Simonyan & Zisserman (2014), Very Deep Convolutional Networks for Large-Scale Image Recognition
+        locator: Sec. 2.1 Architecture and Table 1 (configuration E)
+        url: https://arxiv.org/abs/1409.1556
+    source:
+      id: dl-interviews
+      ref: ch7#prb164
+      url: https://arxiv.org/abs/2201.00650v2
+    status: draft
+  - id: transfer-learning-032
+    type: single
+    difficulty: easy
+    tags:
+      - feature-extraction
+      - linear-classifier
+      - small-data
+    question: |
+      You have 4,000 labelled histopathology images in three classes and an ImageNet-pretrained
+      VGG-19. Which procedure uses the network as a *fixed feature extractor*?
+    options:
+      - text: Store each image's fc7 activations once and train a linear classifier on them
+        correct: true
+      - text: Replace the output layer by a 3-way layer and train all layers with a small learning rate
+        why: That is fine-tuning, which changes the pretrained weights [^2].
+      - text: Label each image with the ImageNet class that gets the highest score from the network
+        why: The 1000 ImageNet classes have nothing to do with the three tissue classes; a new classifier must be trained on the target labels [^1].
+      - text: Train the convolutional layers on the new images and keep the fully connected layers frozen
+        why: Updating the convolutional weights is (partial) fine-tuning, not fixed feature extraction [^2].
+    explanation: |
+      In fixed feature extraction the CNN is never trained again: every image goes through the
+      pretrained network once, the activations of a chosen layer are stored as its feature vector, and
+      a simple classifier such as an SVM or softmax regression is trained on these vectors instead of
+      on the pixels [^1]. This is cheap and works with few labels, and off-the-shelf CNN features with a
+      linear SVM are a strong baseline [^3]. Fine-tuning instead keeps training the copied layers on
+      the target data [^2].
+    references:
+      - source: dl-interviews
+        locator: Ch. 7 (CNN Feature Extraction), Problem PRB-164, p. 208; Solution SOL-164 parts 1 and 3, pp. 218–219
+        url: https://arxiv.org/abs/2201.00650v2
+      - source: d2l
+        locator: Sec. 14.2.1 Steps
+        url: https://d2l.ai/chapter_computer-vision/fine-tuning.html#steps
+      - title: Sharif Razavian et al. (2014), CNN Features off-the-shelf, an Astounding Baseline for Recognition
+        locator: Abstract and Sec. 2 (linear SVM on OverFeat features)
+        url: https://arxiv.org/abs/1403.6382
+    source:
+      id: dl-interviews
+      ref: ch7#prb164-2
+      url: https://arxiv.org/abs/2201.00650v2
+    status: draft
+  - id: transfer-learning-033
+    type: single
+    difficulty: medium
+    tags:
+      - feature-extraction
+      - ensembles
+      - imagenet
+    question: |
+      For fixed feature extraction you can take VGG-19's fc7 activations (4096 values) or its 1000
+      ImageNet class scores. A colleague prefers the class scores because they make it easy to
+      combine several pretrained CNNs, such as ResNet-152, DenseNet-161 and VGG-19. Why do they?
+    options:
+      - text: All ImageNet classifiers score the same 1000 classes, so the vectors line up
+        correct: true
+      - text: The class scores carry more information about the image than the fc7 activations
+        why: The scores are computed from fc7, so they cannot contain information that fc7 lacks [^2].
+      - text: The output layer is the one layer that fine-tuning never changes in any network
+        why: Fine-tuning usually replaces or retrains the output layer first; it is irrelevant to fixed extraction anyway [^3].
+      - text: Class scores are never negative, which linear classifiers require
+        why: Logits can be negative, and linear classifiers accept features of any sign.
+    explanation: |
+      Penultimate-layer features differ in size and meaning from one architecture to the next (512
+      values for ResNet-34, 2048 for ResNet-152, 4096 for VGG), but every ImageNet classifier ends in the
+      same 1000 classes. Taking the output layer therefore gives vectors whose $k$-th entry means the
+      same thing for every network, which makes averaging or stacking several CNNs straightforward [^1].
+      The price is that the 1000 scores are a processed summary of the penultimate layer and cannot add
+      information to it [^2].
+    references:
+      - source: dl-interviews
+        locator: Ch. 7 (CNN Feature Extraction), Problem PRB-165, p. 210; Solution SOL-165, p. 219
+        url: https://arxiv.org/abs/2201.00650v2
+      - title: 'Wikipedia: Data processing inequality'
+        url: https://en.wikipedia.org/wiki/Data_processing_inequality
+      - source: d2l
+        locator: Sec. 14.2.1 Steps
+        url: https://d2l.ai/chapter_computer-vision/fine-tuning.html#steps
+    source:
+      id: dl-interviews
+      ref: ch7#prb165
+      url: https://arxiv.org/abs/2201.00650v2
+    status: draft
+  - id: transfer-learning-034
+    type: short_answer
+    difficulty: medium
+    tags:
+      - feature-extraction
+      - vgg
+      - pytorch
+      - tensor-shapes
+    question: |
+      torchvision's `vgg19().classifier` is
+      `Sequential(Linear(25088, 4096), ReLU, Dropout, Linear(4096, 4096), ReLU, Dropout, Linear(4096, 1000))`.
+      This module turns a pretrained VGG-19 into a feature extractor:
+
+      ```python
+      import torch, torchvision
+
+      class VGG19FE(torch.nn.Module):
+          def __init__(self, original):
+              super().__init__()
+              self.features = original.features            # (N, 512, 7, 7) for 224 x 224 inputs
+              self.classifier = torch.nn.Sequential(
+                  *list(original.classifier.children())[:-1])
+
+          def forward(self, x):
+              f = self.features(x)
+              f = f.view(f.size(0), -1)
+              return self.classifier(f)
+
+      fe = VGG19FE(torchvision.models.vgg19(weights="IMAGENET1K_V1")).eval()
+      out = fe(torch.rand(8, 3, 224, 224))
+      ```
+
+      What is the shape of `out`?
+    answer:
+      accept:
+        - (8, 4096)
+      pattern: \(?\s*8\s*[,x×]\s*4096\s*\)?
+      hint: Two dimensions, e.g. (2, 10)
+      model: $(8, 4096)$, one fc7 feature vector per image
+    explanation: |
+      `children()` lists the seven modules of the classifier, and `[:-1]` drops only the last one, the
+      $4096 \to 1000$ output layer [^1]. The flattened $512 \cdot 7 \cdot 7 = 25{,}088$ values per image
+      therefore pass through fc6 and fc7 and leave as 4096 features, so a batch of 8 images gives
+      $8 \times 4096$ [^2]. In evaluation mode the remaining dropout layers pass their input through
+      unchanged, so the features are deterministic [^3].
+    references:
+      - source: dl-interviews
+        locator: Ch. 7 (CNN Feature Extraction), Problem PRB-166, p. 210; Solution SOL-166, pp. 219–220
+        url: https://arxiv.org/abs/2201.00650v2
+      - source: d2l
+        locator: Sec. 8.2.2 VGG Network
+        url: https://d2l.ai/chapter_convolutional-modern/vgg.html#vgg-network
+      - title: torch.nn.Dropout (PyTorch documentation)
+        url: https://docs.pytorch.org/docs/stable/generated/torch.nn.Dropout.html
+        locator: Class description
+    source:
+      id: dl-interviews
+      ref: ch7#prb166
+      url: https://arxiv.org/abs/2201.00650v2
+    status: draft
+  - id: transfer-learning-035
+    type: short_answer
+    difficulty: medium
+    tags:
+      - feature-extraction
+      - resnet
+      - tensor-shapes
+    question: |
+      The top-level children of torchvision's ResNet-34 are `conv1, bn1, relu, maxpool, layer1,
+      layer2, layer3, layer4, avgpool, fc`. `layer4` outputs 512 channels at 1/32 of the input
+      resolution, and `avgpool` is a global average pooling. With
+      `nn.Sequential(*list(resnet.children())[:-1])` followed by `x.view(x.size(0), -1)` you get 512
+      features per $224 \times 224$ image. How many features per image do you get if you slice with
+      `[:-2]` instead?
+    answer:
+      numeric: 25088
+      tolerance: 0
+      hint: a whole number
+      model: $512 \times 7 \times 7 = 25\,088$
+    explanation: |
+      `[:-1]` removes only the final fully connected layer, so global average pooling reduces each of
+      the 512 channels to one number [^1]. `[:-2]` also removes the pooling, and the flattened output is
+      the whole `layer4` map: $224 / 32 = 7$, so $512 \cdot 7 \cdot 7 = 25{,}088$ values [^2]. Such a
+      map keeps spatial information, but its length depends on the input size, while the pooled 512-D
+      vector does not.
+    references:
+      - source: dl-interviews
+        locator: Ch. 7 (CNN Feature Extraction), Problem PRB-167, p. 211; Solution SOL-167, p. 221
+        url: https://arxiv.org/abs/2201.00650v2
+      - source: d2l
+        locator: Sec. 8.6.3 ResNet Model
+        url: https://d2l.ai/chapter_convolutional-modern/resnet.html#resnet-model
+    source:
+      id: dl-interviews
+      ref: ch7#prb167
+      url: https://arxiv.org/abs/2201.00650v2
+    status: draft
+  - id: transfer-learning-036
+    type: multiple
+    difficulty: medium
+    tags:
+      - feature-extraction
+      - preprocessing
+      - pytorch
+      - inference
+    question: |
+      This function returns a feature vector from an ImageNet-pretrained CNN that lives on the GPU:
+
+      ```python
+      test_trans = transforms.Compose([
+          transforms.Resize(256), transforms.CenterCrop(224), transforms.ToTensor(),
+          transforms.Normalize([0.485, 0.456, 0.406], [0.229, 0.224, 0.225])])
+
+      def extract(image, model):                       # image: a PIL RGB image
+          x = test_trans(image).unsqueeze(0).cuda()    # shape (1, 3, 224, 224)
+          f = model(x)
+          return f.cpu().detach().numpy()[0]
+      ```
+
+      Which statements are correct? Select all that apply.
+    options:
+      - text: '`Normalize` applies the per-channel mean and standard deviation of ImageNet, as in pretraining'
+        correct: true
+      - text: '`.detach()` is needed because `.numpy()` refuses a tensor that requires gradients'
+        correct: true
+      - text: '`.cpu()` copies the result from GPU memory so that NumPy can read it'
+        correct: true
+      - text: '`model.eval()` is not needed, because no parameters are updated here'
+        why: Batch normalization and dropout behave differently in training mode, so the features change unless the model is in evaluation mode [^3].
+      - text: '`Normalize` is a random augmentation, so repeated calls give slightly different vectors'
+        why: Normalization is a fixed affine map per channel; `Resize` and `CenterCrop` are deterministic too [^2].
+    explanation: |
+      A pretrained network expects its inputs preprocessed as during training: torchvision's ImageNet
+      VGG-19 weights expect images resized to 256, center-cropped to 224, scaled to $[0, 1]$ and
+      normalized with the mean $(0.485, 0.456, 0.406)$ and standard deviation
+      $(0.229, 0.224, 0.225)$ [^2]. The output of a model
+      whose parameters require gradients is part of the autograd graph, and `Tensor.numpy()` only
+      converts tensors that are on the CPU and do not require grad, hence `.cpu()` and `.detach()` [^4].
+      Gradients are not needed for inference, which is why the book sets `requires_grad=False` [^1];
+      the model must still be switched to evaluation mode [^3].
+    references:
+      - source: dl-interviews
+        locator: Ch. 7 (CNN Feature Extraction), Problem PRB-168, p. 212; Solution SOL-168, pp. 221–222
+        url: https://arxiv.org/abs/2201.00650v2
+      - title: torchvision.models.vgg19 (torchvision documentation)
+        url: https://docs.pytorch.org/vision/stable/models/generated/torchvision.models.vgg19.html
+        locator: VGG19_Weights.IMAGENET1K_V1, inference transforms
+      - title: torch.nn.Module (PyTorch documentation)
+        url: https://docs.pytorch.org/docs/stable/generated/torch.nn.Module.html#torch.nn.Module.eval
+        locator: Module.eval()
+      - title: torch.Tensor.numpy (PyTorch documentation)
+        url: https://docs.pytorch.org/docs/stable/generated/torch.Tensor.numpy.html
+    source:
+      id: dl-interviews
+      ref: ch7#prb168
+      url: https://arxiv.org/abs/2201.00650v2
+    status: draft
+  - id: transfer-learning-037
+    type: single
+    difficulty: easy
+    tags:
+      - fine-tuning
+      - feature-extraction
+    question: What distinguishes fine-tuning an ImageNet-pretrained CNN from using it as a fixed feature extractor?
+    options:
+      - text: Fine-tuning updates some or all of the pretrained weights by training on the target data
+        correct: true
+      - text: Fine-tuning trains the same architecture from a random initialization on the target data
+        why: That is training from scratch; fine-tuning starts from the pretrained weights [^2].
+      - text: Fine-tuning freezes all pretrained weights and trains only a new classifier on top
+        why: That describes fixed feature extraction, the first of the book's three options [^1].
+      - text: Fine-tuning works only when the target classes are a subset of the ImageNet classes
+        why: The output layer is replaced by one with the target classes, which need not appear in ImageNet [^2].
+    explanation: |
+      The book lists three ways to reuse an ImageNet CNN: retrain only a new classifier on top
+      (feature extraction), fine-tune all layers, or fine-tune part of them [^1]. Fine-tuning copies the
+      pretrained parameters except the output layer, adds a new output layer for the target classes,
+      and continues training on the target data, typically with a smaller learning rate for the copied
+      layers [^2].
+    references:
+      - source: dl-interviews
+        locator: Ch. 7 (CNN Feature Extraction), Problems PRB-169 and PRB-170, p. 213; Solutions SOL-169 and SOL-170, p. 222
+        url: https://arxiv.org/abs/2201.00650v2
+      - source: d2l
+        locator: Sec. 14.2.1 Steps
+        url: https://d2l.ai/chapter_computer-vision/fine-tuning.html#steps
+    source:
+      id: dl-interviews
+      ref: ch7#prb169
+      url: https://arxiv.org/abs/2201.00650v2
+    status: draft
+  - id: transfer-learning-038
+    type: short_answer
+    difficulty: medium
+    tags:
+      - fine-tuning
+      - 1x1-convolution
+      - parameter-count
+    question: |
+      DPN-107, an ImageNet CNN, ends with the classifier `Conv2d(2688, 1000, kernel_size=1)` applied to
+      its 2688-channel feature map. To classify seven kinds of skin lesions you replace it by
+      `Conv2d(2688, 7, kernel_size=1)`. How many trainable parameters (weights and biases) does the new
+      classifier have?
+    answer:
+      numeric: 18823
+      tolerance: 0
+      hint: a whole number
+      model: $2688 \cdot 7 + 7 = 18\,823$
+    explanation: |
+      A $1 \times 1$ convolution acts like a fully connected layer applied at every pixel: each of the
+      $c_o$ output channels has one weight per input channel plus a bias [^2]. Here that is
+      $2688 \cdot 7$ weights and 7 biases, 18,823 parameters. Swapping the 1000-class head for a
+      7-class head is the usual first step of fine-tuning [^1][^3].
+    references:
+      - source: dl-interviews
+        locator: Ch. 7 (CNN Feature Extraction), Problem PRB-171 part 3, p. 213; Solution SOL-171, Code 7.3, p. 224
+        url: https://arxiv.org/abs/2201.00650v2
+      - source: d2l
+        locator: Sec. 7.4.3 1×1 Convolutional Layer
+        url: https://d2l.ai/chapter_convolutional-neural-networks/channels.html#1times-1-convolutional-layer
+      - source: d2l
+        locator: Sec. 14.2.1 Steps
+        url: https://d2l.ai/chapter_computer-vision/fine-tuning.html#steps
+    source:
+      id: dl-interviews
+      ref: ch7#prb171-2
+      url: https://arxiv.org/abs/2201.00650v2
+    status: draft
+  - id: transfer-learning-039
+    type: short_answer
+    difficulty: easy
+    tags:
+      - neural-style-transfer
+      - gram-matrix
+    question: |
+      In neural style transfer, one VGG-19 layer gives a feature map with 256 channels of size
+      $56 \times 56$. It is reshaped into a matrix $\mathbf{X}$ with one row per channel
+      ($256 \times 3136$), and the style loss uses the Gram matrix $\mathbf{X}\mathbf{X}^\top$. How many
+      entries does the Gram matrix have?
+    answer:
+      numeric: 65536
+      tolerance: 0
+      hint: a whole number
+      model: $256 \times 256 = 65\,536$
+    explanation: |
+      $\mathbf{X}\mathbf{X}^\top$ has one row and one column per channel, so it is $256 \times 256$
+      whatever the spatial size; entry $(i, j)$ is the inner product of the flattened maps of channels
+      $i$ and $j$ [^2]. The book defines the Gram matrix of feature vectors $u_1, \ldots, u_k$ the same
+      way, as the matrix of all pairwise dot products $u_i \cdot u_j$ [^1]. Because the spatial positions
+      are summed out, style images and synthesized images of different sizes can still be compared.
+    references:
+      - source: dl-interviews
+        locator: Ch. 7 (CNN Feature Extraction), Problem PRB-176, p. 216; Solution SOL-176, Eq. (7.2), p. 225
+        url: https://arxiv.org/abs/2201.00650v2
+      - source: d2l
+        locator: Sec. 14.12.5.2 Style Loss
+        url: https://d2l.ai/chapter_computer-vision/neural-style.html#style-loss
+    source:
+      id: dl-interviews
+      ref: ch7#prb176
+      url: https://arxiv.org/abs/2201.00650v2
+    status: draft
+  - id: transfer-learning-040
+    type: single
+    difficulty: medium
+    tags:
+      - neural-style-transfer
+      - gram-matrix
+      - style-loss
+    question: |
+      In neural style transfer, a layer's feature map is reshaped into $\mathbf{X}$ with one row per
+      channel and one column per spatial position, and the style loss matches Gram matrices
+      $G_{ij} = \sum_k x_{ik} x_{jk}$. Why does matching Gram matrices transfer style rather than content?
+    options:
+      - text: Each entry sums over positions, so $G$ shows which channels co-occur, not where
+        correct: true
+      - text: The Gram matrix keeps each channel's spatial layout, so it reproduces the brush strokes in place
+        why: The sum over $k$ runs over all positions, so the layout is lost [^2].
+      - text: The Gram matrix is computed from the RGB pixels, so it captures only the colour palette
+        why: It is computed from the feature maps of several VGG layers, which respond to textures and patterns, not only colours [^2][^3].
+      - text: The Gram matrix is normalized to unit trace, which removes the image's brightness
+        why: d2l only divides it by the number of elements; removing brightness is not what makes it a style statistic [^2].
+    explanation: |
+      Content is about *where* things are, so the content loss compares feature maps position by
+      position [^1]. The Gram matrix instead correlates pairs of channels over the whole image: if two
+      texture detectors tend to fire together anywhere, $G_{ij}$ is large [^2]. Matching these
+      correlations at several layers reproduces textures, colours and stroke patterns of the style image
+      while leaving the arrangement to the content loss [^3].
+    references:
+      - source: dl-interviews
+        locator: Ch. 7 (CNN Feature Extraction), Problems PRB-175 and PRB-176, pp. 215–216; Solutions SOL-175 and SOL-176, p. 225
+        url: https://arxiv.org/abs/2201.00650v2
+      - source: d2l
+        locator: Sec. 14.12.5.2 Style Loss
+        url: https://d2l.ai/chapter_computer-vision/neural-style.html#style-loss
+      - title: Gatys, Ecker & Bethge (2015), A Neural Algorithm of Artistic Style
+        locator: Results (style representation built from feature correlations)
+        url: https://arxiv.org/abs/1508.06576
+    source:
+      id: dl-interviews
+      ref: ch7#prb176-2
+      url: https://arxiv.org/abs/2201.00650v2
+    status: draft
+  - id: transfer-learning-041
+    type: short_answer
+    difficulty: medium
+    tags:
+      - embeddings
+      - cosine-similarity
+      - l2-normalization
+    question: |
+      An image-retrieval system L2-normalizes every 512-dimensional ResNet-34 embedding (divides it by
+      its Euclidean norm) before storing it. Two stored embeddings have cosine similarity 0.8. What is
+      the Euclidean distance between them? Round to 3 decimals.
+    answer:
+      numeric: 0.632
+      tolerance: 0.002
+      hint: a number, 3 decimals
+      model: $\sqrt{2 - 2 \cdot 0.8} = \sqrt{0.4} \approx 0.632$
+    explanation: |
+      For unit vectors, $\lVert\mathbf{u} - \mathbf{v}\rVert^2 = \lVert\mathbf{u}\rVert^2 +
+      \lVert\mathbf{v}\rVert^2 - 2\,\mathbf{u}\cdot\mathbf{v} = 2 - 2\cos\theta$ [^2]. With
+      $\cos\theta = 0.8$ the distance is $\sqrt{0.4} \approx 0.632$. This is why feature vectors are
+      normalized before they are stored [^1]: afterwards a dot product is the cosine similarity, and
+      ranking by Euclidean distance gives the same order as ranking by cosine similarity.
+    references:
+      - source: dl-interviews
+        locator: Ch. 8 (Deep Learning), Problem PRB-199, p. 241; Solution SOL-199, p. 296
+        url: https://arxiv.org/abs/2201.00650v2
+      - title: 'Wikipedia: Cosine similarity'
+        url: https://en.wikipedia.org/wiki/Cosine_similarity
+        locator: Definition, L2-normalized Euclidean distance
+    source:
+      id: dl-interviews
+      ref: ch8#prb199
+      url: https://arxiv.org/abs/2201.00650v2
+    status: draft
+  - id: transfer-learning-042
+    type: single
+    difficulty: easy
+    tags:
+      - embeddings
+      - cosine-similarity
+    question: |
+      Two image embeddings are first L2-normalized, and then compared with this function:
+
+      ```python
+      def similarity(v1, v2):          # v1, v2 have Euclidean norm 1
+          mul = sum(a * b for a, b in zip(v1, v2))
+          return mul if mul >= 0 else 0.0
+      ```
+
+      Which set contains every value that `similarity` can return?
+    options:
+      - text: The interval $[0, 1]$
+        correct: true
+      - text: The interval $[-1, 1]$
+        why: The dot product of unit vectors lies in $[-1, 1]$, but negative values are replaced by 0 [^2].
+      - text: The interval $[0, \infty)$
+        why: For unit vectors the dot product is $\cos\theta \le 1$ by the Cauchy–Schwarz inequality [^2].
+      - text: Only the two values 0 and 1
+        why: The function returns the cosine itself whenever it is non-negative, not a thresholded label.
+    explanation: |
+      After normalization the dot product equals the cosine of the angle between the vectors, which lies
+      in $[-1, 1]$; clipping negative values at 0 leaves $[0, 1]$, with 1 for vectors pointing the same
+      way [^1][^2]. For ResNet embeddings the clipping rarely matters: the pooled features come after a
+      ReLU, so all entries are non-negative and the cosine is already at least 0.
+    references:
+      - source: dl-interviews
+        locator: Ch. 8 (Deep Learning), Problem PRB-200, p. 243; Solution SOL-200, p. 296
+        url: https://arxiv.org/abs/2201.00650v2
+      - title: 'Wikipedia: Cosine similarity'
+        url: https://en.wikipedia.org/wiki/Cosine_similarity
+        locator: Definition
+    source:
+      id: dl-interviews
+      ref: ch8#prb200
+      url: https://arxiv.org/abs/2201.00650v2
+    status: draft
+  - id: transfer-learning-043
+    type: true_false
+    difficulty: easy
+    tags:
+      - feature-extraction
+      - small-data
+    question: |
+      True or false: fixed feature extraction with an ImageNet-pretrained CNN is particularly useful when
+      the target problem has too few labelled examples to train a CNN from scratch that generalizes well.
+    options:
+      - text: 'True'
+        correct: true
+      - text: 'False'
+        why: With few labels, training a whole CNN from scratch overfits, while a linear model on pretrained features has few parameters to fit [^2].
+    explanation: |
+      True. Labelled data are scarce in fields such as medical imaging, and reusing a network trained on
+      ImageNet lets the target task benefit from features learned on over a million images [^1][^3]. A
+      linear classifier on such off-the-shelf features is a strong baseline [^2]; with more target data,
+      fine-tuning some or all layers usually improves on it [^3].
+    references:
+      - source: dl-interviews
+        locator: Ch. 7 (CNN Feature Extraction), Problem PRB-161, p. 207; Solution SOL-161, p. 217
+        url: https://arxiv.org/abs/2201.00650v2
+      - title: Sharif Razavian et al. (2014), CNN Features off-the-shelf, an Astounding Baseline for Recognition
+        locator: Abstract
+        url: https://arxiv.org/abs/1403.6382
+      - source: d2l
+        locator: Sec. 14.2 Fine-Tuning (introduction) and 14.2.1 Steps
+        url: https://d2l.ai/chapter_computer-vision/fine-tuning.html
+    source:
+      id: dl-interviews
+      ref: ch7#prb161
+      url: https://arxiv.org/abs/2201.00650v2
+    status: draft
