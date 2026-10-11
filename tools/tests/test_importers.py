@@ -107,3 +107,56 @@ def test_curation_keep_list_and_flag_override(monkeypatch):
     kept, dropped = common.curate("demo", items)
     assert [i.ref for i in kept] == ["a/1", "group/2", "img/3"]
     assert dropped == {"off-scope": 1, "tool-specific": 1}
+
+
+def test_google_ml_parses_multiple_choice_with_feedback_and_math():
+    from bs4 import BeautifulSoup
+
+    from mlrecall.importers import google_ml
+
+    html = """
+    <devsite-multiple-choice preserve-order>
+      <div>1. Which is the recall for
+        5 TP and 2 FN?</div>
+      <div correct>
+        <div>\\(\\frac{5}{7}\\)</div><div>Recall is TP over all actual positives.</div>
+      </div>
+      <div>
+        <div>0.455</div><div>See <a href="/machine-learning/glossary#recall">recall</a>.</div>
+      </div>
+    </devsite-multiple-choice>
+    """
+    block = BeautifulSoup(html, "html.parser").find("devsite-multiple-choice")
+    google_ml._absolute_links(block, "https://developers.google.com/x")
+    data, flag = google_ml._parse(block)
+    assert flag is None
+    assert data["question"] == "Which is the recall for 5 TP and 2 FN?"
+    assert data["shuffle"] is False
+    assert data["options"][0] == {"text": r"$\frac{5}{7}$", "correct": True, "why": None}
+    assert data["explanation"] == "Recall is TP over all actual positives."
+    link = "https://developers.google.com/machine-learning/glossary#recall"
+    assert link in data["options"][1]["why"]
+
+
+def test_numpy_100_reads_keyed_blocks(monkeypatch, tmp_path):
+    from mlrecall.importers import numpy_100
+
+    ktx = tmp_path / "exercises100.ktx"
+    ktx.write_text(
+        "< q3\nCreate a null vector of size 10 (★☆☆)\n\n< h3\nhint: np.zeros\n\n"
+        "< a3\nZ = np.zeros(10)\nprint(Z)\n\n< q4\nNo answer (★★☆)\n",
+        encoding="utf-8",
+    )
+    monkeypatch.setattr(numpy_100, "fetch", lambda *a: ktx)
+    [item] = numpy_100.load_items("sha")
+    assert item.ref == "q3" and item.topic == "numpy"
+    assert item.data["difficulty"] == "easy"
+    assert item.data["question"] == "Create a null vector of size 10"
+    assert item.data["answer"]["model"] == "```python\nZ = np.zeros(10)\nprint(Z)\n```"
+
+
+def test_curation_fix_can_replace_or_remove_option_feedback():
+    item = _item("x/1")
+    item.data["options"][1]["why"] = "Review the page and try again."
+    common._apply_fix(item, {"why": {1: None}})
+    assert item.data["options"][1]["why"] is None

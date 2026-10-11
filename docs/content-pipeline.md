@@ -37,8 +37,8 @@ items:
       references: [{source: mmlu-redux, locator: "row 8 — wrong_groundtruth"}]
 ```
 
-Fix keys: `question`, `options` (`{index: new text}`), `correct`, `type`, `shuffle`,
-`explanation`, `references`. Unlisted items are kept with the default topic; items flagged upstream
+Fix keys: `question`, `options` (`{index: new text}`), `why` (`{index: new feedback}`, `null`
+removes it), `correct`, `type`, `shuffle`, `explanation`, `references`. Unlisted items are kept with the default topic; items flagged upstream
 (MMLU-Redux error labels, or `image` when the text relies on a picture) are dropped unless they get
 a `fix` or `keep: true`.
 

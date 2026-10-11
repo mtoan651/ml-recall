@@ -132,6 +132,8 @@ def _apply_fix(item: Item, fix: dict[str, Any]) -> None:
             data[key] = fix[key]
     for idx, text in (fix.get("options") or {}).items():
         data["options"][int(idx)]["text"] = text
+    for idx, text in (fix.get("why") or {}).items():  # null removes unhelpful upstream feedback
+        data["options"][int(idx)]["why"] = text
     if "correct" in fix:
         wanted = {int(i) for i in fix["correct"]}
         for i, opt in enumerate(data["options"]):

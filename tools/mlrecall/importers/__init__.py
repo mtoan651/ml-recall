@@ -5,7 +5,7 @@ from __future__ import annotations
 from collections.abc import Callable
 
 from .. import bank
-from . import common, hf_course, hf_units, mmlu_redux, ms_beginners
+from . import common, google_ml, hf_course, hf_units, mmlu_redux, ms_beginners, numpy_100
 
 LOADERS: dict[str, Callable[[str], list[common.Item]]] = {
     hf_course.SOURCE_ID: hf_course.load_items,
@@ -13,7 +13,9 @@ LOADERS: dict[str, Callable[[str], list[common.Item]]] = {
     "ms-ml-for-beginners": ms_beginners.load_ml,
     "ms-ds-for-beginners": ms_beginners.load_ds,
     mmlu_redux.SOURCE_ID: mmlu_redux.load_items,
+    numpy_100.SOURCE_ID: numpy_100.load_items,
     **{source_id: hf_units.loader(source_id) for source_id in hf_units.COURSES},
+    **{source_id: google_ml.loader(source_id) for source_id in google_ml.COURSES},
 }
 
 
