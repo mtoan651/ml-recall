@@ -90,19 +90,29 @@ questions:
     status: draft
   - id: alignment-004
     type: single
+    difficulty: easy
     question: What is the role of the reward in RL training of language models?
     options:
       - text: To score how well the model's responses match the desired behavior
         correct: true
-      - text: To measure how large the model's vocabulary is
-        why: Rewards aren't used to evaluate vocabulary knowledge.
-      - text: To determine how fast the model is trained
-        why: Rewards provide feedback on response quality, not training efficiency.
-    explanation: Correct! Rewards guide the model toward generating more helpful, truthful, and appropriate responses. [^1]
+      - text: To measure how large a vocabulary the model has learned to use
+        why: Rewards aren't used to evaluate vocabulary knowledge. They score the quality of the responses the model generates.
+      - text: To set how fast the model trains, the way a learning rate does
+        why: Training speed is set by things like the optimizer and its learning rate. The reward is feedback on how good a response was.
+    explanation: |
+      In reinforcement learning, the reward is the feedback the environment gives the agent after an
+      action, usually a number: positive when the action was good, negative as a penalty [^1]. For an
+      LLM, rewards are designed to reflect how well a response does the task, for example how helpful,
+      truthful or harmless it is [^1]. The model then updates its policy, reinforcing the responses that
+      earned high rewards and moving away from those that earned low ones [^2]. The reward judges what
+      the model says; it doesn't measure its vocabulary, and it isn't a training-speed setting.
     references:
       - source: hf-llm-course
-        locator: 'Chapter 12: Build Reasoning Models'
-        url: https://huggingface.co/learn/llm-course/chapter12/1
+        url: https://huggingface.co/learn/llm-course/chapter12/2#reward
+        locator: Chapter 12.2 Introduction to Reinforcement Learning and its Role in LLMs, sec. Reward
+      - source: hf-llm-course
+        url: https://huggingface.co/learn/llm-course/chapter12/2#the-rl-process-trial-and-error
+        locator: 'Chapter 12.2 Introduction to Reinforcement Learning and its Role in LLMs, sec. The RL Process: Trial and Error (table, steps 3-4)'
     source:
       id: hf-llm-course
       ref: chapter12/2#q4
@@ -197,6 +207,7 @@ questions:
     status: draft
   - id: alignment-008
     type: single
+    difficulty: easy
     question: How does GRPO's group formation work?
     options:
       - text: It samples 4–16 answers to the same prompt and scores them together
@@ -205,11 +216,24 @@ questions:
         why: GRPO uses a single model to generate multiple solution attempts, not an ensemble of different models.
       - text: It splits the training data into different groups
         why: GRPO's group formation involves generating multiple solutions for the same problem, not splitting training data.
-    explanation: Correct! GRPO generates multiple attempts at solving the same problem, typically 4, 8, or 16 different attempts, which are then evaluated as a group. [^1]
+    explanation: |
+      GRPO starts by forming a group: given a prompt, the model doesn't generate one response but
+      several attempts at the same problem, usually 4, 8 or 16, which are kept together [^1]. Each
+      attempt is scored by a reward function, and the rewards are normalized within the group,
+      $A_i = (r_i - \operatorname{mean}(r)) / \operatorname{std}(r)$, so the model learns which answers
+      were better or worse than their peers [^2]. All the attempts come from the one policy being
+      trained [^3], not from an ensemble of different models, and a group is a set of answers to one
+      prompt, not a split of the training data.
     references:
       - source: hf-llm-course
-        locator: 'Chapter 12: Build Reasoning Models'
-        url: https://huggingface.co/learn/llm-course/chapter12/1
+        url: https://huggingface.co/learn/llm-course/chapter12/3#group-formation-creating-multiple-solutions
+        locator: 'Chapter 12.3 Understanding the DeepSeek R1 Paper, sec. Group Formation: Creating Multiple Solutions'
+      - source: hf-llm-course
+        url: https://huggingface.co/learn/llm-course/chapter12/3#preference-learning-understanding-what-makes-a-good-solution
+        locator: 'Chapter 12.3 Understanding the DeepSeek R1 Paper, sec. Preference Learning: Understanding What Makes a Good Solution'
+      - source: hf-llm-course
+        url: https://huggingface.co/learn/llm-course/chapter12/3#grpo-algorithm-in-pseudocode
+        locator: Chapter 12.3 Understanding the DeepSeek R1 Paper, sec. GRPO Algorithm in Pseudocode (group_size outputs per prompt)
     source:
       id: hf-llm-course
       ref: chapter12/3#q4

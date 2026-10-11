@@ -429,6 +429,7 @@ questions:
     status: draft
   - id: rag-agents-015
     type: single
+    difficulty: easy
     question: |
       How does smolagents handle the debate between code-based actions and JSON-based actions?
 
@@ -442,11 +443,23 @@ questions:
         why: smolagents is specifically designed to grant LLMs the ability to call tools or code externally.
       - text: It requires users to manually convert every code snippet into a JSON object before running the agent
         why: smolagents can automatically manage code snippet creation within the CodeAgent path, no manual JSON conversion necessary.
-    explanation: Yes, smolagents primarily recommends code-based actions but includes a JSON-based alternative for users who prefer it or need it. [^1]
+    explanation: |
+      Unlike frameworks whose agents write actions as JSON, smolagents focuses on tool calls written as
+      code: the output can be executed directly, with no JSON to parse first [^1]. `CodeAgent` is its
+      primary agent type, but it also supports `ToolCallingAgent`, which writes tool calls as JSON [^2];
+      that option suits simple systems that don't need variable handling or complex tool calls [^3]. So
+      the library is code-first rather than JSON-only, nobody converts code into JSON by hand, and
+      calling external tools is exactly what both agent types are for.
     references:
       - source: hf-agents-course
-        locator: Unit 2.1 The smolagents framework
-        url: https://huggingface.co/learn/agents-course/unit2/smolagents/introduction
+        url: https://huggingface.co/learn/agents-course/unit2/smolagents/why_use_smolagents#code-vs-json-actions
+        locator: Unit 2.1 Why use smolagents, sec. Code vs. JSON Actions
+      - source: hf-agents-course
+        url: https://huggingface.co/learn/agents-course/unit2/smolagents/why_use_smolagents#agent-types-in-smolagents
+        locator: Unit 2.1 Why use smolagents, sec. Agent Types in smolagents
+      - source: hf-agents-course
+        url: https://huggingface.co/learn/agents-course/unit2/smolagents/tool_calling_agents
+        locator: Unit 2.1 Writing actions as code snippets or JSON blobs (Tool Calling Agents)
     source:
       id: hf-agents-course
       ref: unit2/smolagents/quiz1#q4
@@ -454,6 +467,7 @@ questions:
     status: draft
   - id: rag-agents-016
     type: single
+    difficulty: easy
     question: |
       How does a CodeAgent handle multi-step tasks using the ReAct (Reason + Act) approach?
 
@@ -462,16 +476,32 @@ questions:
       - text: It passes each step to a different agent in a multi-agent system, then combines results
         why: Although multi-agent systems can distribute tasks, CodeAgent itself can handle multiple steps on its own using ReAct.
       - text: It stores every action in JSON for easy parsing before executing them all at once
-        why: This behavior matches ToolCallingAgent's JSON-based approach, not CodeAgent.
+        why: JSON tool calls are what a ToolCallingAgent writes, and even it executes them step by step. A CodeAgent writes Python code and runs each snippet before deciding on the next step.
       - text: It repeats a cycle of thinking, writing Python code, running it and logging the result until it reaches a final answer
         correct: true
       - text: It relies on a vision module to validate code output before continuing to the next step
         why: Vision capabilities are supported in smolagents, but they're not a default requirement for CodeAgent or the ReAct approach.
-    explanation: Correct. This describes the ReAct pattern that CodeAgent uses, including iterative reasoning and code execution. [^1]
+    explanation: |
+      `CodeAgent.run()` follows the ReAct framework: after the system prompt and the task are logged, a
+      loop sends the agent's memory to the model as chat messages, parses the completion to extract a
+      Python code snippet, executes it, and logs the result in an `ActionStep` [^1]. Each step is one
+      thought plus one tool call and its execution [^2], and the loop continues until the agent's
+      objective is fulfilled [^3], so a single CodeAgent carries out a multi-step task by itself.
+      Writing actions as JSON for the system to parse is what a `ToolCallingAgent` does [^4], and vision
+      is an optional capability, not a step of the loop.
     references:
       - source: hf-agents-course
-        locator: Unit 2.1 The smolagents framework
-        url: https://huggingface.co/learn/agents-course/unit2/smolagents/introduction
+        url: https://huggingface.co/learn/agents-course/unit2/smolagents/code_agents#how-does-a-code-agent-work
+        locator: Unit 2.1 Building Agents That Use Code, sec. How Does a Code Agent Work?
+      - source: hf-agents-course
+        url: https://huggingface.co/learn/agents-course/unit2/smolagents/why_use_smolagents#agent-types-in-smolagents
+        locator: Unit 2.1 Why use smolagents, sec. Agent Types in smolagents
+      - source: hf-agents-course
+        url: https://huggingface.co/learn/agents-course/unit1/agent-steps-and-structure#the-thought-action-observation-cycle
+        locator: Unit 1 Understanding AI Agents through the Thought-Action-Observation Cycle, sec. The Thought-Action-Observation Cycle
+      - source: hf-agents-course
+        url: https://huggingface.co/learn/agents-course/unit2/smolagents/tool_calling_agents#how-do-tool-calling-agents-work
+        locator: Unit 2.1 Writing actions as code snippets or JSON blobs, sec. How Do Tool Calling Agents Work?
     source:
       id: hf-agents-course
       ref: unit2/smolagents/quiz2#q2

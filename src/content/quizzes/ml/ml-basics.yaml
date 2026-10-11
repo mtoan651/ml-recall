@@ -769,19 +769,26 @@ questions:
     status: draft
   - id: ml-basics-028
     type: single
+    difficulty: medium
     question: Suppose you train on the training set and evaluate on the test set over multiple rounds. In each round, you use the test set results to guide how to update hyperparameters and the feature set. Can you see anything wrong with this approach?
     options:
       - text: Doing many rounds of this procedure might cause the model to implicitly fit the peculiarities of the test set.
         correct: true
       - text: This approach is fine. After all, you're training on the training set and evaluating on a separate test set.
-        why: Actually, there's a subtle issue here. Think about what might gradually go wrong.
+        why: A separate test set is not enough. Each round uses the test results to make a decision, so information about the test set leaks into the model, and after many rounds the test score no longer reflects performance on new data.
       - text: This approach is computationally inefficient. Don't change hyperparameters or feature sets after each round of testing.
         why: Frequent testing is expensive but critical. However, frequent testing is far less expensive than additional training. Optimizing hyperparameters and the feature set can dramatically improve model quality, so always budget time and computational resources to work on these.
-    explanation: Yes! The more often you use the same test set, the more likely the model closely fits the test set. Like a teacher "teaching to the test," the model inadvertently fits the test set, which might make it harder for the model to fit real-world data. [^1]
+    explanation: |
+      Every time the test results decide a change to the hyperparameters or features, some information
+      about the test set leaks into the model. Over many rounds the model ends up fitting the test set's
+      peculiarities, like a teacher teaching to the test, and does worse on real-world data than the
+      test score suggests [^1]. The remedy is a third split: tune against a validation set and use the
+      test set only to confirm the final model [^1]. Tuning is worth the compute; the problem is which
+      data the choices are based on, and even validation and test sets "wear out" with repeated use [^1].
     references:
       - source: google-mlcc
-        locator: 'Datasets: Dividing the original dataset'
-        url: https://developers.google.com/machine-learning/crash-course/overfitting/dividing-datasets
+        url: https://developers.google.com/machine-learning/crash-course/overfitting/dividing-datasets#training_validation_and_test_sets
+        locator: 'Datasets: Dividing the original dataset, sec. Training, validation, and test sets'
     source:
       id: google-mlcc
       ref: overfitting/dividing-datasets#q1
@@ -789,6 +796,7 @@ questions:
     status: draft
   - id: ml-basics-029
     type: single
+    difficulty: medium
     question: You shuffled all the examples in the dataset and divided the shuffled examples into training, validation, and test sets. However, the loss value on your test set is so staggeringly low that you suspect a mistake. What might have gone wrong?
     options:
       - text: Many of the examples in the test set are duplicates of examples in the training set.
@@ -797,11 +805,18 @@ questions:
         why: Although loss does vary a little on each run, it shouldn't vary so much that you think you won the machine learning lottery.
       - text: By chance, the test set just happened to contain examples that the model performed well on.
         why: The examples were well shuffled, so this is extremely unlikely.
-    explanation: Yes. This can be a problem in a dataset with a lot of redundant examples. We strongly recommend deleting duplicate examples from the test set before testing. [^1]
+    explanation: |
+      A test loss that is too good to be true usually means the model is being tested on examples it
+      has already seen. If the dataset has many redundant examples, shuffling and splitting puts copies
+      of training examples into the test set; in MLCC's spam example, a model reached 99% precision on
+      both sets because duplicates of the same spam emails had not been removed before the split [^1].
+      The fix is to delete from the validation and test sets every example that duplicates a training
+      example [^1]. Run-to-run randomness changes the loss only a little, and with well-shuffled data a
+      lucky test set is extremely unlikely.
     references:
       - source: google-mlcc
-        locator: 'Datasets: Dividing the original dataset'
-        url: https://developers.google.com/machine-learning/crash-course/overfitting/dividing-datasets
+        url: https://developers.google.com/machine-learning/crash-course/overfitting/dividing-datasets#additional_problems_with_test_sets
+        locator: 'Datasets: Dividing the original dataset, sec. Additional problems with test sets'
     source:
       id: google-mlcc
       ref: overfitting/dividing-datasets#q2
@@ -829,17 +844,28 @@ questions:
     status: draft
   - id: ml-basics-031
     type: single
+    difficulty: easy
     question: Suppose your test set contains enough examples to perform a statistically significant test. Furthermore, testing against the test set yields low loss. However, the model performed poorly in the real world. What should you do?
     options:
       - text: Determine how the original dataset differs from real-life data.
         correct: true
       - text: Retest on the same test set. The test results might have been an anomaly.
         why: Although retesting might yield slightly different results, this tactic probably isn't very helpful.
-    explanation: Yes. Even the best datasets are only a snapshot of real-life data; the underlying [ground truth](https://developers.google.com/machine-learning/glossary#ground-truth) tends to change over time. Although your test set matched your training set well enough to suggest good model quality, your dataset probably doesn't adequately match real-world data. You might have to retrain and retest against a new dataset. [^1]
+    explanation: |
+      A good test set must represent the dataset as a whole and also the real-world data the model will
+      meet [^1]. Low loss on a large, statistically significant test set shows only that the test set
+      resembles the training set. If the model still fails in production, the dataset itself differs
+      from real-world data, for example because the world has changed since the data was collected;
+      good generalization needs a stationary dataset whose partitions are statistically similar to
+      real-world data [^2]. Find out how the data differs, then retrain and retest on data that matches
+      reality; rerunning the same test would only reproduce the same misleading result.
     references:
       - source: google-mlcc
-        locator: 'Datasets: Dividing the original dataset'
-        url: https://developers.google.com/machine-learning/crash-course/overfitting/dividing-datasets
+        url: https://developers.google.com/machine-learning/crash-course/overfitting/dividing-datasets#additional_problems_with_test_sets
+        locator: 'Datasets: Dividing the original dataset, sec. Additional problems with test sets (criteria for a good test set)'
+      - source: google-mlcc
+        url: https://developers.google.com/machine-learning/crash-course/overfitting/overfitting#generalization_conditions
+        locator: Overfitting, sec. Generalization conditions
     source:
       id: google-mlcc
       ref: overfitting/dividing-datasets#q4
@@ -941,6 +967,7 @@ questions:
     status: draft
   - id: ml-basics-036
     type: single
+    difficulty: easy
     question: You split a dataset into a training set (70%), a validation set (15%) and a test set (15%). What should you do to ensure that the examples in the training set have a similar statistical distribution to the examples in the validation set and the test set?
     figure:
       src: ./ml-basics/ml-basics-036.svg
@@ -952,11 +979,18 @@ questions:
         why: If the examples in the dataset are not stationary, then sorting makes the partitions *less* similar.
       - text: Do nothing. Given enough examples, the law of averages naturally ensures that the distributions will be statistically similar.
         why: Unfortunately, this is not the case. The examples in certain sections of the dataset may differ from those in other sections.
-    explanation: Yes. Good shuffling of examples makes partitions much more likely to be statistically similar. [^1]
+    explanation: |
+      Good generalization requires partitions with the same distribution: the training examples should
+      be statistically similar to the validation and test examples [^1]. Shuffling the whole dataset
+      thoroughly before splitting makes this much more likely, since each partition then gets a random
+      sample of every part of the data. Sorting from earliest to latest does the opposite when the data
+      is not stationary (it doesn't stay the same over time [^1]): the training set would get the old
+      examples and the test set the newest ones. Doing nothing is risky too, because datasets are often
+      stored in some order, so different sections can differ however many examples there are.
     references:
       - source: google-mlcc
-        locator: Overfitting
-        url: https://developers.google.com/machine-learning/crash-course/overfitting/overfitting
+        url: https://developers.google.com/machine-learning/crash-course/overfitting/overfitting#generalization_conditions
+        locator: Overfitting, sec. Generalization conditions
     source:
       id: google-mlcc
       ref: overfitting/overfitting#q1
@@ -964,6 +998,7 @@ questions:
     status: draft
   - id: ml-basics-037
     type: single
+    difficulty: easy
     question: A streaming service is developing a model to predict the popularity of potential new television shows for the next three years. The streaming service plans to train the model on a dataset containing hundreds of millions of examples, spanning the previous ten years. Will this model encounter a problem?
     options:
       - text: Probably. Viewers' tastes change in ways that past behavior can't predict.
@@ -972,11 +1007,17 @@ questions:
         why: Unfortunately, viewers' tastes are nonstationary.
       - text: Probably not. Viewers' tastes change in predictably cyclical ways. Ten years of data will enable the model to make good predictions on future trends.
         why: Although certain aspects of entertainment are somewhat cyclical, a model trained from past entertainment history will almost certainly have trouble making predictions about the next few years.
-    explanation: Yes. Viewer tastes are not stationary. They constantly change. [^1]
+    explanation: |
+      A model generalizes well only if the dataset is stationary, that is, if it doesn't change
+      significantly over time [^1]. Viewers' tastes are not stationary: they keep changing in ways that
+      past behavior can't predict, so a model trained on the last ten years will probably misjudge what
+      becomes popular in the next three. A bigger dataset doesn't fix this, since hundreds of millions of
+      examples of past tastes still describe the past, and although some aspects of entertainment are
+      somewhat cyclical, that is not enough to forecast new trends reliably.
     references:
       - source: google-mlcc
-        locator: Overfitting
-        url: https://developers.google.com/machine-learning/crash-course/overfitting/overfitting
+        url: https://developers.google.com/machine-learning/crash-course/overfitting/overfitting#generalization_conditions
+        locator: Overfitting, sec. Generalization conditions
     source:
       id: google-mlcc
       ref: overfitting/overfitting#q2
@@ -984,17 +1025,24 @@ questions:
     status: draft
   - id: ml-basics-038
     type: single
+    difficulty: medium
     question: A model aims to predict the time it takes for people to walk a mile based on weather data (temperature, dew point, and precipitation) collected over one year in a city whose weather varies significantly by season. Can you build and test a model from this dataset, even though the weather readings change dramatically by season?
     options:
       - text: Yes
         correct: true
       - text: No
         why: Assuming this dataset contains enough examples of temperature, dew point, and precipitation, then you can build and test a model from this dataset. You just have to ensure that the data is partitioned equally, so that data from all four seasons is distributed equally into the different partitions.
-    explanation: Yes, it is possible to build and test a model from this dataset. You just have to ensure that the data is partitioned equally, so that data from all four seasons is distributed equally into the different partitions. [^1]
+    explanation: |
+      Seasonal variation is not a problem in itself; what generalization needs is that the training,
+      validation and test partitions share the same distribution [^1]. A full year of data covers all
+      four seasons, so as long as there are enough examples and every season is spread evenly across the
+      partitions (for example, by shuffling the whole year before splitting), the model is trained and
+      tested on the same mix of weather. Splitting by date would break this: a model trained on spring
+      to autumn and tested on winter would meet weather it never saw in training.
     references:
       - source: google-mlcc
-        locator: Overfitting
-        url: https://developers.google.com/machine-learning/crash-course/overfitting/overfitting
+        url: https://developers.google.com/machine-learning/crash-course/overfitting/overfitting#generalization_conditions
+        locator: Overfitting, sec. Generalization conditions
     source:
       id: google-mlcc
       ref: overfitting/overfitting#q3
@@ -1057,6 +1105,7 @@ questions:
     status: draft
   - id: ml-basics-041
     type: single
+    difficulty: medium
     question: Which **one** of the following statements is true of dynamic inference?
     options:
       - text: You can provide predictions for all possible items.
@@ -1065,11 +1114,20 @@ questions:
         why: In general, it's not possible to do a post-verification of all predictions before they get used because predictions are being made on demand. You can, however, potentially monitor *aggregate* prediction qualities to provide some level of quality checking, but these will signal fire alarms only after the fire has already spread.
       - text: When performing dynamic inference, you don't need to worry about prediction latency (the lag time for returning predictions) as much as when performing static inference.
         why: Prediction latency is often a real concern in dynamic inference. Unfortunately, you can't necessarily fix prediction latency issues by adding more inference servers.
-    explanation: Yes, this is a strength of dynamic inference. Any request that comes in will be given a score. Dynamic inference handles long-tail distributions (those with many rare items), like the space of all possible sentences written in movie reviews. [^1]
+    explanation: |
+      Dynamic (online) inference makes a prediction on demand for whatever request comes in, so it can
+      serve any new item, including rare, long-tail inputs that a cache of precomputed predictions would
+      not contain [^1]. The price is that it is compute intensive and latency sensitive, which may force
+      a simpler model, and it needs more monitoring [^1]. Checking predictions before they are served is
+      an advantage of static inference, which computes and caches them in advance [^2]; a dynamic
+      prediction is used as soon as it is made, so at best you can monitor aggregate quality afterwards.
     references:
       - source: google-mlcc
-        locator: 'Production ML systems: Static versus dynamic inference'
-        url: https://developers.google.com/machine-learning/crash-course/production-ml-systems/static-vs-dynamic-inference
+        url: https://developers.google.com/machine-learning/crash-course/production-ml-systems/static-vs-dynamic-inference#dynamic_inference
+        locator: 'Production ML systems: Static versus dynamic inference, sec. Dynamic inference'
+      - source: google-mlcc
+        url: https://developers.google.com/machine-learning/crash-course/production-ml-systems/static-vs-dynamic-inference#static_inference
+        locator: 'Production ML systems: Static versus dynamic inference, sec. Static inference'
     source:
       id: google-mlcc
       ref: production-ml-systems/static-vs-dynamic-inference#q2
@@ -1077,6 +1135,7 @@ questions:
     status: draft
   - id: ml-basics-042
     type: multiple
+    difficulty: medium
     question: Which **two** of the following statements are true about static (offline) training?
     options:
       - text: The model stays up to date as new data arrives.
@@ -1087,11 +1146,18 @@ questions:
         correct: true
       - text: Very little monitoring of input data needs to be done at inference time.
         why: Counterintuitively, you do need to monitor input data at serving time. If the input distributions change, then our model's predictions may become unreliable. Imagine, for example, a model trained only on summertime clothing data suddenly being used to predict clothing buying behavior in wintertime.
-    explanation: Yes, offline training gives ample opportunity to verify model performance before introducing the model in production. In general, monitoring requirements at training time are more modest for offline training, which insulates you from many production considerations. However, the more frequently you train your model, the higher the investment you'll need to make in monitoring. You'll also want to validate regularly to ensure that changes to your code (and its dependencies) don't adversely affect model quality. [^1]
+    explanation: |
+      With static (offline) training you train the model once and serve it for a while, so you develop
+      and test it once and can verify it before it goes into production [^1]. Because training jobs run
+      rarely, monitoring at training time is more modest than for online training, whose continuous
+      training jobs must be watched [^1]. The cost is staleness: the model can't take in new data, so its
+      predictions degrade if the relationship between features and labels changes [^1]. For the same
+      reason you still have to monitor the input data at serving time; a model trained only on summer
+      data would be unreliable in winter [^1].
     references:
       - source: google-mlcc
-        locator: 'Production ML systems: Static versus dynamic training'
         url: https://developers.google.com/machine-learning/crash-course/production-ml-systems/static-vs-dynamic-training
+        locator: 'Production ML systems: Static versus dynamic training, Table 1 and the text after it'
     source:
       id: google-mlcc
       ref: production-ml-systems/static-vs-dynamic-training#q1
@@ -1405,6 +1471,7 @@ questions:
     status: draft
   - id: ml-basics-053
     type: single
+    difficulty: easy
     question: The plot below shows the loss curves of the training and test sets. Which **one** of the following statements best identifies the reason for the difference between them?
     figure:
       src: ./ml-basics/ml-basics-053.svg
@@ -1415,17 +1482,23 @@ questions:
       - text: The learning rate is too high.
         why: If the learning rate were too high, the loss curve for the training set would likely not have behaved as it did.
     explanation: |
-      Yes, it probably is. Possible solutions:
-
-      * Make the model simpler, possibly by reducing the number
-      of features.
-      * Increase the regularization rate.
-      * Ensure that the training set and test set are statistically
-      equivalent. [^1]
+      The two curves fall together at first, then diverge: the training loss keeps going down while the
+      test loss levels off and starts to rise. The model is learning details of the training set that
+      don't carry over to new data, the classic sign of overfitting [^1]. A learning rate that is too
+      high would show up in the training curve itself, which would bounce around or keep increasing
+      instead of falling smoothly [^2]. Possible fixes are a simpler model (for example, fewer features),
+      a higher regularization rate, and making sure the training and test sets are statistically
+      equivalent [^3].
     references:
       - source: google-mlcc
-        locator: 'Overfitting: Interpreting loss curves'
-        url: https://developers.google.com/machine-learning/crash-course/overfitting/interpreting-loss-curves
+        url: https://developers.google.com/machine-learning/crash-course/overfitting/overfitting#detecting_overfitting
+        locator: Overfitting, sec. Detecting overfitting
+      - source: google-mlcc
+        url: https://developers.google.com/machine-learning/crash-course/linear-regression/hyperparameters#learning_rate
+        locator: 'Linear regression: Hyperparameters, sec. Learning rate'
+      - source: google-mlcc
+        url: https://developers.google.com/machine-learning/crash-course/overfitting/interpreting-loss-curves#exercise_3_test_loss_diverges_from_training_loss
+        locator: 'Overfitting: Interpreting loss curves, Exercise 3. Test loss diverges from training loss'
     source:
       id: google-mlcc
       ref: overfitting/interpreting-loss-curves#q3

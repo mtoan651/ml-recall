@@ -109,6 +109,7 @@ questions:
     status: draft
   - id: huggingface-004
     type: single
+    difficulty: easy
     question: |
       Why will this code fail?
 
@@ -127,11 +128,26 @@ questions:
         why: Without `model=`, the pipeline falls back to a default checkpoint for the task and only prints a warning.
       - text: This pipeline requires longer inputs; this one is too short.
         why: This is incorrect. Note that a very long text will be truncated when processed by this pipeline.
-    explanation: Right — the correct code needs to include `candidate_labels=[...]`. [^1]
+    explanation: |
+      The `zero-shot-classification` pipeline classifies a text with labels you choose at call time
+      instead of the labels the model was trained with, so the call has to say which labels to choose
+      from: the course passes `candidate_labels=["education", "politics", "business"]` and gets a score
+      for each [^1]. That argument is the set of possible labels for each sequence [^2]; without it there
+      is nothing to score the text against, and the call fails. The same course example creates the
+      pipeline without `model=`, in which case the task's default checkpoint is loaded [^3], and it
+      classifies a single short sentence [^1].
     references:
       - source: hf-llm-course
-        locator: 'Chapter 1: Transformer models'
-        url: https://huggingface.co/learn/llm-course/chapter1/1
+        url: https://huggingface.co/learn/llm-course/chapter1/3#zero-shot-classification
+        locator: Chapter 1.3 Transformers, what can they do?, sec. Zero-shot classification
+      - title: Hugging Face Transformers documentation, Pipelines (ZeroShotClassificationPipeline)
+        url: https://huggingface.co/docs/transformers/main_classes/pipelines#transformers.ZeroShotClassificationPipeline.__call__.candidate_labels
+        locator: ZeroShotClassificationPipeline.__call__, candidate_labels
+        quote: The set of possible class labels to classify each sequence into.
+      - title: Hugging Face Transformers documentation, Pipelines (pipeline)
+        url: https://huggingface.co/docs/transformers/main_classes/pipelines#transformers.pipeline.model
+        locator: pipeline(), model
+        quote: If not provided, the default for the task will be loaded.
     source:
       id: hf-llm-course
       ref: chapter1/7#q4
@@ -295,21 +311,34 @@ questions:
     status: draft
   - id: huggingface-010
     type: single
+    difficulty: easy
     question: What is the main advantage of using `Dataset.map()` with `batched=True`?
     options:
-      - text: It uses less memory.
-        why: While it can be more memory efficient, this is not the main advantage.
+      - text: It uses less memory while the dataset is processed.
+        why: Saving memory isn't the point. Each call receives a whole batch of examples at once, so batching doesn't reduce memory; what it buys is speed.
       - text: It tokenizes many examples per call, which is much faster.
         correct: true
-      - text: It automatically handles padding for you.
+      - text: It pads every example in a batch to the same length.
         why: Batching doesn't automatically handle padding - that's done by the data collator.
-      - text: It converts the data to PyTorch tensors.
+      - text: It converts the tokenized columns into PyTorch tensors.
         why: The tensor conversion happens when you set the format, not during batched mapping.
-    explanation: Correct! Processing in batches allows the fast tokenizer to work on multiple examples simultaneously, significantly improving speed. [^1]
+    explanation: |
+      With `batched=True`, `map()` passes the function many examples at once (each key holding a list)
+      instead of one example per call [^1]. The tokenizer accepts lists of sentence pairs, and the fast
+      tokenizer, written in Rust, is only really fast when it gets lots of inputs at once, so batching
+      greatly speeds up preprocessing [^1]. Padding is deliberately left out of this step and done per
+      batch by a data collator (dynamic padding) [^2], and the conversion to PyTorch tensors comes later,
+      when the dataset's format is set to `"torch"` [^3].
     references:
       - source: hf-llm-course
-        locator: 'Chapter 3: Fine-tuning a pretrained model'
-        url: https://huggingface.co/learn/llm-course/chapter3/1
+        url: https://huggingface.co/learn/llm-course/chapter3/2#preprocessing-a-dataset
+        locator: Chapter 3.2 Processing the data, sec. Preprocessing a dataset
+      - source: hf-llm-course
+        url: https://huggingface.co/learn/llm-course/chapter3/2#dynamic-padding
+        locator: Chapter 3.2 Processing the data, sec. Dynamic padding
+      - source: hf-llm-course
+        url: https://huggingface.co/learn/llm-course/chapter3/4#prepare-for-training
+        locator: Chapter 3.4 A full training loop, sec. Prepare for training
     source:
       id: hf-llm-course
       ref: chapter3/2#q1
@@ -344,6 +373,7 @@ questions:
     status: draft
   - id: huggingface-012
     type: single
+    difficulty: easy
     question: What is the purpose of removing columns like 'sentence1' and 'sentence2' before training?
     options:
       - text: To save memory during training.
@@ -354,11 +384,21 @@ questions:
         why: While true, the main reason is that the model can't process raw text.
       - text: Dropping them makes each training step significantly faster.
         why: The speed improvement is minimal compared to avoiding errors from incompatible data types.
-    explanation: Correct! Models expect numerical tensors, not raw text strings. Keeping text columns would cause errors. [^1]
+    explanation: |
+      When you write your own training loop, you remove the columns the model does not expect
+      (`sentence1`, `sentence2` and `idx`), rename `label` to `labels` and set the format to PyTorch, so
+      that only `attention_mask`, `input_ids`, `labels` and `token_type_ids` remain [^1]. Each batch is
+      then passed to the model as `model(**batch)`, so every column becomes an argument the model must
+      accept, and the raw-text columns hold strings, from which no tensors can be created [^2]. Saving
+      memory or time is a side effect, not the reason, and the `Trainer` removes such columns for you
+      automatically [^1].
     references:
       - source: hf-llm-course
-        locator: 'Chapter 3: Fine-tuning a pretrained model'
-        url: https://huggingface.co/learn/llm-course/chapter3/1
+        url: https://huggingface.co/learn/llm-course/chapter3/4#prepare-for-training
+        locator: Chapter 3.4 A full training loop, secs. Prepare for training and The training loop
+      - source: hf-llm-course
+        url: https://huggingface.co/learn/llm-course/chapter3/2#dynamic-padding
+        locator: Chapter 3.2 Processing the data, sec. Dynamic padding (removing the string columns before batching)
     source:
       id: hf-llm-course
       ref: chapter3/2#q5
@@ -656,6 +696,7 @@ questions:
     status: draft
   - id: huggingface-023
     type: single
+    difficulty: easy
     question: What parameters control the training duration in SFT?
     options:
       - text: '`num_train_epochs` and `max_steps`'
@@ -663,12 +704,26 @@ questions:
       - text: '`batch_size` and `learning_rate`'
         why: While these affect training, they don't directly control the duration.
       - text: '`gradient_checkpointing` and `warmup_ratio`'
-        why: These parameters affect training efficiency and stability, not duration.
-    explanation: Correct! These parameters determine how long the model will train, either by number of epochs or total steps. [^1]
+        why: Gradient checkpointing trades compute for memory, so it changes the cost of each step but not how many steps are run, and `warmup_ratio` only sets which share of the run is used for learning-rate warmup.
+    explanation: |
+      The SFT configuration groups `num_train_epochs` and `max_steps` as the training-duration
+      parameters: the first sets how many passes over the data to make, the second is the alternative
+      that caps the total number of training steps [^1]. When `max_steps` is positive it overrides the
+      number of epochs [^2]. Batch size governs memory use and gradient stability, the learning rate the
+      size of each weight update, and `warmup_ratio` only the share of training used for warmup [^1];
+      gradient checkpointing saves memory at the cost of extra compute per step [^3].
     references:
       - source: hf-llm-course
-        locator: 'Chapter 11: Fine-tune Large Language Models'
-        url: https://huggingface.co/learn/llm-course/chapter11/1
+        url: https://huggingface.co/learn/llm-course/chapter11/3#training-configuration
+        locator: Chapter 11.3 Supervised Fine-Tuning, sec. Training Configuration
+      - title: Hugging Face Transformers documentation, Trainer (TrainingArguments)
+        url: https://huggingface.co/docs/transformers/main_classes/trainer#transformers.TrainingArguments.max_steps
+        locator: TrainingArguments, max_steps
+        quote: Overrides num_train_epochs. If set to a positive number, the total number of training steps to perform.
+      - title: Hugging Face Transformers documentation, Trainer (TrainingArguments)
+        url: https://huggingface.co/docs/transformers/main_classes/trainer#transformers.TrainingArguments.gradient_checkpointing
+        locator: TrainingArguments, gradient_checkpointing
+        quote: Enable gradient checkpointing to trade compute for memory.
     source:
       id: hf-llm-course
       ref: chapter11/3#q1

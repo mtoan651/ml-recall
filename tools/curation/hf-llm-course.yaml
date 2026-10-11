@@ -67,6 +67,11 @@ items:
     fix:
       options:
         1: It tokenizes many examples per call, which is much faster.
+        0: It uses less memory while the dataset is processed.
+        2: It pads every example in a batch to the same length.
+        3: It converts the tokenized columns into PyTorch tensors.
+      why:
+        0: Saving memory isn't the point. Each call receives a whole batch of examples at once, so batching doesn't reduce memory; what it buys is speed.
   "chapter3/2#q3": {topic: transformers}
   "chapter3/2#q4":
     topic: huggingface
@@ -178,7 +183,11 @@ items:
       why:
         0: The method takes any iterator over batches of texts, and a list of lists of texts works too; it just has to hold the whole corpus in memory.
   "chapter6/10#q3": {topic: huggingface}
-  "chapter6/10#q4": {topic: nlp-tasks}
+  "chapter6/10#q4":
+    topic: nlp-tasks
+    fix:
+      why:
+        0: Too simple. Merging every run of tokens with the same entity type would fuse two adjacent entities of that type into one; the `B-` label exists to mark where a new entity starts.
   "chapter6/10#q5":
     topic: nlp-tasks
     fix:
@@ -230,7 +239,12 @@ items:
     fix:
       why:
         3: Poor results usually come from the fine-tuning setup (data, hyperparameters, bugs); debug that first, since pretraining from scratch costs far more.
-  "chapter7/9#q11": {topic: language-models}
+  "chapter7/9#q11":
+    topic: language-models
+    fix:
+      why:
+        0: True, but raw text is only usable at that scale because nobody has to label it. If the objective needed human labels, the amount of text online would hardly help.
+        2: True, but short training code isn't what makes huge corpora usable. The bottleneck would be labeling the data, and the self-supervised objective removes it.
   # chapter 11 — Fine-tuning LLMs (SFT, evaluation)
   "chapter11/3#q1":
     topic: huggingface
@@ -239,6 +253,8 @@ items:
         0: '`num_train_epochs` and `max_steps`'
         1: '`batch_size` and `learning_rate`'
         2: '`gradient_checkpointing` and `warmup_ratio`'
+      why:
+        2: Gradient checkpointing trades compute for memory, so it changes the cost of each step but not how many steps are run, and `warmup_ratio` only sets which share of the run is used for learning-rate warmup.
   "chapter11/3#q2": {topic: training}
   "chapter11/3#q3":
     topic: training
@@ -321,8 +337,11 @@ items:
     fix:
       options:
         0: To score how well the model's responses match the desired behavior
-        1: To measure how large the model's vocabulary is
-        2: To determine how fast the model is trained
+        1: To measure how large a vocabulary the model has learned to use
+        2: To set how fast the model trains, the way a learning rate does
+      why:
+        1: Rewards aren't used to evaluate vocabulary knowledge. They score the quality of the responses the model generates.
+        2: Training speed is set by things like the optimizer and its learning rate. The reward is feedback on how good a response was.
   chapter12/3#q4:
     fix:
       options:
@@ -670,3 +689,7 @@ items:
       why:
         1: That is the learning step, in which the policy is improved after rewards come in. It is not an action taken in the environment.
         2: Taking in the prompt is how the agent observes its current state. The action is what it generates in response.
+  chapter7/9#q12:
+    fix:
+      why:
+        0: True, but every NLP task needs tokenized inputs, and it is a routine call to the tokenizer. The difficulties specific to QA are long contexts and locating the answer's tokens.

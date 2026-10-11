@@ -5,6 +5,7 @@ title: PyTorch
 questions:
   - id: pytorch-001
     type: single
+    difficulty: easy
     question: Why do we move batches to the device in a training loop?
     options:
       - text: To make each training step run faster.
@@ -15,11 +16,21 @@ questions:
         why: Moving to device doesn't inherently save memory.
       - text: Because the DataLoader only accepts batches that are on the GPU.
         why: DataLoader doesn't require specific device placement.
-    explanation: Correct! PyTorch requires tensors to be on the same device for operations to work. [^1]
+    explanation: |
+      The training loop picks a device (the GPU if there is one, since on a CPU training can take hours
+      instead of minutes), moves the model there, and then moves every batch to the same device with
+      `batch = {k: v.to(device) for k, v in batch.items()}` before calling the model [^1]. PyTorch
+      doesn't run an operation on tensors that live on different devices; it raises an error [^2]. So
+      the move is needed for the forward pass to run at all: it doesn't shrink the batch, and the
+      speed-up comes from the GPU, not from the move itself.
     references:
       - source: hf-llm-course
-        locator: 'Chapter 3: Fine-tuning a pretrained model'
-        url: https://huggingface.co/learn/llm-course/chapter3/1
+        url: https://huggingface.co/learn/llm-course/chapter3/4#the-training-loop
+        locator: Chapter 3.4 A full training loop, sec. The training loop
+      - title: PyTorch documentation, CUDA semantics
+        url: https://docs.pytorch.org/docs/stable/notes/cuda.html#cuda-semantics
+        locator: CUDA semantics (introduction)
+        quote: Unless you enable peer-to-peer memory access, any attempts to launch ops on tensors spread across different devices will raise an error.
     source:
       id: hf-llm-course
       ref: chapter3/4#q4
