@@ -37,4 +37,6 @@ pnpm lint && pnpm test && pnpm check && pnpm build   # must pass before committi
 - Never use a `reference`-only source as `source.id`; write an original question and cite it.
 - When generating questions, follow `prompts/generate-questions.md` and
   `docs/content-pipeline.md#writing-good-questions`. Verify facts against the cited source.
+- Do not fetch pages whose terms forbid ingestion by LLMs/AI (e.g. all OpenStax books since
+  July 2026; see `docs/sources.md`), and do not cite them.
 - Run `uv run mlr check` after every data change and fix all errors.

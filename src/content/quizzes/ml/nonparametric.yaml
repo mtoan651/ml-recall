@@ -5,6 +5,7 @@ title: Nearest Neighbors & Kernel Methods
 questions:
   - id: nonparametric-001
     type: single
+    difficulty: hard
     question: |
       Evaluate both statements.
 
@@ -17,6 +18,25 @@ questions:
         correct: true
       - text: True, False
       - text: False, True
+    explanation: |
+      Statement 1 is false. Kernel (Nadaraya–Watson) regression predicts a weighted average of the
+      training targets, $f(x) = \sum_i y_i K(x - x_i) / \sum_j K(x - x_j)$ [^1]. If every $y_i = 1/n$,
+      the weights sum to one and the prediction is the constant $1/n$ everywhere. A kernel density
+      estimate instead adds up the kernels without dividing by their total,
+      $\hat p(x) \propto \sum_i K(x - x_i)$, so it is large where the points are dense [^2].
+      Statement 2 is false too. Thresholds are placed between distinct observed values, so every split
+      sends at least one training example to each child [^3]. Each split along a path therefore
+      removes at least one example, so the depth can never exceed $n - 1$.
+    references:
+      - source: d2l
+        url: https://d2l.ai/chapter_attention-mechanisms-and-transformers/attention-pooling.html
+        locator: Sec. 11.2 Attention Pooling by Similarity, eq. (11.2.2)
+      - title: scikit-learn User Guide
+        url: https://scikit-learn.org/stable/modules/density.html#kernel-density-estimation
+        locator: Sec. 2.8.2 Kernel Density Estimation
+      - title: scikit-learn User Guide
+        url: https://scikit-learn.org/stable/modules/tree.html#mathematical-formulation
+        locator: Sec. 1.10.7 Mathematical formulation (decision trees)
     source:
       id: mmlu-redux
       ref: machine_learning/12
@@ -24,6 +44,7 @@ questions:
     status: draft
   - id: nonparametric-002
     type: single
+    difficulty: medium
     question: 'For Kernel Regression, which one of these structural assumptions is the one that most affects the trade-off between underfitting and overfitting:'
     options:
       - text: Whether kernel function is Gaussian versus triangular versus box-shaped
@@ -31,6 +52,22 @@ questions:
       - text: The kernel width
         correct: true
       - text: The maximum height of the kernel function
+    explanation: |
+      The kernel width (bandwidth) sets how far each training point's influence reaches, so it is the
+      smoothing parameter. A narrow kernel follows local variation and gives a wiggly, high-variance
+      fit. A wide kernel averages over many points and gives a smooth, high-bias fit [^1][^2]. The
+      kernel's shape matters much less: Gaussian, boxcar and Epanechnikov kernels give very similar
+      estimates [^1]. The kernel's maximum height cancels out entirely, because the weights are
+      normalized by their sum [^1].
+    references:
+      - source: d2l
+        url: https://d2l.ai/chapter_attention-mechanisms-and-transformers/attention-pooling.html#adapting-attention-pooling
+        locator: Sec. 11.2.2 Attention Pooling via Nadaraya–Watson Regression and Sec. 11.2.3 Adapting Attention Pooling
+        quote: Clearly, the narrower the kernel, the less smooth the estimate.
+      - title: scikit-learn User Guide
+        url: https://scikit-learn.org/stable/modules/density.html#kernel-density-estimation
+        locator: Sec. 2.8.2 Kernel Density Estimation
+        quote: The bandwidth here acts as a smoothing parameter, controlling the tradeoff between bias and variance in the result.
     source:
       id: mmlu-redux
       ref: machine_learning/28
@@ -38,6 +75,7 @@ questions:
     status: draft
   - id: nonparametric-003
     type: single
+    difficulty: medium
     question: |
       Evaluate both statements.
 
@@ -50,6 +88,24 @@ questions:
       - text: True, False
         correct: true
       - text: False, True
+    explanation: |
+      Statement 1 is true. 1-NN memorizes the training set, and each training point is its own
+      nearest neighbor, so the classifier always reaches zero training error, as long as no two
+      identical inputs carry different labels [^1][^2]. Statement 2 is false. The MAP estimate
+      maximizes the likelihood times the prior $p(\theta)$ [^3]. If the prior gives zero probability
+      to some parameter values, such as a point-mass prior or one whose support leaves out the MLE,
+      the product stays zero there no matter how much data arrives. MAP then cannot approach the MLE,
+      so the prior washes out only when it is positive around the MLE.
+    references:
+      - source: d2l
+        url: https://d2l.ai/chapter_multilayer-perceptrons/generalization-deep.html#inspiration-from-nonparametrics
+        locator: Sec. 5.5.2 Inspiration from Nonparametrics
+      - title: 'James, Witten, Hastie, Tibshirani: An Introduction to Statistical Learning (1st ed., 7th printing)'
+        url: https://www.statlearning.com/s/ISLR-Seventh-Printing.pdf
+        locator: Sec. 2.2.3 The Classification Setting (K-Nearest Neighbors), p. 40
+      - title: Stanford CS229 Lecture Notes (Ma & Ng)
+        url: https://cs229.stanford.edu/main_notes.pdf
+        locator: Sec. 9.4 Bayesian statistics and regularization, eq. (9.5)
     source:
       id: mmlu-redux
       ref: machine_learning/45
@@ -57,6 +113,7 @@ questions:
     status: draft
   - id: nonparametric-004
     type: single
+    difficulty: medium
     question: If N is the number of instances in the training dataset, nearest neighbors has a classification run time of
     options:
       - text: $O(1)$
@@ -64,6 +121,20 @@ questions:
         correct: true
       - text: $O(\log N)$
       - text: $O(N^2)$
+    explanation: |
+      A basic nearest-neighbor classifier does no real training. At prediction time it compares the
+      query with every one of the $N$ stored examples, so brute-force query time grows as $O(DN)$,
+      which is linear in $N$ for a fixed dimension $D$ [^1][^2]. Tree indexes such as k-d trees or ball
+      trees can bring a query down to about $O(D \log N)$ in low dimensions, but they need an extra
+      data structure and slow down toward $O(DN)$ in high dimensions [^1]. Constant time and $O(N^2)$
+      do not describe a single query.
+    references:
+      - title: scikit-learn User Guide
+        url: https://scikit-learn.org/stable/modules/neighbors.html#choice-of-nearest-neighbors-algorithm
+        locator: Sec. 1.6.4 Nearest Neighbor Algorithms (Choice of Nearest Neighbors Algorithm)
+      - source: d2l
+        url: https://d2l.ai/chapter_multilayer-perceptrons/generalization-deep.html#inspiration-from-nonparametrics
+        locator: Sec. 5.5.2 Inspiration from Nonparametrics
     source:
       id: mmlu-redux
       ref: machine_learning/99

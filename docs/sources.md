@@ -27,7 +27,6 @@ original questions. See [content-pipeline.md](content-pipeline.md#copyright-rule
 | 14 | [Hugging Face AI Agents Course](https://huggingface.co/learn/agents-course) | unit quizzes on agents, tools, ReAct, agentic RAG, observability | Apache-2.0 | **v0.3 imported** (19) |
 | 15 | [Microsoft Data Science for Beginners](https://github.com/microsoft/Data-Science-For-Beginners) | pre/post-lecture quizzes; only data types, probability, statistics items kept | MIT | **v0.3 imported** (15) |
 | 16 | [OpenIntro Statistics](https://www.openintro.org/book/os/) | end-of-section exercises, odd-numbered solutions, LaTeX source on GitHub | CC-BY-SA-3.0 | later — probability/statistics |
-| 17 | [OpenStax Introductory Statistics 2e](https://openstax.org/details/books/introductory-statistics-2e) | practice and homework problems with answers | CC-BY-4.0 | later — probability/statistics |
 
 ## Reference only
 
@@ -41,6 +40,7 @@ original questions. See [content-pipeline.md](content-pipeline.md#copyright-rule
 | 23 | [Understanding Deep Learning](https://udlbook.github.io/udlbook/) (Prince) | end-of-chapter problems + notebooks | CC-BY-NC-ND-4.0 |
 | 24 | [fastbook questionnaires](https://github.com/fastai/fastbook) | quiz-like questions at the end of each chapter | prose not redistributable |
 | 25 | [Machine Learning Q and AI](https://sebastianraschka.com/books/ml-q-and-ai/) (Raschka) | 30 Q&A chapters with exercises, free online | all rights reserved |
+| 17 | [OpenStax Introductory Statistics 2e](https://openstax.org/details/books/introductory-statistics-2e) | **not used**: since July 2026 all OpenStax books forbid ingestion into LLMs/generative AI without permission, so we neither import nor fetch them (moved from Adapt on 2026-10-11) | CC-BY-NC-SA-4.0 |
 
 Internal sources: `original` (questions written here, CC BY-SA 4.0) and `ncu-intro-dl` (own course
 slides, `private`).
@@ -57,7 +57,8 @@ exercises (MIT) · Stanford CS336 assignments (MIT) · AIMA exercises · Machine
 
 ## Adding a source
 
-1. Check the license (LICENSE file, site terms) and decide `usage`.
+1. Check the license (LICENSE file, site terms) and decide `usage`. Also look for clauses that
+   forbid feeding the content to AI/LLM tools: such sources are not fetched or cited (see #17).
 2. Add an entry to `sources.yaml` (`pinned` if an importer will read it).
 3. For `adapt` sources, add the attribution to `THIRD_PARTY_NOTICES.md`.
 4. Update the tables above.
