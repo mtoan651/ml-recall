@@ -764,3 +764,87 @@ questions:
       ref: quiz-15/q3
       url: https://github.com/microsoft/ML-For-Beginners/blob/de2d4e12236445198213a0711855e348e7253cd4/quiz-app/src/assets/translations/en.json
     status: draft
+  - id: logistic-regression-022
+    type: short_answer
+    difficulty: medium
+    tags:
+      - softmax
+      - overflow
+      - floating-point
+    question: |
+      A naive softmax computes $\exp(o_j)$ directly. In float16, whose largest finite value is 65504,
+      what is the largest logit $o_j$ for which $\exp(o_j)$ does not overflow? Round to 2 decimals.
+    answer:
+      numeric: 11.09
+      tolerance: 0.02
+      hint: a number, 2 decimals
+      model: $\ln 65504 \approx 11.09$
+    explanation: |
+      $\exp(o)$ stays finite as long as $o \le \ln(\text{largest value})$. For float16 that is only
+      $\ln 65504 \approx 11.09$ [^1], so a logit of 12 already gives `inf`; for float32, with a largest
+      value near $3.4 \times 10^{38}$, it is about 88.7, which matches d2l's warning that logits outside
+      $[-90, 90]$ are unstable [^2]. On the small side, $\exp(o)$ becomes a less precise subnormal number
+      in float16 for $o$ below about $-9.7$ and rounds to 0 below about $-17.3$ [^1]. Subtracting $\max_k o_k$ before
+      exponentiating, as framework softmax and cross-entropy functions do, avoids the overflow [^2].
+    references:
+      - title: 'Wikipedia: Half-precision floating-point format'
+        locator: Half precision examples (largest normal number, smallest normal and subnormal numbers)
+        url: https://en.wikipedia.org/wiki/Half-precision_floating-point_format#Half_precision_examples
+      - source: d2l
+        locator: Sec. 4.5.2 Softmax Revisited
+        url: https://d2l.ai/chapter_linear-classification/softmax-regression-concise.html#softmax-revisited
+      - source: d2l
+        locator: Sec. 4.5.5 Exercises, Exercise 1
+        url: https://d2l.ai/chapter_linear-classification/softmax-regression-concise.html#exercises
+    source:
+      id: d2l
+      ref: chapter_linear-classification/softmax-regression-concise#ex1
+      url: https://d2l.ai/chapter_linear-classification/softmax-regression-concise.html#exercises
+    status: draft
+  - id: logistic-regression-023
+    type: multiple
+    difficulty: medium
+    tags:
+      - softmax
+      - large-vocabulary
+      - computational-cost
+    question: |
+      You use softmax regression to predict the next word from a 512-dimensional feature vector, over a
+      vocabulary of 50,000 words. Which problems does the large vocabulary cause? Select all that
+      apply.
+    options:
+      - text: The softmax outputs no longer sum to 1 when there are very many classes
+        why: The softmax divides by the sum over all classes, so its outputs sum to 1 for any number of classes [^2].
+      - text: The cross-entropy loss stops being convex in the weights
+        why: 'The number of classes does not matter: the loss is a convex log-sum-exp minus a linear term of the logits, which are linear in the weights.'
+      - text: The output layer alone has about 25.6 million weights
+        correct: true
+      - text: Every probability or loss evaluation needs all 50,000 logits for the softmax denominator
+        correct: true
+      - text: Rare words occur in few training examples, so their weights are poorly estimated
+        correct: true
+    explanation: |
+      A fully connected layer with $d$ inputs and $q$ outputs has $O(dq)$ parameters and cost [^1]:
+      here $512 \times 50{,}000 = 25.6$ million weights plus 50,000 biases. The normalizer
+      $\sum_k \exp(o_k)$ runs over every word, so even a single prediction or gradient step touches all
+      50,000 outputs [^2]. Word frequencies are very skewed, so most words are rare [^3], and their
+      weight vectors receive few updates. The softmax, by contrast, is normalized by construction for
+      any number of classes [^2].
+    references:
+      - source: d2l
+        locator: Sec. 4.1.4 Summary and Discussion
+        url: https://d2l.ai/chapter_linear-classification/softmax-regression.html#summary-and-discussion
+      - source: d2l
+        locator: Sec. 4.1.1.2 The Softmax
+        url: https://d2l.ai/chapter_linear-classification/softmax-regression.html#the-softmax
+      - source: d2l
+        locator: Sec. 9.2.5 Exploratory Language Statistics
+        url: https://d2l.ai/chapter_recurrent-neural-networks/text-sequence.html#exploratory-language-statistics
+      - source: d2l
+        locator: Sec. 4.4.7 Exercises, Exercise 4
+        url: https://d2l.ai/chapter_linear-classification/softmax-regression-scratch.html#exercises
+    source:
+      id: d2l
+      ref: chapter_linear-classification/softmax-regression-scratch#ex4
+      url: https://d2l.ai/chapter_linear-classification/softmax-regression-scratch.html#exercises
+    status: draft
