@@ -426,3 +426,116 @@ questions:
       ref: chapter5/8#q9
       url: https://huggingface.co/learn/llm-course/chapter5/8
     status: draft
+  - id: text-representation-016
+    type: short_answer
+    difficulty: easy
+    question: |
+      A bag-of-words model uses the vocabulary `and`, `cat`, `dog`, `mat`, `the`, with each word
+      mapped, in this order, to one position of a 5-dimensional vector. What is the bag-of-words
+      vector of the text "the cat and the dog"?
+    answer:
+      accept:
+        - (1, 1, 1, 0, 2)
+      pattern: '[(\[]?\s*1\s*[,;\s]\s*1\s*[,;\s]\s*1\s*[,;\s]\s*0\s*[,;\s]\s*2\s*[)\]]?'
+      hint: Five counts in vocabulary order, e.g. (0, 2, 0, 1, 0)
+      model: '$(1, 1, 1, 0, 2)$: and, cat and dog once each, mat never, the twice'
+    explanation: |
+      Each vocabulary word owns one position of the vector, and its one-hot encoding has a 1 there.
+      Adding the one-hot vectors of all words in a text gives a vector of word frequencies, the bag of
+      words [^1]. In "the cat and the dog", *and*, *cat* and *dog* occur once, *mat* never and *the*
+      twice, so the vector is $(1, 1, 1, 0, 2)$. Word order is lost: "the dog and the cat" gives the
+      same vector [^1].
+    references:
+      - source: ms-ai-for-beginners
+        url: https://github.com/microsoft/AI-For-Beginners/blob/392d0df1b2647cbee104942390551f1ed9e072c8/lessons/5-NLP/13-TextRep/README.md#bag-of-words-and-tfidf
+        locator: 'Lesson: Representing Text as Tensors, sec. Bag-of-Words and TF/IDF'
+    source:
+      id: ms-ai-for-beginners
+      ref: quiz-113/q1
+      url: https://github.com/microsoft/AI-For-Beginners/blob/392d0df1b2647cbee104942390551f1ed9e072c8/etc/quiz-app/src/assets/translations/en/lesson-13.json
+    status: draft
+  - id: text-representation-017
+    type: single
+    difficulty: medium
+    question: Which statement correctly compares word-level with character-level text representation?
+    options:
+      - text: Words carry more meaning than characters, but the large vocabulary makes one-hot word vectors high-dimensional and sparse
+        correct: true
+      - text: Single characters carry more meaning than whole words, so character-level models are easier for a network to learn from
+      - text: Both give tensors of the same size, because a word is just a short sequence of characters
+      - text: Only character-level text can be one-hot encoded; words have to be fed to the network as strings
+    explanation: |
+      Character-level representation treats each character as a number, so the word *Hello* becomes a
+      $5 \times C$ one-hot tensor for an alphabet of $C$ characters [^1]. Word-level representation
+      builds a vocabulary of all words and one-hot encodes them; it is somewhat better because a single
+      letter means little on its own while words are higher-level semantic units, but the large
+      dictionary gives high-dimensional sparse tensors [^1]. Either way the tokens are mapped to
+      numbers through a vocabulary and then one-hot encoded [^1], so the tensor sizes differ: one
+      column per character versus one per word, with very different vector lengths.
+    references:
+      - source: ms-ai-for-beginners
+        url: https://github.com/microsoft/AI-For-Beginners/blob/392d0df1b2647cbee104942390551f1ed9e072c8/lessons/5-NLP/13-TextRep/README.md#representing-text
+        locator: 'Lesson: Representing Text as Tensors, sec. Representing text'
+    source:
+      id: ms-ai-for-beginners
+      ref: quiz-113/q2
+      url: https://github.com/microsoft/AI-For-Beginners/blob/392d0df1b2647cbee104942390551f1ed9e072c8/etc/quiz-app/src/assets/translations/en/lesson-13.json
+    status: draft
+  - id: text-representation-018
+    type: single
+    difficulty: easy
+    question: An *embedding bag* classifier turns a text of any length into one fixed-size vector before the classifier layer. How?
+    options:
+      - text: It looks up the embedding of every word and combines them with an aggregate such as sum, mean or max
+        correct: true
+      - text: It concatenates the one-hot vectors of all the words into one long vector
+      - text: It counts how often each vocabulary word occurs in the text, giving a vector as long as the whole vocabulary
+      - text: It keeps only the embedding of the text's first word and ignores the rest
+    explanation: |
+      With an embedding layer as the first layer, a bag-of-words classifier becomes an embedding-bag
+      model: each word is converted to its embedding and an aggregate function, such as sum, average or
+      max, is computed over all of them [^1]. PyTorch's `nn.EmbeddingBag` does this in one module; with
+      `mode="mean"` it equals an `Embedding` followed by a mean over the words [^2]. Concatenating
+      vectors would give a length that depends on the text, and counting words is the plain
+      bag-of-words representation with vocabulary-sized vectors [^1].
+    references:
+      - source: ms-ai-for-beginners
+        url: https://github.com/microsoft/AI-For-Beginners/blob/392d0df1b2647cbee104942390551f1ed9e072c8/lessons/5-NLP/14-Embeddings/README.md
+        locator: 'Lesson: Embeddings, introduction'
+      - title: PyTorch documentation
+        url: https://docs.pytorch.org/docs/stable/generated/torch.nn.EmbeddingBag.html
+        locator: torch.nn.EmbeddingBag
+    source:
+      id: ms-ai-for-beginners
+      ref: quiz-114/q3
+      url: https://github.com/microsoft/AI-For-Beginners/blob/392d0df1b2647cbee104942390551f1ed9e072c8/etc/quiz-app/src/assets/translations/en/lesson-14.json
+    status: draft
+  - id: text-representation-019
+    type: single
+    difficulty: easy
+    question: What does an embedding layer (for example PyTorch's `nn.Embedding`) take as input?
+    options:
+      - text: The integer index of each token in the vocabulary
+        correct: true
+      - text: The token as a string of characters
+      - text: A one-hot vector as long as the vocabulary, like a linear layer
+      - text: A pre-trained Word2Vec vector of each word
+    explanation: |
+      An embedding layer is similar to a linear layer, but instead of a one-hot encoded vector it takes
+      the word's number in the vocabulary, which avoids building large one-hot vectors [^1]. In PyTorch,
+      `nn.Embedding` is a lookup table whose input is an `IntTensor` or `LongTensor` of indices; it
+      returns the stored embedding for each index [^2]. Strings must be tokenized and mapped to indices
+      first, and pre-trained Word2Vec vectors can replace the embedding layer's weights rather than
+      being its input [^1].
+    references:
+      - source: ms-ai-for-beginners
+        url: https://github.com/microsoft/AI-For-Beginners/blob/392d0df1b2647cbee104942390551f1ed9e072c8/lessons/5-NLP/14-Embeddings/README.md
+        locator: 'Lesson: Embeddings, introduction and sec. Semantic Embeddings: Word2Vec'
+      - title: PyTorch documentation
+        url: https://docs.pytorch.org/docs/stable/generated/torch.nn.Embedding.html
+        locator: torch.nn.Embedding
+    source:
+      id: ms-ai-for-beginners
+      ref: quiz-214/q3
+      url: https://github.com/microsoft/AI-For-Beginners/blob/392d0df1b2647cbee104942390551f1ed9e072c8/etc/quiz-app/src/assets/translations/en/lesson-14.json
+    status: draft

@@ -311,3 +311,91 @@ questions:
       ref: llm/transformers#q1
       url: https://developers.google.com/machine-learning/crash-course/llm/transformers
     status: draft
+  - id: transformers-012
+    type: single
+    difficulty: medium
+    question: Why does a transformer need positional encoding, while an RNN does not?
+    options:
+      - text: Self-attention handles all tokens in parallel and ignores order; an RNN gets order from its steps
+        correct: true
+      - text: Self-attention cannot handle sequences longer than the embedding size unless positions are encoded
+      - text: Positional encoding replaces the token embeddings, which a transformer does not use at all
+      - text: It adds the recurrent connection between time steps that a transformer would otherwise lack
+    explanation: |
+      In an RNN the relative position of tokens is given by the number of steps, so it need not be
+      represented explicitly; once we switch to attention, the positions must be supplied [^1]. Self-
+      attention trades sequential processing for parallel computation and by itself does not preserve
+      the order of the sequence, so positional encodings are added as an extra input for each token
+      [^2]. They are added to the token embeddings, not used instead of them [^1][^2], and the
+      transformer stays non-recurrent, which is why it parallelizes better [^1].
+    references:
+      - source: ms-ai-for-beginners
+        url: https://github.com/microsoft/AI-For-Beginners/blob/392d0df1b2647cbee104942390551f1ed9e072c8/lessons/5-NLP/18-Transformers/README.md#positional-encodingembedding
+        locator: 'Lesson: Attention Mechanisms and Transformers, sec. Positional Encoding/Embedding'
+      - source: d2l
+        url: https://d2l.ai/chapter_attention-mechanisms-and-transformers/self-attention-and-positional-encoding.html#positional-encoding
+        locator: Sec. 11.6.3 Positional Encoding
+    source:
+      id: ms-ai-for-beginners
+      ref: quiz-118/q3
+      url: https://github.com/microsoft/AI-For-Beginners/blob/392d0df1b2647cbee104942390551f1ed9e072c8/etc/quiz-app/src/assets/translations/en/lesson-18.json
+    status: draft
+  - id: transformers-013
+    type: single
+    difficulty: medium
+    question: In a transformer with *trainable* positional embeddings, how is the input vector of each token built?
+    options:
+      - text: Token and position each get an embedding of the same size, and the two vectors are added
+        correct: true
+      - text: The position number is appended to the token embedding as one extra dimension at the end of the vector
+      - text: The token embedding is multiplied by the token's position index
+      - text: Only the position is embedded; the token itself stays one-hot encoded
+    explanation: |
+      The sequence of tokens is paired with the sequence of their positions $0, 1, \dots$. With trainable
+      positional embedding, embedding layers are applied to both tokens and positions, giving vectors of
+      the same dimension that are then added, so the result embeds both the token and its position [^1].
+      The original transformer uses a fixed sine/cosine encoding instead, but it is added to the token
+      embeddings in the same way, $\mathbf{X} + \mathbf{P}$ [^2]. A single extra number or a scaling by
+      the index would give the position little room to be represented.
+    references:
+      - source: ms-ai-for-beginners
+        url: https://github.com/microsoft/AI-For-Beginners/blob/392d0df1b2647cbee104942390551f1ed9e072c8/lessons/5-NLP/18-Transformers/README.md#positional-encodingembedding
+        locator: 'Lesson: Attention Mechanisms and Transformers, sec. Positional Encoding/Embedding'
+      - source: d2l
+        url: https://d2l.ai/chapter_attention-mechanisms-and-transformers/self-attention-and-positional-encoding.html#positional-encoding
+        locator: Sec. 11.6.3 Positional Encoding
+    source:
+      id: ms-ai-for-beginners
+      ref: quiz-218/q1
+      url: https://github.com/microsoft/AI-For-Beginners/blob/392d0df1b2647cbee104942390551f1ed9e072c8/etc/quiz-app/src/assets/translations/en/lesson-18.json
+    status: draft
+  - id: transformers-014
+    type: single
+    difficulty: medium
+    question: In an encoder-decoder transformer for machine translation, which attention lets the decoder use the encoded source sentence?
+    options:
+      - text: 'Encoder-decoder attention: queries come from the decoder, keys and values from the encoder outputs'
+        correct: true
+      - text: Self-attention inside the encoder, applied to the source tokens
+      - text: Masked self-attention inside the decoder, applied to the tokens generated so far
+      - text: 'None: the encoder hands over only its final hidden state, exactly as in an RNN encoder-decoder without attention'
+    explanation: |
+      Transformers use attention in two ways: self-attention captures patterns within one text, and the
+      attention layer between encoder and decoder performs the translation, much like attention in RNN
+      encoder-decoders [^1]. In this encoder-decoder attention the queries come from the decoder's
+      self-attention sublayer and the keys and values from the encoder outputs [^2]. Encoder
+      self-attention only looks at the source, and the decoder's masked self-attention only at the
+      output tokens generated so far [^2]. Squeezing the source into one final state is the RNN approach
+      whose weaknesses attention was introduced to fix [^1].
+    references:
+      - source: ms-ai-for-beginners
+        url: https://github.com/microsoft/AI-For-Beginners/blob/392d0df1b2647cbee104942390551f1ed9e072c8/lessons/5-NLP/18-Transformers/README.md#encoder-decoder-attention
+        locator: 'Lesson: Attention Mechanisms and Transformers, introduction and sec. Encoder-Decoder Attention'
+      - source: d2l
+        url: https://d2l.ai/chapter_attention-mechanisms-and-transformers/transformer.html#model
+        locator: Sec. 11.7.1 Model (Transformer decoder)
+    source:
+      id: ms-ai-for-beginners
+      ref: quiz-218/q3
+      url: https://github.com/microsoft/AI-For-Beginners/blob/392d0df1b2647cbee104942390551f1ed9e072c8/etc/quiz-app/src/assets/translations/en/lesson-18.json
+    status: draft
