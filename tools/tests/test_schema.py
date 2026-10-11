@@ -83,7 +83,7 @@ def test_short_answer_pattern_is_auto_graded_and_matches_like_the_web_app():
         options=None,
         answer={"pattern": r"\(?\s*5\s*[x×,*]\s*4\s*\)?", "accept": ["5x4"], "model": "5 × 4"},
     )
-    assert q.answer.auto_graded
+    assert q.answer.graded
     for text in ["5x4", " 5 × 4 ", "(5, 4)", "5X4", "５x４"]:
         assert q.answer.matches_pattern(text), text
     assert not q.answer.matches_pattern("4x5")
@@ -106,3 +106,26 @@ def test_pattern_uses_ascii_semantics_like_javascript():
     )
     assert q.answer.matches_pattern("ABC")
     assert not q.answer.matches_pattern("naïve")
+
+
+def test_short_answers_are_auto_graded_never_open():
+    with pytest.raises(ValidationError, match="auto-graded"):
+        make(type="short_answer", options=None, answer={"model": "Explain it yourself"})
+    q = make(type="short_answer", options=None, answer={"numeric": 21})
+    assert [k.numeric for k in q.answer.inputs()] == [21]
+
+
+def test_gap_fill_blanks_match_the_keys_in_reading_order():
+    blanks = {"blanks": [{"accept": ["off"]}, {"accept": ["greedy", "max"]}]}
+    q = make(type="short_answer", options=None, question="An {{1}}-policy, {{2}} target.",
+             answer=blanks)  # fmt: skip
+    assert [k.accept for k in q.answer.inputs()] == [["off"], ["greedy", "max"]]
+    with pytest.raises(ValidationError, match="don't match"):
+        make(type="short_answer", options=None, question="Only {{1}}.", answer=blanks)
+    with pytest.raises(ValidationError, match="don't match"):
+        make(type="short_answer", options=None, question="{{2}} then {{1}}.", answer=blanks)
+    with pytest.raises(ValidationError, match="not inside code or math"):
+        make(type="short_answer", options=None, question="`np.{{1}}` and {{2}}", answer=blanks)
+    with pytest.raises(ValidationError, match="either `blanks`"):
+        make(type="short_answer", options=None, question="{{1}} {{2}}",
+             answer={**blanks, "accept": ["x"]})  # fmt: skip

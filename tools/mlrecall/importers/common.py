@@ -130,9 +130,15 @@ def _apply_fix(item: Item, fix: dict[str, Any]) -> None:
     for key in ("type", "question", "explanation", "shuffle", "figure", "explanation_figure"):
         if key in fix:
             data[key] = fix[key]
-    if "answer" in fix:  # e.g. a model answer whose upstream solution was only a picture
-        data["answer"] = {**(data.get("answer") or {}), **fix["answer"]}
-    for idx, text in (fix.get("options") or {}).items():
+    if "answer" in fix:  # merged into the upstream key; null removes it (now a choice question)
+        if fix["answer"] is None:
+            data.pop("answer", None)
+        else:
+            data["answer"] = {**(data.get("answer") or {}), **fix["answer"]}
+    options = fix.get("options")
+    if isinstance(options, list):  # a whole new option list (e.g. an open question turned MCQ)
+        data["options"] = [dict(o) for o in options]
+    for idx, text in (options if isinstance(options, dict) else {}).items():
         data["options"][int(idx)]["text"] = text
     for idx, text in (fix.get("why") or {}).items():  # null removes unhelpful upstream feedback
         data["options"][int(idx)]["why"] = text

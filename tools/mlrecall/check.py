@@ -96,22 +96,23 @@ def _check_question(r: Report, f: bank.BankFile, q: Question, sources: dict) -> 
         if not (f.path.parent / fig.src).is_file():
             r.errors.append(f"{where}: figure not found: {fig.src}")
 
-    answer = q.answer
-    if answer is not None and answer.pattern is not None:
-        misses = [a for a in answer.accept if not answer.matches_pattern(a)]
-        if misses:
-            r.errors.append(f"{where}: accepted answers don't match `pattern`: {misses}")
-        if not answer.accept:
-            # The build checks each pattern against its examples in JavaScript too.
-            r.errors.append(
-                f"{where}: `pattern` without examples — add the canonical answer to `accept`"
+    for n, key in enumerate(q.answer.inputs() if q.answer else [], start=1):
+        at = f"{where}: blank {n}" if q.answer.blanks else where
+        if key.pattern is not None:
+            misses = [a for a in key.accept if not key.matches_pattern(a)]
+            if misses:
+                r.errors.append(f"{at}: accepted answers don't match `pattern`: {misses}")
+            if not key.accept:
+                # The build checks each pattern against its examples in JavaScript too.
+                r.errors.append(
+                    f"{at}: `pattern` without examples — add the canonical answer to `accept`"
+                )
+        elif any(_DIGIT_GROUPS_RE.search(a) for a in key.accept):
+            # Normalization drops separators: "(32, 3, 64, 64)" would also accept "(323, 64, 64)".
+            r.warnings.append(
+                f"{at}: `accept` splits digits with spaces/punctuation, which grading ignores — "
+                "use `numeric` or a `pattern`"
             )
-    elif answer is not None and any(_DIGIT_GROUPS_RE.search(a) for a in answer.accept):
-        # Normalization drops separators, so "(32, 3, 64, 64)" would also accept "(323, 64, 64)".
-        r.warnings.append(
-            f"{where}: `accept` splits digits with spaces/punctuation, which grading ignores — "
-            "use `numeric` or a `pattern`"
-        )
 
     if q.shuffle and any(POSITIONAL_OPTION_RE.search(o.text) for o in options):
         r.warnings.append(f"{where}: option refers to other options — set `shuffle: false`")

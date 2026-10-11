@@ -77,11 +77,10 @@ class Provenance(_Strict):
     url: HttpUrl | None = None
 
 
-class ShortAnswer(_Strict):
-    """Answer key of a `short_answer` question.
+class AnswerKey(_Strict):
+    """How one typed answer is graded — a whole short answer or one blank of a gap-fill.
 
-    Auto-graded when `numeric`, `accept` or `pattern` is set (an answer is correct if any of
-    them matches); otherwise the learner self-grades against `model`.
+    Correct if any of `numeric`, `accept` or `pattern` matches; at least one is required.
     """
 
     accept: list[Text] = Field(
@@ -98,12 +97,11 @@ class ShortAnswer(_Strict):
         ),
     )
     hint: Text | None = Field(
-        None, description="Format guidance shown under the input, e.g. 'rows×cols, e.g. 3×4'"
+        None, description="Format guidance shown with the input, e.g. 'rows×cols, e.g. 3×4'"
     )
-    model: Text = Field(description="Model answer shown after answering (Markdown)")
 
     @model_validator(mode="after")
-    def _valid_pattern(self) -> ShortAnswer:
+    def _valid_pattern(self) -> AnswerKey:
         if self.pattern is None:
             return self
         for token in ("(?P", "\\A", "\\Z", "(?#", "(?i", "(?x", "(?s", "(?m", "{,"):
@@ -116,7 +114,7 @@ class ShortAnswer(_Strict):
         return self
 
     @property
-    def auto_graded(self) -> bool:
+    def graded(self) -> bool:
         return self.numeric is not None or bool(self.accept) or self.pattern is not None
 
     def matches_pattern(self, text: str) -> bool:
@@ -129,6 +127,48 @@ class ShortAnswer(_Strict):
             return False
         normalized = unicodedata.normalize("NFKC", text).strip()
         return re.fullmatch(self.pattern, normalized, re.IGNORECASE | re.ASCII) is not None
+
+
+class ShortAnswer(AnswerKey):
+    """Answer key of a `short_answer` question — always auto-graded.
+
+    Either one typed answer (a number, word or short phrase: the key fields above), or a
+    gap-fill: the question text has blanks `{{1}}`, `{{2}}`, … and `blanks` holds one key per
+    blank, in order. A gap-fill is correct only when every blank is.
+    """
+
+    blanks: list[AnswerKey] = Field(
+        [], description="Gap-fill: one key per blank {{1}}, {{2}}, … in the question, in order"
+    )
+    model: Text | None = Field(
+        None, description="Optional worked answer shown after answering (Markdown)"
+    )
+
+    @model_validator(mode="after")
+    def _one_form(self) -> ShortAnswer:
+        if self.blanks and self.graded:
+            raise ValueError("use either `blanks` (gap-fill) or accept/numeric/pattern, not both")
+        if not self.blanks and not self.graded:
+            raise ValueError(
+                "short answers are auto-graded: set numeric, accept or pattern "
+                "(or `blanks` for a gap-fill)"
+            )
+        return self
+
+    def inputs(self) -> list[AnswerKey]:
+        """The key of each input: the blanks of a gap-fill, or the answer itself."""
+        return list(self.blanks) or [self]
+
+
+# Blanks of a gap-fill question: "{{1}}", "{{2}}", … in plain text (not in code or math).
+BLANK_RE = re.compile(r"\{\{(\d+)\}\}")
+
+
+def blank_markers(text: str | None) -> list[int]:
+    """Blank numbers in `text` outside code spans/blocks and math, in reading order."""
+    if not text:
+        return []
+    return [int(n) for n in BLANK_RE.findall(_CODE_OR_MATH_RE.sub("", text))]
 
 
 CHOICE_TYPES = ("single", "multiple", "true_false")
@@ -166,6 +206,7 @@ class Question(_Strict):
         else:
             if self.options or not self.answer:
                 raise ValueError("short_answer: needs `answer` and no `options`")
+            self._check_blanks(self.answer)
 
         if self.status == "reviewed":
             missing = [f for f in ("explanation", "difficulty") if not getattr(self, f)]
@@ -183,6 +224,17 @@ class Question(_Strict):
                     f"citation [^{n}] has no matching reference ({len(self.references)} given)"
                 )
         return self
+
+    def _check_blanks(self, answer: ShortAnswer) -> None:
+        found = blank_markers(self.question)
+        if len(BLANK_RE.findall(self.question)) != len(found):
+            raise ValueError("blanks {{n}} must be in plain text, not inside code or math")
+        expected = list(range(1, len(answer.blanks) + 1))
+        if found != expected:
+            raise ValueError(
+                f"question blanks {found} don't match the {len(answer.blanks)} `blanks` keys "
+                f"(expected {expected} in reading order)"
+            )
 
     def _check_choices(self) -> None:
         if not self.options or self.answer:

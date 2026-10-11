@@ -1,24 +1,21 @@
-import { gradeChoice } from "../lib/grading";
+import { describeAccepted, gradeChoice, inputKeys, isGapFill } from "../lib/grading";
 import type { Answer } from "../lib/session";
 import type { QuizQuestion } from "../lib/types";
 import { Figure } from "./Figure";
 import { Html } from "./Html";
 import { CheckIcon, CrossIcon, MinusIcon } from "./Icons";
 
-/** Shown once a question is answered: verdict, model answer, explanation, references, source. */
+/** Shown once a question is answered: verdict, answer key, explanation, references, source. */
 export function Feedback({ question: q, answer }: { question: QuizQuestion; answer: Answer }) {
   return (
     <div className="mt-5 space-y-5">
       {answer.outcome && <Verdict question={q} answer={answer} />}
 
       {q.answer && (
-        <section
-          aria-label="Model answer"
-          className="rounded-xl border border-line bg-subtle px-4 py-3"
-        >
-          <h3 className="text-xs font-semibold tracking-wide text-muted uppercase">Model answer</h3>
-          <Html html={q.answer.modelHtml} className="mt-1.5" />
+        <section aria-label="Answer" className="rounded-xl border border-line bg-subtle px-4 py-3">
+          <h3 className="text-xs font-semibold tracking-wide text-muted uppercase">Answer</h3>
           <AcceptedAnswers question={q} />
+          {q.answer.modelHtml && <Html html={q.answer.modelHtml} className="mt-2" />}
         </section>
       )}
 
@@ -28,7 +25,8 @@ export function Feedback({ question: q, answer }: { question: QuizQuestion; answ
           <Html html={q.explanationHtml} className="mt-1.5" />
         </section>
       ) : (
-        !q.answer && !q.options?.some((o) => o.whyHtml) && <MissingExplanation question={q} />
+        !q.answer?.modelHtml &&
+        !q.options?.some((o) => o.whyHtml) && <MissingExplanation question={q} />
       )}
       {q.explanationFigure && <Figure figure={q.explanationFigure} />}
 
@@ -93,9 +91,9 @@ export function Feedback({ question: q, answer }: { question: QuizQuestion; answ
 
 function Verdict({ question: q, answer }: { question: QuizQuestion; answer: Answer }) {
   const correct = answer.outcome === "correct";
-  const selfGraded = q.type === "short_answer" && answer.revealed;
   // Only a timed test grades a blank answer (practice needs an answer before "Check").
-  const blank = !selfGraded && answer.selected.length === 0 && answer.text.trim() === "";
+  const blank =
+    answer.selected.length === 0 && [answer.text, ...answer.blanks].every((t) => t.trim() === "");
   let detail: string | null = null;
   if (!correct && !blank && q.type === "multiple" && q.options) {
     const { missed, wrong } = gradeChoice(
@@ -123,15 +121,7 @@ function Verdict({ question: q, answer }: { question: QuizQuestion; answer: Answ
       )}
       <div>
         <p className="font-semibold">
-          {selfGraded
-            ? correct
-              ? "Marked as known"
-              : "Marked for another round"
-            : correct
-              ? "Correct"
-              : blank
-                ? "Not answered"
-                : "Not quite"}
+          {correct ? "Correct" : blank ? "Not answered" : "Not quite"}
         </p>
         {detail && <p className="mt-0.5 text-sm">{detail}</p>}
       </div>
@@ -172,17 +162,25 @@ function MissingExplanation({ question: q }: { question: QuizQuestion }) {
 function AcceptedAnswers({ question: q }: { question: QuizQuestion }) {
   const key = q.answer;
   if (!key) return null;
-  const accepted: string[] = [];
-  if (typeof key.numeric === "number") {
-    accepted.push(key.tolerance > 0 ? `${key.numeric} ± ${key.tolerance}` : String(key.numeric));
+  const note = <span className="sr-only"> (case, spaces and punctuation are ignored)</span>;
+  if (isGapFill(key)) {
+    return (
+      <ol className="mt-1.5 space-y-0.5 text-sm">
+        {inputKeys(key).map((k, i) => (
+          // biome-ignore lint/suspicious/noArrayIndexKey: blanks are numbered by position.
+          <li key={i}>
+            <span className="text-muted">Blank {i + 1}:</span>{" "}
+            <span className="text-ink">{describeAccepted(k)}</span>
+            {note}
+          </li>
+        ))}
+      </ol>
+    );
   }
-  accepted.push(...key.accept);
-  if (accepted.length === 0) return null;
   return (
-    <p className="mt-2 text-sm text-muted">
-      Accepted: {accepted.join(" · ")}
-      {key.pattern && " and equivalent spellings"}
-      <span className="sr-only"> (case, spaces and punctuation are ignored)</span>
+    <p className="mt-1.5 text-sm text-ink">
+      {describeAccepted(key)}
+      {note}
     </p>
   );
 }

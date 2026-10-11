@@ -51,7 +51,7 @@ questions:
 | `single` | exactly one option `correct: true` | auto |
 | `multiple` | one or more options `correct: true` ("select all that apply") | auto, all-or-nothing |
 | `true_false` | two options (True/False), one correct | auto |
-| `short_answer` | `answer:` block, no `options` | auto if `numeric`, `accept` or `pattern` is set, otherwise self-graded against `model` |
+| `short_answer` | `answer:` block, no `options`: one typed answer (number, word, short phrase) or a gap-fill with blanks `{{1}}`, `{{2}}`… | auto — always; a gap-fill is correct when every blank is |
 
 ```yaml
 # numeric, auto-graded
@@ -73,13 +73,30 @@ answer:
   hint: Four dimensions in order, e.g. (8, 1, 28, 28) or 8×1×28×28
   model: $(32, 3, 64, 64)$ — (batch size, channels, height, width)
 
-# open question, self-graded: the learner compares with the model answer
+# gap-fill: blanks {{1}}, {{2}}, … in the question text, one key per blank, in order
+question: |
+  Q-learning is an {{1}}-policy method: it acts ε-greedily, but its update uses the
+  {{2}} action of the next state.
 answer:
-  model: |
-    Softmax is invariant to adding a constant to all logits ...
+  blanks:
+    - accept: ["off"]
+    - accept: [greedy, best, max, maximum]
+      hint: one word
+  model: Off-policy; the target uses $\max_a Q(S_{t+1}, a)$.   # optional
+
+# gap-fill in code: put the code around the blank in inline code spans
+question: "Complete the code so that `Z` is a vector of ten zeros: `Z = np.`{{1}}`(10)`"
+answer:
+  blanks:
+    - accept: [zeros]
 ```
 
-Grading of a typed answer — correct if **any** key matches:
+There are no open (self-graded) short answers: a question that can't be turned into a number,
+a word/phrase or a gap-fill becomes a choice question. Blanks must sit in plain text — not inside
+`$…$` math or code — and must be numbered 1, 2, … in reading order (`mlr check`). `model` is
+optional; after answering, the app shows the accepted answer of each blank.
+
+Grading of a typed answer (the whole answer, or one blank) — correct if **any** key matches:
 
 1. `numeric`: the input parses as a number (`42`, `-0.5`, `1/3`, `2.5e-3`) within `tolerance`.
 2. `accept`: equal after normalization (case, Unicode NFKC, whitespace and punctuation ignored).
@@ -91,10 +108,9 @@ Grading of a typed answer — correct if **any** key matches:
    `u` flag): `\w`, `\d`, `\b` don't match accented letters. `accept` must list at least one
    example, and every example must match the pattern (`mlr check`).
 
-`hint` is shown under the input in practice and test mode. Without it the app shows a default:
-"Enter a number, e.g. …" for `numeric`, "A word or short phrase" otherwise. Practice and timed
-tests use the same questions: in a test, open (self-graded) answers are compared with the model
-answer on the results screen.
+`hint` is shown with the input (under it, or as the placeholder of a blank) in practice and test
+mode. Without it the app shows a default: "Enter a number, e.g. …" for `numeric`, "A word or short
+phrase" otherwise. Practice and timed tests use the same questions and grading.
 
 ### Citations
 

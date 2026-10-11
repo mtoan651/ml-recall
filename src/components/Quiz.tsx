@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useMemo, useReducer, useRef, useState } from "react";
-import { gradeChoice, gradeShortAnswer, isAutoGraded } from "../lib/grading";
+import { gradeChoice, gradeInputs, isGapFill } from "../lib/grading";
 import {
   answerOf,
   createSession,
@@ -9,6 +9,7 @@ import {
   type SessionInput,
   score as scoreOf,
   sessionReducer,
+  typedInputs,
 } from "../lib/session";
 import {
   DEFAULT_SETTINGS,
@@ -115,15 +116,19 @@ export default function Quiz({ questions, scope, showTopic = false }: QuizProps)
       return;
     }
     if (!question.answer) return;
-    if (!isAutoGraded(question.answer)) {
-      dispatch({ type: "reveal" });
-      setAnnouncement("Model answer shown. Did you get it?");
-      return;
+    const gapFill = isGapFill(question.answer);
+    const grades = gradeInputs(question.answer, typedInputs(answer, gapFill));
+    const which = (i: number) => (gapFill ? `Blank ${i + 1}` : "That");
+    const empty = grades.findIndex((g) => g.kind === "empty");
+    const notNumber = grades.findIndex((g) => g.kind === "not-a-number");
+    if (empty >= 0) {
+      setInputError(gapFill ? `Fill in blank ${empty + 1} first.` : "Type an answer first.");
+    } else if (notNumber >= 0) {
+      setInputError(`${which(notNumber)} is not a number.`);
+    } else {
+      const correct = grades.every((g) => g.kind === "graded" && g.correct);
+      grade(question.id, correct ? "correct" : "incorrect");
     }
-    const result = gradeShortAnswer(answer.text, question.answer);
-    if (result.kind === "graded") grade(question.id, result.correct ? "correct" : "incorrect");
-    else if (result.kind === "not-a-number") setInputError("That is not a number.");
-    else if (result.kind === "empty") setInputError("Type an answer first.");
   }, [question, answer, grade]);
 
   const next = useCallback(() => {
@@ -132,13 +137,6 @@ export default function Quiz({ questions, scope, showTopic = false }: QuizProps)
     setAnnouncement("");
     dispatch({ type: "next" });
   }, []);
-
-  const selfGrade = useCallback(
-    (outcome: Outcome) => {
-      if (question) grade(question.id, outcome);
-    },
-    [question, grade],
-  );
 
   const select = useCallback(
     (option: number) =>
@@ -150,7 +148,7 @@ export default function Quiz({ questions, scope, showTopic = false }: QuizProps)
   const primary = useCallback(() => {
     if (!question || !answer) return;
     if (answer.outcome) next();
-    else if (!answer.revealed) check();
+    else check();
   }, [question, answer, next, check]);
 
   // Keyboard: 1–9 pick the n-th shown option, Enter checks / continues.
@@ -190,11 +188,10 @@ export default function Quiz({ questions, scope, showTopic = false }: QuizProps)
   };
 
   const isLast = score.current === score.total;
-  const selfGradedPending =
-    question?.type === "short_answer" && answer?.revealed && !answer.outcome;
+  const typed = question?.answer && answer ? typedInputs(answer, isGapFill(question.answer)) : [];
   const canCheck = question?.options
     ? (answer?.selected.length ?? 0) > 0
-    : !question?.answer || !isAutoGraded(question.answer) || (answer?.text.trim() ?? "") !== "";
+    : typed.some((t) => t.trim() !== "");
 
   return (
     <section className="quiz" data-ready={ready} aria-label={`Practice: ${scope}`}>
@@ -286,9 +283,9 @@ export default function Quiz({ questions, scope, showTopic = false }: QuizProps)
                 showTopic={showTopic}
                 inputError={inputError}
                 onSelect={select}
-                onText={(text) => {
+                onText={(text, blank) => {
                   setInputError(null);
-                  dispatch({ type: "type", text });
+                  dispatch({ type: "type", text, blank });
                 }}
                 onSubmitText={primary}
               />
@@ -300,24 +297,7 @@ export default function Quiz({ questions, scope, showTopic = false }: QuizProps)
                       ? "Keys: 1–9 select · Enter check / next"
                       : "Enter: check / next"}
                   </span>
-                  {selfGradedPending ? (
-                    <>
-                      <button
-                        type="button"
-                        onClick={() => selfGrade("incorrect")}
-                        className="rounded-lg border border-line-strong bg-surface px-4 py-2 font-medium hover:bg-subtle"
-                      >
-                        I missed it
-                      </button>
-                      <button
-                        type="button"
-                        onClick={() => selfGrade("correct")}
-                        className="rounded-lg bg-accent px-4 py-2 font-medium text-accent-ink hover:bg-accent-hover"
-                      >
-                        I got it
-                      </button>
-                    </>
-                  ) : answer.outcome ? (
+                  {answer.outcome ? (
                     <button
                       type="button"
                       onClick={next}
@@ -332,7 +312,7 @@ export default function Quiz({ questions, scope, showTopic = false }: QuizProps)
                       disabled={!canCheck}
                       className="rounded-lg bg-accent px-5 py-2 font-medium text-accent-ink hover:bg-accent-hover disabled:cursor-not-allowed disabled:opacity-50"
                     >
-                      {question.answer && !isAutoGraded(question.answer) ? "Show answer" : "Check"}
+                      Check
                     </button>
                   )}
                 </div>

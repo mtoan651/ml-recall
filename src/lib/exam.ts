@@ -1,12 +1,17 @@
 /**
  * Timed tests ("exam mode", docs/web-app.md#timed-tests): N random questions of one topic or
  * tag in N minutes, no feedback until the test is submitted. Tests draw from the same question
- * bank as practice — every type, open short answers included (the learner self-grades those on
- * the results screen). Pure logic only — the island
+ * bank as practice, every type included, with the same grading. Pure logic only — the island
  * (src/components/Exam.tsx) renders and dispatches, src/lib/storage.ts reads and writes.
  */
-import { gradeChoice, gradeShortAnswer, isAutoGraded, type ShortAnswerKey } from "./grading";
-import { type SessionInput, type SessionItem, toggleOption } from "./session";
+import { type FillKey, gradeChoice, gradeInputs, isGapFill } from "./grading";
+import {
+  type SessionInput,
+  type SessionItem,
+  setBlank,
+  toggleOption,
+  typedInputs,
+} from "./session";
 import { order, type Rng, shuffled } from "./shuffle";
 import type { QuestionType } from "./types";
 
@@ -68,8 +73,10 @@ export function selectExamItems(
 export interface ExamAnswer {
   /** Selected options, as original option indexes. */
   selected: number[];
-  /** Typed short answer. */
+  /** Typed short answer (one input). */
   text: string;
+  /** Typed answers of a gap-fill, one per blank in order (absent in tests saved before). */
+  blanks?: string[];
 }
 
 /**
@@ -137,7 +144,7 @@ export function createExam(pool: readonly SessionInput[], options: CreateExamOpt
   };
 }
 
-export const EMPTY_EXAM_ANSWER: ExamAnswer = { selected: [], text: "" };
+export const EMPTY_EXAM_ANSWER: ExamAnswer = { selected: [], text: "", blanks: [] };
 
 export function examAnswerOf(state: ExamState, id: string): ExamAnswer {
   return state.answers[id] ?? EMPTY_EXAM_ANSWER;
@@ -149,7 +156,9 @@ export function currentExamItem(state: ExamState): SessionItem | undefined {
 
 /** Answered = an option is selected or some text is typed. */
 export function isAnswered(answer: ExamAnswer | undefined): boolean {
-  return Boolean(answer && (answer.selected.length > 0 || answer.text.trim() !== ""));
+  if (!answer) return false;
+  const typed = [answer.text, ...(answer.blanks ?? [])].some((t) => t.trim() !== "");
+  return answer.selected.length > 0 || typed;
 }
 
 export function answeredCount(state: ExamState): number {
@@ -167,7 +176,8 @@ export function unansweredCount(state: ExamState): number {
 export type ExamAction =
   /** Select an option (original index); toggles for multiple. */
   | { type: "select"; option: number; multiple: boolean; id?: string }
-  | { type: "type"; text: string; id?: string }
+  /** Type into the answer, or into blank `blank` (0-based) of a gap-fill. */
+  | { type: "type"; text: string; blank?: number; id?: string }
   | { type: "toggleFlag"; id?: string }
   | { type: "goto"; position: number }
   | { type: "next" }
@@ -188,10 +198,12 @@ export function examReducer(state: ExamState, action: ExamAction): ExamState {
     case "type": {
       if (!item) return state;
       const answer = examAnswerOf(state, item.id);
-      return {
-        ...state,
-        answers: { ...state.answers, [item.id]: { ...answer, text: action.text } },
-      };
+      const { blank, text } = action;
+      const next =
+        blank === undefined
+          ? { ...answer, text }
+          : { ...answer, blanks: setBlank(answer.blanks ?? [], blank, text) };
+      return { ...state, answers: { ...state.answers, [item.id]: next } };
     }
     case "toggleFlag": {
       if (!item) return state;
@@ -272,24 +284,20 @@ export function timerAnnouncement(previousMs: number, currentMs: number): string
 
 // --------------------------------------------------------------------------- scoring
 
-/**
- * `pending`: an open short answer (model answer only) that was answered; the learner compares it
- * with the model answer on the results screen and marks it right or wrong.
- */
-export type ExamOutcome = "correct" | "incorrect" | "unanswered" | "pending";
+export type ExamOutcome = "correct" | "incorrect" | "unanswered";
 
 /** What grading needs to know about a question (`QuizQuestion` fits). */
 export interface GradingInput {
   type: QuestionType;
   options?: readonly { correct: boolean }[];
-  answer?: ShortAnswerKey;
+  answer?: FillKey;
 }
 
 /**
  * Grades one answer with the practice rules (src/lib/grading.ts): choice questions are
- * all-or-nothing, short answers match `numeric` / `accept` / `pattern`. Text that is not a number
- * for a numeric-only key is wrong (a test cannot ask again). Open short answers wait for the
- * learner's own verdict (`pending`).
+ * all-or-nothing, short answers match `numeric` / `accept` / `pattern`, and a gap-fill needs
+ * every blank right. Text that is not a number for a numeric-only key is wrong, and so is an
+ * empty blank once anything was typed (a test cannot ask again).
  */
 export function gradeExamAnswer(q: GradingInput, answer: ExamAnswer | undefined): ExamOutcome {
   if (!answer || !isAnswered(answer)) return "unanswered";
@@ -302,10 +310,9 @@ export function gradeExamAnswer(q: GradingInput, answer: ExamAnswer | undefined)
     return correct ? "correct" : "incorrect";
   }
   if (!q.answer) return "incorrect";
-  if (!isAutoGraded(q.answer)) return "pending";
-  const result = gradeShortAnswer(answer.text, q.answer);
-  if (result.kind === "empty") return "unanswered";
-  return result.kind === "graded" && result.correct ? "correct" : "incorrect";
+  const grades = gradeInputs(q.answer, typedInputs(answer, isGapFill(q.answer)));
+  if (grades.every((g) => g.kind === "empty")) return "unanswered";
+  return grades.every((g) => g.kind === "graded" && g.correct) ? "correct" : "incorrect";
 }
 
 export interface ExamScore {
@@ -313,30 +320,20 @@ export interface ExamScore {
   correct: number;
   incorrect: number;
   unanswered: number;
-  /** Open short answers still waiting for the learner's verdict (not counted as correct). */
-  pending: number;
   /** Rounded percentage of `total`. */
   percent: number;
   outcomes: Record<string, ExamOutcome>;
 }
 
-/**
- * Scores a submitted test. `selfGrades` holds the learner's verdicts on open short answers
- * (id → right?); answered open questions without a verdict stay `pending`.
- */
 export function scoreExam(
   state: Pick<ExamState, "items" | "answers">,
   questions: ReadonlyMap<string, GradingInput>,
-  selfGrades: Readonly<Record<string, boolean>> = {},
 ): ExamScore {
   const outcomes: Record<string, ExamOutcome> = {};
-  const counts = { correct: 0, incorrect: 0, unanswered: 0, pending: 0 };
+  const counts = { correct: 0, incorrect: 0, unanswered: 0 };
   for (const { id } of state.items) {
     const q = questions.get(id);
-    let outcome = q ? gradeExamAnswer(q, state.answers[id]) : "unanswered";
-    if (outcome === "pending" && id in selfGrades) {
-      outcome = selfGrades[id] ? "correct" : "incorrect";
-    }
+    const outcome = q ? gradeExamAnswer(q, state.answers[id]) : "unanswered";
     outcomes[id] = outcome;
     counts[outcome]++;
   }
@@ -362,6 +359,8 @@ export function serializeExam(state: ExamState): string {
 export interface StoredQuestionInfo {
   type: QuestionType;
   optionCount: number;
+  /** Blanks of a gap-fill (0 otherwise). */
+  blankCount?: number;
 }
 
 const isRecord = (value: unknown): value is Record<string, unknown> =>
@@ -443,8 +442,13 @@ function parseAnswer(raw: unknown, info: StoredQuestionInfo): ExamAnswer | null 
     typeof raw.text === "string" && info.type === "short_answer"
       ? raw.text.slice(0, MAX_TEXT_LENGTH)
       : "";
-  if (validSelection.length === 0 && text === "") return null;
-  return { selected: validSelection, text };
+  const blankCount = info.type === "short_answer" ? (info.blankCount ?? 0) : 0;
+  const storedBlanks: unknown[] = Array.isArray(raw.blanks) ? raw.blanks : [];
+  const blanks = storedBlanks
+    .slice(0, blankCount)
+    .map((b) => (typeof b === "string" ? b.slice(0, MAX_TEXT_LENGTH) : ""));
+  if (validSelection.length === 0 && text === "" && blanks.every((b) => b === "")) return null;
+  return { selected: validSelection, text, ...(blanks.length > 0 ? { blanks } : {}) };
 }
 
 // --------------------------------------------------------------------------- history

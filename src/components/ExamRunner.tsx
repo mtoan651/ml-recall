@@ -10,7 +10,7 @@ import {
   timerAnnouncement,
   timerLevel,
 } from "../lib/exam";
-import { isNumericOnly, parseNumber } from "../lib/grading";
+import { isGapFill, isNumericOnly, parseNumber } from "../lib/grading";
 import type { SessionItem } from "../lib/session";
 import type { QuizQuestion } from "../lib/types";
 import { ConfirmSubmit } from "./ConfirmSubmit";
@@ -274,7 +274,14 @@ export function ExamRunner({
   const submitText = (id: string) => {
     const key = questions.get(id)?.answer;
     const text = examAnswerOf(exam, id).text;
-    if (key && isNumericOnly(key) && text.trim() !== "" && parseNumber(text) === null) {
+    // A single numeric input: say so now rather than marking it wrong at the end.
+    if (
+      key &&
+      !isGapFill(key) &&
+      isNumericOnly(key) &&
+      text.trim() !== "" &&
+      parseNumber(text) === null
+    ) {
       setInputError({ id, message: NOT_A_NUMBER });
       return;
     }
@@ -322,17 +329,16 @@ export function ExamRunner({
           ref={cardRef}
           question={question}
           item={item}
-          answer={{ ...answer, revealed: false }}
+          answer={{ ...answer, blanks: answer.blanks ?? [] }}
           number={k + 1}
           showTopic={showTopic}
           inputError={inputError?.id === item.id ? inputError.message : null}
           onSelect={(option) => select(item.id, option)}
-          onText={(text) => {
+          onText={(text, blank) => {
             if (inputError?.id === item.id) setInputError(null);
-            dispatch({ type: "type", text, id: item.id });
+            dispatch({ type: "type", text, blank, id: item.id });
           }}
           onSubmitText={() => submitText(item.id)}
-          mode="exam"
         />
       </>
     );

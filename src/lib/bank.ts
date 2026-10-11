@@ -10,9 +10,9 @@ import { getCollection } from "astro:content";
 import { posix } from "node:path";
 import { referenceAnchor } from "./citations";
 import { renderMarkdown } from "./markdown";
-import type { Figure, Question, Source } from "./schema";
+import type { AnswerKey, Figure, Question, Source } from "./schema";
 import { shufflesOptions } from "./shuffle";
-import type { FigureView, QuizQuestion, ReferenceView } from "./types";
+import type { FigureView, InputKeyView, QuizQuestion, ReferenceView } from "./types";
 import { topicUrl } from "./url";
 
 /** Figures next to the YAML files, bundled by Vite: "/src/content/quizzes/dl/cnn/x.svg" → URL. */
@@ -208,13 +208,21 @@ async function renderQuestion(
   { question: q, topic, filePath }: BankQuestion,
   bank: Bank,
 ): Promise<QuizQuestion> {
-  const md = (text: string, field: string, inline = false) =>
+  const md = (text: string, field: string, inline = false, blanks = false) =>
     renderMarkdown(text, {
       citePrefix: q.id,
       refCount: q.references.length,
       context: `${filePath} ${q.id} ${field}`,
       inline,
+      blanks,
     });
+  const inputKey = (k: AnswerKey): InputKeyView => ({
+    accept: k.accept,
+    ...(typeof k.numeric === "number" ? { numeric: k.numeric } : {}),
+    tolerance: k.tolerance,
+    ...(k.pattern ? { pattern: k.pattern } : {}),
+    ...(k.hint ? { hint: k.hint } : {}),
+  });
   const figure = async (f: Figure | null | undefined): Promise<FigureView | undefined> => {
     if (!f) return undefined;
     const src = figureUrl(filePath, f.src) as string; // existence checked in loadBank
@@ -257,11 +265,11 @@ async function renderQuestion(
 
   const [questionHtml, questionFigure, explanationHtml, explanationFigure, modelHtml] =
     await Promise.all([
-      md(q.question, "question"),
+      md(q.question, "question", false, (q.answer?.blanks.length ?? 0) > 0),
       figure(q.figure),
       q.explanation ? md(q.explanation, "explanation") : undefined,
       figure(q.explanation_figure),
-      q.answer ? md(q.answer.model, "answer.model") : undefined,
+      q.answer?.model ? md(q.answer.model, "answer.model") : undefined,
     ]);
 
   const provenanceUrl = q.source.url ?? source.url;
@@ -276,15 +284,12 @@ async function renderQuestion(
     questionHtml,
     ...(questionFigure ? { figure: questionFigure } : {}),
     ...(options ? { options } : {}),
-    ...(q.answer && modelHtml !== undefined
+    ...(q.answer
       ? {
           answer: {
-            accept: q.answer.accept,
-            ...(typeof q.answer.numeric === "number" ? { numeric: q.answer.numeric } : {}),
-            tolerance: q.answer.tolerance,
-            ...(q.answer.pattern ? { pattern: q.answer.pattern } : {}),
-            ...(q.answer.hint ? { hint: q.answer.hint } : {}),
-            modelHtml,
+            ...inputKey(q.answer),
+            ...(q.answer.blanks.length > 0 ? { blanks: q.answer.blanks.map(inputKey) } : {}),
+            ...(modelHtml ? { modelHtml } : {}),
           },
         }
       : {}),

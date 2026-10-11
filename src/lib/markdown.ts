@@ -44,6 +44,8 @@ export interface RenderOptions {
   context?: string;
   /** Unwrap a lone paragraph, for text shown inline (option labels). */
   inline?: boolean;
+  /** Turn gap-fill blanks `{{n}}` into `<span class="blank" data-blank="n">` (question text). */
+  blanks?: boolean;
 }
 
 const SOURCE_KATEX_STRICT = "katex-strict";
@@ -135,6 +137,51 @@ export function transformCitations(tree: MdastRoot, options: RenderOptions): voi
   });
 }
 
+const BLANK_RE = /\{\{(\d+)\}\}/g;
+
+/** Where a gap-fill input goes; the quiz island renders the input into this span. */
+interface BlankNode extends Node {
+  type: "blank";
+  data: Data;
+}
+
+declare module "mdast" {
+  interface PhrasingContentMap {
+    blank: BlankNode;
+  }
+  interface RootContentMap {
+    blank: BlankNode;
+  }
+}
+
+/**
+ * Replaces `{{n}}` in prose with empty `<span class="blank" data-blank="n">` placeholders. Code
+ * and math are separate node types, so `{{n}}` inside them stays text (`mlr check` forbids it).
+ */
+export function transformBlanks(tree: MdastRoot): void {
+  visit(tree, "text", (node, index, parent) => {
+    if (!parent || index === undefined || !BLANK_RE.test(node.value)) return;
+    BLANK_RE.lastIndex = 0;
+    const parts: PhrasingContent[] = [];
+    let last = 0;
+    for (const m of node.value.matchAll(BLANK_RE)) {
+      if (m.index > last) parts.push({ type: "text", value: node.value.slice(last, m.index) });
+      parts.push({
+        type: "blank",
+        data: {
+          hName: "span",
+          hProperties: { className: ["blank"], dataBlank: m[1] },
+          hChildren: [],
+        },
+      });
+      last = m.index + m[0].length;
+    }
+    if (last < node.value.length) parts.push({ type: "text", value: node.value.slice(last) });
+    (parent as Parent).children.splice(index, 1, ...parts);
+    return [SKIP, index + parts.length];
+  });
+}
+
 /** `<p>text</p>` → `text` when the document is a single paragraph. */
 function unwrapParagraph(tree: HastRoot): void {
   const blocks = tree.children.filter((n) => !(n.type === "text" && n.value.trim() === ""));
@@ -151,6 +198,7 @@ function unwrapParagraph(tree: HastRoot): void {
 export async function renderMarkdown(markdown: string, options: RenderOptions): Promise<string> {
   const file = new VFile({ value: markdown });
   const tree = processor.parse(file);
+  if (options.blanks) transformBlanks(tree);
   transformCitations(tree, options);
   const hast = await processor.run(tree, file);
   if (options.inline) unwrapParagraph(hast);

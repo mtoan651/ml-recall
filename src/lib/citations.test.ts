@@ -1,5 +1,11 @@
 import { describe, expect, it } from "vitest";
-import { citationMarkers, referenceAnchor, splitCitations } from "./citations";
+import {
+  allBlankMarkers,
+  blankMarkers,
+  citationMarkers,
+  referenceAnchor,
+  splitCitations,
+} from "./citations";
 import { renderMarkdown } from "./markdown";
 
 describe("citationMarkers (mirror of schema.py citation_markers)", () => {
@@ -91,5 +97,23 @@ describe("citations in rendered Markdown", () => {
     expect(html).toContain('href="#ref-cnn-008-1"');
     expect(html).not.toContain("Ignored definition");
     expect(html).not.toContain("footnote");
+  });
+});
+
+describe("gap-fill blanks", () => {
+  it("marks blanks in prose, not in code or math", async () => {
+    const html = await renderMarkdown("Use `np.{{9}}` or {{1}} and $x_{{2}}$.", {
+      citePrefix: "q",
+      refCount: 0,
+      blanks: true,
+    });
+    expect(html).toContain('<span class="blank" data-blank="1"></span>');
+    expect(html).toContain("np.{{9}}");
+    expect(html).not.toContain('data-blank="2"');
+  });
+
+  it("finds blank markers like schema.py", () => {
+    expect(blankMarkers("An {{1}}-policy, {{2}} target, `{{3}}`.")).toEqual([1, 2]);
+    expect(allBlankMarkers("`{{3}}` and {{1}}")).toEqual([3, 1]);
   });
 });

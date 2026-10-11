@@ -1,5 +1,71 @@
 {
   "$defs": {
+    "AnswerKey": {
+      "additionalProperties": false,
+      "description": "How one typed answer is graded \u2014 a whole short answer or one blank of a gap-fill.\n\nCorrect if any of `numeric`, `accept` or `pattern` matches; at least one is required.",
+      "properties": {
+        "accept": {
+          "default": [],
+          "description": "Accepted answers, matched ignoring case, spaces and punctuation",
+          "items": {
+            "minLength": 1,
+            "type": "string"
+          },
+          "title": "Accept",
+          "type": "array"
+        },
+        "numeric": {
+          "anyOf": [
+            {
+              "type": "number"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "description": "Numeric answer",
+          "title": "Numeric"
+        },
+        "tolerance": {
+          "default": 0,
+          "description": "Absolute tolerance for `numeric`",
+          "minimum": 0,
+          "title": "Tolerance",
+          "type": "number"
+        },
+        "pattern": {
+          "anyOf": [
+            {
+              "minLength": 1,
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "description": "Regex for answers with several valid spellings, e.g. '\\(?5\\s*[x\u00d7,]\\s*4\\)?'. Matched case-insensitively against the whole trimmed answer; use syntax valid in both Python and JavaScript",
+          "title": "Pattern"
+        },
+        "hint": {
+          "anyOf": [
+            {
+              "minLength": 1,
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "description": "Format guidance shown with the input, e.g. 'rows\u00d7cols, e.g. 3\u00d74'",
+          "title": "Hint"
+        }
+      },
+      "title": "AnswerKey",
+      "type": "object"
+    },
     "Figure": {
       "additionalProperties": false,
       "properties": {
@@ -347,7 +413,7 @@
     },
     "ShortAnswer": {
       "additionalProperties": false,
-      "description": "Answer key of a `short_answer` question.\n\nAuto-graded when `numeric`, `accept` or `pattern` is set (an answer is correct if any of\nthem matches); otherwise the learner self-grades against `model`.",
+      "description": "Answer key of a `short_answer` question \u2014 always auto-graded.\n\nEither one typed answer (a number, word or short phrase: the key fields above), or a\ngap-fill: the question text has blanks `{{1}}`, `{{2}}`, \u2026 and `blanks` holds one key per\nblank, in order. A gap-fill is correct only when every blank is.",
       "properties": {
         "accept": {
           "default": [],
@@ -404,19 +470,33 @@
             }
           ],
           "default": null,
-          "description": "Format guidance shown under the input, e.g. 'rows\u00d7cols, e.g. 3\u00d74'",
+          "description": "Format guidance shown with the input, e.g. 'rows\u00d7cols, e.g. 3\u00d74'",
           "title": "Hint"
         },
+        "blanks": {
+          "default": [],
+          "description": "Gap-fill: one key per blank {{1}}, {{2}}, \u2026 in the question, in order",
+          "items": {
+            "$ref": "#/$defs/AnswerKey"
+          },
+          "title": "Blanks",
+          "type": "array"
+        },
         "model": {
-          "description": "Model answer shown after answering (Markdown)",
-          "minLength": 1,
-          "title": "Model",
-          "type": "string"
+          "anyOf": [
+            {
+              "minLength": 1,
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "description": "Optional worked answer shown after answering (Markdown)",
+          "title": "Model"
         }
       },
-      "required": [
-        "model"
-      ],
       "title": "ShortAnswer",
       "type": "object"
     }

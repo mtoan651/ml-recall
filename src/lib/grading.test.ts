@@ -3,8 +3,10 @@ import {
   answerHint,
   compilePattern,
   gradeChoice,
+  gradeInputs,
   gradeShortAnswer,
-  isAutoGraded,
+  inputKeys,
+  isGapFill,
   isNumericOnly,
   matchesPattern,
   matchesText,
@@ -117,15 +119,25 @@ describe("gradeShortAnswer", () => {
     expect(gradeShortAnswer("thirty", key)).toEqual({ kind: "graded", correct: false });
   });
 
-  it("leaves open questions to self-grading", () => {
-    const key = { accept: [], numeric: null };
-    expect(isAutoGraded(key)).toBe(false);
-    expect(gradeShortAnswer("anything", key)).toEqual({ kind: "self-graded" });
+  it("grades every input of a gap-fill", () => {
+    const key = { accept: [], blanks: [{ accept: ["off"] }, { accept: [], numeric: 4 }] };
+    expect(isGapFill(key)).toBe(true);
+    expect(inputKeys(key)).toHaveLength(2);
+    expect(gradeInputs(key, ["OFF", "4.0"])).toEqual([
+      { kind: "graded", correct: true },
+      { kind: "graded", correct: true },
+    ]);
+    expect(gradeInputs(key, ["on"])).toEqual([
+      { kind: "graded", correct: false },
+      { kind: "empty" },
+    ]);
+    expect(gradeInputs({ accept: ["relu"] }, ["ReLU"])).toEqual([
+      { kind: "graded", correct: true },
+    ]);
   });
 
-  it("grades pattern-only keys (and they count as auto-graded)", () => {
+  it("grades pattern-only keys", () => {
     const key = { accept: [], pattern: SHAPE };
-    expect(isAutoGraded(key)).toBe(true);
     expect(isNumericOnly(key)).toBe(false);
     expect(gradeShortAnswer("32x3x64x64", key)).toEqual({ kind: "graded", correct: true });
     expect(gradeShortAnswer("(3, 32, 64, 64)", key)).toEqual({ kind: "graded", correct: false });

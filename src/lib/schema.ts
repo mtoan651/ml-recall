@@ -5,7 +5,7 @@
  * in schema/*.schema.json, and the Astro build fails on any violation.
  */
 import { z } from "astro/zod";
-import { citationMarkers } from "./citations";
+import { allBlankMarkers, blankMarkers, citationMarkers } from "./citations";
 import { compilePattern, matchesPattern } from "./grading";
 
 const SLUG_RE = /^[a-z0-9]+(?:-[a-z0-9]+)*$/;
@@ -55,38 +55,77 @@ export const provenanceSchema = z.strictObject({
 /** Python-only regex syntax that JavaScript rejects or reads differently (`ShortAnswer` in schema.py). */
 const NON_JS_REGEX_TOKENS = ["(?P", "\\A", "\\Z", "(?#", "(?i", "(?x", "(?s", "(?m"];
 
-export const shortAnswerSchema = z
-  .strictObject({
-    accept: z.array(text).default([]),
-    numeric: z.number().nullish(),
-    tolerance: z.number().min(0).default(0),
-    pattern: text.nullish(),
-    hint: text.nullish(),
-    model: text,
-  })
-  .superRefine((answer, ctx) => {
-    const { pattern } = answer;
-    if (!pattern) return;
-    const token = NON_JS_REGEX_TOKENS.find((t) => pattern.includes(t));
-    if (token) {
+const answerKeyShape = {
+  accept: z.array(text).default([]),
+  numeric: z.number().nullish(),
+  tolerance: z.number().min(0).default(0),
+  pattern: text.nullish(),
+  hint: text.nullish(),
+};
+
+type AnswerKeyShape = { accept: string[]; pattern?: string | null | undefined };
+
+/** Pattern rules of `AnswerKey._valid_pattern` in schema.py, plus `accept` ⊂ pattern. */
+function patternProblems(key: AnswerKeyShape, ctx: z.RefinementCtx, path: (string | number)[]) {
+  const { pattern } = key;
+  if (!pattern) return;
+  const token = NON_JS_REGEX_TOKENS.find((t) => pattern.includes(t));
+  if (token) {
+    ctx.addIssue({
+      code: "custom",
+      path: [...path, "pattern"],
+      message: `'${token}' is not valid JavaScript regex syntax`,
+    });
+  } else if (!compilePattern(pattern)) {
+    ctx.addIssue({
+      code: "custom",
+      path: [...path, "pattern"],
+      message: "pattern does not compile",
+    });
+  } else {
+    // Also checked by `mlr check`: the canonical answers must pass the pattern.
+    const misses = key.accept.filter((a) => !matchesPattern(a, pattern));
+    if (misses.length > 0) {
       ctx.addIssue({
         code: "custom",
-        path: ["pattern"],
-        message: `'${token}' is not valid JavaScript regex syntax`,
+        path: [...path, "accept"],
+        message: `accepted answers don't match \`pattern\`: ${misses.join(" | ")}`,
       });
-    } else if (!compilePattern(pattern)) {
-      ctx.addIssue({ code: "custom", path: ["pattern"], message: "pattern does not compile" });
-    } else {
-      // Also checked by `mlr check`: the canonical answers must pass the pattern.
-      const misses = answer.accept.filter((a) => !matchesPattern(a, pattern));
-      if (misses.length > 0) {
-        ctx.addIssue({
-          code: "custom",
-          path: ["accept"],
-          message: `accepted answers don't match \`pattern\`: ${misses.join(" | ")}`,
-        });
-      }
     }
+  }
+}
+
+const graded = (k: { accept: string[]; numeric?: number | null; pattern?: string | null }) =>
+  k.accept.length > 0 || typeof k.numeric === "number" || Boolean(k.pattern);
+
+export const answerKeySchema = z.strictObject(answerKeyShape).superRefine((key, ctx) => {
+  if (!graded(key)) {
+    ctx.addIssue({ code: "custom", message: "set numeric, accept or pattern" });
+  }
+  patternProblems(key, ctx, []);
+});
+
+/** `ShortAnswer` in schema.py: one auto-graded input, or a gap-fill with one key per blank. */
+export const shortAnswerSchema = z
+  .strictObject({
+    ...answerKeyShape,
+    blanks: z.array(answerKeySchema).default([]),
+    model: text.nullish(),
+  })
+  .superRefine((answer, ctx) => {
+    if (answer.blanks.length > 0 && graded(answer)) {
+      ctx.addIssue({
+        code: "custom",
+        message: "use either `blanks` (gap-fill) or accept/numeric/pattern, not both",
+      });
+    } else if (answer.blanks.length === 0 && !graded(answer)) {
+      ctx.addIssue({
+        code: "custom",
+        message:
+          "short answers are auto-graded: set numeric, accept or pattern (or `blanks` for a gap-fill)",
+      });
+    }
+    patternProblems(answer, ctx, []);
   });
 
 export const QUESTION_TYPES = ["single", "multiple", "true_false", "short_answer"] as const;
@@ -139,6 +178,19 @@ function questionProblems(q: QuestionShape): string[] {
     }
   } else if ((q.options && q.options.length > 0) || !q.answer) {
     problems.push("short_answer: needs `answer` and no `options`");
+  } else {
+    // `Question._check_blanks` in schema.py.
+    const found = blankMarkers(q.question);
+    if (allBlankMarkers(q.question).length !== found.length) {
+      problems.push("blanks {{n}} must be in plain text, not inside code or math");
+    } else {
+      const expected = q.answer.blanks.map((_, i) => i + 1);
+      if (found.join(",") !== expected.join(",")) {
+        problems.push(
+          `question blanks [${found.join(", ")}] don't match the ${expected.length} \`blanks\` keys`,
+        );
+      }
+    }
   }
 
   if (q.status === "reviewed") {
@@ -223,6 +275,7 @@ export const sourceRegistrySchema = z.strictObject({
 export type Figure = z.output<typeof figureSchema>;
 export type Option = z.output<typeof optionSchema>;
 export type Reference = z.output<typeof referenceSchema>;
+export type AnswerKey = z.output<typeof answerKeySchema>;
 export type Question = z.output<typeof questionSchema>;
 export type QuizFile = z.output<typeof quizFileSchema>;
 export type Domain = z.output<typeof domainSchema>;

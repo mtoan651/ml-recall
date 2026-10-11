@@ -20,15 +20,25 @@ export interface OptionView {
   image?: FigureView;
 }
 
-export interface AnswerKeyView {
+/** How one typed input is graded: a whole short answer, or one blank of a gap-fill. */
+export interface InputKeyView {
   accept: string[];
   numeric?: number;
   tolerance: number;
   /** Regex source, matched in full and case-insensitively (src/lib/grading.ts). */
   pattern?: string;
-  /** Format guidance under the input (plain text). */
+  /** Format guidance with the input (plain text). */
   hint?: string;
-  modelHtml: string;
+}
+
+export interface AnswerKeyView extends InputKeyView {
+  /**
+   * Gap-fill: one key per blank, in order. The question HTML then holds
+   * `<span class="blank" data-blank="n">` where each input goes.
+   */
+  blanks?: InputKeyView[];
+  /** Optional worked answer shown after answering. */
+  modelHtml?: string;
 }
 
 export interface ReferenceView {
