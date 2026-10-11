@@ -1,4 +1,4 @@
-"""Importer for Hugging Face courses organised in units (Deep RL, Agents).
+"""Importer for Hugging Face courses with quiz pages per unit/chapter (Deep RL, Agents, Audio).
 
 Quiz pages mix `<Question choices={[...]} />` blocks (multiple choice) with open questions whose
 answer sits in `<details><summary>Solution</summary>...</details>`; the latter become self-graded
@@ -22,6 +22,7 @@ class Course:
     site: str
     topics: dict[str, str]  # unit directory -> default topic
     default_topic: str
+    root: str = "units"  # content directory: <root>/en/<unit>/...quiz....mdx
 
 
 COURSES = {
@@ -45,9 +46,18 @@ COURSES = {
         topics={},
         default_topic="rag-agents",
     ),
+    "hf-audio-course": Course(
+        repo="huggingface/audio-transformers-course",
+        site="https://huggingface.co/learn/audio-course",
+        topics={},
+        default_topic="transformers",
+        root="chapters",
+    ),
 }
 
-_PATH_RE = re.compile(r"^units/en/(?P<local>(?P<unit>[^/]+)/(?:[^/]+/)*[^/]*quiz[^/]*)\.mdx$")
+_PATH_RE = re.compile(
+    r"^(?P<root>[^/]+)/en/(?P<local>(?P<unit>[^/]+)/(?:[^/]+/)*[^/]*quiz[^/]*)\.mdx$"
+)
 _HEADING_RE = re.compile(r"^###\s+(?:Q?(?P<num>\d+)\s*[.:)]\s*)?(?P<text>.+)$", re.MULTILINE)
 _DETAILS_RE = re.compile(
     r"<details>\s*<summary>\s*Solution\s*</summary>(?P<body>.*?)</details>", re.S
@@ -98,12 +108,16 @@ def _raw(course: Course, pinned: str, path: str) -> str:
 def _quiz_paths(source_id: str, course: Course, pinned: str) -> list[str]:
     api = f"https://api.github.com/repos/{course.repo}/git/trees/{pinned}?recursive=1"
     tree = json.loads(fetch(source_id, pinned, "tree.json", api).read_text())
-    return sorted(e["path"] for e in tree["tree"] if _PATH_RE.match(e["path"]))
+    return sorted(
+        e["path"]
+        for e in tree["tree"]
+        if (m := _PATH_RE.match(e["path"])) and m.group("root") == course.root
+    )
 
 
 def _toc(source_id: str, course: Course, pinned: str) -> dict[str, tuple[str, str]]:
     """page local path -> (title of its toctree group, local path of the group's first page)"""
-    path = "units/en/_toctree.yml"
+    path = f"{course.root}/en/_toctree.yml"
     toc = load_yaml(fetch(source_id, pinned, "_toctree.yml", _raw(course, pinned, path)))
     index: dict[str, tuple[str, str]] = {}
 
