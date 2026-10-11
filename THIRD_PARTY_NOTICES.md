@@ -11,11 +11,12 @@ End-of-chapter quizzes from <https://github.com/huggingface/course>.
 Licensed under the Apache License, Version 2.0 — full text in
 [LICENSES/Apache-2.0.txt](LICENSES/Apache-2.0.txt).
 
-## Hugging Face Deep RL Course — `hf-deep-rl-course` and AI Agents Course — `hf-agents-course`
+## Hugging Face Deep RL Course — `hf-deep-rl-course`, AI Agents Course — `hf-agents-course` and Audio Course — `hf-audio-course`
 
-Quizzes from <https://github.com/huggingface/deep-rl-class> and
-<https://github.com/huggingface/agents-course>. Licensed under the Apache License, Version 2.0 —
-full text in [LICENSES/Apache-2.0.txt](LICENSES/Apache-2.0.txt).
+Quizzes from <https://github.com/huggingface/deep-rl-class>,
+<https://github.com/huggingface/agents-course> and
+<https://github.com/huggingface/audio-transformers-course>. Licensed under the Apache License,
+Version 2.0 — full text in [LICENSES/Apache-2.0.txt](LICENSES/Apache-2.0.txt).
 
 ## AI for Beginners — `ms-ai-for-beginners`
 
@@ -125,7 +126,27 @@ OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
 ```
 
-## Cited, not copied
+## Dive into Deep Learning — `d2l`
 
-Explanations cite *Dive into Deep Learning* (Zhang, Lipton, Li, Smola; CC BY-SA 4.0,
-<https://d2l.ai>) by section with short quotations.
+End-of-section exercises of *Dive into Deep Learning* by Aston Zhang, Zachary C. Lipton, Mu Li and
+Alexander J. Smola (<https://d2l.ai>, source <https://github.com/d2l-ai/d2l-en>), adapted into
+questions with worked answers; many explanations also cite the book by section with short
+quotations. Licensed under [CC BY-SA 4.0](https://creativecommons.org/licenses/by-sa/4.0/); the
+adapted questions are shared under the same licence.
+
+## UBC CPSC 330 — `ubc-cpsc330` and UBC MDS DSCI 575 — `ubc-dsci575`
+
+Exam-prep and in-class (iClicker) exercises from *CPSC 330: Applied Machine Learning*
+(<https://github.com/UBC-CS/cpsc330-2025W1>), © Varada Kolhatkar, Mike Gelbart, Giulia Toti and
+Firas Moosvi, and *DSCI 575: Advanced Machine Learning*
+(<https://github.com/UBC-MDS/DSCI_575_adv-mach-learn>), © Varada Kolhatkar and Mike Gelbart.
+Instructional material licensed under [CC BY 4.0](https://creativecommons.org/licenses/by/4.0/).
+Answer keys were added where the course gives none.
+
+## forall x: Calgary — `forallx-yyc`
+
+Exercises from *forall x: Calgary. An Introduction to Formal Logic* by P. D. Magnus and Tim
+Button, with additions by J. Robert Loftis, revised by Aaron Thomas-Bolduc and Richard Zach
+(<https://forallx.openlogicproject.org/>, source <https://github.com/rzach/forallx-yyc>).
+Licensed under [CC BY 4.0](https://creativecommons.org/licenses/by/4.0/). Notation was changed to
+¬ ∧ ∨ → ↔ and items were rewritten as choice or numeric questions.

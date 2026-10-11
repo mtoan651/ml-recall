@@ -3,7 +3,8 @@
 The machine-readable registry is [`src/content/sources.yaml`](../src/content/sources.yaml); this
 page explains the choices. Licenses were checked on 2026-10-09 (sources 1–12, 18–25) and 2026-10-10
 (13–17) against each upstream LICENSE file or site terms; Google (8, 8b) and numpy-100 (12) were
-rechecked on 2026-10-11, including for AI-use restrictions (none).
+rechecked on 2026-10-11, including for AI-use restrictions (none). Sources 26–29 were checked on
+2026-10-11.
 
 **Usage:** `adapt` = may be imported/adapted with attribution · `reference` = cite only, write
 original questions. See [content-pipeline.md](content-pipeline.md#copyright-rules).
@@ -27,7 +28,11 @@ original questions. See [content-pipeline.md](content-pipeline.md#copyright-rule
 | 13 | [Hugging Face Deep RL Course](https://huggingface.co/learn/deep-rl-course) | unit quizzes: MCQ + open questions with solutions (RL basics, Q-learning, policy gradient, multi-agent) | Apache-2.0 | **v0.3 imported** (43) |
 | 14 | [Hugging Face AI Agents Course](https://huggingface.co/learn/agents-course) | unit quizzes on agents, tools, ReAct, agentic RAG, observability | Apache-2.0 | **v0.3 imported** (26) |
 | 15 | [Microsoft Data Science for Beginners](https://github.com/microsoft/Data-Science-For-Beginners) | pre/post-lecture quizzes; only data types, probability, statistics items kept | MIT | **v0.3 imported** (70) |
-| 16 | [OpenIntro Statistics](https://www.openintro.org/book/os/) | end-of-section exercises, odd-numbered solutions, LaTeX source on GitHub | CC-BY-SA-3.0 | later — probability/statistics |
+| 26 | [Hugging Face Audio Course](https://huggingface.co/learn/audio-course) | chapter quizzes: sampling, spectrograms, CTC, seq2seq, vocoders | Apache-2.0 | **v0.3 imported** (12) |
+| 27 | [UBC CPSC 330 Applied ML](https://github.com/UBC-CS/cpsc330-2025W1) (Kolhatkar et al.) | midterm/final prep MCQs (keys in red) and lecture iClicker exercises | CC-BY-4.0 | **v0.3 used** |
+| 28 | [UBC MDS DSCI 575 Advanced ML](https://github.com/UBC-MDS/DSCI_575_adv-mach-learn) | iClicker exercises: Markov models, HMMs, RNNs, transformers, LLMs | CC-BY-4.0 | **v0.3 used** |
+| 29 | [forall x: Calgary](https://forallx.openlogicproject.org/) (Magnus, Button et al.) | logic textbook: truth tables, validity, satisfiability, first-order models, keyed in the LaTeX source | CC-BY-4.0 | **v0.3 used** |
+| 16 | [OpenIntro Statistics](https://www.openintro.org/book/os/) | end-of-section exercises, odd-numbered solutions, LaTeX source on GitHub | CC-BY-SA-3.0 | later — probability/statistics; take files from the [GitHub repo](https://github.com/OpenIntroStat/openintro-statistics) only (the website's terms restrict automated scraping) |
 
 ## Reference only
 
@@ -42,25 +47,50 @@ original questions. See [content-pipeline.md](content-pipeline.md#copyright-rule
 | 24 | [fastbook questionnaires](https://github.com/fastai/fastbook) | quiz-like questions at the end of each chapter | prose not redistributable |
 | 25 | [Machine Learning Q and AI](https://sebastianraschka.com/books/ml-q-and-ai/) (Raschka) | 30 Q&A chapters with exercises, free online | all rights reserved |
 | 5 | [Deep Learning Interviews](https://arxiv.org/abs/2201.00650) (Kashani & Ivry) | **not used**: arXiv lists CC BY 4.0, but the book's own copyright page says all rights reserved, personal use only, no quoting or paraphrasing without consent (moved from Adapt on 2026-10-11; d2l exercises are used instead) | contradictory |
-| 17 | [OpenStax Introductory Statistics 2e](https://openstax.org/details/books/introductory-statistics-2e) | **not used**: since July 2026 all OpenStax books forbid ingestion into LLMs/generative AI without permission, so we neither import nor fetch them (moved from Adapt on 2026-10-11) | CC-BY-NC-SA-4.0 |
+| 17 | [OpenStax Introductory Statistics 2e](https://openstax.org/details/books/introductory-statistics-2e) | **not used**: every OpenStax book page now says the book may not be "used in the training of" or "otherwise be ingested into" LLMs or generative AI without permission (checked 2026-10-11). We don't train models, but our pipeline feeds what it reads to an LLM, so we neither import nor fetch OpenStax (moved from Adapt on 2026-10-11) | CC-BY-NC-SA-4.0 |
+| 30 | [Deep-ML](https://www.deep-ml.com/problems) | ML coding problems | **not used**: its LICENSE is "Educational Use Only" — non-commercial, non-transferable — so not CC BY-SA compatible (it also bars use as ML training data, which we don't do) | proprietary |
 
 Internal sources: `original` (questions written here, CC BY-SA 4.0) and `ncu-intro-dl` (own course
 slides, `private`).
 
-## Candidates (not yet registered)
+## MMLU policy
 
-Hugging Face Audio Course (Apache-2.0, chapter quizzes — no audio topic yet) · Hugging Face MCP
-Course (Apache-2.0, quizzes are mostly tool-specific) · Hugging Face Computer Vision community course
-(MIT, very few quizzes) · further MMLU-Redux subsets (econometrics, college_computer_science) ·
-CMU 10-601 recitations with solutions · Kaggle Learn exercises · Deep-ML coding problems
-(deep-ml.com) · Chip Huyen's ML Interviews Book · Karpathy's *Neural Networks: Zero to Hero*
-exercises (MIT) · Stanford CS336 assignments (MIT) · AIMA exercises · Machine Learning cơ bản
-(Vũ Hữu Tiệp). Check the license before registering; most are `reference`.
+MMLU-Redux (CC BY 4.0) and MMLU (MIT) license the datasets, but MMLU's questions were collected
+from practice tests, course material and books whose copyright those licences cannot cover (some
+econometrics items even cite "question 21" of an outside book). The three subsets in use stay;
+**no further subsets are imported** (decided 2026-10-11). Gaps are filled from cleanly licensed
+sources instead, e.g. forall x for logic rather than `formal_logic`.
+
+## Candidates (checked 2026-10-11, not yet used)
+
+Open licence, worth importing later: Neuromatch Academy *Deep Learning* "Think!" questions
+(CC BY 4.0; diffusion, VAEs, CNNs, transformers — need rewriting as MCQs) · Kaggle Learn exercises
+from [`Kaggle/learntools`](https://github.com/Kaggle/learntools) (Apache-2.0; the kaggle.com site
+forbids scraping, the repo does not) · Google *Intro to ML*, *Managing ML Projects* and
+*Recommendation Systems* quizzes (CC BY 4.0, existing importer) · Microsoft *Generative AI for
+Beginners*, *AI Agents for Beginners*, *Generative AI with JavaScript* knowledge checks (MIT) ·
+*Data Science Interviews* theory Q&A (Grigorev, CC BY 4.0; answers need fact-checking) · *Learn
+PyTorch for Deep Learning* (Bourke, MIT) · OpenAI Spinning Up exercises (MIT) · UBC MDS DSCI 563
+and 573 (CC BY 4.0, no keys) · Hugging Face MCP Course (Apache-2.0, mostly tool-specific).
+
+Citation targets for original questions (no quizzes): CS231n notes (MIT) · aima-python (MIT) ·
+Hugging Face smol-course, Diffusion course (Apache-2.0) and Computer Vision course (MIT).
+
+Checked and not usable: Stanford CS336 (its `AGENTS.md` asks AI tools not to give solutions) ·
+AIMA exercises (the repo's MIT licence covers the website theme, not the book's exercises) ·
+Chip Huyen's *ML Interviews Book*, ARENA, Lena Voita's NLP course, Elements of AI, CMU 10-601,
+fast.ai course22, Made With ML, Machine Learning cơ bản (no open licence) · MLSysBook (NC, and its
+quizzes are LLM-generated) · CS-Bench (NC) · MMLU-Pro, SuperGPQA, MMLU-CF, TheoremQA (questions
+scraped from the web or textbooks) · ML-interview datasets on the Hugging Face Hub (synthetic,
+scraped or unlicensed) · GitHub repos of solutions to other courses' quizzes and homework
+(Coursera, CS229/CS231n, Sutton & Barto — the repo owner can't license someone else's questions).
 
 ## Adding a source
 
-1. Check the license (LICENSE file, site terms) and decide `usage`. Also look for clauses that
-   forbid feeding the content to AI/LLM tools: such sources are not fetched or cited (see #17).
+1. Check the license (LICENSE file, site terms) and decide `usage`. Also look for clauses about
+   AI: a ban on *training* models doesn't affect us, but a ban on feeding the content to AI/LLM
+   tools ("ingested into") does — such sources are not fetched or cited (see #17). Check where
+   the questions come from, too: a licence only counts if the licensor wrote them.
 2. Add an entry to `sources.yaml` (`pinned` if an importer will read it).
 3. For `adapt` sources, add the attribution to `THIRD_PARTY_NOTICES.md`.
 4. Update the tables above.
