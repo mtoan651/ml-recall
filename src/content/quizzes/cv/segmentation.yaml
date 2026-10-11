@@ -188,3 +188,122 @@ questions:
       ref: quiz-212/q3
       url: https://github.com/microsoft/AI-For-Beginners/blob/392d0df1b2647cbee104942390551f1ed9e072c8/etc/quiz-app/src/assets/translations/en/lesson-12.json
     status: draft
+  - id: segmentation-007
+    type: multiple
+    difficulty: medium
+    tags:
+      - semantic-segmentation
+      - data-augmentation
+      - label-maps
+    question: |
+      You reuse image-classification augmentations to train a semantic segmentation model, where every
+      pixel has a class label. Select all that apply.
+    options:
+      - text: Random cropping cannot be used, because a crop would cut objects at its border
+        why: d2l uses random cropping for segmentation, cutting the same area from the image and from its label map [^1].
+      - text: A random horizontal flip must be applied to the label map too, with the same random draw
+        correct: true
+      - text: Resizing a random crop with bilinear interpolation is just as safe for the label map as for the image
+        why: Interpolating class indices creates values between classes, for example class 2 at a border between classes 1 and 3; d2l avoids rescaling and crops to a fixed size instead [^1].
+      - text: Color jitter (brightness, contrast, hue) can be applied to the input image alone
+        correct: true
+    explanation: |
+      d2l avoids rescaling for segmentation, because the predicted pixel classes would have to be
+      rescaled back to the original image, which can be inaccurate at class borders; it crops the same
+      fixed-size area from the input image and from the label map instead [^1]. The label map holds class
+      indices, which must not be averaged, so any resizing of labels has to use nearest-neighbour
+      interpolation. Color changes leave pixel positions untouched, so the labels stay valid, while
+      geometric augmentations such as flips and crops must transform image and labels identically [^2].
+    references:
+      - source: d2l
+        locator: Sec. 14.9.2.1 Data Preprocessing
+        url: https://d2l.ai/chapter_computer-vision/semantic-segmentation-and-dataset.html#data-preprocessing
+      - source: d2l
+        locator: Sec. 14.1.1 Common Image Augmentation Methods
+        url: https://d2l.ai/chapter_computer-vision/image-augmentation.html#common-image-augmentation-methods
+      - source: d2l
+        locator: Sec. 14.9.4 Exercises, Exercise 2
+        url: https://d2l.ai/chapter_computer-vision/semantic-segmentation-and-dataset.html#exercises
+    source:
+      id: d2l
+      ref: chapter_computer-vision/semantic-segmentation-and-dataset#ex2
+      url: https://d2l.ai/chapter_computer-vision/semantic-segmentation-and-dataset.html#exercises
+    status: draft
+  - id: segmentation-008
+    type: short_answer
+    difficulty: medium
+    tags:
+      - transposed-convolution
+      - convolution-as-matrix
+    question: |
+      `X = torch.arange(9.0).reshape(3, 3)` and `K = torch.tensor([[1.0, 2.0], [3.0, 4.0]])`.
+      Cross-correlation gives `Y = corr2d(X, K) = [[27, 37], [57, 67]]`. A transposed convolution with
+      the same kernel then gives `Z = trans_conv(Y, K)`, which has the same $3 \times 3$ shape as `X`.
+      What is `Z[1, 1]`, the center entry (where `X[1, 1] = 4`)?
+    answer:
+      numeric: 400
+      tolerance: 0
+      hint: a whole number
+      model: $27 \cdot 4 + 37 \cdot 3 + 57 \cdot 2 + 67 \cdot 1 = 400$
+    explanation: |
+      A transposed convolution broadcasts each input value through the kernel: `Y[i, j] * K` is added to
+      the $2 \times 2$ block of the output starting at $(i, j)$ [^1]. The center $(1, 1)$ lies in all four
+      blocks, at kernel positions $(1, 1)$, $(1, 0)$, $(0, 1)$ and $(0, 0)$, so
+      $Z_{1,1} = 27 \cdot 4 + 37 \cdot 3 + 57 \cdot 2 + 67 \cdot 1 = 400$. In matrix form the convolution
+      is $\mathbf{y} = \mathbf{W}\mathbf{x}$ with a $4 \times 9$ matrix $\mathbf{W}$, and the transposed
+      convolution computes $\mathbf{W}^\top \mathbf{y} = \mathbf{W}^\top \mathbf{W}\mathbf{x}$ [^2]. It
+      restores the shape of `X`, not its values: $\mathbf{W}$ has no inverse.
+    references:
+      - source: d2l
+        locator: Sec. 14.10.1 Basic Operation
+        url: https://d2l.ai/chapter_computer-vision/transposed-conv.html#basic-operation
+      - source: d2l
+        locator: Sec. 14.10.3 Connection to Matrix Transposition
+        url: https://d2l.ai/chapter_computer-vision/transposed-conv.html#connection-to-matrix-transposition
+      - source: d2l
+        locator: Sec. 14.10.5 Exercises, Exercise 1
+        url: https://d2l.ai/chapter_computer-vision/transposed-conv.html#exercises
+    source:
+      id: d2l
+      ref: chapter_computer-vision/transposed-conv#ex1
+      url: https://d2l.ai/chapter_computer-vision/transposed-conv.html#exercises
+    status: draft
+  - id: segmentation-009
+    type: short_answer
+    difficulty: medium
+    tags:
+      - convolution-as-matrix
+      - sparsity
+      - efficiency
+    question: |
+      A convolution can be written as $\mathbf{y} = \mathbf{W}\mathbf{x}$, where $\mathbf{x}$ is the
+      flattened input and each row of $\mathbf{W}$ holds the kernel weights for one output position and
+      zeros elsewhere. For a $32 \times 32$ single-channel input and a $3 \times 3$ kernel (stride 1, no
+      padding), $\mathbf{W}$ has $900 \times 1024$ entries. What percentage of them are nonzero?
+    answer:
+      numeric: 0.879
+      tolerance: 0.01
+      hint: a percentage, 2 decimals (e.g. 1.25)
+      model: Each row has 9 nonzeros out of 1024, so $9/1024 \approx 0.88\%$.
+    explanation: |
+      d2l builds exactly such a sparse weight matrix with many zeros to explain transposed
+      convolutions [^1]. Storing $\mathbf{W}$ densely means $921\,600$ numbers and as many
+      multiplications per example, while a direct convolution needs 9 weights and $900 \times 9 = 8100$
+      multiplications, so more than 99% of the dense work multiplies by zero, and the waste grows with
+      the square of the image size. Practical libraries therefore never form $\mathbf{W}$; when they use
+      matrix multiplication, they copy the input windows into a matrix instead (im2col) [^2].
+    references:
+      - source: d2l
+        locator: Sec. 14.10.3 Connection to Matrix Transposition
+        url: https://d2l.ai/chapter_computer-vision/transposed-conv.html#connection-to-matrix-transposition
+      - title: 'CS231n notes: Convolutional Neural Networks'
+        locator: Convolutional Layer, Implementation as Matrix Multiplication
+        url: https://cs231n.github.io/convolutional-networks/#conv
+      - source: d2l
+        locator: Sec. 14.10.5 Exercises, Exercise 2
+        url: https://d2l.ai/chapter_computer-vision/transposed-conv.html#exercises
+    source:
+      id: d2l
+      ref: chapter_computer-vision/transposed-conv#ex2
+      url: https://d2l.ai/chapter_computer-vision/transposed-conv.html#exercises
+    status: draft

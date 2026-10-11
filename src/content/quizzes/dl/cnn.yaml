@@ -344,3 +344,981 @@ questions:
       ref: chapter3/quiz#q6
       url: https://huggingface.co/learn/audio-course/chapter3/quiz
     status: draft
+  - id: cnn-013
+    type: single
+    difficulty: medium
+    tags:
+      - convolution
+      - 1x1-convolution
+      - network-in-network
+    question: |
+      A convolutional layer with $c_i$ input and $c_o$ output channels computes
+      $$[\mathsf{H}]_{i,j,d} = \sum_{a=-\Delta}^{\Delta}\sum_{b=-\Delta}^{\Delta}\sum_{c} [\mathsf{V}]_{a,b,c,d}\,[\mathsf{X}]_{i+a,j+b,c}.$$
+      What does the layer compute when the kernel size is $\Delta = 0$?
+    options:
+      - text: A fully connected layer over all pixels, so that every output pixel depends on the whole image
+        why: With $\Delta = 0$ the sums over $a$ and $b$ keep only the term $a = b = 0$, so each output pixel sees just the pixel at the same position.
+      - text: One shared linear map from $c_i$ to $c_o$ channels, applied to each pixel separately
+        correct: true
+      - text: A different linear map at every pixel, because with $\Delta = 0$ the weights are no longer shared across positions
+        why: Translation invariance still holds. $\mathsf{V}$ does not depend on $(i, j)$, so every pixel uses the same $c_o \times c_i$ matrix [^1].
+      - text: The identity map, where each output channel copies one of the input channels unchanged
+        why: The weights $[\mathsf{V}]_{0,0,c,d}$ form a learnable $c_o \times c_i$ matrix that mixes the channels, and $c_o$ need not equal $c_i$; nothing forces it to be the identity.
+    explanation: |
+      With $\Delta = 0$ the only offset left is $a = b = 0$, so
+      $[\mathsf{H}]_{i,j,d} = \sum_c [\mathsf{V}]_{0,0,c,d}\,[\mathsf{X}]_{i,j,c}$: one $c_o \times c_i$ matrix
+      multiplies the channel vector at each pixel, with the same weights everywhere [^1]. This is a
+      $1 \times 1$ convolution, which d2l describes as a fully connected layer applied at every pixel
+      location [^2]. Stacking such layers with nonlinearities in between gives a small MLP that runs
+      independently on each pixel, the idea behind Network in Network [^3].
+    references:
+      - source: d2l
+        locator: Sec. 7.1.4 Channels, Eq. (7.1.7)
+        url: https://d2l.ai/chapter_convolutional-neural-networks/why-conv.html#channels
+      - source: d2l
+        locator: Sec. 7.4.3 1×1 Convolutional Layer
+        url: https://d2l.ai/chapter_convolutional-neural-networks/channels.html
+      - source: d2l
+        locator: Sec. 8.3.1 NiN Blocks
+        url: https://d2l.ai/chapter_convolutional-modern/nin.html#nin-blocks
+      - source: d2l
+        locator: Sec. 7.1.6 Exercises, Exercise 1
+        url: https://d2l.ai/chapter_convolutional-neural-networks/why-conv.html#exercises
+    source:
+      id: d2l
+      ref: chapter_convolutional-neural-networks/why-conv#ex1
+      url: https://d2l.ai/chapter_convolutional-neural-networks/why-conv.html#exercises
+    status: draft
+  - id: cnn-014
+    type: short_answer
+    difficulty: medium
+    tags:
+      - convolution
+      - padding
+      - image-boundary
+    question: |
+      A $3 \times 3$ kernel slides over a $6 \times 6$ image with stride 1 and no padding, giving a
+      $4 \times 4$ output. An interior pixel, such as the one in row 2, column 2 (counting from 0),
+      takes part in 9 of the 16 output values. In how many output values does the pixel in row 0,
+      column 3, on the top edge of the image, take part?
+    answer:
+      numeric: 3
+      tolerance: 0
+      hint: a whole number
+      model: Only windows that start in row 0 cover row 0, and only windows that start in columns 1, 2 or 3 cover column 3, so $1 \times 3 = 3$.
+    explanation: |
+      A window that starts at row $r$ covers rows $r$ to $r + 2$, and there are $6 - 3 + 1 = 4$
+      starting rows and starting columns [^1]. Row 0 is covered only by windows that start in row 0,
+      and column 3 by windows that start in columns 1, 2 and 3, so the edge pixel takes part in 3
+      outputs; a corner pixel takes part in just 1. An object at the boundary of the image is therefore
+      seen by fewer windows than one in the middle, and each further convolution shrinks the image and
+      loses more of its border [^2]. Zero padding adds a frame of extra pixels so that the edge pixels
+      are used about as often as the interior ones [^2].
+    references:
+      - source: d2l
+        locator: Sec. 7.2.1 The Cross-Correlation Operation
+        url: https://d2l.ai/chapter_convolutional-neural-networks/conv-layer.html#the-cross-correlation-operation
+      - source: d2l
+        locator: Sec. 7.3.1 Padding (pixel utilization, Fig. 7.3.1)
+        url: https://d2l.ai/chapter_convolutional-neural-networks/padding-and-strides.html#padding
+      - source: d2l
+        locator: Sec. 7.1.6 Exercises, Exercise 5
+        url: https://d2l.ai/chapter_convolutional-neural-networks/why-conv.html#exercises
+    source:
+      id: d2l
+      ref: chapter_convolutional-neural-networks/why-conv#ex5
+      url: https://d2l.ai/chapter_convolutional-neural-networks/why-conv.html#exercises
+    status: draft
+  - id: cnn-015
+    type: single
+    difficulty: medium
+    tags:
+      - convolution
+      - cross-correlation
+      - commutativity
+    question: |
+      The discrete convolution of two sequences is $(f * g)(i) = \sum_a f(a)\, g(i - a)$, where $a$
+      runs over all integers. Which substitution shows in one step that $f * g = g * f$?
+    options:
+      - text: $b = a - i$, which turns the sum into $\sum_b f(b + i)\, g(-b)$
+        why: The algebra is right, but the result is not of the form $\sum_b g(b)\, f(i - b)$, so it does not show the symmetry.
+      - text: $b = i + a$, which turns the sum into $\sum_b f(b - i)\, g(2i - b)$
+        why: The argument of $g$ becomes $2i - b$ instead of $b$, so the sum is not $(g * f)(i)$.
+      - text: $b = -a$, which turns the sum into $\sum_b f(-b)\, g(i + b)$
+        why: This only mirrors the summation index; the result still does not read as $(g * f)(i)$.
+      - text: $b = i - a$, which turns the sum into $\sum_b g(b)\, f(i - b)$
+        correct: true
+    explanation: |
+      Because $a$ runs over all integers, so does $b = i - a$, and the sum becomes
+      $\sum_b g(b)\, f(i - b)$, which is the definition of $(g * f)(i)$ [^1][^2]. The flipped argument
+      $i - a$ is what makes convolution commutative. Deep learning layers actually compute the
+      cross-correlation $(f \star g)(i) = \sum_a f(a)\, g(i + a)$ [^3], and that is not symmetric:
+      swapping the arguments mirrors the result, $(g \star f)(i) = (f \star g)(-i)$ [^4].
+    references:
+      - source: d2l
+        locator: Sec. 7.1.3 Convolutions, Eq. (7.1.6)
+        url: https://d2l.ai/chapter_convolutional-neural-networks/why-conv.html#convolutions
+      - title: 'Wikipedia: Convolution'
+        locator: Properties, Commutativity
+        url: https://en.wikipedia.org/wiki/Convolution#Algebraic_properties
+      - source: d2l
+        locator: Sec. 7.2.5 Cross-Correlation and Convolution
+        url: https://d2l.ai/chapter_convolutional-neural-networks/conv-layer.html#cross-correlation-and-convolution
+      - title: 'Wikipedia: Cross-correlation'
+        locator: Properties
+        url: https://en.wikipedia.org/wiki/Cross-correlation#Properties
+      - source: d2l
+        locator: Sec. 7.1.6 Exercises, Exercise 6
+        url: https://d2l.ai/chapter_convolutional-neural-networks/why-conv.html#exercises
+    source:
+      id: d2l
+      ref: chapter_convolutional-neural-networks/why-conv#ex6
+      url: https://d2l.ai/chapter_convolutional-neural-networks/why-conv.html#exercises
+    status: draft
+  - id: cnn-016
+    type: multiple
+    difficulty: medium
+    tags:
+      - edge-detection
+      - cross-correlation
+      - kernels
+    question: |
+      A $6 \times 6$ image `X` has ones on and below the main diagonal and zeros above it
+      (`X = torch.tril(torch.ones(6, 6))`), so it contains a diagonal edge. It is cross-correlated with
+      the finite-difference kernel `K = [[1, -1]]`, which computes $x_{i,j} - x_{i,j+1}$.
+      Select all that apply.
+    options:
+      - text: The output has the same $6 \times 6$ shape as `X`
+        why: Without padding, a $1 \times 2$ kernel shrinks the width by one, so the output is $6 \times 5$ [^2].
+      - text: The output is zero everywhere, because `K` only detects vertical edges
+        why: A diagonal edge changes value along every row, so horizontal differences pick it up. Only a horizontal edge, which is constant along each row, is invisible to `K` [^1].
+      - text: Transposing the image with `X.T` makes the response of `K` vanish, just as transposing a vertical edge does
+        why: '`X.T` still has a diagonal edge. The response only changes sign, to $-1$, and moves one row down.'
+      - text: The output is nonzero along the diagonal, one entry per row except the last
+        correct: true
+      - text: The transposed kernel `[[1], [-1]]`, which takes vertical differences, also responds to this edge
+        correct: true
+    explanation: |
+      Row $i$ of `X` is 1 up to column $i$ and 0 after it, so $x_{i,i} - x_{i,i+1} = 1$ and all other
+      differences are 0; the last row is all ones and gives only zeros. In d2l, `K` detects the
+      vertical edge of a black-and-white image and vanishes on the transposed image, whose edge is
+      horizontal [^1]. A diagonal edge has both a horizontal and a vertical component: vertical
+      differences $x_{i,j} - x_{i+1,j}$ are $-1$ at $j = i + 1$, so the transposed kernel responds too.
+      Transposing `X` gives an upper-triangular image whose response is $-1$ one row below the
+      diagonal. Without padding the output loses $k - 1$ columns, so it is $6 \times 5$ [^2].
+    references:
+      - source: d2l
+        locator: Sec. 7.2.3 Object Edge Detection in Images
+        url: https://d2l.ai/chapter_convolutional-neural-networks/conv-layer.html#object-edge-detection-in-images
+      - source: d2l
+        locator: Sec. 7.2.1 The Cross-Correlation Operation, Eq. (7.2.1)
+        url: https://d2l.ai/chapter_convolutional-neural-networks/conv-layer.html#the-cross-correlation-operation
+      - source: d2l
+        locator: Sec. 7.2.8 Exercises, Exercise 1
+        url: https://d2l.ai/chapter_convolutional-neural-networks/conv-layer.html#exercises
+    source:
+      id: d2l
+      ref: chapter_convolutional-neural-networks/conv-layer#ex1
+      url: https://d2l.ai/chapter_convolutional-neural-networks/conv-layer.html#exercises
+    status: draft
+  - id: cnn-017
+    type: short_answer
+    difficulty: medium
+    tags:
+      - finite-differences
+      - kernels
+      - derivatives
+    question: |
+      A 1D kernel applied by cross-correlation can approximate derivatives by finite differences:
+      $[1, -1]$ approximates the first derivative and $[1, -2, 1]$ the second. What is the smallest
+      kernel length that can approximate the 4th derivative?
+    answer:
+      numeric: 5
+      tolerance: 0
+      hint: a whole number
+      model: $d + 1 = 5$ taps, for example $[1, -4, 6, -4, 1]$.
+    explanation: |
+      d2l's edge kernel $[1, -1]$ is a finite-difference approximation of the first derivative [^1].
+      The $d$-th finite difference combines $d + 1$ neighbouring samples with binomial coefficients of
+      alternating sign, so the 4th derivative uses $[1, -4, 6, -4, 1]$ [^2]. Fewer taps cannot work: a
+      $d$-th derivative kernel must return 0 on the polynomials $1, x, \ldots, x^{d-1}$, whose $d$-th
+      derivative is 0, and with only $d$ taps these $d$ conditions form an invertible (Vandermonde)
+      system whose only solution is the all-zero kernel. Hence $d + 1$ is the minimum, and 3 taps
+      are needed for the second derivative.
+    references:
+      - source: d2l
+        locator: Sec. 7.2.3 Object Edge Detection in Images
+        url: https://d2l.ai/chapter_convolutional-neural-networks/conv-layer.html#object-edge-detection-in-images
+      - title: 'Wikipedia: Finite difference'
+        locator: Higher-order differences
+        url: https://en.wikipedia.org/wiki/Finite_difference#Higher-order_differences
+      - source: d2l
+        locator: Sec. 7.2.8 Exercises, Exercise 2
+        url: https://d2l.ai/chapter_convolutional-neural-networks/conv-layer.html#exercises
+    source:
+      id: d2l
+      ref: chapter_convolutional-neural-networks/conv-layer#ex2
+      url: https://d2l.ai/chapter_convolutional-neural-networks/conv-layer.html#exercises
+    status: draft
+  - id: cnn-018
+    type: single
+    difficulty: easy
+    tags:
+      - kernels
+      - blur
+      - image-filtering
+    question: Which $3 \times 3$ kernel blurs an image?
+    options:
+      - text: $\tfrac{1}{9}\begin{bmatrix}1&1&1\\1&1&1\\1&1&1\end{bmatrix}$
+        correct: true
+      - text: $\tfrac{1}{8}\begin{bmatrix}-1&0&1\\-2&0&2\\-1&0&1\end{bmatrix}$
+        why: This scaled Sobel kernel takes horizontal differences, so it detects vertical edges rather than smoothing.
+      - text: $\begin{bmatrix}0&-1&0\\-1&4&-1\\0&-1&0\end{bmatrix}$
+        why: This is a Laplacian, a second-derivative operator. Its weights sum to 0, so flat regions map to 0 and edges and spots stand out [^2].
+      - text: $\begin{bmatrix}0&-1&0\\-1&5&-1\\0&-1&0\end{bmatrix}$
+        why: This is the identity plus a Laplacian, a sharpening kernel that boosts differences between neighbours [^2].
+    explanation: |
+      A box blur replaces each pixel by the average of its $3 \times 3$ neighbourhood; the weights are
+      positive and sum to 1, so flat regions keep their value while sharp changes get smeared out [^2].
+      A Gaussian kernel, with larger weights near the center, blurs more smoothly. Blurring reduces
+      pixel noise and is applied before downsampling to avoid aliasing. As with edge detectors, a CNN
+      does not need such kernels to be designed by hand: it can learn them from data [^1].
+    references:
+      - source: d2l
+        locator: Sec. 7.2.7 Summary (kernels for edges, blurring and sharpening)
+        url: https://d2l.ai/chapter_convolutional-neural-networks/conv-layer.html#summary
+      - title: 'Wikipedia: Kernel (image processing)'
+        locator: Details (table of kernels)
+        url: https://en.wikipedia.org/wiki/Kernel_(image_processing)#Details
+      - source: d2l
+        locator: Sec. 7.2.8 Exercises, Exercise 2
+        url: https://d2l.ai/chapter_convolutional-neural-networks/conv-layer.html#exercises
+    source:
+      id: d2l
+      ref: chapter_convolutional-neural-networks/conv-layer#ex2-b
+      url: https://d2l.ai/chapter_convolutional-neural-networks/conv-layer.html#exercises
+    status: draft
+  - id: cnn-019
+    type: short_answer
+    difficulty: medium
+    tags:
+      - im2col
+      - matrix-multiplication
+      - convolution
+    question: |
+      To compute `corr2d(X, K)` with a single matrix product, you copy every kernel-sized window of
+      `X` into one row of a matrix `A` and flatten `K` into a column vector `k`; then `A @ k`,
+      reshaped, is the output. For a $6 \times 8$ input `X` and a $3 \times 3$ kernel `K` (stride 1,
+      no padding), what is the shape of `A`?
+    answer:
+      accept:
+        - (24, 9)
+      pattern: \(?\s*24\s*[,x×]\s*9\s*\)?
+      hint: rows × columns, e.g. (10, 4)
+      model: $(24, 9)$, one row per output position ($4 \times 6 = 24$) and one column per kernel weight ($3 \times 3 = 9$)
+    explanation: |
+      The output has $(6 - 3 + 1) \times (8 - 3 + 1) = 4 \times 6 = 24$ positions [^1], and each is
+      the dot product of one $3 \times 3$ window with the kernel. So `A` has 24 rows of 9 values,
+      and `A @ k` produces all 24 outputs at once. This "im2col" trick turns a convolution into one
+      large matrix product that fast matrix-multiplication routines handle well, at the price of
+      copying each input pixel into up to 9 rows [^2]. With several channels, each row holds
+      $c_i k_h k_w$ values and `k` becomes a matrix with one column per output channel [^2].
+    references:
+      - source: d2l
+        locator: Sec. 7.2.1 The Cross-Correlation Operation, Eq. (7.2.1)
+        url: https://d2l.ai/chapter_convolutional-neural-networks/conv-layer.html#the-cross-correlation-operation
+      - title: 'CS231n notes: Convolutional Neural Networks'
+        locator: Convolutional Layer, Implementation as Matrix Multiplication
+        url: https://cs231n.github.io/convolutional-networks/#conv
+      - source: d2l
+        locator: Sec. 7.2.8 Exercises, Exercise 4
+        url: https://d2l.ai/chapter_convolutional-neural-networks/conv-layer.html#exercises
+    source:
+      id: d2l
+      ref: chapter_convolutional-neural-networks/conv-layer#ex4
+      url: https://d2l.ai/chapter_convolutional-neural-networks/conv-layer.html#exercises
+    status: draft
+  - id: cnn-020
+    type: short_answer
+    difficulty: medium
+    tags:
+      - padding
+      - stride
+      - output-shape
+    question: |
+      In PyTorch, `nn.Conv2d(1, 1, kernel_size=(3, 5), padding=(0, 1), stride=(3, 4))` is applied
+      to an $8 \times 8$ input. `padding=(0, 1)` adds no rows, and one column of zeros on each side.
+      What is the height and width of the output?
+    answer:
+      accept:
+        - (2, 2)
+      pattern: \(?\s*2\s*[,x×]\s*2\s*\)?
+      hint: height × width, e.g. (3, 4)
+      model: Height $\lfloor (8 - 3 + 0 + 3)/3 \rfloor = 2$ and width $\lfloor (8 - 5 + 2 + 4)/4 \rfloor = 2$, so $2 \times 2$.
+    explanation: |
+      With a total of $p_h$ padding rows, $p_w$ padding columns and strides $s_h, s_w$, the output is
+      $\lfloor (n_h - k_h + p_h + s_h)/s_h \rfloor \times \lfloor (n_w - k_w + p_w + s_w)/s_w \rfloor$ [^1].
+      Here $p_h = 0$ and $p_w = 2$ (one column per side), so the height is $\lfloor 8/3 \rfloor = 2$
+      and the width $\lfloor 9/4 \rfloor = 2$. PyTorch's own formula,
+      $\lfloor (n + 2 \cdot \text{padding} - k)/s \rfloor + 1$ per dimension, gives the same result [^2].
+      This is the last example of d2l's padding-and-stride section, whose output is $2 \times 2$ [^1].
+    references:
+      - source: d2l
+        locator: Sec. 7.3.2 Stride, Eq. (7.3.2)
+        url: https://d2l.ai/chapter_convolutional-neural-networks/padding-and-strides.html#stride
+      - title: torch.nn.Conv2d (PyTorch documentation)
+        locator: Shape
+        url: https://docs.pytorch.org/docs/stable/generated/torch.nn.Conv2d.html
+      - source: d2l
+        locator: Sec. 7.3.4 Exercises, Exercise 1
+        url: https://d2l.ai/chapter_convolutional-neural-networks/padding-and-strides.html#exercises
+    source:
+      id: d2l
+      ref: chapter_convolutional-neural-networks/padding-and-strides#ex1
+      url: https://d2l.ai/chapter_convolutional-neural-networks/padding-and-strides.html#exercises
+    status: draft
+  - id: cnn-021
+    type: single
+    difficulty: easy
+    tags:
+      - stride
+      - audio
+      - downsampling
+    question: |
+      An audio signal sampled at 16 kHz goes through a 1D convolution with stride 2. What does the
+      stride of 2 correspond to?
+    options:
+      - text: Halving the amplitude of the signal while keeping its original sampling rate
+        why: The stride sets which positions are evaluated, not the size of the values; the amplitude depends on the kernel weights.
+      - text: Upsampling to 32 kHz, since every input sample now produces two values in the output sequence
+        why: A stride of $s$ skips $s - 1$ positions between windows, so the output gets shorter, not longer [^1].
+      - text: Downsampling, with one output value per two input samples, an effective rate of 8 kHz
+        correct: true
+      - text: Merging the two channels of a stereo recording into a single mono channel
+        why: Channels form a separate axis. The stride acts along the time axis only.
+    explanation: |
+      The stride is the number of positions the window moves at each step, so a stride of 2 evaluates
+      every second position and halves the length of the output [^1]. d2l notes that a stride of $n$
+      reduces the resolution to $1/n$ of the input [^2]. For audio the axis is time, so 16,000 samples
+      per second become 8,000 output values per second: downsampling by a factor of 2, like lowering the
+      sampling rate [^3]. A smoothing kernel in front of the stride plays the role of the low-pass
+      filter that proper downsampling needs [^3].
+    references:
+      - source: d2l
+        locator: Sec. 7.3.2 Stride
+        url: https://d2l.ai/chapter_convolutional-neural-networks/padding-and-strides.html#stride
+      - source: d2l
+        locator: Sec. 7.3.3 Summary and Discussion
+        url: https://d2l.ai/chapter_convolutional-neural-networks/padding-and-strides.html#summary-and-discussion
+      - title: 'Wikipedia: Downsampling (signal processing)'
+        locator: Downsampling by an integer factor
+        url: https://en.wikipedia.org/wiki/Downsampling_(signal_processing)#Downsampling_by_an_integer_factor
+      - source: d2l
+        locator: Sec. 7.3.4 Exercises, Exercise 2
+        url: https://d2l.ai/chapter_convolutional-neural-networks/padding-and-strides.html#exercises
+    source:
+      id: d2l
+      ref: chapter_convolutional-neural-networks/padding-and-strides#ex2
+      url: https://d2l.ai/chapter_convolutional-neural-networks/padding-and-strides.html#exercises
+    status: draft
+  - id: cnn-022
+    type: short_answer
+    difficulty: easy
+    tags:
+      - stride
+      - computational-cost
+    question: |
+      A $3 \times 3$ convolution with padding 1 on every side runs on a $224 \times 224$ feature map.
+      Changing its stride from 1 to 2 cuts the number of multiply–add operations by what factor?
+    answer:
+      numeric: 4
+      tolerance: 0
+      hint: a whole number
+      model: The output shrinks from $224 \times 224$ to $112 \times 112$, so $224^2 / 112^2 = 4$.
+    explanation: |
+      With padding $k - 1$ in total, the output size per dimension is $\lfloor (n + s - 1)/s \rfloor$ [^1]:
+      224 with stride 1 and 112 with stride 2. Every output value costs the same
+      $k_h k_w c_i$ multiplications per output channel [^2], so the cost scales with the number of
+      outputs, $224^2 / 112^2 = 4$. In general a stride of $s$ in both directions cuts the computation,
+      and the memory for the output, by about $s^2$, which is why strided layers are used to
+      downsample [^1].
+    references:
+      - source: d2l
+        locator: Sec. 7.3.2 Stride
+        url: https://d2l.ai/chapter_convolutional-neural-networks/padding-and-strides.html#stride
+      - source: d2l
+        locator: Sec. 7.4.4 Discussion (cost of a convolution)
+        url: https://d2l.ai/chapter_convolutional-neural-networks/channels.html#discussion
+      - source: d2l
+        locator: Sec. 7.3.4 Exercises, Exercise 4
+        url: https://d2l.ai/chapter_convolutional-neural-networks/padding-and-strides.html#exercises
+    source:
+      id: d2l
+      ref: chapter_convolutional-neural-networks/padding-and-strides#ex4
+      url: https://d2l.ai/chapter_convolutional-neural-networks/padding-and-strides.html#exercises
+    status: draft
+  - id: cnn-023
+    type: single
+    difficulty: medium
+    tags:
+      - stride
+      - transposed-convolution
+      - upsampling
+    question: |
+      A "stride of 1/2" means the output has twice the height and width of the input. How is such a
+      layer built in practice, and what is it used for?
+    options:
+      - text: As a stride-2 convolution followed by max-pooling, to downsample feature maps quickly
+        why: Both of these shrink the output; a stride of 1/2 has to enlarge it.
+      - text: As a $1 \times 1$ convolution, which doubles the resolution by doubling the channels
+        why: A $1 \times 1$ convolution keeps the height and width and only changes the number of channels.
+      - text: As a transposed convolution, to upsample feature maps, for example in segmentation
+        correct: true
+      - text: As a dilated convolution with dilation 2, which doubles the size of the output
+        why: Dilation spreads the kernel taps to enlarge the receptive field; with matching padding the output keeps its size, it does not grow.
+    explanation: |
+      Transposed convolution is also called fractionally-strided convolution [^1]. It is equivalent to
+      inserting $s - 1$ zeros between neighbouring input values and running an ordinary stride-1
+      convolution with suitable padding, so a stride of 2 in the transposed layer acts like a stride
+      of 1/2 [^2]. For
+      example, a transposed convolution with a $4 \times 4$ kernel, stride 2 and padding 1 doubles the
+      height and width [^3]. Such layers restore resolution in segmentation networks and build up images
+      in GAN generators [^1][^3].
+    references:
+      - source: d2l
+        locator: Sec. 14.10 Transposed Convolution (introduction)
+        url: https://d2l.ai/chapter_computer-vision/transposed-conv.html
+      - title: A guide to convolution arithmetic for deep learning (Dumoulin & Visin, 2016)
+        locator: Sec. 4 Transposed convolution arithmetic (zero insertion for non-unit strides)
+        url: https://arxiv.org/abs/1603.07285
+      - source: d2l
+        locator: Sec. 20.2.2 The Generator
+        url: https://d2l.ai/chapter_generative-adversarial-networks/dcgan.html#the-generator
+      - source: d2l
+        locator: Sec. 7.3.4 Exercises, Exercise 6
+        url: https://d2l.ai/chapter_convolutional-neural-networks/padding-and-strides.html#exercises
+    source:
+      id: d2l
+      ref: chapter_convolutional-neural-networks/padding-and-strides#ex6
+      url: https://d2l.ai/chapter_convolutional-neural-networks/padding-and-strides.html#exercises
+    status: draft
+  - id: cnn-024
+    type: short_answer
+    difficulty: medium
+    tags:
+      - convolution
+      - kernel-size
+      - receptive-field
+    question: |
+      Two convolutions are applied one after the other with no nonlinearity in between: first a
+      $3 \times 3$ kernel, then a $5 \times 5$ kernel (one channel, stride 1). The pair is equivalent to
+      a single convolution with a $k \times k$ kernel. What is $k$?
+    answer:
+      numeric: 7
+      tolerance: 0
+      hint: a whole number
+      model: $k = k_1 + k_2 - 1 = 3 + 5 - 1 = 7$
+    explanation: |
+      Convolution is associative, $(X * K_1) * K_2 = X * (K_1 * K_2)$, so two linear convolutions
+      collapse into one whose kernel is $K_1 * K_2$ [^2]. Convolving a length-3 and a length-5 sequence
+      gives length $3 + 5 - 1 = 7$ in each direction. The output sizes agree: without padding the first
+      layer removes 2 rows and columns and the second removes 4, together 6, exactly what one
+      $7 \times 7$ kernel removes [^1]. Each output therefore sees a $7 \times 7$ receptive field [^3].
+      Without nonlinearities in between, extra depth adds no expressive power.
+    references:
+      - source: d2l
+        locator: Sec. 7.2.1 The Cross-Correlation Operation, Eq. (7.2.1)
+        url: https://d2l.ai/chapter_convolutional-neural-networks/conv-layer.html#the-cross-correlation-operation
+      - title: 'Wikipedia: Convolution'
+        locator: Properties, Associativity
+        url: https://en.wikipedia.org/wiki/Convolution#Algebraic_properties
+      - source: d2l
+        locator: Sec. 7.2.6 Feature Map and Receptive Field
+        url: https://d2l.ai/chapter_convolutional-neural-networks/conv-layer.html#feature-map-and-receptive-field
+      - source: d2l
+        locator: Sec. 7.4.5 Exercises, Exercise 1
+        url: https://d2l.ai/chapter_convolutional-neural-networks/channels.html#exercises
+    source:
+      id: d2l
+      ref: chapter_convolutional-neural-networks/channels#ex1
+      url: https://d2l.ai/chapter_convolutional-neural-networks/channels.html#exercises
+    status: draft
+  - id: cnn-025
+    type: true_false
+    difficulty: hard
+    tags:
+      - convolution
+      - kernel-factorization
+    shuffle: false
+    question: |
+      Convolving the length-2 kernels $[a, b]$ and $[c, d]$ gives the length-3 kernel
+      $[ac,\ ad + bc,\ bd]$. True or false: every length-3 1D kernel with real weights can be written
+      this way, as two stacked length-2 convolutions with no nonlinearity in between.
+    options:
+      - text: 'True'
+        why: The kernel $[1, 0, 1]$ would need $ac = 1$, $bd = 1$ and $ad + bc = 0$. The first two give $c = 1/a$ and $d = 1/b$, and then $ad + bc = a/b + b/a$, which is never 0 for real nonzero $a, b$.
+      - text: 'False'
+        correct: true
+    explanation: |
+      Composing two convolutions always gives one convolution, but the converse fails. Convolving
+      coefficient sequences multiplies polynomials, so $[a, b]$ corresponds to $a + bz$ and a
+      length-3 kernel $[p, q, r]$ to $p + qz + rz^2$ [^1]. That kernel splits into two real length-2
+      kernels exactly when the quadratic has real roots. $[1, 0, 1]$ corresponds to $1 + z^2$, which
+      has none, so it cannot be factored. In 2D the count also fails: a $3 \times 3$ kernel has 9
+      weights, two stacked $2 \times 2$ kernels only 8, so most $3 \times 3$ kernels are out of reach [^2].
+    references:
+      - title: 'Wikipedia: Convolution'
+        locator: Discrete convolution (polynomial multiplication)
+        url: https://en.wikipedia.org/wiki/Convolution#Discrete_convolution
+      - source: d2l
+        locator: Sec. 7.4.5 Exercises, Exercise 1
+        url: https://d2l.ai/chapter_convolutional-neural-networks/channels.html#exercises
+    source:
+      id: d2l
+      ref: chapter_convolutional-neural-networks/channels#ex1-b
+      url: https://d2l.ai/chapter_convolutional-neural-networks/channels.html#exercises
+    status: draft
+  - id: cnn-026
+    type: short_answer
+    difficulty: medium
+    tags:
+      - computational-cost
+      - convolution
+      - stride
+    question: |
+      A convolutional layer maps a $3 \times 32 \times 32$ input to 16 output channels with $3 \times 3$
+      kernels, padding 1 on every side and stride 2. Counting one multiplication per kernel weight per
+      output value (ignore the bias and the additions), how many multiplications does the forward pass
+      need for one example?
+    answer:
+      numeric: 110592
+      tolerance: 0
+      hint: a whole number
+      model: The output is $16 \times 16 \times 16 = 4096$ values, each needing $3 \cdot 3 \cdot 3 = 27$ multiplications, so $4096 \times 27 = 110\,592$.
+    explanation: |
+      The output height and width are $\lfloor (32 - 3 + 2 + 2)/2 \rfloor = 16$ [^1]. Each output value
+      sums $c_i k_h k_w = 27$ products over its window and all input channels, and there are
+      $c_o \times 16 \times 16$ output values, so the total is $c_o h_o w_o c_i k_h k_w = 110\,592$.
+      This is the $\mathcal{O}(h \cdot w \cdot k^2 \cdot c_i \cdot c_o)$ cost from d2l, with the
+      output size in place of the input size [^2]. The additions take about as many operations again,
+      and the same layer with stride 1 would need $442\,368$ multiplications.
+    references:
+      - source: d2l
+        locator: Sec. 7.3.2 Stride, Eq. (7.3.2)
+        url: https://d2l.ai/chapter_convolutional-neural-networks/padding-and-strides.html#stride
+      - source: d2l
+        locator: Sec. 7.4.4 Discussion
+        url: https://d2l.ai/chapter_convolutional-neural-networks/channels.html#discussion
+      - source: d2l
+        locator: Sec. 7.4.5 Exercises, Exercise 2
+        url: https://d2l.ai/chapter_convolutional-neural-networks/channels.html#exercises
+    source:
+      id: d2l
+      ref: chapter_convolutional-neural-networks/channels#ex2
+      url: https://d2l.ai/chapter_convolutional-neural-networks/channels.html#exercises
+    status: draft
+  - id: cnn-027
+    type: short_answer
+    difficulty: easy
+    tags:
+      - computational-cost
+      - channels
+    question: |
+      By what factor does the number of multiplications of a convolutional layer grow if you double
+      both the number of input channels $c_i$ and the number of output channels $c_o$, keeping the
+      kernel size, padding, stride and input height and width the same?
+    answer:
+      numeric: 4
+      tolerance: 0
+      hint: a whole number
+      model: The cost is proportional to $c_i \cdot c_o$, so it grows by $2 \times 2 = 4$.
+    explanation: |
+      A convolution costs $\mathcal{O}(h \cdot w \cdot k^2 \cdot c_i \cdot c_o)$ [^1]: every output
+      channel looks at every input channel. Doubling both channel counts multiplies the cost by
+      $2 \times 2 = 4$, and so does the number of kernel weights,
+      $c_o \times c_i \times k_h \times k_w$ [^2]. This quadratic penalty for wider layers is what
+      grouped convolutions, as in ResNeXt, are designed to soften [^3].
+    references:
+      - source: d2l
+        locator: Sec. 7.4.4 Discussion
+        url: https://d2l.ai/chapter_convolutional-neural-networks/channels.html#discussion
+      - source: d2l
+        locator: Sec. 7.4.2 Multiple Output Channels
+        url: https://d2l.ai/chapter_convolutional-neural-networks/channels.html#multiple-output-channels
+      - source: d2l
+        locator: Sec. 8.6.5 ResNeXt
+        url: https://d2l.ai/chapter_convolutional-modern/resnet.html#resnext
+      - source: d2l
+        locator: Sec. 7.4.5 Exercises, Exercise 3
+        url: https://d2l.ai/chapter_convolutional-neural-networks/channels.html#exercises
+    source:
+      id: d2l
+      ref: chapter_convolutional-neural-networks/channels#ex3
+      url: https://d2l.ai/chapter_convolutional-neural-networks/channels.html#exercises
+    status: draft
+  - id: cnn-028
+    type: short_answer
+    difficulty: medium
+    tags:
+      - computational-cost
+      - padding
+    question: |
+      A $3 \times 3$ convolution with stride 1 runs on a $32 \times 32$ input. With padding 1 on every
+      side the output is $32 \times 32$. By what factor does the number of multiplications grow if you
+      double the padding to 2 on every side?
+    answer:
+      numeric: 1.129
+      tolerance: 0.005
+      hint: a number, 2 decimals
+      model: The output grows to $34 \times 34$, so the factor is $(34/32)^2 \approx 1.13$.
+    explanation: |
+      With a total padding of $p$ per dimension the output size is $n - k + p + 1$ [^1], so 4 padding
+      rows and columns give $32 - 3 + 4 + 1 = 34$. The cost per output value does not change, so the
+      total grows with the number of outputs, $34^2 / 32^2 \approx 1.13$. Doubling the padding barely
+      changes the compute, unlike doubling the channels (a factor of 4) [^2], but the output is now
+      larger than the input, and its new border values come from windows that are mostly zeros.
+    references:
+      - source: d2l
+        locator: Sec. 7.3.1 Padding, Eq. (7.3.1)
+        url: https://d2l.ai/chapter_convolutional-neural-networks/padding-and-strides.html#padding
+      - source: d2l
+        locator: Sec. 7.4.4 Discussion
+        url: https://d2l.ai/chapter_convolutional-neural-networks/channels.html#discussion
+      - source: d2l
+        locator: Sec. 7.4.5 Exercises, Exercise 3
+        url: https://d2l.ai/chapter_convolutional-neural-networks/channels.html#exercises
+    source:
+      id: d2l
+      ref: chapter_convolutional-neural-networks/channels#ex3-b
+      url: https://d2l.ai/chapter_convolutional-neural-networks/channels.html#exercises
+    status: draft
+  - id: cnn-029
+    type: single
+    difficulty: medium
+    tags:
+      - 1x1-convolution
+      - floating-point
+      - code-reading
+    question: |
+      d2l checks that a $1 \times 1$ convolution written as one matrix product agrees with its general
+      multichannel cross-correlation:
+
+      ```python
+      Y1 = corr2d_multi_in_out_1x1(X, K)  # reshape, then one matmul
+      Y2 = corr2d_multi_in_out(X, K)      # corr2d per channel, then a Python sum
+      assert float(torch.abs(Y1 - Y2).sum()) < 1e-6
+      ```
+
+      Why does the check use a tolerance instead of testing for exact equality?
+    options:
+      - text: Both compute the same sums, but in a different order, and float rounding depends on the order
+        correct: true
+      - text: The general version pads the input, so its border values come out slightly different
+        why: '`corr2d` uses no padding, and with a $1 \times 1$ kernel both outputs keep the height and width of the input.'
+      - text: '`torch.normal` draws fresh random numbers each time a function reads `X` or `K`'
+        why: '`X` and `K` are drawn once and the same tensors are passed to both functions.'
+      - text: The matrix version leaves out the bias term, so the two results always differ by a small constant offset
+        why: Neither function adds a bias; both compute only the weighted sums over the input channels.
+    explanation: |
+      Mathematically both functions compute $\sum_c K_{o,c} X_{c,i,j}$ for every output [^1]. In
+      floating point, addition is not associative: $(a + b) + c$ and $a + (b + c)$ can differ in the
+      last bits [^2]. The matrix-multiplication routine may accumulate the products in a different order
+      (blocked, vectorized) than the Python sum over channels, so `Y1` and `Y2` can differ by about
+      $10^{-7}$. They may match exactly on some inputs, but nothing guarantees it, which is why such
+      tests compare floats with a tolerance, as `torch.allclose` does [^3].
+    references:
+      - source: d2l
+        locator: Sec. 7.4.3 1×1 Convolutional Layer
+        url: https://d2l.ai/chapter_convolutional-neural-networks/channels.html
+      - title: 'Wikipedia: Floating-point arithmetic'
+        locator: Accuracy problems (addition is not associative)
+        url: https://en.wikipedia.org/wiki/Floating-point_arithmetic#Accuracy_problems
+      - title: torch.allclose (PyTorch documentation)
+        locator: Function description
+        url: https://docs.pytorch.org/docs/stable/generated/torch.allclose.html
+      - source: d2l
+        locator: Sec. 7.4.5 Exercises, Exercise 4
+        url: https://d2l.ai/chapter_convolutional-neural-networks/channels.html#exercises
+    source:
+      id: d2l
+      ref: chapter_convolutional-neural-networks/channels#ex4
+      url: https://d2l.ai/chapter_convolutional-neural-networks/channels.html#exercises
+    status: draft
+  - id: cnn-030
+    type: short_answer
+    difficulty: easy
+    tags:
+      - grouped-convolution
+      - block-diagonal
+      - computational-cost
+    question: |
+      A layer multiplies a 256-dimensional channel vector by a dense $256 \times 256$ weight matrix.
+      You replace it with a block-diagonal matrix of 8 blocks of size $32 \times 32$, as a grouped
+      convolution with 8 groups does. By what factor does the number of multiplications drop?
+    answer:
+      numeric: 8
+      tolerance: 0
+      hint: a whole number
+      model: $256^2 = 65\,536$ against $8 \times 32^2 = 8192$, a factor of 8.
+    explanation: |
+      Only the diagonal blocks are nonzero, so the product needs $b$ small products of size
+      $(c/b) \times (c/b)$, that is $c^2/b$ multiplications instead of $c^2$. d2l derives the same for a
+      grouped convolution with $g$ groups: the cost falls from $\mathcal{O}(c_i c_o)$ to
+      $\mathcal{O}(c_i c_o / g)$, and the number of parameters falls by the same factor $g$ [^1]. It
+      also notes that a grouped convolution can be viewed as a block-diagonal weight matrix [^2].
+    references:
+      - source: d2l
+        locator: Sec. 8.6.5 ResNeXt
+        url: https://d2l.ai/chapter_convolutional-modern/resnet.html#resnext
+      - source: d2l
+        locator: Sec. 8.6.6 Summary and Discussion
+        url: https://d2l.ai/chapter_convolutional-modern/resnet.html#summary-and-discussion
+      - source: d2l
+        locator: Sec. 7.4.5 Exercises, Exercise 7
+        url: https://d2l.ai/chapter_convolutional-neural-networks/channels.html#exercises
+    source:
+      id: d2l
+      ref: chapter_convolutional-neural-networks/channels#ex7
+      url: https://d2l.ai/chapter_convolutional-neural-networks/channels.html#exercises
+    status: draft
+  - id: cnn-031
+    type: single
+    difficulty: medium
+    tags:
+      - grouped-convolution
+      - resnext
+      - channel-mixing
+    question: |
+      A grouped convolution with $g$ groups is $g$ times cheaper than a dense one, because its
+      channel-mixing matrix is block-diagonal. What is the main downside, and how does the ResNeXt
+      block reduce it?
+    options:
+      - text: The output has only $1/g$ of the channels; concatenating $g$ copies of it restores the full width
+        why: Each group produces $c_o/g$ channels, so all groups together still produce $c_o$; copies would add no information.
+      - text: The receptive field shrinks by a factor of $g$; larger kernels in later layers make up for it
+        why: Groups split the channels, not the image; the kernel size and the receptive field stay the same.
+      - text: The layer needs $g$ times more parameters; sharing weights between the groups removes the excess
+        why: A grouped convolution has $g$ times fewer parameters than a dense one [^1].
+      - text: Groups never exchange information; $1 \times 1$ convolutions around it mix the channels again
+        correct: true
+    explanation: |
+      With a block-diagonal weight matrix, channel $i$ of group 1 never influences any output of group
+      2, so features computed in different groups cannot be combined. d2l names this as the only
+      challenge of the design: no information is exchanged between the $g$ groups [^1]. ResNeXt places
+      the grouped $3 \times 3$ convolution between two $1 \times 1$ convolutions, which mix all channels
+      and cost only $\mathcal{O}(c \cdot b)$ [^1]. ShuffleNet uses another fix: it permutes channels
+      between groups after each grouped convolution [^2].
+    references:
+      - source: d2l
+        locator: Sec. 8.6.5 ResNeXt
+        url: https://d2l.ai/chapter_convolutional-modern/resnet.html#resnext
+      - title: 'ShuffleNet: An Extremely Efficient Convolutional Neural Network for Mobile Devices (Zhang et al., 2017)'
+        locator: Sec. 3.1 Channel Shuffle for Group Convolutions
+        url: https://arxiv.org/abs/1707.01083
+      - source: d2l
+        locator: Sec. 7.4.5 Exercises, Exercise 7
+        url: https://d2l.ai/chapter_convolutional-neural-networks/channels.html#exercises
+    source:
+      id: d2l
+      ref: chapter_convolutional-neural-networks/channels#ex7-b
+      url: https://d2l.ai/chapter_convolutional-neural-networks/channels.html#exercises
+    status: draft
+  - id: cnn-032
+    type: single
+    difficulty: medium
+    tags:
+      - pooling
+      - average-pooling
+      - depthwise-convolution
+      - code-reading
+    question: |
+      You want a convolution that reproduces `nn.AvgPool2d(2)` (a $2 \times 2$ window with stride 2)
+      on a `c`-channel input. Each candidate below gets all its weights set to `0.25` and no bias.
+      Which one matches the pooling layer?
+    options:
+      - text: '`nn.Conv2d(c, c, kernel_size=2, stride=1, groups=c)`'
+        why: With stride 1 the windows overlap and the output is $(h - 1) \times (w - 1)$; `AvgPool2d(2)` uses a stride equal to its window size [^2].
+      - text: '`nn.Conv2d(c, c, kernel_size=2, stride=2, groups=c)`'
+        correct: true
+      - text: '`nn.Conv2d(c, 1, kernel_size=2, stride=2)`'
+        why: This has a single output channel, while pooling keeps the number of channels [^3].
+      - text: '`nn.Conv2d(c, c, kernel_size=2, stride=2)`'
+        why: Without groups, each output channel sums over all `c` input channels, so channels get mixed; pooling handles each channel on its own [^3].
+    explanation: |
+      Average pooling outputs the mean of each window and has no parameters [^1]; frameworks set the
+      stride equal to the window size by default [^2], and pooling processes every channel separately,
+      so the number of channels stays the same [^3]. A depthwise convolution (`groups=c`) applies one
+      $2 \times 2$ kernel to each channel; with all weights $1/(p_h p_w) = 0.25$ and stride 2 it computes
+      exactly the mean of each window [^4]. A normal convolution would instead add up the results of all
+      input channels, as a multichannel convolution does.
+    references:
+      - source: d2l
+        locator: Sec. 7.5.1 Maximum Pooling and Average Pooling
+        url: https://d2l.ai/chapter_convolutional-neural-networks/pooling.html#maximum-pooling-and-average-pooling
+      - source: d2l
+        locator: Sec. 7.5.2 Padding and Stride
+        url: https://d2l.ai/chapter_convolutional-neural-networks/pooling.html#padding-and-stride
+      - source: d2l
+        locator: Sec. 7.5.3 Multiple Channels
+        url: https://d2l.ai/chapter_convolutional-neural-networks/pooling.html#multiple-channels
+      - title: torch.nn.Conv2d (PyTorch documentation)
+        locator: Parameters, groups
+        url: https://docs.pytorch.org/docs/stable/generated/torch.nn.Conv2d.html
+      - source: d2l
+        locator: Sec. 7.5.5 Exercises, Exercise 1
+        url: https://d2l.ai/chapter_convolutional-neural-networks/pooling.html#exercises
+    source:
+      id: d2l
+      ref: chapter_convolutional-neural-networks/pooling#ex1
+      url: https://d2l.ai/chapter_convolutional-neural-networks/pooling.html#exercises
+    status: draft
+  - id: cnn-033
+    type: true_false
+    difficulty: medium
+    tags:
+      - pooling
+      - max-pooling
+      - linearity
+    shuffle: false
+    question: |
+      True or false: with suitable weights and bias, a single convolutional layer with no activation
+      function can compute $2 \times 2$ max-pooling.
+    options:
+      - text: 'True'
+        why: A convolution is affine in its input, but the maximum is not. For a window $(1, 0, 0, 0)$ the max is 1, for $(0, 1, 0, 0)$ it is 1, but for their sum $(1, 1, 0, 0)$ it is still 1, not 2.
+      - text: 'False'
+        correct: true
+    explanation: |
+      A convolutional layer computes a weighted sum of the window plus a bias, an affine function
+      $f(\mathbf{x}) = \mathbf{w}^\top \mathbf{x} + b$. Suppose it equalled the max on every window. The
+      all-zero window forces $b = 0$, each window with a single 1 forces every weight to be 1, and then
+      $f(1, 1, 0, 0) = 2$ while the max is 1, a contradiction. Pooling layers have no kernel and compute
+      the max directly, a nonlinear operation [^1]. Adding ReLU changes the picture, since
+      $\max(a, b) = b + \mathrm{ReLU}(a - b)$.
+    references:
+      - source: d2l
+        locator: Sec. 7.5.1 Maximum Pooling and Average Pooling
+        url: https://d2l.ai/chapter_convolutional-neural-networks/pooling.html#maximum-pooling-and-average-pooling
+      - source: d2l
+        locator: Sec. 7.5.5 Exercises, Exercise 2
+        url: https://d2l.ai/chapter_convolutional-neural-networks/pooling.html#exercises
+    source:
+      id: d2l
+      ref: chapter_convolutional-neural-networks/pooling#ex2
+      url: https://d2l.ai/chapter_convolutional-neural-networks/pooling.html#exercises
+    status: draft
+  - id: cnn-034
+    type: single
+    difficulty: medium
+    tags:
+      - relu
+      - max-pooling
+    question: |
+      Which expression equals $\max(a, b)$ for all real numbers $a$ and $b$, using only
+      $\mathrm{ReLU}(x) = \max(0, x)$, additions and subtractions?
+    options:
+      - text: $\mathrm{ReLU}(a - b) + \mathrm{ReLU}(b - a)$
+        why: This is $|a - b|$, which is 0 for $a = b = 1$.
+      - text: $b + \mathrm{ReLU}(a - b)$
+        correct: true
+      - text: $\mathrm{ReLU}(a + b) - \mathrm{ReLU}(-a)$
+        why: For $a = 1, b = 2$ this gives $3 - 0 = 3$, not 2.
+      - text: $\mathrm{ReLU}(a) + \mathrm{ReLU}(b)$
+        why: For $a = b = 1$ this gives 2, not 1.
+    explanation: |
+      If $a \ge b$, then $\mathrm{ReLU}(a - b) = a - b$ and the sum is $a$; otherwise the ReLU gives 0
+      and the sum is $b$. To use ReLU units only, write $b = \mathrm{ReLU}(b) - \mathrm{ReLU}(-b)$, so
+      $\max(a, b) = \mathrm{ReLU}(a - b) + \mathrm{ReLU}(b) - \mathrm{ReLU}(-b)$ [^2]. Applying the
+      pairwise max twice, $\max(\max(a, b), \max(c, d))$, gives the max of a $2 \times 2$ window, so
+      max-pooling can be built from convolutions that form the differences plus ReLU layers, even though
+      a convolution alone cannot compute it [^1].
+    references:
+      - source: d2l
+        locator: Sec. 7.5.1 Maximum Pooling and Average Pooling
+        url: https://d2l.ai/chapter_convolutional-neural-networks/pooling.html#maximum-pooling-and-average-pooling
+      - source: d2l
+        locator: Sec. 5.1.2.1 ReLU Function
+        url: https://d2l.ai/chapter_multilayer-perceptrons/mlp.html#relu-function
+      - source: d2l
+        locator: Sec. 7.5.5 Exercises, Exercise 3
+        url: https://d2l.ai/chapter_convolutional-neural-networks/pooling.html#exercises
+    source:
+      id: d2l
+      ref: chapter_convolutional-neural-networks/pooling#ex3
+      url: https://d2l.ai/chapter_convolutional-neural-networks/pooling.html#exercises
+    status: draft
+  - id: cnn-035
+    type: short_answer
+    difficulty: medium
+    tags:
+      - pooling
+      - computational-cost
+    question: |
+      A $2 \times 2$ max-pooling layer with stride 2 and no padding is applied to a
+      $64 \times 32 \times 32$ input (channels × height × width). Finding the maximum of $n$ numbers
+      takes $n - 1$ comparisons. How many comparisons does the layer make?
+    answer:
+      numeric: 49152
+      tolerance: 0
+      hint: a whole number
+      model: The output is $64 \times 16 \times 16 = 16\,384$ windows of 4 values, each needing 3 comparisons, so $49\,152$.
+    explanation: |
+      Pooling works on each channel separately and keeps the number of channels [^1], and a
+      $2 \times 2$ window with stride 2 halves the height and width [^2], giving $64 \times 16 \times 16$
+      outputs. Each output is the max of 4 values, which takes 3 comparisons, so
+      $64 \cdot 256 \cdot 3 = 49\,152$. In general the cost is $c \cdot h_o \cdot w_o \cdot (p_h p_w - 1)$:
+      linear in the number of channels, with no $c_i \times c_o$ product, so pooling is far cheaper than
+      a convolution on the same input [^3].
+    references:
+      - source: d2l
+        locator: Sec. 7.5.3 Multiple Channels
+        url: https://d2l.ai/chapter_convolutional-neural-networks/pooling.html#multiple-channels
+      - source: d2l
+        locator: Sec. 7.5.2 Padding and Stride
+        url: https://d2l.ai/chapter_convolutional-neural-networks/pooling.html#padding-and-stride
+      - source: d2l
+        locator: Sec. 7.4.4 Discussion
+        url: https://d2l.ai/chapter_convolutional-neural-networks/channels.html#discussion
+      - source: d2l
+        locator: Sec. 7.5.5 Exercises, Exercise 4
+        url: https://d2l.ai/chapter_convolutional-neural-networks/pooling.html#exercises
+    source:
+      id: d2l
+      ref: chapter_convolutional-neural-networks/pooling#ex4
+      url: https://d2l.ai/chapter_convolutional-neural-networks/pooling.html#exercises
+    status: draft
+  - id: cnn-036
+    type: single
+    difficulty: easy
+    tags:
+      - pooling
+      - min-pooling
+    question: |
+      A framework offers max-pooling but no minimum pooling. Which expression computes $2 \times 2$
+      minimum pooling of a tensor `X` with any real values, using the max-pooling function `maxpool`?
+    options:
+      - text: '`1 / maxpool(1 / X)`'
+        why: This only works for strictly positive values; zeros cause a division by zero and negative values break the ordering.
+      - text: '`-maxpool(X)`'
+        why: This negates the maximum of each window, which has nothing to do with the minimum.
+      - text: '`maxpool(-X)`'
+        why: This is the negated minimum of each window; the sign has to be flipped back.
+      - text: '`-maxpool(-X)`'
+        correct: true
+    explanation: |
+      For any set of numbers, $\min S = -\max(-S)$: negating reverses the order, so the largest of the
+      negated values is the negated smallest value. Pooling applies its operation to each window
+      separately [^1], so `-maxpool(-X)` with the same window and stride is minimum pooling, and no
+      separate layer is needed.
+    references:
+      - source: d2l
+        locator: Sec. 7.5.1 Maximum Pooling and Average Pooling
+        url: https://d2l.ai/chapter_convolutional-neural-networks/pooling.html#maximum-pooling-and-average-pooling
+      - source: d2l
+        locator: Sec. 7.5.5 Exercises, Exercise 6
+        url: https://d2l.ai/chapter_convolutional-neural-networks/pooling.html#exercises
+    source:
+      id: d2l
+      ref: chapter_convolutional-neural-networks/pooling#ex6
+      url: https://d2l.ai/chapter_convolutional-neural-networks/pooling.html#exercises
+    status: draft

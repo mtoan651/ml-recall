@@ -212,3 +212,498 @@ questions:
       ref: quiz-111/q3
       url: https://github.com/microsoft/AI-For-Beginners/blob/392d0df1b2647cbee104942390551f1ed9e072c8/etc/quiz-app/src/assets/translations/en/lesson-11.json
     status: draft
+  - id: object-detection-008
+    type: short_answer
+    difficulty: easy
+    tags:
+      - bounding-boxes
+      - box-formats
+    question: |
+      A bounding box in corner format $(x_1, y_1, x_2, y_2)$ is $(40, 20, 200, 140)$, in pixel
+      coordinates with the origin at the top-left corner and $y$ pointing down. Write it in center format
+      $(c_x, c_y, w, h)$.
+    answer:
+      accept:
+        - (120, 80, 160, 120)
+      pattern: \(?\s*120(\.0+)?\s*,\s*80(\.0+)?\s*,\s*160(\.0+)?\s*,\s*120(\.0+)?\s*\)?
+      hint: four numbers, e.g. (10, 20, 30, 40)
+      model: $c_x = (40 + 200)/2 = 120$, $c_y = (20 + 140)/2 = 80$, $w = 200 - 40 = 160$, $h = 140 - 20 = 120$
+    explanation: |
+      The center is the midpoint of the two corners, and the width and height are the differences of
+      their coordinates; d2l's `box_corner_to_center` computes exactly these four values [^1]. Both
+      formats describe an axis-aligned rectangle with four numbers, its four degrees of freedom, which is
+      why the last dimension of the `boxes` tensor these functions take is always 4 [^1][^2].
+    references:
+      - source: d2l
+        locator: Sec. 14.3.1 Bounding Boxes
+        url: https://d2l.ai/chapter_computer-vision/bounding-box.html#bounding-boxes
+      - source: d2l
+        locator: Sec. 14.3.3 Exercises, Exercise 2
+        url: https://d2l.ai/chapter_computer-vision/bounding-box.html#exercises
+    source:
+      id: d2l
+      ref: chapter_computer-vision/bounding-box#ex2
+      url: https://d2l.ai/chapter_computer-vision/bounding-box.html#exercises
+    status: draft
+  - id: object-detection-009
+    type: short_answer
+    difficulty: easy
+    tags:
+      - anchor-boxes
+    question: |
+      d2l generates anchor boxes centered on every pixel. With $n$ sizes $s_1, \ldots, s_n$ and $m$
+      aspect ratios $r_1, \ldots, r_m$ it keeps only the combinations that contain $s_1$ or $r_1$. How
+      many anchor boxes does it generate for a $300 \times 400$ image with
+      `sizes=[0.75, 0.5, 0.25, 0.1]` and `ratios=[1, 2, 0.5]`?
+    answer:
+      numeric: 720000
+      tolerance: 0
+      hint: a whole number
+      model: $n + m - 1 = 4 + 3 - 1 = 6$ anchors per pixel, so $300 \cdot 400 \cdot 6 = 720\,000$.
+    explanation: |
+      The combinations $(s_1, r_1), \ldots, (s_1, r_m), (s_2, r_1), \ldots, (s_n, r_1)$ give $n + m - 1$
+      anchor boxes per pixel and $wh(n + m - 1)$ for the whole image [^1]. All $nm = 12$ combinations
+      would double that to 1.44 million. Even the reduced count is large, which is why multiscale
+      detection places anchor centers on the cells of a coarser feature map instead of on every
+      pixel [^2].
+    references:
+      - source: d2l
+        locator: Sec. 14.4.1 Generating Multiple Anchor Boxes
+        url: https://d2l.ai/chapter_computer-vision/anchor.html#generating-multiple-anchor-boxes
+      - source: d2l
+        locator: Sec. 14.5.1 Multiscale Anchor Boxes
+        url: https://d2l.ai/chapter_computer-vision/multiscale-object-detection.html#multiscale-anchor-boxes
+      - source: d2l
+        locator: Sec. 14.4.6 Exercises, Exercise 1
+        url: https://d2l.ai/chapter_computer-vision/anchor.html#exercises
+    source:
+      id: d2l
+      ref: chapter_computer-vision/anchor#ex1
+      url: https://d2l.ai/chapter_computer-vision/anchor.html#exercises
+    status: draft
+  - id: object-detection-010
+    type: short_answer
+    difficulty: medium
+    tags:
+      - iou
+      - bounding-boxes
+    question: |
+      Two $1 \times 1$ squares overlap; the second is shifted horizontally by $d$ relative to the first
+      ($0 \le d \le 1$, no vertical shift). For which $d$ is their intersection over union exactly 0.5?
+    answer:
+      numeric: 0.3333
+      tolerance: 0.001
+      hint: a number, 3 decimals
+      model: $\frac{1 - d}{1 + d} = \frac{1}{2}$ gives $d = 1/3$.
+    explanation: |
+      IoU is the area of the intersection divided by the area of the union [^1]. The intersection is a
+      $(1 - d) \times 1$ rectangle, and the union is $2 - (1 - d) = 1 + d$, so
+      $\text{IoU} = (1 - d)/(1 + d)$, which equals 0.5 at $d = 1/3$. Two boxes shifted by a third of
+      their width already reach the IoU of 0.5 that d2l uses as its default threshold when assigning
+      ground-truth boxes to anchors [^2], so 0.5 is a fairly loose match.
+    references:
+      - source: d2l
+        locator: Sec. 14.4.2 Intersection over Union (IoU)
+        url: https://d2l.ai/chapter_computer-vision/anchor.html#intersection-over-union-iou
+      - source: d2l
+        locator: Sec. 14.4.3.1 Assigning Ground-Truth Bounding Boxes to Anchor Boxes
+        url: https://d2l.ai/chapter_computer-vision/anchor.html#assigning-ground-truth-bounding-boxes-to-anchor-boxes
+      - source: d2l
+        locator: Sec. 14.4.6 Exercises, Exercise 2
+        url: https://d2l.ai/chapter_computer-vision/anchor.html#exercises
+    source:
+      id: d2l
+      ref: chapter_computer-vision/anchor#ex2
+      url: https://d2l.ai/chapter_computer-vision/anchor.html#exercises
+    status: draft
+  - id: object-detection-011
+    type: short_answer
+    difficulty: medium
+    tags:
+      - non-maximum-suppression
+      - soft-nms
+    question: |
+      Two people stand close together. A detector gives one box per person, with scores 0.95 and 0.80,
+      and the boxes have an IoU of 0.6. Plain non-maximum suppression with threshold 0.5 would delete
+      the 0.80 box. Linear Soft-NMS keeps it and instead multiplies its score by $(1 - \text{IoU})$
+      whenever its IoU with the selected box is at least the threshold. What is its new score?
+    answer:
+      numeric: 0.32
+      tolerance: 0.001
+      hint: a number, 2 decimals
+      model: $0.80 \times (1 - 0.6) = 0.32$
+    explanation: |
+      NMS is greedy: it keeps the highest-scoring box and removes every other box whose IoU with it
+      exceeds the threshold [^1], so the second person would be missed. Soft-NMS instead decays the
+      scores of overlapping boxes as a function of their overlap, so no box is eliminated outright [^2].
+      With the linear rule $s_i \leftarrow s_i (1 - \text{IoU})$ the box keeps a score of 0.32 and can
+      still be reported, while near-duplicates with IoU close to 1 drop to almost 0. The paper also
+      proposes a Gaussian penalty $s_i e^{-\text{IoU}^2/\sigma}$, which avoids the jump at the
+      threshold [^2].
+    references:
+      - source: d2l
+        locator: Sec. 14.4.4 Predicting Bounding Boxes with Non-Maximum Suppression
+        url: https://d2l.ai/chapter_computer-vision/anchor.html#predicting-bounding-boxes-with-non-maximum-suppression
+      - title: 'Soft-NMS: Improving Object Detection With One Line of Code (Bodla et al., 2017)'
+        locator: Abstract and Sec. 4 Soft-NMS (rescoring functions)
+        url: https://arxiv.org/abs/1704.04503
+      - source: d2l
+        locator: Sec. 14.4.6 Exercises, Exercise 4
+        url: https://d2l.ai/chapter_computer-vision/anchor.html#exercises
+    source:
+      id: d2l
+      ref: chapter_computer-vision/anchor#ex4
+      url: https://d2l.ai/chapter_computer-vision/anchor.html#exercises
+    status: draft
+  - id: object-detection-012
+    type: true_false
+    difficulty: medium
+    tags:
+      - non-maximum-suppression
+      - detr
+      - set-prediction
+    shuffle: false
+    question: |
+      True or false: non-maximum suppression does not have to be a hand-crafted post-processing step;
+      a detector can learn to output a single box per object.
+    options:
+      - text: 'True'
+        correct: true
+      - text: 'False'
+        why: Hosang et al. trained a network that performs non-maximum suppression from boxes and scores alone, and DETR's set prediction removes the NMS step altogether [^2][^3].
+    explanation: |
+      d2l's NMS is a fixed greedy rule with a hand-picked IoU threshold [^1]. Hosang et al. replaced it
+      with a learned network that rescores detections and suppresses duplicates using only boxes and
+      their scores [^2]. DETR goes further: it predicts a fixed-size set of boxes and is trained with a
+      one-to-one (bipartite) matching to the ground truth, which penalizes duplicate detections, so it
+      needs no NMS at all [^3].
+    references:
+      - source: d2l
+        locator: Sec. 14.4.4 Predicting Bounding Boxes with Non-Maximum Suppression
+        url: https://d2l.ai/chapter_computer-vision/anchor.html#predicting-bounding-boxes-with-non-maximum-suppression
+      - title: Learning non-maximum suppression (Hosang, Benenson & Schiele, 2017)
+        locator: Abstract
+        url: https://arxiv.org/abs/1705.02950
+      - title: End-to-End Object Detection with Transformers (Carion et al., 2020)
+        locator: Abstract
+        url: https://arxiv.org/abs/2005.12872
+      - source: d2l
+        locator: Sec. 14.4.6 Exercises, Exercise 5
+        url: https://d2l.ai/chapter_computer-vision/anchor.html#exercises
+    source:
+      id: d2l
+      ref: chapter_computer-vision/anchor#ex5
+      url: https://d2l.ai/chapter_computer-vision/anchor.html#exercises
+    status: draft
+  - id: object-detection-013
+    type: single
+    difficulty: medium
+    tags:
+      - multiscale-detection
+      - receptive-field
+      - feature-maps
+    question: |
+      A multiscale detector uses anchors on a large feature map near the input for small objects, and
+      anchors on a small feature map near the output for large objects. Why do the deeper, smaller
+      feature maps suit large objects?
+    options:
+      - text: Their units have smaller receptive fields, so they can concentrate on the fine details of large objects
+        why: Receptive fields grow with depth; units near the output see larger parts of the input [^1].
+      - text: Their units carry fewer channels, so the predictors on top of them have fewer parameters to fit
+        why: Channel counts usually grow with depth, and the number of channels does not decide which object sizes a map can detect.
+      - text: They are upsampled back to the input resolution before prediction, so they see more of the pixels
+        why: The detector predicts directly on the small maps; no upsampling takes place [^3].
+      - text: Their units have larger receptive fields and more abstract features, so they can cover whole large objects
+        correct: true
+    explanation: |
+      Units of feature maps closer to the output have wider receptive fields on the input image, so they
+      can detect larger objects [^1]. Deep networks learn hierarchical features with increasing levels of
+      abstraction [^2], so the maps at different scales also differ in abstraction: early maps hold
+      low-level patterns such as edges, later ones whole object parts. In SSD the multiscale maps near
+      the top are smaller but have larger receptive fields, and they detect fewer but larger
+      objects [^3].
+    references:
+      - source: d2l
+        locator: Sec. 14.5.2 Multiscale Detection
+        url: https://d2l.ai/chapter_computer-vision/multiscale-object-detection.html#multiscale-detection
+      - source: d2l
+        locator: Sec. 8.1.1 Representation Learning
+        url: https://d2l.ai/chapter_convolutional-modern/alexnet.html#representation-learning
+      - source: d2l
+        locator: Sec. 14.7.1 Model
+        url: https://d2l.ai/chapter_computer-vision/ssd.html#model
+      - source: d2l
+        locator: Sec. 14.5.4 Exercises, Exercise 1
+        url: https://d2l.ai/chapter_computer-vision/multiscale-object-detection.html#exercises
+    source:
+      id: d2l
+      ref: chapter_computer-vision/multiscale-object-detection#ex1
+      url: https://d2l.ai/chapter_computer-vision/multiscale-object-detection.html#exercises
+    status: draft
+  - id: object-detection-014
+    type: short_answer
+    difficulty: medium
+    tags:
+      - ssd
+      - anchor-boxes
+      - output-shape
+    question: |
+      An SSD-style class predictor is a $3 \times 3$ convolution with padding 1, applied to a feature map
+      of shape $1 \times 256 \times 10 \times 10$. Each spatial position is the center of $a = 4$ anchor
+      boxes, and there are $q = 5$ object classes plus background. What is the shape of the class
+      predictor's output?
+    answer:
+      accept:
+        - (1, 24, 10, 10)
+      pattern: \(?\s*1\s*[,x×]\s*24\s*[,x×]\s*10\s*[,x×]\s*10\s*\)?
+      hint: four dimensions, e.g. (1, 8, 5, 5)
+      model: $(1, a(q + 1), h, w) = (1, 24, 10, 10)$; the matching offset predictor outputs $(1, 4a, h, w) = (1, 16, 10, 10)$.
+    explanation: |
+      The class predictor keeps the height and width, so each output position corresponds to the anchors
+      centered there, and it needs $a(q + 1)$ output channels: channel $i(q + 1) + j$ holds the score of
+      class $j$ for anchor $i$ [^1]. With $a = 4$ and $q + 1 = 6$ that is 24 channels. The offset
+      predictor is built the same way with 4 values per anchor [^2]. To combine scales, SSD moves the
+      channels last and flattens each prediction, here into $10 \cdot 10 \cdot 24 = 2400$ values per
+      example [^3].
+    references:
+      - source: d2l
+        locator: Sec. 14.7.1.1 Class Prediction Layer
+        url: https://d2l.ai/chapter_computer-vision/ssd.html#class-prediction-layer
+      - source: d2l
+        locator: Sec. 14.7.1.2 Bounding Box Prediction Layer
+        url: https://d2l.ai/chapter_computer-vision/ssd.html#bounding-box-prediction-layer
+      - source: d2l
+        locator: Sec. 14.7.1.3 Concatenating Predictions for Multiple Scales
+        url: https://d2l.ai/chapter_computer-vision/ssd.html#concatenating-predictions-for-multiple-scales
+      - source: d2l
+        locator: Sec. 14.5.4 Exercises, Exercise 3
+        url: https://d2l.ai/chapter_computer-vision/multiscale-object-detection.html#exercises
+    source:
+      id: d2l
+      ref: chapter_computer-vision/multiscale-object-detection#ex3
+      url: https://d2l.ai/chapter_computer-vision/multiscale-object-detection.html#exercises
+    status: draft
+  - id: object-detection-015
+    type: single
+    difficulty: medium
+    tags:
+      - data-augmentation
+      - random-cropping
+      - bounding-boxes
+    question: |
+      You add random cropping as data augmentation when training an object detector. What has to be
+      handled that does not come up in image classification?
+    options:
+      - text: Boxes must be shifted and clipped to the crop, and objects left mostly outside it dropped from the labels
+        correct: true
+      - text: The crop must be resized back to the original size, which keeps every box coordinate valid
+        why: Resizing the crop does not restore the original coordinates; boxes still have to be expressed relative to the crop.
+      - text: Nothing extra, because the labels of an image stay valid after any crop of that image
+        why: Detection labels include box coordinates in the image's coordinate system, and cropping changes those coordinates.
+      - text: Only crops that contain no objects may be used, so that no bounding box is ever cut
+        why: Crops without objects contain no positive examples. SSD samples crops that overlap the objects instead [^2].
+    explanation: |
+      In classification one label describes the whole image, but a detection label is a class plus box
+      coordinates relative to the image [^1]. After cropping, every box has to be translated into the
+      crop's coordinates and clipped to it. A crop that contains only a small sliver of an object should
+      not teach the model that the sliver is the whole object; SSD keeps the overlapping part of a
+      ground-truth box only if the box's center lies inside the sampled patch, and samples patches with a
+      minimum IoU with the objects [^2].
+    references:
+      - source: d2l
+        locator: Sec. 14.6.2 Reading the Dataset (labels are class and box coordinates)
+        url: https://d2l.ai/chapter_computer-vision/object-detection-dataset.html#reading-the-dataset
+      - title: 'SSD: Single Shot MultiBox Detector (Liu et al., 2016)'
+        locator: Sec. 2.2 Training, Data augmentation
+        url: https://arxiv.org/abs/1512.02325
+      - source: d2l
+        locator: Sec. 14.6.5 Exercises, Exercise 2
+        url: https://d2l.ai/chapter_computer-vision/object-detection-dataset.html#exercises
+    source:
+      id: d2l
+      ref: chapter_computer-vision/object-detection-dataset#ex2
+      url: https://d2l.ai/chapter_computer-vision/object-detection-dataset.html#exercises
+    status: draft
+  - id: object-detection-016
+    type: short_answer
+    difficulty: medium
+    tags:
+      - focal-loss
+      - class-imbalance
+      - ssd
+    question: |
+      Focal loss replaces the cross-entropy $-\log p_j$ by $-\alpha (1 - p_j)^{\gamma} \log p_j$, where
+      $p_j$ is the predicted probability of the true class. With $\alpha = 1$ and $\gamma = 2$, by what
+      factor is the loss of a well-classified example with $p_j = 0.9$ smaller than its cross-entropy?
+    answer:
+      numeric: 100
+      tolerance: 0.5
+      hint: a number
+      model: $(1 - 0.9)^2 = 0.01$, so the loss is 100 times smaller; for a hard example with $p_j = 0.1$ the factor is only $1/0.81 \approx 1.23$.
+    explanation: |
+      The factor $(1 - p_j)^\gamma$ is close to 0 for confident correct predictions and close to 1 for
+      misclassified ones, so increasing $\gamma$ cuts the relative loss of well-classified examples and
+      training focuses on the hard ones [^1]. Lin et al. designed the loss for dense one-stage detectors,
+      which score a very large number of anchors that are mostly easy background; without the factor
+      these easy negatives dominate the total loss [^2].
+    references:
+      - source: d2l
+        locator: Sec. 14.7.5 Exercises, Exercise 1 (focal loss)
+        url: https://d2l.ai/chapter_computer-vision/ssd.html#exercises
+      - title: Focal Loss for Dense Object Detection (Lin et al., 2017)
+        locator: Sec. 3.2 Focal Loss Definition
+        url: https://arxiv.org/abs/1708.02002
+    source:
+      id: d2l
+      ref: chapter_computer-vision/ssd#ex1
+      url: https://d2l.ai/chapter_computer-vision/ssd.html#exercises
+    status: draft
+  - id: object-detection-017
+    type: short_answer
+    difficulty: medium
+    tags:
+      - smooth-l1
+      - bounding-box-regression
+      - loss-functions
+    question: |
+      The smooth $\ell_1$ loss with hyperparameter $\sigma$ is
+      $$f(x) = \begin{cases} (\sigma x)^2/2, & |x| < 1/\sigma^2,\\ |x| - 0.5/\sigma^2, & \text{otherwise.}\end{cases}$$
+      With $\sigma = 2$, what is $f(0.2)$?
+    answer:
+      numeric: 0.08
+      tolerance: 0.0005
+      hint: a number, 2 decimals
+      model: $|0.2| < 1/4$, so the quadratic branch applies, $(2 \cdot 0.2)^2/2 = 0.08$; the plain $\ell_1$ loss would give 0.2.
+    explanation: |
+      Near zero the loss is quadratic, so its gradient $\sigma^2 x$ shrinks smoothly as a predicted offset
+      approaches its target, whereas the $\ell_1$ gradient stays at $\pm 1$. Beyond $|x| = 1/\sigma^2$ it is
+      linear like $\ell_1$, so large errors and outliers do not dominate as they would under a squared
+      loss. The two pieces meet with the same value $0.5/\sigma^2$ and slope 1, and a very large $\sigma$
+      makes the loss behave like $\ell_1$ [^1]. d2l's SSD uses the plain $\ell_1$ loss for the
+      offsets [^2].
+    references:
+      - source: d2l
+        locator: Sec. 14.7.5 Exercises, Exercise 1 (smooth L1 loss)
+        url: https://d2l.ai/chapter_computer-vision/ssd.html#exercises
+      - source: d2l
+        locator: Sec. 14.7.2.2 Defining Loss and Evaluation Functions
+        url: https://d2l.ai/chapter_computer-vision/ssd.html#defining-loss-and-evaluation-functions
+    source:
+      id: d2l
+      ref: chapter_computer-vision/ssd#ex1-b
+      url: https://d2l.ai/chapter_computer-vision/ssd.html#exercises
+    status: draft
+  - id: object-detection-018
+    type: short_answer
+    difficulty: easy
+    tags:
+      - ssd
+      - hard-negative-mining
+      - class-imbalance
+    question: |
+      Most anchor boxes in a detector are background (negatives). Instead of using all of them, SSD
+      ranks the negatives by their classification loss and keeps only the hardest ones, so that
+      negatives outnumber positives by at most 3 to 1. An image has 8,732 anchors, 8 of them positive.
+      How many negative anchors contribute to the classification loss?
+    answer:
+      numeric: 24
+      tolerance: 0
+      hint: a whole number
+      model: At most $3 \times 8 = 24$ negatives, the 24 with the highest classification loss.
+    explanation: |
+      The d2l exercise suggests downsampling the vast number of negative anchors to balance the classes [^1].
+      SSD does this with hard negative mining: after matching, it sorts the negatives by their confidence
+      loss and keeps the top ones so the ratio is at most 3:1, which the authors found gives faster and
+      more stable training [^2]. Without it, the 8,724 negatives would outnumber the positives about
+      1000 to 1 and swamp the loss.
+    references:
+      - source: d2l
+        locator: Sec. 14.7.5 Exercises, Exercise 2
+        url: https://d2l.ai/chapter_computer-vision/ssd.html#exercises
+      - title: 'SSD: Single Shot MultiBox Detector (Liu et al., 2016)'
+        locator: Sec. 2.2 Training, Hard negative mining
+        url: https://arxiv.org/abs/1512.02325
+    source:
+      id: d2l
+      ref: chapter_computer-vision/ssd#ex2
+      url: https://d2l.ai/chapter_computer-vision/ssd.html#exercises
+    status: draft
+  - id: object-detection-019
+    type: true_false
+    difficulty: easy
+    tags:
+      - yolo
+      - one-stage-detectors
+    shuffle: false
+    question: |
+      True or false: object detection can be framed as a single regression problem, in which one network
+      maps the whole image directly to bounding-box coordinates and class probabilities, with no
+      separate region-proposal step.
+    options:
+      - text: 'True'
+        correct: true
+      - text: 'False'
+        why: YOLO does exactly this. It predicts all boxes and class probabilities from the full image in one evaluation of a single network [^2].
+    explanation: |
+      The R-CNN family first generates region proposals and then classifies each region and refines its
+      box [^1]. YOLO frames detection as a regression to spatially separated bounding boxes and the
+      associated class probabilities, predicted by a single network directly from the full image in one
+      evaluation [^2]. It divides the image into an $S \times S$ grid, and each cell predicts a few boxes
+      with confidences plus class probabilities, which makes it fast enough for real-time use.
+    references:
+      - source: d2l
+        locator: Sec. 14.8.1 R-CNNs
+        url: https://d2l.ai/chapter_computer-vision/rcnn.html#r-cnns
+      - title: 'You Only Look Once: Unified, Real-Time Object Detection (Redmon et al., 2016)'
+        locator: Abstract and Sec. 2 Unified Detection
+        url: https://arxiv.org/abs/1506.02640
+      - source: d2l
+        locator: Sec. 14.8.6 Exercises, Exercise 1
+        url: https://d2l.ai/chapter_computer-vision/rcnn.html#exercises
+    source:
+      id: d2l
+      ref: chapter_computer-vision/rcnn#ex1
+      url: https://d2l.ai/chapter_computer-vision/rcnn.html#exercises
+    status: draft
+  - id: object-detection-020
+    type: single
+    difficulty: medium
+    tags:
+      - ssd
+      - faster-r-cnn
+      - one-stage-detectors
+      - two-stage-detectors
+    question: |
+      What is the main structural difference between single-shot multibox detection (SSD) and
+      Faster R-CNN?
+    options:
+      - text: SSD builds on a pretrained CNN backbone, while Faster R-CNN has to train its whole CNN from scratch
+        why: Both usually start from a pretrained backbone such as VGG or ResNet [^1][^2].
+      - text: SSD relies on selective search for its region proposals, while Faster R-CNN learns them with a proposal network
+        why: SSD uses no region proposals at all; selective search belongs to R-CNN and Fast R-CNN [^2].
+      - text: SSD predicts from dense anchors in one pass; Faster R-CNN first proposes regions, then classifies each
+        correct: true
+      - text: SSD predicts a pixel mask for every object, while Faster R-CNN predicts only the bounding boxes
+        why: Pixel masks are added by Mask R-CNN, not by SSD [^2].
+    explanation: |
+      SSD runs a base network followed by multiscale feature map blocks and predicts the classes and
+      offsets of all anchor boxes at every scale directly, in a single stage [^1]. Faster R-CNN is a
+      two-stage detector: a region proposal network scores anchors as object or background and keeps a
+      few proposals after NMS, and RoI pooling then extracts features for each proposal for the final
+      class and box prediction [^2]. One-stage detectors are simpler and faster, while two-stage ones
+      spend more computation per region.
+    references:
+      - source: d2l
+        locator: Sec. 14.7.1 Model
+        url: https://d2l.ai/chapter_computer-vision/ssd.html#model
+      - source: d2l
+        locator: Sec. 14.8.3 Faster R-CNN and Sec. 14.8.5 Summary
+        url: https://d2l.ai/chapter_computer-vision/rcnn.html#faster-r-cnn
+      - source: d2l
+        locator: Sec. 14.8.6 Exercises, Exercise 2
+        url: https://d2l.ai/chapter_computer-vision/rcnn.html#exercises
+    source:
+      id: d2l
+      ref: chapter_computer-vision/rcnn#ex2
+      url: https://d2l.ai/chapter_computer-vision/rcnn.html#exercises
+    status: draft

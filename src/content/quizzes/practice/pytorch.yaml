@@ -237,3 +237,472 @@ questions:
       ref: quiz-207/q3
       url: https://github.com/microsoft/AI-For-Beginners/blob/392d0df1b2647cbee104942390551f1ed9e072c8/etc/quiz-app/src/assets/translations/en/lesson-7.json
     status: draft
+  - id: pytorch-008
+    type: short_answer
+    difficulty: medium
+    tags:
+      - nn-module
+      - module-registration
+      - code-reading
+    question: |
+      What does the last line print?
+
+      ```python
+      import torch
+      from torch import nn
+
+      class ListSequential(nn.Module):
+          def __init__(self, *args):
+              super().__init__()
+              self.layers = list(args)       # a plain Python list
+
+          def forward(self, X):
+              for layer in self.layers:
+                  X = layer(X)
+              return X
+
+      net = ListSequential(nn.Linear(20, 256), nn.ReLU(), nn.Linear(256, 10))
+      print(len(list(net.parameters())))
+      ```
+    answer:
+      numeric: 0
+      tolerance: 0
+      hint: a whole number
+      model: 0, because modules kept in a plain list are not registered as submodules, so `net` knows of no parameters (with `nn.Sequential` or `nn.ModuleList` it would be 4).
+    explanation: |
+      d2l's `MySequential` registers every layer with `add_module`, "in this way the system knows the
+      added modules" and can initialize their parameters [^1]. Assigning a module directly as an
+      attribute registers it too, but a Python list is just an ordinary attribute, so its layers are
+      invisible to `parameters()`, `state_dict()`, `.to()` and `children()`. `nn.ModuleList` is the
+      registered version of a list [^2]. The forward pass still works, because it calls the layers
+      directly.
+    references:
+      - source: d2l
+        locator: Sec. 6.1.2 The Sequential Module
+        url: https://d2l.ai/chapter_builders-guide/model-construction.html#the-sequential-module
+      - title: torch.nn.ModuleList (PyTorch documentation)
+        locator: Class description
+        url: https://docs.pytorch.org/docs/stable/generated/torch.nn.ModuleList.html
+      - source: d2l
+        locator: Sec. 6.1.5 Exercises, Exercise 1
+        url: https://d2l.ai/chapter_builders-guide/model-construction.html#exercises
+    source:
+      id: d2l
+      ref: chapter_builders-guide/model-construction#ex1
+      url: https://d2l.ai/chapter_builders-guide/model-construction.html#exercises
+    status: draft
+  - id: pytorch-009
+    type: multiple
+    difficulty: medium
+    tags:
+      - nn-module
+      - module-registration
+      - state-dict
+    question: |
+      A custom module keeps its layers in a plain Python list instead of registering them:
+
+      ```python
+      class ListSequential(nn.Module):
+          def __init__(self, *args):
+              super().__init__()
+              self.layers = list(args)
+
+          def forward(self, X):
+              for layer in self.layers:
+                  X = layer(X)
+              return X
+
+      net = ListSequential(nn.Linear(20, 256), nn.ReLU(), nn.Linear(256, 10))
+      ```
+
+      Which of these happen? Select all that apply.
+    options:
+      - text: '`torch.optim.SGD(net.parameters(), lr=0.1)` raises an error about an empty parameter list'
+        correct: true
+      - text: '`torch.save(net.state_dict(), "net.pt")` stores the weights of both linear layers'
+        why: The state dict only contains registered parameters and buffers, and here there are none, so an empty dictionary is saved [^2].
+      - text: '`net.to("cuda")` leaves both linear layers on the CPU'
+        correct: true
+      - text: Python raises an error as soon as `net` is constructed, because modules may not sit in a list
+        why: Storing modules in a list is legal Python; nothing checks it, which is what makes the bug easy to miss.
+      - text: '`net(torch.rand(2, 20))` runs and returns a tensor of shape `(2, 10)`'
+        correct: true
+    explanation: |
+      `nn.Module` tracks only submodules and parameters that are assigned directly or added with
+      `add_module`; d2l's `MySequential` registers its layers so that "the system knows the added
+      modules" [^1]. The list hides the layers from every method that walks the registered submodules:
+      `parameters()` is empty, so the optimizer refuses to start, `to()` moves nothing, and
+      `state_dict()` is empty. The forward pass still works because it calls the layers itself.
+      `nn.ModuleList` or `nn.Sequential` fixes all of this [^2].
+    references:
+      - source: d2l
+        locator: Sec. 6.1.2 The Sequential Module
+        url: https://d2l.ai/chapter_builders-guide/model-construction.html#the-sequential-module
+      - title: torch.nn.ModuleList (PyTorch documentation)
+        locator: Class description
+        url: https://docs.pytorch.org/docs/stable/generated/torch.nn.ModuleList.html
+      - source: d2l
+        locator: Sec. 6.1.5 Exercises, Exercise 1
+        url: https://d2l.ai/chapter_builders-guide/model-construction.html#exercises
+    source:
+      id: d2l
+      ref: chapter_builders-guide/model-construction#ex1-b
+      url: https://d2l.ai/chapter_builders-guide/model-construction.html#exercises
+    status: draft
+  - id: pytorch-010
+    type: short_answer
+    difficulty: medium
+    tags:
+      - nn-sequential
+      - parameter-sharing
+      - code-reading
+    question: |
+      You want three independent $8 \to 8$ linear layers in a row and write:
+
+      ```python
+      layer = nn.Linear(8, 8)
+      net = nn.Sequential(*[layer] * 3)
+      print(sum(p.numel() for p in net.parameters()))
+      ```
+
+      What does the last line print?
+    answer:
+      numeric: 72
+      tolerance: 0
+      hint: a whole number
+      model: '72: `[layer] * 3` repeats the same object, so all three positions share one $8 \times 8$ weight and one bias ($64 + 8$); a factory such as `[nn.Linear(8, 8) for _ in range(3)]` gives 216.'
+    explanation: |
+      Multiplying a list repeats references to its items; the items are not copied [^1]. The
+      `Sequential` therefore applies the same module three times, which ties the parameters exactly like
+      d2l's shared layer: changing one position changes all of them, and their gradients add up [^2].
+      `parameters()` returns each tensor only once, so it counts $64 + 8 = 72$. To get independent
+      layers, call a factory function that builds a new module each time, as the d2l exercise asks.
+    references:
+      - title: Built-in Types, Common Sequence Operations (Python documentation)
+        locator: Note 2 on s * n (items are referenced, not copied)
+        url: https://docs.python.org/3/library/stdtypes.html#common-sequence-operations
+      - source: d2l
+        locator: Sec. 6.2.2 Tied Parameters
+        url: https://d2l.ai/chapter_builders-guide/parameters.html#tied-parameters
+      - source: d2l
+        locator: Sec. 6.1.5 Exercises, Exercise 3
+        url: https://d2l.ai/chapter_builders-guide/model-construction.html#exercises
+    source:
+      id: d2l
+      ref: chapter_builders-guide/model-construction#ex3
+      url: https://d2l.ai/chapter_builders-guide/model-construction.html#exercises
+    status: draft
+  - id: pytorch-011
+    type: single
+    difficulty: easy
+    tags:
+      - parameter-sharing
+      - inductive-bias
+    question: Which is a good reason to share (tie) parameters between several parts of a network?
+    options:
+      - text: Each copy of a tied layer averages its gradient with the others, which removes the gradient noise
+        why: The gradients from the different uses are summed, not averaged, and summing does not remove minibatch noise [^1].
+      - text: It builds in the assumption that the same transformation applies in several places, and leaves fewer parameters to learn
+        correct: true
+      - text: It lets each copy of the layer specialize to its own position while storing the weights only once
+        why: Tied copies are the same tensor, so they cannot specialize; they always compute the same function.
+      - text: Shared parameters receive no gradient, so they act as fixed features that cannot overfit
+        why: Tied parameters do receive gradients; the contributions from all places where they are used are added up [^1].
+    explanation: |
+      Tied layers are represented by the same tensor, and during backpropagation the gradients from all
+      places where it is used are added together [^1]. Sharing cuts the number of parameters, so the model
+      needs less memory and less data, and it encodes a prior: the same operation is right everywhere it
+      is applied. CNNs share one kernel across all positions, which follows from translation invariance [^2],
+      and RNNs share their weights across time steps, so the number of parameters does not grow with the
+      sequence length [^3].
+    references:
+      - source: d2l
+        locator: Sec. 6.2.2 Tied Parameters
+        url: https://d2l.ai/chapter_builders-guide/parameters.html#tied-parameters
+      - source: d2l
+        locator: Sec. 7.1.2.1 Translation Invariance
+        url: https://d2l.ai/chapter_convolutional-neural-networks/why-conv.html#translation-invariance
+      - source: d2l
+        locator: Sec. 9.4.4 Summary
+        url: https://d2l.ai/chapter_recurrent-neural-networks/rnn.html#summary
+      - source: d2l
+        locator: Sec. 6.2.4 Exercises, Exercise 3
+        url: https://d2l.ai/chapter_builders-guide/parameters.html#exercises
+    source:
+      id: d2l
+      ref: chapter_builders-guide/parameters#ex3
+      url: https://d2l.ai/chapter_builders-guide/parameters.html#exercises
+    status: draft
+  - id: pytorch-012
+    type: short_answer
+    difficulty: medium
+    tags:
+      - parameter-sharing
+      - parameter-count
+      - code-reading
+    question: |
+      What does the last line print?
+
+      ```python
+      shared = nn.Linear(8, 8)
+      net = nn.Sequential(nn.Linear(4, 8), nn.ReLU(),
+                          shared, nn.ReLU(),
+                          shared, nn.ReLU(),
+                          nn.Linear(8, 1))
+      print(sum(p.numel() for p in net.parameters()))
+      ```
+    answer:
+      numeric: 121
+      tolerance: 0
+      hint: a whole number
+      model: $(4 \cdot 8 + 8) + (8 \cdot 8 + 8) + (8 + 1) = 40 + 72 + 9 = 121$; the shared layer is counted once.
+    explanation: |
+      The second and third hidden layers are the same `nn.Linear` object, so their parameters are the
+      same tensors, not copies [^1]. `parameters()` yields every tensor only once, so the shared layer's
+      72 parameters are counted once: $40 + 72 + 9 = 121$, against 193 without sharing [^2]. During
+      backpropagation the gradients of both uses of `shared` are added together [^1].
+    references:
+      - source: d2l
+        locator: Sec. 6.2.2 Tied Parameters
+        url: https://d2l.ai/chapter_builders-guide/parameters.html#tied-parameters
+      - title: torch.nn.Module.parameters (PyTorch documentation)
+        locator: Module.parameters and Module.named_parameters (remove_duplicate)
+        url: https://docs.pytorch.org/docs/stable/generated/torch.nn.Module.html#torch.nn.Module.named_parameters
+      - source: d2l
+        locator: Sec. 6.2.4 Exercises, Exercise 3
+        url: https://d2l.ai/chapter_builders-guide/parameters.html#exercises
+    source:
+      id: d2l
+      ref: chapter_builders-guide/parameters#ex3-b
+      url: https://d2l.ai/chapter_builders-guide/parameters.html#exercises
+    status: draft
+  - id: pytorch-013
+    type: single
+    difficulty: easy
+    tags:
+      - lazy-initialization
+      - nn-lazylinear
+    shuffle: false
+    question: |
+      ```python
+      net = nn.Sequential(nn.Linear(20, 256), nn.ReLU(), nn.LazyLinear(10))
+      ```
+
+      Before any data has passed through `net`, which parameters have been initialized?
+    options:
+      - text: All of them, because `LazyLinear` uses a default input size of 1 until real data arrives
+        why: There is no default size. The weight is an `UninitializedParameter`, and even reading its shape raises an error [^2].
+      - text: Only the first layer's; the `LazyLinear` weights stay uninitialized until the first forward pass
+        correct: true
+      - text: All of them, because once the first layer's input size is known PyTorch infers the rest at once
+        why: PyTorch infers the missing shapes only when data flows through the layer; it does not trace shapes when the model is built [^1].
+      - text: None of them, because a single lazy layer makes the whole network wait for the first forward pass
+        why: '`nn.Linear(20, 256)` knows both of its sizes, so it creates and initializes its weights in its constructor.'
+    explanation: |
+      d2l explains that the framework defers initialization, waiting until data first passes through the
+      model to infer the missing sizes [^1]. A layer whose sizes are all given, such as
+      `nn.Linear(20, 256)`, initializes its weights right away. The weight of `nn.LazyLinear(10)` stays an
+      `UninitializedParameter` until the first call, when it sees 256 input features and becomes a
+      $10 \times 256$ matrix [^2].
+    references:
+      - source: d2l
+        locator: Sec. 6.4 Lazy Initialization
+        url: https://d2l.ai/chapter_builders-guide/lazy-init.html
+      - title: torch.nn.LazyLinear (PyTorch documentation)
+        locator: Class description
+        url: https://docs.pytorch.org/docs/stable/generated/torch.nn.LazyLinear.html
+      - source: d2l
+        locator: Sec. 6.4.2 Exercises, Exercise 1
+        url: https://d2l.ai/chapter_builders-guide/lazy-init.html#exercises
+    source:
+      id: d2l
+      ref: chapter_builders-guide/lazy-init#ex1
+      url: https://d2l.ai/chapter_builders-guide/lazy-init.html#exercises
+    status: draft
+  - id: pytorch-014
+    type: single
+    difficulty: easy
+    tags:
+      - shape-mismatch
+      - nn-linear
+      - debugging
+    question: |
+      ```python
+      net = nn.Sequential(nn.Linear(20, 256), nn.ReLU(), nn.Linear(128, 10))
+      X = torch.rand(2, 20)
+      ```
+
+      The second linear layer expects 128 inputs, but the first one produces 256. What happens?
+    options:
+      - text: Building `net` already raises an error, because `nn.Sequential` checks neighbouring layers
+        why: '`nn.Sequential` only stores the layers; no shapes are checked until tensors flow through them.'
+      - text: '`net(X)` runs, because PyTorch resizes the second layer to 256 inputs as a lazy layer would'
+        why: Only lazy modules such as `nn.LazyLinear` infer their input size; a layer built with explicit sizes keeps them [^1].
+      - text: '`net(X)` runs, and PyTorch silently uses only the first 128 of the 256 hidden values'
+        why: The matrix product needs matching inner dimensions; PyTorch never truncates a tensor to make it fit.
+      - text: Building `net` works; calling `net(X)` raises a shape-mismatch error at the second layer
+        correct: true
+    explanation: |
+      PyTorch checks shapes only when tensors meet. The model is built without complaint, and the first
+      forward pass fails at the second layer with an error like "mat1 and mat2 shapes cannot be
+      multiplied (2x256 and 128x10)" [^2]. With lazy layers this kind of mistake cannot happen, because
+      the input sizes are inferred from the data; d2l counts this among the benefits of lazy
+      initialization [^1].
+    references:
+      - source: d2l
+        locator: Sec. 6.4.1 Summary
+        url: https://d2l.ai/chapter_builders-guide/lazy-init.html#summary
+      - title: torch.nn.Linear (PyTorch documentation)
+        locator: Shape
+        url: https://docs.pytorch.org/docs/stable/generated/torch.nn.Linear.html
+      - source: d2l
+        locator: Sec. 6.4.2 Exercises, Exercise 2
+        url: https://d2l.ai/chapter_builders-guide/lazy-init.html#exercises
+    source:
+      id: d2l
+      ref: chapter_builders-guide/lazy-init#ex2
+      url: https://d2l.ai/chapter_builders-guide/lazy-init.html#exercises
+    status: draft
+  - id: pytorch-015
+    type: single
+    difficulty: medium
+    tags:
+      - custom-layer
+      - einsum
+      - code-reading
+    question: |
+      A custom layer computes $y_k = \sum_{i,j} W_{ijk}\, x_i x_j$ for every example, with a parameter
+      `W` of shape `(d, d, m)`. For a batch `X` of shape `(n, d)`, which line returns the `(n, m)` output?
+    options:
+      - text: '`torch.einsum("ni,nj,ijk->nk", X, X, W)`'
+        correct: true
+      - text: '`torch.einsum("ni,nj,ijk->k", X, X, W)`'
+        why: Leaving `n` out of the output sums over the batch, giving one vector of shape `(m,)` for the whole batch [^2].
+      - text: '`torch.einsum("ni,ni,iik->nk", X, X, W)`'
+        why: Repeating the index `i` keeps only the diagonal terms $W_{iik} x_i^2$ and drops all products $x_i x_j$ with $i \ne j$.
+      - text: '`torch.einsum("ni,ijk->nk", X, W)`'
+        why: This uses $x_i$ only once and sums $W$ over $j$, so the result is linear in $\mathbf{x}$, not quadratic.
+    explanation: |
+      In `einsum`, indices that appear in the output are kept and all others are summed over [^2]. The
+      output needs the batch index `n` and the output index `k`, while `i` and `j` are summed, and both
+      factors $x_i$ and $x_j$ must come from the same example, hence `"ni,nj,ijk->nk"`. In a d2l-style
+      custom layer, `W` is created as an `nn.Parameter` in `__init__` and used in `forward` [^1].
+    references:
+      - source: d2l
+        locator: Sec. 6.5.2 Layers with Parameters
+        url: https://d2l.ai/chapter_builders-guide/custom-layer.html#layers-with-parameters
+      - title: torch.einsum (PyTorch documentation)
+        locator: Function description
+        url: https://docs.pytorch.org/docs/stable/generated/torch.einsum.html
+      - source: d2l
+        locator: Sec. 6.5.4 Exercises, Exercise 1
+        url: https://d2l.ai/chapter_builders-guide/custom-layer.html#exercises
+    source:
+      id: d2l
+      ref: chapter_builders-guide/custom-layer#ex1
+      url: https://d2l.ai/chapter_builders-guide/custom-layer.html#exercises
+    status: draft
+  - id: pytorch-016
+    type: multiple
+    difficulty: easy
+    tags:
+      - checkpointing
+      - state-dict
+      - saving-models
+    question: |
+      Even if a model will never be deployed anywhere else, why save its parameters (its `state_dict`)
+      to disk during and after training? Select all that apply.
+    options:
+      - text: To store the model's code as well, so the architecture can be rebuilt without its class definition
+        why: A state dict holds only the parameter tensors; the architecture has to be recreated in code before loading them [^2].
+      - text: To reuse the trained layers later, for example as the starting point for fine-tuning
+        correct: true
+      - text: To resume a long training run from the last checkpoint after a crash or power cut
+        correct: true
+      - text: To keep the best checkpoint seen so far, for example the one with the lowest validation loss
+        correct: true
+      - text: To make the forward pass faster, because loaded weights come back already compiled
+        why: Loading copies tensor values into the model; it has no effect on how fast the forward pass runs.
+    explanation: |
+      d2l recommends saving intermediate results periodically (checkpointing), so a long run does not
+      lose days of computation [^1]. The saved file contains parameters, not the model: to reload it you
+      build the architecture in code and then load the parameters into it [^2]. Saved parameters are what
+      fine-tuning starts from [^3], and keeping the checkpoint with the best validation score lets you
+      return to it, as in early stopping [^4].
+    references:
+      - source: d2l
+        locator: Sec. 6.6 File I/O (introduction)
+        url: https://d2l.ai/chapter_builders-guide/read-write.html
+      - source: d2l
+        locator: Sec. 6.6.2 Loading and Saving Model Parameters
+        url: https://d2l.ai/chapter_builders-guide/read-write.html#loading-and-saving-model-parameters
+      - source: d2l
+        locator: Sec. 14.2.1 Steps
+        url: https://d2l.ai/chapter_computer-vision/fine-tuning.html#steps
+      - source: d2l
+        locator: Sec. 5.5.3 Early Stopping
+        url: https://d2l.ai/chapter_multilayer-perceptrons/generalization-deep.html#early-stopping
+      - source: d2l
+        locator: Sec. 6.6.4 Exercises, Exercise 1
+        url: https://d2l.ai/chapter_builders-guide/read-write.html#exercises
+    source:
+      id: d2l
+      ref: chapter_builders-guide/read-write#ex1
+      url: https://d2l.ai/chapter_builders-guide/read-write.html#exercises
+    status: draft
+  - id: pytorch-017
+    type: single
+    difficulty: hard
+    tags:
+      - state-dict
+      - load-state-dict
+      - transfer-learning
+      - code-reading
+    question: |
+      A trained model was saved with `torch.save(old.state_dict(), "mlp.params")`. Its class is:
+
+      ```python
+      class MLP(nn.Module):
+          def __init__(self, num_outputs=10):
+              super().__init__()
+              self.hidden = nn.Linear(20, 256)
+              self.output = nn.Linear(256, num_outputs)
+
+          def forward(self, X):
+              return self.output(torch.relu(self.hidden(X)))
+      ```
+
+      You build `new = MLP(num_outputs=5)` and load `sd = torch.load("mlp.params")`. Which call copies
+      the trained hidden layer into `new` and leaves the new 5-class output layer at its random
+      initialization?
+    options:
+      - text: '`new.load_state_dict(sd)`'
+        why: The file holds a $10 \times 256$ `output.weight` while `new` has a $5 \times 256$ one, so loading fails with a size-mismatch error.
+      - text: '`new.load_state_dict(sd, strict=False)`'
+        why: '`strict=False` only tolerates missing or unexpected keys; the size mismatch of `output.weight` and `output.bias` still raises an error.'
+      - text: '`new.load_state_dict({k: v for k, v in sd.items() if "hidden" in k}, strict=False)`'
+        correct: true
+      - text: '`new.hidden.load_state_dict({k: v for k, v in sd.items() if k.startswith("hidden.")})`'
+        why: Inside the submodule the keys are `weight` and `bias`, but the filtered dictionary still uses `hidden.weight` and `hidden.bias`, so the keys do not match and loading fails.
+    explanation: |
+      A state dict maps parameter names such as `hidden.weight` and `output.bias` to tensors, and loading
+      it into a freshly built architecture restores the parameters [^1]. With `strict=False` PyTorch
+      accepts a dictionary that lacks some keys, which is the documented way to warm-start a model from
+      part of another one [^2], so the filtered call loads `hidden.*` and reports `output.*` as missing.
+      Shape mismatches are a different check: they raise an error even with `strict=False`. Loading into
+      the submodule also works if the `hidden.` prefix is stripped from the keys first.
+    references:
+      - source: d2l
+        locator: Sec. 6.6.2 Loading and Saving Model Parameters
+        url: https://d2l.ai/chapter_builders-guide/read-write.html#loading-and-saving-model-parameters
+      - title: Saving and Loading Models (PyTorch tutorial)
+        locator: Warmstarting Model Using Parameters from a Different Model
+        url: https://docs.pytorch.org/tutorials/beginner/saving_loading_models.html#warmstarting-model-using-parameters-from-a-different-model
+      - source: d2l
+        locator: Sec. 6.6.4 Exercises, Exercise 2
+        url: https://d2l.ai/chapter_builders-guide/read-write.html#exercises
+    source:
+      id: d2l
+      ref: chapter_builders-guide/read-write#ex2
+      url: https://d2l.ai/chapter_builders-guide/read-write.html#exercises
+    status: draft
