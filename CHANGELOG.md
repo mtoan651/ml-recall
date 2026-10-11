@@ -7,6 +7,10 @@ versioning: [SemVer](https://semver.org) as defined in [docs/conventions.md](doc
 
 ### Changed
 
+- Licence policy: the project is non-commercial (study and research), so NonCommercial sources
+  without ND (CC BY-NC-SA) may be adapted; those questions keep their licence
+  (`LICENSE-CONTENT.md`, `THIRD_PARTY_NOTICES.md`). MMLU subsets are imported selectively.
+- `mlr check` is ~5× faster: the near-duplicate scan only compares texts of similar length.
 - Source decisions: no further MMLU subsets (its questions come from copyrighted tests and
   books); AI clauses are judged by what they cover (a training ban doesn't affect us, an
   ingestion ban does); OpenIntro stays usable from its GitHub repo; Deep-ML is reference-only
@@ -35,6 +39,27 @@ versioning: [SemVer](https://semver.org) as defined in [docs/conventions.md](doc
 
 ### Added
 
+- 879 more questions (1641 → 2520), all drafts with cited explanations; numbers re-computed by
+  script, search/game/logic/graph keys by simulators and brute force:
+  - **Non-commercial course material** (new licence policy, CC BY-NC-SA, 374): MIT
+    OpenCourseWare 6.034, 16.410, 6.867, 6.438, 18.657, 9.520, 15.062, 6.7960, 6.864, 18.065,
+    6.S890, 18.S096 (292; keys worked out where OCW publishes none) and NPTEL assignments with
+    their published answers (71); UBC DSCI 571 (11).
+  - **Open courses**: Neuromatch Academy (84), Kaggle Learn via `learntools` (75), Data Science
+    Interviews (50), Microsoft Generative AI / AI Agents / GenAI-with-JS (28), Learn PyTorch,
+    Spinning Up, Udacity, Cortal NLP (60), UBC DSCI 563/573 (24), trusthlt NLP (23), Galaxy
+    Training Network (14), Hugging Face MCP Course (7), Google Intro to ML (10).
+  - **MMLU-Redux keep-lists**: econometrics (20) and college computer science (9), two upstream
+    keys corrected.
+  - **Original questions** (101) for genetic algorithms, fine-tuning/PEFT, alignment,
+    multi-agent, diffusion, search, segmentation, autoencoders, transfer learning and policy
+    gradient.
+  - Topics that were thin: search 6 → 86, probabilistic models 94 → 125, knowledge
+    representation 45 → 69, time series 16 → 59, multi-agent 10 → 45, genetic algorithms
+    6 → 31, diffusion 0 → 29, fine-tuning 6 → 27, alignment 10 → 26, policy gradient 11 → 27,
+    autoencoders 8 → 32, transfer learning 8 → 30.
+- `figstyle.graph_figure` draws graphical-model diagrams, search graphs and game trees; the
+  Gutmann generators use it (all figures re-render byte-identical).
 - 575 questions from newly surveyed open sources (1066 → 1641), all drafts with cited
   explanations; numbers re-computed by script, logic keys by truth tables, graph claims by a
   d-separation checker:
