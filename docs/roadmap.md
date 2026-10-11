@@ -36,6 +36,10 @@ Versions follow [conventions.md#versioning](conventions.md#versioning).
 - [x] Full audit of the bank (every key re-solved; 283 + 48 fixes) and re-review of all dropped
   upstream items under keep-and-fix (+287 kept)
 - [x] `figstyle.py` and `mlr figs`; picture questions from Google MLCC, Google ML courses and HF Deep RL kept and redrawn (21 questions, 30 SVGs)
+- [x] Source survey (Hugging Face, open courses, a user-supplied list of 88 links) and new
+  sources: HF Audio Course, UBC CPSC 330 and DSCI 575, forall x, Gutmann's pen-and-paper
+  exercises, ML-InterviewQs, dlbook_exercises, and every convertible d2l exercise (+575
+  questions); MMLU expansion paused for provenance
 - [ ] `mlr extract` (markitdown/docling)
 
 ## v0.4.0 — Review features
