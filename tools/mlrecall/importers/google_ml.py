@@ -132,8 +132,12 @@ def _pages(source_id: str, course: Course, pinned: str) -> list[str]:
 
 
 def _title(soup: BeautifulSoup) -> str:
+    """The page title without the site's bookmark widget nested in the <h1>."""
     h1 = soup.find("h1")
-    return " ".join(h1.get_text(" ").split()) if h1 else ""
+    if not h1:
+        return ""
+    text = "".join(s for s in h1.find_all(string=True, recursive=False))
+    return " ".join(text.split())
 
 
 def _absolute_links(block: Tag, page_url: str) -> None:
@@ -153,8 +157,8 @@ def _md(html: str, stem: bool = False) -> str:
     text = html_to_md(html)
     if stem:
         text = _NUMBERED_RE.sub("", text, count=1)
-    text = _DISPLAY_MATH_RE.sub(lambda m: f"$${m.group(1).strip()}$$", text)
-    text = _INLINE_MATH_RE.sub(lambda m: f"${m.group(1).strip()}$", text)
+    text = _DISPLAY_MATH_RE.sub(lambda m: f"$${_tex(m.group(1))}$$", text)
+    text = _INLINE_MATH_RE.sub(lambda m: f"${_tex(m.group(1))}$", text)
     paragraphs = []
     for para in re.split(r"\n\s*\n", text):
         lines = [line.strip() for line in para.splitlines() if line.strip()]
@@ -163,6 +167,11 @@ def _md(html: str, stem: bool = False) -> str:
         else:
             paragraphs.append(" ".join(lines))
     return "\n\n".join(p for p in paragraphs if p)
+
+
+def _tex(math: str) -> str:
+    """MathJax tolerates a bare `%` in `\\text{25%}`; in KaTeX it starts a comment."""
+    return re.sub(r"(?<!\\)%", r"\\%", math.strip())
 
 
 def _parse(block: Tag) -> tuple[dict, str | None] | None:
