@@ -250,3 +250,902 @@ questions:
       ref: variational-inference#variational-posterior-approximation-ii-b
       url: https://github.com/michaelgutmann/ml-pen-and-paper-exercises/blob/571295dfe49b37d16884b2c5397e62e154ce5f88/topics/variational-inference.tex
     status: draft
+  - id: autoencoders-009
+    type: short_answer
+    difficulty: easy
+    tags:
+      - linear-autoencoder
+      - parameter-count
+      - bottleneck
+    question: |
+      A linear autoencoder for flattened $28 \times 28$ MNIST images has an encoder
+      `nn.Linear(784, 32)` and a decoder `nn.Linear(32, 784)`. How many trainable parameters does it
+      have in total?
+    answer:
+      numeric: 50992
+      tolerance: 0
+      hint: a whole number
+      model: $784 \cdot 32 + 32 + 32 \cdot 784 + 784 = 25{,}120 + 25{,}872 = 50{,}992$
+    explanation: |
+      Each linear layer has $n_\text{in} \times n_\text{out}$ weights plus $n_\text{out}$ biases:
+      $25{,}088 + 32$ for the encoder and $25{,}088 + 784$ for the decoder [^2]. The 32 units in the
+      middle are the compressed representation; the targets are the inputs themselves, and a sigmoid
+      on the decoder output matches the $[0, 1]$ pixel range [^1].
+    references:
+      - source: udacity-dl-pytorch
+        locator: Simple Autoencoder notebook, Linear Autoencoder
+        url: https://github.com/udacity/deep-learning-v2-pytorch/blob/c9404fc86181fc3f0906b368697268257f348535/autoencoder/linear-autoencoder/Simple_Autoencoder_Solution.ipynb
+      - title: 'PyTorch documentation: Linear'
+        url: https://pytorch.org/docs/stable/generated/torch.nn.Linear.html
+        locator: weight of shape (out_features, in_features) and bias of shape (out_features)
+    source:
+      id: udacity-dl-pytorch
+      ref: autoencoder/linear-autoencoder/Simple_Autoencoder_Solution.ipynb#parameter-count
+      url: https://github.com/udacity/deep-learning-v2-pytorch/blob/c9404fc86181fc3f0906b368697268257f348535/autoencoder/linear-autoencoder/Simple_Autoencoder_Solution.ipynb
+    status: draft
+  - id: autoencoders-010
+    type: short_answer
+    difficulty: medium
+    tags:
+      - convolutional-autoencoder
+      - compression
+      - shapes
+    question: |
+      A convolutional autoencoder's encoder is:
+
+      ```python
+      x = F.relu(nn.Conv2d(1, 16, 3, padding=1)(x))   # input: 1 × 28 × 28
+      x = nn.MaxPool2d(2, 2)(x)
+      x = F.relu(nn.Conv2d(16, 4, 3, padding=1)(x))
+      x = nn.MaxPool2d(2, 2)(x)                        # compressed representation
+      ```
+
+      How many numbers does the compressed representation of one image contain?
+    answer:
+      numeric: 196
+      tolerance: 0
+      hint: a whole number
+      model: $1 \times 28 \times 28 \to 16 \times 14 \times 14 \to 4 \times 7 \times 7 = 196$
+    explanation: |
+      The padded $3 \times 3$ convolutions keep the spatial size, and each $2 \times 2$ max-pool
+      halves it, $28 \to 14 \to 7$ [^1][^2]. The last convolution has 4 channels, so the code is
+      $4 \times 7 \times 7 = 196$ numbers, a quarter of the 784 input pixels. The decoder must undo
+      this, here with two transposed convolutions of kernel size and stride 2 [^1].
+    references:
+      - source: udacity-dl-pytorch
+        locator: Convolutional Autoencoder notebook, Encoder; Decoder
+        url: https://github.com/udacity/deep-learning-v2-pytorch/blob/c9404fc86181fc3f0906b368697268257f348535/autoencoder/convolutional-autoencoder/Convolutional_Autoencoder_Solution.ipynb
+      - source: d2l
+        locator: Sec. 7.5.2 Padding and Stride
+        url: https://d2l.ai/chapter_convolutional-neural-networks/pooling.html#padding-and-stride
+    source:
+      id: udacity-dl-pytorch
+      ref: autoencoder/convolutional-autoencoder/Convolutional_Autoencoder_Solution.ipynb#compressed-representation
+      url: https://github.com/udacity/deep-learning-v2-pytorch/blob/c9404fc86181fc3f0906b368697268257f348535/autoencoder/convolutional-autoencoder/Convolutional_Autoencoder_Solution.ipynb
+    status: draft
+  - id: autoencoders-011
+    type: short_answer
+    difficulty: medium
+    tags:
+      - transposed-convolution
+      - decoder
+      - shapes
+    question: |
+      A denoising autoencoder's encoder pools a $28 \times 28$ image three times with
+      `nn.MaxPool2d(2, 2)`, giving $28 \to 14 \to 7 \to 3$. Its decoder starts with
+      `nn.ConvTranspose2d(8, 8, kernel_size=3, stride=2)` (no padding). What is the spatial size
+      of this layer's output for a $3 \times 3$ input?
+    answer:
+      numeric: 7
+      tolerance: 0
+      hint: a whole number
+      model: $(3 - 1) \cdot 2 - 2 \cdot 0 + 3 = 7$
+    explanation: |
+      A transposed convolution produces $(H_\text{in} - 1) \cdot s - 2p + k$ outputs per side
+      [^2]; with $H_\text{in} = 3$, $s = 2$, $k = 3$ this is 7. Pooling 7 down to 3 floors away a
+      row and a column, so a kernel of 2 would only give 6; the notebook uses kernel size 3 for this
+      first layer to get back to $7 \times 7$, then two layers with kernel and stride 2 give 14 and
+      28 [^1].
+    references:
+      - source: udacity-dl-pytorch
+        locator: "Denoising Autoencoder notebook, Denoising (ConvDenoiser: t_conv1 'kernel_size=3 to get to a 7x7 image output')"
+        url: https://github.com/udacity/deep-learning-v2-pytorch/blob/c9404fc86181fc3f0906b368697268257f348535/autoencoder/denoising-autoencoder/Denoising_Autoencoder_Solution.ipynb
+      - title: 'PyTorch documentation: ConvTranspose2d'
+        url: https://pytorch.org/docs/stable/generated/torch.nn.ConvTranspose2d.html
+        locator: Shape (H_out formula)
+    source:
+      id: udacity-dl-pytorch
+      ref: autoencoder/denoising-autoencoder/Denoising_Autoencoder_Solution.ipynb#transpose-conv-size
+      url: https://github.com/udacity/deep-learning-v2-pytorch/blob/c9404fc86181fc3f0906b368697268257f348535/autoencoder/denoising-autoencoder/Denoising_Autoencoder_Solution.ipynb
+    status: draft
+  - id: autoencoders-012
+    type: single
+    difficulty: easy
+    tags:
+      - denoising-autoencoder
+      - reconstruction-loss
+    question: |
+      You train a denoising autoencoder on MNIST by adding Gaussian noise to each batch,
+      `noisy = clip(images + 0.5 * randn)`. What do you feed into the model, and what do you
+      compare its output with in the MSE loss?
+    options:
+      - text: Feed the noisy images; compare the output with the clean images
+        correct: true
+      - text: Feed the clean images; compare the output with the noisy images
+        why: That would train the network to add noise, the opposite of denoising [^1].
+      - text: Feed the noisy images; compare the output with the noisy images
+        why: Reconstructing its own noisy input teaches the network to copy the noise, not remove it [^1].
+      - text: Feed the noisy images; compare the output with the noise that was added
+        why: That trains a noise estimator, not a model whose output is a clean image [^1].
+    explanation: |
+      A denoising autoencoder uses noisy images as input and the original, clean images as
+      targets, so the loss rewards outputs that remove the noise [^1]. Because pixel values are
+      compared as quantities, a regression loss such as `MSELoss` fits, and the noise is regenerated
+      for every batch, so the network cannot memorize it [^1].
+    references:
+      - source: udacity-dl-pytorch
+        locator: Denoising Autoencoder notebook, Denoising; Training
+        url: https://github.com/udacity/deep-learning-v2-pytorch/blob/c9404fc86181fc3f0906b368697268257f348535/autoencoder/denoising-autoencoder/Denoising_Autoencoder_Solution.ipynb
+    source:
+      id: udacity-dl-pytorch
+      ref: autoencoder/denoising-autoencoder/Denoising_Autoencoder_Solution.ipynb#inputs-and-targets
+      url: https://github.com/udacity/deep-learning-v2-pytorch/blob/c9404fc86181fc3f0906b368697268257f348535/autoencoder/denoising-autoencoder/Denoising_Autoencoder_Solution.ipynb
+    status: draft
+  - id: autoencoders-013
+    type: single
+    difficulty: medium
+    tags:
+      - transposed-convolution
+      - upsampling
+      - checkerboard-artifacts
+    question: |
+      The reconstructions of a convolutional autoencoder whose decoder uses transposed convolutions
+      show checkerboard-like artifacts. Which decoder change addresses this?
+    options:
+      - text: Nearest-neighbour upsampling followed by ordinary convolutions
+        correct: true
+      - text: Transposed convolutions with a kernel larger than the stride, e.g. kernel 3 and stride 2
+        why: Kernels larger than the stride make neighbouring outputs overlap unevenly, which is exactly what causes checkerboard patterns [^1].
+      - text: Max pooling at the end of the decoder
+        why: Pooling shrinks the image; the decoder needs to enlarge the compressed representation [^1].
+      - text: A softmax over the pixels in the output layer
+        why: Softmax makes the pixels compete and sum to 1; it does not affect how the image is upsampled [^1].
+    explanation: |
+      Transposed convolutions can produce checkerboard artifacts because their kernels overlap
+      unevenly; choosing the stride equal to the kernel size avoids the overlap [^1]. The alternative
+      in the notebooks, following the Distill article, resizes the feature map with nearest-neighbour
+      upsampling and then applies a normal convolution, so every output pixel gets the same number
+      of contributions [^1][^2].
+    references:
+      - source: udacity-dl-pytorch
+        locator: Convolutional Autoencoder notebook, Transpose Convolutions, Decoder; Upsampling notebook (decoder with upsampling and convolutional layers)
+        url: https://github.com/udacity/deep-learning-v2-pytorch/blob/c9404fc86181fc3f0906b368697268257f348535/autoencoder/convolutional-autoencoder/Upsampling_Solution.ipynb
+      - title: Odena, Dumoulin & Olah (2016), Deconvolution and Checkerboard Artifacts, Distill
+        url: https://distill.pub/2016/deconv-checkerboard/
+        locator: Overlap & Artifacts; Better Upsampling
+    source:
+      id: udacity-dl-pytorch
+      ref: autoencoder/convolutional-autoencoder/Upsampling_Solution.ipynb#checkerboard
+      url: https://github.com/udacity/deep-learning-v2-pytorch/blob/c9404fc86181fc3f0906b368697268257f348535/autoencoder/convolutional-autoencoder/Upsampling_Solution.ipynb
+    status: draft
+  - id: autoencoders-014
+    type: single
+    difficulty: medium
+    tags:
+      - linear-autoencoder
+      - pca
+      - dimensionality-reduction
+    question: |
+      A linear autoencoder maps 784-pixel images to $K = 20$ hidden units and back with two `nn.Linear` layers and no
+      nonlinearity, trained to minimize the mean squared reconstruction error. Compared with projecting onto the top
+      20 principal components (PCA), what does it learn at the optimum?
+    options:
+      - text: The same 20-dimensional subspace as PCA, though its 20 weight vectors need not be the orthogonal principal axes
+        correct: true
+      - text: A better reconstruction than PCA, because gradient descent can discover nonlinear features
+        why: Without activation functions the whole network is linear, and among linear rank-20 maps PCA already gives the lowest squared error.
+      - text: A worse reconstruction than PCA in every case, because it has no centering step
+        why: The biases of the `nn.Linear` layers can absorb the mean, as PCA's centering does; at the optimum the error matches PCA.
+      - text: Exactly the top 20 principal axes, sorted by explained variance
+        why: Any invertible mixing of the hidden units gives the same reconstructions, so training pins down the subspace, not the individual ordered axes.
+    explanation: |
+      With squared-error loss and a linear encoder and decoder, the best rank-$K$ reconstruction is the projection onto
+      the top-$K$ principal subspace, so a trained linear autoencoder spans the same subspace as PCA [^1][^2]. NMA's
+      comparison shows reconstructions of similar quality, both getting worse as $K$ shrinks [^1]. The weights are
+      defined only up to an invertible $K \times K$ transformation, so they are generally not orthogonal and not equal
+      to the principal components [^2]. Nonlinearities and convolutions are what let an autoencoder beat PCA at the
+      same $K$ [^1].
+    references:
+      - source: neuromatch-dl
+        locator: W2D3 Tutorial 1, Section 3.1 Conceptual introduction to AutoEncoders, Think! 3.1 PCA vs. Linear autoencoder
+        url: https://github.com/NeuromatchAcademy/course-content-dl/blob/caba36c513fb8139ac3c9e7503f7a769dadde25e/tutorials/W2D3_GenerativeModelsAndDeepLearningDiscussion1/instructor/W2D3_Tutorial1.ipynb
+      - title: 'Wikipedia: Autoencoder'
+        url: https://en.wikipedia.org/wiki/Autoencoder
+        locator: Applications, Dimensionality reduction, Principal component analysis
+    source:
+      id: neuromatch-dl
+      ref: W2D3_GenerativeModelsAndDeepLearningDiscussion1/W2D3_Tutorial1#think3.1
+      url: https://github.com/NeuromatchAcademy/course-content-dl/blob/caba36c513fb8139ac3c9e7503f7a769dadde25e/tutorials/W2D3_GenerativeModelsAndDeepLearningDiscussion1/instructor/W2D3_Tutorial1.ipynb
+    status: draft
+  - id: autoencoders-015
+    type: short_answer
+    difficulty: easy
+    tags:
+      - convolutional-autoencoder
+      - output-shape
+    question: |
+      A convolutional autoencoder encodes a $1 \times 28 \times 28$ MNIST image with `nn.Conv2d(1, 32, 5)` + ReLU and
+      `nn.Conv2d(32, 32, 5)` + ReLU (stride 1, no padding), then flattens the result and applies
+      `nn.Linear(flat, K)`. What is `flat`, the number of input features of that linear layer?
+    answer:
+      numeric: 12800
+      tolerance: 0
+      hint: an integer
+      model: $28 \to 24 \to 20$, so $32 \times 20 \times 20 = 12800$
+    explanation: |
+      A 5×5 convolution without padding shrinks each side by 4, so the feature maps are $24 \times 24$ and then
+      $20 \times 20$, with 32 channels [^1][^2]. Flattening gives $32 \cdot 20 \cdot 20 = 12800$ features, which the encoder's
+      linear layer compresses to $K$ numbers [^1]. The decoder mirrors this: `nn.Linear(K, 12800)`, an `nn.Unflatten`
+      back to $(32, 20, 20)$, and two 5×5 `ConvTranspose2d` layers that grow the maps back to $28 \times 28$ [^1].
+    references:
+      - source: neuromatch-dl
+        locator: W2D3 Tutorial 1, Coding Exercise 3.2 Fill in code for the ConvAutoEncoder module
+        url: https://github.com/NeuromatchAcademy/course-content-dl/blob/caba36c513fb8139ac3c9e7503f7a769dadde25e/tutorials/W2D3_GenerativeModelsAndDeepLearningDiscussion1/instructor/W2D3_Tutorial1.ipynb
+      - source: d2l
+        locator: Sec. 7.3.1 Padding
+        url: https://d2l.ai/chapter_convolutional-neural-networks/padding-and-strides.html#padding
+    source:
+      id: neuromatch-dl
+      ref: W2D3_GenerativeModelsAndDeepLearningDiscussion1/W2D3_Tutorial1#ex3.2
+      url: https://github.com/NeuromatchAcademy/course-content-dl/blob/caba36c513fb8139ac3c9e7503f7a769dadde25e/tutorials/W2D3_GenerativeModelsAndDeepLearningDiscussion1/instructor/W2D3_Tutorial1.ipynb
+    status: draft
+  - id: autoencoders-016
+    type: single
+    difficulty: medium
+    tags:
+      - convolutional-autoencoder
+      - bias
+      - pca
+    question: |
+      NMA's convolutional autoencoder for grayscale images starts its encoder and ends its decoder with a custom
+      `BiasLayer` that adds a learnable offset to every pixel. Why add it, when `nn.Conv2d` already has a bias?
+    options:
+      - text: A convolution has one bias per output channel, shared by all pixels, so it cannot store a mean image the way PCA centering does
+        correct: true
+      - text: '`nn.Conv2d` has no bias by default, so without the custom layer the network would have no offsets at all'
+        why: '`nn.Conv2d` has `bias=True` by default; the issue is that its bias is per channel, not per pixel.'
+      - text: A per-pixel bias makes the encoder invariant to translations of the digit within the image
+        why: A fixed offset per pixel location ties values to positions, like a mean image; it adds no translation invariance.
+      - text: It doubles the effective learning rate of the first layer, which speeds up training
+        why: 'Its purpose is representational: it lets the network model the average image, leaving the other layers to fit finer structure.'
+    explanation: |
+      PCA subtracts the mean image before encoding and adds it back after decoding, and an `nn.Linear` decoder can
+      learn the same thing through its bias, one per output pixel [^1]. A convolution applies the same bias at every
+      location, so for a one-channel output `Conv2d` learns a single bias for the whole image [^1][^2]. The `BiasLayer`
+      restores a per-pixel offset at both ends, so the convolutional layers can spend their capacity on finer
+      structure [^1].
+    references:
+      - source: neuromatch-dl
+        locator: W2D3 Tutorial 1, Section 3.2 Building a nonlinear convolutional autoencoder (side note on biases)
+        url: https://github.com/NeuromatchAcademy/course-content-dl/blob/caba36c513fb8139ac3c9e7503f7a769dadde25e/tutorials/W2D3_GenerativeModelsAndDeepLearningDiscussion1/instructor/W2D3_Tutorial1.ipynb
+      - title: 'PyTorch documentation: torch.nn.Conv2d'
+        url: https://docs.pytorch.org/docs/stable/generated/torch.nn.Conv2d.html
+        locator: Variables (bias of shape out_channels)
+    source:
+      id: neuromatch-dl
+      ref: W2D3_GenerativeModelsAndDeepLearningDiscussion1/W2D3_Tutorial1#sec3.2-bias
+      url: https://github.com/NeuromatchAcademy/course-content-dl/blob/caba36c513fb8139ac3c9e7503f7a769dadde25e/tutorials/W2D3_GenerativeModelsAndDeepLearningDiscussion1/instructor/W2D3_Tutorial1.ipynb
+    status: draft
+  - id: autoencoders-017
+    type: true_false
+    difficulty: easy
+    tags:
+      - transposed-convolution
+      - decoder
+    question: |
+      True or false: `nn.ConvTranspose2d` computes the mathematical inverse of the corresponding `nn.Conv2d`, so a
+      decoder built from it undoes the encoder exactly.
+    options:
+      - text: 'True'
+        why: It is the gradient (adjoint) of the convolution with respect to its input, also called a fractionally strided convolution; it restores the shape, not the values.
+      - text: 'False'
+        correct: true
+    explanation: |
+      `ConvTranspose2d` can be seen as the gradient of `Conv2d` with respect to its input; it is also called a
+      fractionally strided convolution or "deconvolution", although it is not an actual deconvolution [^1][^2]. It maps
+      a small feature map back to the larger shape, but its weights are learned separately, so a mirrored decoder
+      only approximately inverts the encoder after training [^1]. A downsampling convolution maps many inputs to the
+      same output, so an exact inverse does not exist in general.
+    references:
+      - source: neuromatch-dl
+        locator: W2D3 Tutorial 1, Section 3.2 (ConvTranspose2d note)
+        url: https://github.com/NeuromatchAcademy/course-content-dl/blob/caba36c513fb8139ac3c9e7503f7a769dadde25e/tutorials/W2D3_GenerativeModelsAndDeepLearningDiscussion1/instructor/W2D3_Tutorial1.ipynb
+      - title: 'PyTorch documentation: torch.nn.ConvTranspose2d'
+        url: https://docs.pytorch.org/docs/stable/generated/torch.nn.ConvTranspose2d.html
+        locator: Description
+    source:
+      id: neuromatch-dl
+      ref: W2D3_GenerativeModelsAndDeepLearningDiscussion1/W2D3_Tutorial1#sec3.2-deconv
+      url: https://github.com/NeuromatchAcademy/course-content-dl/blob/caba36c513fb8139ac3c9e7503f7a769dadde25e/tutorials/W2D3_GenerativeModelsAndDeepLearningDiscussion1/instructor/W2D3_Tutorial1.ipynb
+    status: draft
+  - id: autoencoders-018
+    type: single
+    difficulty: medium
+    tags:
+      - vae
+      - generative-models
+      - latent-space
+    question: |
+      You train a plain convolutional autoencoder and a VAE with the same $K$-dimensional bottleneck on MNIST, then
+      feed both decoders random codes $\mathbf{z} \sim \mathcal{N}(\mathbf{0}, I)$. Only the VAE's outputs look like
+      handwritten digits. Why?
+    options:
+      - text: Its KL term keeps codes near the prior $\mathcal{N}(0, I)$, so prior samples fall where the decoder was trained
+        correct: true
+      - text: The VAE decoder has more capacity, so it can turn any random code into a plausible-looking digit
+        why: Both decoders can have the same architecture; the difference comes from how training shapes the latent space.
+      - text: The plain decoder ignores its input after training and always outputs the average training image
+        why: A trained autoencoder reconstructs its inputs well; it fails on random codes because they fall outside the region its encoder uses.
+      - text: Only the VAE rescales its decoder outputs to the range of real pixel values, between 0 and 1
+        why: Output scaling is not the issue; the plain autoencoder never constrained its codes to follow any particular distribution.
+    explanation: |
+      A plain autoencoder only learns to reconstruct, so its codes can occupy an oddly shaped region of $\mathbb{R}^K$, and
+      random $\mathcal{N}(\mathbf{0}, I)$ codes mostly fall where the decoder was never trained [^1]. A VAE's encoder outputs a
+      distribution $q(\mathbf{z}\mid\mathbf{x})$; its loss, the negative ELBO, contains a KL term that keeps these distributions
+      close to the prior $p(\mathbf{z}) = \mathcal{N}(\mathbf{0}, I)$, and its reconstruction term must work on average over
+      samples of $\mathbf{z}$ [^1][^2]. Prior samples therefore produce codes the decoder knows how to turn into digits,
+      which is what makes a VAE a generative model [^1].
+    references:
+      - source: neuromatch-dl
+        locator: W2D3 Tutorial 1, Section 4 Variational Auto-Encoders, Think! 4.2 AutoEncoders vs. Variational AutoEncoders
+        url: https://github.com/NeuromatchAcademy/course-content-dl/blob/caba36c513fb8139ac3c9e7503f7a769dadde25e/tutorials/W2D3_GenerativeModelsAndDeepLearningDiscussion1/instructor/W2D3_Tutorial1.ipynb
+      - title: Kingma and Welling (2013), Auto-Encoding Variational Bayes
+        url: https://arxiv.org/abs/1312.6114
+        locator: Sec. 2.2 The variational bound
+    source:
+      id: neuromatch-dl
+      ref: W2D3_GenerativeModelsAndDeepLearningDiscussion1/W2D3_Tutorial1#think4.2
+      url: https://github.com/NeuromatchAcademy/course-content-dl/blob/caba36c513fb8139ac3c9e7503f7a769dadde25e/tutorials/W2D3_GenerativeModelsAndDeepLearningDiscussion1/instructor/W2D3_Tutorial1.ipynb
+    status: draft
+  - id: autoencoders-019
+    type: short_answer
+    difficulty: medium
+    tags:
+      - probabilistic-pca
+      - latent-variable-models
+      - covariance
+    question: |
+      Two noisy thermometers in the same room are modelled with probabilistic PCA:
+      $\mathbf{x} = \boldsymbol\mu + \mathbf{w}z + \boldsymbol\epsilon$, with one latent temperature deviation $z \sim \mathcal{N}(0, 8)$,
+      loading $\mathbf{w} = [1, 1]^\top/\sqrt{2}$ (the identity line) and independent sensor noise
+      $\boldsymbol\epsilon \sim \mathcal{N}(\mathbf{0}, I)$. What correlation between the two readings does this model imply?
+    answer:
+      numeric: 0.8
+      tolerance: 0.005
+      hint: a number, 2 decimals
+      model: $\mathrm{Cov}(\mathbf{x}) = 8\,\mathbf{w}\mathbf{w}^\top + I = \begin{bmatrix}5 & 4\\ 4 & 5\end{bmatrix}$, so $\rho = 4/5 = 0.8$
+    explanation: |
+      In the generative model $\mathbf{x} = \boldsymbol\mu + \mathbf{w}z + \boldsymbol\epsilon$, independence of $z$ and
+      $\boldsymbol\epsilon$ gives $\mathrm{Cov}(\mathbf{x}) = \mathrm{Var}(z)\,\mathbf{w}\mathbf{w}^\top + \sigma^2 I$ [^1]. Here
+      $\mathbf{w}\mathbf{w}^\top$ has all entries $\tfrac12$, so the shared latent adds $8 \cdot \tfrac12 = 4$ to each variance and to the
+      covariance, while the noise adds 1 to each variance only; the correlation is $4/\sqrt{5 \cdot 5} = 0.8$. Unlike
+      plain PCA, this model can generate new readings: sample $z$ and $\boldsymbol\epsilon$, then compute
+      $\boldsymbol\mu + \mathbf{w}z + \boldsymbol\epsilon$ [^1].
+    references:
+      - source: neuromatch-dl
+        locator: W2D3 Tutorial 1, Section 2 Latent Variable Models, (Bonus) Coding Exercise 2 pPCA
+        url: https://github.com/NeuromatchAcademy/course-content-dl/blob/caba36c513fb8139ac3c9e7503f7a769dadde25e/tutorials/W2D3_GenerativeModelsAndDeepLearningDiscussion1/instructor/W2D3_Tutorial1.ipynb
+    source:
+      id: neuromatch-dl
+      ref: W2D3_GenerativeModelsAndDeepLearningDiscussion1/W2D3_Tutorial1#ex2
+      url: https://github.com/NeuromatchAcademy/course-content-dl/blob/caba36c513fb8139ac3c9e7503f7a769dadde25e/tutorials/W2D3_GenerativeModelsAndDeepLearningDiscussion1/instructor/W2D3_Tutorial1.ipynb
+    status: draft
+  - id: autoencoders-020
+    type: single
+    difficulty: medium
+    tags:
+      - vae
+      - representation-learning
+      - rsa
+    question: |
+      NMA trains a VAE on dSprites: white shapes (heart, square or oval) with random scale, orientation and
+      position. Its reconstructions keep these factors fairly well. But comparing the encoder's features across
+      images shows that only images with similar positions get similar features; shape barely matters, and a linear
+      shape classifier on these features does poorly. What does this show?
+    options:
+      - text: Good reconstruction does not guarantee a feature space organized by the factors a downstream task needs
+        correct: true
+      - text: The VAE must be undertrained, since a well-trained VAE encodes every factor in its own dimension
+        why: Nothing in the reconstruction objective forces the latent space to align with shape; a space organized mostly by position satisfies it.
+      - text: The decoder, not the encoder, stores the shape information, so classify the decoder weights instead
+        why: A classifier works on the encoder features of each image; the finding is that these features are not organized by shape.
+      - text: Feature similarity cannot be measured for generative models, so the comparison is meaningless
+        why: Cosine similarities between encoder features can be computed for any encoder; NMA does so for supervised, random, VAE and SimCLR encoders.
+    explanation: |
+      Reconstruction only requires that the image can be recovered from the code; it says nothing about how the code
+      space is organized [^1]. NMA's representational similarity matrices show that the VAE's features are structured
+      mostly by `posX` and `posY`, not by `shape`, so a linear shape classifier does poorly even though the decoded images
+      look right [^1]. A supervised encoder trained on shape labels groups images by shape, and a contrastive SimCLR
+      encoder recovers shape without labels [^1][^2].
+    references:
+      - source: neuromatch-dl
+        locator: W3D3 Tutorial 1, Section 4 Generative approaches to representation learning can fail (Discussions 4.1.1 and 4.1.2)
+        url: https://github.com/NeuromatchAcademy/course-content-dl/blob/caba36c513fb8139ac3c9e7503f7a769dadde25e/tutorials/W3D3_UnsupervisedAndSelfSupervisedLearning/instructor/W3D3_Tutorial1.ipynb
+      - source: neuromatch-dl
+        locator: W3D3 Tutorial 1, Bonus 1 Self-supervised networks learn representation invariance
+        url: https://github.com/NeuromatchAcademy/course-content-dl/blob/caba36c513fb8139ac3c9e7503f7a769dadde25e/tutorials/W3D3_UnsupervisedAndSelfSupervisedLearning/instructor/W3D3_Tutorial1.ipynb
+    source:
+      id: neuromatch-dl
+      ref: W3D3_UnsupervisedAndSelfSupervisedLearning/W3D3_Tutorial1#think4.1.2
+      url: https://github.com/NeuromatchAcademy/course-content-dl/blob/caba36c513fb8139ac3c9e7503f7a769dadde25e/tutorials/W3D3_UnsupervisedAndSelfSupervisedLearning/instructor/W3D3_Tutorial1.ipynb
+    status: draft
+  - id: autoencoders-021
+    type: multiple
+    difficulty: hard
+    tags:
+      - autoencoder
+      - representation-learning
+      - generalization
+    question: |
+      An encoder $f^\ast$ and decoder $g^\ast$ reconstruct every image of a finite training set of
+      distinct images of coloured shapes perfectly: $g^\ast(f^\ast(x_i)) = x_i$. Nothing else is known
+      about them. Which statements are guaranteed? Select all that apply.
+    options:
+      - text: The index $i$ of a training image can be recovered from its code $f^\ast(x_i)$
+        correct: true
+      - text: The colour of a training image can be recovered from its code $f^\ast(x_i)$
+        correct: true
+      - text: Two red training images have closer codes than a red and a blue training image
+        why: Reconstruction only needs distinct codes; nothing ties distances in code space to colour.
+      - text: The colour of a new image $x$ from the same distribution can be recovered from $f^\ast(x)$
+        why: The objective constrains $f^\ast$ only on the training images; on new images it can map anything anywhere.
+    explanation: |
+      Perfect reconstruction makes $f^\ast$ injective on the training set: decoding the code gives back
+      $x_i$, from which both its index and its colour can be read off [^1]. The objective says nothing
+      about the geometry of the code space, so similar images need not get nearby codes, and it says
+      nothing about images outside the training set [^1]. Any grouping seen in practice comes from the
+      inductive biases of the architecture and optimizer, or from added regularizers such as the
+      variational autoencoder's prior [^2].
+    references:
+      - source: mit-ocw-67960
+        locator: Homework 4, Problem 7(a) and 7(d)
+        url: https://ocw.mit.edu/courses/6-7960-deep-learning-fall-2024/resources/mit6_7960_f24_hw4_pdf/
+      - title: Kingma & Welling (2019), An Introduction to Variational Autoencoders, arXiv:1906.02691
+        locator: Sec. 2 Variational Autoencoders
+        url: https://arxiv.org/abs/1906.02691
+    source:
+      id: mit-ocw-67960
+      ref: mit6_7960_f24_hw4#q7a
+      url: https://ocw.mit.edu/courses/6-7960-deep-learning-fall-2024/resources/mit6_7960_f24_hw4_pdf/
+    status: draft
+  - id: autoencoders-022
+    type: multiple
+    difficulty: hard
+    tags:
+      - vae
+      - aggregate-posterior
+      - latent-space
+    question: |
+      A VAE with encoder $q_\phi(z \mid x) = \mathcal{N}(\mu(x), \sigma^2(x) I)$ is trained perfectly:
+      the aggregate posterior $q_\phi(z) = \mathbb{E}_{x \sim p_{\text{data}}}[q_\phi(z \mid x)]$ equals the
+      prior $\mathcal{N}(0, I)$, and the model's marginal $p_\theta(x)$ equals $p_{\text{data}}$. Which
+      statements follow? Select all that apply.
+    options:
+      - text: Decoding samples $z \sim \mathcal{N}(0, I)$ gives samples from $p_{\text{data}}$
+        correct: true
+      - text: The encoder means $\mu(x)$, for $x \sim p_{\text{data}}$, are distributed as $\mathcal{N}(0, I)$
+        why: Only the mixture of the Gaussians $\mathcal{N}(\mu(x), \sigma^2(x)I)$ is $\mathcal{N}(0, I)$; the means alone can follow a non-Gaussian distribution [^1].
+      - text: Decoding only the means $\mu(x)$ of the data reproduces $p_{\text{data}}$
+        why: The means alone need not cover the latent space; the variances fill the rest, so dropping them misses part of the distribution [^1].
+      - text: Every individual posterior $q_\phi(z \mid x)$ equals $\mathcal{N}(0, I)$
+        why: Then $z$ would carry no information about $x$ (posterior collapse); only their average over the data has to match the prior.
+    explanation: |
+      $p_\theta(x) = \int p(z)\,p_\theta(x \mid z)\,dz$ with $p(z) = \mathcal{N}(0, I)$, so if it equals
+      $p_{\text{data}}$, decoding prior samples generates data [^2]. The prior constrains only the
+      mixture of the encoder's Gaussians [^1]. For example, if half the data have
+      $\sigma^2 = 0.5$ with means spread as $\mathcal{N}(0, 0.5)$ and the other half $\sigma^2 = 0.9$
+      with means spread as $\mathcal{N}(0, 0.1)$, each half gives $z \sim \mathcal{N}(0, 1)$, yet the means
+      follow a mixture of two different Gaussians, which is not Gaussian.
+    references:
+      - source: mit-ocw-67960
+        locator: Homework 5 solutions, Problem 2(a)–(b)
+        url: https://ocw.mit.edu/courses/6-7960-deep-learning-fall-2024/resources/mit6_7960_f24_hw5_sol_pdf/
+      - title: Kingma & Welling (2019), An Introduction to Variational Autoencoders, arXiv:1906.02691
+        locator: Sec. 2.2 Evidence Lower Bound (ELBO)
+        url: https://arxiv.org/abs/1906.02691
+    source:
+      id: mit-ocw-67960
+      ref: mit6_7960_f24_hw5_sol#q2
+      url: https://ocw.mit.edu/courses/6-7960-deep-learning-fall-2024/resources/mit6_7960_f24_hw5_sol_pdf/
+    status: draft
+  - id: autoencoders-023
+    type: true_false
+    difficulty: medium
+    tags:
+      - autoencoder
+      - generative-model
+      - latent-space
+    shuffle: false
+    question: |
+      A deterministic autoencoder reconstructs its data perfectly, $g(f(x)) = x$. True or false:
+      decoding random codes $z \sim \mathcal{N}(0, I)$ with $g$ then produces samples from the data
+      distribution.
+    options:
+      - text: 'True'
+        why: Nothing in the reconstruction loss makes the codes $f(x)$ follow $\mathcal{N}(0, I)$, so most Gaussian samples land where $g$ was never trained [^1].
+      - text: 'False'
+        correct: true
+    explanation: |
+      A plain autoencoder only learns to invert its own codes; the codes of the training data can sit
+      in any region and in any shape [^1]. Gaussian samples usually fall into gaps between them, and
+      the decoder's output there is arbitrary. A VAE adds the KL term toward the prior
+      $\mathcal{N}(0, I)$, which shapes the codes so that sampling the prior is meaningful [^2].
+    references:
+      - source: mit-ocw-67960
+        locator: Homework 5 solutions, Problem 3
+        url: https://ocw.mit.edu/courses/6-7960-deep-learning-fall-2024/resources/mit6_7960_f24_hw5_sol_pdf/
+      - title: Kingma & Welling (2019), An Introduction to Variational Autoencoders, arXiv:1906.02691
+        locator: Sec. 2.2 Evidence Lower Bound (ELBO)
+        url: https://arxiv.org/abs/1906.02691
+    source:
+      id: mit-ocw-67960
+      ref: mit6_7960_f24_hw5_sol#q3
+      url: https://ocw.mit.edu/courses/6-7960-deep-learning-fall-2024/resources/mit6_7960_f24_hw5_sol_pdf/
+    status: draft
+  - id: autoencoders-024
+    type: single
+    difficulty: hard
+    tags:
+      - variational-inference
+      - partition-function
+      - lower-bound
+    question: |
+      A distribution $p(x) = \tilde{p}(x) / Z$ has an intractable normaliser $Z$. Variational
+      inference picks a tractable $q$ and minimises
+      $$J(q) = \sum_x q(x) \log \frac{q(x)}{\tilde{p}(x)}.$$
+      What does $J(q)$ tell you about $\log Z$?
+    options:
+      - text: $\log Z \ge -J(q)$, with equality when $q = p$
+        correct: true
+      - text: $\log Z \ge J(q)$, with equality when $q = p$
+        why: 'Since $J(q) = \mathrm{KL}(q \,\|\, p) - \log Z$, the bound has the opposite sign: it is $-J(q)$ that lies below $\log Z$.'
+      - text: $\log Z \le -J(q)$, so $-J(q)$ is an upper bound
+        why: $\log Z = -J(q) + \mathrm{KL}(q \,\|\, p)$ and the KL term is non-negative, so $-J(q)$ is a lower bound.
+      - text: $\log Z = -J(q)$ for every choice of $q$
+        why: Equality holds only when $\mathrm{KL}(q \,\|\, p) = 0$, i.e. when $q = p$.
+    explanation: |
+      Substituting $\tilde{p} = Z p$ gives $J(q) = \sum_x q \log (q / p) - \log Z = \mathrm{KL}(q \,\|\, p) -
+      \log Z$ [^1]. As the KL divergence is non-negative, $\log Z = \mathrm{KL}(q \,\|\, p) - J(q) \ge
+      -J(q)$, so minimising $J$ both tightens this lower bound and pulls $q$ toward $p$ in reverse KL
+      [^1][^2]. In a VAE the same identity with $\tilde{p}(z) = p(x, z)$ and $Z = p(x)$ makes $-J$ the
+      evidence lower bound (ELBO) [^2].
+    references:
+      - source: nptel-deep-learning-2
+        locator: Assignment 6, Q3–Q4 (goal of variational inference; lower bound on log Z(θ))
+        url: https://archive.nptel.ac.in/content/storage2/courses/downloads_new/106106201/noc19_cs18-assessmentid-73.pdf
+      - title: 'Wikipedia: Evidence lower bound'
+        url: https://en.wikipedia.org/wiki/Evidence_lower_bound#Deriving_the_ELBO
+        locator: Motivation — Deriving the ELBO; Maximizing the ELBO
+    source:
+      id: nptel-deep-learning-2
+      ref: deep-learning-2/assignment6#q4
+      url: https://archive.nptel.ac.in/content/storage2/courses/downloads_new/106106201/noc19_cs18-assessmentid-73.pdf
+    status: draft
+  - id: autoencoders-025
+    type: multiple
+    difficulty: medium
+    tags:
+      - vae
+      - decoder
+      - gaussian-likelihood
+    question: |
+      A VAE decoder outputs a mean vector $f_\theta(z)$ and models the data as
+      $P(X \mid z) = \mathcal{N}\big(f_\theta(z), I\big)$, a Gaussian with unit variance in every
+      dimension. Which statements follow? Select all that apply.
+    options:
+      - text: The covariance matrix of $P(X \mid z)$ is the identity matrix
+        correct: true
+      - text: Given $z$, the components of $X$ (e.g. pixels) are independent of each other
+        correct: true
+      - text: Maximising $\log P(X \mid z)$ amounts to minimising $\lVert X - f_\theta(z) \rVert^2$
+        correct: true
+      - text: The decoder must also output a separate variance for every pixel
+        why: The variance is fixed at 1, so the decoder only outputs the mean.
+      - text: Given $z$, neighbouring pixels stay correlated through the covariance
+        why: A diagonal (identity) covariance has no off-diagonal terms, so there is no such correlation given $z$.
+    explanation: |
+      Unit variance in each dimension with no stated correlation means $\Sigma = I$ [^1]. A Gaussian
+      with diagonal covariance factorises over dimensions, so given $z$ the pixels are independent;
+      all dependence between them must come through $z$ [^1][^2]. The log-density is
+      $-\tfrac12\lVert X - f_\theta(z)\rVert^2$ plus a constant, so the reconstruction term of the
+      VAE objective becomes a squared error [^2].
+    references:
+      - source: nptel-deep-learning-2
+        locator: Assignment 6, Q1 (decoder P(X|z) Gaussian with unit variance)
+        url: https://archive.nptel.ac.in/content/storage2/courses/downloads_new/106106201/noc19_cs18-assessmentid-73.pdf
+      - title: Kingma & Welling (2013), Auto-Encoding Variational Bayes, arXiv:1312.6114
+        url: https://arxiv.org/abs/1312.6114
+        locator: 'Sec. 3 Example: Variational Auto-Encoder; Appendix C.2 Gaussian MLP as encoder or decoder'
+    source:
+      id: nptel-deep-learning-2
+      ref: deep-learning-2/assignment6#q1
+      url: https://archive.nptel.ac.in/content/storage2/courses/downloads_new/106106201/noc19_cs18-assessmentid-73.pdf
+    status: draft
+  - id: autoencoders-026
+    type: single
+    difficulty: medium
+    tags:
+      - vae
+      - rbm
+      - intractable-likelihood
+      - gibbs-sampling
+    question: |
+      Restricted Boltzmann machines and variational autoencoders are both latent-variable models
+      whose likelihood $P(X)$ is intractable. How does each cope with it?
+    options:
+      - text: RBMs use Gibbs sampling; VAEs fit an encoder $Q_\theta(z \mid X)$ to the posterior
+        correct: true
+      - text: Both use Gibbs sampling to approximate the gradient of $\log P(X)$
+        why: VAEs need no sampling chains; they sample $z$ once from the encoder and use the reparameterisation trick [^3].
+      - text: Both fit an encoder $Q_\theta(z \mid X)$ to the posterior and maximise a lower bound
+        why: A standard RBM has no encoder network or variational bound; it is trained with contrastive divergence, i.e. Gibbs sampling [^2].
+      - text: Neither needs to approximate, since both compute $P(X)$ in closed form
+        why: The RBM's partition function and the VAE's integral over $z$ are both intractable, which is the whole difficulty.
+    explanation: |
+      An RBM's log-likelihood gradient contains an expectation under the model, which is estimated by
+      alternating Gibbs sampling of hidden and visible units (contrastive divergence) [^1][^2]. A VAE
+      instead introduces an approximate posterior $Q_\theta(z \mid X)$, computed by an encoder, and
+      maximises the evidence lower bound, avoiding both the intractable posterior $P(z \mid X)$ and
+      sampling chains [^3].
+    references:
+      - source: nptel-deep-learning-2
+        locator: Assignment 6, Q2 (how RBMs and VAEs deal with the intractable P(X))
+        url: https://archive.nptel.ac.in/content/storage2/courses/downloads_new/106106201/noc19_cs18-assessmentid-73.pdf
+      - title: 'Wikipedia: Restricted Boltzmann machine'
+        url: https://en.wikipedia.org/wiki/Restricted_Boltzmann_machine#Training_algorithm
+        locator: Training algorithm
+      - title: Kingma & Welling (2013), Auto-Encoding Variational Bayes, arXiv:1312.6114
+        url: https://arxiv.org/abs/1312.6114
+        locator: Sec. 2.2 The variational bound; Sec. 2.4 The reparameterization trick
+    source:
+      id: nptel-deep-learning-2
+      ref: deep-learning-2/assignment6#q2
+      url: https://archive.nptel.ac.in/content/storage2/courses/downloads_new/106106201/noc19_cs18-assessmentid-73.pdf
+    status: draft
+  - id: autoencoders-027
+    type: multiple
+    difficulty: medium
+    tags:
+      - undercomplete
+      - overcomplete
+      - identity-function
+      - regularization
+    question: |
+      An autoencoder with input size $d$ and code size $d'$ is trained only to minimise reconstruction
+      error. With $d' \geq d$ and no other constraint it can reach zero error by learning the identity,
+      which teaches it nothing useful. Which changes rule out this trivial solution? Select all that
+      apply.
+    options:
+      - text: Make the code undercomplete, $d' < d$, so the input has to pass through a bottleneck
+        correct: true
+      - text: Replace the squared error with a cross-entropy reconstruction loss on the same clean target
+        why: Cross-entropy is also minimised when the output equals the input, so copying stays an optimal solution; the loss changes which features are learned, not this problem [^2].
+      - text: Feed a corrupted copy $\tilde{x}$ of the input and score the output against the clean $x$
+        correct: true
+      - text: Add more units to the code layer, so the network has more capacity to learn useful features
+        why: More units make copying easier, not harder; with a large enough code or enough capacity the network can learn the identity [^1][^2].
+      - text: Keep $d' \geq d$ but penalise the code so that only a few units are active for each input
+        correct: true
+    explanation: |
+      Reconstruction alone does not force useful features: an autoencoder whose code is as large as the
+      input, or larger, can reconstruct perfectly by learning the identity [^1][^2]. Vincent et al.
+      describe the ways out: the classic bottleneck ($d' < d$), an overcomplete but sparse code, and
+      their denoising criterion, where the input is corrupted while the loss still compares with the
+      clean input, so copying is no longer optimal [^2]. Wikipedia names such modifications of the basic
+      autoencoder as the standard way to match code size and capacity to the data [^1].
+    references:
+      - title: 'Wikipedia: Autoencoder'
+        url: https://en.wikipedia.org/wiki/Autoencoder#Interpretation
+        locator: Section "Mathematical principles", subsection "Interpretation"
+      - title: 'Vincent et al. (2010), Stacked Denoising Autoencoders: Learning Useful Representations in a Deep Network with a Local Denoising Criterion'
+        url: https://www.jmlr.org/papers/v11/vincent10a.html
+        locator: Sec. 2.3 Merely Retaining Information is Not Enough; Sec. 3 Using a Denoising Criterion
+    source:
+      id: original
+      ref: autoencoders-027
+    status: draft
+  - id: autoencoders-028
+    type: short_answer
+    difficulty: hard
+    tags:
+      - linear-autoencoder
+      - pca
+      - reconstruction-error
+    question: |
+      Centred data in $\mathbb{R}^4$ have a covariance matrix (normalised by $1/N$) with eigenvalues
+      $6, 3, 2, 1$. A linear autoencoder $\hat{x} = W_d W_e x$ with a 2-unit code is trained to minimise
+      the mean squared reconstruction error $\frac{1}{N}\sum_i \lVert x_i - \hat{x}_i \rVert^2$. What is
+      the smallest value this error can reach?
+    answer:
+      numeric: 3
+      tolerance: 0.001
+      hint: a number
+      model: $2 + 1 = 3$, the variance along the two discarded principal directions
+    explanation: |
+      A linear autoencoder with $p$ code units computes a rank-$p$ linear map, and with squared error its
+      optimum is the orthogonal projection onto the span of the first $p$ principal components [^1][^2].
+      By the Eckart–Young theorem this is the best rank-$p$ least-squares fit, and the error left is the
+      variance along the discarded directions, $\sum_{j > p} \lambda_j$ [^3]. Here that is $2 + 1 = 3$,
+      a quarter of the total variance $12$. The trained weights need not be the principal components
+      themselves, only span the same subspace, so the error is the same either way [^1].
+    references:
+      - title: 'Wikipedia: Autoencoder'
+        url: https://en.wikipedia.org/wiki/Autoencoder#Principal_component_analysis
+        locator: Section "Applications", subsection "Dimensionality reduction", "Principal component analysis"
+      - title: 'Vincent et al. (2010), Stacked Denoising Autoencoders: Learning Useful Representations in a Deep Network with a Local Denoising Criterion'
+        url: https://www.jmlr.org/papers/v11/vincent10a.html
+        locator: Sec. 2.3 Merely Retaining Information is Not Enough (and footnote 4)
+      - title: 'Wikipedia: Principal component analysis'
+        url: https://en.wikipedia.org/wiki/Principal_component_analysis#Singular_value_decomposition
+        locator: Section "Details", subsection "Singular value decomposition" (Theorem "Optimal k-dimensional fit", relative residual variance R(k))
+    source:
+      id: original
+      ref: autoencoders-028
+    status: draft
+  - id: autoencoders-029
+    type: single
+    difficulty: medium
+    tags:
+      - vae
+      - reparameterization-trick
+      - backpropagation
+    question: |
+      A VAE encoder outputs $\mu_\phi(x)$ and $\sigma_\phi(x)$, and the loss contains
+      $\mathbb{E}_{z \sim q_\phi(z \mid x)}[\log p_\theta(x \mid z)]$, estimated with a sampled $z$. Why
+      is the sample written as $z = \mu_\phi(x) + \sigma_\phi(x) \odot \epsilon$ with
+      $\epsilon \sim \mathcal{N}(0, I)$?
+    options:
+      - text: Without it the decoder parameters $\theta$ would get no gradient from the reconstruction term
+        why: The gradient with respect to $\theta$ is easy either way, because $\theta$ does not appear in the sampling distribution; the trouble is with $\phi$ [^2].
+      - text: Sampling $z$ this way is what makes the KL term to the prior $\mathcal{N}(0, I)$ computable in closed form
+        why: The closed-form KL comes from both distributions being Gaussian (Appendix B), not from the way $z$ is sampled [^1].
+      - text: The noise moves into $\epsilon$, so $z$ is differentiable in $\phi$ and gradients reach the encoder
+        correct: true
+      - text: It removes sampling from training, since $\epsilon$ is drawn once and then kept fixed
+        why: A new $\epsilon$ is drawn as training proceeds; the estimate stays a Monte Carlo estimate, it just becomes differentiable in $\phi$ [^1].
+    explanation: |
+      The expectation is taken under $q_\phi$, so $\phi$ sits inside the sampling distribution and its
+      gradient cannot simply be moved inside the expectation [^2]. The naive Monte Carlo
+      (score-function) estimator of that gradient has very high variance and is impractical [^1]. The
+      reparameterization trick writes $z = g_\phi(\epsilon, x)$ with noise $\epsilon$ that does not
+      depend on $\phi$; for a Gaussian, $z = \mu + \sigma \epsilon$ [^1]. The Monte Carlo estimate then
+      becomes differentiable in $\phi$, an unbiased gradient estimate that ordinary backpropagation can
+      compute [^1][^2].
+    references:
+      - title: Kingma & Welling (2013), Auto-Encoding Variational Bayes
+        url: https://arxiv.org/abs/1312.6114
+        locator: Sec. 2.2 The variational bound (naive estimator); Sec. 2.4 The reparameterization trick; Appendix B
+      - title: 'Wikipedia: Variational autoencoder'
+        url: https://en.wikipedia.org/wiki/Variational_autoencoder#Reparameterization
+        locator: Section "Reparameterization"
+    source:
+      id: original
+      ref: autoencoders-029
+    status: draft
+  - id: autoencoders-030
+    type: short_answer
+    difficulty: medium
+    tags:
+      - vae
+      - kl-divergence
+      - code-reading
+      - pytorch
+    question: |
+      A VAE computes the KL term between the encoder's diagonal Gaussian $\mathcal{N}(\mu, \sigma^2)$ and
+      the prior $\mathcal{N}(0, I)$ like this. What does `kl` evaluate to, in nats?
+
+      ```python
+      import torch
+
+      mu = torch.tensor([1.0, 0.0])
+      logvar = torch.log(torch.tensor([1.0, 0.25]))    # log sigma^2
+      kl = -0.5 * torch.sum(1 + logvar - mu**2 - logvar.exp())
+      ```
+    answer:
+      numeric: 0.8181
+      tolerance: 0.005
+      hint: a number, 2 decimals
+      model: 'dimension 1: $\frac12(1 + 1 - 1 - 0) = 0.5$; dimension 2: $\frac12(0 + 0.25 - 1 - \ln 0.25) \approx 0.318$; total $\approx 0.82$'
+    explanation: |
+      For a diagonal Gaussian posterior and a standard normal prior the KL divergence has a closed form,
+      $D_{\mathrm{KL}} = \frac12 \sum_j (\mu_j^2 + \sigma_j^2 - 1 - \ln \sigma_j^2)$, which the code
+      computes with `logvar` $= \ln \sigma^2$ [^1][^2]. The first dimension only pays for its shifted
+      mean, $\frac12 \cdot 1^2 = 0.5$. The second has the right mean but too small a variance:
+      $\frac12(0.25 - 1 + 1.386) \approx 0.318$. Because this term is computed and differentiated
+      without sampling, only the reconstruction term needs the reparameterised Monte Carlo estimate
+      [^1].
+    references:
+      - title: Kingma & Welling (2013), Auto-Encoding Variational Bayes
+        url: https://arxiv.org/abs/1312.6114
+        locator: Sec. 3 Example Variational Auto-Encoder, Eq. (10); Appendix B Solution of −D_KL(q_φ(z)||p_θ(z)), Gaussian case
+      - title: 'Wikipedia: Kullback–Leibler divergence'
+        url: https://en.wikipedia.org/wiki/Kullback%E2%80%93Leibler_divergence#Multivariate_normal_distributions
+        locator: Section "Examples", subsection "Multivariate normal distributions"
+    source:
+      id: original
+      ref: autoencoders-030
+    status: draft
+  - id: autoencoders-031
+    type: single
+    difficulty: medium
+    tags:
+      - denoising-autoencoder
+      - corruption
+      - training
+    question: |
+      You train a denoising autoencoder (encoder $f$, decoder $g$, reconstruction loss $L$) with masking
+      noise. Which training setup matches the denoising autoencoder of Vincent et al.?
+    options:
+      - text: Train an ordinary autoencoder on clean $x$, and mask inputs only at test time to check robustness
+        why: Without corruption during training the criterion is the plain reconstruction one, so nothing pushes the network away from copying [^1].
+      - text: Mask part of $x$ to get $\tilde{x}$ and minimise $L(x, g(f(\tilde{x})))$, with a new mask each time
+        correct: true
+      - text: Mask a random fraction of $x$ to get $\tilde{x}$ and minimise $L(\tilde{x}, g(f(\tilde{x})))$ on the masked input
+        why: With the corrupted input as the target this is an ordinary autoencoder on noisy data, and copying (noise included) is still optimal. The loss must compare with the clean $x$ [^1].
+      - text: Mask a random fraction of the code $f(x)$ and minimise $L(x, g(\text{masked } f(x)))$
+        why: The denoising autoencoder corrupts the input, $\tilde{x} \sim q_D(\tilde{x} \mid x)$, so the encoder must learn features that can be computed robustly from a corrupted input [^1].
+    explanation: |
+      A denoising autoencoder corrupts each input with a stochastic mapping
+      $\tilde{x} \sim q_D(\tilde{x} \mid x)$, encodes $\tilde{x}$, and trains the reconstruction
+      $g(f(\tilde{x}))$ to be close to the uncorrupted $x$; a new corrupted version is drawn every time
+      an example is presented [^1]. Masking noise sets a random fraction $\nu$ of the inputs to 0, so the
+      network has to fill in the blanks from dependencies between dimensions [^1]. Since the target is
+      clean but the input is not, copying is no longer optimal and the features must capture structure
+      in the data [^1][^2]. Once trained, the encoder is applied to uncorrupted inputs [^1].
+    references:
+      - title: 'Vincent et al. (2010), Stacked Denoising Autoencoders: Learning Useful Representations in a Deep Network with a Local Denoising Criterion'
+        url: https://www.jmlr.org/papers/v11/vincent10a.html
+        locator: Sec. 3.1 The Denoising Autoencoder Algorithm; Sec. 3.3 Types of Corruption Considered; Sec. 3.5 Stacking Denoising Autoencoders
+      - title: 'Wikipedia: Autoencoder'
+        url: https://en.wikipedia.org/wiki/Autoencoder#Denoising_autoencoder_(DAE)
+        locator: Section "Variations", subsection "Denoising autoencoder (DAE)"
+    source:
+      id: original
+      ref: autoencoders-031
+    status: draft
+  - id: autoencoders-032
+    type: true_false
+    difficulty: medium
+    tags:
+      - beta-vae
+      - disentanglement
+      - kl-divergence
+    shuffle: false
+    question: |
+      A β-VAE maximises
+      $\mathbb{E}_{q(z \mid x)}[\log p(x \mid z)] - \beta\, D_{\mathrm{KL}}(q(z \mid x) \,\|\, p(z))$ with an
+      isotropic unit Gaussian prior $p(z)$. True or false: raising $\beta$ from 1 to, say, 4 typically
+      gives both more disentangled latent factors and more accurate reconstructions.
+    options:
+      - text: 'True'
+        why: A larger $\beta$ pulls the posterior harder toward the factorised prior. That favours disentangling, but it also limits how much information about $x$ the code carries, so reconstructions get worse [^1].
+      - text: 'False'
+        correct: true
+    explanation: |
+      With $\beta = 1$ the objective is the ordinary VAE bound; $\beta > 1$ weights the KL term more
+      [^1][^2]. The stronger pressure toward the factorised unit Gaussian prior encourages disentangled
+      latent factors [^1][^2], but the KL term also bounds how much information can pass through the
+      latent channels, so less detail about $x$ gets through [^1]. Burgess et al. note that the higher
+      $\beta$ values needed for disentangling often trade off against reconstruction fidelity, and they
+      propose gradually raising a target KL capacity instead [^1].
+    references:
+      - title: Burgess et al. (2018), Understanding disentangling in β-VAE
+        url: https://arxiv.org/abs/1804.03599
+        locator: Sec. 3 β-VAE, Eq. (5); Sec. 4.2 β-VAE through the information bottleneck perspective; Sec. 5 Controlled capacity increase
+      - title: 'Wikipedia: Variational autoencoder'
+        url: https://en.wikipedia.org/wiki/Variational_autoencoder#Variations
+        locator: Section "Variations" (β-VAE)
+    source:
+      id: original
+      ref: autoencoders-032
+    status: draft

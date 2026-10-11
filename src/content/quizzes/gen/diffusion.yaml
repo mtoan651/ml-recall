@@ -1,0 +1,1107 @@
+schema_version: 1
+domain: gen
+topic: diffusion
+title: Diffusion Models
+questions:
+  - id: diffusion-001
+    type: single
+    difficulty: easy
+    tags:
+      - score-function
+      - diffusion-models
+    question: |
+      Diffusion models work with the score of a density, $\mathbf{s}(\mathbf{x}) = \nabla_{\mathbf{x}} \log p(\mathbf{x})$.
+      For a single Gaussian $p = \mathcal{N}(\boldsymbol\mu, \sigma^2 I)$, what do the direction and the length
+      of the score tell you at a point $\mathbf{x}$?
+    options:
+      - text: 'Direction: toward the mode (uphill in density). Length: larger the farther $\mathbf{x}$ is from the mode'
+        correct: true
+      - text: 'Direction: away from the mode (downhill in density). Length: larger the closer $\mathbf{x}$ is to the mode'
+        why: The score is a gradient of $\log p$, so it points uphill, toward higher density; for this Gaussian it is $-(\mathbf{x}-\boldsymbol\mu)/\sigma^2$.
+      - text: 'Direction: toward the mode. Length: largest at the mode itself and shrinking with the distance'
+        why: At the mode the gradient of $\log p$ is zero; the length $\lVert\mathbf{x}-\boldsymbol\mu\rVert/\sigma^2$ grows with the distance.
+      - text: 'Direction: along the contour lines of the density. Length: the same everywhere'
+        why: A gradient is perpendicular to the contour lines, not along them, and here its length depends on the distance from the mode.
+    explanation: |
+      The score is the gradient of the log density, so it points in the direction in which the
+      probability of the data increases fastest [^1]. For $\mathcal{N}(\boldsymbol\mu, \sigma^2 I)$,
+      $\log p(\mathbf{x}) = -\lVert\mathbf{x}-\boldsymbol\mu\rVert^2/(2\sigma^2) + \text{const}$, so
+      $\mathbf{s}(\mathbf{x}) = -(\mathbf{x}-\boldsymbol\mu)/\sigma^2$: it points back to the mean, and its length is
+      proportional to the distance from it, zero at the mode [^1]. Reverse diffusion follows this field (plus
+      noise) to move noisy samples back toward regions of high data density [^2].
+    references:
+      - source: neuromatch-dl
+        locator: W2D4 Tutorial 1, Section 1.2 What is Score, Think! 1.2 What does score tell us?
+        url: https://github.com/NeuromatchAcademy/course-content-dl/blob/caba36c513fb8139ac3c9e7503f7a769dadde25e/tutorials/W2D4_DiffusionGenerativeModels/instructor/W2D4_Tutorial1.ipynb
+      - title: Song et al. (2021), Score-Based Generative Modeling through Stochastic Differential Equations
+        locator: Sec. 3.2 Generating samples by reversing the SDE
+        url: https://arxiv.org/abs/2011.13456
+    source:
+      id: neuromatch-dl
+      ref: W2D4_DiffusionGenerativeModels/W2D4_Tutorial1#think1.2
+      url: https://github.com/NeuromatchAcademy/course-content-dl/blob/caba36c513fb8139ac3c9e7503f7a769dadde25e/tutorials/W2D4_DiffusionGenerativeModels/instructor/W2D4_Tutorial1.ipynb
+    status: draft
+  - id: diffusion-002
+    type: short_answer
+    difficulty: medium
+    tags:
+      - score-function
+      - gaussian-mixture
+    question: |
+      A 1-D Gaussian mixture is $p(x) = \tfrac12\,\mathcal{N}(x; -1, 1) + \tfrac12\,\mathcal{N}(x; 1, 1)$. Its score is the
+      average of the component scores $-(x - \mu_k)$, weighted by how much each component contributes to the
+      density at $x$. What is the score $\frac{d}{dx}\log p(x)$ at $x = 1$?
+    answer:
+      numeric: -0.238
+      tolerance: 0.002
+      hint: a number, 3 decimals
+      model: $w_1 \cdot (-2) + w_2 \cdot 0$ with $w_1 = e^{-2}/(1 + e^{-2}) \approx 0.119$, so $\approx -0.238$
+    explanation: |
+      Differentiating $\log \sum_k \pi_k p_k(x)$ gives $\sum_k w_k(x)\,\frac{d}{dx}\log p_k(x)$ with
+      $w_k(x) = \pi_k p_k(x)/p(x)$, the posterior probability that $x$ came from component $k$ [^1]. At $x = 1$ the
+      right component's score is $0$ ($x$ is its mean) and the left one's is $-(1 - (-1)) = -2$. The weights are
+      proportional to $e^{-(1+1)^2/2} = e^{-2}$ and $e^{0} = 1$, so $w_1 = e^{-2}/(1 + e^{-2}) \approx 0.119$ and the
+      score is $\approx -0.238$, a small pull toward the far mode. The nearest mode dominates the score, which is
+      the intuition the tutorial draws from its Gaussian-mixture example [^1].
+    references:
+      - source: neuromatch-dl
+        locator: W2D4 Tutorial 1, Coding Exercise 1.2 Score for Gaussian Mixtures and Think! 1.2
+        url: https://github.com/NeuromatchAcademy/course-content-dl/blob/caba36c513fb8139ac3c9e7503f7a769dadde25e/tutorials/W2D4_DiffusionGenerativeModels/instructor/W2D4_Tutorial1.ipynb
+    source:
+      id: neuromatch-dl
+      ref: W2D4_DiffusionGenerativeModels/W2D4_Tutorial1#ex1.2
+      url: https://github.com/NeuromatchAcademy/course-content-dl/blob/caba36c513fb8139ac3c9e7503f7a769dadde25e/tutorials/W2D4_DiffusionGenerativeModels/instructor/W2D4_Tutorial1.ipynb
+    status: draft
+  - id: diffusion-003
+    type: single
+    difficulty: medium
+    tags:
+      - denoising-score-matching
+      - training-objective
+    question: |
+      Denoising score matching trains a score network by minimizing
+      $\mathbb{E}\,\lVert \sigma_t\,\mathbf{s}_\theta(\mathbf{x} + \sigma_t \mathbf{z}, t) + \mathbf{z}\rVert^2$ over clean training
+      points $\mathbf{x}$ and Gaussian noise $\mathbf{z}$. With two or more distinct training points, can a flexible
+      enough network drive this loss to zero?
+    options:
+      - text: 'No: one noisy input can arise from different clean points with different noise, so the best output is an average'
+        correct: true
+      - text: 'Yes: a network with enough capacity can memorize the noise that was added to every training example'
+        why: The network sees only the noisy input, not which clean point and noise produced it; the same noisy input has several possible targets.
+      - text: Yes, but only if every training example is noised with the same noise level $\sigma_t$
+        why: Even at one fixed $\sigma_t$, Gaussian noise lets two different clean points reach the same noisy input, so the targets still conflict.
+      - text: No, because the loss always contains the term $\lVert\mathbf{z}\rVert^2$, which does not depend on $\theta$
+        why: An output of exactly $-\mathbf{z}/\sigma_t$ would make each term zero; the obstacle is that $\mathbf{z}$ cannot be read off the noisy input.
+    explanation: |
+      Gaussian noise lets two clean points $\mathbf{x}_1 \neq \mathbf{x}_2$ produce the same noisy input,
+      $\mathbf{x}_1 + \sigma_t\mathbf{z}_1 = \mathbf{x}_2 + \sigma_t\mathbf{z}_2$, while the targets $-\mathbf{z}_1/\sigma_t$ and
+      $-\mathbf{z}_2/\sigma_t$ differ [^1]. A function of the noisy input can output only one value there, so the
+      minimizer is the conditional average of the targets, and that average is the true score of the noised data
+      distribution [^1][^2]. The leftover variance keeps the loss above zero; it echoes the earlier observation that
+      a mixture's score is a weighted average of the component scores [^1].
+    references:
+      - source: neuromatch-dl
+        locator: W2D4 Tutorial 1, Section 2 Learning the score by denoising, Think! 2 Denoising objective
+        url: https://github.com/NeuromatchAcademy/course-content-dl/blob/caba36c513fb8139ac3c9e7503f7a769dadde25e/tutorials/W2D4_DiffusionGenerativeModels/instructor/W2D4_Tutorial1.ipynb
+      - title: Vincent (2011), A Connection Between Score Matching and Denoising Autoencoders
+        url: https://www.iro.umontreal.ca/~vincentp/Publications/smdae_techreport.pdf
+        locator: Denoising score matching and its equivalence to explicit score matching
+    source:
+      id: neuromatch-dl
+      ref: W2D4_DiffusionGenerativeModels/W2D4_Tutorial1#think2
+      url: https://github.com/NeuromatchAcademy/course-content-dl/blob/caba36c513fb8139ac3c9e7503f7a769dadde25e/tutorials/W2D4_DiffusionGenerativeModels/instructor/W2D4_Tutorial1.ipynb
+    status: draft
+  - id: diffusion-004
+    type: true_false
+    difficulty: medium
+    tags:
+      - denoising-score-matching
+      - score-function
+    question: |
+      A "dataset" holds the single point $\mathbf{x}_0 = \mathbf{0}$. After noising, $\tilde{\mathbf{x}} = \sigma_t \mathbf{z}$
+      with $\mathbf{z} \sim \mathcal{N}(\mathbf{0}, I)$, and the exact score of the noised distribution is
+      $\mathbf{s}(\tilde{\mathbf{x}}, t) = -\tilde{\mathbf{x}}/\sigma_t^2$. True or false: plugging this exact score into
+      the denoising loss $\lVert \sigma_t\,\mathbf{s}(\tilde{\mathbf{x}}, t) + \mathbf{z}\rVert^2$ gives exactly $0$ for every
+      noise sample $\mathbf{z}$.
+    options:
+      - text: 'True'
+        correct: true
+      - text: 'False'
+        why: $\sigma_t \cdot (-\sigma_t\mathbf{z}/\sigma_t^2) + \mathbf{z} = -\mathbf{z} + \mathbf{z} = \mathbf{0}$ for every $\mathbf{z}$.
+    explanation: |
+      With one data point there is no doubt about where a noisy input came from: $\tilde{\mathbf{x}} = \sigma_t\mathbf{z}$
+      fixes $\mathbf{z} = \tilde{\mathbf{x}}/\sigma_t$. The noised distribution is $\mathcal{N}(\mathbf{0}, \sigma_t^2 I)$, whose
+      score is $-\tilde{\mathbf{x}}/\sigma_t^2$, and $\sigma_t\mathbf{s} + \mathbf{z} = -\mathbf{z} + \mathbf{z} = \mathbf{0}$. NMA uses
+      exactly this case to unit-test a loss implementation: a correct loss returns zero for the analytic score [^1].
+      With two or more data points the loss cannot reach zero, because different points produce overlapping noisy
+      inputs [^2].
+    references:
+      - source: neuromatch-dl
+        locator: W2D4 Tutorial 1, Coding Exercise 2 Implementing Denoising Score Matching Objective (test with a single 0 data point)
+        url: https://github.com/NeuromatchAcademy/course-content-dl/blob/caba36c513fb8139ac3c9e7503f7a769dadde25e/tutorials/W2D4_DiffusionGenerativeModels/instructor/W2D4_Tutorial1.ipynb
+      - source: neuromatch-dl
+        locator: W2D4 Tutorial 1, Think! 2 Denoising objective
+        url: https://github.com/NeuromatchAcademy/course-content-dl/blob/caba36c513fb8139ac3c9e7503f7a769dadde25e/tutorials/W2D4_DiffusionGenerativeModels/instructor/W2D4_Tutorial1.ipynb
+    source:
+      id: neuromatch-dl
+      ref: W2D4_DiffusionGenerativeModels/W2D4_Tutorial1#ex2
+      url: https://github.com/NeuromatchAcademy/course-content-dl/blob/caba36c513fb8139ac3c9e7503f7a769dadde25e/tutorials/W2D4_DiffusionGenerativeModels/instructor/W2D4_Tutorial1.ipynb
+    status: draft
+  - id: diffusion-005
+    type: short_answer
+    difficulty: medium
+    tags:
+      - forward-process
+      - noise-schedule
+      - sde
+    question: |
+      A variance-exploding forward process $d\mathbf{x} = g(t)\,d\mathbf{w}$ uses the diffusion coefficient
+      $g(t) = \lambda^t$ with $\lambda = 25$, for $t \in [0, 1]$. Given $\mathbf{x}_0$, the noisy state is
+      $\mathbf{x}_t \sim \mathcal{N}(\mathbf{x}_0, \sigma_t^2 I)$ with $\sigma_t^2 = \int_0^t g(\tau)^2\,d\tau$. What is the noise
+      standard deviation $\sigma_1$ at the end of the process?
+    answer:
+      numeric: 9.85
+      tolerance: 0.02
+      hint: a number, 2 decimals
+      model: $\sigma_1^2 = \frac{\lambda^2 - 1}{2\ln\lambda} = \frac{624}{2\ln 25} \approx 96.93$, so $\sigma_1 \approx 9.85$
+    explanation: |
+      Integrating $g(\tau)^2 = \lambda^{2\tau} = e^{2\tau\ln\lambda}$ gives $\sigma_t^2 = (\lambda^{2t} - 1)/(2\ln\lambda)$ [^1].
+      At $t = 1$ this is $(625 - 1)/(2 \times 3.219) \approx 96.9$, so $\sigma_1 \approx 9.85$; note that the code needs the
+      standard deviation, the square root of this variance [^1]. MNIST pixels lie in $[0, 1]$, so noise with a
+      standard deviation near 10 drowns the digit, which is why the sampler can start from pure noise
+      $\mathcal{N}(\mathbf{0}, \sigma_1^2 I)$ [^2].
+    references:
+      - source: neuromatch-dl
+        locator: W2D4 Tutorial 2, Coding Exercise 1 Train Diffusion for MNIST (Math Recap for Forward Processes, `marginal_prob_std`)
+        url: https://github.com/NeuromatchAcademy/course-content-dl/blob/caba36c513fb8139ac3c9e7503f7a769dadde25e/tutorials/W2D4_DiffusionGenerativeModels/instructor/W2D4_Tutorial2.ipynb
+      - source: neuromatch-dl
+        locator: W2D4 Tutorial 2, Train and Test the Diffusion Model (Euler–Maruyama sampler, initial noise)
+        url: https://github.com/NeuromatchAcademy/course-content-dl/blob/caba36c513fb8139ac3c9e7503f7a769dadde25e/tutorials/W2D4_DiffusionGenerativeModels/instructor/W2D4_Tutorial2.ipynb
+    source:
+      id: neuromatch-dl
+      ref: W2D4_DiffusionGenerativeModels/W2D4_Tutorial2#ex1
+      url: https://github.com/NeuromatchAcademy/course-content-dl/blob/caba36c513fb8139ac3c9e7503f7a769dadde25e/tutorials/W2D4_DiffusionGenerativeModels/instructor/W2D4_Tutorial2.ipynb
+    status: draft
+  - id: diffusion-006
+    type: single
+    difficulty: medium
+    tags:
+      - reverse-sde
+      - sampling
+    question: |
+      The forward process $d\mathbf{x} = g(t)\,d\mathbf{w}$ is simulated backwards in time with step $\Delta t$, using the
+      score $\mathbf{s}(\mathbf{x}, t) = \nabla_\mathbf{x}\log p_t(\mathbf{x})$ and fresh noise $\mathbf{z}_t \sim \mathcal{N}(\mathbf{0}, I)$.
+      Which update is one step of the reverse-time SDE?
+    options:
+      - text: $\mathbf{x}_{t-\Delta t} = \mathbf{x}_t + g(t)^2\,\mathbf{s}(\mathbf{x}_t, t)\,\Delta t + g(t)\sqrt{\Delta t}\,\mathbf{z}_t$
+        correct: true
+      - text: $\mathbf{x}_{t-\Delta t} = \mathbf{x}_t - g(t)^2\,\mathbf{s}(\mathbf{x}_t, t)\,\Delta t + g(t)\sqrt{\Delta t}\,\mathbf{z}_t$
+        why: Subtracting the score moves samples downhill in density, away from the data, so the noise would never be removed.
+      - text: $\mathbf{x}_{t-\Delta t} = \mathbf{x}_t + g(t)\,\mathbf{s}(\mathbf{x}_t, t)\,\Delta t + g(t)^2\sqrt{\Delta t}\,\mathbf{z}_t$
+        why: 'The powers are swapped: the drift carries $g(t)^2$ and the noise term $g(t)$, as in the forward step $\mathbf{x}_{t+\Delta t} = \mathbf{x}_t + g(t)\sqrt{\Delta t}\,\mathbf{z}_t$.'
+      - text: $\mathbf{x}_{t-\Delta t} = \mathbf{x}_t - g(t)\sqrt{\Delta t}\,\mathbf{z}_t$, with no score term at all
+        why: Fresh noise cannot cancel the noise added earlier; without the score term the samples just keep diffusing.
+    explanation: |
+      Anderson's reverse-time result says that the time reversal of $d\mathbf{x} = g(t)\,d\mathbf{w}$ is
+      $d\mathbf{x} = -g(t)^2\nabla_\mathbf{x}\log p_t(\mathbf{x})\,dt + g(t)\,d\mathbf{w}$, with time running backwards [^1][^2].
+      Because $dt$ is negative going backwards, a step of size $\Delta t$ adds $+g(t)^2\,\mathbf{s}\,\Delta t$: the score
+      term pushes each sample uphill in density, while the noise term keeps the samples spread as in the forward
+      process. This Euler–Maruyama step is the simplest sampling equation of a diffusion model [^1].
+    references:
+      - source: neuromatch-dl
+        locator: W2D4 Tutorial 1, Section 1.3 Reverse Diffusion and Bonus Exercise 1.3 Score enables reversal of diffusion
+        url: https://github.com/NeuromatchAcademy/course-content-dl/blob/caba36c513fb8139ac3c9e7503f7a769dadde25e/tutorials/W2D4_DiffusionGenerativeModels/instructor/W2D4_Tutorial1.ipynb
+      - title: Song et al. (2021), Score-Based Generative Modeling through Stochastic Differential Equations
+        locator: Sec. 3.2 Generating samples by reversing the SDE, Eq. (6)
+        url: https://arxiv.org/abs/2011.13456
+    source:
+      id: neuromatch-dl
+      ref: W2D4_DiffusionGenerativeModels/W2D4_Tutorial1#ex1.3
+      url: https://github.com/NeuromatchAcademy/course-content-dl/blob/caba36c513fb8139ac3c9e7503f7a769dadde25e/tutorials/W2D4_DiffusionGenerativeModels/instructor/W2D4_Tutorial1.ipynb
+    status: draft
+  - id: diffusion-007
+    type: multiple
+    difficulty: hard
+    tags:
+      - reverse-sde
+      - probability-flow-ode
+      - sampling
+    question: |
+      For a forward SDE $d\mathbf{x} = \mathbf{f}(\mathbf{x}, t)\,dt + g(t)\,d\mathbf{w}$, a diffusion model can sample either with
+      the reverse SDE $d\mathbf{x} = [\mathbf{f} - g^2\,\nabla_\mathbf{x}\log p_t]\,dt + g\,d\mathbf{w}$ or with the probability-flow
+      ODE $d\mathbf{x} = [\mathbf{f} - \tfrac12 g^2\,\nabla_\mathbf{x}\log p_t]\,dt$. Which statements are true? Select all that apply.
+    options:
+      - text: Both, started from $p_T$ and run from $t = T$ back to 0, pass through the same marginals $p_t$ as the forward process
+        correct: true
+      - text: The ODE has no noise term, so a given starting point is always mapped to the same sample
+        correct: true
+      - text: Apart from $\mathbf{f}$ and $g$, both need only the score $\nabla_\mathbf{x}\log p_t$, which a network learns by denoising
+        correct: true
+      - text: The ODE uses half the score weight because it takes twice as many steps as the SDE
+        why: The factor $\tfrac12$ gives the deterministic flow the same marginals as the stochastic one; it has nothing to do with the number of steps.
+      - text: Only the reverse SDE can generate samples; the ODE can only evaluate likelihoods
+        why: Simulating either the SDE or the ODE samples from the model [^1].
+    explanation: |
+      Solving either the reverse SDE or the probability-flow ODE backwards in time from $p_T$ reproduces the
+      forward process's marginals $p_t$, so both can turn noise into data [^1][^2]. The ODE replaces the noise by an
+      extra half-weight score drift, so its trajectories are deterministic [^2]. In both, the only unknown is the
+      time-dependent score, which is learned with denoising score matching [^1].
+    references:
+      - source: neuromatch-dl
+        locator: W2D4 Tutorial 1, Summary (general reverse SDE and probability-flow ODE)
+        url: https://github.com/NeuromatchAcademy/course-content-dl/blob/caba36c513fb8139ac3c9e7503f7a769dadde25e/tutorials/W2D4_DiffusionGenerativeModels/instructor/W2D4_Tutorial1.ipynb
+      - title: Song et al. (2021), Score-Based Generative Modeling through Stochastic Differential Equations
+        locator: Sec. 4.3 Probability flow and connection to neural ODEs
+        url: https://arxiv.org/abs/2011.13456
+    source:
+      id: neuromatch-dl
+      ref: W2D4_DiffusionGenerativeModels/W2D4_Tutorial1#sec-summary
+      url: https://github.com/NeuromatchAcademy/course-content-dl/blob/caba36c513fb8139ac3c9e7503f7a769dadde25e/tutorials/W2D4_DiffusionGenerativeModels/instructor/W2D4_Tutorial1.ipynb
+    status: draft
+  - id: diffusion-008
+    type: single
+    difficulty: hard
+    tags:
+      - u-net
+      - score-network
+      - noise-scale
+    question: |
+      A time-dependent U-Net score model for MNIST ends its forward pass with
+      `h = h / marginal_prob_std(t)[:, None, None, None]`, i.e. it divides its output by $\sigma_t$. It is trained so
+      that $\mathbf{s}_\theta(\mathbf{x} + \sigma_t\mathbf{z}, t) \approx -\mathbf{z}/\sigma_t$. What is the main benefit and the main
+      cost of this design?
+    options:
+      - text: The layers before the division only need to output about $-\mathbf{z}$, of unit scale at every $t$; but errors are amplified when $\sigma_t$ is small
+        correct: true
+      - text: It normalizes the input image, so the network sees pixel values in $[0, 1]$ at every noise level; but it slows down every training step
+        why: The division acts on the output, not on the input; its effect is on the scale of what the network must produce.
+      - text: It turns the score into a probability distribution whose entries sum to one; but it makes the sampler nondeterministic
+        why: A score is a gradient of $\log p$, not a probability; dividing by $\sigma_t$ only rescales it.
+      - text: It removes the need for a time embedding, since $t$ now enters only through $\sigma_t$; but it doubles the parameter count
+        why: The U-Net still adds a time embedding in every block, and the division adds no parameters at all.
+    explanation: |
+      The target $-\mathbf{z}/\sigma_t$ changes scale by orders of magnitude, from about $0.1$ at $t = 1$ ($\sigma_1$ near 10)
+      to huge values as $t \to 0$ [^1]. Dividing by $\sigma_t$ inside the model means the layers before it only predict
+      $-\mathbf{z}$, whose variance is about 1 at every $t$, which is easier to learn [^1]. The price is that any error is
+      multiplied by $1/\sigma_t$ in the low-noise regime; the loss weighting $\gamma_t = \sigma_t^2$ counteracts this by
+      down-weighting the small-$\sigma_t$ times [^1][^2].
+    references:
+      - source: neuromatch-dl
+        locator: W2D4 Tutorial 2, Section 1 Neural Network Architecture, Think! 1 U-Net Architecture (item 5)
+        url: https://github.com/NeuromatchAcademy/course-content-dl/blob/caba36c513fb8139ac3c9e7503f7a769dadde25e/tutorials/W2D4_DiffusionGenerativeModels/instructor/W2D4_Tutorial2.ipynb
+      - source: neuromatch-dl
+        locator: W2D4 Tutorial 2, Coding Exercise 2 Defining the loss function (weighting $\gamma_t = \sigma_t^2$)
+        url: https://github.com/NeuromatchAcademy/course-content-dl/blob/caba36c513fb8139ac3c9e7503f7a769dadde25e/tutorials/W2D4_DiffusionGenerativeModels/instructor/W2D4_Tutorial2.ipynb
+    source:
+      id: neuromatch-dl
+      ref: W2D4_DiffusionGenerativeModels/W2D4_Tutorial2#think1-q5
+      url: https://github.com/NeuromatchAcademy/course-content-dl/blob/caba36c513fb8139ac3c9e7503f7a769dadde25e/tutorials/W2D4_DiffusionGenerativeModels/instructor/W2D4_Tutorial2.ipynb
+    status: draft
+  - id: diffusion-009
+    type: short_answer
+    difficulty: medium
+    tags:
+      - u-net
+      - transposed-convolution
+      - skip-connections
+    question: |
+      The encoder of a diffusion U-Net for $28 \times 28$ MNIST images applies 3×3 convolutions without padding:
+      stride 1 ($28 \to 26$), stride 2 ($26 \to 12$), stride 2 ($12 \to 5$) and stride 2 ($5 \to 2$). The decoder mirrors
+      it with 3×3 transposed convolutions of stride 2 and concatenates each output with the encoder map of the same
+      size. The first one turns $2 \times 2$ into $5 \times 5$. What height would the next one,
+      `nn.ConvTranspose2d(256, 64, 3, stride=2)` without `output_padding`, produce from the $5 \times 5$ map?
+    answer:
+      numeric: 11
+      tolerance: 0
+      hint: an integer
+      model: $(5 - 1) \times 2 + 3 = 11$, one short of the encoder's 12, hence `output_padding=1`
+    explanation: |
+      Without padding, a transposed convolution produces $(n - 1)\cdot\text{stride} + k$ rows [^1], here
+      $(5 - 1)\cdot 2 + 3 = 11$. The encoder went $12 \to 5$ because $\lfloor (12 - 3)/2 \rfloor + 1 = 5$, and a stride-2
+      convolution maps both 11 and 12 to 5, so the size cannot be inverted uniquely [^1]. The skip connection
+      concatenates with the $12 \times 12$ encoder map, so NMA's U-Net passes `output_padding=1` to add the missing row
+      and column [^2]. Concatenating encoder features into the decoder is the U-Net's skip connection [^2].
+    references:
+      - title: 'PyTorch documentation: torch.nn.ConvTranspose2d'
+        url: https://docs.pytorch.org/docs/stable/generated/torch.nn.ConvTranspose2d.html
+        locator: Shape (output size formula) and the note on output_padding
+      - source: neuromatch-dl
+        locator: W2D4 Tutorial 2, Network architecture (time-dependent U-Net) and Think! 1 (items 2–3)
+        url: https://github.com/NeuromatchAcademy/course-content-dl/blob/caba36c513fb8139ac3c9e7503f7a769dadde25e/tutorials/W2D4_DiffusionGenerativeModels/instructor/W2D4_Tutorial2.ipynb
+    source:
+      id: neuromatch-dl
+      ref: W2D4_DiffusionGenerativeModels/W2D4_Tutorial2#think1-q3
+      url: https://github.com/NeuromatchAcademy/course-content-dl/blob/caba36c513fb8139ac3c9e7503f7a769dadde25e/tutorials/W2D4_DiffusionGenerativeModels/instructor/W2D4_Tutorial2.ipynb
+    status: draft
+  - id: diffusion-010
+    type: single
+    difficulty: medium
+    tags:
+      - denoising-score-matching
+      - training-objective
+      - noise-scale
+    question: |
+      When training a score model with denoising score matching, the time is sampled as
+      `t = torch.rand(B) * (1 - eps) + eps`, i.e. uniformly from $[\epsilon, 1]$ with a small $\epsilon > 0$ such as
+      $10^{-3}$, instead of from $[0, 1]$. Why are the times near 0 left out?
+    options:
+      - text: 'As $t \to 0$, $\sigma_t \to 0$: the target $-\mathbf{z}/\sigma_t$ blows up and the score of almost clean data is too irregular'
+        correct: true
+      - text: At $t = 0$ the forward process has already turned the data into pure noise, so there is nothing left to learn
+        why: 'It is the other way round: at $t = 0$ the data is clean; pure noise is reached at $t = 1$.'
+      - text: Times near 0 would make some examples in a batch share a noise level, which biases the gradient
+        why: Each example draws its own $t$ from a continuous distribution; sharing noise levels is not the issue.
+      - text: The diffusion coefficient $g(t) = \lambda^t$ is undefined at $t = 0$, so the forward process cannot start there
+        why: $g(0) = \lambda^0 = 1$ is well defined; the problem is $\sigma_0 = 0$, not $g$.
+    explanation: |
+      The noise scale $\sigma_t^2 = \int_0^t g^2\,d\tau$ goes to 0 as $t \to 0$ [^1]. The denoising target $-\mathbf{z}/\sigma_t$ then
+      becomes arbitrarily large, and the score of nearly clean data is very sharp around each training point, so NMA
+      truncates the time range at $\epsilon$ for numerical stability and to avoid learning the highly irregular score of
+      a tiny noise scale [^1][^2]. The sampler likewise stops at $t = \epsilon$ rather than 0 [^2].
+    references:
+      - source: neuromatch-dl
+        locator: W2D4 Tutorial 1, Bonus The Math behind Score Matching Objective
+        url: https://github.com/NeuromatchAcademy/course-content-dl/blob/caba36c513fb8139ac3c9e7503f7a769dadde25e/tutorials/W2D4_DiffusionGenerativeModels/instructor/W2D4_Tutorial1.ipynb
+      - source: neuromatch-dl
+        locator: W2D4 Tutorial 2, Coding Exercise 2 Defining the loss function (Tips) and the Euler–Maruyama sampler
+        url: https://github.com/NeuromatchAcademy/course-content-dl/blob/caba36c513fb8139ac3c9e7503f7a769dadde25e/tutorials/W2D4_DiffusionGenerativeModels/instructor/W2D4_Tutorial2.ipynb
+    source:
+      id: neuromatch-dl
+      ref: W2D4_DiffusionGenerativeModels/W2D4_Tutorial2#ex2
+      url: https://github.com/NeuromatchAcademy/course-content-dl/blob/caba36c513fb8139ac3c9e7503f7a769dadde25e/tutorials/W2D4_DiffusionGenerativeModels/instructor/W2D4_Tutorial2.ipynb
+    status: draft
+  - id: diffusion-011
+    type: single
+    difficulty: medium
+    tags:
+      - u-net
+      - time-embedding
+      - score-network
+    question: |
+      In NMA's diffusion U-Net the time $t$ is first embedded as a vector: $\sin$ and $\cos$ of $2\pi\omega_i t$ for fixed
+      random frequencies $\omega_i$, followed by a learned linear layer. How does this embedding reach a convolutional
+      feature map `h` of shape (B, C, H, W) inside a block?
+    options:
+      - text: A linear layer maps it to $C$ numbers per example, which are added at every spatial position of their channel
+        correct: true
+      - text: It is written into the input image as an extra row of pixels before the first convolution
+        why: The embedding is injected in every block as per-channel values, not by editing the image.
+      - text: It is multiplied with the convolution kernels, giving each time step its own set of weights
+        why: The kernels are shared across all $t$; time enters additively through a learned `Dense(embed_dim, C)` output shaped (B, C, 1, 1).
+      - text: It replaces the normalization statistics of each layer with values computed from $t$
+        why: The network uses ordinary GroupNorm layers; time is added before the normalization as a per-channel offset.
+    explanation: |
+      Each block computes `h = conv(h_prev) + t_mod(embed)`, where `t_mod` is a linear layer whose output is reshaped to
+      (B, C, 1, 1), so broadcasting adds the same value at every pixel of a channel [^1]. The embedding itself is
+      $[\sin(2\pi\omega t), \cos(2\pi\omega t)]$ with frequencies drawn once and frozen (`requires_grad=False`), followed by
+      a learned linear layer [^1]. A time-dependent shift per channel lets the same convolution weights behave
+      differently at different noise levels, which a score that depends on $t$ requires [^1].
+    references:
+      - source: neuromatch-dl
+        locator: W2D4 Tutorial 2, Network architecture (time embedding and modulation) and Think! 1 (item 4)
+        url: https://github.com/NeuromatchAcademy/course-content-dl/blob/caba36c513fb8139ac3c9e7503f7a769dadde25e/tutorials/W2D4_DiffusionGenerativeModels/instructor/W2D4_Tutorial2.ipynb
+    source:
+      id: neuromatch-dl
+      ref: W2D4_DiffusionGenerativeModels/W2D4_Tutorial2#think1-q4
+      url: https://github.com/NeuromatchAcademy/course-content-dl/blob/caba36c513fb8139ac3c9e7503f7a769dadde25e/tutorials/W2D4_DiffusionGenerativeModels/instructor/W2D4_Tutorial2.ipynb
+    status: draft
+  - id: diffusion-012
+    type: short_answer
+    difficulty: medium
+    tags:
+      - ddpm
+      - forward-process
+      - noise-schedule
+    question: |
+      A DDPM forward process adds noise with $q(x_t \mid x_{t-1}) = \mathcal{N}(\sqrt{\alpha_t}\,x_{t-1}, \beta_t I)$,
+      where $\alpha_t = 1 - \beta_t$. For a scalar $x_0 = 2$ and the schedule
+      $\beta_1, \beta_2, \beta_3 = 0.1, 0.2, 0.3$, what is the mean of $x_3$ given $x_0$?
+    answer:
+      numeric: 1.42
+      tolerance: 0.002
+      hint: a number, 2 decimals
+      model: $\bar\alpha_3 = 0.9 \cdot 0.8 \cdot 0.7 = 0.504$, mean $\sqrt{0.504} \times 2 \approx 1.42$ (variance $1 - 0.504 = 0.496$)
+    explanation: |
+      Unrolling $x_t = \sqrt{\alpha_t}\,x_{t-1} + \sqrt{\beta_t}\,z_t$ and adding the independent Gaussian
+      noises gives the closed form $q(x_t \mid x_0) = \mathcal{N}(\sqrt{\bar\alpha_t}\,x_0, (1 - \bar\alpha_t) I)$
+      with $\bar\alpha_t = \prod_{s \le t}\alpha_s$ [^1][^2]. Here $\bar\alpha_3 = 0.504$, so the mean is
+      $\sqrt{0.504} \cdot 2 \approx 1.42$ and the variance $0.496$; a simulation with two million samples
+      agrees. The closed form lets training jump to any step $t$ without simulating the steps before it.
+    references:
+      - title: Ho, Jain & Abbeel (2020), Denoising Diffusion Probabilistic Models, arXiv:2006.11239
+        locator: Sec. 2 Background, Eq. (4)
+        url: https://arxiv.org/abs/2006.11239
+      - source: mit-ocw-67960
+        locator: Homework 5 solutions, Problem 7
+        url: https://ocw.mit.edu/courses/6-7960-deep-learning-fall-2024/resources/mit6_7960_f24_hw5_sol_pdf/
+    source:
+      id: mit-ocw-67960
+      ref: mit6_7960_f24_hw5_sol#q7
+      url: https://ocw.mit.edu/courses/6-7960-deep-learning-fall-2024/resources/mit6_7960_f24_hw5_sol_pdf/
+    status: draft
+  - id: diffusion-013
+    type: short_answer
+    difficulty: medium
+    tags:
+      - ddpm
+      - kl-divergence
+      - forward-process
+    question: |
+      After $T$ noising steps, $q(x_T \mid x_0) = \mathcal{N}(\sqrt{\bar\alpha_T}\,x_0, (1 - \bar\alpha_T) I)$.
+      For $d$-dimensional Gaussians,
+      $D_{\mathrm{KL}}\big(\mathcal{N}(a, \Sigma) \,\|\, \mathcal{N}(0, I)\big) = \tfrac12\big(\lVert a \rVert^2 + \operatorname{tr}\Sigma - \log\det\Sigma - d\big)$.
+      For $d = 1$, $x_0 = 1$ and $\bar\alpha_T = 0.1$, what is the KL divergence from
+      $q(x_T \mid x_0)$ to $\mathcal{N}(0, 1)$, in nats?
+    answer:
+      numeric: 0.0527
+      tolerance: 0.001
+      hint: a number, 3 decimals
+      model: $\tfrac12\big(0.1 + 0.9 - \ln 0.9 - 1\big) = \tfrac12 \times 0.105 \approx 0.053$
+    explanation: |
+      Plugging in $a = \sqrt{\bar\alpha_T}\,x_0$ and $\Sigma = (1 - \bar\alpha_T) I$ gives
+      $\tfrac12\big(\bar\alpha_T\lVert x_0 \rVert^2 + d(1 - \bar\alpha_T) - d\log(1 - \bar\alpha_T) - d\big)$ [^1].
+      With the numbers, $\tfrac12(0.1 + 0.9 + 0.1054 - 1) \approx 0.053$ nats. As $T$ grows,
+      $\bar\alpha_T \to 0$ and every term vanishes, so $x_T$ becomes indistinguishable from pure
+      noise [^1]. This is why sampling can start from $\mathcal{N}(0, I)$, and why the prior-matching term
+      $L_T$ of the DDPM loss has no trainable parameters [^2].
+    references:
+      - source: mit-ocw-67960
+        locator: Homework 5 solutions, Problem 8
+        url: https://ocw.mit.edu/courses/6-7960-deep-learning-fall-2024/resources/mit6_7960_f24_hw5_sol_pdf/
+      - title: Ho, Jain & Abbeel (2020), Denoising Diffusion Probabilistic Models, arXiv:2006.11239
+        locator: Sec. 3.1 Forward process and L_T
+        url: https://arxiv.org/abs/2006.11239
+    source:
+      id: mit-ocw-67960
+      ref: mit6_7960_f24_hw5_sol#q8
+      url: https://ocw.mit.edu/courses/6-7960-deep-learning-fall-2024/resources/mit6_7960_f24_hw5_sol_pdf/
+    status: draft
+  - id: diffusion-014
+    type: single
+    difficulty: hard
+    tags:
+      - ddpm
+      - reverse-process
+      - posterior-mean
+      - epsilon-parameterization
+    question: |
+      In DDPM, $x_t = \sqrt{\bar\alpha_t}\,x_0 + \sqrt{1 - \bar\alpha_t}\,\epsilon$ with
+      $\epsilon \sim \mathcal{N}(0, I)$, and the forward-process posterior $q(x_{t-1} \mid x_t, x_0)$ has the mean
+      $\tilde\mu = \frac{\sqrt{\alpha_t}(1 - \bar\alpha_{t-1})}{1 - \bar\alpha_t}x_t + \frac{\sqrt{\bar\alpha_{t-1}}\,\beta_t}{1 - \bar\alpha_t}x_0$.
+      Written in terms of $x_t$ and the noise $\epsilon$ instead of $x_0$, what is $\tilde\mu$?
+    options:
+      - text: $\frac{1}{\sqrt{\alpha_t}}\Big(x_t - \frac{\beta_t}{\sqrt{1 - \bar\alpha_t}}\,\epsilon\Big)$
+        correct: true
+      - text: $\frac{1}{\sqrt{\bar\alpha_t}}\Big(x_t - \sqrt{1 - \bar\alpha_t}\,\epsilon\Big)$
+        why: That is $x_0$ itself, solved from $x_t = \sqrt{\bar\alpha_t}\,x_0 + \sqrt{1 - \bar\alpha_t}\,\epsilon$, not the mean of the one-step-back $x_{t-1}$.
+      - text: $\frac{1}{\sqrt{\alpha_t}}\Big(x_t - \sqrt{\beta_t}\,\epsilon\Big)$
+        why: This would undo one step if $\epsilon$ were the noise of that single step; here $\epsilon$ is the total noise added since $x_0$.
+      - text: $\sqrt{\alpha_t}\,x_t - \frac{\beta_t}{\sqrt{1 - \bar\alpha_t}}\,\epsilon$
+        why: Going backwards divides by $\sqrt{\alpha_t}$ instead of multiplying, since the forward step shrank $x_{t-1}$ by $\sqrt{\alpha_t}$.
+    explanation: |
+      Solve the noising equation for $x_0 = (x_t - \sqrt{1 - \bar\alpha_t}\,\epsilon)/\sqrt{\bar\alpha_t}$ and
+      substitute it into $\tilde\mu$; the $x_t$ terms combine to $x_t/\sqrt{\alpha_t}$ and the noise term
+      to $-\beta_t\,\epsilon / (\sqrt{\alpha_t}\sqrt{1 - \bar\alpha_t})$ [^1][^2]. DDPM therefore lets the
+      network predict $\epsilon$ and plugs its guess into this formula to get the mean of the next,
+      less noisy sample [^2]. A numerical check with $\beta = (0.1, 0.2, 0.3)$ gives the same value
+      for both forms.
+    references:
+      - source: mit-ocw-67960
+        locator: Homework 5 solutions, Problem 9
+        url: https://ocw.mit.edu/courses/6-7960-deep-learning-fall-2024/resources/mit6_7960_f24_hw5_sol_pdf/
+      - title: Ho, Jain & Abbeel (2020), Denoising Diffusion Probabilistic Models, arXiv:2006.11239
+        locator: Sec. 2 Background, Eqs. (6)–(7); Sec. 3.2 Reverse process and L_{1:T-1}, Eq. (11)
+        url: https://arxiv.org/abs/2006.11239
+    source:
+      id: mit-ocw-67960
+      ref: mit6_7960_f24_hw5_sol#q9a
+      url: https://ocw.mit.edu/courses/6-7960-deep-learning-fall-2024/resources/mit6_7960_f24_hw5_sol_pdf/
+    status: draft
+  - id: diffusion-015
+    type: short_answer
+    difficulty: hard
+    tags:
+      - ddpm
+      - posterior-variance
+      - gaussian-conditioning
+    question: |
+      A scalar diffusion has two steps: $x_1 = \sqrt{0.9}\,x_0 + \sqrt{0.1}\,z_1$ and
+      $x_2 = \sqrt{0.8}\,x_1 + \sqrt{0.2}\,z_2$, with independent $z_1, z_2 \sim \mathcal{N}(0, 1)$
+      (so $\beta_1 = 0.1$, $\beta_2 = 0.2$). What is the variance of $x_1$ given both $x_2$ and $x_0$?
+    answer:
+      numeric: 0.0714
+      tolerance: 0.001
+      hint: a number, 3 decimals
+      model: $\tilde\beta_2 = \frac{1 - \bar\alpha_1}{1 - \bar\alpha_2}\beta_2 = \frac{0.1}{0.28} \times 0.2 = \frac{1}{14} \approx 0.0714$
+    explanation: |
+      DDPM's posterior variance is $\tilde\beta_t = \frac{1 - \bar\alpha_{t-1}}{1 - \bar\alpha_t}\beta_t$ [^1];
+      with $\bar\alpha_1 = 0.9$ and $\bar\alpha_2 = 0.72$ that is $\frac{0.1}{0.28} \cdot 0.2 = 1/14$.
+      The same number comes from combining two Gaussian clues about $x_1$: given $x_0$ it has variance
+      0.1, and $x_2$ measures $\sqrt{0.8}\,x_1$ with noise variance 0.2, so the precisions add,
+      $1/0.1 + 0.8/0.2 = 14$ [^2]. The posterior is narrower than either clue alone, and it is the
+      target variance the reverse process tries to match.
+    references:
+      - title: Ho, Jain & Abbeel (2020), Denoising Diffusion Probabilistic Models, arXiv:2006.11239
+        locator: Sec. 2 Background, Eqs. (6)–(7)
+        url: https://arxiv.org/abs/2006.11239
+      - source: mit-ocw-67960
+        locator: Homework 5 solutions, Problem 9 (Eqs. 4–5 of the handout)
+        url: https://ocw.mit.edu/courses/6-7960-deep-learning-fall-2024/resources/mit6_7960_f24_hw5_sol_pdf/
+    source:
+      id: mit-ocw-67960
+      ref: mit6_7960_f24_hw5_sol#q9b
+      url: https://ocw.mit.edu/courses/6-7960-deep-learning-fall-2024/resources/mit6_7960_f24_hw5_sol_pdf/
+    status: draft
+  - id: diffusion-016
+    type: single
+    difficulty: medium
+    tags:
+      - ddpm
+      - training-objective
+      - epsilon-prediction
+    question: |
+      DDPM trains a network $\epsilon_\theta(x_t, t)$ with the simplified loss
+      $\lVert \epsilon - \epsilon_\theta(x_t, t) \rVert_2^2$. What is the network asked to output?
+    options:
+      - text: The noise $\epsilon$ that was added to $x_0$ to make $x_t$
+        correct: true
+      - text: The clean image $x_0$, from which $\epsilon$ is computed afterwards
+        why: Predicting $x_0$ is a possible alternative parameterization, but this loss compares the output directly with the noise.
+      - text: A fresh sample of $x_{t-1}$ drawn from the forward process
+        why: The network outputs a deterministic prediction; randomness enters the reverse step through added noise, not through the network's target.
+      - text: The variance $\beta_t$ of the forward step at time $t$
+        why: The $\beta_t$ form a fixed schedule; they are not learned or predicted.
+    explanation: |
+      Training picks $x_0$, a step $t$ and noise $\epsilon$, forms $x_t = \sqrt{\bar\alpha_t}\,x_0 + \sqrt{1 - \bar\alpha_t}\,\epsilon$,
+      and regresses $\epsilon$ from $(x_t, t)$ [^1]. With the reverse variances fixed to
+      $\tilde\beta_t$, the KL term between the true and the model posterior is a positive weight times
+      $\lVert \epsilon - \epsilon_\theta \rVert^2$ plus a constant, so both have the same minimizer [^2].
+      The weightless version is the "simple" loss that worked best in practice [^1].
+    references:
+      - title: Ho, Jain & Abbeel (2020), Denoising Diffusion Probabilistic Models, arXiv:2006.11239
+        locator: Sec. 3.2 Reverse process and L_{1:T-1}, Eqs. (11)–(12); Eq. (14); Algorithm 1
+        url: https://arxiv.org/abs/2006.11239
+      - source: mit-ocw-67960
+        locator: Homework 5 solutions, Problems 10–11
+        url: https://ocw.mit.edu/courses/6-7960-deep-learning-fall-2024/resources/mit6_7960_f24_hw5_sol_pdf/
+    source:
+      id: mit-ocw-67960
+      ref: mit6_7960_f24_hw5_sol#q11
+      url: https://ocw.mit.edu/courses/6-7960-deep-learning-fall-2024/resources/mit6_7960_f24_hw5_sol_pdf/
+    status: draft
+  - id: diffusion-017
+    type: multiple
+    difficulty: medium
+    tags:
+      - ddpm
+      - vae
+      - latent-variable-models
+      - sampling
+    question: |
+      A diffusion model can be compared with a VAE: the noising process plays the encoder, $x_T$ the
+      latent and the learned denoiser the decoder. Which statements about this comparison are true?
+      Select all that apply.
+    options:
+      - text: The diffusion "encoder" has no learned parameters
+        correct: true
+      - text: The diffusion latent $x_T$ has the same dimension as the data
+        correct: true
+      - text: Generating one sample takes one denoiser evaluation per step, run in sequence from $t = T$ down to 1
+        correct: true
+      - text: Like a VAE encoder, the noising process is trained to make $x_T$ Gaussian
+        why: The noise schedule $\beta_t$ is fixed, and $x_T$ is close to Gaussian because of it, not because of training [^1].
+      - text: The decoder maps $x_T$ to $x_0$ in a single network evaluation, like a VAE decoder
+        why: The reverse process removes noise one step at a time, so it needs $T$ evaluations [^2].
+    explanation: |
+      In a VAE both encoder and decoder are learned and the latent is usually much smaller than the
+      input [^3]. In DDPM the encoder is the fixed chain $\prod_t q(x_t \mid x_{t-1})$ and only the
+      reverse chain $\prod_t p_\theta(x_{t-1} \mid x_t)$ is learned [^1]. The latent keeps the data's
+      shape, and sampling runs the learned reverse step $T$ times, which is why diffusion sampling is
+      slow compared with a VAE's single decoder pass [^2].
+    references:
+      - source: mit-ocw-67960
+        locator: Homework 5 solutions, Problems 13–14
+        url: https://ocw.mit.edu/courses/6-7960-deep-learning-fall-2024/resources/mit6_7960_f24_hw5_sol_pdf/
+      - title: Ho, Jain & Abbeel (2020), Denoising Diffusion Probabilistic Models, arXiv:2006.11239
+        locator: Sec. 2 Background; Algorithm 2 (Sampling)
+        url: https://arxiv.org/abs/2006.11239
+      - title: Kingma & Welling (2019), An Introduction to Variational Autoencoders, arXiv:1906.02691
+        locator: Sec. 2 Variational Autoencoders
+        url: https://arxiv.org/abs/1906.02691
+    source:
+      id: mit-ocw-67960
+      ref: mit6_7960_f24_hw5_sol#q14
+      url: https://ocw.mit.edu/courses/6-7960-deep-learning-fall-2024/resources/mit6_7960_f24_hw5_sol_pdf/
+    status: draft
+  - id: diffusion-018
+    type: single
+    difficulty: easy
+    tags:
+      - forward-process
+      - noise-schedule
+      - ddpm
+    question: |
+      A DDPM corrupts an image $x_0$ over $T$ steps with a forward process $q(x_t \mid x_{t-1})$ and a
+      variance schedule $\beta_1, \dots, \beta_T$. With $z_t \sim \mathcal{N}(0, I)$, which description of one
+      forward step is correct?
+    options:
+      - text: $x_t = \sqrt{1-\beta_t}\,x_{t-1} + \beta_t z_t$, so $\beta_t$ is the standard deviation of the added noise
+        why: In $q(x_t \mid x_{t-1}) = \mathcal{N}(x_t; \sqrt{1-\beta_t}\,x_{t-1}, \beta_t I)$, $\beta_t$ is the variance, so the noise standard deviation is $\sqrt{\beta_t}$ [^1].
+      - text: $x_t = x_{t-1} + \sqrt{\beta_t}\,z_t$, so the variance of $x_t$ keeps growing with $t$
+        why: Without the factor $\sqrt{1-\beta_t}$ the variance grows at every step. DDPM shrinks $x_{t-1}$ first, so a unit-variance input stays at unit variance [^2].
+      - text: A network predicts the noise to add at step $t$ and is trained jointly with the reverse process
+        why: The forward process is fixed. DDPM even fixes the $\beta_t$ to constants, so $q$ has no learnable parameters; only the reverse process is learned [^1].
+      - text: $x_t = \sqrt{1-\beta_t}\,x_{t-1} + \sqrt{\beta_t}\,z_t$, and the step has no trainable parameters
+        correct: true
+    explanation: |
+      The forward step is $q(x_t \mid x_{t-1}) = \mathcal{N}(x_t; \sqrt{1-\beta_t}\,x_{t-1}, \beta_t I)$
+      [^1], that is $x_t = \sqrt{1-\beta_t}\,x_{t-1} + \sqrt{\beta_t}\,z_t$. Shrinking $x_{t-1}$ by
+      $\sqrt{1-\beta_t}$ before adding noise of variance $\beta_t$ keeps the variance at $I$ when
+      $x_{t-1}$ has unit variance, since $(1-\beta_t) + \beta_t = 1$ [^2]. DDPM fixes the $\beta_t$ to
+      constants, so the forward process has no learnable parameters and only the reverse process
+      $p_\theta$ is trained [^1].
+    references:
+      - title: Ho, Jain & Abbeel (2020), Denoising Diffusion Probabilistic Models
+        url: https://arxiv.org/abs/2006.11239
+        locator: Sec. 2 Background, Eq. (2); Sec. 3.1 Forward process and L_T
+      - title: 'Wikipedia: Diffusion model'
+        url: https://en.wikipedia.org/wiki/Diffusion_model#Forward_diffusion
+        locator: Section "Denoising diffusion model", subsection "Forward diffusion"
+    source:
+      id: original
+      ref: diffusion-018
+    status: draft
+  - id: diffusion-019
+    type: short_answer
+    difficulty: medium
+    tags:
+      - closed-form
+      - code-reading
+      - pytorch
+    question: |
+      The DDPM forward process has the closed form
+      $q(x_t \mid x_0) = \mathcal{N}(\sqrt{\bar\alpha_t}\,x_0, (1-\bar\alpha_t) I)$ with
+      $\bar\alpha_t = \prod_{s=1}^{t}(1-\beta_s)$. A toy schedule has $T = 4$ steps. What value does
+      `xt` hold at the end?
+
+      ```python
+      import torch
+
+      betas = torch.tensor([0.05, 0.1, 0.2, 0.3])   # beta_1 .. beta_4
+      alphas_bar = torch.cumprod(1 - betas, dim=0)
+      x0, eps = 1.5, -1.0
+      t = 2                                         # a Python index into the tensors
+      xt = alphas_bar[t].sqrt() * x0 + (1 - alphas_bar[t]).sqrt() * eps
+      ```
+    answer:
+      numeric: 0.6784
+      tolerance: 0.005
+      hint: a number, 2 decimals
+      model: '`alphas_bar[2]` $= 0.95 \cdot 0.9 \cdot 0.8 = 0.684$, so $\sqrt{0.684} \cdot 1.5 + \sqrt{0.316} \cdot (-1) \approx 1.241 - 0.562 = 0.68$'
+    explanation: |
+      `torch.cumprod` returns the running products [^2], here $\bar\alpha_1, \dots, \bar\alpha_4 = 0.95,
+      0.855, 0.684, 0.4788$, and index `2` is the third one, $\bar\alpha_3 = 0.684$. The closed form
+      jumps from $x_0$ to $x_t$ in one step, $x_t = \sqrt{\bar\alpha_t}\,x_0 + \sqrt{1-\bar\alpha_t}\,
+      \epsilon$, without simulating $x_1$ and $x_2$ [^1]. So $x_3 = \sqrt{0.684} \cdot 1.5 - \sqrt{0.316}
+      \approx 1.241 - 0.562 = 0.678$. DDPM training (Algorithm 1) uses exactly this to noise each
+      example at a random $t$ [^1].
+    references:
+      - title: Ho, Jain & Abbeel (2020), Denoising Diffusion Probabilistic Models
+        url: https://arxiv.org/abs/2006.11239
+        locator: Sec. 2 Background, Eq. (4); Sec. 3.4 Simplified training objective, Algorithm 1
+      - title: 'PyTorch documentation: torch.cumprod'
+        url: https://docs.pytorch.org/docs/stable/generated/torch.cumprod.html
+        locator: torch.cumprod (y_i = x_1 × x_2 × … × x_i)
+    source:
+      id: original
+      ref: diffusion-019
+    status: draft
+  - id: diffusion-020
+    type: short_answer
+    difficulty: medium
+    tags:
+      - epsilon-prediction
+      - closed-form
+      - ddim
+    question: |
+      A trained DDPM noise predictor sees the noisy value $x_t = 1.0$ at a step with
+      $\bar\alpha_t = 0.64$ and predicts $\epsilon_\theta(x_t, t) = 1.5$. Using
+      $x_t = \sqrt{\bar\alpha_t}\,x_0 + \sqrt{1-\bar\alpha_t}\,\epsilon$, what is the model's estimate
+      $\hat{x}_0$ of the clean value?
+    answer:
+      numeric: 0.125
+      tolerance: 0.001
+      hint: a number, 3 decimals
+      model: $\hat{x}_0 = (x_t - \sqrt{1-\bar\alpha_t}\,\epsilon_\theta)/\sqrt{\bar\alpha_t} = (1.0 - 0.6 \cdot 1.5)/0.8 = 0.125$
+    explanation: |
+      Predicting the noise is equivalent to predicting the clean data: solving the closed form for
+      $x_0$ gives $\hat{x}_0 = (x_t - \sqrt{1-\bar\alpha_t}\,\epsilon_\theta(x_t, t))/\sqrt{\bar\alpha_t}$
+      [^1][^2]. With $\sqrt{0.64} = 0.8$ and $\sqrt{0.36} = 0.6$, $\hat{x}_0 = (1.0 - 0.9)/0.8 = 0.125$.
+      DDIM's update is built on this "predicted $x_0$": it rescales $\hat{x}_0$ to the next noise level
+      and adds back the predicted noise direction [^2].
+    references:
+      - title: 'Wikipedia: Diffusion model'
+        url: https://en.wikipedia.org/wiki/Diffusion_model#Noise_prediction_network
+        locator: Section "Denoising diffusion model", subsections "Noise prediction network" and "Backward diffusion process"
+      - title: Song, Meng & Ermon (2020), Denoising Diffusion Implicit Models
+        url: https://arxiv.org/abs/2010.02502
+        locator: Sec. 3.2 Generative process and unified variational inference objective, Eq. (9); Sec. 4.1 Denoising Diffusion Implicit Models, Eq. (12)
+    source:
+      id: original
+      ref: diffusion-020
+    status: draft
+  - id: diffusion-021
+    type: single
+    difficulty: hard
+    tags:
+      - noise-schedule
+      - linear-schedule
+      - closed-form
+    question: |
+      DDPM uses $T = 1000$ steps with $\beta_t$ increasing linearly from $\beta_1 = 10^{-4}$ to
+      $\beta_T = 0.02$. In $x_T = \sqrt{\bar\alpha_T}\,x_0 + \sqrt{1-\bar\alpha_T}\,\epsilon$, roughly how
+      large is the signal coefficient $\sqrt{\bar\alpha_T}$? Hint:
+      $\ln \bar\alpha_T = \sum_t \ln(1-\beta_t) \approx -\sum_t \beta_t$.
+    options:
+      - text: 'About $0.14$: the noise level of the last step, $\sqrt{\beta_T}$, sets the signal left'
+        why: $\sqrt{\beta_T}$ is the noise of a single step. The signal left after $T$ steps is a product over all of them [^2].
+      - text: 'About $0.006$: $x_T$ is almost pure noise, with only a faint trace of $x_0$'
+        correct: true
+      - text: 'About $0.95$: each step removes so little signal that most of $x_0$ survives'
+        why: $\sqrt{(1-10^{-4})^{1000}} \approx 0.95$ would hold only if every $\beta_t$ were the smallest one. The schedule grows to $0.02$, and the $\beta_t$ add up to about $10$ [^1].
+      - text: 'Exactly $0$: after $T$ steps no information at all about $x_0$ is left'
+        why: $\bar\alpha_T$ is a product of positive factors, so it is tiny but not zero; DDPM reports $L_T \approx 10^{-5}$ bits per dimension, small but not zero [^1].
+    explanation: |
+      With a linear schedule $\sum_t \beta_t = 1000 \cdot (10^{-4} + 0.02)/2 \approx 10.05$, so
+      $\bar\alpha_T \approx e^{-10.05} \approx 4 \times 10^{-5}$ and $\sqrt{\bar\alpha_T} \approx 0.006$
+      (the exact product gives $0.0064$). DDPM chose the schedule to keep the signal-to-noise ratio at
+      $x_T$ as small as possible, so that $q(x_T \mid x_0)$ is close to the prior $\mathcal{N}(0, I)$
+      and $L_T \approx 10^{-5}$ bits per dimension [^1]. The closed form
+      $q(x_t \mid x_0) = \mathcal{N}(\sqrt{\bar\alpha_t}\,x_0, (1-\bar\alpha_t) I)$ is what makes this
+      one-line estimate possible [^2].
+    references:
+      - title: Ho, Jain & Abbeel (2020), Denoising Diffusion Probabilistic Models
+        url: https://arxiv.org/abs/2006.11239
+        locator: Sec. 4 Experiments, first paragraph (T = 1000, β_t linear from 10⁻⁴ to 0.02, L_T ≈ 10⁻⁵ bits/dim)
+      - title: Ho, Jain & Abbeel (2020), Denoising Diffusion Probabilistic Models
+        url: https://arxiv.org/abs/2006.11239
+        locator: Sec. 2 Background, Eq. (4)
+    source:
+      id: original
+      ref: diffusion-021
+    status: draft
+  - id: diffusion-022
+    type: single
+    difficulty: medium
+    tags:
+      - noise-schedule
+      - cosine-schedule
+    question: |
+      Nichol and Dhariwal replaced DDPM's linear $\beta_t$ schedule with a cosine schedule,
+      $\bar\alpha_t = f(t)/f(0)$ with $f(t) = \cos^2\!\big(\frac{t/T + s}{1+s} \cdot \frac{\pi}{2}\big)$.
+      Which weakness of the linear schedule does this address?
+    options:
+      - text: It removes too little signal near $t = 0$, so the cosine schedule makes $\bar\alpha_t$ fall fastest there
+        why: The cosine schedule is designed to change very little near $t = 0$ and $t = T$, with a roughly linear drop of $\bar\alpha_t$ in the middle [^1].
+      - text: At $64 \times 64$ and $32 \times 32$, the end of its forward process is too noisy to help sample quality
+        correct: true
+      - text: It never brings $\bar\alpha_T$ close to zero, so $x_T$ still shows a visible trace of the image
+        why: The linear schedule ends at $\bar\alpha_T \approx 4 \times 10^{-5}$. Its problem is the opposite one, that the image is destroyed too early [^1][^2].
+      - text: Its $\beta_t$ exceed 1 near $t = T$, which makes the forward process undefined there
+        why: The linear $\beta_t$ only reach $0.02$. It is the cosine schedule whose $\beta_t$ has to be clipped at $0.999$ near $t = T$ [^1].
+    explanation: |
+      The linear schedule works for high-resolution images but is sub-optimal at $64 \times 64$ and
+      $32 \times 32$: the end of the forward process is too noisy to contribute much, and a model
+      trained with it barely gets worse (in FID) when up to 20% of the reverse process is skipped
+      [^1]. The cosine schedule makes $\bar\alpha_t$ drop roughly linearly in the middle and change
+      little near both ends, so information is destroyed more gradually [^1]. A small offset
+      $s = 0.008$ keeps $\beta_t$ from being too tiny near $t = 0$, and $\beta_t$ is clipped at $0.999$
+      [^1]. For $T = 1000$, $\sqrt{\bar\alpha_t}$ at $t = 500$ is about $0.28$ under DDPM's linear
+      schedule [^2] but about $0.70$ under the cosine one.
+    references:
+      - title: Nichol & Dhariwal (2021), Improved Denoising Diffusion Probabilistic Models
+        url: https://arxiv.org/abs/2102.09672
+        locator: Sec. 3.2 Improving the Noise Schedule, Eq. (17)
+      - title: Ho, Jain & Abbeel (2020), Denoising Diffusion Probabilistic Models
+        url: https://arxiv.org/abs/2006.11239
+        locator: Sec. 4 Experiments (linear schedule, β_1 = 10⁻⁴ to β_T = 0.02, T = 1000)
+    source:
+      id: original
+      ref: diffusion-022
+    status: draft
+  - id: diffusion-023
+    type: multiple
+    difficulty: hard
+    tags:
+      - training-objective
+      - epsilon-prediction
+      - score-matching
+    question: |
+      DDPM trains its noise predictor with
+      $L_{\text{simple}}(\theta) = \mathbb{E}_{t, x_0, \epsilon}\big[\lVert \epsilon - \epsilon_\theta(\sqrt{\bar\alpha_t}\,x_0 + \sqrt{1-\bar\alpha_t}\,\epsilon,\ t) \rVert^2\big]$.
+      Which statements about this objective are true? Select all that apply.
+    options:
+      - text: At the optimum, $\epsilon_\theta(x_t, t) = -\sqrt{1-\bar\alpha_t}\,\nabla_{x_t} \ln q(x_t)$
+        correct: true
+      - text: It drops the per-step weights of the variational bound, which down-weights the small-$t$ terms
+        correct: true
+      - text: For each example, $t \sim \text{Uniform}\{1, \dots, T\}$ and $\epsilon \sim \mathcal{N}(0, I)$
+        correct: true
+      - text: To build $x_t$, the forward chain has to be simulated step by step from $x_0$ up to $x_{t-1}$ first
+        why: The closed form $q(x_t \mid x_0)$ gives $x_t$ from $x_0$ and $\epsilon$ in one step; Algorithm 1 does exactly this [^1].
+      - text: The noise schedule $\beta_t$ is learned jointly with $\theta$ by backpropagating through this loss
+        why: DDPM fixes the $\beta_t$ to constants, so the forward process has no learnable parameters [^1].
+    explanation: |
+      Algorithm 1 samples $x_0$, a uniform $t$ and Gaussian $\epsilon$, forms $x_t$ in closed form and
+      takes a gradient step on $\lVert \epsilon - \epsilon_\theta(x_t, t) \rVert^2$ [^1].
+      $L_{\text{simple}}$ (Eq. 14) is the bound of Eq. (12) without its weights, which down-weights the
+      small-$t$ terms (very little noise) so the network focuses on the harder denoising at larger
+      $t$ [^1]. Ho et al. note that the objective resembles denoising score matching over many noise
+      scales [^1]; at the optimum the noise prediction equals the score of $q(x_t)$ scaled by
+      $-\sqrt{1-\bar\alpha_t}$ [^2].
+    references:
+      - title: Ho, Jain & Abbeel (2020), Denoising Diffusion Probabilistic Models
+        url: https://arxiv.org/abs/2006.11239
+        locator: Sec. 3.2 Reverse process and L_{1:T−1}, Eq. (12); Sec. 3.4 Simplified training objective, Eq. (14) and Algorithm 1
+      - title: 'Wikipedia: Diffusion model'
+        url: https://en.wikipedia.org/wiki/Diffusion_model#Their_equivalence
+        locator: Section "Score-based generative model", subsection "Their equivalence"
+    source:
+      id: original
+      ref: diffusion-023
+    status: draft
+  - id: diffusion-024
+    type: single
+    difficulty: medium
+    tags:
+      - ddim
+      - sampling
+      - ddpm
+    question: |
+      A noise predictor $\epsilon_\theta$ was trained with the standard DDPM objective for $T = 1000$
+      steps. Which statement about sampling from it with DDIM at $\eta = 0$ (all $\sigma_t = 0$) is
+      correct?
+    options:
+      - text: It must first retrain $\epsilon_\theta$ with a non-Markovian objective before it can skip steps
+        why: DDIM's non-Markovian processes lead to the same training objective as DDPM (Theorem 1), so a pretrained DDPM model can be used as is [^1].
+      - text: Like DDPM's Algorithm 2 it adds fresh noise $\sigma_t z$ at every step, only over fewer steps
+        why: Fresh noise with DDPM's variance is the $\eta = 1$ case. At $\eta = 0$ the noise coefficient is zero, so the sampler is deterministic [^1][^2].
+      - text: It reuses $\epsilon_\theta$ as is, can skip steps, and maps each $x_T$ to one fixed $x_0$
+        correct: true
+      - text: It only matches DDPM quality with all 1000 steps; with 10 to 50 steps DDPM sampling wins
+        why: It is the other way round. With 10 to 50 steps DDIM ($\eta = 0$) reaches a much lower FID than DDPM on CIFAR10 [^1].
+    explanation: |
+      DDIM generalises DDPM to non-Markovian forward processes that lead to the same training
+      objective, so a model trained for DDPM can be sampled directly [^1]. Its update (Eq. 12) adds a
+      "predicted $x_0$", a "direction pointing to $x_t$" and noise $\sigma_t \epsilon_t$; with
+      $\sigma_t = 0$ the noise term vanishes and the model becomes an implicit, deterministic map from
+      $x_T$ to $x_0$ [^1]. Because it can run on an increasing subsequence $\tau$ of $[1, \dots, T]$, it
+      samples 10× to 50× faster than DDPM, whose Algorithm 2 adds new noise at each of the $T$ steps
+      [^1][^2].
+    references:
+      - title: Song, Meng & Ermon (2020), Denoising Diffusion Implicit Models
+        url: https://arxiv.org/abs/2010.02502
+        locator: Sec. 3.2 (Theorem 1); Sec. 4.1 Denoising Diffusion Implicit Models, Eq. (12); Sec. 4.2 Accelerated generation processes; Sec. 5.1, Table 1
+      - title: Ho, Jain & Abbeel (2020), Denoising Diffusion Probabilistic Models
+        url: https://arxiv.org/abs/2006.11239
+        locator: Sec. 3.2 Reverse process and L_{1:T−1}, Algorithm 2 (Sampling)
+    source:
+      id: original
+      ref: diffusion-024
+    status: draft
+  - id: diffusion-025
+    type: short_answer
+    difficulty: medium
+    tags:
+      - classifier-free-guidance
+      - guidance
+    question: |
+      Classifier-free guidance combines the conditional and unconditional noise predictions of one
+      network as $\tilde\epsilon = (1+w)\,\epsilon_\theta(z, c) - w\,\epsilon_\theta(z)$. At one pixel,
+      $\epsilon_\theta(z, c) = 0.6$ and $\epsilon_\theta(z) = 0.2$. What is $\tilde\epsilon$ for the
+      guidance strength $w = 3$?
+    answer:
+      numeric: 1.8
+      tolerance: 0.001
+      hint: a number, 1 decimal
+      model: $(1+3) \cdot 0.6 - 3 \cdot 0.2 = 2.4 - 0.6 = 1.8$
+    explanation: |
+      Eq. (6) of the classifier-free guidance paper extrapolates past the conditional prediction, away
+      from the unconditional one: $\tilde\epsilon = \epsilon_\theta(z) + (1+w)(\epsilon_\theta(z, c) -
+      \epsilon_\theta(z))$ [^1]. Here $4 \cdot 0.6 - 3 \cdot 0.2 = 1.8$, much further from $0.2$ than the
+      conditional $0.6$. Larger $w$ trades diversity for fidelity: the best FID came from a little
+      guidance and the best Inception Score from strong guidance ($w \geq 4$) [^2]. The same rule can
+      also be written with a guidance scale $\gamma = 1 + w$, as
+      $\epsilon_{\text{uncond}} + \gamma(\epsilon_{\text{cond}} - \epsilon_{\text{uncond}})$ [^3].
+    references:
+      - title: Ho & Salimans (2022), Classifier-Free Diffusion Guidance
+        url: https://arxiv.org/abs/2207.12598
+        locator: Sec. 3.2 Classifier-free guidance, Eq. (6) and Algorithm 2
+      - title: Ho & Salimans (2022), Classifier-Free Diffusion Guidance
+        url: https://arxiv.org/abs/2207.12598
+        locator: Sec. 4.1 Varying the classifier-free guidance strength
+      - title: 'Wikipedia: Diffusion model'
+        url: https://en.wikipedia.org/wiki/Diffusion_model#Classifier-free_guidance_(CFG)
+        locator: Section "Main variants", subsection "Classifier-free guidance (CFG)"
+    source:
+      id: original
+      ref: diffusion-025
+    status: draft
+  - id: diffusion-026
+    type: true_false
+    difficulty: medium
+    tags:
+      - classifier-free-guidance
+      - guidance
+    shuffle: false
+    question: |
+      Classifier-free guidance samples with
+      $\tilde\epsilon = (1+w)\,\epsilon_\theta(z, c) - w\,\epsilon_\theta(z)$. True or false: setting the
+      guidance strength to $w = 0$ turns the sampler into an unconditional model that ignores $c$.
+    options:
+      - text: 'True'
+        why: With $w = 0$ the formula gives $\tilde\epsilon = \epsilon_\theta(z, c)$, the plain conditional model without guidance; the paper's tables list $w = 0$ as the non-guided model [^1]. The unconditional model would be $w = -1$.
+      - text: 'False'
+        correct: true
+    explanation: |
+      Plugging in $w = 0$ removes the unconditional term and leaves $\tilde\epsilon = \epsilon_\theta(z, c)$:
+      ordinary conditional sampling without guidance [^1]. Guidance starts at $w > 0$, which pushes the
+      prediction away from the unconditional one; the paper motivates this with the gradient of an
+      implicit classifier $p^i(c \mid z) \propto p(z \mid c)/p(z)$ [^1]. A fully unconditional sampler corresponds to
+      $w = -1$, which gives $\tilde\epsilon = \epsilon_\theta(z)$. In the equivalent form
+      $\epsilon_{\text{uncond}} + \gamma(\epsilon_{\text{cond}} - \epsilon_{\text{uncond}})$, $\gamma = 1$
+      is unguided and $\gamma = 0$ is unconditional [^2].
+    references:
+      - title: Ho & Salimans (2022), Classifier-Free Diffusion Guidance
+        url: https://arxiv.org/abs/2207.12598
+        locator: Sec. 3.2 Classifier-free guidance, Eq. (6); Table 1 caption (w = 0.0 is the non-guided model)
+      - title: 'Wikipedia: Diffusion model'
+        url: https://en.wikipedia.org/wiki/Diffusion_model#Classifier-free_guidance_(CFG)
+        locator: Section "Main variants", subsection "Classifier-free guidance (CFG)"
+    source:
+      id: original
+      ref: diffusion-026
+    status: draft
+  - id: diffusion-027
+    type: single
+    difficulty: medium
+    tags:
+      - classifier-free-guidance
+      - conditioning-dropout
+    question: |
+      Classifier-free guidance needs a conditional noise prediction $\epsilon_\theta(z, c)$ and an
+      unconditional one $\epsilon_\theta(z)$ at every sampling step. How does the original method obtain
+      the unconditional prediction?
+    options:
+      - text: The trained conditional model is reused with a randomly chosen class label in place of $c$
+        why: A random label only yields a sample of that random class. CFG trains the unconditional case explicitly, by dropping the label during training [^1].
+      - text: A classifier is trained on noisy images, and its gradient is subtracted from $\epsilon_\theta(z, c)$
+        why: That is classifier guidance, the method this paper sets out to replace; classifier-free guidance uses no classifier at all [^2].
+      - text: The conditional predictions for all classes are averaged at sampling time to form $\epsilon_\theta(z)$
+        why: That would cost one network call per class at every step. The method gets $\epsilon_\theta(z)$ from the same network by feeding the null token $c = \varnothing$ [^1].
+      - text: One network does both; in training the label is sometimes replaced by a null token
+        correct: true
+    explanation: |
+      Classifier-free guidance trains a single network for both tasks: in Algorithm 1 the conditioning
+      is discarded with probability $p_{\text{uncond}}$ and replaced by a null token $\varnothing$, so
+      $\epsilon_\theta(z) = \epsilon_\theta(z, c = \varnothing)$ [^1]. At sampling time the two
+      predictions are combined as $(1+w)\,\epsilon_\theta(z, c) - w\,\epsilon_\theta(z)$, so no
+      classifier trained on noisy data is needed [^1][^2]. The paper tried
+      $p_{\text{uncond}} \in \{0.1, 0.2, 0.5\}$: 0.1 and 0.2 worked about equally well and 0.5 was
+      worse, so only a small share of training goes to the unconditional task [^3].
+    references:
+      - title: Ho & Salimans (2022), Classifier-Free Diffusion Guidance
+        url: https://arxiv.org/abs/2207.12598
+        locator: Sec. 3.2 Classifier-free guidance, Algorithms 1 and 2
+      - title: Ho & Salimans (2022), Classifier-Free Diffusion Guidance
+        url: https://arxiv.org/abs/2207.12598
+        locator: Sec. 1 Introduction and Sec. 3.1 Classifier guidance
+      - title: Ho & Salimans (2022), Classifier-Free Diffusion Guidance
+        url: https://arxiv.org/abs/2207.12598
+        locator: Sec. 4.2 Varying the unconditional training probability
+    source:
+      id: original
+      ref: diffusion-027
+    status: draft
+  - id: diffusion-028
+    type: short_answer
+    difficulty: easy
+    tags:
+      - latent-diffusion
+      - autoencoder
+      - compression
+    question: |
+      A latent diffusion model encodes a $512 \times 512$ RGB image with an autoencoder of downsampling
+      factor $f = 8$ and $c = 4$ latent channels, and runs the whole diffusion process on the latent.
+      By what factor is the number of values the diffusion model works on smaller than the number of
+      pixel values?
+    answer:
+      numeric: 48
+      tolerance: 0
+      hint: a whole number
+      model: $\frac{512 \cdot 512 \cdot 3}{64 \cdot 64 \cdot 4} = \frac{786432}{16384} = 48$
+    explanation: |
+      The encoder maps $x \in \mathbb{R}^{H \times W \times 3}$ to $z \in \mathbb{R}^{h \times w \times c}$
+      with $f = H/h = W/w$ [^1], so here $z$ has $64 \cdot 64 \cdot 4 = 16{,}384$ values instead of
+      $786{,}432$, a factor of $48$. An $f = 8$, $c = 4$ autoencoder is one of those trained in the paper
+      [^2]. The denoising U-Net runs at every sampling step, while the decoder runs once at the end, so
+      the savings apply to the expensive part [^1]. The paper found $f = 4$ to $8$ the best balance:
+      $f = 1, 2$ train slowly and $f = 32$ loses too much information [^3].
+    references:
+      - title: Rombach et al. (2021), High-Resolution Image Synthesis with Latent Diffusion Models
+        url: https://arxiv.org/abs/2112.10752
+        locator: Sec. 3.1 Perceptual Image Compression; Sec. 3.2 Latent Diffusion Models
+      - title: Rombach et al. (2021), High-Resolution Image Synthesis with Latent Diffusion Models
+        url: https://arxiv.org/abs/2112.10752
+        locator: Appendix D.2, Table 8 (autoencoder zoo; f = 8, KL, c = 4)
+      - title: Rombach et al. (2021), High-Resolution Image Synthesis with Latent Diffusion Models
+        url: https://arxiv.org/abs/2112.10752
+        locator: Sec. 4.1 On Perceptual Compression Tradeoffs
+    source:
+      id: original
+      ref: diffusion-028
+    status: draft
+  - id: diffusion-029
+    type: multiple
+    difficulty: medium
+    tags:
+      - latent-diffusion
+      - cross-attention
+      - conditioning
+    question: |
+      Which statements about latent diffusion models (LDMs) as introduced by Rombach et al. are true?
+      Select all that apply.
+    options:
+      - text: The autoencoder is trained first, and once trained it can be reused for many diffusion models
+        correct: true
+      - text: The latent is a single flat vector, so the denoiser is an MLP rather than a convolutional U-Net
+        why: The latent keeps a two-dimensional $h \times w \times c$ structure, so the denoiser is a time-conditional U-Net built mainly from 2D convolutions [^1].
+      - text: A larger downsampling factor $f$ always gives better samples, because the diffusion model then gets cheaper to run
+        why: Very large factors (LDM-32) lose too much information in the first stage and limit quality; $f = 4$ to $8$ worked best [^3].
+      - text: In cross-attention, queries come from U-Net features and keys/values from the prompt encoding $\tau_\theta(y)$
+        correct: true
+      - text: The decoder $\mathcal{D}$ runs at every denoising step to check the image in pixel space
+        why: Sampling happens entirely in latent space; a sample from $p(z)$ is decoded with a single pass through $\mathcal{D}$ at the end [^1].
+    explanation: |
+      LDMs train in two stages: an autoencoder $(\mathcal{E}, \mathcal{D})$ learns a latent space that is
+      perceptually equivalent to pixel space but much smaller, and is trained only once and reused for
+      many diffusion models; a time-conditional U-Net then learns
+      $L_{\text{LDM}} = \mathbb{E}\lVert \epsilon - \epsilon_\theta(z_t, t) \rVert_2^2$ on $z = \mathcal{E}(x)$
+      [^1]. Conditioning uses cross-attention layers in the U-Net with $Q = W_Q\,\varphi_i(z_t)$,
+      $K = W_K\,\tau_\theta(y)$ and $V = W_V\,\tau_\theta(y)$, where $\tau_\theta$ is a domain-specific
+      encoder, for example a transformer for text [^2]. Generated latents are decoded once at the end,
+      and $f$ trades cost against fidelity [^1][^3].
+    references:
+      - title: Rombach et al. (2021), High-Resolution Image Synthesis with Latent Diffusion Models
+        url: https://arxiv.org/abs/2112.10752
+        locator: Sec. 1 Introduction; Sec. 3.1 Perceptual Image Compression; Sec. 3.2 Latent Diffusion Models, Eq. (2)
+      - title: Rombach et al. (2021), High-Resolution Image Synthesis with Latent Diffusion Models
+        url: https://arxiv.org/abs/2112.10752
+        locator: Sec. 3.3 Conditioning Mechanisms, Eq. (3)
+      - title: Rombach et al. (2021), High-Resolution Image Synthesis with Latent Diffusion Models
+        url: https://arxiv.org/abs/2112.10752
+        locator: Sec. 4.1 On Perceptual Compression Tradeoffs
+    source:
+      id: original
+      ref: diffusion-029
+    status: draft

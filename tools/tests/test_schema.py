@@ -1,7 +1,7 @@
 import pytest
 from pydantic import ValidationError
 
-from mlrecall.check import POSITIONAL_OPTION_RE, _math_line_starts_block
+from mlrecall.check import POSITIONAL_OPTION_RE, _math_line_starts_block, _wrapped_display_math
 from mlrecall.schema import Question, citation_markers
 
 
@@ -136,3 +136,9 @@ def test_math_continuation_that_looks_like_a_list_item_is_flagged():
     assert _math_line_starts_block("so $x = (a\n- b)$ holds")
     assert not _math_line_starts_block("$a$ and\n- a real list item")
     assert not _math_line_starts_block("$x = (14,\n6) = y$")  # "6)" cannot interrupt a paragraph
+
+
+def test_display_math_that_wraps_mid_paragraph_is_flagged():
+    assert _wrapped_display_math("kernel\n$$K = a +\nb.$$\nWhich map?")
+    assert not _wrapped_display_math("$$\nK = a +\nb\n$$")  # fenced on its own lines
+    assert not _wrapped_display_math("so $$K = a + b$$ holds")

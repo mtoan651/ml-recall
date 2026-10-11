@@ -1115,3 +1115,151 @@ questions:
       ref: chapter_reinforcement-learning/qlearning#ex3
       url: https://d2l.ai/chapter_reinforcement-learning/qlearning.html#exercises
     status: draft
+  - id: q-learning-028
+    type: short_answer
+    difficulty: medium
+    tags:
+      - optimistic-initialization
+      - td-error
+      - exploration
+    question: |
+      A Q-learning agent with $\gamma = 0.99$ initializes every $Q(s, a)$ optimistically to $1/(1 - \gamma) = 100$, the largest
+      possible return when rewards lie in $[0, 1]$. It takes action $a$ in state $s$, receives reward 0 and lands in $s'$,
+      whose Q-values are all still 100. With learning rate $\alpha = 0.1$, what is $Q(s, a)$ after the update?
+    answer:
+      numeric: 99.9
+      tolerance: 0.001
+      hint: a number, 1 decimal
+      model: TD error $0 + 0.99 \cdot 100 - 100 = -1$; $100 + 0.1 \cdot (-1) = 99.9$
+    explanation: |
+      Q-learning moves $Q(s, a)$ toward the TD target $r + \gamma\max_{a'} Q(s', a')$ by $\alpha$ times the TD error [^1][^2]. Here
+      the target is $0 + 0.99 \cdot 100 = 99$, the error is $-1$ and the new value is $99.9$. The agent is slightly
+      "disappointed", so a greedy agent next prefers the untried actions that still hold 100: optimistic initialization
+      drives exploration even without $\epsilon$-greedy [^1][^2]. With all values initialized to 0, a greedy agent sees every
+      action as equally good and can get stuck repeating one [^1].
+    references:
+      - source: neuromatch-dl
+        locator: W3D4 Tutorial 2, Section 1 Q-learning (the Q-learning update rule in code, Coding Exercise 1)
+        url: https://github.com/NeuromatchAcademy/course-content-dl/blob/caba36c513fb8139ac3c9e7503f7a769dadde25e/tutorials/W3D4_BasicReinforcementLearning/instructor/W3D4_Tutorial2.ipynb
+      - title: 'Sutton and Barto (2018), Reinforcement Learning: An Introduction, 2nd ed.'
+        url: http://incompleteideas.net/book/the-book-2nd.html
+        locator: Sec. 2.6 Optimistic Initial Values and Sec. 6.5 Q-learning
+    source:
+      id: neuromatch-dl
+      ref: W3D4_BasicReinforcementLearning/W3D4_Tutorial2#ex1
+      url: https://github.com/NeuromatchAcademy/course-content-dl/blob/caba36c513fb8139ac3c9e7503f7a769dadde25e/tutorials/W3D4_BasicReinforcementLearning/instructor/W3D4_Tutorial2.ipynb
+    status: draft
+  - id: q-learning-029
+    type: single
+    difficulty: medium
+    tags:
+      - sarsa
+      - on-policy
+      - off-policy
+      - cliff-walking
+    question: |
+      In the Cliff World grid (start and goal at the two ends of the bottom row, the cells between them a cliff with
+      reward −100, every other move −1), Q-learning and SARSA are both trained with ε-greedy exploration. Q-learning's
+      greedy policy walks right along the cliff edge, while SARSA's goes one row higher. Why?
+    options:
+      - text: SARSA values its own exploring policy, which sometimes slips off the edge; Q-learning values greedy play
+        correct: true
+      - text: SARSA uses a larger discount factor, so it places more value on the safer path
+        why: 'Both use the same $\gamma$; the difference is the TD target: the action actually taken (SARSA) versus the best action (Q-learning).'
+      - text: Q-learning explores more, so it was the only one of the two to discover the shorter path
+        why: Both use the same ε-greedy exploration; Q-learning prefers the edge because its target assumes greedy play afterwards.
+      - text: SARSA cannot represent the path along the cliff edge in its tabular Q-function
+        why: Both use the same tabular Q; SARSA's values next to the edge are lowered by exploratory falls, so it avoids that path.
+    explanation: |
+      Q-learning's target uses $\max_a Q(s', a)$, the value of acting greedily afterwards, so it learns the optimal path along
+      the edge (return −11) even though exploration occasionally drops it into the cliff [^1][^2]. SARSA's target uses the
+      next action its ε-greedy policy actually takes, so the risk of a random step into the cliff lowers the values next
+      to the edge, and it learns a safer path that costs 2 more steps [^1][^2]. This is the on-policy versus off-policy
+      distinction [^1].
+    references:
+      - source: neuromatch-cn
+        locator: W3D4 Tutorial 3, Section 2 Q-Learning and Bonus Sections 1–2 (SARSA, On-Policy vs Off-Policy)
+        url: https://github.com/NeuromatchAcademy/course-content/blob/44634e960df7a14cd0bf7398187f2d209d26b0e8/tutorials/W3D4_ReinforcementLearning/instructor/W3D4_Tutorial3.ipynb
+      - title: 'Sutton and Barto (2018), Reinforcement Learning: An Introduction, 2nd ed.'
+        url: http://incompleteideas.net/book/the-book-2nd.html
+        locator: Sec. 6.5 Q-learning, Example 6.6 Cliff Walking
+    source:
+      id: neuromatch-cn
+      ref: W3D4_ReinforcementLearning/W3D4_Tutorial3#bonus2
+      url: https://github.com/NeuromatchAcademy/course-content/blob/44634e960df7a14cd0bf7398187f2d209d26b0e8/tutorials/W3D4_ReinforcementLearning/instructor/W3D4_Tutorial3.ipynb
+    status: draft
+  - id: q-learning-030
+    type: multiple
+    difficulty: medium
+    tags:
+      - dyna-q
+      - model-based-rl
+      - planning
+    question: |
+      Dyna-Q adds planning to Q-learning: after each real step it updates $Q$ from the real transition, stores the observed
+      reward and next state in a table $\text{Model}(s, a)$, and then performs $k$ extra Q-learning updates on transitions
+      replayed from that table. Which statements are true? Select all that apply.
+    options:
+      - text: With $k = 0$ it reduces to ordinary Q-learning
+        correct: true
+      - text: Storing one outcome per state–action pair is a valid model only if the environment is deterministic
+        correct: true
+      - text: A change in the world (e.g. a new shortcut) that is experienced once can spread through the Q-table during planning
+        correct: true
+      - text: More planning steps always help, so $k$ should be as large as compute allows
+        why: 'NMA finds diminishing returns: beyond some $k$ the extra planning adds little relative to its cost.'
+      - text: Planning updates use a different learning rule from the one used for real experience
+        why: Simulated transitions are learned with the same Q-learning update as real ones.
+    explanation: |
+      Dyna-Q combines acting, learning and planning: one Q-learning update from the real transition and $k$ more from
+      transitions sampled from the stored model; with $k = 0$ there is no planning and it is just Q-learning [^1][^2]. The
+      model simply caches the last reward and next state seen for each pair, which is correct only when each state–action
+      pair always leads to the same outcome [^1]. Because planning replays stored transitions, a change seen once is
+      propagated without being experienced again, which is why Dyna-Q exploits a new shortcut much faster than Q-learning;
+      beyond some $k$ the gains level off [^1].
+    references:
+      - source: neuromatch-cn
+        locator: W3D4 Tutorial 4, Sections 2–4 (Dyna-Q, How much to plan?, When the world changes...)
+        url: https://github.com/NeuromatchAcademy/course-content/blob/44634e960df7a14cd0bf7398187f2d209d26b0e8/tutorials/W3D4_ReinforcementLearning/instructor/W3D4_Tutorial4.ipynb
+      - title: 'Sutton and Barto (2018), Reinforcement Learning: An Introduction, 2nd ed.'
+        url: http://incompleteideas.net/book/the-book-2nd.html
+        locator: 'Sec. 8.2 Dyna: Integrated Planning, Acting, and Learning'
+    source:
+      id: neuromatch-cn
+      ref: W3D4_ReinforcementLearning/W3D4_Tutorial4#sec2
+      url: https://github.com/NeuromatchAcademy/course-content/blob/44634e960df7a14cd0bf7398187f2d209d26b0e8/tutorials/W3D4_ReinforcementLearning/instructor/W3D4_Tutorial4.ipynb
+    status: draft
+  - id: q-learning-031
+    type: short_answer
+    difficulty: medium
+    tags:
+      - td3
+      - clipped-double-q
+      - bellman-target
+    question: |
+      TD3 learns two critics and forms one target from their target networks,
+      $y = r + \gamma(1-d)\min_{i=1,2} Q_{\phi_{i,\text{targ}}}(s', a'(s'))$. For a transition with
+      $r = 1$, $\gamma = 0.99$, $d = 0$ (not terminal), and target critics giving $10$ and $8$ at
+      $(s', a'(s'))$, what is $y$?
+    answer:
+      numeric: 8.92
+      tolerance: 0.001
+      hint: a number, 2 decimals
+      model: $1 + 0.99 \cdot \min(10, 8) = 1 + 7.92 = 8.92$
+    explanation: |
+      TD3's clipped double-Q learning uses the *smaller* of the two target critics in the Bellman
+      target, $1 + 0.99 \cdot 8 = 8.92$, and both critics regress towards this same target [^1]. Taking
+      the minimum counters the overestimation bias that a single learned Q-function develops when the
+      policy exploits its errors [^1][^2]. With $d = 1$ the bootstrap term would vanish and $y = r = 1$.
+    references:
+      - source: spinning-up
+        locator: 'Algorithms: Twin Delayed DDPG, Key Equations (clipped double-Q learning)'
+        url: https://spinningup.openai.com/en/latest/algorithms/td3.html#key-equations
+      - title: Fujimoto, van Hoof & Meger (2018), Addressing Function Approximation Error in Actor-Critic Methods, arXiv:1802.09477
+        url: https://arxiv.org/abs/1802.09477
+        locator: Sec. 4.2 Clipped Double Q-Learning for Actor-Critic
+    source:
+      id: spinning-up
+      ref: docs/spinningup/exercises.rst#q3
+      url: https://github.com/openai/spinningup/blob/038665d62d569055401d91856abb287263096178/docs/spinningup/exercises.rst
+    status: draft

@@ -571,3 +571,435 @@ questions:
       ref: lectures/notes/08_llms-applications.ipynb#ex8.3
       url: https://github.com/UBC-MDS/DSCI_575_adv-mach-learn/blob/af9d47c5fdaa26aa9a50e0f50cd991cf325f1972/lectures/notes/08_llms-applications.ipynb
     status: draft
+  - id: llm-basics-020
+    type: single
+    difficulty: easy
+    tags:
+      - data-contamination
+      - evaluation
+      - benchmarks
+    question: What does "data contamination" mean when evaluating a large language model on a benchmark?
+    options:
+      - text: The benchmark's test data was part of what the model was trained on
+        correct: true
+      - text: The benchmark's labels contain annotation errors
+        why: Noisy gold labels are a separate problem (annotator bias and artifacts in datasets) [^1].
+      - text: The model's training data contains toxic or harmful text
+        why: That is a data-quality and safety issue, not contamination of the evaluation [^1].
+      - text: Several benchmarks test the same skill, so their results are correlated
+        why: Overlapping benchmarks do not leak test data into training, which is what contamination means [^1].
+    explanation: |
+      Data contamination means evaluating an LLM on the same data it was trained on; the score then
+      measures memorization rather than generalization [^1]. The lecture's example: many papers
+      queried ChatGPT through the web interface, handing over benchmark data that could have been
+      used to improve later models [^1]. Like any test-set leak it breaks the train/test separation
+      on which evaluation rests [^2].
+    references:
+      - source: trusthlt-nlp
+        locator: Lecture 1 slides, frame 'Beware of (unintended) data contamination!' (citing Balloccu et al., EACL 2024)
+        url: https://github.com/trusthlt/nlp-with-deep-learning-lectures/blob/751182ea7a6a6f2246bbd8313329ecd09d270dbc/lectures/lecture01/pdf/nlpwdl2025-lecture01-handout.pdf
+      - source: d2l
+        locator: Sec. 4.6.2 Test Set Reuse
+        url: https://d2l.ai/chapter_linear-classification/generalization-classification.html#test-set-reuse
+    source:
+      id: trusthlt-nlp
+      ref: lectures/lecture01/nlpwdl2025-lecture01.tex#data-contamination
+      url: https://github.com/trusthlt/nlp-with-deep-learning-lectures/blob/751182ea7a6a6f2246bbd8313329ecd09d270dbc/lectures/lecture01/pdf/nlpwdl2025-lecture01-handout.pdf
+    status: draft
+  - id: llm-basics-021
+    type: single
+    difficulty: easy
+    tags:
+      - non-determinism
+      - sampling
+      - hallucination
+    question: |
+      You send the same prompt to an LLM chat app twice and get two different answers. Which statement
+      best describes how to treat LLM output?
+    options:
+      - text: Variation only appears at the highest temperature setting; any lower setting gives identical answers
+        why: Lower temperatures make output more predictable, but sampling still introduces variation unless it is (close to) zero [^3].
+      - text: The model computes exact results, so its arithmetic and code can be used without checking
+        why: LLMs can produce confident but wrong content, including wrong sums and broken code, so their output must be verified [^1][^2].
+      - text: Outputs are sampled and can vary for the same prompt; treat them as a first draft to check and refine
+        correct: true
+      - text: The model looks answers up in a stored table, so different outputs mean the model was updated in between
+        why: An LLM generates text token by token from a probability distribution; it does not look up stored answers [^1].
+    explanation: |
+      Generative models are not deterministic: each answer is sampled, so the same prompt can give
+      different completions [^1]. They also fabricate references and facts and present them
+      persuasively, so their output is a good first attempt that you still need to check and improve
+      [^1][^2]. The temperature setting controls how varied the sampling is [^3].
+    references:
+      - source: ms-genai-for-beginners
+        locator: 'Lesson 01: Introduction to Generative AI and LLMs (last paragraph before the assignment) and Knowledge check answer'
+        url: https://github.com/microsoft/generative-ai-for-beginners/blob/d8ec07e31c4b32bd283d565c1abd9b58bb5cf2e8/01-introduction-to-genai/README.md#knowledge-check
+      - source: ms-genai-for-beginners
+        locator: 'Lesson 03: Using Generative AI Responsibly, Hallucinations'
+        url: https://github.com/microsoft/generative-ai-for-beginners/blob/d8ec07e31c4b32bd283d565c1abd9b58bb5cf2e8/03-using-generative-ai-responsibly/README.md#hallucinations
+      - source: ms-genai-for-beginners
+        locator: 'Lesson 06: Building Text Generation Applications, Improve your setup (Experimenting with temperature)'
+        url: https://github.com/microsoft/generative-ai-for-beginners/blob/d8ec07e31c4b32bd283d565c1abd9b58bb5cf2e8/06-text-generation-apps/README.md#improve-your-setup
+    source:
+      id: ms-genai-for-beginners
+      ref: 01-introduction-to-genai#q1
+      url: https://github.com/microsoft/generative-ai-for-beginners/blob/d8ec07e31c4b32bd283d565c1abd9b58bb5cf2e8/01-introduction-to-genai/README.md#knowledge-check
+    status: draft
+  - id: llm-basics-022
+    type: single
+    difficulty: easy
+    tags:
+      - prompt-engineering
+      - specificity
+    question: Which image-generation prompt follows prompt-engineering best practice most closely?
+    options:
+      - text: Show me an image of a red Volvo XC90 parked by a cliff at sunset
+        correct: true
+      - text: Show me an image of a red car
+        why: It is vague about which car and what scene, so the model has to guess most details [^1].
+      - text: Show me an image of a car, and be as creative as you can
+        why: Asking for creativity without specifics hands every decision to the model and makes the result unpredictable [^1].
+      - text: Show me an image of a red Volvo XC90
+        why: Naming the make and model helps, but nothing describes the setting; it is the second-best prompt [^1].
+    explanation: |
+      Good prompts are specific: they say *what* (a red Volvo XC90 rather than "a car") and give the
+      surrounding context (parked by a cliff at sunset) [^1]. The more of the intended content the
+      prompt pins down, the less the model fills in on its own, and the closer the output is to what
+      you wanted [^1][^2].
+    references:
+      - source: ms-genai-for-beginners
+        locator: 'Lesson 04: Prompt Engineering Fundamentals, Best Practices and Knowledge check answer'
+        url: https://github.com/microsoft/generative-ai-for-beginners/blob/d8ec07e31c4b32bd283d565c1abd9b58bb5cf2e8/04-prompt-engineering-fundamentals/README.md#best-practices
+      - title: 'Wikipedia: Prompt engineering'
+        url: https://en.wikipedia.org/wiki/Prompt_engineering#Text-to-image_prompting
+        locator: Section "Text-to-image prompting"
+    source:
+      id: ms-genai-for-beginners
+      ref: 04-prompt-engineering-fundamentals#q1
+      url: https://github.com/microsoft/generative-ai-for-beginners/blob/d8ec07e31c4b32bd283d565c1abd9b58bb5cf2e8/04-prompt-engineering-fundamentals/README.md#knowledge-check
+    status: draft
+  - id: llm-basics-023
+    type: single
+    difficulty: medium
+    tags:
+      - chain-of-thought
+      - prompting
+      - reasoning
+    question: |
+      An LLM answers "Alice has 5 apples, throws away 3, gives 2 to Bob and Bob gives one back. How many
+      does she have?" with 5. You add a similar solved example that writes out each calculation step
+      (7 − 1 = 6, 6 − 4 = 2, 2 + 1 = 3) before the question. Why does this chain-of-thought prompt help?
+    options:
+      - text: It guarantees a correct answer on every arithmetic problem
+        why: Chain-of-thought improves multi-step reasoning on average but does not guarantee correctness [^2].
+      - text: The model checks its own final answer against the example's final result
+        why: The example has a different answer (3); the model reuses its method, not its result.
+      - text: The extra example shortens the prompt, which leaves more of the context window for the answer
+        why: A chain-of-thought prompt is longer, and the answer that follows uses even more tokens [^1].
+      - text: The model copies the worked method and computes each intermediate step before answering
+        correct: true
+    explanation: |
+      Chain-of-thought prompting shows the model how to solve a problem step by step, here by a similar
+      example with its calculation written out [^1]. The model then generates its own intermediate steps
+      ($5 - 3 = 2$, $2 - 2 = 0$, $0 + 1 = 1$) before the answer, which makes multi-step arithmetic and
+      reasoning problems much more reliable [^1][^2]. Wei et al. showed that such step-by-step exemplars
+      substantially improve large models on math word problems [^2].
+    references:
+      - source: ms-genai-for-beginners
+        locator: 'Lesson 05: Creating Advanced prompts, Chain-of-thought'
+        url: https://github.com/microsoft/generative-ai-for-beginners/blob/d8ec07e31c4b32bd283d565c1abd9b58bb5cf2e8/05-advanced-prompts/README.md#chain-of-thought
+      - title: Wei et al. (2022), Chain-of-Thought Prompting Elicits Reasoning in Large Language Models, arXiv:2201.11903
+        url: https://arxiv.org/abs/2201.11903
+        locator: Abstract and Sec. 3 Arithmetic Reasoning
+    source:
+      id: ms-genai-for-beginners
+      ref: 05-advanced-prompts#q1
+      url: https://github.com/microsoft/generative-ai-for-beginners/blob/d8ec07e31c4b32bd283d565c1abd9b58bb5cf2e8/05-advanced-prompts/README.md#knowledge-check
+    status: draft
+  - id: llm-basics-024
+    type: single
+    difficulty: easy
+    tags:
+      - temperature
+      - sampling
+      - decoding
+    question: |
+      A text-generation app uses an LLM's `temperature` parameter. What happens when you lower the
+      temperature towards 0?
+    options:
+      - text: The model uses fewer tokens of the prompt, so it runs faster
+        why: Temperature only reshapes the sampling distribution of each new token; the whole prompt is still processed.
+      - text: The answers become guaranteed to be factually correct
+        why: A low temperature picks the model's most likely continuation, which can still be wrong.
+      - text: The output becomes more predictable, concentrating on the most likely next tokens
+        correct: true
+      - text: The responses become shorter, because the model generates fewer tokens at a low temperature
+        why: Length is controlled by the token limit (e.g. `max_tokens`), not by the temperature.
+    explanation: |
+      Temperature controls how random the output is: higher values give more varied text, lower values
+      more predictable text, with 0 the least varied [^1][^2]. Technically the logits are divided by the
+      temperature before the softmax, so a low temperature sharpens the next-token distribution towards
+      the most likely tokens [^3]. It does not change the response length or the facts the model knows.
+    references:
+      - source: ms-genai-for-beginners
+        locator: 'Lesson 06: Building Text Generation Applications, Improve your setup (Experimenting with temperature)'
+        url: https://github.com/microsoft/generative-ai-for-beginners/blob/d8ec07e31c4b32bd283d565c1abd9b58bb5cf2e8/06-text-generation-apps/README.md#improve-your-setup
+      - source: ms-genai-for-beginners
+        locator: 'Lesson 05: Creating Advanced prompts, Using temperature to vary your output'
+        url: https://github.com/microsoft/generative-ai-for-beginners/blob/d8ec07e31c4b32bd283d565c1abd9b58bb5cf2e8/05-advanced-prompts/README.md#using-temperature-to-vary-your-output
+      - title: 'Wikipedia: Softmax function'
+        url: https://en.wikipedia.org/wiki/Softmax_function#Definition
+        locator: Sections "Definition" (temperature $T = 1/\beta$) and "Smooth arg max"
+    source:
+      id: ms-genai-for-beginners
+      ref: 06-text-generation-apps#q1
+      url: https://github.com/microsoft/generative-ai-for-beginners/blob/d8ec07e31c4b32bd283d565c1abd9b58bb5cf2e8/06-text-generation-apps/README.md#knowledge-check
+    status: draft
+  - id: llm-basics-025
+    type: single
+    difficulty: medium
+    tags:
+      - context-window
+      - tokens
+      - max-tokens
+    question: |
+      A model has a context window of 128k tokens and can generate at most 16k output tokens. What is
+      the context window?
+    options:
+      - text: The `max_tokens` setting of a request, which caps how long the reply can be
+        why: '`max_tokens` limits only the generated output; the context window is a fixed property of the model.'
+      - text: The number of previous chat messages that the model takes into account when replying
+        why: The limit is counted in tokens, not messages; how many earlier messages fit depends on their length [^1].
+      - text: The most tokens the model can process at once, input and generated output together
+        correct: true
+      - text: A setting that controls how creative the model's replies are
+        why: Creativity is controlled by sampling settings such as temperature, not by the context window.
+    explanation: |
+      The context window is the span of tokens the model can attend to in one go: the prompt, including
+      the conversation history, plus the tokens it generates [^1][^2]. With a 128k window and at most 16k
+      output tokens, about $128\text{k} - 16\text{k} = 112\text{k}$ tokens remain for the input [^2]. When
+      a conversation grows beyond that, older messages must be dropped or summarized.
+    references:
+      - title: 'Wikipedia: Large language model'
+        url: https://en.wikipedia.org/wiki/Large_language_model#Attention_mechanism_and_context_window
+        locator: Section "Attention mechanism and context window"
+      - source: ms-genai-javascript
+        locator: 'Lesson 2: Writing Your First AI App, Context window'
+        url: https://github.com/microsoft/generative-ai-with-javascript/blob/03e41953411ca192bd69d37e6b784a0baaaab65b/lessons/02-first-ai-app/README.md#context-window
+    source:
+      id: ms-genai-javascript
+      ref: lessons/02-first-ai-app#q1
+      url: https://github.com/microsoft/generative-ai-with-javascript/blob/03e41953411ca192bd69d37e6b784a0baaaab65b/lessons/02-first-ai-app/README.md#knowledge-check
+    status: draft
+  - id: llm-basics-026
+    type: single
+    difficulty: easy
+    tags:
+      - prompt-engineering
+      - fine-tuning
+    question: Which of these is an example of prompt engineering rather than model training?
+    options:
+      - text: Training the model on labelled examples to recognize patterns in data
+        why: Training updates the model's weights; prompt engineering only changes the input [^1][^2].
+      - text: Fine-tuning the model on your company's past support tickets
+        why: Fine-tuning creates a new model with updated weights, which is training, not prompting [^2].
+      - text: Rewriting the request with a role, examples and the required output format
+        correct: true
+      - text: Adding more layers to the model so that it can understand longer and more complex prompts
+        why: Changing the architecture is model design; prompt engineering works with a fixed model.
+    explanation: |
+      Prompt engineering is crafting the prompt — instructions, context, examples, output format — to
+      get the desired output from a language model whose weights stay fixed [^1]. Techniques such as
+      few-shot prompting, chain-of-thought and meta prompts all work this way [^1]. Training or
+      fine-tuning, by contrast, changes the model's weights on data [^2].
+    references:
+      - source: ms-genai-javascript
+        locator: 'Lesson 3: Prompt Engineering, What is prompt engineering? and Prompt engineering techniques and strategies'
+        url: https://github.com/microsoft/generative-ai-with-javascript/blob/03e41953411ca192bd69d37e6b784a0baaaab65b/lessons/03-prompt-engineering/README.md#what-is-prompt-engineering
+      - source: ms-genai-for-beginners
+        locator: 'Lesson 02: Exploring and comparing different LLMs, Fine-tuned model'
+        url: https://github.com/microsoft/generative-ai-for-beginners/blob/d8ec07e31c4b32bd283d565c1abd9b58bb5cf2e8/02-exploring-and-comparing-different-llms/README.md#fine-tuned-model
+    source:
+      id: ms-genai-javascript
+      ref: lessons/03-prompt-engineering#q1
+      url: https://github.com/microsoft/generative-ai-with-javascript/blob/03e41953411ca192bd69d37e6b784a0baaaab65b/lessons/03-prompt-engineering/README.md#knowledge-check
+    status: draft
+  - id: llm-basics-027
+    type: single
+    difficulty: easy
+    tags:
+      - structured-output
+      - json
+      - information-extraction
+    question: |
+      A travel chatbot asks an LLM to return the destination, dates and budget from the user's message
+      as JSON that follows a given schema, instead of a free-text answer. What is the main benefit?
+    options:
+      - text: Your code can parse, validate and pass the extracted fields to other services
+        correct: true
+      - text: The response uses no tokens, because JSON is not text
+        why: JSON is generated as tokens like any other text.
+      - text: The model no longer needs the user's message to produce an answer
+        why: The fields are extracted *from* the user's message, so it is still required.
+      - text: The model becomes unable to make mistakes in the extracted values
+        why: A schema fixes the shape of the output, not the correctness of the values; they still need checking.
+    explanation: |
+      Structured output organizes the answer in a format such as JSON, XML or CSV, which makes it easy
+      for other services to process, and is also easier for people to read [^1]. Asking for a fixed
+      schema turns free text into data you can extract and validate, for example the destination, dates
+      and budget of a trip request [^1].
+    references:
+      - source: ms-genai-javascript
+        locator: 'Lesson 4: Structured Output, Structured Output and Extracting data from prompts'
+        url: https://github.com/microsoft/generative-ai-with-javascript/blob/03e41953411ca192bd69d37e6b784a0baaaab65b/lessons/04-structured-output/README.md#structured-output
+    source:
+      id: ms-genai-javascript
+      ref: lessons/04-structured-output#q1
+      url: https://github.com/microsoft/generative-ai-with-javascript/blob/03e41953411ca192bd69d37e6b784a0baaaab65b/lessons/04-structured-output/README.md#knowledge-check
+    status: draft
+  - id: llm-basics-028
+    type: single
+    difficulty: easy
+    tags:
+      - tree-of-thought
+      - chain-of-thought
+      - prompting
+    question: |
+      What lets Tree-of-Thought (ToT) prompting solve problems that Chain-of-Thought (CoT) prompting
+      fails on?
+    options:
+      - text: It explores several reasoning paths, evaluates them and can backtrack
+        correct: true
+      - text: It fine-tunes the model with reinforcement learning on each new problem
+        why: ToT is an inference-time method; it uses the frozen model to propose and evaluate thoughts [^2].
+      - text: It adds domain-specific heuristics that remove hallucinations
+        why: ToT is a general search framework; it has no built-in domain knowledge and does not guarantee factuality [^2].
+      - text: It removes the need to write any prompt for the model
+        why: ToT still prompts the model, both to generate thoughts and to evaluate them [^2].
+    explanation: |
+      CoT generates one chain of reasoning left to right, so an early mistake cannot be undone [^1].
+      ToT treats intermediate "thoughts" as nodes of a tree: the model proposes several next thoughts,
+      rates how promising each is, and a search algorithm such as breadth-first or depth-first search
+      expands the good ones and backtracks from dead ends [^2]. On tasks like the Game of 24 this
+      deliberate search raised the success rate far above CoT [^2].
+    references:
+      - source: nptel-intro-llms
+        locator: Assignment 8, Q5 (why Tree-of-Thought is more effective than Chain-of-Thought)
+        url: https://archive.nptel.ac.in/content/storage2/courses/downloads_new/106102576/noc25_cs45_assignment_Week_8.png
+      - title: 'Yao et al. (2023), Tree of Thoughts: Deliberate Problem Solving with Large Language Models, arXiv:2305.10601'
+        url: https://arxiv.org/abs/2305.10601
+        locator: Abstract; Sec. 3 Tree of Thoughts
+    source:
+      id: nptel-intro-llms
+      ref: intro-llms/assignment8#q5
+      url: https://archive.nptel.ac.in/content/storage2/courses/downloads_new/106102576/noc25_cs45_assignment_Week_8.png
+    status: draft
+  - id: llm-basics-029
+    type: single
+    difficulty: medium
+    tags:
+      - quantization
+      - post-training-quantization
+      - calibration
+    question: |
+      Post-training quantization (PTQ) converts a trained LLM to low precision without retraining it,
+      but it still runs the model on a small calibration dataset. What is that data for?
+    options:
+      - text: To estimate scale factors for weights and activations on representative inputs
+        correct: true
+      - text: To fine-tune all of the weights briefly on that data and then save the updated model
+        why: That would be quantization-aware training or fine-tuning; PTQ leaves the weights' values to rounding [^2].
+      - text: To precompute and store the attention matrices of typical inputs
+        why: Attention matrices depend on each new input and are never cached from calibration data.
+      - text: To find outlier dimensions that magnitude pruning then removes
+        why: Pruning is a separate compression method; calibration sets the quantization ranges [^2].
+    explanation: |
+      To map floating-point values to a few integer levels, PTQ needs a scale (and zero point) for
+      each tensor or group [^1]. Weights are known in advance, but activation ranges depend on the
+      inputs, so the model is run on a few hundred representative examples to measure them; methods
+      such as GPTQ also use these activations to choose how to round the weights [^2].
+    references:
+      - source: nptel-intro-llms
+        locator: Assignment 10, Q5 (why PTQ uses a calibration dataset)
+        url: https://archive.nptel.ac.in/content/storage2/courses/downloads_new/106102576/noc25_cs45_assignment_Week_10.png
+      - title: 'Frantar et al. (2022), GPTQ: Accurate Post-Training Quantization for Generative Pre-trained Transformers, arXiv:2210.17323'
+        url: https://arxiv.org/abs/2210.17323
+        locator: Abstract; Sec. 3 Background (layer-wise quantization on calibration data)
+    source:
+      id: nptel-intro-llms
+      ref: intro-llms/assignment10#q5
+      url: https://archive.nptel.ac.in/content/storage2/courses/downloads_new/106102576/noc25_cs45_assignment_Week_10.png
+    status: draft
+  - id: llm-basics-030
+    type: multiple
+    difficulty: medium
+    tags:
+      - knowledge-distillation
+      - sequence-level-distillation
+      - compression
+    question: |
+      Which statements about sequence-level knowledge distillation for language models are true?
+      Select all that apply.
+    options:
+      - text: The student is trained on whole output sequences produced by the teacher, e.g. its beam-search outputs
+        correct: true
+      - text: It can be combined with word-level distillation, which matches the teacher's per-token distributions
+        correct: true
+      - text: It needs only the teacher's top-1 token at each position, with no sequence-level search
+        why: Sequence-level distillation approximates the teacher's distribution over whole sequences, typically with beam search [^2].
+      - text: It requires the teacher to write a chain-of-thought explanation for each example
+        why: The student simply imitates the teacher's output sequences; no explanations are needed [^2].
+    explanation: |
+      Word-level distillation trains the student to match the teacher's next-token distribution at
+      each position [^2]. Sequence-level distillation instead runs the teacher (e.g. with beam search)
+      to produce output sequences and trains the student on them as targets, transferring the
+      teacher's sequence-level behaviour [^1][^2]. Kim and Rush found the two complementary and
+      combined them, with large gains for small translation models [^2].
+    references:
+      - source: nptel-intro-llms
+        locator: Assignment 10, Q10 (sequence-level distillation)
+        url: https://archive.nptel.ac.in/content/storage2/courses/downloads_new/106102576/noc25_cs45_assignment_Week_10.png
+      - title: Kim & Rush (2016), Sequence-Level Knowledge Distillation, arXiv:1606.07947
+        url: https://arxiv.org/abs/1606.07947
+        locator: Sec. 3.1 Word-Level Knowledge Distillation; Sec. 3.2 Sequence-Level Knowledge Distillation
+    source:
+      id: nptel-intro-llms
+      ref: intro-llms/assignment10#q10
+      url: https://archive.nptel.ac.in/content/storage2/courses/downloads_new/106102576/noc25_cs45_assignment_Week_10.png
+    status: draft
+  - id: llm-basics-031
+    type: single
+    difficulty: medium
+    tags:
+      - mechanistic-interpretability
+      - induction-heads
+      - in-context-learning
+    question: |
+      Interpretability research on transformers found "induction heads". What does an induction head
+      do?
+    options:
+      - text: It looks back for an earlier copy of the current token and predicts what followed it
+        correct: true
+      - text: It attends only to punctuation tokens, in order to detect where sentences begin and end
+        why: Induction heads copy continuations of repeated tokens; they are not specialised for punctuation [^2].
+      - text: It masks future tokens so the model cannot look ahead
+        why: The causal mask does that for every head; it is not a learned behaviour of one head.
+      - text: It is a feed-forward layer that stores out-of-distribution facts
+        why: An induction head is an attention head, formed together with a previous-token head [^2].
+    explanation: |
+      In a sequence "… A B … A", an induction head attends from the second A to the token after the
+      first A, i.e. B, and copies it, so the model predicts B [^1][^2]. It works with a
+      previous-token head in an earlier layer, forming a two-layer circuit, and Olsson et al. argue
+      that such heads are a major mechanism behind in-context learning [^2].
+    references:
+      - source: nptel-intro-llms
+        locator: Assignment 10, Q7–Q8 (induction heads; circuits)
+        url: https://archive.nptel.ac.in/content/storage2/courses/downloads_new/106102576/noc25_cs45_assignment_Week_10.png
+      - title: Olsson et al. (2022), In-context Learning and Induction Heads, arXiv:2209.11895
+        url: https://arxiv.org/abs/2209.11895
+        locator: Abstract; Introduction (definition of induction heads)
+    source:
+      id: nptel-intro-llms
+      ref: intro-llms/assignment10#q7
+      url: https://archive.nptel.ac.in/content/storage2/courses/downloads_new/106102576/noc25_cs45_assignment_Week_10.png
+    status: draft

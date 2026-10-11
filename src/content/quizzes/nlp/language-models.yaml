@@ -721,3 +721,877 @@ questions:
       ref: lectures/notes/02_LMs-text-preprocessing.ipynb#ex2.3
       url: https://github.com/UBC-MDS/DSCI_575_adv-mach-learn/blob/af9d47c5fdaa26aa9a50e0f50cd991cf325f1972/lectures/notes/02_LMs-text-preprocessing.ipynb
     status: draft
+  - id: language-models-021
+    type: short_answer
+    difficulty: easy
+    tags:
+      - n-gram
+      - markov-assumption
+      - long-range-dependencies
+    question: |
+      An $n$-gram language model predicts the next word from the previous $n - 1$ words. What is the
+      smallest $n$ for which it can capture a dependency between the next word and the word 10
+      positions before it?
+    answer:
+      numeric: 11
+      tolerance: 0
+      hint: a whole number
+      model: 'The context must reach back 10 words, plus the predicted word: $n = 11$'
+    explanation: |
+      A $k$-th order Markov model conditions the next word on the last $k$ words only, which is an
+      $n$-gram model with $n = k + 1$ [^1]. To see a word 10 positions back, the context needs
+      $k = 10$ words, so the model must have observed the relevant 11-grams; this is the
+      long-range-dependency shortcoming of $n$-gram models [^1]. Counts of 11-grams are
+      astronomically sparse, which is why neural language models replace counting [^2].
+    references:
+      - source: trusthlt-nlp
+        locator: Lecture 5 slides, frames 'Simplifications in classical language models' and 'Shortcomings of n-gram language models'
+        url: https://github.com/trusthlt/nlp-with-deep-learning-lectures/blob/751182ea7a6a6f2246bbd8313329ecd09d270dbc/lectures/lecture05/pdf/nlpwdl2025-lecture05-handout.pdf
+      - source: d2l
+        locator: Sec. 9.3.1.3 Laplace Smoothing (limitations of n-gram counting)
+        url: https://d2l.ai/chapter_recurrent-neural-networks/language-model.html#laplace-smoothing
+    source:
+      id: trusthlt-nlp
+      ref: lectures/lecture05/nlpwdl2025-lecture05.tex#ngram-shortcomings
+      url: https://github.com/trusthlt/nlp-with-deep-learning-lectures/blob/751182ea7a6a6f2246bbd8313329ecd09d270dbc/lectures/lecture05/pdf/nlpwdl2025-lecture05-handout.pdf
+    status: draft
+  - id: language-models-022
+    type: short_answer
+    difficulty: medium
+    tags:
+      - neural-language-model
+      - embedding-layer
+      - parameter-count
+    question: |
+      A neural language model looks up 50-dimensional embeddings for the previous 3 words,
+      concatenates them, applies a hidden layer $g(\mathbf{x}\mathbf{W}^1 + \mathbf{b}^1)$ with 100
+      units, and then a softmax layer over a vocabulary of 10,000 words. How many parameters do
+      $\mathbf{W}^1$ and $\mathbf{b}^1$ have together?
+    answer:
+      numeric: 15100
+      tolerance: 0
+      hint: a whole number
+      model: '$\mathbf{x} \in \mathbb{R}^{3 \cdot 50 = 150}$: $150 \times 100 + 100 = 15{,}100$'
+    explanation: |
+      Each lookup returns a row of the embedding matrix $\mathbf{E} \in \mathbb{R}^{|V| \times 50}$,
+      and concatenating three of them gives $\mathbf{x} \in \mathbb{R}^{150}$ [^1]. The hidden layer
+      therefore has $150 \times 100$ weights plus 100 biases, 15,100 in all [^1]. For comparison,
+      $\mathbf{E}$ has $500{,}000$ parameters and the output layer $100 \times 10{,}000 + 10{,}000$;
+      the vocabulary size, not the context length, dominates, and adding a context word only adds
+      $50 \times 100$ weights [^1].
+    references:
+      - source: trusthlt-nlp
+        locator: "Lecture 5 slides, frames 'Network concatenating 3 words as embeddings (d_w = 50)', 'Embedding layer: Lookup operation', 'Some advantages of neural LMs'"
+        url: https://github.com/trusthlt/nlp-with-deep-learning-lectures/blob/751182ea7a6a6f2246bbd8313329ecd09d270dbc/lectures/lecture05/pdf/nlpwdl2025-lecture05-handout.pdf
+    source:
+      id: trusthlt-nlp
+      ref: lectures/lecture05/nlpwdl2025-lecture05.tex#neural-lm-concat
+      url: https://github.com/trusthlt/nlp-with-deep-learning-lectures/blob/751182ea7a6a6f2246bbd8313329ecd09d270dbc/lectures/lecture05/pdf/nlpwdl2025-lecture05-handout.pdf
+    status: draft
+  - id: language-models-023
+    type: short_answer
+    difficulty: medium
+    tags:
+      - masked-language-modeling
+      - bert
+      - cross-entropy
+    question: |
+      During masked-language-model pretraining, the input "The cat sat" is masked at positions 1
+      and 3: "[MASK] cat [MASK]". The model gives the true token probability 0.5 for "The" at
+      position 1, 0.9 for "cat" at position 2 and 0.25 for "sat" at position 3. What is the loss of
+      this sequence (sum of negative natural-log likelihoods)?
+    answer:
+      numeric: 2.079
+      tolerance: 0.003
+      hint: a number, 3 decimals
+      model: 'Only masked positions count: $-\ln 0.5 - \ln 0.25 = 0.693 + 1.386 \approx 2.079$'
+    explanation: |
+      The masked-LM loss sums $-\log P_\theta[t, x_t]$ over the masked positions $\tilde{T}$ only
+      [^1]. Position 2 was kept, so its 0.9 does not enter the loss; the loss is
+      $-\ln 0.5 - \ln 0.25 \approx 0.693 + 1.386 = 2.079$. BERT is trained to predict only the
+      masked tokens, from their bidirectional context [^2].
+    references:
+      - source: trusthlt-nlp
+        locator: "Lecture 7 slides, frames 'BERT: pre-training by masked language modeling' and 'Explaining line 9 (negative log likelihood)'"
+        url: https://github.com/trusthlt/nlp-with-deep-learning-lectures/blob/751182ea7a6a6f2246bbd8313329ecd09d270dbc/lectures/lecture07/pdf/nlpwdl2025-lecture07-handout.pdf
+      - source: d2l
+        locator: Sec. 15.8.5.1 Masked Language Modeling
+        url: https://d2l.ai/chapter_natural-language-processing-pretraining/bert.html#masked-language-modeling
+    source:
+      id: trusthlt-nlp
+      ref: lectures/lecture07/nlpwdl2025-lecture07.tex#mlm-loss
+      url: https://github.com/trusthlt/nlp-with-deep-learning-lectures/blob/751182ea7a6a6f2246bbd8313329ecd09d270dbc/lectures/lecture07/pdf/nlpwdl2025-lecture07-handout.pdf
+    status: draft
+  - id: language-models-024
+    type: short_answer
+    difficulty: medium
+    tags:
+      - bigram
+      - maximum-likelihood
+      - sentence-probability
+    question: |
+      A bigram model is estimated by counting, $P(w_i \mid w_{i-1}) = \frac{\text{count}(w_{i-1}\, w_i)}{\text{count}(w_{i-1})}$,
+      on a three-sentence corpus:
+
+      ```text
+      <s> I am Gustave </s>
+      <s> Gustave I am </s>
+      <s> I love natural language processing </s>
+      ```
+
+      What probability does it assign to the sentence `<s> I am Gustave </s>`?
+    answer:
+      numeric: 0.111
+      tolerance: 0.002
+      hint: a probability, 3 decimals
+      model: $P(I \mid \text{<s>}) \cdot P(am \mid I) \cdot P(Gustave \mid am) \cdot P(\text{</s>} \mid Gustave) = \frac23 \cdot \frac23 \cdot \frac12 \cdot \frac12 = \frac19$
+    explanation: |
+      The chain rule with the bigram (first-order Markov) assumption turns the sentence probability
+      into a product of bigram probabilities [^1]. Counting: "I" follows `<s>` in 2 of 3 sentences;
+      "am" follows "I" in 2 of the 3 occurrences of "I" (the slide's example); "Gustave" follows
+      "am" once of twice; `</s>` follows "Gustave" once of twice [^1]. The product is
+      $\frac{2}{3}\cdot\frac{2}{3}\cdot\frac{1}{2}\cdot\frac{1}{2} = \frac{1}{9} \approx 0.111$. In
+      practice such products are computed as sums of logs to avoid underflow [^1].
+    references:
+      - source: cortal-nlp
+        locator: 'N-grams slides, slides 10–14 (How to compute P(S)?; N-grams are Markov models; Example: estimating bigram probabilities) and slide 18 (Practical issues)'
+        url: https://github.com/gustavecortal/natural-language-processing/blob/49945d346964022ea6003bf59a64e11966bbb863/2%20-%20N-grams/n-grams.pdf
+    source:
+      id: cortal-nlp
+      ref: 2 - N-grams/n-grams.pdf#bigram-sentence-probability
+      url: https://github.com/gustavecortal/natural-language-processing/blob/49945d346964022ea6003bf59a64e11966bbb863/2%20-%20N-grams/n-grams.pdf
+    status: draft
+  - id: language-models-025
+    type: short_answer
+    difficulty: medium
+    tags:
+      - add-one-smoothing
+      - laplace-smoothing
+      - bigram
+    question: |
+      On the corpus
+
+      ```text
+      <s> I am Gustave </s>
+      <s> Gustave I am </s>
+      <s> I love natural language processing </s>
+      ```
+
+      the word "love" occurs once, always followed by "natural", so the unsmoothed estimate is
+      $P(\text{natural} \mid \text{love}) = 1$. With add-one smoothing,
+      $P(w_i \mid w_{i-1}) = \frac{\text{count}(w_{i-1}\, w_i) + 1}{\text{count}(w_{i-1}) + |V|}$,
+      and a vocabulary of $|V| = 8$ word types (the 7 words plus `</s>`), what is
+      $P(\text{natural} \mid \text{love})$?
+    answer:
+      numeric: 0.222
+      tolerance: 0.002
+      hint: a probability, 3 decimals
+      model: $\frac{1 + 1}{1 + 8} = \frac{2}{9} \approx 0.222$
+    explanation: |
+      Add-one smoothing pretends every bigram was seen once more than it was, so unseen bigrams
+      such as "love Gustave" get $(0 + 1)/(1 + 8) = 1/9$ instead of 0 and no longer zero out a
+      sentence's probability [^1]. The probability mass for them is taken from the seen bigrams:
+      here $P(\text{natural} \mid \text{love})$ drops from 1 to $2/9 \approx 0.222$ [^1]. Such large
+      shifts after rare contexts are why better methods use backoff or interpolation [^1][^2].
+    references:
+      - source: cortal-nlp
+        locator: 'N-grams slides, slide 18 (Practical issues: add-1 smoothing) and slide 19 (backoff or interpolation)'
+        url: https://github.com/gustavecortal/natural-language-processing/blob/49945d346964022ea6003bf59a64e11966bbb863/2%20-%20N-grams/n-grams.pdf
+      - source: d2l
+        locator: Sec. 9.3.1.3 Laplace Smoothing (limitations of n-gram counting)
+        url: https://d2l.ai/chapter_recurrent-neural-networks/language-model.html#laplace-smoothing
+    source:
+      id: cortal-nlp
+      ref: 2 - N-grams/n-grams.pdf#add-one-smoothing
+      url: https://github.com/gustavecortal/natural-language-processing/blob/49945d346964022ea6003bf59a64e11966bbb863/2%20-%20N-grams/n-grams.pdf
+    status: draft
+  - id: language-models-026
+    type: short_answer
+    difficulty: medium
+    tags:
+      - perplexity
+      - evaluation
+    question: |
+      A language model assigns the probabilities 0.5, 0.25, 0.5 and 0.125 to the four tokens of a
+      test text, each given the tokens before it. What is its perplexity on this text,
+      $P(w_1, \dots, w_N)^{-1/N}$?
+    answer:
+      numeric: 3.364
+      tolerance: 0.005
+      hint: a number, 3 decimals
+      model: $P = 0.5 \cdot 0.25 \cdot 0.5 \cdot 0.125 = 1/128$; $128^{1/4} = 2^{7/4} \approx 3.364$
+    explanation: |
+      Perplexity is the inverse probability of the test set, normalized by its length, so longer
+      texts are not penalized just for being long; minimizing perplexity means maximizing
+      probability [^1]. Here $P = 2^{-7}$ over $N = 4$ tokens, so the perplexity is
+      $2^{7/4} \approx 3.36$: on average the model is as unsure as if it chose uniformly among about
+      3.4 tokens, matching the reading $\text{perplexity} = 2^H$ with $H = 1.75$ bits per token
+      [^1][^2].
+    references:
+      - source: cortal-nlp
+        locator: N-grams slides, slide 16 (Perplexity) and slide 17 (Perplexity and Entropy)
+        url: https://github.com/gustavecortal/natural-language-processing/blob/49945d346964022ea6003bf59a64e11966bbb863/2%20-%20N-grams/n-grams.pdf
+      - source: d2l
+        locator: Sec. 9.3.2 Perplexity
+        url: https://d2l.ai/chapter_recurrent-neural-networks/language-model.html#perplexity
+    source:
+      id: cortal-nlp
+      ref: 2 - N-grams/n-grams.pdf#perplexity
+      url: https://github.com/gustavecortal/natural-language-processing/blob/49945d346964022ea6003bf59a64e11966bbb863/2%20-%20N-grams/n-grams.pdf
+    status: draft
+  - id: language-models-027
+    type: short_answer
+    difficulty: easy
+    tags:
+      - interpolation
+      - trigram
+      - smoothing
+    question: |
+      An interpolated trigram model combines
+      $\hat{P}(w_n \mid w_{n-2}, w_{n-1}) = \lambda_1 P(w_n \mid w_{n-2}, w_{n-1}) + \lambda_2 P(w_n \mid w_{n-1}) + \lambda_3 P(w_n)$
+      with $\lambda_1 = 0.5$, $\lambda_2 = 0.3$, $\lambda_3 = 0.2$. The trigram, bigram and unigram
+      estimates for a word are 0.4, 0.2 and 0.05. What is the interpolated probability?
+    answer:
+      numeric: 0.27
+      tolerance: 0.001
+      hint: a probability, 2 decimals
+      model: $0.5 \cdot 0.4 + 0.3 \cdot 0.2 + 0.2 \cdot 0.05 = 0.20 + 0.06 + 0.01 = 0.27$
+    explanation: |
+      Interpolation trains models of different orders and mixes their estimates with weights that
+      sum to 1, so the result is still a probability distribution [^1]. Here
+      $0.20 + 0.06 + 0.01 = 0.27$. If the trigram was never seen, its estimate is 0 but the bigram
+      and unigram terms keep the word's probability above 0; backoff instead switches to the
+      shorter context only when the longer one has no counts [^1].
+    references:
+      - source: cortal-nlp
+        locator: N-grams slides, slide 19 (Better n-grams using backoff or interpolation methods)
+        url: https://github.com/gustavecortal/natural-language-processing/blob/49945d346964022ea6003bf59a64e11966bbb863/2%20-%20N-grams/n-grams.pdf
+    source:
+      id: cortal-nlp
+      ref: 2 - N-grams/n-grams.pdf#interpolation
+      url: https://github.com/gustavecortal/natural-language-processing/blob/49945d346964022ea6003bf59a64e11966bbb863/2%20-%20N-grams/n-grams.pdf
+    status: draft
+  - id: language-models-028
+    type: true_false
+    difficulty: medium
+    tags:
+      - greedy-decoding
+      - temperature
+      - text-generation
+    question: |
+      This loop generates 100 tokens:
+      ```python
+      input_tokens = tokenizer.encode(prompt)
+      with torch.no_grad():
+          for _ in range(100):
+              logits = model(torch.LongTensor(input_tokens).unsqueeze(0)).logits[0, -1, :]
+              probs = nn.functional.softmax(logits, dim=-1)
+              top_token = torch.argmax(probs).item()
+              input_tokens.append(top_token)
+      ```
+      True or false: dividing `logits` by a temperature of 0.2 before the softmax would change which tokens this loop
+      generates.
+    options:
+      - text: 'True'
+        why: Dividing by a positive temperature keeps the order of the logits, so the argmax, and with it the generated text, stays the same.
+      - text: 'False'
+        correct: true
+    explanation: |
+      The loop is greedy decoding: at each step it appends the single most likely next token and feeds the longer
+      sequence back into the model [^1]. Temperature rescales the logits before the softmax; any positive temperature
+      keeps their order, and softmax preserves rank order, so the argmax and the generated text do not change [^2].
+      Temperature matters only when you sample from the distribution, where a low value such as 0.2 concentrates the
+      probability on the likeliest tokens and a high value spreads it out [^1][^2].
+    references:
+      - source: neuromatch-dl
+        locator: W2D5 Tutorial 2, Section 4, Coding Exercise 4.1 Implement the code to generate text after fine-tuning (and the note on temperature)
+        url: https://github.com/NeuromatchAcademy/course-content-dl/blob/caba36c513fb8139ac3c9e7503f7a769dadde25e/tutorials/W2D5_TimeSeriesAndNaturalLanguageProcessing/instructor/W2D5_Tutorial2.ipynb
+      - title: 'Wikipedia: Softmax function'
+        url: https://en.wikipedia.org/wiki/Softmax_function
+        locator: Definition (temperature) and History (softmax preserves the rank order of its inputs)
+    source:
+      id: neuromatch-dl
+      ref: W2D5_TimeSeriesAndNaturalLanguageProcessing/W2D5_Tutorial2#ex4.1
+      url: https://github.com/NeuromatchAcademy/course-content-dl/blob/caba36c513fb8139ac3c9e7503f7a769dadde25e/tutorials/W2D5_TimeSeriesAndNaturalLanguageProcessing/instructor/W2D5_Tutorial2.ipynb
+    status: draft
+  - id: language-models-029
+    type: single
+    difficulty: easy
+    tags:
+      - evaluation
+      - code-generation
+      - metrics
+    question: |
+      You fine-tune a code model and evaluate it with token-level accuracy: the fraction of generated tokens that
+      exactly match a reference solution. Why is this a poor metric for code generation?
+    options:
+      - text: Many different programs do the same thing, so correct code can score low and similar-looking broken code high
+        correct: true
+      - text: Accuracy can only be computed for classifiers, not for models that generate sequences
+        why: Token accuracy is computable for any next-token predictor; the problem is what it measures.
+      - text: Accuracy is too slow to compute over long source files during evaluation
+        why: Comparing tokens is cheap; the issue is that matching text is not the same as correct behaviour.
+      - text: Accuracy rewards longer outputs, so the model learns to pad its code
+        why: Exact-match accuracy does not favour length; it rewards copying the surface form of the reference.
+    explanation: |
+      Exact token matching measures surface similarity to one reference, but code has many valid implementations of the
+      same function [^1]. A correct solution written differently gets a low score, while code that mimics the reference
+      but contains a logical error can score well; accuracy ignores whether the program runs and meets its
+      requirements [^1]. Execution-based metrics such as pass@k, which run unit tests on the generated code, address
+      this [^2].
+    references:
+      - source: neuromatch-dl
+        locator: W2D5 Tutorial 2, Think 4.3 Accuracy metric observations
+        url: https://github.com/NeuromatchAcademy/course-content-dl/blob/caba36c513fb8139ac3c9e7503f7a769dadde25e/tutorials/W2D5_TimeSeriesAndNaturalLanguageProcessing/instructor/W2D5_Tutorial2.ipynb
+      - title: Chen et al. (2021), Evaluating Large Language Models Trained on Code
+        url: https://arxiv.org/abs/2107.03374
+        locator: Sec. 2.1 Functional Correctness
+    source:
+      id: neuromatch-dl
+      ref: W2D5_TimeSeriesAndNaturalLanguageProcessing/W2D5_Tutorial2#think4.3
+      url: https://github.com/NeuromatchAcademy/course-content-dl/blob/caba36c513fb8139ac3c9e7503f7a769dadde25e/tutorials/W2D5_TimeSeriesAndNaturalLanguageProcessing/instructor/W2D5_Tutorial2.ipynb
+    status: draft
+  - id: language-models-030
+    type: single
+    difficulty: medium
+    tags:
+      - causal-lm
+      - logits
+      - lm-head
+      - tensor-shapes
+    question: |
+      A causal language model has `embed_tokens = Embedding(4096, 256)`, 8 decoder layers and
+      `lm_head = Linear(256, 4096)`. You run `out = model(input_ids)` on one sequence of 17 tokens. What
+      is `out[0]` (the first output of the `...ForCausalLM` model)?
+    options:
+      - text: A single embedding of the whole sequence, of shape `(1, 4096)`
+        why: The model gives one output per position; pooling over the sequence would be a separate step.
+      - text: Token embeddings of shape `(17, 256)` from the input layer
+        why: The embedding layer is the first step of the model, not its output, and the batch dimension is kept [^1].
+      - text: Next-token logits over the vocabulary, shape `(1, 17, 4096)`
+        correct: true
+      - text: The hidden states of the last decoder layer, of shape `(1, 17, 256)`
+        why: Hidden states are 256-dimensional, but a `...ForCausalLM` model returns the output of `lm_head` first; hidden states need `output_hidden_states=True` [^1].
+    explanation: |
+      The causal-LM head projects each position's 256-dimensional hidden state to the 4096-token
+      vocabulary, so the first output is a logits tensor of shape (batch, sequence length,
+      vocabulary size) = $(1, 17, 4096)$ [^1][^2]. The last dimension is 4096 *because* these are
+      vocabulary scores; the tutorial calls them "hidden states", but the hidden size is 256 [^2].
+    references:
+      - title: 'Hugging Face Transformers documentation: Model outputs (CausalLMOutput)'
+        url: https://huggingface.co/docs/transformers/main_classes/output
+        locator: CausalLMOutputWithPast (`logits` of shape (batch_size, sequence_length, config.vocab_size); `hidden_states` optional)
+      - source: galaxy-training
+        locator: Pretraining a Large Language Model (LLM) from Scratch on DNA Sequences — Choose the LLM architecture (model printout); Compute the embedding of a DNA sequence
+        url: https://training.galaxyproject.org/training-material/topics/statistics/tutorials/genomic-llm-pretraining/tutorial.html
+    source:
+      id: galaxy-training
+      ref: genomic-llm-pretraining#q17
+      url: https://github.com/galaxyproject/training-material/blob/917e68d1d61c2915c7a970d75468b8494be90c0d/topics/statistics/tutorials/genomic-llm-pretraining/tutorial.md
+    status: draft
+  - id: language-models-031
+    type: single
+    difficulty: easy
+    tags:
+      - causal-lm
+      - data-collator
+      - pretraining-objective
+    question: |
+      For pretraining, a DNA language model uses
+      `DataCollatorForLanguageModeling(tokenizer=tokenizer, mlm=False)`. What training objective does
+      `mlm=False` select?
+    options:
+      - text: Sequence classification — predict one label per sequence
+        why: A language-modelling collator builds token-level targets from the text itself; classification needs separate labels.
+      - text: No objective — the collator only pads and skips the loss
+        why: The collator also creates the labels, so the model computes a language-modelling loss [^1].
+      - text: Causal language modelling — predict each token from the tokens before it
+        correct: true
+      - text: Masked language modelling — predict about 15% of the tokens, hidden at random
+        why: That is what `mlm=True` would select; with `mlm=False` no tokens are masked [^1].
+    explanation: |
+      With `mlm=False` the collator copies the input IDs into the labels (padding positions are
+      ignored), and the causal LM shifts them internally, so each position learns to predict the next
+      token [^1][^2]. This matches the decoder-only (Mistral/Mixtral-style) model trained in the tutorial
+      [^3]. With `mlm=True` it would instead mask random tokens, BERT-style [^1].
+    references:
+      - title: 'Hugging Face Transformers documentation: Data Collator'
+        url: https://huggingface.co/docs/transformers/main_classes/data_collator#transformers.DataCollatorForLanguageModeling
+        locator: DataCollatorForLanguageModeling, parameter `mlm`
+      - source: hf-llm-course
+        locator: Chapter 7.6 Training a causal language model from scratch
+        url: https://huggingface.co/learn/llm-course/chapter7/6
+      - source: galaxy-training
+        locator: Pretraining a Large Language Model (LLM) from Scratch on DNA Sequences — Data Collation
+        url: https://training.galaxyproject.org/training-material/topics/statistics/tutorials/genomic-llm-pretraining/tutorial.html
+    source:
+      id: galaxy-training
+      ref: genomic-llm-pretraining#q13
+      url: https://github.com/galaxyproject/training-material/blob/917e68d1d61c2915c7a970d75468b8494be90c0d/topics/statistics/tutorials/genomic-llm-pretraining/tutorial.md
+    status: draft
+  - id: language-models-032
+    type: short_answer
+    difficulty: medium
+    tags:
+      - temperature
+      - sampling
+      - softmax
+    question: |
+      A language model's next-token logits are $(2, 1, 0)$. Generation samples from
+      $\operatorname{softmax}(\text{logits}/T)$. What probability does the most likely token get at
+      temperature $T = 0.5$? Give 3 decimals.
+    answer:
+      numeric: 0.867
+      tolerance: 0.001
+      hint: a number between 0 and 1, 3 decimals
+      model: $\operatorname{softmax}(4, 2, 0)_1 = e^4/(e^4 + e^2 + 1) \approx 0.867$ (at $T = 1$ it is 0.665)
+    explanation: |
+      Dividing the logits by $T = 0.5$ doubles them to $(4, 2, 0)$, and the softmax gives
+      $e^4/(e^4+e^2+1) = 54.6/63.0 = 0.867$ for the top token, versus $0.665$ at $T = 1$ [^1]. Low
+      temperatures sharpen the distribution, so sampled sequences become more similar to each other; in
+      the tutorial, generated DNA sequences grow more variable as the temperature rises [^2].
+    references:
+      - title: 'Wikipedia: Softmax function'
+        url: https://en.wikipedia.org/wiki/Softmax_function#Definition
+        locator: Section "Definition" (temperature $T = 1/\beta$)
+      - source: galaxy-training
+        locator: Generating Artificial Yeast DNA Sequences using a DNA LLM — Generate Synthetic DNA Sequences (temperatures 0.001 to 1.5)
+        url: https://training.galaxyproject.org/training-material/topics/statistics/tutorials/genomic-llm-sequence-generation/tutorial.html
+    source:
+      id: galaxy-training
+      ref: genomic-llm-sequence-generation#q5
+      url: https://github.com/galaxyproject/training-material/blob/917e68d1d61c2915c7a970d75468b8494be90c0d/topics/statistics/tutorials/genomic-llm-sequence-generation/tutorial.md
+    status: draft
+  - id: language-models-033
+    type: short_answer
+    difficulty: medium
+    tags:
+      - top-k-sampling
+      - decoding
+    question: |
+      The next-token distribution over five tokens is $(0.5, 0.2, 0.15, 0.1, 0.05)$. With top-$k$ sampling
+      and $k = 3$, what is the probability of sampling the third token (originally 0.15)? Give 3
+      decimals.
+    answer:
+      numeric: 0.176
+      tolerance: 0.001
+      hint: a number between 0 and 1, 3 decimals
+      model: $0.15/(0.5 + 0.2 + 0.15) = 0.15/0.85 \approx 0.176$
+    explanation: |
+      Top-$k$ sampling keeps only the $k$ most probable tokens and renormalizes their probabilities to
+      sum to 1 [^1]. The kept mass is $0.85$, so the third token gets $0.15/0.85 = 0.176$, and the last
+      two tokens cannot be sampled at all [^1][^2]. This cuts off the unreliable tail of the distribution
+      while keeping some randomness.
+    references:
+      - title: 'Hugging Face blog: How to generate text — Top-K Sampling'
+        url: https://huggingface.co/blog/how-to-generate#top-k-sampling
+        locator: Section "Top-K Sampling"
+      - source: galaxy-training
+        locator: Generating Artificial Yeast DNA Sequences using a DNA LLM — Build the Sequence Generator (`do_sample=True`, `top_k=50`)
+        url: https://training.galaxyproject.org/training-material/topics/statistics/tutorials/genomic-llm-sequence-generation/tutorial.html
+    source:
+      id: galaxy-training
+      ref: genomic-llm-sequence-generation#q2
+      url: https://github.com/galaxyproject/training-material/blob/917e68d1d61c2915c7a970d75468b8494be90c0d/topics/statistics/tutorials/genomic-llm-sequence-generation/tutorial.md
+    status: draft
+  - id: language-models-034
+    type: single
+    difficulty: easy
+    tags:
+      - autoregressive-generation
+      - inference
+      - teacher-forcing
+    question: |
+      Training a GPT-style model on a sequence of $T$ tokens takes one forward pass, but greedily
+      generating $T$ new tokens takes much longer. Why?
+    options:
+      - text: Tokens are produced one at a time, each needing its own forward pass
+        correct: true
+      - text: Generation also computes gradients, which doubles the work per token
+        why: Generation is inference only; no gradients are computed.
+      - text: The causal mask is switched off during generation, so attention costs more
+        why: Generation uses the same causal attention; the mask is not the issue.
+      - text: Greedy decoding scores every possible sequence of $T$ tokens before choosing
+        why: That would be exhaustive search; greedy decoding picks the single most likely token at each step.
+    explanation: |
+      During training the whole target text is known, so the causal mask lets one forward pass produce
+      all $T$ next-token predictions in parallel [^1]. During generation the token at step $t$ does not
+      exist until step $t - 1$ has been decoded, so the model must run $T$ sequential passes [^2]. Key–value
+      caching makes each pass cheaper but cannot remove this sequential dependency.
+    references:
+      - source: d2l
+        locator: Sec. 11.9.3 Decoder-Only
+        url: https://d2l.ai/chapter_attention-mechanisms-and-transformers/large-pretraining-transformers.html#decoder-only
+      - source: d2l
+        locator: Sec. 9.5.5 Decoding
+        url: https://d2l.ai/chapter_recurrent-neural-networks/rnn-scratch.html#decoding
+      - source: mit-ocw-67960
+        locator: Homework 3, Problem 4(e)
+        url: https://ocw.mit.edu/courses/6-7960-deep-learning-fall-2024/resources/mit6_7960_f24_hw3_pdf/
+    source:
+      id: mit-ocw-67960
+      ref: mit6_7960_f24_hw3#q4e
+      url: https://ocw.mit.edu/courses/6-7960-deep-learning-fall-2024/resources/mit6_7960_f24_hw3_pdf/
+    status: draft
+  - id: language-models-035
+    type: short_answer
+    difficulty: medium
+    tags:
+      - nucleus-sampling
+      - top-p
+      - decoding
+    question: |
+      A language model gives the next-token probabilities $(0.5, 0.2, 0.15, 0.1, 0.05)$. Nucleus
+      (top-$p$) sampling with $p = 0.8$ keeps the smallest set of most likely tokens whose probabilities
+      add up to at least $p$, renormalizes, and samples. With what probability is the most likely token
+      chosen?
+    answer:
+      numeric: 0.588
+      tolerance: 0.002
+      hint: a probability, 3 decimals
+      model: The nucleus is the top three tokens ($0.5 + 0.2 + 0.15 = 0.85 \ge 0.8$), so $0.5 / 0.85 \approx 0.588$
+    explanation: |
+      The cumulative sums are 0.5, 0.7 and 0.85, so the first three tokens form the nucleus and the
+      remaining 0.15 of probability mass is cut off [^1]. Renormalizing gives $0.5 / 0.85 \approx 0.588$
+      for the top token. Unlike greedy decoding it can still pick less likely words, which avoids
+      repetitive text, and unlike plain sampling it never picks words from the unreliable tail [^1].
+      The nucleus grows when the model is unsure and shrinks when it is confident [^2].
+    references:
+      - title: Holtzman et al. (2020), The Curious Case of Neural Text Degeneration, arXiv:1904.09751
+        locator: Sec. 3.1 Nucleus Sampling
+        url: https://arxiv.org/abs/1904.09751
+      - source: mit-ocw-67960
+        locator: Homework 3, Problem 4(h)
+        url: https://ocw.mit.edu/courses/6-7960-deep-learning-fall-2024/resources/mit6_7960_f24_hw3_pdf/
+    source:
+      id: mit-ocw-67960
+      ref: mit6_7960_f24_hw3#q4h
+      url: https://ocw.mit.edu/courses/6-7960-deep-learning-fall-2024/resources/mit6_7960_f24_hw3_pdf/
+    status: draft
+  - id: language-models-036
+    type: short_answer
+    difficulty: medium
+    tags:
+      - smoothing
+      - absolute-discounting
+      - n-gram
+    question: |
+      After a context $w$, a corpus shows $N = 10$ following tokens of three word types, with counts
+      5, 3 and 2. The vocabulary has $V = 10$ words, so 7 types never followed $w$. Absolute discounting
+      with $\delta = 0.5$ subtracts $\delta$ from every non-zero count, gives seen words
+      $(r - \delta)/N$, and shares the freed probability mass equally among the unseen types. What is the
+      probability of each unseen word?
+    answer:
+      numeric: 0.0214
+      tolerance: 0.0005
+      hint: a probability, 3 significant digits
+      model: Freed mass $3 \times 0.5 / 10 = 0.15$, shared by 7 unseen words, $0.15 / 7 \approx 0.0214$
+    explanation: |
+      The seen words get $4.5/10$, $2.5/10$ and $1.5/10$, which sum to 0.85, so the three discounts
+      freed $3 \times 0.5 / 10 = 0.15$ [^1]. Split over the $N_0 = 7$ unseen types that is about 0.0214 each,
+      and the distribution sums to 1 again. Kneser–Ney smoothing builds on the same absolute discount
+      but shares the freed mass in proportion to a lower-order distribution instead of equally [^2].
+    references:
+      - source: mit-ocw-6864
+        locator: Problem Set 2, Question 1 (absolute discounting)
+        url: https://ocw.mit.edu/courses/6-864-advanced-natural-language-processing-fall-2005/resources/hw2/
+      - title: 'Wikipedia: Kneser–Ney smoothing'
+        locator: Introduction; Method (absolute-discounting interpolation)
+        url: https://en.wikipedia.org/wiki/Kneser%E2%80%93Ney_smoothing
+    source:
+      id: mit-ocw-6864
+      ref: hw2#q1a
+      url: https://ocw.mit.edu/courses/6-864-advanced-natural-language-processing-fall-2005/resources/hw2/
+    status: draft
+  - id: language-models-037
+    type: single
+    difficulty: medium
+    tags:
+      - smoothing
+      - linear-discounting
+      - absolute-discounting
+    question: |
+      Two smoothing methods take probability mass from seen words: absolute discounting subtracts a
+      constant $\delta$ from every non-zero count, and linear discounting multiplies every seen word's
+      probability by $1 - \alpha$. How much probability does a word seen $r$ times (out of $N$) lose?
+    options:
+      - text: $\delta / N$ under absolute and $\alpha r / N$ under linear discounting
+        correct: true
+      - text: $\alpha r / N$ under absolute and $\delta / N$ under linear discounting
+        why: The roles are swapped; subtracting a constant count removes the same $\delta/N$ from every seen word.
+      - text: The same amount $\delta / N$ under both methods
+        why: Linear discounting removes a fixed fraction, so frequent words give up more probability than rare ones.
+      - text: Nothing; both only add probability to unseen words
+        why: The total must stay 1, so the mass given to unseen words has to come from the seen ones.
+    explanation: |
+      Under absolute discounting $P = (r - \delta)/N$, so each seen word gives up $\delta/N$ whatever its
+      count [^1]. Under linear discounting $P = (1 - \alpha)r/N$, a loss of $\alpha r/N$ that grows with
+      $r$, so frequent and reliable estimates are discounted most [^1]. Absolute discounting matches
+      observed count statistics better and is the basis of Kneser–Ney smoothing [^2].
+    references:
+      - source: mit-ocw-6864
+        locator: Problem Set 2, Question 1
+        url: https://ocw.mit.edu/courses/6-864-advanced-natural-language-processing-fall-2005/resources/hw2/
+      - title: 'Wikipedia: Kneser–Ney smoothing'
+        locator: Introduction; Method
+        url: https://en.wikipedia.org/wiki/Kneser%E2%80%93Ney_smoothing
+    source:
+      id: mit-ocw-6864
+      ref: hw2#q1b
+      url: https://ocw.mit.edu/courses/6-864-advanced-natural-language-processing-fall-2005/resources/hw2/
+    status: draft
+  - id: language-models-038
+    type: short_answer
+    difficulty: medium
+    tags:
+      - smoothing
+      - good-turing
+      - unseen-words
+    question: |
+      A sample of $n = 20$ word tokens contains $N_1 = 6$ word types seen exactly once, and $N_0 = 30$
+      vocabulary words do not occur at all. Good–Turing estimation gives the unseen words the total
+      probability $N_1 / n$, shared equally among them. What probability does each unseen word get?
+    answer:
+      numeric: 0.01
+      tolerance: 0.0005
+      hint: a probability
+      model: $N_1 / (n N_0) = 6 / (20 \times 30) = 0.01$
+    explanation: |
+      Good–Turing estimates the chance that the next token is a new word by the fraction of tokens
+      that were singletons, $N_1 / n = 0.3$ [^1]. Shared among the 30 unseen words, each gets $0.01$. The
+      adjusted counts $r^* = (r + 1)N_{r+1}/N_r$ of the seen words are what make the probabilities sum to
+      1 together with this unseen mass [^1][^2].
+    references:
+      - title: 'Wikipedia: Good–Turing frequency estimation'
+        locator: The method — Calculation
+        url: https://en.wikipedia.org/wiki/Good%E2%80%93Turing_frequency_estimation
+      - source: mit-ocw-6864
+        locator: Problem Set 2, Question 2
+        url: https://ocw.mit.edu/courses/6-864-advanced-natural-language-processing-fall-2005/resources/hw2/
+    source:
+      id: mit-ocw-6864
+      ref: hw2#q2b
+      url: https://ocw.mit.edu/courses/6-864-advanced-natural-language-processing-fall-2005/resources/hw2/
+    status: draft
+  - id: language-models-039
+    type: single
+    difficulty: medium
+    tags:
+      - smoothing
+      - good-turing
+    question: |
+      Good–Turing replaces the count $r$ of a word by $r^* = (r + 1)N_{r+1}/N_r$, where $N_r$ is the number
+      of word types seen exactly $r$ times. What goes wrong if this is applied to the most frequent
+      word of a corpus?
+    options:
+      - text: Its adjusted count is 0, because $N_{r+1} = 0$
+        correct: true
+      - text: Its probability exceeds 1, because $r + 1 > r$
+        why: The factor $N_{r+1}/N_r$ is usually below 1; the real problem is that it can be 0.
+      - text: The formula needs $N_0$, which is unknown for frequent words
+        why: $N_0$ only matters for sharing the unseen mass; the frequent word's estimate uses $N_r$ and $N_{r+1}$.
+      - text: Nothing; Good–Turing is most accurate for frequent words
+        why: For large $r$ the counts $N_r$ are tiny and noisy, so Good–Turing is least reliable there.
+    explanation: |
+      The most frequent word has some count $r$ that no other word exceeds, so $N_{r+1} = 0$ and
+      $r^* = 0$, even though this is the word we know best [^1]. Large counts are reliable as they are,
+      so practical schemes leave them alone or first smooth the $N_r$ values, for example by reading
+      them off a regression line fitted to $\log N_r$ against $\log r$ [^1][^2].
+    references:
+      - title: 'Wikipedia: Good–Turing frequency estimation'
+        locator: The method — Calculation; Smoothing
+        url: https://en.wikipedia.org/wiki/Good%E2%80%93Turing_frequency_estimation
+      - source: mit-ocw-6864
+        locator: Problem Set 2, Question 2.1
+        url: https://ocw.mit.edu/courses/6-864-advanced-natural-language-processing-fall-2005/resources/hw2/
+    source:
+      id: mit-ocw-6864
+      ref: hw2#q2a
+      url: https://ocw.mit.edu/courses/6-864-advanced-natural-language-processing-fall-2005/resources/hw2/
+    status: draft
+  - id: language-models-040
+    type: single
+    difficulty: hard
+    tags:
+      - log-linear-model
+      - bigram
+      - maximum-likelihood
+    question: |
+      A bigram language model $P(w_2 \mid w_1) \propto \exp(\theta \cdot \phi(w_1, w_2))$ has one indicator
+      feature for every word pair $(u, v)$, which is 1 exactly when $w_1 = u$ and $w_2 = v$. It is trained by
+      maximum likelihood without regularization on a corpus in which every possible bigram occurs.
+      What does the trained model predict?
+    options:
+      - text: $P(w_2 \mid w_1) = \mathrm{Count}(w_1, w_2) / \mathrm{Count}(w_1)$, the relative frequency
+        correct: true
+      - text: The add-one smoothed estimate $(\mathrm{Count}(w_1, w_2) + 1)/(\mathrm{Count}(w_1) + \lvert V \rvert)$
+        why: Without a regularizer or prior nothing adds pseudo-counts; the optimum matches the data exactly.
+      - text: The unigram frequency of $w_2$, whatever $w_1$ is
+        why: The features are specific to each pair, so the model can and does condition on $w_1$.
+      - text: A uniform distribution over the vocabulary, because all features have the same form
+        why: The weights are learned from the counts, so frequent bigrams get larger weights.
+    explanation: |
+      The gradient of the log-likelihood is observed feature counts minus expected feature counts [^1].
+      For the feature of pair $(u, v)$ this is $\mathrm{Count}(u, v) - \mathrm{Count}(u)\,P(v \mid u)$, so at
+      the optimum $P(v \mid u) = \mathrm{Count}(u, v)/\mathrm{Count}(u)$ [^2]. With one free weight per pair
+      the log-linear model can represent any conditional distribution, so it reproduces the
+      maximum-likelihood bigram estimate. If some bigram had count 0, its weight would be pushed to
+      $-\infty$, which is why such models need regularization.
+    references:
+      - source: d2l
+        locator: Sec. 4.1.2.2 Softmax and Cross-Entropy Loss, Eq. (4.1.10)
+        url: https://d2l.ai/chapter_linear-classification/softmax-regression.html#softmax-and-cross-entropy-loss
+      - source: mit-ocw-6864
+        locator: Problem Set 3, Question 2
+        url: https://ocw.mit.edu/courses/6-864-advanced-natural-language-processing-fall-2005/resources/hw3/
+    source:
+      id: mit-ocw-6864
+      ref: hw3#q2
+      url: https://ocw.mit.edu/courses/6-864-advanced-natural-language-processing-fall-2005/resources/hw3/
+    status: draft
+  - id: language-models-041
+    type: short_answer
+    difficulty: medium
+    tags:
+      - n-gram
+      - bigram
+      - maximum-likelihood
+    question: |
+      A bigram model is estimated by maximum likelihood (relative counts) from this corpus of three
+      sentences:
+
+      ```text
+      <s> the sunset is nice </s>
+      <s> people watch the sunset </s>
+      <s> they enjoy the beautiful sunset </s>
+      ```
+
+      What probability does it give to `<s> people watch the beautiful sunset </s>`? Multiply the six
+      bigram probabilities, from the one for `<s> people` to the one for `sunset </s>`.
+    answer:
+      numeric: 0.0741
+      tolerance: 0.0005
+      hint: a probability, 3 significant digits (a fraction such as 1/9 also works)
+      model: $\frac{1}{3} \cdot 1 \cdot 1 \cdot \frac{1}{3} \cdot 1 \cdot \frac{2}{3} = \frac{2}{27} \approx 0.0741$
+    explanation: |
+      Each bigram probability is a count ratio, $P(w \mid v) = c(v\,w) / c(v)$ [^2]. Three sentences start
+      with `<s>` and one continues with "people" (1/3); "people watch" and "watch the" are certain;
+      "the" occurs three times and once before "beautiful" (1/3); "beautiful sunset" is certain; and
+      "sunset" occurs three times, twice before `</s>` (2/3). The product is $2/27 \approx 0.074$
+      [^1].
+    references:
+      - source: nptel-intro-llms
+        locator: Assignment 2, Q4 (bigram probability of a sentence, accepted answer 2/27)
+        url: https://archive.nptel.ac.in/content/storage2/courses/downloads_new/106102576/noc25_cs45_assignment_Week_2.png
+      - source: d2l
+        locator: Sec. 9.3.1.1 Markov Models and n-grams
+        url: https://d2l.ai/chapter_recurrent-neural-networks/language-model.html#markov-models-and-n-grams
+    source:
+      id: nptel-intro-llms
+      ref: intro-llms/assignment2#q4
+      url: https://archive.nptel.ac.in/content/storage2/courses/downloads_new/106102576/noc25_cs45_assignment_Week_2.png
+    status: draft
+  - id: language-models-042
+    type: short_answer
+    difficulty: medium
+    tags:
+      - perplexity
+      - evaluation
+    question: |
+      A language model assigns the sentence `<s> people watch the beautiful sunset </s>` the
+      probability $P = 2/27$ (this already includes the step into `</s>`). Its perplexity is
+      $P^{-1/N}$, where $N$ is the number of words, here counted without `<s>` and `</s>`, so $N = 5$.
+      What is the perplexity?
+    answer:
+      numeric: 1.683
+      tolerance: 0.002
+      hint: a number, 3 decimals
+      model: $(27/2)^{1/5} = 13.5^{0.2} \approx 1.683$
+    explanation: |
+      Perplexity is the inverse probability normalised by length, the exponential of the average
+      negative log-likelihood per token [^2]: $\exp(-\tfrac{1}{5}\ln\tfrac{2}{27}) = 13.5^{1/5} \approx
+      1.683$ [^1]. It is the effective number of equally likely choices per word, so lower is better.
+      Conventions differ: counting `</s>` as a sixth token, as many textbooks do, gives
+      $13.5^{1/6} \approx 1.543$, so compare perplexities only under the same convention.
+    references:
+      - source: nptel-intro-llms
+        locator: Assignment 2, Q5 (perplexity of the sentence, accepted answer (27/2)^(1/5))
+        url: https://archive.nptel.ac.in/content/storage2/courses/downloads_new/106102576/noc25_cs45_assignment_Week_2.png
+      - source: d2l
+        locator: Sec. 9.3.2 Perplexity
+        url: https://d2l.ai/chapter_recurrent-neural-networks/language-model.html#perplexity
+    source:
+      id: nptel-intro-llms
+      ref: intro-llms/assignment2#q5
+      url: https://archive.nptel.ac.in/content/storage2/courses/downloads_new/106102576/noc25_cs45_assignment_Week_2.png
+    status: draft
+  - id: language-models-043
+    type: short_answer
+    difficulty: easy
+    tags:
+      - n-gram
+      - markov-assumption
+    question: |
+      A 5-gram language model predicts each word from a fixed number of preceding words. Viewed as a
+      Markov model, what is its order, i.e. how many previous words does it condition on?
+    answer:
+      numeric: 4
+      tolerance: 0
+      hint: a whole number
+      model: '4: $P(w_t \mid w_{t-4}, \dots, w_{t-1})$'
+    explanation: |
+      An $n$-gram model approximates $P(w_t \mid w_1, \dots, w_{t-1})$ by
+      $P(w_t \mid w_{t-n+1}, \dots, w_{t-1})$, keeping only the last $n - 1$ words [^2]. A 5-gram model
+      therefore uses a context of 4 words and is a fourth-order Markov model; a bigram model is first
+      order [^1][^2].
+    references:
+      - source: nptel-intro-llms
+        locator: Assignment 2, Q1 (a 5-gram model is a fourth-order Markov model)
+        url: https://archive.nptel.ac.in/content/storage2/courses/downloads_new/106102576/noc25_cs45_assignment_Week_2.png
+      - source: d2l
+        locator: Sec. 9.3.1.1 Markov Models and n-grams
+        url: https://d2l.ai/chapter_recurrent-neural-networks/language-model.html#markov-models-and-n-grams
+    source:
+      id: nptel-intro-llms
+      ref: intro-llms/assignment2#q1
+      url: https://archive.nptel.ac.in/content/storage2/courses/downloads_new/106102576/noc25_cs45_assignment_Week_2.png
+    status: draft
+  - id: language-models-044
+    type: single
+    difficulty: medium
+    tags:
+      - kneser-ney
+      - smoothing
+      - continuation-probability
+    question: |
+      The word "Kong" is frequent in a corpus, but almost only after "Hong". When a bigram has not
+      been seen, Kneser–Ney smoothing falls back on a continuation probability
+      $P_{\text{cont}}(w)$ instead of the plain unigram frequency. What does $P_{\text{cont}}(w)$
+      measure, and why does it help?
+    options:
+      - text: How many distinct words precede $w$; "Kong" gets little mass in new contexts
+        correct: true
+      - text: How often $w$ occurs overall; frequent words like "Kong" should get more mass
+        why: That is the plain unigram estimate, which would wrongly favour "Kong" after unseen histories [^2].
+      - text: The length of $w$ in characters; longer words are rarer in new contexts
+        why: Kneser–Ney is defined on counts of word types and contexts, not on word length [^2].
+      - text: The perplexity of $w$ on held-out data; it picks words that minimise perplexity
+        why: The continuation count is computed from training counts, without held-out perplexity [^2].
+    explanation: |
+      $P_{\text{cont}}(w)$ is proportional to the number of different words that precede $w$, so it
+      asks how likely $w$ is to appear as a novel continuation [^2]. "Kong" follows only one word, so
+      although its unigram count is high, it gets a small share of the backoff mass, while a word
+      that follows many different words gets a large share [^1][^2]. This is why Kneser–Ney
+      usually beats backoff to raw unigram frequencies.
+    references:
+      - source: nptel-intro-llms
+        locator: Assignment 2, Q6 (main intuition behind Kneser–Ney smoothing)
+        url: https://archive.nptel.ac.in/content/storage2/courses/downloads_new/106102576/noc25_cs45_assignment_Week_2.png
+      - title: 'Wikipedia: Kneser–Ney smoothing'
+        url: https://en.wikipedia.org/wiki/Kneser%E2%80%93Ney_smoothing#Method
+        locator: Method
+    source:
+      id: nptel-intro-llms
+      ref: intro-llms/assignment2#q6
+      url: https://archive.nptel.ac.in/content/storage2/courses/downloads_new/106102576/noc25_cs45_assignment_Week_2.png
+    status: draft

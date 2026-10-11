@@ -821,3 +821,403 @@ questions:
       ref: chapter_reinforcement-learning/mdp#ex2
       url: https://d2l.ai/chapter_reinforcement-learning/mdp.html#exercises
     status: draft
+  - id: rl-basics-025
+    type: short_answer
+    difficulty: hard
+    tags:
+      - value-iteration
+      - bellman-equation
+      - gridworld
+    question: |
+      A grid world has 6 free cells in 2 rows of 3, surrounded by walls; the goal `g` is the top-left cell:
+      ```
+      g . .
+      . . .
+      ```
+      Actions move up, down, left or right; moving into a wall leaves the agent where it is. Every action whose next cell
+      is the goal gives reward 1 (including bumping into a wall while standing on the goal); all other actions give 0,
+      and the goal is not terminal. Value iteration with $\gamma = 0.99$ converges to the optimal values $V^*$. What is
+      $V^*$ of the bottom-right cell?
+    answer:
+      numeric: 98.01
+      tolerance: 0.02
+      hint: a number, 2 decimals
+      model: $V^*(g) = 1/(1 - \gamma) = 100$; a neighbour of the goal gets $1 + 0.99 \cdot 100 = 100$; two steps away $99$; three steps away $0.99 \cdot 99 = 98.01$
+    explanation: |
+      Value iteration repeats the Bellman backup $Q(s,a) \leftarrow R(s,a) + \gamma\sum_{s'} P(s' \mid s, a)\max_{a'} Q(s', a')$ until it stops
+      changing [^1][^2]. On the goal the agent can collect reward 1 forever by bumping into a wall, so
+      $V^*(g) = 1/(1 - 0.99) = 100$, and a cell next to the goal gets $1 + 0.99 \cdot 100 = 100$ as well [^1]. Each further step
+      multiplies by $\gamma$ without new reward: the bottom-right cell is 3 moves from the goal, so
+      $V^* = 0.99 \cdot 0.99 \cdot 100 = 98.01$. The greedy policy $\arg\max_a Q(s, a)$ then always moves toward the goal [^1].
+    references:
+      - source: neuromatch-dl
+        locator: W3D4 Tutorial 1, Section 2.2 Markov Decision Process and Section 3 Value iteration (Coding Exercise 4)
+        url: https://github.com/NeuromatchAcademy/course-content-dl/blob/caba36c513fb8139ac3c9e7503f7a769dadde25e/tutorials/W3D4_BasicReinforcementLearning/instructor/W3D4_Tutorial1.ipynb
+      - source: d2l
+        locator: Sec. 17.2 Value Iteration
+        url: https://d2l.ai/chapter_reinforcement-learning/value-iter.html
+    source:
+      id: neuromatch-dl
+      ref: W3D4_BasicReinforcementLearning/W3D4_Tutorial1#ex4
+      url: https://github.com/NeuromatchAcademy/course-content-dl/blob/caba36c513fb8139ac3c9e7503f7a769dadde25e/tutorials/W3D4_BasicReinforcementLearning/instructor/W3D4_Tutorial1.ipynb
+    status: draft
+  - id: rl-basics-026
+    type: single
+    difficulty: medium
+    tags:
+      - behavioural-cloning
+      - imitation-learning
+      - policy-network
+    question: |
+      To build an Othello player, NMA trains a policy network on a dataset of expert games: for each board the network
+      outputs log-probabilities over the board positions and is trained to maximize the log-probability of the move the
+      expert made. What kind of learning is this?
+    options:
+      - text: "Behavioural cloning: supervised learning of the expert's moves, without any rewards"
+        correct: true
+      - text: 'Q-learning: the network learns the value of each move from the final game outcome'
+        why: The targets are the expert's moves, not values or returns; no reward signal enters the loss.
+      - text: 'Policy-gradient RL: moves are reinforced in proportion to the return of each game'
+        why: Policy gradients weight log-probabilities by returns of the agent's own games; here every expert move is a fixed label.
+      - text: 'Unsupervised learning: the network clusters board positions without any targets'
+        why: Each board comes with a target move, so this is supervised learning.
+    explanation: |
+      The loss is the cross-entropy between the network's move distribution and the expert's move,
+      $-\frac1N\sum_i \log \pi_\theta(a_i^{\text{expert}} \mid s_i)$, an ordinary classification objective [^1]. Learning a policy by
+      imitating demonstrations this way is behavioural cloning [^2]. It needs no reward, but the player can only be as
+      good as the demonstrations and can stray into situations the experts never produced, which is why NMA later adds
+      planning with Monte Carlo rollouts [^1][^2].
+    references:
+      - source: neuromatch-dl
+        locator: W3D5 Tutorial 2, Section 3 Train a policy network from expert game data (Coding Exercise 3.1)
+        url: https://github.com/NeuromatchAcademy/course-content-dl/blob/caba36c513fb8139ac3c9e7503f7a769dadde25e/tutorials/W3D5_AdvancedReinforcementLearningAndDeepLearningDiscussion3/instructor/W3D5_Tutorial2.ipynb
+      - title: 'Wikipedia: Imitation learning'
+        url: https://en.wikipedia.org/wiki/Imitation_learning
+        locator: Approaches, Behavior Cloning
+    source:
+      id: neuromatch-dl
+      ref: W3D5_AdvancedReinforcementLearningAndDeepLearningDiscussion3/W3D5_Tutorial2#ex3.1
+      url: https://github.com/NeuromatchAcademy/course-content-dl/blob/caba36c513fb8139ac3c9e7503f7a769dadde25e/tutorials/W3D5_AdvancedReinforcementLearningAndDeepLearningDiscussion3/instructor/W3D5_Tutorial2.ipynb
+    status: draft
+  - id: rl-basics-027
+    type: single
+    difficulty: medium
+    tags:
+      - monte-carlo-rollouts
+      - planning
+      - board-games
+    question: NMA's Monte Carlo Othello player has a policy network and a value network. How does it choose a move?
+    options:
+      - text: For each of the few likeliest moves, it samples short continuations with the policy, scores their ends with the value net, and takes the best average
+        correct: true
+      - text: It plays the move with the highest policy probability and uses one rollout only to check that the move is legal
+        why: Legality comes from the game rules; the rollouts estimate how good each candidate move is.
+      - text: It searches every legal move exhaustively to the end of the game and plays the guaranteed winner
+        why: Rollouts are short (a few moves deep) and only for the top few moves; the full game tree is far too large to search.
+      - text: It keeps training the policy network during each game, using the rollout outcomes as new labels
+        why: The rollouts only evaluate candidate moves; the networks stay fixed while the player plays.
+    explanation: |
+      The planner keeps the $K$ moves with the highest policy probability (3 in NMA's setting) and, for each, runs several
+      rollouts (10) that sample moves from the policy for a few steps (depth 5), returning the value network's estimate at
+      the end, or the actual result if the game ends [^1]. Averaging these returns gives a Monte Carlo estimate of each
+      move's value, and the player picks the highest [^1][^2]. Simulating ahead lets the agent look beyond a single value
+      prediction, at the cost of many network evaluations per move [^2].
+    references:
+      - source: neuromatch-dl
+        locator: W3D5 Tutorial 2, Section 5 Plan using Monte Carlo Rollouts (Coding Exercises 5.1 and 5.2)
+        url: https://github.com/NeuromatchAcademy/course-content-dl/blob/caba36c513fb8139ac3c9e7503f7a769dadde25e/tutorials/W3D5_AdvancedReinforcementLearningAndDeepLearningDiscussion3/instructor/W3D5_Tutorial2.ipynb
+      - title: 'Sutton and Barto (2018), Reinforcement Learning: An Introduction, 2nd ed.'
+        url: http://incompleteideas.net/book/the-book-2nd.html
+        locator: Sec. 8.10 Rollout Algorithms
+    source:
+      id: neuromatch-dl
+      ref: W3D5_AdvancedReinforcementLearningAndDeepLearningDiscussion3/W3D5_Tutorial2#ex5.1
+      url: https://github.com/NeuromatchAcademy/course-content-dl/blob/caba36c513fb8139ac3c9e7503f7a769dadde25e/tutorials/W3D5_AdvancedReinforcementLearningAndDeepLearningDiscussion3/instructor/W3D5_Tutorial2.ipynb
+    status: draft
+  - id: rl-basics-028
+    type: short_answer
+    difficulty: easy
+    tags:
+      - td-learning
+      - value-function
+      - stochastic-rewards
+    question: |
+      In a TD-learning model of classical conditioning, a cue is followed a few steps later by a reward of 10 units that
+      arrives with probability 0.8 (otherwise nothing), after which no further rewards follow in the trial. Values are
+      learned with a small learning rate. What does the learned value of the state just before the reward converge to?
+    answer:
+      numeric: 8
+      tolerance: 0.05
+      hint: a number
+      model: $\mathbb{E}[r] = 0.8 \times 10 = 8$
+    explanation: |
+      The TD update $V(s_t) \leftarrow V(s_t) + \alpha\,[r_{t+1} + \gamma V(s_{t+1}) - V(s_t)]$ moves the value a little toward each sampled
+      target [^1][^2]. With a small $\alpha$ this averages the targets, and no reward follows afterwards, so the value converges
+      to the expected reward $0.8 \cdot 10 + 0.2 \cdot 0 = 8$ [^1]. NMA shows that a probabilistic reward and a mixture of reward
+      sizes with the same mean give the same values: TD learning tracks the average reward [^1].
+    references:
+      - source: neuromatch-cn
+        locator: W3D4 Tutorial 1, Section 1 Temporal difference learning and Section 3 TD-learning with probabilistic rewards (Think! 3)
+        url: https://github.com/NeuromatchAcademy/course-content/blob/44634e960df7a14cd0bf7398187f2d209d26b0e8/tutorials/W3D4_ReinforcementLearning/instructor/W3D4_Tutorial1.ipynb
+      - title: 'Sutton and Barto (2018), Reinforcement Learning: An Introduction, 2nd ed.'
+        url: http://incompleteideas.net/book/the-book-2nd.html
+        locator: Sec. 6.1 TD Prediction
+    source:
+      id: neuromatch-cn
+      ref: W3D4_ReinforcementLearning/W3D4_Tutorial1#think3
+      url: https://github.com/NeuromatchAcademy/course-content/blob/44634e960df7a14cd0bf7398187f2d209d26b0e8/tutorials/W3D4_ReinforcementLearning/instructor/W3D4_Tutorial1.ipynb
+    status: draft
+  - id: rl-basics-029
+    type: single
+    difficulty: medium
+    tags:
+      - td-learning
+      - learning-rate
+      - stochastic-rewards
+    question: |
+      In the same conditioning task (reward of 10 with probability 0.8, nothing afterwards), the TD learner uses learning
+      rate $\alpha = 1$. What happens to the value of the state just before the reward?
+    options:
+      - text: It keeps jumping to the latest outcome, 10 or 0, and never settles at 8
+        correct: true
+      - text: It converges to 8, faster than with a small learning rate
+        why: With $\alpha = 1$ the old estimate is discarded at every visit, so no averaging over outcomes takes place.
+      - text: It converges to 10, because the learner ignores the trials without reward
+        why: A missed reward gives a TD target of 0, which $\alpha = 1$ copies into the value just like a reward of 10.
+      - text: It diverges to infinity, because $\alpha = 1$ exceeds the stability limit
+        why: The value is overwritten by a bounded target (0 or 10), so it cannot diverge; it just fails to average.
+    explanation: |
+      With $\alpha = 1$ the update sets $V(s_t)$ equal to the latest TD target $r_{t+1} + \gamma V(s_{t+1})$, forgetting all earlier
+      experience [^1][^2]. For the state before a stochastic reward that target is 10 on 80% of trials and 0 on the rest, so
+      the value flips between them and never represents the average of 8; NMA notes that large learning rates prevent
+      the TD learner from converging and give implausible value functions [^1]. A small constant $\alpha$ makes the value an
+      exponentially weighted average of recent targets [^2].
+    references:
+      - source: neuromatch-cn
+        locator: W3D4 Tutorial 1, Section 3 TD-learning with probabilistic rewards (Think! 3)
+        url: https://github.com/NeuromatchAcademy/course-content/blob/44634e960df7a14cd0bf7398187f2d209d26b0e8/tutorials/W3D4_ReinforcementLearning/instructor/W3D4_Tutorial1.ipynb
+      - title: 'Sutton and Barto (2018), Reinforcement Learning: An Introduction, 2nd ed.'
+        url: http://incompleteideas.net/book/the-book-2nd.html
+        locator: Sec. 2.5 Tracking a Nonstationary Problem
+    source:
+      id: neuromatch-cn
+      ref: W3D4_ReinforcementLearning/W3D4_Tutorial1#think3-alpha
+      url: https://github.com/NeuromatchAcademy/course-content/blob/44634e960df7a14cd0bf7398187f2d209d26b0e8/tutorials/W3D4_ReinforcementLearning/instructor/W3D4_Tutorial1.ipynb
+    status: draft
+  - id: rl-basics-030
+    type: single
+    difficulty: medium
+    tags:
+      - policy-optimization
+      - q-learning
+      - sample-efficiency
+      - on-policy
+    question: |
+      Compared with policy-optimization methods such as PPO, what is the main strength and the main
+      weakness of Q-learning methods such as DQN?
+    options:
+      - text: 'Strength: they can reuse old data off-policy, so they are more sample efficient; weakness: training is less stable'
+        correct: true
+      - text: 'Strength: they handle continuous actions directly; weakness: they cannot use a replay buffer'
+        why: Plain Q-learning needs a max over actions, which is hard for continuous actions, and it is exactly the method that uses replay buffers [^1].
+      - text: 'Strength: they need no exploration at all; weakness: they need a model of the environment'
+        why: Q-learning is model-free and still has to explore to collect informative data.
+      - text: 'Strength: they directly optimize the expected return, so they are more stable; weakness: they need fresh on-policy data'
+        why: That describes policy optimization; Q-learning optimizes performance only indirectly through a Bellman self-consistency equation [^1].
+    explanation: |
+      Policy optimization directly maximizes $J(\pi_\theta)$ and usually learns on-policy, which makes it
+      stable and reliable but data-hungry [^1]. Q-learning fits $Q_\theta$ to the Bellman equation and is
+      almost always off-policy, so it can reuse data collected at any time; this makes it substantially
+      more sample efficient when it works, but its indirect objective has many failure modes [^1].
+    references:
+      - source: spinning-up
+        locator: 'Part 2: Kinds of RL Algorithms, What to Learn in Model-Free RL (Trade-offs Between Policy Optimization and Q-Learning)'
+        url: https://spinningup.openai.com/en/latest/spinningup/rl_intro2.html#what-to-learn-in-model-free-rl
+    source:
+      id: spinning-up
+      ref: docs/spinningup/rl_intro2.rst#q1
+      url: https://github.com/openai/spinningup/blob/038665d62d569055401d91856abb287263096178/docs/spinningup/rl_intro2.rst
+    status: draft
+  - id: rl-basics-031
+    type: single
+    difficulty: medium
+    tags:
+      - model-based-rl
+      - model-free-rl
+      - planning
+    question: |
+      An RL agent can either learn a model of the environment (which predicts next states and rewards)
+      and plan with it, or learn a policy or value function directly. What is the main risk of the
+      model-based route when no ground-truth model is available?
+    options:
+      - text: It cannot plan ahead, because planning needs the true transition probabilities
+        why: Planning with a learned model is exactly what model-based methods do; the issue is the model's accuracy [^1].
+      - text: The agent exploits the model's errors, doing well in the model but badly in reality
+        correct: true
+      - text: It always needs many more environment samples than any model-free method would
+        why: Gains in sample efficiency are the main *upside* of using a model [^1].
+      - text: A learned model makes the policy deterministic and stops exploration
+        why: Learning a model says nothing about whether the policy is deterministic.
+    explanation: |
+      A model lets the agent plan ahead and can greatly improve sample efficiency [^1]. But a learned
+      model has errors, and the agent may exploit that bias, performing well inside the model and
+      poorly in the real environment; learning a good model is hard [^1]. Model-free methods give up the
+      potential sample efficiency but are easier to implement and tune [^1].
+    references:
+      - source: spinning-up
+        locator: 'Part 2: Kinds of RL Algorithms, Model-Free vs Model-Based RL'
+        url: https://spinningup.openai.com/en/latest/spinningup/rl_intro2.html#model-free-vs-model-based-rl
+    source:
+      id: spinning-up
+      ref: docs/spinningup/rl_intro2.rst#q2
+      url: https://github.com/openai/spinningup/blob/038665d62d569055401d91856abb287263096178/docs/spinningup/rl_intro2.rst
+    status: draft
+  - id: rl-basics-032
+    type: single
+    difficulty: easy
+    tags:
+      - policy-network
+      - action-space
+      - chess
+    question: |
+      A policy network for Connect Four takes the board as input and has 7 output nodes, one
+      probability per column the agent could play. You build the same kind of network for chess. How
+      many output nodes should it have?
+    options:
+      - text: 4672, one for each move in a fixed list of possible moves
+        correct: true
+      - text: 2, one for each of the two players in a game
+        why: The network chooses the agent's action, so it needs one output per possible move, not per player [^1].
+      - text: 16, one for each of the pieces a player starts the game with
+        why: Choosing a piece is only half a move; the outputs must also say where it goes [^2].
+      - text: 64, one for each square of the chess board
+        why: A square alone does not identify a move; moves need both a from-square and a kind of move [^2].
+    explanation: |
+      The network outputs a probability for each possible move, and the agent samples its move from
+      them [^1]. In Connect Four a move is a column, hence 7 outputs; in chess the exercise's key is
+      4672, the number of possible moves [^3]. This is the action encoding of AlphaZero, which
+      represents its chess policy as an $8 \times 8 \times 73$ stack of planes: a starting square times
+      73 kinds of move, $64 \times 73 = 4672$ [^2]. Illegal moves in a position are masked out.
+    references:
+      - source: kaggle-learn
+        locator: Intro to Game AI and RL, Lesson 4 Deep Reinforcement Learning — tutorial, Neural Networks
+        url: https://github.com/Kaggle/learntools/blob/e9ba66dc899d3e17b80d3a1b9a5d29f430d310cb/notebooks/game_ai/raw/tut4.ipynb
+      - title: Silver et al. (2017), Mastering Chess and Shogi by Self-Play with a General Reinforcement Learning Algorithm
+        url: https://arxiv.org/abs/1712.01815
+        locator: Representation; Table S2 (8 × 8 × 73 planes, 4,672 possible moves)
+      - source: kaggle-learn
+        locator: Intro to Game AI and RL, Lesson 4 exercise, Question 1 Set the architecture
+        url: https://github.com/Kaggle/learntools/blob/e9ba66dc899d3e17b80d3a1b9a5d29f430d310cb/notebooks/game_ai/raw/ex4.ipynb
+    source:
+      id: kaggle-learn
+      ref: game_ai/ex4#q1
+      url: https://github.com/Kaggle/learntools/blob/e9ba66dc899d3e17b80d3a1b9a5d29f430d310cb/notebooks/game_ai/raw/ex4.ipynb
+    status: draft
+  - id: rl-basics-033
+    type: single
+    difficulty: medium
+    tags:
+      - reward-design
+      - reward-shaping
+    question: |
+      You train an agent to play Minesweeper. Each move ends in one of four ways: the agent wins
+      (it cleared the last safe square), it makes an invalid move (uncovering a square already
+      uncovered, which ends the game as a loss), it detonates a mine (a loss), or it clears a safe
+      square and the game goes on. Which rewards (win / invalid / mine / safe square) make maximizing
+      the cumulative reward the same as trying to win?
+    options:
+      - text: +1 / −10 / −1 / +0.01
+        correct: true
+      - text: +1 / −10 / −1 / −0.01
+        why: The step penalties pay the agent to end the game early; on a board with more than 201 safe squares even a win totals less than −1, so stepping on a mine at once earns more.
+      - text: +1 / +0.01 / −1 / +0.01
+        why: An invalid move must be punished; here it earns as much as clearing a safe square, so nothing teaches the agent to avoid it [^1].
+    explanation: |
+      The solution's checklist: the rewards for an invalid move and for a mine must be negative, the
+      reward for winning positive, and the reward for clearing a safe square zero or slightly
+      positive [^1]. A small positive reward per safe square gives the agent feedback before the end of
+      the game, much like the $1/42$ bonus per move in the Connect Four tutorial [^2]. A negative step
+      reward instead turns losing early into the better deal once the board is large enough: winning
+      on a board with $n$ safe squares would be worth $1 - 0.01(n - 1)$, below −1 for $n > 201$.
+    references:
+      - source: kaggle-learn
+        locator: Intro to Game AI and RL, Lesson 4 exercise, Question 2 Decide reward (solution)
+        url: https://github.com/Kaggle/learntools/blob/e9ba66dc899d3e17b80d3a1b9a5d29f430d310cb/learntools/game_ai/ex4.py
+      - source: kaggle-learn
+        locator: Intro to Game AI and RL, Lesson 4 Deep Reinforcement Learning — tutorial, Setup and Reinforcement Learning
+        url: https://github.com/Kaggle/learntools/blob/e9ba66dc899d3e17b80d3a1b9a5d29f430d310cb/notebooks/game_ai/raw/tut4.ipynb
+    source:
+      id: kaggle-learn
+      ref: game_ai/ex4#q2
+      url: https://github.com/Kaggle/learntools/blob/e9ba66dc899d3e17b80d3a1b9a5d29f430d310cb/notebooks/game_ai/raw/ex4.ipynb
+    status: draft
+  - id: rl-basics-034
+    type: short_answer
+    difficulty: easy
+    tags:
+      - cumulative-reward
+      - return
+      - reward-design
+    question: |
+      A Connect Four agent gets a reward after each of its moves: +1 if the move wins, −10 if the move
+      is invalid (which ends the game), −1 if the opponent wins on its next move, and $1/42$
+      otherwise. In one game the agent moves first, plays 7 times and wins with its 7th move. What is
+      its cumulative reward? Round to 3 decimals.
+    answer:
+      numeric: 1.143
+      tolerance: 0.002
+      hint: a number, 3 decimals
+      model: $6 \times \frac{1}{42} + 1 = \frac{8}{7} \approx 1.143$
+    explanation: |
+      The cumulative reward is the sum of the rewards the agent collects over the game [^1]. Its first
+      six moves neither win nor lose, so each earns $1/42$, and the seventh wins, earning +1:
+      $6/42 + 1 \approx 1.143$. The tutorial works the same sum for other games: a win after 8 moves in
+      total gives $3/42 + 1$, and a loss when the opponent wins with the 11th move gives
+      $4/42 - 1$ [^1]. A draw fills the 42 cells, so the agent plays 21 moves and collects
+      $21/42 = 0.5$ [^1].
+    references:
+      - source: kaggle-learn
+        locator: Intro to Game AI and RL, Lesson 4 Deep Reinforcement Learning — tutorial, Setup
+        url: https://github.com/Kaggle/learntools/blob/e9ba66dc899d3e17b80d3a1b9a5d29f430d310cb/notebooks/game_ai/raw/tut4.ipynb
+    source:
+      id: kaggle-learn
+      ref: game_ai/tut4#setup
+      url: https://github.com/Kaggle/learntools/blob/e9ba66dc899d3e17b80d3a1b9a5d29f430d310cb/notebooks/game_ai/raw/tut4.ipynb
+    status: draft
+  - id: rl-basics-035
+    type: single
+    difficulty: medium
+    tags:
+      - reward-shaping
+      - credit-assignment
+    question: |
+      To help training converge, a Connect Four agent receives $+1/42$ for every move that neither wins
+      nor loses, on top of +1 for a win and −1 for a loss. What side effect does this bonus have on
+      the behaviour that maximizes the cumulative reward?
+    options:
+      - text: Longer games pay more, so it may delay a win it could take now
+        correct: true
+      - text: Fast wins pay more, so the agent takes risks to finish the game early
+        why: Every extra move adds $1/42$, so of two sure wins, the later one has the larger total [^1].
+      - text: None, because $1/42$ is too small to change which moves are best
+        why: When a win is secure either way, delaying it strictly increases the total by $1/42$ per move, so the ranking of moves does change [^1].
+      - text: Draws become worth more than wins, so the agent stops trying to win
+        why: A draw is worth $21/42 = 0.5$ at most, while a win is worth +1 plus the bonuses collected before it [^1].
+    explanation: |
+      The agent maximizes the sum of its rewards, so a per-move bonus rewards making the game last as
+      long as possible [^1]. The tutorial notes that this can make the agent inefficient: it may take
+      longer to play an obvious winning move [^1]. The bonus is there because it helps the algorithms
+      converge; the trade-off falls under the temporal credit assignment problem and reward
+      shaping [^1][^2].
+    references:
+      - source: kaggle-learn
+        locator: Intro to Game AI and RL, Lesson 4 Deep Reinforcement Learning — tutorial, Setup and Reinforcement Learning
+        url: https://github.com/Kaggle/learntools/blob/e9ba66dc899d3e17b80d3a1b9a5d29f430d310cb/notebooks/game_ai/raw/tut4.ipynb
+      - title: Ng, Harada & Russell (1999), Policy invariance under reward transformations
+        url: https://people.eecs.berkeley.edu/~russell/papers/icml99-shaping.pdf
+        locator: Introduction (shaping rewards can change the optimal policy)
+    source:
+      id: kaggle-learn
+      ref: game_ai/tut4#reward-shaping
+      url: https://github.com/Kaggle/learntools/blob/e9ba66dc899d3e17b80d3a1b9a5d29f430d310cb/notebooks/game_ai/raw/tut4.ipynb
+    status: draft

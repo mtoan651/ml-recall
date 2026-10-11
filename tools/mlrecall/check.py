@@ -121,6 +121,11 @@ def _check_question(r: Report, f: bank.BankFile, q: Question, sources: dict) -> 
     texts += [o.text for o in options] + [o.why for o in options]
     if any(t and _unbalanced_dollars(t) for t in texts):
         r.warnings.append(f"{where}: unbalanced $ — math won't render (escape a literal $ as \\$)")
+    if any(t and _wrapped_display_math(t) for t in texts):
+        r.warnings.append(
+            f"{where}: `$$…$$` starts mid-line and wraps onto the next line, which Markdown "
+            "misreads — keep it on one line, or put each `$$` on a line of its own"
+        )
     if any(t and _math_line_starts_block(t) for t in texts):
         r.warnings.append(
             f"{where}: a line inside math starts with `+ `, `- `, `* ` or `1. `, which Markdown "
@@ -131,6 +136,15 @@ def _check_question(r: Report, f: bank.BankFile, q: Question, sources: dict) -> 
 def _unbalanced_dollars(text: str) -> bool:
     text = re.sub(r"```.*?```|`[^`\n]*`", "", text, flags=re.DOTALL)
     return len(re.findall(r"(?<!\\)\$", text)) % 2 == 1
+
+
+def _wrapped_display_math(text: str) -> bool:
+    text = re.sub(r"```.*?```", "", text, flags=re.DOTALL)
+    for m in re.finditer(r"(?<!\\)\$\$(.*?)(?<!\\)\$\$", text, flags=re.DOTALL):
+        body = m.group(1)
+        if "\n" in body.strip(" ") and not body.lstrip(" ").startswith("\n"):
+            return True
+    return False
 
 
 # Block markers that may interrupt a paragraph (CommonMark): bullets, ordered lists starting at 1.
@@ -168,14 +182,29 @@ def _check_near_duplicates(r: Report) -> None:
         return tuple(f.src for f in [q.figure, *(o.image for o in q.options or [])] if f)
 
     items = [(q.id, fingerprint(q), figures(q)) for _, q in r.questions]
-    for i, (id_a, a, fig_a) in enumerate(items):
-        for id_b, b, fig_b in items[i + 1 :]:
-            if fig_a and fig_b and fig_a != fig_b:
+    # Compare only texts within 20% of each other's length: walk them sorted by length and stop
+    # once the gap is too large. The quick ratios are upper bounds of ratio(), so they only skip
+    # pairs that could not reach the threshold; the result equals the all-pairs comparison.
+    order = sorted(range(len(items)), key=lambda k: len(items[k][1]))
+    pairs = []
+    for pos, i in enumerate(order):
+        for j in order[pos + 1 :]:
+            a, b = items[i][1], items[j][1]
+            if len(b) - len(a) > 0.2 * max(len(b), 1):
+                break
+            lo, hi = min(i, j), max(i, j)
+            (_, text_lo, fig_lo), (_, text_hi, fig_hi) = items[lo], items[hi]
+            if fig_lo and fig_hi and fig_lo != fig_hi:
                 continue  # the same stem about two different figures is two questions
-            if abs(len(a) - len(b)) > 0.2 * max(len(a), len(b), 1):
-                continue
-            if SequenceMatcher(None, a, b).ratio() >= NEAR_DUPLICATE_RATIO:
-                r.warnings.append(f"near-duplicate questions: {id_a} ~ {id_b}")
+            m = SequenceMatcher(None, text_lo, text_hi)
+            if (
+                m.real_quick_ratio() >= NEAR_DUPLICATE_RATIO
+                and m.quick_ratio() >= NEAR_DUPLICATE_RATIO
+                and m.ratio() >= NEAR_DUPLICATE_RATIO
+            ):
+                pairs.append((lo, hi))
+    for lo, hi in sorted(pairs):
+        r.warnings.append(f"near-duplicate questions: {items[lo][0]} ~ {items[hi][0]}")
 
 
 def summary(r: Report) -> str:

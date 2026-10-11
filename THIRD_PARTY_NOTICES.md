@@ -11,12 +11,19 @@ End-of-chapter quizzes from <https://github.com/huggingface/course>.
 Licensed under the Apache License, Version 2.0 — full text in
 [LICENSES/Apache-2.0.txt](LICENSES/Apache-2.0.txt).
 
-## Hugging Face Deep RL Course — `hf-deep-rl-course`, AI Agents Course — `hf-agents-course` and Audio Course — `hf-audio-course`
+## Hugging Face Deep RL, AI Agents, Audio and MCP courses — `hf-deep-rl-course`, `hf-agents-course`, `hf-audio-course`, `hf-mcp-course`
 
 Quizzes from <https://github.com/huggingface/deep-rl-class>,
-<https://github.com/huggingface/agents-course> and
-<https://github.com/huggingface/audio-transformers-course>. Licensed under the Apache License,
-Version 2.0 — full text in [LICENSES/Apache-2.0.txt](LICENSES/Apache-2.0.txt).
+<https://github.com/huggingface/agents-course>,
+<https://github.com/huggingface/audio-transformers-course> and
+<https://github.com/huggingface/mcp-course>. Licensed under the Apache License, Version 2.0 —
+full text in [LICENSES/Apache-2.0.txt](LICENSES/Apache-2.0.txt).
+
+## Kaggle Learn — `kaggle-learn`
+
+Exercises and tutorial notebooks from <https://github.com/Kaggle/learntools> (the Kaggle Learn
+courses), © Kaggle, licensed under the Apache License, Version 2.0 — full text in
+[LICENSES/Apache-2.0.txt](LICENSES/Apache-2.0.txt). Taken from the repository only.
 
 ## AI for Beginners — `ms-ai-for-beginners`
 
@@ -150,3 +157,50 @@ Button, with additions by J. Robert Loftis, revised by Aaron Thomas-Bolduc and R
 (<https://forallx.openlogicproject.org/>, source <https://github.com/rzach/forallx-yyc>).
 Licensed under [CC BY 4.0](https://creativecommons.org/licenses/by/4.0/). Notation was changed to
 ¬ ∧ ∨ → ↔ and items were rewritten as choice or numeric questions.
+
+## Other open courses and question sets (CC BY / CC BY-SA)
+
+Adapted into questions, with answer keys and explanations added or corrected where needed:
+
+- *Neuromatch Academy: Deep Learning* and *Computational Neuroscience* — `neuromatch-dl`,
+  `neuromatch-cn` — <https://github.com/NeuromatchAcademy/course-content-dl>,
+  <https://github.com/NeuromatchAcademy/course-content>, © Neuromatch, CC BY 4.0.
+- *Data Science Interviews* (theory questions) — `ds-interviews` — Alexey Grigorev and
+  contributors, <https://github.com/alexeygrigorev/data-science-interviews>, CC BY 4.0.
+- *Galaxy Training Network* statistics and ML tutorials — `galaxy-training` —
+  <https://github.com/galaxyproject/training-material>, CC BY 4.0.
+- UBC MDS *DSCI 563 Unsupervised Learning* and *DSCI 573 Feature and Model Selection* —
+  `ubc-dsci563`, `ubc-dsci573` — <https://github.com/UBC-MDS>, CC BY 4.0.
+- *Natural Language Processing with Deep Learning* lectures (Ivan Habernal, trusthlt) —
+  `trusthlt-nlp` — <https://github.com/trusthlt/nlp-with-deep-learning-lectures>, CC BY-SA 4.0.
+
+The licences are at <https://creativecommons.org/licenses/by/4.0/> and
+<https://creativecommons.org/licenses/by-sa/4.0/>.
+
+## Other open courses (MIT)
+
+Adapted from repositories licensed under the MIT License (text as for the Microsoft repositories
+above, with each copyright holder): Microsoft *Generative AI for Beginners*, *AI Agents for
+Beginners* and *Generative AI with JavaScript* (`ms-genai-for-beginners`,
+`ms-ai-agents-for-beginners`, `ms-genai-javascript`, © Microsoft Corporation); *Learn PyTorch
+for Deep Learning* (`learn-pytorch`, © Daniel Bourke); *Spinning Up in Deep RL*
+(`spinning-up`, © OpenAI); Udacity *deep-learning-v2-pytorch* (`udacity-dl-pytorch`,
+© Udacity); Gustave Cortal's *Natural Language Processing* (`cortal-nlp`).
+
+## NonCommercial sources (CC BY-NC-SA)
+
+These questions are licensed under
+[CC BY-NC-SA 4.0](https://creativecommons.org/licenses/by-nc-sa/4.0/) and may only be reused for
+non-commercial purposes (see `LICENSE-CONTENT.md`):
+
+- **MIT OpenCourseWare** — `mit-ocw-6034`, `mit-ocw-6034-s05`, `mit-ocw-16410`, `mit-ocw-6867`,
+  `mit-ocw-6438`, `mit-ocw-18657`, `mit-ocw-9520`, `mit-ocw-15062`, `mit-ocw-67960`,
+  `mit-ocw-6864`, `mit-ocw-18065`, `mit-ocw-6s890`, `mit-ocw-18s096`: quizzes, exams and problem
+  sets of the courses named in `src/content/sources.yaml`, © Massachusetts Institute of
+  Technology and the course instructors, <https://ocw.mit.edu>. Answer keys were worked out
+  where OCW publishes none.
+- **NPTEL** — `nptel-ai-search-methods`, `nptel-intro-llms`, `nptel-deep-learning-2`: weekly
+  assignments of the NPTEL courses named in `src/content/sources.yaml`, © the course instructors
+  and NPTEL (IITs and IISc), <https://nptel.ac.in>.
+- **UBC MDS DSCI 571 Supervised Learning I** — `ubc-dsci571` — its licence file names CC BY 4.0
+  but links to CC BY-NC-SA 4.0; the stricter licence is applied.

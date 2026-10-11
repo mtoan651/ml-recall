@@ -676,3 +676,193 @@ questions:
       ref: chapter_attention-mechanisms-and-transformers/queries-keys-values#ex4
       url: https://d2l.ai/chapter_attention-mechanisms-and-transformers/queries-keys-values.html#exercises
     status: draft
+  - id: architectures-018
+    type: single
+    difficulty: medium
+    tags:
+      - graph-neural-networks
+      - aggregation
+      - message-passing
+    question: |
+      A message-passing GNN aggregates the neighbour features of node $v$ as
+      $f\big(\sum_{u \in N(v)} g(h_u)\big)$, where $g$ is applied to each neighbour separately and $f$
+      sees only the sum. Which choice of $f$ and $g$ gives the mean of the neighbour features?
+    options:
+      - text: $g(h) = (h, 1)$ and $f(s, c) = s / c$
+        correct: true
+      - text: $g(h) = h / \lvert N(v) \rvert$ and $f(s) = s$
+        why: $g$ sees one neighbour's feature at a time and does not know how many neighbours $v$ has.
+      - text: $g(h) = h$ and $f(s) = s / d$, with $d$ the feature dimension
+        why: The sum must be divided by the number of neighbours, not by the feature dimension; $f$ needs that count from the sum.
+      - text: $g(h) = e^{h}$ and $f(s) = \log s$
+        why: This is log-sum-exp, a smooth version of the maximum, not the mean.
+    explanation: |
+      Appending a constant 1 to each message makes the sum carry two things: the feature total
+      $\sum_u h_u$ and the neighbour count $\lvert N(v) \rvert$ [^1]. $f$ can then divide one by the other.
+      Sum aggregation with learned $f$ and $g$ (MLPs in practice) is the most expressive of the
+      standard aggregators, because a sum over a multiset can be made injective while mean and max
+      cannot [^2].
+    references:
+      - source: mit-ocw-67960
+        locator: Homework 2, Graph neural networks, Problem 15(a)
+        url: https://ocw.mit.edu/courses/6-7960-deep-learning-fall-2024/resources/mit6_7960_f24_hw2_pdf/
+      - title: Xu, Hu, Leskovec & Jegelka (2019), How Powerful are Graph Neural Networks?, arXiv:1810.00826
+        locator: Sec. 4 Building powerful graph neural networks; Sec. 5 Less powerful but still interesting GNNs
+        url: https://arxiv.org/abs/1810.00826
+    source:
+      id: mit-ocw-67960
+      ref: mit6_7960_f24_hw2#q15a
+      url: https://ocw.mit.edu/courses/6-7960-deep-learning-fall-2024/resources/mit6_7960_f24_hw2_pdf/
+    status: draft
+  - id: architectures-019
+    type: single
+    difficulty: hard
+    tags:
+      - graph-neural-networks
+      - aggregation
+      - log-sum-exp
+    question: |
+      With the same sum-based aggregator $f\big(\sum_{u \in N(v)} g(h_u)\big)$ and scalar features, which
+      choice approximates the maximum $\max_{u \in N(v)} h_u$ arbitrarily well for large $\beta > 0$?
+    options:
+      - text: $g(h) = e^{\beta h}$, $f(s) = (\log s) / \beta$
+        correct: true
+      - text: $g(h) = \beta h^2$, $f(s) = \sqrt{s / \beta}$
+        why: The $\beta$ cancels, leaving the Euclidean norm of the features, which loses their signs and grows with the number of neighbours.
+      - text: $g(h) = e^{\beta h}$, $f(s) = s / \beta$
+        why: Without the logarithm the output grows like $e^{\beta \max_u h_u} / \beta$ instead of approaching the maximum.
+      - text: $g(h) = (\beta h, 1)$, $f(s, c) = s / (\beta c)$
+        why: The $\beta$ cancels and this is the mean of the features, which lies below the maximum unless all features are equal.
+    explanation: |
+      The log-sum-exp satisfies $\max_u h_u \le \tfrac{1}{\beta}\log\sum_u e^{\beta h_u} \le \max_u h_u + \tfrac{\log n}{\beta}$
+      for $n$ neighbours, so the error vanishes as $\beta$ grows [^1]. The homework's hint points to the
+      same idea with norms: $(\sum_u \lvert h_u \rvert^p)^{1/p} \to \max_u \lvert h_u \rvert$ as $p \to \infty$, made
+      sign-safe by shifting features from $[-C, C]$ to $[0, 2C]$ first [^2]. Either way a sum aggregator
+      with suitable $f$ and $g$ can emulate max aggregation.
+    references:
+      - title: 'Wikipedia: LogSumExp'
+        locator: Properties
+        url: https://en.wikipedia.org/wiki/LogSumExp#Properties
+      - source: mit-ocw-67960
+        locator: Homework 2, Graph neural networks, Problem 15(b)
+        url: https://ocw.mit.edu/courses/6-7960-deep-learning-fall-2024/resources/mit6_7960_f24_hw2_pdf/
+    source:
+      id: mit-ocw-67960
+      ref: mit6_7960_f24_hw2#q15b
+      url: https://ocw.mit.edu/courses/6-7960-deep-learning-fall-2024/resources/mit6_7960_f24_hw2_pdf/
+    status: draft
+  - id: architectures-020
+    type: single
+    difficulty: hard
+    tags:
+      - graph-neural-networks
+      - weisfeiler-leman
+      - expressivity
+    question: |
+      Every node starts with the same feature vector. Which pair of graphs can no message-passing GNN
+      tell apart, whatever its aggregate, update and readout functions?
+    options:
+      - text: A 6-cycle and two disjoint triangles
+        correct: true
+      - text: A triangle and a path of three nodes
+        why: The path has two degree-1 nodes, so after one round of message passing the node features already differ.
+      - text: A 4-cycle and a star with one centre and three leaves
+        why: The star's centre has degree 3 and its leaves degree 1, while every 4-cycle node has degree 2, so one round separates them.
+      - text: A 4-cycle and a path of four nodes
+        why: The path's end nodes have degree 1, so their messages differ from the cycle's after one round.
+    explanation: |
+      A message-passing GNN can separate two graphs only if the 1-dimensional Weisfeiler–Leman test can
+      [^1][^2]. In a 6-cycle and in two triangles every node has exactly two neighbours, so at every
+      round each node receives the same messages and all 12 nodes keep identical features. The readout
+      then sees the same multiset of six features for both graphs, although one graph has two
+      triangles and the other none, so such GNNs cannot count triangles [^3].
+    references:
+      - title: Xu, Hu, Leskovec & Jegelka (2019), How Powerful are Graph Neural Networks?, arXiv:1810.00826
+        locator: Sec. 4 Building powerful graph neural networks, Lemma 2
+        url: https://arxiv.org/abs/1810.00826
+      - title: 'Wikipedia: Weisfeiler Leman graph isomorphism test'
+        locator: Introduction (relation to graph neural networks)
+        url: https://en.wikipedia.org/wiki/Weisfeiler_Leman_graph_isomorphism_test
+      - source: mit-ocw-67960
+        locator: Homework 2, Graph neural networks, Problem 16(c)
+        url: https://ocw.mit.edu/courses/6-7960-deep-learning-fall-2024/resources/mit6_7960_f24_hw2_pdf/
+    source:
+      id: mit-ocw-67960
+      ref: mit6_7960_f24_hw2#q16c
+      url: https://ocw.mit.edu/courses/6-7960-deep-learning-fall-2024/resources/mit6_7960_f24_hw2_pdf/
+    status: draft
+  - id: architectures-021
+    type: true_false
+    difficulty: medium
+    tags:
+      - graph-neural-networks
+      - molecules
+      - chirality
+    shuffle: false
+    question: |
+      A molecule is given to a message-passing GNN as a graph: atoms are nodes whose features encode the
+      element, bonds are edges whose features encode the bond type. True or false: such a GNN can tell
+      a chiral molecule from its mirror image.
+    options:
+      - text: 'True'
+        why: A molecule and its mirror image have the same atoms joined by the same bonds, so their graphs are identical and every GNN output is identical too [^1][^2].
+      - text: 'False'
+        correct: true
+    explanation: |
+      Mirror-image (chiral) molecules differ only in the 3D arrangement of their atoms; their
+      connectivity is the same [^1]. A GNN that sees only the graph is a function of that connectivity
+      and the node and edge features, so it gives both the same output [^2]. To separate them, the
+      input must carry geometry, for example 3D coordinates or explicit chirality tags on the atoms.
+    references:
+      - title: 'Wikipedia: Chirality (chemistry)'
+        locator: Introduction
+        url: https://en.wikipedia.org/wiki/Chirality_(chemistry)
+      - source: mit-ocw-67960
+        locator: Homework 2, Graph neural networks, Problem 17
+        url: https://ocw.mit.edu/courses/6-7960-deep-learning-fall-2024/resources/mit6_7960_f24_hw2_pdf/
+    source:
+      id: mit-ocw-67960
+      ref: mit6_7960_f24_hw2#q17
+      url: https://ocw.mit.edu/courses/6-7960-deep-learning-fall-2024/resources/mit6_7960_f24_hw2_pdf/
+    status: draft
+  - id: architectures-022
+    type: single
+    difficulty: medium
+    tags:
+      - vision-transformer
+      - inductive-bias
+      - cnn
+    question: |
+      Trained from scratch on a small image dataset such as CIFAR-10, a vision transformer usually
+      does worse than a ResNet of similar size, while on very large datasets it can do better. What is
+      the main reason?
+    options:
+      - text: It lacks convolution's built-in locality and translation biases
+        correct: true
+      - text: Self-attention cannot represent local features such as edges at all
+        why: Attention can learn to focus on nearby patches; it just has to learn this from data instead of having it built in [^2].
+      - text: The ViT needs image sizes that are a multiple of the patch size
+        why: That is a shape constraint, solved by resizing or padding; it does not explain lower accuracy.
+      - text: The ViT has too few parameters to fit the training set
+        why: ViTs are large models; their problem on small data is generalization, not capacity.
+    explanation: |
+      A convolution assumes that nearby pixels matter together and that the same pattern can appear
+      anywhere; these assumptions are right for images and save the network from learning them [^1].
+      A ViT treats patches as a set with learned position embeddings, so it must learn such structure
+      from examples, and with little data it generalizes worse [^1][^2]. With enough data the weaker
+      bias stops hurting and the flexibility pays off.
+    references:
+      - source: d2l
+        locator: Sec. 11.8.6 Summary and Discussion
+        url: https://d2l.ai/chapter_attention-mechanisms-and-transformers/vision-transformer.html#summary-and-discussion
+      - title: Dosovitskiy et al. (2021), An Image is Worth 16x16 Words, arXiv:2010.11929
+        locator: Sec. 1 Introduction; Sec. 3.1 Vision Transformer (Inductive bias)
+        url: https://arxiv.org/abs/2010.11929
+      - source: mit-ocw-67960
+        locator: Homework 3, Problem 3(e)
+        url: https://ocw.mit.edu/courses/6-7960-deep-learning-fall-2024/resources/mit6_7960_f24_hw3_pdf/
+    source:
+      id: mit-ocw-67960
+      ref: mit6_7960_f24_hw3#q3e
+      url: https://ocw.mit.edu/courses/6-7960-deep-learning-fall-2024/resources/mit6_7960_f24_hw3_pdf/
+    status: draft

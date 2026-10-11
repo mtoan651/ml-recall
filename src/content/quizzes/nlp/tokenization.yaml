@@ -484,3 +484,459 @@ questions:
       ref: chapter_natural-language-processing-pretraining/subword-embedding#ex4
       url: https://d2l.ai/chapter_natural-language-processing-pretraining/subword-embedding.html#exercises
     status: draft
+  - id: tokenization-014
+    type: single
+    difficulty: medium
+    tags:
+      - bpe
+      - subword
+      - merges
+    question: |
+      Byte-pair encoding is trained on the toy corpus "this fat cat with the hat is in the cave of
+      the thin bat", split into characters, counting adjacent pairs only inside words. The first
+      merge is `t h` → `th` (6 times), the second `a t` → `at` (4 times). Which pair is merged
+      third?
+    options:
+      - text: '`th e`, which occurs 3 times'
+        correct: true
+      - text: '`th i`, which occurs 2 times'
+        why: '`th i` occurs only in "this" and "thin" (2 times), fewer than `th e` [^1].'
+      - text: '`i s`, which occurs 2 times'
+        why: '`i s` occurs in "this" and "is" (2 times), fewer than `th e` [^1].'
+      - text: '`h e`, which occurs 3 times'
+        why: After the first merge, every `h` that followed a `t` is part of `th`, so `h e` no longer occurs in "the"; it is now `th e` [^1].
+    explanation: |
+      BPE repeatedly merges the most frequent adjacent pair and adds it to the vocabulary [^1].
+      After `th` and `at`, "the" appears three times as `th e`, more often than any other pair
+      inside a word (`th i`, `i s` and `i n` occur twice), so the third merge creates `the` [^1].
+      Frequent words thus end up as single tokens, while rare words stay split into subwords [^2].
+    references:
+      - source: trusthlt-nlp
+        locator: "Lecture 3 slides, frames 'Subword units: Byte-pair encoding' and 'Byte-pair encoding example on a toy corpus (parts 1 and 2)'"
+        url: https://github.com/trusthlt/nlp-with-deep-learning-lectures/blob/751182ea7a6a6f2246bbd8313329ecd09d270dbc/lectures/lecture03/pdf/nlpwdl2025-lecture03-handout.pdf
+      - source: d2l
+        locator: Sec. 15.6.2 Byte Pair Encoding
+        url: https://d2l.ai/chapter_natural-language-processing-pretraining/subword-embedding.html#byte-pair-encoding
+    source:
+      id: trusthlt-nlp
+      ref: lectures/lecture03/nlpwdl2025-lecture03.tex#bpe-toy-corpus
+      url: https://github.com/trusthlt/nlp-with-deep-learning-lectures/blob/751182ea7a6a6f2246bbd8313329ecd09d270dbc/lectures/lecture03/pdf/nlpwdl2025-lecture03-handout.pdf
+    status: draft
+  - id: tokenization-015
+    type: single
+    difficulty: medium
+    tags:
+      - sentencepiece
+      - whitespace
+      - detokenization
+    question: |
+      SentencePiece tokenizes "Hello world." as `[Hello] [▁wor] [ld] [.]`, writing the space before
+      "world" as the symbol `▁` inside a token. What does keeping the whitespace as `▁` achieve?
+    options:
+      - text: The original text can be restored exactly
+        correct: true
+      - text: It stops words from being split into subwords
+        why: Words are still split ("wor" + "ld"); `▁` only records where the spaces were [^1].
+      - text: It removes spaces, which makes the vocabulary smaller
+        why: The spaces are not removed but kept, as part of the tokens [^1].
+      - text: It marks the end of every word for the decoder
+        why: '`▁` stands for the space *before* a word piece; there is no end-of-word marker in this scheme [^1].'
+    explanation: |
+      Classic word-level BPE splits on whitespace first and marks word-internal splits (e.g.
+      `Net@@ any@@ ahu`), so the exact spacing of the input is lost [^1]. SentencePiece treats the
+      input as a raw character stream, escapes whitespace as `▁` and tokenizes it into an arbitrary
+      subword sequence; detokenization is lossless, because concatenating the pieces and turning `▁`
+      back into spaces reproduces the normalized text [^1][^2].
+    references:
+      - source: trusthlt-nlp
+        locator: "Lecture 3 slides, frame 'SentencePiece: A variant of byte pair encoding'"
+        url: https://github.com/trusthlt/nlp-with-deep-learning-lectures/blob/751182ea7a6a6f2246bbd8313329ecd09d270dbc/lectures/lecture03/pdf/nlpwdl2025-lecture03-handout.pdf
+      - title: Kudo & Richardson (2018), SentencePiece — a simple and language independent subword tokenizer and detokenizer for neural text processing
+        url: https://arxiv.org/abs/1808.06226
+        locator: Sec. 3.1 Lossless Tokenization
+    source:
+      id: trusthlt-nlp
+      ref: lectures/lecture03/nlpwdl2025-lecture03.tex#sentencepiece
+      url: https://github.com/trusthlt/nlp-with-deep-learning-lectures/blob/751182ea7a6a6f2246bbd8313329ecd09d270dbc/lectures/lecture03/pdf/nlpwdl2025-lecture03-handout.pdf
+    status: draft
+  - id: tokenization-016
+    type: true_false
+    difficulty: easy
+    tags:
+      - bpe
+      - out-of-vocabulary
+      - unk-token
+    question: |
+      A word-level vocabulary of the 3,000 most frequent words maps the unseen word "wampinuk" to
+      `UNK`. True or false: a BPE tokenizer whose base vocabulary contains every character of the
+      training corpus must also map "wampinuk" to a single `UNK` token.
+    options:
+      - text: 'True'
+        why: BPE starts from single characters and only adds merged units, so any word over known characters can be written as a sequence of subwords [^1].
+      - text: 'False'
+        correct: true
+    explanation: |
+      A word-level vocabulary keeps only frequent words and replaces everything else by `UNK`,
+      losing the word entirely [^1]. BPE starts from all characters and adds merged units, so an
+      unseen word is split into known pieces, in the worst case single characters; over large
+      multilingual corpora this prevents out-of-vocabulary tokens [^1]. Byte-level BPE goes further and starts
+      from the 256 byte values, so no input can be unknown [^2].
+    references:
+      - source: trusthlt-nlp
+        locator: "Lecture 3 slides, frames 'Out-of-vocabulary (UNK) tokens' and 'Subword units: Byte-pair encoding'"
+        url: https://github.com/trusthlt/nlp-with-deep-learning-lectures/blob/751182ea7a6a6f2246bbd8313329ecd09d270dbc/lectures/lecture03/pdf/nlpwdl2025-lecture03-handout.pdf
+      - source: d2l
+        locator: Sec. 15.6.2 Byte Pair Encoding
+        url: https://d2l.ai/chapter_natural-language-processing-pretraining/subword-embedding.html#byte-pair-encoding
+    source:
+      id: trusthlt-nlp
+      ref: lectures/lecture03/nlpwdl2025-lecture03.tex#unk-vs-bpe
+      url: https://github.com/trusthlt/nlp-with-deep-learning-lectures/blob/751182ea7a6a6f2246bbd8313329ecd09d270dbc/lectures/lecture03/pdf/nlpwdl2025-lecture03-handout.pdf
+    status: draft
+  - id: tokenization-017
+    type: single
+    difficulty: medium
+    tags:
+      - bpe
+      - merge-rules
+      - segmentation
+    question: |
+      A BPE tokenizer learned these merges, in this order, from a corpus of "low", "lowest",
+      "newer", "wider" and "new":
+
+      1. `e r` → `er`
+      2. `n e` → `ne`
+      3. `ne w` → `new`
+      4. `l o` → `lo`
+      5. `lo w` → `low`
+      6. `new er` → `newer`
+
+      It tokenizes a new word by splitting it into characters and applying the merges in the order
+      they were learned. How is the unseen word "lowered" tokenized?
+    options:
+      - text: '`low` `er` `e` `d`'
+        correct: true
+      - text: '`low` `e` `r` `e` `d`'
+        why: Merge 1 joins the `e r` in "lower" into `er` before anything else [^1].
+      - text: '`lo` `w` `er` `e` `d`'
+        why: Merge 5 still applies after merge 4, turning `lo w` into `low` [^1].
+      - text: '`low` `ere` `d`'
+        why: No learned merge creates `ere`; only the six listed merges can be applied [^1].
+    explanation: |
+      BPE learns merges from the training corpus and applies them to new text in the order in which
+      they were learned; this fixed order makes the tokenization deterministic [^1]. For
+      l-o-w-e-r-e-d: merge 1 gives `l o w er e d`, merges 2, 3 and 6 do not apply, merges 4 and 5
+      give `low er e d` [^1]. An unseen word is thus built from known subwords, as with "lower" =
+      `low` + `er` [^1].
+    references:
+      - source: cortal-nlp
+        locator: 'Tokenization and datasets slides, slides 15–20 (Tokenization: Byte-Pair Encoding; Applying BPE on an example; Sequence of merges)'
+        url: https://github.com/gustavecortal/natural-language-processing/blob/49945d346964022ea6003bf59a64e11966bbb863/1%20-%20Tokenization%20and%20datasets/tokenization_and_datasets.pdf
+    source:
+      id: cortal-nlp
+      ref: 1 - Tokenization and datasets/tokenization_and_datasets.pdf#bpe-apply-merges
+      url: https://github.com/gustavecortal/natural-language-processing/blob/49945d346964022ea6003bf59a64e11966bbb863/1%20-%20Tokenization%20and%20datasets/tokenization_and_datasets.pdf
+    status: draft
+  - id: tokenization-018
+    type: short_answer
+    difficulty: medium
+    tags:
+      - byte-level-bpe
+      - merges
+      - utf-8
+    question: |
+      A byte-level BPE tokenizer starts from the 256 byte values (ASCII: 116 = `t`, 104 = `h`,
+      101 = `e`, 32 = space) and learned, among others, these merges:
+
+      - `(101, 32)` → token 256
+      - `(116, 104)` → token 259
+      - `(259, 256)` → token 275
+
+      How many bytes of text does token 275 stand for?
+    answer:
+      numeric: 4
+      tolerance: 0
+      hint: a whole number
+      model: '259 = `th`, 256 = `e␣`, so 275 = `the␣`: 4 bytes'
+    explanation: |
+      Each merge replaces a pair of existing tokens by a new token id, starting at 256, and the
+      vocabulary entry of the new token is the concatenation of the two byte strings [^1]. Token 256
+      is "e" + space, token 259 is "th", so token 275 is "the " (with the trailing space), 4 bytes;
+      merges of merges build ever longer frequent strings [^1]. The vocabulary size is 256 plus the
+      number of merges [^1].
+    references:
+      - source: cortal-nlp
+        locator: "Byte-pair encoding notebook (adapted from Karpathy's minbpe): training loop with vocab_size = 276, merges dict, decoding"
+        url: https://github.com/gustavecortal/natural-language-processing/blob/49945d346964022ea6003bf59a64e11966bbb863/1%20-%20Tokenization%20and%20datasets/byte_pair_encoding_tokenization.ipynb
+    source:
+      id: cortal-nlp
+      ref: 1 - Tokenization and datasets/byte_pair_encoding_tokenization.ipynb#token-275
+      url: https://github.com/gustavecortal/natural-language-processing/blob/49945d346964022ea6003bf59a64e11966bbb863/1%20-%20Tokenization%20and%20datasets/byte_pair_encoding_tokenization.ipynb
+    status: draft
+  - id: tokenization-019
+    type: short_answer
+    difficulty: easy
+    tags:
+      - byte-level-bpe
+      - utf-8
+      - unicode
+    question: |
+      Byte-level BPE first encodes the text as UTF-8 and starts from one token per byte. In UTF-8,
+      ASCII letters take 1 byte and "é" takes 2 bytes. How many initial tokens does the word "café"
+      produce, before any merge?
+    answer:
+      numeric: 5
+      tolerance: 0
+      hint: a whole number
+      model: '`c a f` = 3 bytes, `é` = 2 bytes: 5 tokens'
+    explanation: |
+      The notebook converts text with `text.encode("utf-8")` into integers 0–255, so the initial
+      tokens are bytes, not characters [^1]. ASCII characters need one byte each, but characters
+      outside ASCII need two to four, so "café" has 4 characters but 5 byte tokens; the Korean and
+      emoji example in the notebook grows from 26 code points to 39 bytes [^1]. Merges then shorten
+      such sequences again.
+    references:
+      - source: cortal-nlp
+        locator: Byte-pair encoding notebook, Unicode code points (ord) vs. UTF-8 bytes (encode)
+        url: https://github.com/gustavecortal/natural-language-processing/blob/49945d346964022ea6003bf59a64e11966bbb863/1%20-%20Tokenization%20and%20datasets/byte_pair_encoding_tokenization.ipynb
+    source:
+      id: cortal-nlp
+      ref: 1 - Tokenization and datasets/byte_pair_encoding_tokenization.ipynb#utf-8-bytes
+      url: https://github.com/gustavecortal/natural-language-processing/blob/49945d346964022ea6003bf59a64e11966bbb863/1%20-%20Tokenization%20and%20datasets/byte_pair_encoding_tokenization.ipynb
+    status: draft
+  - id: tokenization-020
+    type: short_answer
+    difficulty: medium
+    tags:
+      - pre-tokenization
+      - normalization
+      - huggingface-tokenizers
+    question: |
+      A WordPiece tokenizer is set up with this normalizer and pre-tokenizer (Hugging Face `tokenizers`):
+      ```python
+      tokenizer.normalizer = normalizers.Sequence([
+          normalizers.Replace(Regex(r"[\s]"), " "),
+          normalizers.Lowercase(), normalizers.NFD(), normalizers.StripAccents()])
+      tokenizer.pre_tokenizer = pre_tokenizers.Sequence([
+          pre_tokenizers.WhitespaceSplit(),
+          pre_tokenizers.Digits(individual_digits=True),
+          pre_tokenizers.Punctuation()])
+      ```
+      How many pre-tokens (pieces handed on to the WordPiece model) does the input `Don't stop at 23.5%` produce?
+    answer:
+      numeric: 10
+      tolerance: 0
+      hint: an integer
+      model: "`don`, `'`, `t`, `stop`, `at`, `2`, `3`, `.`, `5`, `%`"
+    explanation: |
+      The normalizer lowercases and strips accents but keeps punctuation, giving `don't stop at 23.5%` [^1]. The
+      pre-tokenizer then splits on whitespace (4 chunks), puts every digit in its own piece (`23.5` becomes `2`, `3`,
+      `.`, `5`) and isolates every punctuation character (`don't` becomes `don`, `'`, `t`, and `%` stands alone), 10
+      pre-tokens in total [^1][^2]. WordPiece then splits each piece further into vocabulary subwords, but never merges
+      across these boundaries [^2].
+    references:
+      - source: neuromatch-dl
+        locator: W2D5 Tutorial 2, Section 2 The NLP pipeline, Tokenizer Features
+        url: https://github.com/NeuromatchAcademy/course-content-dl/blob/caba36c513fb8139ac3c9e7503f7a769dadde25e/tutorials/W2D5_TimeSeriesAndNaturalLanguageProcessing/instructor/W2D5_Tutorial2.ipynb
+      - source: hf-llm-course
+        locator: Chapter 6, Normalization and pre-tokenization
+        url: https://huggingface.co/learn/llm-course/chapter6/4
+    source:
+      id: neuromatch-dl
+      ref: W2D5_TimeSeriesAndNaturalLanguageProcessing/W2D5_Tutorial2#sec2-features
+      url: https://github.com/NeuromatchAcademy/course-content-dl/blob/caba36c513fb8139ac3c9e7503f7a769dadde25e/tutorials/W2D5_TimeSeriesAndNaturalLanguageProcessing/instructor/W2D5_Tutorial2.ipynb
+    status: draft
+  - id: tokenization-021
+    type: single
+    difficulty: medium
+    tags:
+      - subword-tokenization
+      - bpe
+      - wordpiece
+    question: |
+      Someone proposes skipping trained subword tokenizers: just split text into two-character chunks and one-hot
+      encode them, which also never meets an unknown word. What does a trained subword tokenizer such as BPE or
+      WordPiece offer that this scheme lacks?
+    options:
+      - text: 'Units chosen from corpus frequencies: common words or pieces become single tokens, so sequences are shorter and more meaningful'
+        correct: true
+      - text: Dense vectors that capture meaning, whereas one-hot codes are sparse and carry no similarity
+        why: A tokenizer only maps text to token ids; meaning-bearing dense vectors come from the embedding layer that follows it.
+      - text: A guaranteed vocabulary smaller than the 676 possible two-letter combinations
+        why: Subword vocabularies usually hold tens of thousands of tokens; a small vocabulary is not their advantage.
+      - text: No need for an embedding layer, because the token ids can be fed to the model directly
+        why: Token ids still have to be embedded; NMA notes that the usual next step after a tokenizer is an embedder.
+    explanation: |
+      BPE starts from characters and repeatedly merges the most frequent adjacent pair, and WordPiece keeps substrings
+      that occur often enough, so both build their units from corpus statistics [^1][^2]. Frequent words become single
+      tokens and rare words split into a few recurring pieces, so sequences stay short, units carry reusable morphemes,
+      and unknown words are still covered [^1]. Fixed two-letter chunks ignore these statistics: every word is cut the
+      same arbitrary way, into about half as many tokens as it has letters. Either way, the ids still need an embedding
+      layer afterwards [^1].
+    references:
+      - source: neuromatch-dl
+        locator: W2D5 Tutorial 2, Section 2 Tokenizers (BPE and WordPiece), Think 2.1 Tokenizer good practices
+        url: https://github.com/NeuromatchAcademy/course-content-dl/blob/caba36c513fb8139ac3c9e7503f7a769dadde25e/tutorials/W2D5_TimeSeriesAndNaturalLanguageProcessing/instructor/W2D5_Tutorial2.ipynb
+      - source: hf-llm-course
+        locator: Chapter 6, Byte-Pair Encoding tokenization
+        url: https://huggingface.co/learn/llm-course/chapter6/5
+    source:
+      id: neuromatch-dl
+      ref: W2D5_TimeSeriesAndNaturalLanguageProcessing/W2D5_Tutorial2#think2.1
+      url: https://github.com/NeuromatchAcademy/course-content-dl/blob/caba36c513fb8139ac3c9e7503f7a769dadde25e/tutorials/W2D5_TimeSeriesAndNaturalLanguageProcessing/instructor/W2D5_Tutorial2.ipynb
+    status: draft
+  - id: tokenization-022
+    type: single
+    difficulty: medium
+    tags:
+      - tokenizer
+      - vocabulary
+      - pretrained-models
+    question: |
+      You load a pretrained GPT-2-style code model and want to use a different tokenizer with it. What must the
+      replacement tokenizer satisfy for the pretrained model to work?
+    options:
+      - text: It must map text to the same token ids as the original vocabulary, since each id selects a learned embedding row
+        correct: true
+      - text: It must have been trained on the same amount of text, whatever its vocabulary looks like
+        why: Corpus size is irrelevant; what matters is that id 1234 still means the token the model learned for id 1234.
+      - text: It only needs to produce fewer tokens per sentence than the original tokenizer
+        why: Shorter sequences do not help if the ids point to the wrong embedding rows; the model would read nonsense.
+      - text: It must use the WordPiece algorithm, because GPT-style models cannot read BPE tokens
+        why: GPT-2 itself uses byte-level BPE; any algorithm works as long as it yields the model's own token-to-id mapping.
+    explanation: |
+      A language model never sees text, only token ids, and each id indexes a row of the embedding matrix learned during
+      pretraining [^1]. A tokenizer with another vocabulary, for example `bert-base-uncased` for a GPT-2 model as NMA
+      warns, would send ids whose learned meaning does not match the text [^1]. That is why preprocessing must be done
+      exactly as when the model was pretrained, and why checkpoints are loaded together with their own tokenizer [^2].
+    references:
+      - source: neuromatch-dl
+        locator: W2D5 Tutorial 2, Section 4 NLG with GPT, Think 4.1 Tokenizers
+        url: https://github.com/NeuromatchAcademy/course-content-dl/blob/caba36c513fb8139ac3c9e7503f7a769dadde25e/tutorials/W2D5_TimeSeriesAndNaturalLanguageProcessing/instructor/W2D5_Tutorial2.ipynb
+      - source: hf-llm-course
+        locator: Chapter 2, Behind the pipeline (Preprocessing with a tokenizer)
+        url: https://huggingface.co/learn/llm-course/chapter2/2
+    source:
+      id: neuromatch-dl
+      ref: W2D5_TimeSeriesAndNaturalLanguageProcessing/W2D5_Tutorial2#think4.1
+      url: https://github.com/NeuromatchAcademy/course-content-dl/blob/caba36c513fb8139ac3c9e7503f7a769dadde25e/tutorials/W2D5_TimeSeriesAndNaturalLanguageProcessing/instructor/W2D5_Tutorial2.ipynb
+    status: draft
+  - id: tokenization-023
+    type: short_answer
+    difficulty: easy
+    tags:
+      - k-mers
+      - dna
+      - vocabulary
+    question: |
+      A DNA language model tokenizes reads into overlapping 6-mers (substrings of 6 nucleotides, stride 1)
+      over the alphabet {A, C, G, T}; its vocabulary holds all $4^6 = 4096$ possible 6-mers. How many
+      6-mer tokens does a read of 200 base pairs produce (ignoring special tokens)?
+    answer:
+      numeric: 195
+      tolerance: 0
+      hint: a whole number
+      model: $200 - 6 + 1 = 195$
+    explanation: |
+      With stride 1, a window of length $k$ can start at positions $1, \dots, L - k + 1$, so a 200-bp
+      read gives $200 - 6 + 1 = 195$ overlapping 6-mers [^1]. The vocabulary has one entry per possible
+      6-mer, $4^6 = 4096$ [^2]. Note that the tokenizer actually loaded in the cited tutorial, DNABERT-2's,
+      uses byte-pair encoding with a vocabulary of 4096 instead of fixed 6-mers, which is why a short
+      string such as "ATT" becomes a single token there [^2][^3].
+    references:
+      - title: 'Wikipedia: k-mer'
+        url: https://en.wikipedia.org/wiki/K-mer
+        locator: Introduction (a sequence of length $L$ has $L - k + 1$ k-mers)
+      - source: galaxy-training
+        locator: Pretraining a Large Language Model (LLM) from Scratch on DNA Sequences — Choose the LLM architecture (vocabulary size $4^6$); Prepare the tokenizer
+        url: https://training.galaxyproject.org/training-material/topics/statistics/tutorials/genomic-llm-pretraining/tutorial.html
+      - title: 'Zhou et al. (2023), DNABERT-2: Efficient Foundation Model and Benchmark For Multi-Species Genome, arXiv:2306.15006'
+        url: https://arxiv.org/abs/2306.15006
+        locator: Abstract and Sec. 3 Method (BPE replaces k-mer tokenization)
+    source:
+      id: galaxy-training
+      ref: genomic-llm-pretraining#q3
+      url: https://github.com/galaxyproject/training-material/blob/917e68d1d61c2915c7a970d75468b8494be90c0d/topics/statistics/tutorials/genomic-llm-pretraining/tutorial.md
+    status: draft
+  - id: tokenization-024
+    type: short_answer
+    difficulty: easy
+    tags:
+      - vocabulary
+      - unknown-token
+      - special-tokens
+    question: |
+      A word-level tokenizer has this vocabulary and `encode` method; `word_tokenize` splits words and
+      punctuation into separate tokens.
+      ```python
+      vocab = {"<start>": 0, "<pad>": 1, "<unk>": 2, "to": 3, "be": 4,
+               "or": 5, "not": 6, ".": 7}
+
+      def encode(text):
+          ids = [vocab["<start>"]]
+          for tok in word_tokenize(text):
+              ids.append(vocab.get(tok, vocab["<unk>"]))
+          return ids
+      ```
+      What does `encode("to be or never.")` return?
+    answer:
+      accept:
+        - '[0, 3, 4, 5, 2, 7]'
+      pattern: \[?\s*0\s*,\s*3\s*,\s*4\s*,\s*5\s*,\s*2\s*,\s*7\s*\]?
+      hint: a list of ids, e.g. [0, 1, 2]
+      model: '`[0, 3, 4, 5, 2, 7]`: the start token, three known words, `<unk>` for "never", then "."'
+    explanation: |
+      Every encoded sequence begins with the `<start>` id 0, which later gives the language model a
+      first input to predict from [^1]. The tokens are `to`, `be`, `or`, `never` and `.`; "never" is not
+      in the vocabulary, so it maps to the unknown token `<unk>` (2) [^2]. The `<pad>` token is not
+      added here: it only fills shorter sequences up to the batch length.
+    references:
+      - source: mit-ocw-67960
+        locator: Homework 3, Problem 4(a)–(b)
+        url: https://ocw.mit.edu/courses/6-7960-deep-learning-fall-2024/resources/mit6_7960_f24_hw3_pdf/
+      - source: d2l
+        locator: Sec. 9.2.3 Vocabulary
+        url: https://d2l.ai/chapter_recurrent-neural-networks/text-sequence.html#vocabulary
+    source:
+      id: mit-ocw-67960
+      ref: mit6_7960_f24_hw3#q4a
+      url: https://ocw.mit.edu/courses/6-7960-deep-learning-fall-2024/resources/mit6_7960_f24_hw3_pdf/
+    status: draft
+  - id: tokenization-025
+    type: single
+    difficulty: medium
+    tags:
+      - continuous-inputs
+      - patches
+      - audio
+      - embeddings
+    question: |
+      A transformer for text looks up each discrete token in an embedding table. How is it usually
+      adapted to continuous inputs such as images or audio waveforms?
+    options:
+      - text: Cut it into patches or frames and project each one linearly to a vector
+        correct: true
+      - text: Round every pixel or audio sample to an integer and look it up in an embedding table
+        why: Each value would become its own token, giving huge sequences and treating nearby values as unrelated symbols.
+      - text: Feed the whole image or recording as a single token
+        why: With one token, self-attention has nothing to relate; the model could not capture structure inside the input.
+      - text: Sort the samples by value so that similar values become neighbouring tokens
+        why: Sorting destroys the spatial or temporal order that the model needs to learn from.
+    explanation: |
+      Patches (for images) or short frames (for audio) play the role of tokens: each is flattened and
+      projected linearly to the model dimension, replacing the embedding lookup [^1]. Position
+      embeddings are added so the model knows where each patch or frame came from, and self-attention
+      then relates nearby and distant parts alike [^1][^2]. Audio models often use spectrogram frames or
+      a small convolutional front end for the same purpose.
+    references:
+      - source: d2l
+        locator: Sec. 11.8.1 Model; 11.8.2 Patch Embedding
+        url: https://d2l.ai/chapter_attention-mechanisms-and-transformers/vision-transformer.html#patch-embedding
+      - source: mit-ocw-67960
+        locator: Homework 3, Problem 2(d)
+        url: https://ocw.mit.edu/courses/6-7960-deep-learning-fall-2024/resources/mit6_7960_f24_hw3_pdf/
+    source:
+      id: mit-ocw-67960
+      ref: mit6_7960_f24_hw3#q2d
+      url: https://ocw.mit.edu/courses/6-7960-deep-learning-fall-2024/resources/mit6_7960_f24_hw3_pdf/
+    status: draft

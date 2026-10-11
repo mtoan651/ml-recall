@@ -794,3 +794,429 @@ questions:
       ref: quiz-6/q3
       url: https://github.com/microsoft/ML-For-Beginners/blob/de2d4e12236445198213a0711855e348e7253cd4/quiz-app/src/assets/translations/en.json
     status: draft
+  - id: ai-ethics-028
+    type: single
+    difficulty: medium
+    tags:
+      - bias-measurement
+      - language-models
+      - crows-pairs
+    question: |
+      To test a masked language model for bias, you compare the probabilities it assigns to two sentences that differ
+      in one word: "The tigers are looking for their prey in the jungles." versus "The compsognathus are looking for
+      their prey in the jungles." The first gets a much higher probability. Why is this weak evidence that the model is
+      biased against long-extinct animals?
+    options:
+      - text: The swapped words differ in how common they are, and raw sentence probability rewards frequent words
+        correct: true
+      - text: Masked language models cannot score whole sentences, so the comparison is invalid
+        why: A masked model can score a sentence, e.g. by masking tokens one at a time and summing their log-probabilities, as CrowS-Pairs does.
+      - text: The second sentence is ungrammatical, and ungrammatical sentences get probability zero
+        why: Language models give unlikely sentences small, not zero, probability; the confound here is word frequency.
+      - text: Bias can only be measured for social attributes such as gender, so animals are out of scope
+        why: Bias tests can target any attribute; the problem with this test is that word frequency confounds it.
+    explanation: |
+      A rare word such as "compsognathus" lowers a sentence's probability simply because the model has seen it rarely
+      (and it may be split into several unlikely subword tokens), whatever the model "thinks" about the referent [^1].
+      The CrowS-Pairs metric therefore masks the tokens the two sentences share, one at a time, and sums their
+      log-probabilities given the rest, so the differing words are conditioned on rather than scored [^1][^2]. NMA's
+      simplified demo uses raw probabilities, which is acceptable only because its word pairs were chosen with similar
+      frequencies [^1].
+    references:
+      - source: neuromatch-dl
+        locator: W3D1 Tutorial 1, Section 8 Ethics in language models, Think! 8.1 Problems of this approach
+        url: https://github.com/NeuromatchAcademy/course-content-dl/blob/caba36c513fb8139ac3c9e7503f7a769dadde25e/tutorials/W3D1_AttentionAndTransformers/instructor/W3D1_Tutorial1.ipynb
+      - title: 'Nangia et al. (2020), CrowS-Pairs: A Challenge Dataset for Measuring Social Biases in Masked Language Models'
+        url: https://aclanthology.org/2020.emnlp-main.154/
+        locator: Bias metric (pseudo-log-likelihood over the unmodified tokens)
+    source:
+      id: neuromatch-dl
+      ref: W3D1_AttentionAndTransformers/W3D1_Tutorial1#think8.1
+      url: https://github.com/NeuromatchAcademy/course-content-dl/blob/caba36c513fb8139ac3c9e7503f7a769dadde25e/tutorials/W3D1_AttentionAndTransformers/instructor/W3D1_Tutorial1.ipynb
+    status: draft
+  - id: ai-ethics-029
+    type: single
+    difficulty: medium
+    tags:
+      - dataset-bias
+      - shortcut-learning
+      - self-supervised-learning
+    question: |
+      In a biased training set every square appears on the left of the image and every heart on the right; the test
+      set has both shapes everywhere. A supervised shape classifier drops to chance on the test set, while a linear
+      classifier on a SimCLR encoder (pretrained without labels, with random translations among its augmentations)
+      stays accurate. Why?
+    options:
+      - text: The supervised model can use horizontal position as a shortcut; translation augmentations make SimCLR features ignore position
+        correct: true
+      - text: SimCLR was pretrained on the test images, so it has seen every shape at every position
+        why: SimCLR is pretrained on augmented training images and never sees the test set; the augmentations create the robustness.
+      - text: The supervised model has too few parameters to recognize shapes, so it falls back on guessing
+        why: The same model classifies shapes well on unbiased data; on biased data, position is simply an easier cue for the label.
+      - text: Linear classifiers cannot overfit, so any linear probe is robust to biases in its training data
+        why: A linear classifier on position-sensitive features would learn the same shortcut; robustness comes from features that ignore position.
+    explanation: |
+      In the biased training set position perfectly predicts shape, so a supervised network can learn "left means
+      square" instead of the shape itself, and that rule fails on the test set [^1]. SimCLR is pretrained to give two
+      augmented views of the same image similar features; since the views differ by random translations, the encoder
+      becomes insensitive to position and cannot pass the shortcut to the classifier [^1][^2]. Choosing such
+      augmentations requires knowing which factors the task should ignore, which is easy in this toy setting and hard
+      with real data, so reducing bias in data collection still matters [^1].
+    references:
+      - source: neuromatch-dl
+        locator: W3D3 Tutorial 1, Section 7 Ethical considerations for self-supervised learning from biased datasets, Discussion 7.1.1
+        url: https://github.com/NeuromatchAcademy/course-content-dl/blob/caba36c513fb8139ac3c9e7503f7a769dadde25e/tutorials/W3D3_UnsupervisedAndSelfSupervisedLearning/instructor/W3D3_Tutorial1.ipynb
+      - title: Chen et al. (2020), A Simple Framework for Contrastive Learning of Visual Representations (SimCLR)
+        url: https://arxiv.org/abs/2002.05709
+        locator: Sec. 2.1 The Contrastive Learning Framework
+    source:
+      id: neuromatch-dl
+      ref: W3D3_UnsupervisedAndSelfSupervisedLearning/W3D3_Tutorial1#think7.1.1
+      url: https://github.com/NeuromatchAcademy/course-content-dl/blob/caba36c513fb8139ac3c9e7503f7a769dadde25e/tutorials/W3D3_UnsupervisedAndSelfSupervisedLearning/instructor/W3D3_Tutorial1.ipynb
+    status: draft
+  - id: ai-ethics-030
+    type: multiple
+    difficulty: easy
+    tags:
+      - responsible-ai
+      - hallucination
+      - harmful-content
+      - fairness
+    question: |
+      You build a history-tutoring app on top of an LLM. Which of these are potential harms that a
+      responsible generative-AI product must measure and mitigate? Select all that apply.
+    options:
+      - text: Confident but factually wrong answers (hallucinations)
+        correct: true
+      - text: Using a model with fewer parameters than the largest available
+        why: Model size is a cost–quality trade-off; a smaller model is not in itself irresponsible [^1].
+      - text: Output that reinforces bias against marginalized groups
+        correct: true
+      - text: Answers that are shorter than the maximum token limit
+        why: Short answers are a product choice, not a harm; the harms to manage are hallucinations, harmful content and lack of fairness [^1].
+      - text: Hateful content or instructions for illegal acts
+        correct: true
+    explanation: |
+      Microsoft's course names three kinds of potential harm: hallucinations (nonsensical or factually
+      wrong content stated convincingly), harmful content (self-harm, hate, violence, illegal acts,
+      sexual content) and lack of fairness (outputs that reinforce exclusionary worldviews) [^1]. A
+      responsible product measures these harms and mitigates them in four layers: the model, the
+      safety system, the metaprompt (with grounding) and the user experience [^1]. Correctness matters
+      too: hallucinations count as a harm precisely because wrong answers can be persuasive [^1].
+    references:
+      - source: ms-genai-for-beginners
+        locator: 'Lesson 03: Using Generative AI Responsibly, Why Should You Prioritize Responsible AI (Hallucinations, Harmful Content, Lack of Fairness) and How to Use Generative AI Responsibly'
+        url: https://github.com/microsoft/generative-ai-for-beginners/blob/d8ec07e31c4b32bd283d565c1abd9b58bb5cf2e8/03-using-generative-ai-responsibly/README.md#why-should-you-prioritize-responsible-ai
+    source:
+      id: ms-genai-for-beginners
+      ref: 03-using-generative-ai-responsibly#q1
+      url: https://github.com/microsoft/generative-ai-for-beginners/blob/d8ec07e31c4b32bd283d565c1abd9b58bb5cf2e8/03-using-generative-ai-responsibly/README.md#knowledge-check
+    status: draft
+  - id: ai-ethics-031
+    type: single
+    difficulty: medium
+    tags:
+      - data-poisoning
+      - ai-security
+      - data-integrity
+    question: |
+      An attacker flips the labels of a small fraction of a spam filter's training emails, so that some
+      legitimate emails are labelled spam. What is this attack called, and which defence addresses it
+      most directly?
+    options:
+      - text: Prompt injection; filter and sanitize every single user prompt at inference time
+        why: Prompt injection manipulates a model through crafted *inputs* at use time; this attack corrupts the *training* data [^1][^2].
+      - text: Data poisoning; track where training data comes from and who may change it
+        correct: true
+      - text: Model stealing; verify and authenticate the trained model's parameters
+        why: Model stealing copies a trained model; here nobody copies the model, its training labels are altered.
+      - text: Overreliance; keep reminding users that the model's answers can be wrong
+        why: Overreliance is about people trusting outputs too much; it does not describe tampering with training data [^1].
+    explanation: |
+      Changing the information used to train a model on purpose so that it makes mistakes is data
+      poisoning; label flipping is one of its forms, alongside feature poisoning, data injection and
+      backdoors [^1]. Because poisoned data is hard to detect afterwards, the course stresses tracking the
+      origin and lineage of the data, and strict role-based access to it, to keep it intact [^1]. Prompt
+      injection, by contrast, attacks a deployed model through its inputs [^2].
+    references:
+      - source: ms-genai-for-beginners
+        locator: 'Lesson 13: Securing Your Generative AI Applications, Understanding the threats and risks of AI (label flipping) and Knowledge check answer'
+        url: https://github.com/microsoft/generative-ai-for-beginners/blob/d8ec07e31c4b32bd283d565c1abd9b58bb5cf2e8/13-securing-ai-applications/README.md#understanding-the-threats-and-risks-of-ai
+      - title: 'Wikipedia: Prompt injection'
+        url: https://en.wikipedia.org/wiki/Prompt_injection#Types
+        locator: Section "Types"
+    source:
+      id: ms-genai-for-beginners
+      ref: 13-securing-ai-applications#q1
+      url: https://github.com/microsoft/generative-ai-for-beginners/blob/d8ec07e31c4b32bd283d565c1abd9b58bb5cf2e8/13-securing-ai-applications/README.md#knowledge-check
+    status: draft
+  - id: ai-ethics-032
+    type: single
+    difficulty: easy
+    tags:
+      - bias
+      - historical-bias
+    question: |
+      You train a toxicity classifier on comments from an online community in which comments that
+      mention one religion really are more often toxic, because the community is hostile to that
+      religion. Which type of bias can this introduce into the model?
+    options:
+      - text: Historical bias
+        correct: true
+      - text: Representation bias
+        why: Representation bias means the data poorly represents the people the model will serve; here the problem is the hostile world the data records [^1].
+      - text: Evaluation bias
+        why: Evaluation bias comes from benchmark data that does not match the population served, not from the training comments themselves [^1].
+      - text: Deployment bias
+        why: Deployment bias arises when a model is used differently from how it was intended, which the scenario does not involve [^1].
+    explanation: |
+      Historical bias occurs when the state of the world in which the data was generated is flawed
+      [^1]. The comments faithfully record a community that treats one religion with hostility, so the
+      model learns to associate mentions of that religion with toxicity, which is the official
+      answer [^2]. The exercise shows the effect on real data: the model it trains flags
+      "I have a muslim friend" as toxic but not "I have a christian friend" [^2].
+    references:
+      - source: kaggle-learn
+        locator: AI Ethics, Lesson 3 Identifying Bias in AI — tutorial, Six types of bias
+        url: https://github.com/Kaggle/learntools/blob/e9ba66dc899d3e17b80d3a1b9a5d29f430d310cb/notebooks/ethics/raw/tut3.ipynb
+      - source: kaggle-learn
+        locator: AI Ethics, Lesson 3 exercise, Questions 4–5 Identify bias / Test your understanding (official answers)
+        url: https://github.com/Kaggle/learntools/blob/e9ba66dc899d3e17b80d3a1b9a5d29f430d310cb/learntools/ethics/ex3.py
+    source:
+      id: kaggle-learn
+      ref: ethics/ex3#q5
+      url: https://github.com/Kaggle/learntools/blob/e9ba66dc899d3e17b80d3a1b9a5d29f430d310cb/notebooks/ethics/raw/ex3.ipynb
+    status: draft
+  - id: ai-ethics-033
+    type: single
+    difficulty: medium
+    tags:
+      - bias
+      - measurement-bias
+    question: |
+      For a toxicity classifier, you translate every comment that is not in English into English with
+      a separate tool, and then treat all comments as if they had been written in English. Which type
+      of bias does this most directly introduce?
+    options:
+      - text: Measurement bias
+        correct: true
+      - text: Historical bias
+        why: Historical bias comes from a flawed world being recorded faithfully; here the recording itself, the translation, is less accurate for some groups [^1].
+      - text: Evaluation bias
+        why: Evaluation bias concerns benchmark data that does not represent the population served, not how the training inputs were produced [^1].
+      - text: Deployment bias
+        why: Deployment bias is about a model being used differently from how it was intended, not about errors in the input data [^1].
+    explanation: |
+      Measurement bias occurs when the accuracy of the data varies across groups [^1]. Machine
+      translation adds errors to non-English comments only, so the inputs are systematically less
+      accurate for speakers of other languages [^2]. The official answer adds that it can also cause
+      aggregation bias: treating all languages as one group, when the model would likely do better if
+      comments in different languages were handled differently [^2].
+    references:
+      - source: kaggle-learn
+        locator: AI Ethics, Lesson 3 Identifying Bias in AI — tutorial, Measurement bias; Aggregation bias
+        url: https://github.com/Kaggle/learntools/blob/e9ba66dc899d3e17b80d3a1b9a5d29f430d310cb/notebooks/ethics/raw/tut3.ipynb
+      - source: kaggle-learn
+        locator: AI Ethics, Lesson 3 exercise, Question 6 Test your understanding, part 2 (official answer)
+        url: https://github.com/Kaggle/learntools/blob/e9ba66dc899d3e17b80d3a1b9a5d29f430d310cb/learntools/ethics/ex3.py
+    source:
+      id: kaggle-learn
+      ref: ethics/ex3#q6
+      url: https://github.com/Kaggle/learntools/blob/e9ba66dc899d3e17b80d3a1b9a5d29f430d310cb/notebooks/ethics/raw/ex3.ipynb
+    status: draft
+  - id: ai-ethics-034
+    type: multiple
+    difficulty: medium
+    tags:
+      - bias
+      - representation-bias
+      - evaluation-bias
+      - deployment-bias
+    question: |
+      A toxicity classifier is trained on comments mostly from users in the United Kingdom and
+      evaluated on another set of comments, also mostly from the UK, where it performs very well. A
+      company in Australia then deploys it for its users, and it performs poorly because of
+      differences between British and Australian English. Which types of bias does the model suffer
+      from? Select all that apply.
+    options:
+      - text: Representation bias
+        correct: true
+      - text: Evaluation bias
+        correct: true
+      - text: Deployment bias
+        correct: true
+      - text: Historical bias
+        why: Nothing suggests the UK comments record a flawed state of the world; they are just the wrong population [^1].
+      - text: Measurement bias
+        why: The comments are recorded accurately for every group; the problem is which users they come from [^1].
+    explanation: |
+      The training data poorly represents the people the model will serve, Australian users, which is
+      representation bias [^1]. The evaluation set has the same mismatch, so the great test score says
+      nothing about Australian comments, which is evaluation bias [^1]. And the model is used in a
+      setting different from the one it was built and checked for, which the official answer calls
+      deployment bias [^2]. These types are not mutually exclusive; one application can suffer from
+      several at once [^1].
+    references:
+      - source: kaggle-learn
+        locator: AI Ethics, Lesson 3 Identifying Bias in AI — tutorial, Six types of bias
+        url: https://github.com/Kaggle/learntools/blob/e9ba66dc899d3e17b80d3a1b9a5d29f430d310cb/notebooks/ethics/raw/tut3.ipynb
+      - source: kaggle-learn
+        locator: AI Ethics, Lesson 3 exercise, Question 7 Test your understanding, part 3 (official answer)
+        url: https://github.com/Kaggle/learntools/blob/e9ba66dc899d3e17b80d3a1b9a5d29f430d310cb/learntools/ethics/ex3.py
+    source:
+      id: kaggle-learn
+      ref: ethics/ex3#q7
+      url: https://github.com/Kaggle/learntools/blob/e9ba66dc899d3e17b80d3a1b9a5d29f430d310cb/notebooks/ethics/raw/ex3.ipynb
+    status: draft
+  - id: ai-ethics-035
+    type: short_answer
+    difficulty: easy
+    tags:
+      - fairness
+      - equal-opportunity
+      - true-positive-rate
+      - confusion-matrix
+    question: |
+      A model approves or denies credit card applications. On test data, its results for Group A
+      are:
+
+      | | Approved | Denied |
+      |---|---|---|
+      | Should be approved | 7528 | 2219 |
+      | Should be denied | 500 | 39723 |
+
+      For Group B, its true positive rate is 98.03%. What is Group A's true positive rate, the
+      quantity compared under equal opportunity? Give it as a percentage with 2 decimals.
+    answer:
+      numeric: 77.23
+      tolerance: 0.01
+      hint: a percentage, 2 decimals
+      model: $7528 / (7528 + 2219) = 77.23\%$
+    explanation: |
+      The true positive rate is the share of people who should be selected that the model actually
+      selects, and equal opportunity requires it to be the same for each group [^1]. For Group A it is
+      $7528 / (7528 + 2219) \approx 77.23\%$, far below Group B's 98.03%: a qualified applicant from
+      Group A is much less likely to be approved [^2]. The model's accuracy for Group A,
+      $(39723 + 7528) / 49970 \approx 94.56\%$, is close to Group B's 95.02%, so equal accuracy
+      alone would hide this gap [^2].
+    references:
+      - source: kaggle-learn
+        locator: AI Ethics, Lesson 4 AI Fairness — tutorial, Equal opportunity
+        url: https://github.com/Kaggle/learntools/blob/e9ba66dc899d3e17b80d3a1b9a5d29f430d310cb/notebooks/ethics/raw/tut4.ipynb
+      - source: kaggle-learn
+        locator: AI Ethics, Lesson 4 exercise, Question 1 Varieties of fairness (text and official answer)
+        url: https://github.com/Kaggle/learntools/blob/e9ba66dc899d3e17b80d3a1b9a5d29f430d310cb/notebooks/ethics/raw/ex4.ipynb
+    source:
+      id: kaggle-learn
+      ref: ethics/ex4#q1
+      url: https://github.com/Kaggle/learntools/blob/e9ba66dc899d3e17b80d3a1b9a5d29f430d310cb/notebooks/ethics/raw/ex4.ipynb
+    status: draft
+  - id: ai-ethics-036
+    type: true_false
+    difficulty: easy
+    tags:
+      - fairness
+      - fairness-through-unawareness
+      - proxies
+    question: |
+      True or false: removing the group-membership column from the training data guarantees that a
+      credit-approval model treats both groups fairly.
+    options:
+      - text: 'True'
+        why: Other features, such as income or home ownership, can act as proxies for the group, and in the exercise the group-unaware model was still unfair [^2].
+      - text: 'False'
+        correct: true
+    explanation: |
+      "Group unaware" fairness removes group membership from the data, but proxies for it must be
+      removed too: in a segregated city, a zip code reveals race [^1]. It is also unlikely to fix
+      historical bias [^1]. In the exercise, Group B applicants have higher incomes on average, and the
+      group-unaware model still favours Group B under demographic parity while favouring Group A
+      under equal accuracy and equal opportunity [^2].
+    references:
+      - source: kaggle-learn
+        locator: AI Ethics, Lesson 4 AI Fairness — tutorial, Group unaware / "Fairness through unawareness"
+        url: https://github.com/Kaggle/learntools/blob/e9ba66dc899d3e17b80d3a1b9a5d29f430d310cb/notebooks/ethics/raw/tut4.ipynb
+      - source: kaggle-learn
+        locator: AI Ethics, Lesson 4 exercise, Question 3 Varieties of fairness, part 2 (official answer) and closing notes
+        url: https://github.com/Kaggle/learntools/blob/e9ba66dc899d3e17b80d3a1b9a5d29f430d310cb/learntools/ethics/ex4.py
+    source:
+      id: kaggle-learn
+      ref: ethics/ex4#q3
+      url: https://github.com/Kaggle/learntools/blob/e9ba66dc899d3e17b80d3a1b9a5d29f430d310cb/notebooks/ethics/raw/ex4.ipynb
+    status: draft
+  - id: ai-ethics-037
+    type: single
+    difficulty: medium
+    tags:
+      - fairness
+      - demographic-parity
+      - equal-opportunity
+      - group-thresholds
+    question: |
+      Groups A and B are equally represented among credit card applicants. A model with group-specific
+      approval thresholds approves about as many applicants from A as from B, and its accuracy is
+      about the same for both groups. It approves every Group A applicant who should be approved, but
+      only 63% of the Group B applicants who should be approved. Which of these criteria does it
+      violate?
+    options:
+      - text: Equal opportunity
+        correct: true
+      - text: Demographic parity
+        why: The approved applicants come about equally from both groups, matching their 50/50 share among applicants, which is what demographic parity asks [^1].
+      - text: Equal accuracy
+        why: The model is about equally accurate for both groups, so equal accuracy holds [^2].
+    explanation: |
+      Equal opportunity requires the same true positive rate, the share of people who should be
+      selected that are selected, in each group [^1]. Here it is 100% for Group A and 63% for Group
+      B, so the model favours Group A on this criterion even though it satisfies demographic parity
+      [^2]. Optimizing for one type of fairness often breaks another, which is why choosing the
+      criterion should be a long conversation within the team [^1].
+    references:
+      - source: kaggle-learn
+        locator: AI Ethics, Lesson 4 AI Fairness — tutorial, Four fairness criteria; Example
+        url: https://github.com/Kaggle/learntools/blob/e9ba66dc899d3e17b80d3a1b9a5d29f430d310cb/notebooks/ethics/raw/tut4.ipynb
+      - source: kaggle-learn
+        locator: AI Ethics, Lesson 4 exercise, Question 4 Varieties of fairness, part 3 (official answer)
+        url: https://github.com/Kaggle/learntools/blob/e9ba66dc899d3e17b80d3a1b9a5d29f430d310cb/learntools/ethics/ex4.py
+    source:
+      id: kaggle-learn
+      ref: ethics/ex4#q4
+      url: https://github.com/Kaggle/learntools/blob/e9ba66dc899d3e17b80d3a1b9a5d29f430d310cb/notebooks/ethics/raw/ex4.ipynb
+    status: draft
+  - id: ai-ethics-038
+    type: single
+    difficulty: easy
+    tags:
+      - human-centered-design
+      - prototyping
+    question: |
+      During a pandemic, a public health agency is flooded with calls and e-mails and decides that an
+      AI chatbot answering pandemic questions would help. Following human-centered design, how should
+      it start prototyping?
+    options:
+      - text: Build a quick non-AI prototype and test it with a diverse group of potential users
+        correct: true
+      - text: Build the best AI chatbot it can, then test it with a diverse group of potential users
+        why: Iterating on an AI prototype is slower and more expensive; a non-AI prototype gives the same early lessons sooner [^2].
+      - text: Train a model on its archive of past e-mails first, and design the interface around it
+        why: Starting from the model skips learning what users expect and need, which should shape the eventual design [^1].
+      - text: Release a first version to the public and improve it based on the complaints it gets
+        why: Testing on everyone at once exposes all users to an unfinished system; HCD tests early prototypes with consenting users [^1].
+    explanation: |
+      Human-centered design recommends developing a non-AI prototype quickly to see how people interact
+      with it, which is easier, faster and cheaper, and gives early information about what users
+      expect [^1]. The people giving feedback should be diverse and should understand and consent to
+      what they are helping with [^1]. The official answer for the chatbot is exactly this, with the
+      lessons informing the eventual AI prototype [^2].
+    references:
+      - source: kaggle-learn
+        locator: AI Ethics, Lesson 2 Human-Centered Design for AI — tutorial, 4. Prototype, starting with non-AI solutions
+        url: https://github.com/Kaggle/learntools/blob/e9ba66dc899d3e17b80d3a1b9a5d29f430d310cb/notebooks/ethics/raw/tut2.ipynb
+      - source: kaggle-learn
+        locator: AI Ethics, Lesson 2 exercise, Question 4 Prototyping a chatbot (official answer)
+        url: https://github.com/Kaggle/learntools/blob/e9ba66dc899d3e17b80d3a1b9a5d29f430d310cb/learntools/ethics/ex2.py
+    source:
+      id: kaggle-learn
+      ref: ethics/ex2#q4
+      url: https://github.com/Kaggle/learntools/blob/e9ba66dc899d3e17b80d3a1b9a5d29f430d310cb/notebooks/ethics/raw/ex2.ipynb
+    status: draft

@@ -40,6 +40,9 @@ Versions follow [conventions.md#versioning](conventions.md#versioning).
   sources: HF Audio Course, UBC CPSC 330 and DSCI 575, forall x, Gutmann's pen-and-paper
   exercises, ML-InterviewQs, dlbook_exercises, and every convertible d2l exercise (+575
   questions); MMLU expansion paused for provenance
+- [x] Second survey round under the non-commercial licence policy: MIT OCW, NPTEL, Neuromatch,
+  Kaggle Learn, smaller open courses, MMLU keep-lists and original questions for the remaining
+  thin topics (+879 questions, 2520 in all); `graph_figure` helper
 - [ ] `mlr extract` (markitdown/docling)
 
 ## v0.4.0 — Review features

@@ -1322,3 +1322,624 @@ questions:
       ref: chapter_convolutional-neural-networks/pooling#ex6
       url: https://d2l.ai/chapter_convolutional-neural-networks/pooling.html#exercises
     status: draft
+  - id: cnn-037
+    type: short_answer
+    difficulty: medium
+    tags:
+      - output-size
+      - patchgan
+      - convolution-arithmetic
+    question: |
+      The last layer of a CycleGAN discriminator receives an $8 \times 8 \times 512$ feature map
+      and applies `nn.Conv2d(512, 1, kernel_size=8, stride=1, padding=0)`. What is the spatial
+      size (height = width) of its output?
+    answer:
+      numeric: 1
+      tolerance: 0
+      hint: a whole number
+      model: $(8 - 8 + 2 \cdot 0)/1 + 1 = 1$, so the output is $1 \times 1 \times 1$
+    explanation: |
+      The output width of a convolution is $(W - F + 2P)/S + 1$ [^1][^2]. A kernel as large as the
+      input with no padding fits in exactly one position, so the layer outputs a single number per
+      image, the real/fake score; it acts like a fully connected layer over the whole map [^1]. The
+      four earlier stride-2 convolutions had reduced the $128 \times 128$ input to $8 \times 8$.
+    references:
+      - source: udacity-dl-pytorch
+        locator: CycleGAN notebook, Define the Discriminator Architecture; CIFAR CNN notebook, Output volume for a convolutional layer
+        url: https://github.com/udacity/deep-learning-v2-pytorch/blob/c9404fc86181fc3f0906b368697268257f348535/cycle-gan/CycleGAN_Solution.ipynb
+      - source: d2l
+        locator: Sec. 7.3.2 Stride, Eq. (7.3.2)
+        url: https://d2l.ai/chapter_convolutional-neural-networks/padding-and-strides.html#stride
+    source:
+      id: udacity-dl-pytorch
+      ref: cycle-gan/CycleGAN_Solution.ipynb#discriminator-last-layer
+      url: https://github.com/udacity/deep-learning-v2-pytorch/blob/c9404fc86181fc3f0906b368697268257f348535/cycle-gan/CycleGAN_Solution.ipynb
+    status: draft
+  - id: cnn-038
+    type: short_answer
+    difficulty: medium
+    tags:
+      - parameter-count
+      - flatten
+      - cifar10
+    question: |
+      A CIFAR-10 CNN takes $32 \times 32 \times 3$ images through three blocks of
+      `Conv2d(kernel 3, padding 1)` + ReLU + `MaxPool2d(2, 2)`, with 16, 32 and 64 output channels,
+      then flattens and applies `fc1 = nn.Linear(?, 500)`. How many parameters does `fc1` have?
+    answer:
+      numeric: 512500
+      tolerance: 0
+      hint: a whole number
+      model: $32 \to 16 \to 8 \to 4$; input $64 \cdot 4 \cdot 4 = 1024$; $1024 \times 500 + 500 = 512{,}500$
+    explanation: |
+      Padded $3 \times 3$ convolutions keep the size and each pooling halves it, so the feature map
+      after the third block is $64 \times 4 \times 4$, flattened to 1024 values [^1][^2]. `fc1`
+      therefore has $1024 \cdot 500 + 500 = 512{,}500$ parameters, far more than the three
+      convolutions together ($448 + 4{,}640 + 18{,}496$); in such small CNNs most parameters sit in
+      the first fully connected layer.
+    references:
+      - source: udacity-dl-pytorch
+        locator: CIFAR-10 CNN notebook, Define the Network Architecture (Net class, 'linear layer (64 * 4 * 4 -> 500)')
+        url: https://github.com/udacity/deep-learning-v2-pytorch/blob/c9404fc86181fc3f0906b368697268257f348535/convolutional-neural-networks/cifar-cnn/cifar10_cnn_solution.ipynb
+      - source: d2l
+        locator: Sec. 7.5.2 Padding and Stride
+        url: https://d2l.ai/chapter_convolutional-neural-networks/pooling.html#padding-and-stride
+    source:
+      id: udacity-dl-pytorch
+      ref: convolutional-neural-networks/cifar-cnn/cifar10_cnn_solution.ipynb#fc1-parameters
+      url: https://github.com/udacity/deep-learning-v2-pytorch/blob/c9404fc86181fc3f0906b368697268257f348535/convolutional-neural-networks/cifar-cnn/cifar10_cnn_solution.ipynb
+    status: draft
+  - id: cnn-039
+    type: short_answer
+    difficulty: easy
+    tags:
+      - convolution
+      - cross-correlation
+      - blur
+    question: |
+      A $2 \times 2$ kernel with all entries $\tfrac14$ slides over the image below with stride 1 and no padding, as in a CNN
+      layer (cross-correlation):
+      $$\begin{bmatrix}0 & 200 & 200\\ 0 & 0 & 200\\ 0 & 0 & 0\end{bmatrix}$$
+      The output is $2 \times 2$. What is its top-right entry?
+    answer:
+      numeric: 150
+      tolerance: 0
+      hint: a number
+      model: $(200 + 200 + 0 + 200)/4 = 150$
+    explanation: |
+      Each output entry is the sum of the element-wise products of the kernel with one $2 \times 2$ window of the image
+      [^1][^2]. The top-right window is $\begin{bmatrix}200 & 200\\ 0 & 200\end{bmatrix}$, and with all weights $\tfrac14$ the
+      entry is the window's mean, $600/4 = 150$ [^1]. The full output is $\begin{bmatrix}50 & 150\\ 0 & 50\end{bmatrix}$: this
+      kernel is a box blur that averages neighbouring pixels [^1].
+    references:
+      - source: neuromatch-dl
+        locator: W2D2 Tutorial 1, Section 2, Coding Exercise 2.1 Convolution of a Simple Kernel
+        url: https://github.com/NeuromatchAcademy/course-content-dl/blob/caba36c513fb8139ac3c9e7503f7a769dadde25e/tutorials/W2D2_Convnets/instructor/W2D2_Tutorial1.ipynb
+      - source: d2l
+        locator: Sec. 7.2.1 The Cross-Correlation Operation
+        url: https://d2l.ai/chapter_convolutional-neural-networks/conv-layer.html#the-cross-correlation-operation
+    source:
+      id: neuromatch-dl
+      ref: W2D2_Convnets/W2D2_Tutorial1#ex2.1
+      url: https://github.com/NeuromatchAcademy/course-content-dl/blob/caba36c513fb8139ac3c9e7503f7a769dadde25e/tutorials/W2D2_Convnets/instructor/W2D2_Tutorial1.ipynb
+    status: draft
+  - id: cnn-040
+    type: single
+    difficulty: medium
+    tags:
+      - edge-detection
+      - kernels
+    question: |
+      The kernel $\begin{bmatrix}1 & -1\\ 1 & -1\end{bmatrix}$ responds strongly to vertical edges (a left–right change in
+      brightness). You transpose it to $\begin{bmatrix}1 & 1\\ -1 & -1\end{bmatrix}$ and apply it to an image that contains only
+      a vertical edge: bright columns on the left, dark on the right, every row identical. What does the transposed
+      kernel detect, and what does it output on this image?
+    options:
+      - text: Horizontal edges; on this image it outputs zero everywhere
+        correct: true
+      - text: Vertical edges again; it outputs the same map with the sign flipped
+        why: 'Transposing swaps rows and columns: the kernel now compares the top row of each window with the bottom row, i.e. it detects horizontal edges.'
+      - text: Horizontal edges; it outputs large values along the vertical edge
+        why: Every row is identical, so top minus bottom is zero in every window, including those on the edge.
+      - text: Diagonal edges; it outputs half the response of the original kernel
+        why: The transposed kernel subtracts the bottom row from the top row, a horizontal-edge detector, and its response here is exactly zero.
+    explanation: |
+      The transposed kernel adds the top row of each $2 \times 2$ window and subtracts the bottom row, so it responds to
+      brightness changes from top to bottom: horizontal edges [^1]. In an image with a purely vertical edge every row is
+      identical, so top and bottom cancel in every window and the output is 0 everywhere [^1][^2]. The original kernel,
+      which subtracts the right column from the left, is the one that fires on this edge [^1].
+    references:
+      - source: neuromatch-dl
+        locator: W2D2 Tutorial 1, Section 2.2 Padding and Edge Detection, Think! 2.2.1 and Think! 2.2.2 Kernel structure
+        url: https://github.com/NeuromatchAcademy/course-content-dl/blob/caba36c513fb8139ac3c9e7503f7a769dadde25e/tutorials/W2D2_Convnets/instructor/W2D2_Tutorial1.ipynb
+      - source: d2l
+        locator: Sec. 7.2.3 Object Edge Detection in Images
+        url: https://d2l.ai/chapter_convolutional-neural-networks/conv-layer.html#object-edge-detection-in-images
+    source:
+      id: neuromatch-dl
+      ref: W2D2_Convnets/W2D2_Tutorial1#think2.2.2
+      url: https://github.com/NeuromatchAcademy/course-content-dl/blob/caba36c513fb8139ac3c9e7503f7a769dadde25e/tutorials/W2D2_Convnets/instructor/W2D2_Tutorial1.ipynb
+    status: draft
+  - id: cnn-041
+    type: short_answer
+    difficulty: easy
+    tags:
+      - output-shape
+      - pooling
+      - flatten
+    question: |
+      A CNN for $28 \times 28$ grayscale letters has these layers in order (stride 1 and no padding for the
+      convolutions): `Conv2d(1, 32, kernel_size=3)`, ReLU, `Conv2d(32, 64, kernel_size=3)`, ReLU, `MaxPool2d(2)`,
+      flatten, `Linear(in_features, 128)`, ReLU, `Linear(128, 2)`. What must `in_features` be?
+    answer:
+      numeric: 9216
+      tolerance: 0
+      hint: an integer
+      model: $28 \to 26 \to 24 \to 12$; $64 \times 12 \times 12 = 9216$
+    explanation: |
+      Each 3×3 convolution without padding removes 2 rows and 2 columns ($28 \to 26 \to 24$), and 2×2 max-pooling halves the
+      size to 12 [^1][^2]. Flattening 64 channels of $12 \times 12$ gives 9216 features [^1]. This first linear layer has
+      $9216 \cdot 128 + 128 \approx 1.18$ million parameters, far more than the two convolutions together
+      ($320 + 18496$): dense layers on top of feature maps, not the convolutions, dominate the parameter count [^1].
+    references:
+      - source: neuromatch-dl
+        locator: W2D2 Tutorial 1, Section 4 Putting it all together, Coding Exercise 4 Implement your own CNN
+        url: https://github.com/NeuromatchAcademy/course-content-dl/blob/caba36c513fb8139ac3c9e7503f7a769dadde25e/tutorials/W2D2_Convnets/instructor/W2D2_Tutorial1.ipynb
+      - source: d2l
+        locator: Sec. 7.5 Pooling
+        url: https://d2l.ai/chapter_convolutional-neural-networks/pooling.html
+    source:
+      id: neuromatch-dl
+      ref: W2D2_Convnets/W2D2_Tutorial1#ex4
+      url: https://github.com/NeuromatchAcademy/course-content-dl/blob/caba36c513fb8139ac3c9e7503f7a769dadde25e/tutorials/W2D2_Convnets/instructor/W2D2_Tutorial1.ipynb
+    status: draft
+  - id: cnn-042
+    type: short_answer
+    difficulty: hard
+    tags:
+      - resnext
+      - grouped-convolution
+      - parameter-count
+    question: |
+      A ResNet bottleneck block with 256 input and output channels uses a 1×1 convolution to 64 channels, a 3×3
+      convolution from 64 to 64 channels and a 1×1 convolution back to 256: $256 \cdot 64 + 9 \cdot 64 \cdot 64 + 64 \cdot 256 = 69632$
+      weights (ignoring biases). A ResNeXt block instead has 32 parallel paths, each a 1×1 convolution from 256 to 4
+      channels, a 3×3 convolution from 4 to 4 and a 1×1 convolution from 4 to 256, with the path outputs summed. How many
+      weights does the ResNeXt block have (ignoring biases)?
+    answer:
+      numeric: 70144
+      tolerance: 0
+      hint: an integer
+      model: $32 \times (256 \cdot 4 + 9 \cdot 4 \cdot 4 + 4 \cdot 256) = 32 \times 2192 = 70144$
+    explanation: |
+      Each path costs $1024 + 144 + 1024 = 2192$ weights, and 32 paths give $70144$, almost the same as the ResNet block
+      [^1][^2]. For that budget ResNeXt has $32 \times 4 = 128$ channels in its bottleneck instead of 64, but each 3×3
+      convolution mixes only the 4 channels of its own path, which is a grouped convolution [^1][^2]. The wider bottleneck
+      tends to outweigh the restricted mixing, which is why ResNeXt usually outperforms ResNet at equal cost [^1].
+    references:
+      - source: neuromatch-dl
+        locator: W2D2 Tutorial 3, Section 4 Inception + ResNeXt, Interactive Demo 4 and Think! 4 ResNet vs. ResNeXt
+        url: https://github.com/NeuromatchAcademy/course-content-dl/blob/caba36c513fb8139ac3c9e7503f7a769dadde25e/tutorials/W2D2_Convnets/instructor/W2D2_Tutorial3.ipynb
+      - title: Xie et al. (2017), Aggregated Residual Transformations for Deep Neural Networks
+        url: https://arxiv.org/abs/1611.05431
+        locator: Sec. 3.4 Model Capacity, Eq. (4)
+    source:
+      id: neuromatch-dl
+      ref: W2D2_Convnets/W2D2_Tutorial3#think4
+      url: https://github.com/NeuromatchAcademy/course-content-dl/blob/caba36c513fb8139ac3c9e7503f7a769dadde25e/tutorials/W2D2_Convnets/instructor/W2D2_Tutorial3.ipynb
+    status: draft
+  - id: cnn-043
+    type: short_answer
+    difficulty: medium
+    tags:
+      - depthwise-separable-convolution
+      - mobilenet
+      - parameter-count
+    question: |
+      A convolution maps 64 input channels to 2 output channels with 3×3 kernels (no biases). A depthwise separable
+      version uses one 3×3 filter per input channel (depthwise step), followed by a 1×1 convolution from 64 to 2
+      channels (pointwise step). How many fewer weights does the depthwise separable version need?
+    answer:
+      numeric: 448
+      tolerance: 0
+      hint: an integer
+      model: 'Regular: $64 \cdot 3 \cdot 3 \cdot 2 = 1152$; separable: $64 \cdot 9 + 64 \cdot 2 = 704$; difference $448$'
+    explanation: |
+      A regular convolution has a 3×3 kernel for every pair of input and output channels: $64 \cdot 9 \cdot 2 = 1152$ weights
+      [^1]. The depthwise step filters each input channel separately ($64 \cdot 9 = 576$) and the pointwise 1×1 step mixes
+      the channels ($64 \cdot 2 = 128$), 704 in total [^1][^2]. With only 4 input channels the saving is $72 - 44 = 28$; it
+      grows with the number of channels, which is why MobileNets use this factorization throughout [^1][^2].
+    references:
+      - source: neuromatch-dl
+        locator: W2D2 Tutorial 3, Section 5 Depthwise separable convolutions, Coding Exercise 5.1 and Think! 5.1
+        url: https://github.com/NeuromatchAcademy/course-content-dl/blob/caba36c513fb8139ac3c9e7503f7a769dadde25e/tutorials/W2D2_Convnets/instructor/W2D2_Tutorial3.ipynb
+      - title: 'Howard et al. (2017), MobileNets: Efficient Convolutional Neural Networks for Mobile Vision Applications'
+        url: https://arxiv.org/abs/1704.04861
+        locator: Sec. 3.1 Depthwise Separable Convolution
+    source:
+      id: neuromatch-dl
+      ref: W2D2_Convnets/W2D2_Tutorial3#think5.1
+      url: https://github.com/NeuromatchAcademy/course-content-dl/blob/caba36c513fb8139ac3c9e7503f7a769dadde25e/tutorials/W2D2_Convnets/instructor/W2D2_Tutorial3.ipynb
+    status: draft
+  - id: cnn-044
+    type: single
+    difficulty: medium
+    tags:
+      - inductive-bias
+      - mlp
+      - feature-learning
+    question: |
+      An MLP is trained on images by flattening each image into a vector. When you visualize its first-layer weights as
+      images, you do not see the small edge-like filters that the first layer of a CNN typically learns. Why?
+    options:
+      - text: An MLP has no built-in bias toward local, translation-equivariant features, so nothing favours edge filters
+        correct: true
+      - text: Only the last layer of an MLP gets trained, so the first layer keeps its random initial weights
+        why: Backpropagation trains every layer; the first layer does learn features, just not localized edge filters.
+      - text: Flattening destroys the pixel values, so the first layer only receives meaningless noise
+        why: Flattening keeps every pixel value; it only discards the explicit 2-D neighbourhood structure.
+      - text: Edge detectors need more parameters than a single dense layer of an MLP has available
+        why: A dense first layer has far more parameters than a small convolution kernel; capacity is not the issue.
+    explanation: |
+      Each first-layer unit of an MLP connects to every pixel, with no weight sharing and no notion of neighbourhood, so
+      it is free to learn image-sized patterns [^1]. A CNN's small shared kernels build in locality and translation
+      equivariance, an inductive bias under which local edge detectors emerge in the first layer [^1][^2]. Without that
+      prior, an MLP does not learn a hierarchy that starts from edges by default [^1].
+    references:
+      - source: neuromatch-dl
+        locator: W1D3 Tutorial 2, Section 2 Deeper MLPs, Think! 2 Why first layer features are high level?
+        url: https://github.com/NeuromatchAcademy/course-content-dl/blob/caba36c513fb8139ac3c9e7503f7a769dadde25e/tutorials/W1D3_MultiLayerPerceptrons/instructor/W1D3_Tutorial2.ipynb
+      - source: d2l
+        locator: Sec. 7.1 From Fully Connected Layers to Convolutions
+        url: https://d2l.ai/chapter_convolutional-neural-networks/why-conv.html
+    source:
+      id: neuromatch-dl
+      ref: W1D3_MultiLayerPerceptrons/W1D3_Tutorial2#think2
+      url: https://github.com/NeuromatchAcademy/course-content-dl/blob/caba36c513fb8139ac3c9e7503f7a769dadde25e/tutorials/W1D3_MultiLayerPerceptrons/instructor/W1D3_Tutorial2.ipynb
+    status: draft
+  - id: cnn-045
+    type: short_answer
+    difficulty: medium
+    tags:
+      - parameter-count
+      - fully-connected
+      - convolution
+    question: |
+      A $32 \times 32$ RGB image (3,072 input values) must be mapped to a $32 \times 32 \times 16$ feature
+      map. A $3 \times 3$ convolution with padding 1 and 16 output channels needs $3\cdot3\cdot3\cdot16 +
+      16 = 448$ parameters. How many parameters (weights plus biases) does a fully connected layer with
+      the same input and output sizes need?
+    answer:
+      numeric: 50348032
+      tolerance: 0
+      hint: a whole number
+      model: $3072 \cdot 16384 + 16384 = 50{,}348{,}032$
+    explanation: |
+      The output has $32 \cdot 32 \cdot 16 = 16{,}384$ values; a dense layer connects each of them to all
+      3,072 inputs and adds a bias, giving $3072 \cdot 16384 + 16384 = 50{,}348{,}032$ parameters. The
+      convolution needs about 100,000 times fewer, because each output only looks at a $3 \times 3$
+      neighbourhood (locality) and the same kernel is reused at every position (translation
+      invariance) [^1][^2].
+    references:
+      - source: d2l
+        locator: Sec. 7.1 From Fully Connected Layers to Convolutions (7.1.2 Constraining the MLP)
+        url: https://d2l.ai/chapter_convolutional-neural-networks/why-conv.html
+      - source: ds-interviews
+        locator: theory.md, Neural networks for computer vision — "Why do we actually need convolutions?"
+        url: https://github.com/alexeygrigorev/data-science-interviews/blob/919f44547ef5ffc2bd59674fd301940529f4c1a8/theory.md#neural-networks-for-computer-vision
+    source:
+      id: ds-interviews
+      ref: theory.md#q108
+      url: https://github.com/alexeygrigorev/data-science-interviews/blob/919f44547ef5ffc2bd59674fd301940529f4c1a8/theory.md#neural-networks-for-computer-vision
+    status: draft
+  - id: cnn-046
+    type: single
+    difficulty: medium
+    tags:
+      - equivariance
+      - rotation
+      - data-augmentation
+    question: |
+      A CNN trained only on upright photos misclassifies the same photos rotated by 90°. Which
+      statement explains this?
+    options:
+      - text: Convolution is equivariant to translations but not to rotations, so rotated patterns produce different features
+        correct: true
+      - text: Max pooling already makes CNNs invariant to rotation, so the error must come from the fully connected classifier head
+        why: Pooling gives a little invariance to small shifts within its window, not to large rotations.
+      - text: CNNs are invariant to every geometric transformation, so the photos must be corrupted
+        why: Convolution shares weights across positions only, which gives translation equivariance and nothing more [^2].
+      - text: The rotated images have a different number of pixels, which breaks the convolution
+        why: A 90° rotation of a square image keeps its size; the problem is that the learned kernels are orientation-specific.
+    explanation: |
+      Sharing one kernel across all positions makes convolution translation-equivariant: a shifted
+      input gives a shifted feature map [^1]. Nothing similar holds for rotations or scale changes, so
+      a kernel that detects a vertical edge does not respond to a horizontal one [^2]. Rotation
+      robustness must be learned, typically by adding rotated copies through data augmentation [^3].
+    references:
+      - source: d2l
+        locator: Sec. 7.1.2.1 Translation Invariance
+        url: https://d2l.ai/chapter_convolutional-neural-networks/why-conv.html#translation-invariance
+      - title: Goodfellow, Bengio & Courville, Deep Learning (MIT Press, 2016)
+        url: https://www.deeplearningbook.org/contents/convnets.html
+        locator: Sec. 9.2 Motivation (equivariant representations; not equivariant to rotation or scale)
+      - source: d2l
+        locator: Sec. 14.1 Image Augmentation
+        url: https://d2l.ai/chapter_computer-vision/image-augmentation.html
+    source:
+      id: ds-interviews
+      ref: theory.md#q111
+      url: https://github.com/alexeygrigorev/data-science-interviews/blob/919f44547ef5ffc2bd59674fd301940529f4c1a8/theory.md#neural-networks-for-computer-vision
+    status: draft
+  - id: cnn-047
+    type: short_answer
+    difficulty: medium
+    tags:
+      - convolution
+      - relu
+      - edge-detection
+      - feature-map
+    question: |
+      This $6 \times 6$ image has a long vertical line in column 1 and a short horizontal line in
+      row 4 (rows and columns numbered from 0):
+
+      ```text
+      0 1 0 0 0 0
+      0 1 0 0 0 0
+      0 1 0 0 0 0
+      0 1 0 0 0 0
+      0 1 0 1 1 1
+      0 1 0 0 0 0
+      ```
+
+      It is filtered with the $2 \times 2$ kernel `[[1, -1], [1, -1]]` (stride 1, no padding, kernel
+      slid over the image without flipping, as convolution layers do), and the result goes through
+      ReLU. What is the sum of all entries of the resulting $5 \times 5$ feature map?
+    answer:
+      numeric: 10
+      tolerance: 0
+      hint: a whole number
+      model: Five windows over the line's right edge give $1 + 1 - 0 - 0 = 2$ each; all other entries are $\le 0$ and become 0, so $5 \times 2 = 10$.
+    explanation: |
+      Each output entry is the sum of the window's left column minus its right column, so the kernel
+      responds to vertical edges that are bright on the left [^1]. Windows over columns 1–2 cover the
+      right edge of the vertical line and give $2$ in all five rows; windows over columns 0–1 give
+      $-2$, and the windows touching the left end of the horizontal line give $-1$; inside the
+      horizontal line the columns cancel to 0. ReLU sets the negative entries to zero, so only the
+      five 2s remain, summing to 10 [^2]. The vertical line survives as a feature and the horizontal
+      line disappears, as the exercise's solution predicts from the kernel's vertical columns [^3].
+    references:
+      - source: d2l
+        locator: Sec. 7.2.1 The Cross-Correlation Operation
+        url: https://d2l.ai/chapter_convolutional-neural-networks/conv-layer.html#the-cross-correlation-operation
+      - source: kaggle-learn
+        locator: Computer Vision, Lesson 2 Convolution and ReLU — tutorial, Filter with Convolution; Detect with ReLU
+        url: https://github.com/Kaggle/learntools/blob/e9ba66dc899d3e17b80d3a1b9a5d29f430d310cb/notebooks/computer_vision/raw/tut2.ipynb
+      - source: kaggle-learn
+        locator: Computer Vision, Lesson 2 exercise, Question 4 Observe Convolution on a Numerical Matrix (solution)
+        url: https://github.com/Kaggle/learntools/blob/e9ba66dc899d3e17b80d3a1b9a5d29f430d310cb/learntools/computer_vision/ex2.py
+    source:
+      id: kaggle-learn
+      ref: computer_vision/ex2#q4
+      url: https://github.com/Kaggle/learntools/blob/e9ba66dc899d3e17b80d3a1b9a5d29f430d310cb/notebooks/computer_vision/raw/ex2.ipynb
+    status: draft
+  - id: cnn-048
+    type: short_answer
+    difficulty: easy
+    tags:
+      - convolution
+      - max-pooling
+      - output-shape
+      - padding
+      - stride
+    question: |
+      A $400 \times 400$ grayscale image goes through a $3 \times 3$ convolution with stride 1 and
+      `'valid'` padding, then ReLU, then $2 \times 2$ max pooling with stride 2 and `'same'` padding.
+      What is the height of the pooled feature map?
+    answer:
+      numeric: 199
+      tolerance: 0
+      hint: a whole number of pixels
+      model: $400 - 3 + 1 = 398$ after the convolution, $398 / 2 = 199$ after pooling
+    explanation: |
+      With `'valid'` padding the window stays inside the input, so the output shrinks by the kernel
+      size minus one: $400 - 3 + 1 = 398$ [^1]. ReLU keeps the size. A stride-2 pooling window then
+      moves 2 pixels per step, and since 398 is even, $2 \times 2$ windows tile the map exactly and no
+      padding is added: $398 / 2 = 199$ [^2]. The exercise's checker expects a $199 \times 199$
+      condensed image for exactly this pipeline [^3].
+    references:
+      - source: kaggle-learn
+        locator: Computer Vision, Lesson 4 The Sliding Window — tutorial, Stride; Padding
+        url: https://github.com/Kaggle/learntools/blob/e9ba66dc899d3e17b80d3a1b9a5d29f430d310cb/notebooks/computer_vision/raw/tut4.ipynb
+      - source: d2l
+        locator: Sec. 7.3.2 Stride, Eq. (7.3.2)
+        url: https://d2l.ai/chapter_convolutional-neural-networks/padding-and-strides.html#stride
+      - source: kaggle-learn
+        locator: Computer Vision, Lesson 3 exercise, Question 1 Apply Pooling to Condense (checker)
+        url: https://github.com/Kaggle/learntools/blob/e9ba66dc899d3e17b80d3a1b9a5d29f430d310cb/learntools/computer_vision/ex3.py
+    source:
+      id: kaggle-learn
+      ref: computer_vision/ex3#q1
+      url: https://github.com/Kaggle/learntools/blob/e9ba66dc899d3e17b80d3a1b9a5d29f430d310cb/notebooks/computer_vision/raw/ex3.ipynb
+    status: draft
+  - id: cnn-049
+    type: single
+    difficulty: medium
+    tags:
+      - max-pooling
+      - translation-invariance
+    question: |
+      A feature map contains a small circle. You shift the circle by one or two pixels and then apply
+      $2 \times 2$ max pooling (stride 2) several times in a row, to both the original and the
+      shifted map. How do the two final maps compare?
+    options:
+      - text: They come out the same, because repeated pooling discards small shifts
+        correct: true
+      - text: They keep the shift, just at a lower resolution
+        why: Pooling removes some positional information, so after several rounds a shift of a pixel or two no longer shows [^1].
+      - text: They would come out the same for a shift of any size
+        why: Pooling gives invariance only over small distances; features that start far apart stay distinct [^1].
+      - text: The shifted circle vanishes, since only the original pixels can be maxima
+        why: Max pooling keeps the largest activation in each window wherever it lies, so a shifted feature is kept, not lost [^1].
+    explanation: |
+      The zero pixels around a feature carry positional information, and max pooling throws some of
+      it away; repeated pooling makes features at slightly different positions indistinguishable [^1].
+      This is translation invariance over small distances, and the exercise's solution notes that the
+      final image is the same each time a small random shift is applied [^2]. Building this invariance
+      into the network means it does not have to learn from data to ignore small shifts in framing [^1].
+    references:
+      - source: kaggle-learn
+        locator: Computer Vision, Lesson 3 Maximum Pooling — tutorial, Translation Invariance
+        url: https://github.com/Kaggle/learntools/blob/e9ba66dc899d3e17b80d3a1b9a5d29f430d310cb/notebooks/computer_vision/raw/tut3.ipynb
+      - source: kaggle-learn
+        locator: Computer Vision, Lesson 3 exercise, Question 2 Explore Invariance (solution)
+        url: https://github.com/Kaggle/learntools/blob/e9ba66dc899d3e17b80d3a1b9a5d29f430d310cb/learntools/computer_vision/ex3.py
+    source:
+      id: kaggle-learn
+      ref: computer_vision/ex3#q2
+      url: https://github.com/Kaggle/learntools/blob/e9ba66dc899d3e17b80d3a1b9a5d29f430d310cb/notebooks/computer_vision/raw/ex3.ipynb
+    status: draft
+  - id: cnn-050
+    type: short_answer
+    difficulty: medium
+    tags:
+      - global-average-pooling
+      - parameter-count
+      - classifier-head
+    question: |
+      A convolutional base outputs 512 feature maps of size $5 \times 5$ per image, and the head is a
+      single `Dense(1, activation='sigmoid')` unit. That unit has {{1}} trainable parameters if the
+      maps are flattened first, and {{2}} if they first go through global average pooling.
+    answer:
+      blanks:
+        - numeric: 12801
+          tolerance: 0
+          hint: with Flatten
+        - numeric: 513
+          tolerance: 0
+          hint: with global average pooling
+      model: Flatten gives $5 \cdot 5 \cdot 512 + 1 = 12801$; global average pooling gives $512 + 1 = 513$.
+    explanation: |
+      `Flatten` unstacks every activation, giving $5 \times 5 \times 512 = 12800$ inputs plus a bias.
+      `GlobalAvgPool2D` instead replaces each feature map by its average value, giving 512 inputs plus
+      a bias, 25 times fewer weights [^1]. Each pooled value acts as a score for one high-level
+      feature, large if it is present and small if not, and the head only has to map these scores to
+      the classes [^2].
+    references:
+      - source: kaggle-learn
+        locator: Computer Vision, Lesson 3 exercise, Global Average Pooling (text before Question 3)
+        url: https://github.com/Kaggle/learntools/blob/e9ba66dc899d3e17b80d3a1b9a5d29f430d310cb/notebooks/computer_vision/raw/ex3.ipynb
+      - source: kaggle-learn
+        locator: Computer Vision, Lesson 3 exercise, Question 3 Understand the Pooled Features (solution)
+        url: https://github.com/Kaggle/learntools/blob/e9ba66dc899d3e17b80d3a1b9a5d29f430d310cb/learntools/computer_vision/ex3.py
+    source:
+      id: kaggle-learn
+      ref: computer_vision/ex3#q3
+      url: https://github.com/Kaggle/learntools/blob/e9ba66dc899d3e17b80d3a1b9a5d29f430d310cb/notebooks/computer_vision/raw/ex3.ipynb
+    status: draft
+  - id: cnn-051
+    type: short_answer
+    difficulty: easy
+    tags:
+      - receptive-field
+      - stacked-convolutions
+    question: |
+      Three convolutional layers with $3 \times 3$ kernels and stride 1 are stacked directly on an
+      image. A neuron in the third layer receives information from a square patch of input pixels.
+      What is the side length of that patch?
+    answer:
+      numeric: 7
+      tolerance: 0
+      hint: a whole number of pixels
+      model: $3 \to 5 \to 7$, one more pixel on each side per layer
+    explanation: |
+      The receptive field of a neuron is the set of input pixels it is connected to [^1]. One
+      $3 \times 3$ layer sees a $3 \times 3$ patch; a second layer sees a $3 \times 3$ patch of the
+      first, whose fields overlap in a $5 \times 5$ patch, and a third layer adds one more pixel on
+      each side: $7 \times 7$ [^2]. Three stacked $3 \times 3$ kernels have $27$ weights per channel
+      pair, against $49$ for a single $7 \times 7$ kernel with the same receptive field, which is how
+      convnets grow large receptive fields cheaply [^1].
+    references:
+      - source: kaggle-learn
+        locator: Computer Vision, Lesson 4 exercise, The Receptive Field
+        url: https://github.com/Kaggle/learntools/blob/e9ba66dc899d3e17b80d3a1b9a5d29f430d310cb/notebooks/computer_vision/raw/ex4.ipynb
+      - source: kaggle-learn
+        locator: Computer Vision, Lesson 4 exercise, Question 1 Growing the Receptive Field (hint and solution)
+        url: https://github.com/Kaggle/learntools/blob/e9ba66dc899d3e17b80d3a1b9a5d29f430d310cb/learntools/computer_vision/ex4.py
+    source:
+      id: kaggle-learn
+      ref: computer_vision/ex4#q1
+      url: https://github.com/Kaggle/learntools/blob/e9ba66dc899d3e17b80d3a1b9a5d29f430d310cb/notebooks/computer_vision/raw/ex4.ipynb
+    status: draft
+  - id: cnn-052
+    type: short_answer
+    difficulty: medium
+    tags:
+      - cyclic-convolution
+      - convolution
+      - circulant
+    question: |
+      Compute the cyclic (circular) convolution of $c = (2, 1, 3)$ and $d = (3, 1, 2)$, both of length 3:
+      $(c \circledast d)_k = \sum_{j} c_j\, d_{(k - j) \bmod 3}$ for $k = 0, 1, 2$.
+    answer:
+      accept:
+        - (11, 11, 14)
+      pattern: \(?\s*11\s*,\s*11\s*,\s*14\s*\)?
+      hint: three numbers, e.g. (1, 2, 3)
+      model: Linear convolution $(6, 5, 14, 5, 6)$; wrapping entries 3 and 4 onto 0 and 1 gives $(11, 11, 14)$
+    explanation: |
+      The ordinary convolution has length 5: $(6,\ 2{+}3,\ 4{+}1{+}9,\ 1{\cdot}2{+}3{\cdot}1,\ 6) = (6, 5, 14, 5, 6)$ [^1].
+      The cyclic version wraps indices modulo 3, so the last two entries are added onto the first two,
+      giving $(11, 11, 14)$ [^1]. Both versions satisfy the check
+      $(\sum c)(\sum d) = 6 \times 6 = 36 = 11 + 11 + 14$. Cyclic convolution is multiplication by a circulant
+      matrix, and a CNN with circular padding computes exactly this [^2].
+    references:
+      - title: 'Wikipedia: Circular convolution'
+        locator: Definitions; Discrete sequences
+        url: https://en.wikipedia.org/wiki/Circular_convolution
+      - source: mit-ocw-18065
+        locator: Problems for Lecture 30 (textbook Section IV.2), Problem 1; Lecture 31, Problem 3
+        url: https://ocw.mit.edu/courses/18-065-matrix-methods-in-data-analysis-signal-processing-and-machine-learning-spring-2018/resources/18065-all-problem-sets-in-one-file/
+    source:
+      id: mit-ocw-18065
+      ref: MIT18_065S18PSets#lec30-q1
+      url: https://ocw.mit.edu/courses/18-065-matrix-methods-in-data-analysis-signal-processing-and-machine-learning-spring-2018/resources/18065-all-problem-sets-in-one-file/
+    status: draft
+  - id: cnn-053
+    type: single
+    difficulty: hard
+    tags:
+      - circulant
+      - fourier
+      - convolution-theorem
+    question: |
+      Every $n \times n$ circulant matrix is a polynomial $C = c_0 I + c_1 P + \dots + c_{n-1}P^{n-1}$ in the
+      cyclic shift $P$, so it performs a cyclic convolution. What are the eigenvectors of circulant
+      matrices, and what follows for the product $CD$ of two circulants?
+    options:
+      - text: The Fourier modes; the eigenvalues of $CD$ are the products of those of $C$ and $D$
+        correct: true
+      - text: The standard basis vectors; the eigenvalues of $CD$ are the products of those of $C$ and $D$
+        why: $P$ moves each standard basis vector to the next one, so they are not eigenvectors of $P$ or of its polynomials.
+      - text: The Fourier modes; the eigenvalues of $CD$ are the sums of those of $C$ and $D$
+        why: Sums of eigenvalues belong to $C + D$; for a product with shared eigenvectors they multiply.
+      - text: They depend on the coefficients $c_k$, so two circulants share eigenvectors only if $CD = DC$
+        why: All circulants are polynomials in the same $P$, so they all share $P$'s eigenvectors and always commute.
+    explanation: |
+      The eigenvectors of the shift $P$ are the Fourier modes, and every polynomial in $P$ has the same
+      eigenvectors; its eigenvalues are the discrete Fourier transform of its first column [^1]. Since
+      all circulants are diagonalized by the same basis, they commute and the eigenvalues of $CD$
+      multiply [^1]. In signal terms this is the convolution theorem: cyclic convolution becomes
+      elementwise multiplication of DFTs, which is how FFT-based convolution works [^2].
+    references:
+      - title: 'Wikipedia: Circulant matrix'
+        locator: Properties — Eigenvectors and eigenvalues; Other properties
+        url: https://en.wikipedia.org/wiki/Circulant_matrix
+      - source: mit-ocw-18065
+        locator: Problems for Lectures 31–32 (textbook Section IV.2), Problems 4–5
+        url: https://ocw.mit.edu/courses/18-065-matrix-methods-in-data-analysis-signal-processing-and-machine-learning-spring-2018/resources/18065-all-problem-sets-in-one-file/
+    source:
+      id: mit-ocw-18065
+      ref: MIT18_065S18PSets#lec32-q4
+      url: https://ocw.mit.edu/courses/18-065-matrix-methods-in-data-analysis-signal-processing-and-machine-learning-spring-2018/resources/18065-all-problem-sets-in-one-file/
+    status: draft

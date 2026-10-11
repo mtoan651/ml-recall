@@ -656,3 +656,98 @@ questions:
       ref: quiz-204/q3
       url: https://github.com/microsoft/AI-For-Beginners/blob/392d0df1b2647cbee104942390551f1ed9e072c8/etc/quiz-app/src/assets/translations/en/lesson-4.json
     status: draft
+  - id: information-theory-019
+    type: single
+    difficulty: easy
+    question: Bob writes down a number between 1 and 1,000. Mary must identify that number by asking "yes/no" questions of Bob. Mary knows that Bob always tells the truth. If Mary uses an optimal strategy, then she will determine the answer at the end of exactly how many questions in the worst case?
+    options:
+      - text: 1,000
+        why: Asking about one number at a time is the worst strategy, not the optimal one.
+      - text: '999'
+        why: 999 questions is the worst case of guessing the numbers one by one; halving needs far fewer.
+      - text: '500'
+        why: Halving the remaining range each time needs far fewer than 500 questions.
+      - text: '10'
+        correct: true
+    explanation: Each yes/no answer can at most halve the set of remaining candidates, so $k$ questions can tell apart at most $2^k$ numbers; since $2^9 = 512 < 1000 \le 1024 = 2^{10}$, 10 questions are necessary. Binary search — always asking whether the number lies above the middle of the remaining range — needs at most $\lfloor \log_2 1000 \rfloor + 1 = 10$ questions [^2]. In information terms, the answer carries $\log_2 1000 \approx 9.97$ bits and each reply gives at most one bit [^1].
+    references:
+      - source: mmlu-redux
+        locator: college_computer_science row 43
+      - title: 'Wikipedia: Binary search'
+        url: https://en.wikipedia.org/wiki/Binary_search
+        locator: Performance
+    source:
+      id: mmlu-redux
+      ref: college_computer_science/43
+      url: https://huggingface.co/datasets/edinburgh-dawg/mmlu-redux-2.0/viewer/college_computer_science/test?row=43
+    status: draft
+  - id: information-theory-020
+    type: short_answer
+    difficulty: medium
+    tags:
+      - kl-divergence
+      - asymmetry
+    question: For $p = (0.5, 0.5)$ and $q = (0.9, 0.1)$, compute $D(p \,\|\, q) = \sum_i p_i \ln(p_i / q_i)$ in nats.
+    answer:
+      numeric: 0.511
+      tolerance: 0.002
+      hint: a number, 3 decimals
+      model: $0.5\ln(0.5/0.9) + 0.5\ln(0.5/0.1) = -0.294 + 0.805 \approx 0.511$
+    explanation: |
+      The terms are $0.5\ln(5/9) \approx -0.294$ and $0.5\ln 5 \approx 0.805$, so $D(p \,\|\, q) \approx 0.511$ [^1].
+      In the other direction, $D(q \,\|\, p) = 0.9\ln 1.8 + 0.1\ln 0.2 \approx 0.368$, so the KL divergence is not
+      symmetric and is not a distance [^1]. It weights the log-ratio by the first argument: $p$ puts half
+      its mass where $q$ is small, which costs a lot [^2].
+    references:
+      - title: 'Wikipedia: Kullback–Leibler divergence'
+        locator: Introduction (not symmetric); Basic example
+        url: https://en.wikipedia.org/wiki/Kullback%E2%80%93Leibler_divergence
+      - source: mit-ocw-6864
+        locator: Problem Set 3, Question 4.2
+        url: https://ocw.mit.edu/courses/6-864-advanced-natural-language-processing-fall-2005/resources/hw3/
+    source:
+      id: mit-ocw-6864
+      ref: hw3#q4b
+      url: https://ocw.mit.edu/courses/6-864-advanced-natural-language-processing-fall-2005/resources/hw3/
+    status: draft
+  - id: information-theory-021
+    type: single
+    difficulty: medium
+    tags:
+      - kl-divergence
+      - jensen-shannon
+      - distributional-similarity
+    shuffle: false
+    question: |
+      Word distributions estimated from small counts often contain zero probabilities. Which of these
+      measures between two distributions $p$ and $q$ can become infinite because of such a zero?
+    options:
+      - text: The KL divergence $D(p \,\|\, q)$
+        correct: true
+      - text: The $L_1$ distance $\sum_i \lvert p_i - q_i \rvert$
+        why: Each term is at most 1, so the $L_1$ distance never exceeds 2.
+      - text: The information radius $D(p \,\|\, m) + D(q \,\|\, m)$ with $m = (p + q)/2$
+        why: The mixture $m$ is positive wherever $p$ or $q$ is, so every log-ratio is finite and the total is at most $2\ln 2$.
+      - text: None of them, since probabilities never exceed 1
+        why: KL contains $\ln(p_i / q_i)$, which is infinite when $q_i = 0 < p_i$.
+    explanation: |
+      $D(p \,\|\, q)$ has the term $p_i \ln(p_i / q_i)$, which is infinite as soon as $q$ gives zero probability
+      to an outcome that $p$ allows [^1]. The information radius compares both distributions with their
+      average, which never has such zeros, and is bounded by $2\ln 2$; it is twice the Jensen–Shannon
+      divergence [^2]. With sparse counts one therefore smooths before using KL, or prefers bounded
+      measures.
+    references:
+      - title: 'Wikipedia: Kullback–Leibler divergence'
+        locator: Definition (absolute continuity; otherwise +∞)
+        url: https://en.wikipedia.org/wiki/Kullback%E2%80%93Leibler_divergence
+      - title: 'Wikipedia: Jensen–Shannon divergence'
+        locator: Definition; Bounds
+        url: https://en.wikipedia.org/wiki/Jensen%E2%80%93Shannon_divergence
+      - source: mit-ocw-6864
+        locator: Problem Set 3, Question 4
+        url: https://ocw.mit.edu/courses/6-864-advanced-natural-language-processing-fall-2005/resources/hw3/
+    source:
+      id: mit-ocw-6864
+      ref: hw3#q4c
+      url: https://ocw.mit.edu/courses/6-864-advanced-natural-language-processing-fall-2005/resources/hw3/
+    status: draft

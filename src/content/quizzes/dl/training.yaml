@@ -1574,3 +1574,868 @@ questions:
       ref: questions/dl.yml#q2
       url: https://github.com/dsgiitr/ML-InterviewQs/blob/8c6d228b051af7ceb429e6322befda068964e6b5/questions/dl.yml
     status: draft
+  - id: training-051
+    type: short_answer
+    difficulty: easy
+    tags:
+      - weight-initialization
+      - uniform-initialization
+    question: |
+      A rule of thumb initializes the weights of a layer uniformly in $[-y, y]$ with
+      $y = 1/\sqrt{n}$, where $n$ is the number of inputs to each neuron. An MLP for Fashion-MNIST
+      has layers 784 → 256 → 128 → 10. What is $y$ for the second layer (256 → 128)?
+    answer:
+      numeric: 0.0625
+      tolerance: 0.0001
+      hint: a number, 4 decimals
+      model: '$n = 256$ inputs: $y = 1/\sqrt{256} = 1/16 = 0.0625$'
+    explanation: |
+      The notebook's general rule is to start weights close to zero without being too small, in
+      $[-1/\sqrt{n}, 1/\sqrt{n}]$ with $n$ the neuron's fan-in [^1]; for 256 inputs that is
+      $\pm 0.0625$ (for the first layer, $\pm 1/28 \approx 0.036$). Scaling with the fan-in keeps
+      the variance of each neuron's summed input roughly constant across layers, the same idea
+      behind Xavier initialization [^2].
+    references:
+      - source: udacity-dl-pytorch
+        locator: Weight Initialization notebook, General rule for setting weights
+        url: https://github.com/udacity/deep-learning-v2-pytorch/blob/c9404fc86181fc3f0906b368697268257f348535/weight-initialization/weight_initialization_solution.ipynb
+      - source: d2l
+        locator: Sec. 5.4.2.2 Xavier Initialization
+        url: https://d2l.ai/chapter_multilayer-perceptrons/numerical-stability-and-init.html#xavier-initialization
+    source:
+      id: udacity-dl-pytorch
+      ref: weight-initialization/weight_initialization_solution.ipynb#general-rule
+      url: https://github.com/udacity/deep-learning-v2-pytorch/blob/c9404fc86181fc3f0906b368697268257f348535/weight-initialization/weight_initialization_solution.ipynb
+    status: draft
+  - id: training-052
+    type: single
+    difficulty: medium
+    tags:
+      - saddle-point
+      - loss-landscape
+      - linear-networks
+    question: |
+      The network $\hat{y} = w_1 w_2 x$ is trained with squared error on data from $y = x$, so its minima form the curve
+      $w_1 w_2 = 1$. What kind of point is $(w_1, w_2) = (0, 0)$?
+    options:
+      - text: 'A saddle point: the gradient is zero, the loss falls along $w_1 = w_2$ and rises along $w_1 = -w_2$'
+        correct: true
+      - text: 'A local minimum: every small change of the weights increases the loss'
+        why: Moving along $w_1 = w_2 = \varepsilon$ gives the product $\varepsilon^2 > 0$, which moves the prediction toward the targets and lowers the loss.
+      - text: 'A local maximum: the loss is largest when the network outputs zero'
+        why: Moving along $w_1 = -w_2$ makes the product negative and the loss larger, so the origin is not a maximum either.
+      - text: 'Not a critical point: the gradient there points toward the curve of solutions'
+        why: Each partial derivative contains a factor $w_2$ or $w_1$, so at the origin the gradient is exactly zero.
+    explanation: |
+      The gradients are $\partial L/\partial w_1 = -2 w_2 x(y - w_1 w_2 x)$ and $\partial L/\partial w_2 = -2 w_1 x(y - w_1 w_2 x)$; both vanish at
+      the origin [^1]. Along $w_1 = w_2 = \varepsilon$ the product $\varepsilon^2$ moves the output toward $y = x$ and the loss drops,
+      while along $w_1 = -w_2$ the product $-\varepsilon^2$ moves it away and the loss rises, so the origin is a saddle [^1].
+      Gradient descent started near it moves very slowly at first, one source of the long plateaus seen when deep
+      linear networks are trained from small weights [^2].
+    references:
+      - source: neuromatch-dl
+        locator: W1D2 Tutorial 2, Section 1.2 Learning landscapes (Think!)
+        url: https://github.com/NeuromatchAcademy/course-content-dl/blob/caba36c513fb8139ac3c9e7503f7a769dadde25e/tutorials/W1D2_LinearDeepLearning/instructor/W1D2_Tutorial2.ipynb
+      - title: Saxe, McClelland and Ganguli (2013), Exact solutions to the nonlinear dynamics of learning in deep linear neural networks
+        url: https://arxiv.org/abs/1312.6120
+        locator: Abstract
+    source:
+      id: neuromatch-dl
+      ref: W1D2_LinearDeepLearning/W1D2_Tutorial2#think1
+      url: https://github.com/NeuromatchAcademy/course-content-dl/blob/caba36c513fb8139ac3c9e7503f7a769dadde25e/tutorials/W1D2_LinearDeepLearning/instructor/W1D2_Tutorial2.ipynb
+    status: draft
+  - id: training-053
+    type: single
+    difficulty: hard
+    tags:
+      - learning-rate
+      - depth
+      - linear-networks
+    question: |
+      A deep narrow linear network $\hat{y} = x\,w_1 w_2 \cdots w_L$ (one unit per layer) is trained by gradient descent. For
+      deeper networks, the learning rate that gives fast but stable training is smaller. Why?
+    options:
+      - text: A step moves all $L$ weights, each by a gradient that is a product of the other $L - 1$, so the output shifts more
+        correct: true
+      - text: Deeper networks have more data to fit, so each step must be smaller to avoid overfitting that data
+        why: The data is the same for every depth; the constraint is the stability of the updates, not overfitting.
+      - text: The loss of a deeper linear network is convex, and convex losses always need smaller steps
+        why: Products of weights make the loss non-convex (it has saddle points); convexity is not the reason.
+      - text: PyTorch optimizers automatically lower their default learning rate as the number of layers grows
+        why: An optimizer knows nothing about the depth of the network; its default learning rate is the same for any model.
+    explanation: |
+      With $\hat{y} = x\prod_i w_i$, the gradient for $w_k$ is the loss gradient times $x\prod_{i \neq k} w_i$, a product of $L - 1$
+      weights that can explode or vanish [^1]. One gradient step changes all $L$ weights at once, so to first order the
+      prediction moves by $-\eta\,\frac{\partial L}{\partial \hat{y}}\sum_k (\partial\hat{y}/\partial w_k)^2$, a sum of $L$ terms: with weights
+      near 1 the output moves about $L$ times further than with a single weight. Keeping that step stable needs a learning
+      rate that shrinks roughly like $1/L$; NMA's widget exercise finds the optimal learning rate falling with depth, and
+      shows that it interacts with the initialization [^1][^2].
+    references:
+      - source: neuromatch-dl
+        locator: W1D2 Tutorial 2, Sections 2.1–2.3 (effect of depth, choosing a learning rate, Interactive Demo 2.3 Depth and Learning Rate)
+        url: https://github.com/NeuromatchAcademy/course-content-dl/blob/caba36c513fb8139ac3c9e7503f7a769dadde25e/tutorials/W1D2_LinearDeepLearning/instructor/W1D2_Tutorial2.ipynb
+      - source: neuromatch-dl
+        locator: W1D2 Tutorial 2, Section 2.4 Why initialization is important
+        url: https://github.com/NeuromatchAcademy/course-content-dl/blob/caba36c513fb8139ac3c9e7503f7a769dadde25e/tutorials/W1D2_LinearDeepLearning/instructor/W1D2_Tutorial2.ipynb
+    source:
+      id: neuromatch-dl
+      ref: W1D2_LinearDeepLearning/W1D2_Tutorial2#think2.3
+      url: https://github.com/NeuromatchAcademy/course-content-dl/blob/caba36c513fb8139ac3c9e7503f7a769dadde25e/tutorials/W1D2_LinearDeepLearning/instructor/W1D2_Tutorial2.ipynb
+    status: draft
+  - id: training-054
+    type: single
+    difficulty: medium
+    tags:
+      - learning-dynamics
+      - svd
+      - linear-networks
+    question: |
+      A deep linear network is trained from very small random weights on hierarchically structured data (items such as
+      canary, robin, goldfish, tuna and plants, with their features). The training loss shows a series of plateaus,
+      each followed by a sudden drop. What happens at each drop?
+    options:
+      - text: The network picks up one more singular mode of the input–output map, the strongest (e.g. animal vs plant) first
+        correct: true
+      - text: A learning-rate schedule lowers the learning rate, which produces a sudden improvement
+        why: The drops appear with a constant learning rate; they come from the dynamics of the weights themselves.
+      - text: The network memorizes one more training example at each drop
+        why: Each drop corresponds to a whole dimension of the input–output structure, shared by many items, not to a single example.
+      - text: Random noise in the weights occasionally kicks the network out of a bad local minimum
+        why: The plateaus are saddle regions that gradient descent leaves by itself; their timing follows the strengths of the modes.
+    explanation: |
+      A linear network computes $\mathbf{W}_{\text{tot}} = \mathbf{W}_L \cdots \mathbf{W}_1$, and its learning dynamics decouple along the
+      singular vectors of the input–output correlations [^1][^2]. From small initial weights each mode stays near zero for
+      a while, a plateau near a saddle, and then grows quickly, and modes with larger singular values are learned
+      earlier [^1][^2]. With hierarchical data the strongest mode is the broadest distinction, so the network learns
+      coarse categories before fine ones; with large initial weights the bumps disappear [^1].
+    references:
+      - source: neuromatch-dl
+        locator: W1D2 Tutorial 3, Section 1 Deep Linear Neural Nets (Interactive Demo 1, Think!) and Section 2 Singular Value Decomposition
+        url: https://github.com/NeuromatchAcademy/course-content-dl/blob/caba36c513fb8139ac3c9e7503f7a769dadde25e/tutorials/W1D2_LinearDeepLearning/instructor/W1D2_Tutorial3.ipynb
+      - title: Saxe, McClelland and Ganguli (2013), Exact solutions to the nonlinear dynamics of learning in deep linear neural networks
+        url: https://arxiv.org/abs/1312.6120
+        locator: Abstract
+    source:
+      id: neuromatch-dl
+      ref: W1D2_LinearDeepLearning/W1D2_Tutorial3#think1
+      url: https://github.com/NeuromatchAcademy/course-content-dl/blob/caba36c513fb8139ac3c9e7503f7a769dadde25e/tutorials/W1D2_LinearDeepLearning/instructor/W1D2_Tutorial3.ipynb
+    status: draft
+  - id: training-055
+    type: single
+    difficulty: medium
+    tags:
+      - early-stopping
+      - learning-dynamics
+      - illusory-correlation
+    question: |
+      A deep linear network learns the features of items from a hierarchy: canary, robin, shark and tuna (animals) and
+      several plants. The feature "has bones" is true for canary, robin and tuna, but false for the shark and for all
+      plants. Training is stopped early, while the loss is still on an intermediate plateau. What does the network most
+      likely predict for "shark has bones"?
+    options:
+      - text: That the shark has bones, because so far it has learned only the broad animal-versus-plant distinction
+        correct: true
+      - text: That the shark has no bones, because item-specific facts are learned before broad categories
+        why: 'The order is the reverse: the strongest, broadest modes are learned first and item-specific details last.'
+      - text: Something close to the plant value, because sharks and plants are both unlike birds
+        why: In the hierarchy the shark is an animal; the first distinction learned puts it with the other animals.
+      - text: A value unrelated to the other items, because nothing has been learned yet
+        why: By an intermediate plateau the strongest modes are already learned, so predictions follow the category.
+    explanation: |
+      Deep linear networks learn the strongest modes of the data first, so the animal-versus-plant distinction is
+      learned before the details that set the shark apart [^1][^2]. While only that coarse mode is learned, the shark is
+      represented like the other animals and inherits their "has bones" feature, an illusory correlation that never
+      appears in the data [^1]. Training longer removes it, a warning against stopping on a plateau [^1].
+    references:
+      - source: neuromatch-dl
+        locator: W1D2 Tutorial 3, Section 4 Illusory Correlations
+        url: https://github.com/NeuromatchAcademy/course-content-dl/blob/caba36c513fb8139ac3c9e7503f7a769dadde25e/tutorials/W1D2_LinearDeepLearning/instructor/W1D2_Tutorial3.ipynb
+      - title: Saxe, McClelland and Ganguli (2013), Exact solutions to the nonlinear dynamics of learning in deep linear neural networks
+        url: https://arxiv.org/abs/1312.6120
+        locator: Abstract
+    source:
+      id: neuromatch-dl
+      ref: W1D2_LinearDeepLearning/W1D2_Tutorial3#ex4
+      url: https://github.com/NeuromatchAcademy/course-content-dl/blob/caba36c513fb8139ac3c9e7503f7a769dadde25e/tutorials/W1D2_LinearDeepLearning/instructor/W1D2_Tutorial3.ipynb
+    status: draft
+  - id: training-056
+    type: short_answer
+    difficulty: medium
+    tags:
+      - rmsprop
+      - adaptive-learning-rate
+      - optimizers
+    question: |
+      RMSprop updates $v_t = \alpha v_{t-1} + (1 - \alpha)\,g_t^2$ and $w_{t+1} = w_t - \eta\,g_t/\sqrt{v_t + \epsilon}$ (element-wise). With
+      $\alpha = 0.8$, $\eta = 10^{-3}$, $\epsilon = 10^{-8}$ and $v_0 = 0$, the first gradient of some weight is $g_1 = 50$. By how
+      much does that weight change in the first step (magnitude)?
+    answer:
+      numeric: 0.002236
+      tolerance: 0.00001
+      hint: a number, e.g. 0.001234
+      model: $v_1 = 0.2 \cdot 2500 = 500$; step $= 10^{-3} \cdot 50/\sqrt{500} = 10^{-3}/\sqrt{0.2} \approx 0.002236$
+    explanation: |
+      After one step $v_1 = (1 - \alpha)\,g_1^2$, so the update is $\eta\,g_1/\sqrt{(1 - \alpha)g_1^2} = \eta/\sqrt{1 - \alpha} \approx 2.24\,\eta$,
+      whatever the size of $g_1$ [^1][^2]. Dividing by the running root-mean-square of the gradient makes the step depend on
+      the gradient relative to its recent history, which equalizes progress across parameters with very different
+      curvature, the poor-conditioning problem RMSprop addresses [^1][^2]. Because $v_0 = 0$ underestimates $v$ early on, the
+      first steps are larger than later ones; Adam's bias correction fixes this start-up effect [^3].
+    references:
+      - source: neuromatch-dl
+        locator: W1D4 Tutorial 1, Section 7 Adaptive methods, Coding Exercise 7 Implement RMSprop
+        url: https://github.com/NeuromatchAcademy/course-content-dl/blob/caba36c513fb8139ac3c9e7503f7a769dadde25e/tutorials/W1D4_Optimization/instructor/W1D4_Tutorial1.ipynb
+      - source: d2l
+        locator: Sec. 12.8 RMSProp
+        url: https://d2l.ai/chapter_optimization/rmsprop.html
+      - source: d2l
+        locator: Sec. 12.10.1 The Algorithm
+        url: https://d2l.ai/chapter_optimization/adam.html#the-algorithm
+    source:
+      id: neuromatch-dl
+      ref: W1D4_Optimization/W1D4_Tutorial1#ex7
+      url: https://github.com/NeuromatchAcademy/course-content-dl/blob/caba36c513fb8139ac3c9e7503f7a769dadde25e/tutorials/W1D4_Optimization/instructor/W1D4_Tutorial1.ipynb
+    status: draft
+  - id: training-057
+    type: single
+    difficulty: medium
+    tags:
+      - gradient-descent
+      - random-search
+      - high-dimensions
+    question: |
+      Starting from the same weights of an MLP with tens of thousands of parameters, you compare one small
+      gradient-descent step with 100 random perturbations of similar size. The gradient step reduces the loss; almost
+      none of the random perturbations do. Why?
+    options:
+      - text: The gradient is the steepest-descent direction, and a random direction in many dimensions is nearly orthogonal to it
+        correct: true
+      - text: Random perturbations are always larger than gradient steps, so they overshoot the minimum
+        why: The comparison uses steps of similar size; the difference is the direction, not the length.
+      - text: Random search only works on convex losses, and the loss of an MLP is not convex
+        why: Random search struggles even on convex functions in high dimensions; the issue is how rarely a random direction aligns with the gradient.
+      - text: Only the gradient step uses the labels, so random changes of the weights cannot affect the loss
+        why: Any change of the weights changes the loss; random changes just do not reliably make it smaller.
+    explanation: |
+      For a small step $\boldsymbol\delta$ the loss changes by about $\nabla L \cdot \boldsymbol\delta$ [^1][^2]. The gradient step
+      $\boldsymbol\delta = -\eta\nabla L$ makes this $-\eta\lVert\nabla L\rVert^2 < 0$, so with a suitable step size it reliably improves the loss
+      [^1][^2]. A random direction in $d$ dimensions has a cosine with the gradient of order $1/\sqrt{d}$, so its first-order
+      effect is tiny and curvature decides the outcome; near a minimum that mostly increases the loss. NMA also finds
+      the gradient's improvement much larger at initialization than later in training, closer to an optimum [^1].
+    references:
+      - source: neuromatch-dl
+        locator: W1D4 Tutorial 1, Section 3 High dimensional search, Think! 3 Gradient descent vs. random search
+        url: https://github.com/NeuromatchAcademy/course-content-dl/blob/caba36c513fb8139ac3c9e7503f7a769dadde25e/tutorials/W1D4_Optimization/instructor/W1D4_Tutorial1.ipynb
+      - source: d2l
+        locator: Sec. 12.3.1 One-Dimensional Gradient Descent
+        url: https://d2l.ai/chapter_optimization/gd.html#one-dimensional-gradient-descent
+    source:
+      id: neuromatch-dl
+      ref: W1D4_Optimization/W1D4_Tutorial1#think3
+      url: https://github.com/NeuromatchAcademy/course-content-dl/blob/caba36c513fb8139ac3c9e7503f7a769dadde25e/tutorials/W1D4_Optimization/instructor/W1D4_Tutorial1.ipynb
+    status: draft
+  - id: training-058
+    type: single
+    difficulty: medium
+    tags:
+      - overparameterization
+      - non-convexity
+      - overfitting
+    question: |
+      NMA trains MLPs of different widths and depths from several slightly perturbed initializations. Larger networks
+      reach a low training loss faster and more consistently across initializations. What is a real downside of relying
+      on this overparameterization?
+    options:
+      - text: More memory and compute per step, and a higher risk of overfitting that must be checked on held-out data
+        correct: true
+      - text: Larger networks always end up in worse local minima than smaller ones
+        why: 'The observation is the opposite: larger networks reach a low training loss more reliably.'
+      - text: Overparameterized networks can no longer be trained with gradient descent
+        why: They are trained with gradient descent in the same experiment, and they train faster.
+      - text: Larger networks make the loss convex, which removes the benefit of momentum
+        why: Adding units does not make the loss convex; NMA's point is that good solutions become plentiful and easy to reach.
+    explanation: |
+      With many more parameters there are many weight configurations that reach a low loss, and an initialization is
+      more likely to lie close to one of them, so training is faster and less sensitive to the starting point [^1]. The
+      costs are more memory and computation per step, and a model large enough to fit the training data easily can also
+      overfit it, so validation or cross-validation remains necessary [^1][^2].
+    references:
+      - source: neuromatch-dl
+        locator: W1D4 Tutorial 1, Section 5 Non-convexity, Interactive Demo 5 and Think! 5.1 Width and depth of the network
+        url: https://github.com/NeuromatchAcademy/course-content-dl/blob/caba36c513fb8139ac3c9e7503f7a769dadde25e/tutorials/W1D4_Optimization/instructor/W1D4_Tutorial1.ipynb
+      - source: neuromatch-dl
+        locator: W2D1 Tutorial 1, Section 2 Overfitting and Section 3 Memorization
+        url: https://github.com/NeuromatchAcademy/course-content-dl/blob/caba36c513fb8139ac3c9e7503f7a769dadde25e/tutorials/W2D1_Regularization/instructor/W2D1_Tutorial1.ipynb
+    source:
+      id: neuromatch-dl
+      ref: W1D4_Optimization/W1D4_Tutorial1#think5.1
+      url: https://github.com/NeuromatchAcademy/course-content-dl/blob/caba36c513fb8139ac3c9e7503f7a769dadde25e/tutorials/W1D4_Optimization/instructor/W1D4_Tutorial1.ipynb
+    status: draft
+  - id: training-059
+    type: single
+    difficulty: medium
+    tags:
+      - minibatch-size
+      - sgd
+      - learning-rate
+    question: |
+      Under a fixed wall-clock time budget, you train the same MLP with SGD using small and large minibatches. Which
+      statement describes the trade-off?
+    options:
+      - text: Larger batches give less noisy gradients and allow a larger learning rate, but fewer updates fit into the budget
+        correct: true
+      - text: Larger batches give noisier gradient estimates but allow more parameter updates per second
+        why: Averaging over more examples reduces the gradient variance, and each forward and backward pass takes longer, so there are fewer updates.
+      - text: The batch size has no effect on how training progresses; only the learning rate matters here
+        why: NMA's comparison shows clearly different training curves for different batch sizes under the same time budget.
+      - text: Very small batches are slow to compute, but they give the most accurate gradient estimates
+        why: Small batches are fast to compute but represent the data poorly, giving high-variance gradient estimates.
+    explanation: |
+      The cost of a forward and backward pass grows roughly linearly with the number of examples, so larger minibatches
+      mean fewer parameter updates in a fixed time [^1]. In exchange, the average gradient over more examples is a more
+      confident estimate of the direction to move, so a larger learning rate can be used, while tiny minibatches are
+      cheap but give high-variance estimates [^1][^2]. The learning rate therefore has to be tuned together with the batch
+      size [^1].
+    references:
+      - source: neuromatch-dl
+        locator: W1D4 Tutorial 1, Section 6 Full gradients are expensive (Interactive Demos 6.1 and 6.2)
+        url: https://github.com/NeuromatchAcademy/course-content-dl/blob/caba36c513fb8139ac3c9e7503f7a769dadde25e/tutorials/W1D4_Optimization/instructor/W1D4_Tutorial1.ipynb
+      - source: d2l
+        locator: Sec. 12.5 Minibatch Stochastic Gradient Descent
+        url: https://d2l.ai/chapter_optimization/minibatch-sgd.html
+    source:
+      id: neuromatch-dl
+      ref: W1D4_Optimization/W1D4_Tutorial1#sec6.2
+      url: https://github.com/NeuromatchAcademy/course-content-dl/blob/caba36c513fb8139ac3c9e7503f7a769dadde25e/tutorials/W1D4_Optimization/instructor/W1D4_Tutorial1.ipynb
+    status: draft
+  - id: training-060
+    type: true_false
+    difficulty: easy
+    tags:
+      - minibatch-sampling
+      - sampling-with-replacement
+      - numpy
+    question: |
+      A helper draws a minibatch with
+      ```python
+      batch_indices = np.random.choice(len(input_data), num_points)
+      batch_inputs = input_data[batch_indices]
+      ```
+      True or false: a minibatch drawn this way can contain the same training example more than once.
+    options:
+      - text: 'True'
+        correct: true
+      - text: 'False'
+        why: '`np.random.choice` samples with replacement by default (`replace=True`), so repeated indices are possible.'
+    explanation: |
+      `np.random.choice(n, size)` draws indices independently and uniformly, with replacement unless `replace=False` is
+      passed [^1]. NMA uses it to sample i.i.d. minibatches [^2]. Sampling with replacement matches the i.i.d. picture
+      behind SGD, but a batch can repeat examples and a pass of such batches misses some examples entirely; in practice
+      one usually shuffles once per epoch and goes through the data without replacement [^3].
+    references:
+      - title: 'NumPy documentation: numpy.random.choice'
+        url: https://numpy.org/doc/stable/reference/random/generated/numpy.random.choice.html
+        locator: Parameters (replace, default True)
+      - source: neuromatch-dl
+        locator: W1D4 Tutorial 1, Coding Exercise 6 Implement minibatch sampling
+        url: https://github.com/NeuromatchAcademy/course-content-dl/blob/caba36c513fb8139ac3c9e7503f7a769dadde25e/tutorials/W1D4_Optimization/instructor/W1D4_Tutorial1.ipynb
+      - source: d2l
+        locator: Sec. 12.4.4 Stochastic Gradients and Finite Samples
+        url: https://d2l.ai/chapter_optimization/sgd.html#stochastic-gradients-and-finite-samples
+    source:
+      id: neuromatch-dl
+      ref: W1D4_Optimization/W1D4_Tutorial1#ex6
+      url: https://github.com/NeuromatchAcademy/course-content-dl/blob/caba36c513fb8139ac3c9e7503f7a769dadde25e/tutorials/W1D4_Optimization/instructor/W1D4_Tutorial1.ipynb
+    status: draft
+  - id: training-061
+    type: short_answer
+    difficulty: easy
+    tags:
+      - memorization
+      - random-labels
+      - generalization
+    question: |
+      A large network is trained on an image dataset with 3 balanced classes (cat, dog, wild animal) after the labels
+      were randomly shuffled, so labels are unrelated to images. It reaches 100% training accuracy. About what validation
+      accuracy, in percent, should you expect on correctly labelled validation images?
+    answer:
+      numeric: 33.3
+      tolerance: 3
+      hint: a percentage, e.g. 50
+      model: 'Chance level: $100\%/3 \approx 33\%$'
+    explanation: |
+      With shuffled labels there is no relation between images and labels to learn, so 100% training accuracy can only
+      come from memorizing every training example [^1][^2]. On new images the memorized labels carry no information, so
+      predictions are no better than guessing among 3 balanced classes, about 33% [^1]. Training accuracy alone therefore
+      says little about generalization [^1][^2].
+    references:
+      - source: neuromatch-dl
+        locator: W2D1 Tutorial 1, Section 3 Memorization
+        url: https://github.com/NeuromatchAcademy/course-content-dl/blob/caba36c513fb8139ac3c9e7503f7a769dadde25e/tutorials/W2D1_Regularization/instructor/W2D1_Tutorial1.ipynb
+      - title: Zhang et al. (2017), Understanding deep learning requires rethinking generalization
+        url: https://arxiv.org/abs/1611.03530
+        locator: Sec. 2 Effective capacity of neural networks
+    source:
+      id: neuromatch-dl
+      ref: W2D1_Regularization/W2D1_Tutorial1#sec3
+      url: https://github.com/NeuromatchAcademy/course-content-dl/blob/caba36c513fb8139ac3c9e7503f7a769dadde25e/tutorials/W2D1_Regularization/instructor/W2D1_Tutorial1.ipynb
+    status: draft
+  - id: training-062
+    type: single
+    difficulty: medium
+    tags:
+      - dropout
+      - regularization
+    question: Which of these is a sound guideline for using dropout?
+    options:
+      - text: Avoid it right before the output layer, and expect it to hurt a small model that is not overfitting
+        correct: true
+      - text: Keep it active at test time as well, so that training and test conditions match
+        why: Dropout is used only during training; at test time the full network is used, which is why `model.eval()` matters.
+      - text: Halve the number of hidden units when adding it, since dropout adds capacity
+        why: Dropout removes capacity during training; NMA suggests widening layers (e.g. doubling the units at rate 0.5), not shrinking them.
+      - text: Expect it to speed up early training, so its benefit is largest after a few epochs
+        why: Dropout usually slows early training; its benefit shows in the final, converged error.
+    explanation: |
+      Dropout zeroes random units during training and is switched off at test time, so `model.eval()` must be called
+      before testing [^1][^2]. Because it reduces capacity, it helps networks that overfit and can hurt a small model; wider
+      layers are often used with it [^1]. Dropout right before the last layer leaves no later layer to compensate for the
+      dropped units, and it usually hurts early in training while lowering the final error after convergence [^1].
+    references:
+      - source: neuromatch-dl
+        locator: W2D1 Tutorial 2, Section 2 Dropout, Section 2.1 Dropout Implementation Caveats and Think 2.2 Dropout caveats
+        url: https://github.com/NeuromatchAcademy/course-content-dl/blob/caba36c513fb8139ac3c9e7503f7a769dadde25e/tutorials/W2D1_Regularization/instructor/W2D1_Tutorial2.ipynb
+      - source: d2l
+        locator: Sec. 5.6 Dropout
+        url: https://d2l.ai/chapter_multilayer-perceptrons/dropout.html
+    source:
+      id: neuromatch-dl
+      ref: W2D1_Regularization/W2D1_Tutorial2#think2.2
+      url: https://github.com/NeuromatchAcademy/course-content-dl/blob/caba36c513fb8139ac3c9e7503f7a769dadde25e/tutorials/W2D1_Regularization/instructor/W2D1_Tutorial2.ipynb
+    status: draft
+  - id: training-063
+    type: single
+    difficulty: easy
+    tags:
+      - regularization
+      - model-capacity
+      - overparameterization
+    question: Why does common practice prefer a large, regularized network over a small network that is unable to overfit?
+    options:
+      - text: Regularization can only reduce effective complexity; it cannot help a model too small to describe the data
+        correct: true
+      - text: Small networks train more slowly, because each of their parameters receives a larger gradient
+        why: 'The issue is capacity, not speed: if the model cannot represent the function, no training trick fixes it.'
+      - text: Regularization adds parameters, so it turns a small network into a large one
+        why: L1/L2 penalties, dropout and early stopping add no parameters; they constrain the existing ones.
+      - text: Large networks never overfit when they are trained with SGD
+        why: Large networks can even memorize random labels; regularization is what keeps them from overfitting.
+    explanation: |
+      Penalties such as L1/L2, dropout, data augmentation and early stopping all work by limiting the effective
+      complexity of a model [^1]. If the starting model is too simple to capture the data, the remedy is more complexity,
+      which regularization cannot provide; a large model can instead be regularized down to the right complexity [^1].
+      Large networks are also easier to optimize, as NMA's overparameterization experiments show [^2].
+    references:
+      - source: neuromatch-dl
+        locator: W2D1 Tutorial 2, Section 3 Data Augmentation, Think! 3.2 Overparameterized vs. Small NN
+        url: https://github.com/NeuromatchAcademy/course-content-dl/blob/caba36c513fb8139ac3c9e7503f7a769dadde25e/tutorials/W2D1_Regularization/instructor/W2D1_Tutorial2.ipynb
+      - source: neuromatch-dl
+        locator: W1D4 Tutorial 1, Section 5 Non-convexity, Think! 5.1
+        url: https://github.com/NeuromatchAcademy/course-content-dl/blob/caba36c513fb8139ac3c9e7503f7a769dadde25e/tutorials/W1D4_Optimization/instructor/W1D4_Tutorial1.ipynb
+    source:
+      id: neuromatch-dl
+      ref: W2D1_Regularization/W2D1_Tutorial2#think3.2
+      url: https://github.com/NeuromatchAcademy/course-content-dl/blob/caba36c513fb8139ac3c9e7503f7a769dadde25e/tutorials/W2D1_Regularization/instructor/W2D1_Tutorial2.ipynb
+    status: draft
+  - id: training-064
+    type: multiple
+    difficulty: easy
+    tags:
+      - underfitting
+      - model-capacity
+      - transfer-learning
+    question: |
+      Your image classifier underfits: training and validation accuracy are both low. Which changes are
+      likely to help? Select all that apply.
+    options:
+      - text: Add more layers or hidden units
+        correct: true
+      - text: Train for more epochs
+        correct: true
+      - text: Start from a pretrained model (transfer learning)
+        correct: true
+      - text: Raise the dropout probability
+        why: Dropout is a regularizer that fights overfitting; it makes fitting the training data harder, not easier [^2].
+      - text: Increase the weight-decay coefficient
+        why: Stronger weight decay further restricts the model, which worsens underfitting [^2].
+    explanation: |
+      Underfitting means the model has too little predictive power for the training data, so the cure
+      is to increase it: a larger model, features transferred from a pretrained model, or simply more
+      training time [^1]. Regularizers such as dropout and weight decay do the opposite — they restrain
+      the model to reduce overfitting [^2].
+    references:
+      - source: learn-pytorch
+        locator: 04 PyTorch Custom Datasets exercise solutions, Exercise 1 (methods for preventing underfitting)
+        url: https://github.com/mrdbourke/pytorch-deep-learning/blob/a16552001d963d078390d5bbdfc321e7e7c94bd1/extras/solutions/04_pytorch_custom_datasets_exercise_solutions.ipynb
+      - source: d2l
+        locator: Sec. 3.7 Weight Decay; Sec. 5.6 Dropout
+        url: https://d2l.ai/chapter_linear-regression/weight-decay.html
+    source:
+      id: learn-pytorch
+      ref: extras/solutions/04_pytorch_custom_datasets_exercise_solutions.ipynb#ex1
+      url: https://github.com/mrdbourke/pytorch-deep-learning/blob/a16552001d963d078390d5bbdfc321e7e7c94bd1/extras/solutions/04_pytorch_custom_datasets_exercise_solutions.ipynb
+    status: draft
+  - id: training-065
+    type: multiple
+    difficulty: medium
+    tags:
+      - sgd
+      - learning-rate
+      - batch-size
+    question: |
+      You train a linear model with minibatch SGD and vary the learning rate and the batch size.
+      Which statements are true? Select all that apply.
+    options:
+      - text: Smaller batches give noisier weight updates and noisier loss curves
+        correct: true
+      - text: With a smaller learning rate, the network needs more minibatches before its weights converge
+        correct: true
+      - text: Too large a learning rate can make the training fail completely
+        correct: true
+      - text: Larger batches give noisier loss curves, because each step uses more data
+        why: A larger batch is a larger sample of the data, so its gradient estimate is less noisy, not more [^2].
+      - text: A smaller learning rate makes each training step take longer to compute
+        why: The learning rate only scales the size of the update; a step costs the same, there are just more of them [^1].
+    explanation: |
+      Each minibatch is a random sample of the data, and smaller samples give noisier estimates, so
+      small batches make noisier updates and loss curves [^2]. The learning rate sets how far the
+      weights move toward each batch's solution: a smaller rate needs more minibatches to converge
+      [^1], while a large one speeds training but does not settle into a minimum as well, and a rate
+      that is too large can make training fail [^2]. Adam adapts the learning rate itself, which is
+      why it works well without tuning [^1].
+    references:
+      - source: kaggle-learn
+        locator: Intro to Deep Learning, Lesson 3 Stochastic Gradient Descent — tutorial, Learning Rate and Batch Size
+        url: https://github.com/Kaggle/learntools/blob/e9ba66dc899d3e17b80d3a1b9a5d29f430d310cb/notebooks/deep_learning_intro/raw/tut3.ipynb
+      - source: kaggle-learn
+        locator: Intro to Deep Learning, Lesson 3 exercise, Question 4 Learning Rate and Batch Size (solution)
+        url: https://github.com/Kaggle/learntools/blob/e9ba66dc899d3e17b80d3a1b9a5d29f430d310cb/learntools/deep_learning_intro/ex3.py
+    source:
+      id: kaggle-learn
+      ref: deep_learning_intro/ex3#q4
+      url: https://github.com/Kaggle/learntools/blob/e9ba66dc899d3e17b80d3a1b9a5d29f430d310cb/notebooks/deep_learning_intro/raw/ex3.ipynb
+    status: draft
+  - id: training-066
+    type: single
+    difficulty: easy
+    tags:
+      - learning-curves
+      - underfitting
+      - capacity
+    question: |
+      A linear model predicting song popularity gives learning curves in which the training and
+      validation loss level off close to each other, the validation loss never rises, and both stay
+      well above the loss that larger networks reach. What should you try next?
+    options:
+      - text: It underfits, so add capacity with wider or deeper layers
+        correct: true
+      - text: It is overfitting, so add an early-stopping callback
+        why: Overfitting shows as a validation loss that rises while the training loss keeps falling; here it never rises [^1].
+      - text: It is overfitting, so remove units from the model
+        why: The small gap between the curves means the model has learned little noise; removing capacity would make it worse [^1].
+      - text: It fits well, because the two learning curves stay close together
+        why: A small gap only means little noise was learned; a loss that stays high means the model has not learned enough signal [^1].
+    explanation: |
+      The gap between the training and validation curves shows how much noise the model has learned,
+      and underfitting means the loss is not as low as it could be because the model has not learned
+      enough signal [^1]. Close curves, a validation loss that never increases and a high final loss
+      point to underfitting, which the exercise's solution diagnoses for the linear baseline [^2]. The
+      remedy is more capacity, by making the network wider or deeper [^1].
+    references:
+      - source: kaggle-learn
+        locator: Intro to Deep Learning, Lesson 4 Overfitting and Underfitting — tutorial, Interpreting the Learning Curves; Capacity
+        url: https://github.com/Kaggle/learntools/blob/e9ba66dc899d3e17b80d3a1b9a5d29f430d310cb/notebooks/deep_learning_intro/raw/tut4.ipynb
+      - source: kaggle-learn
+        locator: Intro to Deep Learning, Lesson 4 exercise, Question 1 Evaluate Baseline (solution)
+        url: https://github.com/Kaggle/learntools/blob/e9ba66dc899d3e17b80d3a1b9a5d29f430d310cb/learntools/deep_learning_intro/ex4.py
+    source:
+      id: kaggle-learn
+      ref: deep_learning_intro/ex4#q1
+      url: https://github.com/Kaggle/learntools/blob/e9ba66dc899d3e17b80d3a1b9a5d29f430d310cb/notebooks/deep_learning_intro/raw/ex4.ipynb
+    status: draft
+  - id: training-067
+    type: short_answer
+    difficulty: medium
+    tags:
+      - early-stopping
+      - patience
+      - keras
+    question: |
+      Keras's `EarlyStopping(min_delta=0.001, patience=5, restore_best_weights=True)` watches the
+      validation loss of this run:
+
+      | Epoch | 1 | 2 | 3 | 4 | 5 | 6 | 7 | 8 | 9 | 10 |
+      |---|---|---|---|---|---|---|---|---|---|---|
+      | Validation loss | 0.60 | 0.50 | 0.45 | 0.44 | 0.46 | 0.47 | 0.45 | 0.48 | 0.49 | 0.43 |
+
+      Training stops after epoch {{1}}, and the model keeps the weights from epoch {{2}}.
+    answer:
+      blanks:
+        - numeric: 9
+          tolerance: 0
+          hint: epoch number
+        - numeric: 4
+          tolerance: 0
+          hint: epoch number
+      model: The best loss, 0.44, is at epoch 4; epochs 5–9 are five epochs without an improvement of at least 0.001, so training stops after epoch 9 and restores epoch 4's weights.
+    explanation: |
+      The callback stops training when the validation loss has not improved by at least `min_delta`
+      for `patience` epochs, and with `restore_best_weights` it keeps the best model found [^1][^2].
+      The loss improves up to 0.44 at epoch 4; epochs 5 to 9 never get below $0.44 - 0.001$ (epoch 7's
+      0.45 is no improvement), so the fifth epoch without improvement, epoch 9, ends training. Its
+      weights are replaced by those of epoch 4, and the 0.43 that epoch 10 would have reached is never
+      seen: patience trades such late improvements for protection against overfitting [^1].
+    references:
+      - source: kaggle-learn
+        locator: Intro to Deep Learning, Lesson 4 Overfitting and Underfitting — tutorial, Early Stopping; Adding Early Stopping
+        url: https://github.com/Kaggle/learntools/blob/e9ba66dc899d3e17b80d3a1b9a5d29f430d310cb/notebooks/deep_learning_intro/raw/tut4.ipynb
+      - title: 'Keras documentation: EarlyStopping'
+        url: https://keras.io/api/callbacks/early_stopping/
+        locator: Arguments `min_delta`, `patience`, `restore_best_weights`
+    source:
+      id: kaggle-learn
+      ref: deep_learning_intro/ex4#q3
+      url: https://github.com/Kaggle/learntools/blob/e9ba66dc899d3e17b80d3a1b9a5d29f430d310cb/notebooks/deep_learning_intro/raw/ex4.ipynb
+    status: draft
+  - id: training-068
+    type: single
+    difficulty: medium
+    tags:
+      - batch-normalization
+      - feature-scaling
+    question: |
+      A dense network trained on raw, unstandardized data, whose features have very different
+      scales, usually fails to train or converges to a huge loss. Adding a `BatchNormalization` layer
+      before each `Dense` layer lets it train. Why does this help?
+    options:
+      - text: It standardizes each batch, then rescales it with two trainable parameters
+        correct: true
+      - text: Batchnorm randomly zeroes a fraction of its inputs, which keeps the activations small
+        why: Randomly dropping units is dropout, a regularizer against overfitting, not a fix for badly scaled inputs [^1].
+      - text: Batchnorm divides the learning rate by the size of each feature, so large features take small steps
+        why: Batchnorm does not touch the optimizer; it rescales the data flowing through the network [^1].
+      - text: Batchnorm clips every activation to the range from 0 to 1 before the next layer sees it
+        why: Batchnorm normalizes with the batch's mean and standard deviation and then applies a learned scale and shift; it does not clip [^1].
+    explanation: |
+      SGD shifts weights in proportion to the size of the activations, so features on very different
+      scales make training unstable [^1]. A batch normalization layer normalizes each incoming batch
+      with its own mean and standard deviation and then puts the data on a new scale with two
+      trainable rescaling parameters [^1]. As the first layer it acts as an adaptive preprocessor, like
+      `StandardScaler`, which is why the exercise's unstandardized *Concrete* model trains once
+      batchnorm is added [^1][^2].
+    references:
+      - source: kaggle-learn
+        locator: Intro to Deep Learning, Lesson 5 Dropout and Batch Normalization — tutorial, Dropout; Batch Normalization
+        url: https://github.com/Kaggle/learntools/blob/e9ba66dc899d3e17b80d3a1b9a5d29f430d310cb/notebooks/deep_learning_intro/raw/tut5.ipynb
+      - source: kaggle-learn
+        locator: Intro to Deep Learning, Lesson 5 exercise, Questions 3–4 Add / Evaluate Batch Normalization
+        url: https://github.com/Kaggle/learntools/blob/e9ba66dc899d3e17b80d3a1b9a5d29f430d310cb/notebooks/deep_learning_intro/raw/ex5.ipynb
+    source:
+      id: kaggle-learn
+      ref: deep_learning_intro/ex5#q4
+      url: https://github.com/Kaggle/learntools/blob/e9ba66dc899d3e17b80d3a1b9a5d29f430d310cb/notebooks/deep_learning_intro/raw/ex5.ipynb
+    status: draft
+  - id: training-069
+    type: single
+    difficulty: medium
+    tags:
+      - l2-regularization
+      - embeddings
+      - recommender-systems
+    question: |
+      A matrix-factorization recommender predicts $3.5 + \mathbf{u} \cdot \mathbf{m}$, where 3.5 is the
+      mean training rating. Trained without regularization, its top recommendations are obscure movies
+      rated by only a handful of users. Why does adding an L2 penalty on the embeddings fix this?
+    options:
+      - text: Obscure movies' embeddings shrink toward zero, so their predictions fall back to about 3.5
+        correct: true
+      - text: The penalty drops every movie with fewer than a set number of ratings from the training data
+        why: That is the other fix, a threshold on the number of ratings; L2 regularization keeps all movies and changes the loss instead [^1].
+      - text: The penalty pushes the predictions of obscure movies down to the lowest possible rating
+        why: A zero embedding gives a dot product of 0, which means the average rating of 3.5, not the minimum [^1].
+      - text: The penalty forces all movie embeddings to be equal, so every movie gets the same prediction
+        why: Popular movies are worth large weights because they improve many predictions, so their embeddings stay informative [^1].
+    explanation: |
+      L2 regularization adds a weight penalty to the loss, so the model must balance accurate
+      predictions against keeping embeddings small [^1]. Moving an obscure movie's embedding to fit its
+      one or two ratings improves the loss very little, so its weights end up close to 0 [^1]. A movie
+      whose embedding is all zeros gets output 0 for every user, which on the centered scale is the
+      training average of about 3.5 stars, a sensible guess for a movie we know little about [^2].
+      The regularized model also overfits less, which improves its validation error [^1].
+    references:
+      - source: kaggle-learn
+        locator: Embeddings exercise 2, Parts 3–6 (thresholding; A whirlwind introduction to L2 regularization; regularization)
+        url: https://github.com/Kaggle/learntools/blob/e9ba66dc899d3e17b80d3a1b9a5d29f430d310cb/notebooks/embeddings/raw/2-exercises.ipynb
+      - source: kaggle-learn
+        locator: Embeddings exercise 2, Part 5 (solution)
+        url: https://github.com/Kaggle/learntools/blob/e9ba66dc899d3e17b80d3a1b9a5d29f430d310cb/learntools/embeddings/ex2_factorization.py
+    source:
+      id: kaggle-learn
+      ref: embeddings/ex2#q5
+      url: https://github.com/Kaggle/learntools/blob/e9ba66dc899d3e17b80d3a1b9a5d29f430d310cb/notebooks/embeddings/raw/2-exercises.ipynb
+    status: draft
+  - id: training-070
+    type: single
+    difficulty: medium
+    tags:
+      - adam
+      - sign-descent
+      - steepest-descent
+      - norms
+    question: |
+      Switch off Adam's moving averages and its $\epsilon$ ($\beta_1 = \beta_2 = \epsilon = 0$). Each
+      weight then moves by $-\eta\, g_i / \sqrt{g_i^2} = -\eta\,\mathrm{sign}(g_i)$. This update direction
+      is steepest descent under which norm of the weight change?
+    options:
+      - text: The max norm $\ell_\infty$
+        correct: true
+      - text: The Euclidean $\ell_2$ norm
+        why: Steepest descent under $\ell_2$ moves along $-g$ itself, which is plain gradient descent [^1].
+      - text: The $\ell_1$ norm
+        why: Under $\ell_1$ the best unit step puts all of its length on the coordinate with the largest $\lvert g_i \rvert$, which is coordinate descent.
+      - text: The spectral norm
+        why: The spectral norm is a matrix norm; steepest descent under it orthogonalizes the gradient matrix to $UV^\top$ rather than taking elementwise signs [^2].
+    explanation: |
+      Steepest descent minimizes $g^\top \Delta w + \tfrac{\lambda}{2}\lVert \Delta w \rVert^2$; its
+      direction is the unit vector $t$ that minimizes $g^\top t$ [^1]. Under the max norm every
+      coordinate may move by up to 1, so the best $t$ is $-\mathrm{sign}(g)$, and the step length is the
+      dual norm $\lVert g \rVert_1$ divided by $\lambda$. With the moving averages off, Adam's
+      $\hat m_t / \sqrt{\hat v_t}$ is exactly $\mathrm{sign}(g)$ [^3], which is why Adam is described as
+      steepest descent under an $\ell_\infty$-type norm [^2].
+    references:
+      - source: mit-ocw-67960
+        locator: Homework 2, Steepest descent, Problems 1–3
+        url: https://ocw.mit.edu/courses/6-7960-deep-learning-fall-2024/resources/mit6_7960_f24_hw2_pdf/
+      - title: Bernstein & Newhouse (2024), Old Optimizer, New Norm — An Anthology, arXiv:2409.20325
+        locator: Story I, Adam as steepest descent under the max-of-max norm
+        url: https://arxiv.org/abs/2409.20325
+      - source: d2l
+        locator: Sec. 12.10.1 The Algorithm, Eqs. (12.10.1)–(12.10.3)
+        url: https://d2l.ai/chapter_optimization/adam.html#the-algorithm
+    source:
+      id: mit-ocw-67960
+      ref: mit6_7960_f24_hw2#q3c
+      url: https://ocw.mit.edu/courses/6-7960-deep-learning-fall-2024/resources/mit6_7960_f24_hw2_pdf/
+    status: draft
+  - id: training-071
+    type: single
+    difficulty: hard
+    tags:
+      - steepest-descent
+      - spectral-norm
+      - orthogonalized-updates
+      - svd
+    question: |
+      A layer's gradient matrix has the reduced SVD $G = U \Sigma V^\top$. Steepest descent under the
+      spectral norm $\lVert \cdot \rVert_*$ (the largest singular value) solves
+      $$\operatorname*{arg\,min}_{\Delta W}\Big[\operatorname{tr}(G^\top \Delta W) + \tfrac{\lambda}{2}\lVert \Delta W \rVert_*^2\Big].$$
+      Which update is the solution?
+    options:
+      - text: $-\frac{\operatorname{tr}\Sigma}{\lambda}\, U V^\top$
+        correct: true
+      - text: $-\frac{1}{\lambda}\, U \Sigma V^\top$
+        why: That is $-G/\lambda$, plain gradient descent, which is steepest descent under the Frobenius norm.
+      - text: $-\frac{\sigma_{\max}}{\lambda}\, U V^\top$
+        why: The direction is right, but the step length is the dual norm of $G$, the nuclear norm $\operatorname{tr}\Sigma$ (sum of singular values), not its largest singular value.
+      - text: $-\frac{\operatorname{tr}\Sigma}{\lambda}\, \mathrm{sign}(G)$
+        why: Elementwise signs are steepest descent under a max-of-entries norm; under the spectral norm the update sets all singular values equal instead [^2].
+    explanation: |
+      As for vectors, the solution is $-\frac{\lVert G \rVert^\dagger}{\lambda}$ times the unit-norm
+      matrix $T$ that maximizes $\operatorname{tr}(G^\top T)$ [^1]. Over matrices with spectral norm 1
+      the maximum is $\operatorname{tr}\Sigma$, reached at $T = UV^\top$, so the dual norm is the nuclear
+      norm and the step is $-\frac{\operatorname{tr}\Sigma}{\lambda} UV^\top$ [^1]. The update keeps the
+      gradient's singular vectors but sets every singular value to the same size; Shampoo without
+      accumulation takes exactly this direction [^2]. A numerical minimizer on a random $3 \times 2$
+      gradient agrees with the formula.
+    references:
+      - source: mit-ocw-67960
+        locator: Homework 2, Steepest descent, Problem 4
+        url: https://ocw.mit.edu/courses/6-7960-deep-learning-fall-2024/resources/mit6_7960_f24_hw2_pdf/
+      - title: Bernstein & Newhouse (2024), Old Optimizer, New Norm — An Anthology, arXiv:2409.20325
+        locator: Story II, Shampoo as steepest descent under the spectral norm (Eq. 16)
+        url: https://arxiv.org/abs/2409.20325
+    source:
+      id: mit-ocw-67960
+      ref: mit6_7960_f24_hw2#q4b
+      url: https://ocw.mit.edu/courses/6-7960-deep-learning-fall-2024/resources/mit6_7960_f24_hw2_pdf/
+    status: draft
+  - id: training-072
+    type: short_answer
+    difficulty: medium
+    tags:
+      - initialization
+      - spectral-norm
+      - hyperparameter-transfer
+    question: |
+      A layer maps $d_{\text{in}} = 1024$ inputs to $d_{\text{out}} = 256$ outputs. It is initialized as
+      $W = \sqrt{d_{\text{out}} / d_{\text{in}}}\; M$, where $M \in \mathbb{R}^{256 \times 1024}$ is a random
+      semi-orthogonal matrix (orthonormal rows). What is the spectral norm of $W$?
+    answer:
+      numeric: 0.5
+      tolerance: 0.001
+      hint: a number
+      model: All singular values of $M$ are 1, so $\lVert W \rVert_* = \sqrt{256/1024} = 0.5$
+    explanation: |
+      A semi-orthogonal matrix has all its singular values equal to 1, so $W$'s singular values are all
+      $\sqrt{256/1024} = 0.5$ [^1]. The factor is chosen so that an input whose entries have RMS size 1,
+      $\lVert x \rVert_2 = \sqrt{1024} = 32$, gives an output whose entries have RMS size at most 1,
+      $\lVert Wx \rVert_2 \le 0.5 \times 32 = 16 = \sqrt{256}$, with equality along the top singular
+      directions [^2]. Initializing and updating every layer at this scale is what lets a learning rate
+      tuned on a narrow network transfer to a wide one [^1][^2].
+    references:
+      - source: mit-ocw-67960
+        locator: Homework 2, Hyperparameter transfer, Problems 7 and 9
+        url: https://ocw.mit.edu/courses/6-7960-deep-learning-fall-2024/resources/mit6_7960_f24_hw2_pdf/
+      - title: Yang, Simon & Bernstein (2023), A Spectral Condition for Feature Learning, arXiv:2310.17813
+        locator: Abstract and Sec. 1 (spectral scaling condition)
+        url: https://arxiv.org/abs/2310.17813
+    source:
+      id: mit-ocw-67960
+      ref: mit6_7960_f24_hw2#q9
+      url: https://ocw.mit.edu/courses/6-7960-deep-learning-fall-2024/resources/mit6_7960_f24_hw2_pdf/
+    status: draft
+  - id: training-073
+    type: single
+    difficulty: easy
+    tags:
+      - weight-decay
+      - svd
+      - regularization
+    question: |
+      After every gradient step you apply weight decay $W \leftarrow 0.999\,W$. Write
+      $W = \sum_i \sigma_i u_i v_i^\top$ (its singular value decomposition). What does one decay step do?
+    options:
+      - text: Multiplies every $\sigma_i$ by 0.999 and leaves the singular vectors unchanged
+        correct: true
+      - text: Subtracts 0.001 from every $\sigma_i$ and leaves the singular vectors unchanged
+        why: Subtracting a constant is soft-thresholding; weight decay is a multiplication, so each $\sigma_i$ shrinks in proportion to its size.
+      - text: Shrinks the small $\sigma_i$ much faster than the large ones
+        why: All singular values are multiplied by the same factor, so their ratios stay the same.
+      - text: Shortens the singular vectors $u_i$ and $v_i$ by the factor 0.999
+        why: Singular vectors have unit length by definition; the scaling goes into the $\sigma_i$.
+    explanation: |
+      $0.999\,W = \sum_i (0.999\,\sigma_i)\,u_i v_i^\top$, and the $u_i$, $v_i$ remain unit-length and
+      orthonormal, so this is again an SVD [^1]. Weight decay therefore shrinks the whole matrix
+      uniformly toward zero without rotating it; it is the multiplicative form of an $L_2$ penalty on the
+      weights [^2]. Only the gradient steps change the directions.
+    references:
+      - source: mit-ocw-67960
+        locator: Homework 2, Hyperparameter transfer, Problem 11
+        url: https://ocw.mit.edu/courses/6-7960-deep-learning-fall-2024/resources/mit6_7960_f24_hw2_pdf/
+      - source: d2l
+        locator: Sec. 3.7.1 Norms and Weight Decay
+        url: https://d2l.ai/chapter_linear-regression/weight-decay.html#norms-and-weight-decay
+    source:
+      id: mit-ocw-67960
+      ref: mit6_7960_f24_hw2#q11
+      url: https://ocw.mit.edu/courses/6-7960-deep-learning-fall-2024/resources/mit6_7960_f24_hw2_pdf/
+    status: draft

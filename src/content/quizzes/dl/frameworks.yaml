@@ -438,3 +438,39 @@ questions:
       ref: chapter_computational-performance/parameterserver#ex2
       url: https://d2l.ai/chapter_computational-performance/parameterserver.html#exercises
     status: draft
+  - id: frameworks-013
+    type: short_answer
+    difficulty: hard
+    tags:
+      - reverse-mode
+      - adjoint-method
+      - automatic-differentiation
+    question: |
+      $A(p)$ is an invertible $n \times n$ matrix built from $n - 1$ parameters $p$, and
+      $f(p) = \left(c^\top A(p)^{-1} b\right)^2$ for fixed vectors $b, c$. Using the adjoint (reverse-mode)
+      method, how many linear solves with $A$ (or $A^\top$) are needed to get $f$ and the whole gradient
+      $\nabla_p f$, whatever $n$ is?
+    answer:
+      numeric: 2
+      tolerance: 0
+      hint: a whole number
+      model: One solve $x = A^{-1}b$ for $f$, one adjoint solve $v = A^{-\top}(-2(c^\top x)c)$; then $\partial f/\partial p_k = v^\top (\partial A/\partial p_k)\, x$
+    explanation: |
+      From $d(A^{-1}) = -A^{-1}\,dA\,A^{-1}$, $df = -2(c^\top x)\,c^\top A^{-1}\,dA\,x$ with $x = A^{-1}b$ [^1].
+      Solving once for the row vector $v^\top = -2(c^\top x)\,c^\top A^{-1}$ (the adjoint solve) turns every
+      partial derivative into the cheap product $v^\top(\partial A/\partial p_k)\,x$ [^1]. Finite differences
+      would need about one extra solve per parameter. This is reverse-mode differentiation, which gets
+      the gradient of a scalar output at a small constant multiple of the cost of evaluating it, the
+      property backpropagation relies on [^2].
+    references:
+      - source: mit-ocw-18s096
+        locator: Problem Set 2 solutions, Problem 1(a)–(b)
+        url: https://ocw.mit.edu/courses/18-s096-matrix-calculus-for-machine-learning-and-beyond-january-iap-2023/resources/mit18_s096iap23_pset2sol_pdf/
+      - title: 'Wikipedia: Automatic differentiation'
+        locator: Forward and reverse accumulation — Reverse accumulation
+        url: https://en.wikipedia.org/wiki/Automatic_differentiation
+    source:
+      id: mit-ocw-18s096
+      ref: mit18_s096iap23_pset2#p1b
+      url: https://ocw.mit.edu/courses/18-s096-matrix-calculus-for-machine-learning-and-beyond-january-iap-2023/resources/mit18_s096iap23_pset2sol_pdf/
+    status: draft

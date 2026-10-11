@@ -1692,3 +1692,1123 @@ questions:
       ref: lectures/tutorials/solutions/final_prep.pdf#q18
       url: https://github.com/UBC-CS/cpsc330-2025W1/blob/a89d6131a0e2ae5f7ab36f207a3809a5b7137aef/lectures/tutorials/solutions/final_prep.pdf
     status: draft
+  - id: neural-networks-056
+    type: short_answer
+    difficulty: medium
+    tags:
+      - relu
+      - universal-approximation
+      - piecewise-linear
+    question: |
+      A one-hidden-layer ReLU network can interpolate points exactly. For the points $(0, 0)$, $(1, 2)$, $(2, 1)$, $(3, 1)$
+      use the units $\mathrm{ReLU}(x - 0)$, $\mathrm{ReLU}(x - 1)$ and $\mathrm{ReLU}(x - 2)$ (one per point except the last) and
+      the output $\hat{y}(x) = \sum_i c_i\,\mathrm{ReLU}(x - x_i)$, where each weight $c_i$ is the change in slope at its point.
+      What is the weight $c_2$ of $\mathrm{ReLU}(x - 1)$?
+    answer:
+      numeric: -3
+      tolerance: 0
+      hint: an integer
+      model: Slopes are $2$, $-1$, $0$, so $c = (2, -3, 1)$ and $c_2 = -1 - 2 = -3$
+    explanation: |
+      Between consecutive points the interpolant is a line with slope $(y_{i+1} - y_i)/(x_{i+1} - x_i)$: here $2$, $-1$ and $0$
+      [^1]. A ReLU that starts at $x_i$ adds $c_i$ to the slope from that point on, so $c_1 = 2$, $c_2 = -1 - 2 = -3$ and
+      $c_3 = 0 - (-1) = 1$; for example $\hat{y}(1.5) = 2 \cdot 1.5 - 3 \cdot 0.5 = 1.5$, on the line from $(1, 2)$ to $(2, 1)$ [^1].
+      With enough units such piecewise-linear sums approximate any continuous function on an interval, the idea behind
+      the universal approximation theorem [^1][^2].
+    references:
+      - source: neuromatch-dl
+        locator: W1D3 Tutorial 1, Section 1 The Need for MLPs, Coding Exercise 1 Function approximation with ReLU
+        url: https://github.com/NeuromatchAcademy/course-content-dl/blob/caba36c513fb8139ac3c9e7503f7a769dadde25e/tutorials/W1D3_MultiLayerPerceptrons/instructor/W1D3_Tutorial1.ipynb
+      - source: d2l
+        locator: Sec. 5.1.1.4 Universal Approximators
+        url: https://d2l.ai/chapter_multilayer-perceptrons/mlp.html#universal-approximators
+    source:
+      id: neuromatch-dl
+      ref: W1D3_MultiLayerPerceptrons/W1D3_Tutorial1#ex1
+      url: https://github.com/NeuromatchAcademy/course-content-dl/blob/caba36c513fb8139ac3c9e7503f7a769dadde25e/tutorials/W1D3_MultiLayerPerceptrons/instructor/W1D3_Tutorial1.ipynb
+    status: draft
+  - id: neural-networks-057
+    type: short_answer
+    difficulty: medium
+    tags:
+      - cross-entropy
+      - softmax
+      - loss-functions
+    question: |
+      `nn.CrossEntropyLoss()` (mean reduction) receives these logits for two examples whose labels are `[0, 1]`:
+      ```python
+      x = torch.tensor([[10.0,  1.0, -1.0, -20.0],
+                        [10.0, 10.0,  2.0, -10.0]])
+      ```
+      What loss does it return? Round to 3 decimals.
+    answer:
+      numeric: 0.347
+      tolerance: 0.001
+      hint: a number, 3 decimals
+      model: $\ell_1 \approx 0.0001$, $\ell_2 = \log(2 + e^{-8} + e^{-20}) \approx 0.693$; mean $\approx 0.347$
+    explanation: |
+      For logits $\mathbf{x}_i$ and label $c$, the loss is $-x_{i,c} + \log\sum_j e^{x_{i,j}}$, averaged over the batch [^1][^2]. The
+      first example is classified confidently and correctly: $-10 + \log(e^{10} + e^{1} + e^{-1} + e^{-20}) \approx 0.0001$. The
+      second has two tied top logits, so the true class gets probability just under $\tfrac12$ and the loss is
+      $\log(2 + e^{-8} + e^{-20}) \approx 0.693$. The mean is about $0.347$: one uncertain example dominates the batch loss.
+    references:
+      - source: neuromatch-dl
+        locator: W1D3 Tutorial 1, Section 2.1 Classification with MLPs, Coding Exercise 2.1 Implement Batch Cross Entropy Loss
+        url: https://github.com/NeuromatchAcademy/course-content-dl/blob/caba36c513fb8139ac3c9e7503f7a769dadde25e/tutorials/W1D3_MultiLayerPerceptrons/instructor/W1D3_Tutorial1.ipynb
+      - title: 'PyTorch documentation: torch.nn.CrossEntropyLoss'
+        url: https://docs.pytorch.org/docs/stable/generated/torch.nn.CrossEntropyLoss.html
+        locator: Description (loss for class indices, reduction='mean')
+    source:
+      id: neuromatch-dl
+      ref: W1D3_MultiLayerPerceptrons/W1D3_Tutorial1#ex2.1
+      url: https://github.com/NeuromatchAcademy/course-content-dl/blob/caba36c513fb8139ac3c9e7503f7a769dadde25e/tutorials/W1D3_MultiLayerPerceptrons/instructor/W1D3_Tutorial1.ipynb
+    status: draft
+  - id: neural-networks-058
+    type: short_answer
+    difficulty: medium
+    tags:
+      - backpropagation
+      - chain-rule
+      - linear-networks
+    question: |
+      A "shallow narrow" linear network predicts $\hat{y} = w_1 w_2 x$ and is trained on the squared error
+      $L = (y - w_1 w_2 x)^2$. For one example with $x = 1$ and $y = 2$, and current weights $w_1 = 1.4$, $w_2 = -1.6$, what is
+      $\partial L/\partial w_1$?
+    answer:
+      numeric: 13.568
+      tolerance: 0.001
+      hint: a number, 3 decimals
+      model: $-2 w_2 x (y - w_1 w_2 x) = -2(-1.6)(1)(2 + 2.24) = 13.568$
+    explanation: |
+      By the chain rule, $\partial L/\partial w_1 = -2\,(y - w_1 w_2 x)\cdot w_2 x$ [^1]. The prediction is $1.4 \cdot (-1.6) = -2.24$,
+      so the residual is $4.24$ and the gradient is $-2 \cdot 4.24 \cdot (-1.6) = 13.568$ [^1]. Each weight's gradient is
+      scaled by the other weight; in a deeper chain it is scaled by the product of all the other weights, which is how
+      depth makes gradients vanish or explode [^2].
+    references:
+      - source: neuromatch-dl
+        locator: W1D2 Tutorial 2, Section 1.1 A Shallow Narrow Linear Net, Analytical Exercise 1.1 Loss Gradients
+        url: https://github.com/NeuromatchAcademy/course-content-dl/blob/caba36c513fb8139ac3c9e7503f7a769dadde25e/tutorials/W1D2_LinearDeepLearning/instructor/W1D2_Tutorial2.ipynb
+      - source: neuromatch-dl
+        locator: W1D2 Tutorial 2, Section 2.1 The effect of depth
+        url: https://github.com/NeuromatchAcademy/course-content-dl/blob/caba36c513fb8139ac3c9e7503f7a769dadde25e/tutorials/W1D2_LinearDeepLearning/instructor/W1D2_Tutorial2.ipynb
+    source:
+      id: neuromatch-dl
+      ref: W1D2_LinearDeepLearning/W1D2_Tutorial2#ex1.1
+      url: https://github.com/NeuromatchAcademy/course-content-dl/blob/caba36c513fb8139ac3c9e7503f7a769dadde25e/tutorials/W1D2_LinearDeepLearning/instructor/W1D2_Tutorial2.ipynb
+    status: draft
+  - id: neural-networks-059
+    type: short_answer
+    difficulty: medium
+    tags:
+      - sigmoid
+      - vanishing-gradients
+      - backpropagation
+    question: |
+      The derivative of the sigmoid, $\sigma'(x) = \sigma(x)(1 - \sigma(x))$, is at most $0.25$. A
+      gradient flows backwards through 5 sigmoid activations; ignore the weights (treat them as 1).
+      What is the largest factor by which these 5 activations can scale the gradient? Give the exact
+      value or 3 significant digits.
+    answer:
+      numeric: 0.000977
+      tolerance: 0.0000015
+      hint: a number, e.g. 0.0123 or 1/81
+      model: $0.25^5 = 1/1024 \approx 0.000977$
+    explanation: |
+      By the chain rule the gradient is multiplied by $\sigma'$ at every sigmoid layer, and
+      $\sigma'(x) = \sigma(x)(1-\sigma(x)) \le 0.25$, with the maximum at $x = 0$ [^1]. Five layers
+      therefore shrink it by at least a factor $0.25^5 \approx 0.001$, and far more when the units
+      saturate, where $\sigma' \approx 0$ [^1][^2]. This vanishing gradient is a main reason ReLU, whose
+      derivative is exactly 1 for positive inputs, replaced the sigmoid in hidden layers [^1].
+    references:
+      - source: d2l
+        locator: Sec. 5.4.1.1 Vanishing Gradients
+        url: https://d2l.ai/chapter_multilayer-perceptrons/numerical-stability-and-init.html#vanishing-gradients
+      - source: ds-interviews
+        locator: theory.md, Neural networks — "What are the problems with sigmoid as an activation function?"
+        url: https://github.com/alexeygrigorev/data-science-interviews/blob/919f44547ef5ffc2bd59674fd301940529f4c1a8/theory.md#neural-networks
+    source:
+      id: ds-interviews
+      ref: theory.md#q88
+      url: https://github.com/alexeygrigorev/data-science-interviews/blob/919f44547ef5ffc2bd59674fd301940529f4c1a8/theory.md#neural-networks
+    status: draft
+  - id: neural-networks-060
+    type: single
+    difficulty: hard
+    tags:
+      - initialization
+      - zero-init
+      - symmetry
+      - tanh
+    question: |
+      A regression MLP $\hat y = \mathbf{w}_2^\top \tanh(W_1\mathbf{x} + \mathbf{b}_1) + b_2$ is initialized
+      with **all** weights and biases equal to 0 and trained with gradient descent on MSE. What happens?
+    options:
+      - text: Training works normally, because the output bias gets a gradient and breaks the symmetry
+        why: The output bias does change, but it only shifts the prediction; the hidden weights and biases still receive exactly zero gradient.
+      - text: Only the output bias $b_2$ ever changes, so the network can only learn a constant
+        correct: true
+      - text: The hidden units learn identical but nonzero weights, so the network behaves like one hidden unit
+        why: That happens with a constant nonzero initialization; with zeros and $\tanh(0) = 0$, the gradients of $W_1$ and $\mathbf{w}_2$ are exactly zero at every step.
+      - text: The loss becomes NaN after the first step because of a division by zero
+        why: Nothing is divided by the weights; the gradients are simply zero, not undefined.
+    explanation: |
+      With zero weights every hidden activation is $\tanh(0) = 0$. The gradient of $\mathbf{w}_2$ is
+      $\delta\,\mathbf{h} = \mathbf{0}$, and the gradient reaching the hidden layer is
+      $\mathbf{w}_2\delta = \mathbf{0}$, so $W_1$ and $\mathbf{b}_1$ never move either; only $b_2$ gets
+      the gradient $\delta$ and converges to the mean target. Initialization must break the symmetry
+      between hidden units, which is why weights are drawn at random [^1][^2].
+    references:
+      - source: d2l
+        locator: Sec. 5.4.1.3 Breaking the Symmetry
+        url: https://d2l.ai/chapter_multilayer-perceptrons/numerical-stability-and-init.html#breaking-the-symmetry
+      - source: d2l
+        locator: Sec. 5.3 Forward Propagation, Backward Propagation, and Computational Graphs (5.3.3 Backpropagation)
+        url: https://d2l.ai/chapter_multilayer-perceptrons/backprop.html
+    source:
+      id: ds-interviews
+      ref: theory.md#q91
+      url: https://github.com/alexeygrigorev/data-science-interviews/blob/919f44547ef5ffc2bd59674fd301940529f4c1a8/theory.md#neural-networks
+    status: draft
+  - id: neural-networks-061
+    type: short_answer
+    difficulty: medium
+    tags:
+      - perceptron
+      - learning-rule
+    question: |
+      Run the perceptron algorithm (step size 1, initial weights $\mathbf{w} = (0, 0, 0)$) on the
+      augmented points $(1, x_1, x_2)$, cycling through them in this order: negative $(-1, 0)$,
+      negative $(2, -2)$, positive $(1, 0)$. A point counts as misclassified when
+      $y\,(\mathbf{w} \cdot \mathbf{x}) \le 0$, and then $\mathbf{w} \leftarrow \mathbf{w} +
+      y\,\mathbf{x}$. How many updates happen before a full pass makes no mistake?
+    answer:
+      numeric: 4
+      tolerance: 0
+      hint: a whole number
+      model: $(0,0,0) \to (-1,1,0) \to (-2,-1,2) \to (-1,0,2)$ in pass 1, then $(0,1,2)$ at the positive point in pass 2; pass 3 is clean.
+    explanation: |
+      Pass 1 updates on all three points (the first because $\mathbf{w} \cdot \mathbf{x} = 0$) [^1].
+      In pass 2 the two negatives are now correct, but the positive $(1, 1, 0)$ scores $-1$ and
+      triggers a fourth update to $\mathbf{w} = (0, 1, 2)$, i.e. the boundary $x_1 + 2x_2 = 0$, which
+      separates all three points [^2].
+    references:
+      - title: 'Wikipedia: Perceptron'
+        url: https://en.wikipedia.org/wiki/Perceptron#Steps
+        locator: Learning algorithm, Steps
+      - source: mit-ocw-6034-s05
+        locator: Quiz 2 (Spring 2005) solutions, Problem 3 Perceptron, part 1
+        url: https://ocw.mit.edu/courses/6-034-artificial-intelligence-spring-2005/resources/q2_soln/
+    source:
+      id: mit-ocw-6034-s05
+      ref: q2_soln#q3.1
+      url: https://ocw.mit.edu/courses/6-034-artificial-intelligence-spring-2005/resources/q2_soln/
+    status: draft
+  - id: neural-networks-062
+    type: short_answer
+    difficulty: medium
+    tags:
+      - sigmoid
+      - gradient-descent
+      - backpropagation
+    question: |
+      A single sigmoid unit computes $y = s(z)$ with $z = -w_0 + w_1 x_1 + w_2 x_2$ (a constant input
+      $-1$ on $w_0$), current weights $w_0 = 0$, $w_1 = 1$, $w_2 = 1$. For the input
+      $\mathbf{x} = (2, -2)$ with target $y^* = 0$ and error $E = \frac{1}{2}(y - y^*)^2$, what is the
+      gradient-descent change $\Delta w_2$ with step size $\eta = 1$?
+    answer:
+      numeric: 0.25
+      tolerance: 0.001
+      hint: a decimal, e.g. 0.5
+      model: $z = 0$, $y = 0.5$; $\Delta w_2 = -\eta (y - y^*)\,y(1-y)\,x_2 = -(0.5)(0.25)(-2) = 0.25$
+    explanation: |
+      By the chain rule $\partial E/\partial w_2 = (y - y^*)\,s'(z)\,x_2$ with $s'(z) = y(1 - y)$
+      [^1][^2]. Here $z = 2 - 2 = 0$, so $y = 0.5$ and $s'(z) = 0.25$, and $\Delta w_2 = -0.5 \cdot 0.25
+      \cdot (-2) = 0.25$: the weight on $x_2$ grows, which lowers $z$ for this input because
+      $x_2 < 0$, pushing $y$ toward the target 0.
+    references:
+      - title: 'Wikipedia: Logistic function'
+        url: https://en.wikipedia.org/wiki/Logistic_function#Derivative
+        locator: Derivative
+      - source: mit-ocw-6034-s05
+        locator: Quiz 2 (Spring 2005) solutions, Problem 4 Neural Net, part 2
+        url: https://ocw.mit.edu/courses/6-034-artificial-intelligence-spring-2005/resources/q2_soln/
+    source:
+      id: mit-ocw-6034-s05
+      ref: q2_soln#q4.2
+      url: https://ocw.mit.edu/courses/6-034-artificial-intelligence-spring-2005/resources/q2_soln/
+    status: draft
+  - id: neural-networks-063
+    type: short_answer
+    difficulty: hard
+    tags:
+      - perceptron
+      - dual-form
+      - learning-rule
+    question: |
+      A perceptron (step size 1, zero initial weights, inputs augmented as $(1, x_1, x_2, x_3)$) is run
+      until it separates this data. The last column says how many times each point was misclassified
+      (and so used in an update):
+
+      | $x_1$ | $x_2$ | $x_3$ | $y$ | mistakes |
+      |---|---|---|---|---|
+      | 2 | 3 | 1 | +1 | 12 |
+      | 2 | 4 | 0 | +1 | 0 |
+      | 3 | 1 | 1 | −1 | 3 |
+      | 1 | 1 | 0 | −1 | 6 |
+      | 1 | 2 | 1 | −1 | 11 |
+
+      What is the final weight on $x_2$?
+    answer:
+      numeric: 5
+      tolerance: 0
+      hint: a whole number
+      model: $\mathbf{w} = 12(1,2,3,1) - 3(1,3,1,1) - 6(1,1,1,0) - 11(1,1,2,1) = (-8, -2, 5, -2)$
+    explanation: |
+      Each update adds $y_i \mathbf{x}_i$, so the final weights are $\mathbf{w} = \sum_i m_i y_i
+      \mathbf{x}_i$, where $m_i$ counts the mistakes on point $i$; this is the dual view of the
+      perceptron [^1][^2]. The $x_2$ component is $12 \cdot 3 - 3 \cdot 1 - 6 \cdot 1 - 11 \cdot 2 =
+      5$, and the separator is $-8 - 2x_1 + 5x_2 - 2x_3 = 0$.
+    references:
+      - title: 'Wikipedia: Kernel perceptron'
+        url: https://en.wikipedia.org/wiki/Kernel_perceptron#Algorithm
+        locator: Algorithm (dual form, mistake counts)
+      - source: mit-ocw-6034-s05
+        locator: Quiz 2 review solutions, Problem 6 Perceptron
+        url: https://ocw.mit.edu/courses/6-034-artificial-intelligence-spring-2005/resources/quiz2_review_sol/
+    source:
+      id: mit-ocw-6034-s05
+      ref: quiz2_review_sol#q6-perceptron
+      url: https://ocw.mit.edu/courses/6-034-artificial-intelligence-spring-2005/resources/quiz2_review_sol/
+    status: draft
+  - id: neural-networks-064
+    type: single
+    difficulty: medium
+    tags:
+      - backpropagation
+      - output-layer
+      - regression
+    question: |
+      A network trained by backpropagation on squared error $E = \frac{1}{2}(y - y^*)^2$ has sigmoid
+      hidden units. You change only the output unit from a sigmoid to a linear unit, $y = \sum_i w_i
+      x_i$, to do regression. How does the output unit's error term $\delta$ change?
+    options:
+      - text: Every $\delta$ in the network loses its $o(1 - o)$ factor
+        why: Only the output unit changed; the hidden units are still sigmoids and keep their derivative.
+      - text: It becomes $y(1 - y)$, independent of the target
+        why: The error term must depend on how far the output is from the target.
+      - text: It stays $y(1 - y)(y - y^*)$, because the hidden units are still sigmoids
+        why: The factor $y(1 - y)$ is the derivative of the output sigmoid, which has been removed.
+      - text: It becomes $y - y^*$; the factor $y(1 - y)$ disappears
+        correct: true
+    explanation: |
+      The output $\delta$ is $\partial E/\partial z = (\partial E/\partial y)(\partial y/\partial z)$
+      [^1][^2]. For a sigmoid, $\partial y/\partial z = y(1 - y)$; for a linear unit it is 1, so
+      $\delta = y - y^*$. All hidden-layer formulas stay the same, since they only receive this
+      $\delta$ through the weights.
+    references:
+      - title: 'Wikipedia: Backpropagation'
+        url: https://en.wikipedia.org/wiki/Backpropagation#Derivation
+        locator: Derivation
+      - source: mit-ocw-6034-s05
+        locator: Quiz 2 review solutions, Problem 5 Backprop
+        url: https://ocw.mit.edu/courses/6-034-artificial-intelligence-spring-2005/resources/quiz2_review_sol/
+    source:
+      id: mit-ocw-6034-s05
+      ref: quiz2_review_sol#q5-backprop
+      url: https://ocw.mit.edu/courses/6-034-artificial-intelligence-spring-2005/resources/quiz2_review_sol/
+    status: draft
+  - id: neural-networks-065
+    type: single
+    difficulty: medium
+    tags:
+      - weight-decay
+      - regularization
+      - gradient-descent
+    question: |
+      A single sigmoid unit $y = s(\mathbf{w} \cdot \mathbf{x})$ is trained on
+      $E(\mathbf{w}) = \frac{1}{2}\sum_i (y_i - y_i^*)^2 + \frac{\beta}{2}\sum_j w_j^2$. What is the
+      stochastic gradient-descent update for $w_j$ on one example $(\mathbf{x}, y^*)$ with step size
+      $\eta$?
+    options:
+      - text: $w_j \leftarrow w_j - \eta\,[(y - y^*)\,x_j + \beta w_j]$
+        why: This drops the sigmoid derivative $y(1 - y)$ from the chain rule.
+      - text: $w_j \leftarrow w_j - \eta\,[(y - y^*)\,y(1 - y)\,x_j + \beta w_j]$
+        correct: true
+      - text: $w_j \leftarrow w_j - \eta\,[(y - y^*)\,y(1 - y)\,x_j - \beta w_j]$
+        why: The penalty's gradient is $+\beta w_j$; subtracting it shrinks weights toward 0, the sign here would grow them.
+      - text: $w_j \leftarrow (1 - \eta\beta)\,w_j$
+        why: That is only the decay part; the error term still has to be followed.
+    explanation: |
+      The gradient of the squared error is $(y - y^*)\,y(1 - y)\,x_j$ and the gradient of
+      $\frac{\beta}{2}w_j^2$ is $\beta w_j$, so each step also shrinks every weight by $\eta\beta w_j$:
+      weight decay [^1][^2]. Small weights keep the sigmoid out of saturation and limit overfitting;
+      $\beta$ is chosen by cross-validation.
+    references:
+      - source: d2l
+        locator: Sec. 3.7 Weight Decay
+        url: https://d2l.ai/chapter_linear-regression/weight-decay.html
+      - source: mit-ocw-6034-s05
+        locator: Quiz 2 review solutions, Problem 5 Machine Learning (sigmoid unit with weight penalty)
+        url: https://ocw.mit.edu/courses/6-034-artificial-intelligence-spring-2005/resources/quiz2_review_sol/
+    source:
+      id: mit-ocw-6034-s05
+      ref: quiz2_review_sol#q5-weight-decay
+      url: https://ocw.mit.edu/courses/6-034-artificial-intelligence-spring-2005/resources/quiz2_review_sol/
+    status: draft
+  - id: neural-networks-066
+    type: multiple
+    difficulty: medium
+    tags:
+      - perceptron
+      - linear-separability
+      - boolean-functions
+    question: |
+      A single threshold perceptron outputs 1 when $\sum_i w_i x_i - w_T > 0$ and 0 otherwise. Which
+      of these functions can it compute, for suitable weights? Select all that apply.
+    options:
+      - text: $A < B$ for real-valued inputs $A, B$
+        correct: true
+      - text: $A \oplus B$ (exclusive or) for Boolean inputs
+        why: XOR is not linearly separable; no line puts (0,1) and (1,0) on one side and (0,0) and (1,1) on the other.
+      - text: $|A - B| < E$ for real-valued inputs $A, B, E$
+        why: The true region is the intersection of two half-spaces, $A - B < E$ and $B - A < E$, which a single linear threshold cannot carve out.
+      - text: $A \rightarrow B$ (that is, $\neg A \lor B$) for Boolean inputs $A, B \in \{0, 1\}$
+        correct: true
+    explanation: |
+      A perceptron can compute exactly the linearly separable functions [^1]. $A \rightarrow B$ works
+      with $w_A = -1$, $w_B = 1$, $w_T = -0.5$ (only $A = 1, B = 0$ gives a sum $\le 0$), and
+      $A < B$ with $w_A = -1$, $w_B = 1$, $w_T = 0$ [^2]. "Within $E$" needs two inequalities at once,
+      and XOR is the classic non-separable case, so both need a hidden layer.
+    references:
+      - title: 'Wikipedia: Perceptron'
+        url: https://en.wikipedia.org/wiki/Perceptron#Boolean_function
+        locator: Power of representation, Boolean function
+      - source: mit-ocw-6034
+        locator: Quiz 3 (2009), Question 2 Part A, items 1–3
+        url: https://ocw.mit.edu/courses/6-034-artificial-intelligence-fall-2010/resources/mit6_034f10_quiz3_2009/
+    source:
+      id: mit-ocw-6034
+      ref: mit6_034f10_quiz3_2009#q2a
+      url: https://ocw.mit.edu/courses/6-034-artificial-intelligence-fall-2010/resources/mit6_034f10_quiz3_2009/
+    status: draft
+  - id: neural-networks-067
+    type: short_answer
+    difficulty: hard
+    tags:
+      - backpropagation
+      - sigmoid
+      - forward-pass
+    question: |
+      A small network of sigmoid units without thresholds: unit A has input X with weight
+      $W_{XA} = 1$, unit B has input Y with weight $W_{YB} = -1$, and the output unit C has inputs A
+      and B with weights $W_{AC} = 1$, $W_{BC} = 0$. For $X = 60$, $Y = 70$ and target $d = 1$, the
+      output error term is $\delta_C = o_C(1 - o_C)(d - o_C)$ and the update is
+      $\Delta W_{AC} = \delta_C\, o_A$ (learning rate 1). What is $\Delta W_{AC}$? Round to 3
+      decimals.
+    answer:
+      numeric: 0.053
+      tolerance: 0.001
+      hint: a decimal, 3 decimal places
+      model: $o_A = s(60) \approx 1$, $o_B = s(-70) \approx 0$, $z_C = 1$, $o_C = s(1) \approx 0.731$; $\delta_C = 0.731 \cdot 0.269 \cdot 0.269 \approx 0.053$; $\Delta W_{AC} \approx 0.053$
+    explanation: |
+      Forward pass: A and B are saturated at about 1 and 0, so $z_C = 1 \cdot 1 + 0 \cdot 0 = 1$ and
+      $o_C = s(1) \approx 0.73$ [^1]. The output error term is $\delta_C \approx 0.73 \cdot 0.27 \cdot
+      0.27 \approx 0.053$, and since $o_A \approx 1$ the weight $W_{AC}$ changes by about 0.053 [^2].
+    references:
+      - title: 'Wikipedia: Backpropagation'
+        url: https://en.wikipedia.org/wiki/Backpropagation#Derivation
+        locator: Derivation
+      - source: mit-ocw-6034
+        locator: Quiz 3 (2010), Problem 2 Neural Nets, Part A1–A2
+        url: https://ocw.mit.edu/courses/6-034-artificial-intelligence-fall-2010/resources/mit6_034f10_quiz3_2010/
+    source:
+      id: mit-ocw-6034
+      ref: mit6_034f10_quiz3_2010#q2a2-wac
+      url: https://ocw.mit.edu/courses/6-034-artificial-intelligence-fall-2010/resources/mit6_034f10_quiz3_2010/
+    status: draft
+  - id: neural-networks-068
+    type: single
+    difficulty: medium
+    tags:
+      - backpropagation
+      - saturation
+      - vanishing-gradient
+    question: |
+      In the network X → A → C (weights $W_{XA} = 1$, $W_{AC} = 1$, sigmoid units, no thresholds) with
+      input $X = 60$ and a nonzero output error term $\delta_C \approx 0.053$, backpropagation gives
+      $\Delta W_{XA} = \delta_A X$ with $\delta_A = o_A(1 - o_A)\,W_{AC}\,\delta_C$. Why is
+      $\Delta W_{XA}$ practically zero?
+    options:
+      - text: Unit A is saturated, so $o_A(1 - o_A) \approx 10^{-26}$
+        correct: true
+      - text: The other hidden unit has weight $W_{BC} = 0$
+        why: $W_{BC}$ only affects the path through B; A's error term depends on $W_{AC} = 1$.
+      - text: The output error $d - o_C$ is zero
+        why: The output is about 0.73 against a target of 1, so the error is about 0.27.
+      - text: The large input $X = 60$ makes the update round off to zero
+        why: $X$ multiplies the update, so a large $X$ would make it bigger; the tiny factor is the sigmoid derivative.
+    explanation: |
+      The sigmoid's slope $s'(z) = s(z)(1 - s(z))$ is at most 0.25 and vanishes for large $|z|$ [^1].
+      With $z_A = 60$ it is about $e^{-60} \approx 10^{-26}$, so almost no error signal reaches
+      $W_{XA}$, however large the output error is. This saturation is one cause of vanishing
+      gradients and a reason to scale inputs and keep weights small [^2].
+    references:
+      - title: 'Wikipedia: Logistic function'
+        url: https://en.wikipedia.org/wiki/Logistic_function#Derivative
+        locator: Derivative
+      - source: d2l
+        locator: Sec. 5.4.1.1 Vanishing Gradients (sigmoid saturation)
+        url: https://d2l.ai/chapter_multilayer-perceptrons/numerical-stability-and-init.html#vanishing-gradients
+    source:
+      id: mit-ocw-6034
+      ref: mit6_034f10_quiz3_2010#q2a2-wxa
+      url: https://ocw.mit.edu/courses/6-034-artificial-intelligence-fall-2010/resources/mit6_034f10_quiz3_2010/
+    status: draft
+  - id: neural-networks-069
+    type: single
+    difficulty: medium
+    tags:
+      - recurrent-networks
+      - backpropagation
+      - feedback
+    question: |
+      To give a network a sense of timing, you feed the output of one neuron back into the input of
+      one of its ancestors. Why can't plain backpropagation, as derived for feedforward networks,
+      train this network directly?
+    options:
+      - text: The loop doubles the number of weights, which makes backpropagation too slow
+        why: One feedback connection adds one weight; cost is not the obstacle.
+      - text: The loop makes the graph cyclic, so errors have no backward order
+        correct: true
+      - text: Sigmoid units cannot receive their own outputs as inputs
+        why: Nothing in a sigmoid unit forbids that input; the problem is the cycle in the graph.
+      - text: Recurrent networks have no differentiable error function
+        why: Their error is just as differentiable; the gradient is obtained by unrolling the loop in time.
+    explanation: |
+      Backpropagation computes the error terms layer by layer from the output back to the inputs,
+      which needs an acyclic computation graph [^1]. With a feedback loop, a unit's output depends on
+      its own earlier output, so the network must first be unrolled over time steps; the resulting
+      algorithm is backpropagation through time [^2].
+    references:
+      - title: 'Wikipedia: Recurrent neural network'
+        url: https://en.wikipedia.org/wiki/Recurrent_neural_network#Training
+        locator: Training (backpropagation through time)
+      - source: d2l
+        locator: Sec. 9.7 Backpropagation Through Time
+        url: https://d2l.ai/chapter_recurrent-neural-networks/bptt.html#backpropagation-through-time
+    source:
+      id: mit-ocw-6034
+      ref: mit6_034f10_quiz3_2009#q2c1
+      url: https://ocw.mit.edu/courses/6-034-artificial-intelligence-fall-2010/resources/mit6_034f10_quiz3_2009/
+    status: draft
+  - id: neural-networks-070
+    type: single
+    difficulty: medium
+    tags:
+      - loss-functions
+      - differentiability
+      - cost-sensitive
+    question: |
+      A physician trains a single sigmoid unit and wants the error to be the total misclassification
+      cost: $c_{01}$ for each false positive and $c_{10}$ for each false negative, computed after
+      thresholding the output at 0.5. Why is this a poor training criterion for gradient descent?
+    options:
+      - text: It is always larger than the squared error, so training diverges
+        why: The size of an error function does not make gradient descent diverge; its slope does the work.
+      - text: It cannot give false positives and false negatives different weights
+        why: It does weight them differently, by $c_{01}$ and $c_{10}$; the trouble is its shape, not its weighting.
+      - text: It ignores the training labels
+        why: It compares predictions with the labels to count the two kinds of mistakes.
+      - text: It is piecewise constant, so its gradient is zero almost everywhere
+        correct: true
+    explanation: |
+      Counting thresholded mistakes changes only when a point crosses the boundary, so small weight
+      changes leave it unchanged and the gradient gives no direction [^1]. A cost-weighted squared
+      error, $c_{10}\sum_{y=1}(g(\mathbf{x}) - y)^2 + c_{01}\sum_{y=0}(g(\mathbf{x}) - y)^2$, keeps
+      the costs and is differentiable, so backpropagation can use it [^2].
+    references:
+      - source: d2l
+        locator: Sec. 4.3.2 Accuracy (accuracy is not differentiable, so it is hard to optimize directly)
+        url: https://d2l.ai/chapter_linear-classification/classification.html#accuracy
+      - source: mit-ocw-6034-s05
+        locator: Quiz 2 review solutions, Problem 8 Neural networks, parts 1–4
+        url: https://ocw.mit.edu/courses/6-034-artificial-intelligence-spring-2005/resources/quiz2_review_sol/
+    source:
+      id: mit-ocw-6034-s05
+      ref: quiz2_review_sol#q8-nn-cost
+      url: https://ocw.mit.edu/courses/6-034-artificial-intelligence-spring-2005/resources/quiz2_review_sol/
+    status: draft
+  - id: neural-networks-071
+    type: short_answer
+    difficulty: easy
+    tags:
+      - linear-unit
+      - parameter-count
+      - keras
+    question: |
+      The Red Wine Quality table has 12 columns: 11 physicochemical measurements and the target
+      `quality`. A linear model for it is `keras.Sequential([layers.Dense(units=1, input_shape=[11])])`.
+      How many trainable parameters does the model have?
+    answer:
+      numeric: 12
+      tolerance: 0
+      hint: a whole number
+      model: 11 weights (one per input) + 1 bias = 12
+    explanation: |
+      The input shape counts only the features, not the target, so the model takes 11 inputs [^1]. A
+      linear unit computes a weighted sum of its inputs plus a bias, so it has one weight per input
+      and one bias: $11 + 1 = 12$ [^2]. Before training the weights are random and the bias is 0; the
+      network learns by finding better values for them [^1].
+    references:
+      - source: kaggle-learn
+        locator: Intro to Deep Learning, Lesson 1 exercise, Questions 1–3 (input shape, linear model, weights)
+        url: https://github.com/Kaggle/learntools/blob/e9ba66dc899d3e17b80d3a1b9a5d29f430d310cb/learntools/deep_learning_intro/ex1.py
+      - source: kaggle-learn
+        locator: Intro to Deep Learning, Lesson 1 A Single Neuron — tutorial, The Linear Unit; Multiple Inputs
+        url: https://github.com/Kaggle/learntools/blob/e9ba66dc899d3e17b80d3a1b9a5d29f430d310cb/notebooks/deep_learning_intro/raw/tut1.ipynb
+    source:
+      id: kaggle-learn
+      ref: deep_learning_intro/ex1#q2
+      url: https://github.com/Kaggle/learntools/blob/e9ba66dc899d3e17b80d3a1b9a5d29f430d310cb/notebooks/deep_learning_intro/raw/ex1.ipynb
+    status: draft
+  - id: neural-networks-072
+    type: short_answer
+    difficulty: medium
+    tags:
+      - parameter-count
+      - dense-layers
+      - keras
+    question: |
+      A regression model for a dataset with 8 feature columns is:
+
+      ```python
+      model = keras.Sequential([
+          layers.Dense(512, activation='relu', input_shape=[8]),
+          layers.Dense(512, activation='relu'),
+          layers.Dense(512, activation='relu'),
+          layers.Dense(1),
+      ])
+      ```
+
+      How many trainable parameters does it have?
+    answer:
+      numeric: 530433
+      tolerance: 0
+      hint: a whole number
+      model: $(8 \cdot 512 + 512) + 2(512 \cdot 512 + 512) + (512 + 1) = 4608 + 2 \cdot 262656 + 513 = 530433$
+    explanation: |
+      A dense layer connects every input to every unit and gives each unit a bias, so it has
+      $n_{\text{in}} \times n_{\text{out}} + n_{\text{out}}$ parameters [^1]. The first hidden layer has
+      $8 \cdot 512 + 512 = 4608$, each of the next two $512 \cdot 512 + 512 = 262656$, and the output
+      unit $512 + 1 = 513$, for 530,433 in total. Activations add no parameters, and the output layer
+      has no activation because the target is a real number [^2].
+    references:
+      - source: kaggle-learn
+        locator: Intro to Deep Learning, Lesson 2 Deep Neural Networks — tutorial, Layers; Stacking Dense Layers
+        url: https://github.com/Kaggle/learntools/blob/e9ba66dc899d3e17b80d3a1b9a5d29f430d310cb/notebooks/deep_learning_intro/raw/tut2.ipynb
+      - source: kaggle-learn
+        locator: Intro to Deep Learning, Lesson 2 exercise, Question 2 Define a Model with Hidden Layers
+        url: https://github.com/Kaggle/learntools/blob/e9ba66dc899d3e17b80d3a1b9a5d29f430d310cb/notebooks/deep_learning_intro/raw/ex2.ipynb
+    source:
+      id: kaggle-learn
+      ref: deep_learning_intro/ex2#q2
+      url: https://github.com/Kaggle/learntools/blob/e9ba66dc899d3e17b80d3a1b9a5d29f430d310cb/notebooks/deep_learning_intro/raw/ex2.ipynb
+    status: draft
+  - id: neural-networks-073
+    type: single
+    difficulty: easy
+    tags:
+      - binary-classification
+      - cross-entropy
+      - accuracy
+      - loss-function
+    question: |
+      You report accuracy for a binary classifier, yet you train it by minimizing binary
+      cross-entropy. Why not train it on accuracy directly?
+    options:
+      - text: Accuracy changes in jumps, so it gives SGD no smooth signal to follow
+        correct: true
+      - text: Accuracy can only be computed on the validation set, never on training batches
+        why: Accuracy can be computed on any batch; Keras reports it during training as a metric [^1].
+      - text: Accuracy needs probabilities, while cross-entropy works on raw unbounded outputs
+        why: Both take the probabilities produced by a sigmoid output; the difference is that accuracy changes in jumps while cross-entropy changes smoothly [^1].
+      - text: Minimizing cross-entropy always gives a higher accuracy than any other loss could
+        why: Cross-entropy is a smooth stand-in; accuracy tends to improve along with it, but no loss is guaranteed best [^1].
+    explanation: |
+      SGD needs a loss that changes smoothly with the weights, but accuracy, a ratio of correct
+      predictions to total predictions, changes in jumps, so it cannot serve as a loss [^1].
+      Cross-entropy measures the distance between the predicted probabilities and the true class and
+      grows the further the probability of the correct class is from 1.0; other metrics such as
+      accuracy tend to improve along with it [^1]. The exercise checks this on the learning curves:
+      accuracy rose as the cross-entropy fell [^2].
+    references:
+      - source: kaggle-learn
+        locator: Intro to Deep Learning, Lesson 6 Binary Classification — tutorial, Accuracy and Cross-Entropy; Making Probabilities with the Sigmoid Function
+        url: https://github.com/Kaggle/learntools/blob/e9ba66dc899d3e17b80d3a1b9a5d29f430d310cb/notebooks/deep_learning_intro/raw/tut6.ipynb
+      - source: kaggle-learn
+        locator: Intro to Deep Learning, Lesson 6 exercise, Question 3 Train and Evaluate (solution)
+        url: https://github.com/Kaggle/learntools/blob/e9ba66dc899d3e17b80d3a1b9a5d29f430d310cb/learntools/deep_learning_intro/ex6.py
+    source:
+      id: kaggle-learn
+      ref: deep_learning_intro/ex6#q3
+      url: https://github.com/Kaggle/learntools/blob/e9ba66dc899d3e17b80d3a1b9a5d29f430d310cb/notebooks/deep_learning_intro/raw/ex6.ipynb
+    status: draft
+  - id: neural-networks-074
+    type: multiple
+    difficulty: medium
+    tags:
+      - embeddings
+      - categorical-features
+      - recommender-systems
+    question: |
+      A music-streaming service trains a neural network on 500 million past streams to suggest songs.
+      Each row has these variables:
+
+      | Variable | Meaning | Unique values |
+      |---|---|---|
+      | `stream_id` | id of this streaming event (one per row) | 500 million |
+      | `user_id` | id of the listener | 5 million |
+      | `song_id` | id of the song | 10 million |
+      | `artist_id` | id of the song's artist | 1 million |
+      | `song_duration` | length of the song in seconds | 450 |
+
+      Which variables should go into the network through an embedding layer? Select all that apply.
+    options:
+      - text: '`user_id`'
+        correct: true
+      - text: '`song_id`'
+        correct: true
+      - text: '`artist_id`'
+        correct: true
+      - text: '`stream_id`'
+        why: It is unique to each row, essentially an index, so it carries nothing that could generalize to new streams [^1].
+      - text: '`song_duration`'
+        why: A duration is a (roughly) continuous quantity; it should be a numeric input after preprocessing, not a set of categories [^1].
+    explanation: |
+      Embedding layers suit sparse categorical variables with very many possible values, which would
+      be hard to handle otherwise; `user_id`, `song_id` and `artist_id` are such variables [^1]. An
+      embedding layer maps each id to a dense vector, learned with the rest of the model, that
+      captures latent properties useful for the prediction [^2]. A category with few values, such as a 150-value country code or a two-valued flag,
+      can simply be one-hot encoded or used as a binary input instead [^1].
+    references:
+      - source: kaggle-learn
+        locator: Embeddings exercise 1, Part 1 When to use embeddings? (solution)
+        url: https://github.com/Kaggle/learntools/blob/e9ba66dc899d3e17b80d3a1b9a5d29f430d310cb/learntools/embeddings/ex1_embedding_layers.py
+      - source: kaggle-learn
+        locator: Embeddings tutorial 1, sparse categorical variables; Good idea - Embedding layers
+        url: https://github.com/Kaggle/learntools/blob/e9ba66dc899d3e17b80d3a1b9a5d29f430d310cb/notebooks/embeddings/raw/1-embeddings.ipynb
+    source:
+      id: kaggle-learn
+      ref: embeddings/ex1#q1
+      url: https://github.com/Kaggle/learntools/blob/e9ba66dc899d3e17b80d3a1b9a5d29f430d310cb/notebooks/embeddings/raw/1-exercises.ipynb
+    status: draft
+  - id: neural-networks-075
+    type: short_answer
+    difficulty: easy
+    tags:
+      - matrix-factorization
+      - embeddings
+      - dot-product
+      - recommender-systems
+    question: |
+      A matrix-factorization recommender was trained on ratings centered on the training mean of 3.5
+      stars, so it predicts $3.5 + \mathbf{u} \cdot \mathbf{m}$. A user's embedding is
+      $\mathbf{u} = (0.5, -1.0, 0.8, 1.5)$ and a movie's embedding is
+      $\mathbf{m} = (1.2, 0.3, -0.5, 0.4)$. What rating does the model predict, in stars?
+    answer:
+      numeric: 4.0
+      tolerance: 0.01
+      hint: stars, 2 decimals
+      model: $3.5 + (0.6 - 0.3 - 0.4 + 0.6) = 3.5 + 0.5 = 4.0$
+    explanation: |
+      The model combines the two embeddings with a dot product, which needs both vectors to have the
+      same length [^1]: $0.5 \cdot 1.2 + (-1.0)(0.3) + 0.8 \cdot (-0.5) + 1.5 \cdot 0.4 = 0.5$. Because
+      it was trained on centered ratings, an output of 0 means the overall average, so the prediction
+      is $3.5 + 0.5 = 4.0$ stars [^1]. Each term $u_i m_i$ pairs how much the user likes a quality with
+      how much the movie has it, which is why the two embedding spaces are tied together [^1].
+    references:
+      - source: kaggle-learn
+        locator: Embeddings tutorial 2 Matrix factorization for recommendation problems, Dot Products and Why?
+        url: https://github.com/Kaggle/learntools/blob/e9ba66dc899d3e17b80d3a1b9a5d29f430d310cb/notebooks/embeddings/raw/2-factorization.ipynb
+    source:
+      id: kaggle-learn
+      ref: embeddings/tut2#dot-products
+      url: https://github.com/Kaggle/learntools/blob/e9ba66dc899d3e17b80d3a1b9a5d29f430d310cb/notebooks/embeddings/raw/2-factorization.ipynb
+    status: draft
+  - id: neural-networks-076
+    type: short_answer
+    difficulty: easy
+    tags:
+      - relu-network
+      - parameter-count
+      - mlp
+    question: |
+      A ReLU network maps a scalar input $x$ to a scalar output with $l = 3$ weight layers,
+      $$f(x) = W_3\,\mathrm{ReLU}\big(W_2\,\mathrm{ReLU}(W_1 x + b_1) + b_2\big) + b_3,$$
+      and both hidden layers have width $k = 10$. How many trainable parameters (weights and biases)
+      does it have?
+    answer:
+      numeric: 141
+      tolerance: 0
+      hint: a whole number
+      model: '$W_1, b_1$: $10 + 10$; $W_2, b_2$: $100 + 10$; $W_3, b_3$: $10 + 1$; total $141$'
+    explanation: |
+      The shapes follow from the scalar input and output: $W_1 \in \mathbb{R}^{10 \times 1}$,
+      $W_2 \in \mathbb{R}^{10 \times 10}$, $W_3 \in \mathbb{R}^{1 \times 10}$, and one bias per unit,
+      $b_1, b_2 \in \mathbb{R}^{10}$ and $b_3 \in \mathbb{R}$ [^1]. That gives
+      $20 + 110 + 11 = 141$ parameters. In general the count is $k^2 + 4k + 1$: the hidden-to-hidden
+      matrix dominates, so doubling the width roughly quadruples the parameters [^2].
+    references:
+      - source: mit-ocw-67960
+        locator: Homework 1, Approximation, Problems 1–2
+        url: https://ocw.mit.edu/courses/6-7960-deep-learning-fall-2024/resources/mit6_7960_f24_hw1_pdf/
+      - source: d2l
+        locator: Sec. 5.1.1.3 From Linear to Nonlinear
+        url: https://d2l.ai/chapter_multilayer-perceptrons/mlp.html#from-linear-to-nonlinear
+    source:
+      id: mit-ocw-67960
+      ref: mit6_7960_f24_hw1#q2
+      url: https://ocw.mit.edu/courses/6-7960-deep-learning-fall-2024/resources/mit6_7960_f24_hw1_pdf/
+    status: draft
+  - id: neural-networks-077
+    type: single
+    difficulty: medium
+    tags:
+      - relu-network
+      - convexity
+    question: |
+      A ReLU network with $l \ge 2$ layers maps a scalar input $x$ to a scalar output. Viewed as a
+      function of $x$, what can be said about its shape in general?
+    options:
+      - text: Depending on the weights it can be convex, concave or neither
+        correct: true
+      - text: It is always convex, because ReLU is a convex function
+        why: A negative output weight turns a convex ReLU term into a concave one, and mixing signs gives shapes that are neither [^1].
+      - text: It is always convex for $l = 2$ and can be non-convex only for $l \ge 3$
+        why: Already with two layers, $-\mathrm{ReLU}(x)$ is concave and $\mathrm{ReLU}(x) - \mathrm{ReLU}(x - 1)$ is neither convex nor concave.
+      - text: It is always concave, because the hidden units saturate
+        why: ReLU does not saturate for positive inputs, and $\mathrm{ReLU}(x)$ itself is a convex network output.
+    explanation: |
+      A two-layer network is a weighted sum $\sum_j w_j\,\mathrm{ReLU}(a_j x + c_j) + b$ [^1]. Each
+      term is convex when $w_j > 0$ and concave when $w_j < 0$, so with mixed signs the sum can be
+      neither: $\mathrm{ReLU}(x) - \mathrm{ReLU}(x - 1)$ is flat, then rises, then is flat again.
+      Deeper networks inherit this, so convexity in the input is not guaranteed for any $l \ge 2$ [^2].
+      Networks that must be convex in their input restrict the weights instead, as input-convex
+      neural networks do with non-negative hidden-to-hidden weights [^3].
+    references:
+      - source: d2l
+        locator: Sec. 5.1.2.1 ReLU Function
+        url: https://d2l.ai/chapter_multilayer-perceptrons/mlp.html#relu-function
+      - source: mit-ocw-67960
+        locator: Homework 1, Approximation, Problem 3
+        url: https://ocw.mit.edu/courses/6-7960-deep-learning-fall-2024/resources/mit6_7960_f24_hw1_pdf/
+      - title: Amos, Xu & Kolter (2017), Input Convex Neural Networks, arXiv:1609.07152
+        locator: Sec. 3 Convex neural network architectures, Proposition 1
+        url: https://arxiv.org/abs/1609.07152
+    source:
+      id: mit-ocw-67960
+      ref: mit6_7960_f24_hw1#q3
+      url: https://ocw.mit.edu/courses/6-7960-deep-learning-fall-2024/resources/mit6_7960_f24_hw1_pdf/
+    status: draft
+  - id: neural-networks-078
+    type: single
+    difficulty: easy
+    tags:
+      - relu-network
+      - piecewise-linear
+      - continuity
+    question: |
+      As a function of a scalar input, what kind of function does a ReLU network of any depth and
+      width always compute?
+    options:
+      - text: A continuous, piecewise linear function
+        correct: true
+      - text: A piecewise linear function that may jump where a unit switches on
+        why: ReLU is continuous, and sums and compositions of continuous functions are continuous, so the output has no jumps [^1].
+      - text: A polynomial whose degree grows with the depth
+        why: Each layer is affine and ReLU is linear on each side of zero, so $x$ is never multiplied by itself.
+      - text: A linear function, because every layer is affine
+        why: The ReLU between the affine maps is nonlinear and creates kinks where a unit's input crosses zero [^1].
+    explanation: |
+      ReLU is continuous and linear on each side of zero [^1]. Affine maps, sums and compositions of
+      continuous piecewise linear functions are again continuous and piecewise linear, so the output
+      has zero discontinuities but can have kinks, the points where some unit's pre-activation crosses
+      zero [^2]. The kinks are why the network is not differentiable everywhere, while its value never
+      jumps.
+    references:
+      - source: d2l
+        locator: Sec. 5.1.2.1 ReLU Function
+        url: https://d2l.ai/chapter_multilayer-perceptrons/mlp.html#relu-function
+      - source: mit-ocw-67960
+        locator: Homework 1, Approximation, Problem 4(a)–(b)
+        url: https://ocw.mit.edu/courses/6-7960-deep-learning-fall-2024/resources/mit6_7960_f24_hw1_pdf/
+    source:
+      id: mit-ocw-67960
+      ref: mit6_7960_f24_hw1#q4a
+      url: https://ocw.mit.edu/courses/6-7960-deep-learning-fall-2024/resources/mit6_7960_f24_hw1_pdf/
+    status: draft
+  - id: neural-networks-079
+    type: single
+    difficulty: hard
+    tags:
+      - relu-network
+      - depth
+      - linear-regions
+      - expressivity
+    question: |
+      Keep the width $k$ of a scalar-input ReLU network fixed and add layers. How can the largest
+      possible number of non-differentiable points (kinks) of the output grow with the number of
+      layers $l$?
+    options:
+      - text: Exponentially in $l$
+        correct: true
+      - text: Linearly in $l$, adding at most $k$ kinks per layer
+        why: A new layer acts on the previous layer's output, so it can split every existing linear piece again rather than add a fixed number of kinks [^1].
+      - text: Polynomially in $l$, like $l^k$
+        why: Composition can double the number of pieces per layer, which beats any polynomial in $l$ [^2].
+      - text: It stays at most $k$, whatever the depth
+        why: That bound holds for a single hidden layer, where each unit contributes one kink; deeper layers fold the input repeatedly [^1].
+    explanation: |
+      Kinks separate linear regions, and each unit of a new layer is a threshold on the previous layer's
+      output, so it can cut every existing region in two [^1]. A width-2 layer can compute the tent map
+      $g(x) = 2\,\mathrm{ReLU}(x) - 4\,\mathrm{ReLU}(x - \tfrac12)$ on $[0, 1]$, and composing it $l$ times
+      gives a sawtooth with $2^l$ linear pieces [^2]. A one-hidden-layer network needs about $2^l$ units
+      for the same function, so deeper networks can be exponentially more efficient for some functions,
+      even though a wide shallow network is already a universal approximator [^1].
+    references:
+      - source: mit-ocw-67960
+        locator: Homework 1, Approximation, Problem 4(c) iii–iv
+        url: https://ocw.mit.edu/courses/6-7960-deep-learning-fall-2024/resources/mit6_7960_f24_hw1_pdf/
+      - title: Telgarsky (2016), Benefits of depth in neural networks, arXiv:1602.04485
+        locator: Sec. 1.1 Main result; Sec. 3 Benefits of depth (triangle-wave construction)
+        url: https://arxiv.org/abs/1602.04485
+    source:
+      id: mit-ocw-67960
+      ref: mit6_7960_f24_hw1#q4c
+      url: https://ocw.mit.edu/courses/6-7960-deep-learning-fall-2024/resources/mit6_7960_f24_hw1_pdf/
+    status: draft
+  - id: neural-networks-080
+    type: multiple
+    difficulty: hard
+    tags:
+      - relu-network
+      - bias
+      - convexity
+    question: |
+      A two-layer ReLU network of width 2 has no biases: $f(x) = W_2\,\mathrm{ReLU}(W_1 x)$ with
+      $W_1 \in \mathbb{R}^{2 \times 1}$, $W_2 \in \mathbb{R}^{1 \times 2}$ and scalar $x$. Which shapes
+      can $f$ take on $[-5, 5]$ for a suitable choice of weights? Select all that apply.
+    options:
+      - text: A linear function, such as $f(x) = x$
+        correct: true
+      - text: A convex function that is not linear, such as $f(x) = \lvert x \rvert$
+        correct: true
+      - text: A function with two non-differentiable points
+        why: Without biases every unit $\mathrm{ReLU}(w x)$ has its kink at $x = 0$, so $f$ has at most one kink.
+      - text: A function that is neither convex nor concave
+        why: $f$ is made of two linear pieces that meet at $x = 0$; it is convex if the right slope is at least the left slope and concave otherwise.
+    explanation: |
+      $\mathrm{ReLU}(wx)$ equals $w\,\mathrm{ReLU}(x)$ for $w > 0$ and $\lvert w \rvert\,\mathrm{ReLU}(-x)$
+      for $w < 0$, so $f(x) = a\,\mathrm{ReLU}(x) + b\,\mathrm{ReLU}(-x)$ for some $a, b$ [^1]. With
+      $W_1 = (1, -1)^\top$, $W_2 = (1, -1)$ this is $x$, and with $W_2 = (1, 1)$ it is $\lvert x \rvert$.
+      Every such $f$ has slope $a$ for $x > 0$ and $-b$ for $x < 0$, with one possible kink at 0, so it is
+      always convex or concave. Biases are what let the kinks move away from the origin [^2].
+    references:
+      - source: mit-ocw-67960
+        locator: Homework 1, Approximation, Problem 5
+        url: https://ocw.mit.edu/courses/6-7960-deep-learning-fall-2024/resources/mit6_7960_f24_hw1_pdf/
+      - source: d2l
+        locator: Sec. 5.1.2.1 ReLU Function
+        url: https://d2l.ai/chapter_multilayer-perceptrons/mlp.html#relu-function
+    source:
+      id: mit-ocw-67960
+      ref: mit6_7960_f24_hw1#q5
+      url: https://ocw.mit.edu/courses/6-7960-deep-learning-fall-2024/resources/mit6_7960_f24_hw1_pdf/
+    status: draft
+  - id: neural-networks-081
+    type: single
+    difficulty: medium
+    tags:
+      - relu-network
+      - boolean-functions
+      - functional-completeness
+    question: |
+      For Boolean inputs $x_1, x_2 \in \{0, 1\}$, which logic gate does the ReLU unit
+      $f(x_1, x_2) = 1 - \mathrm{ReLU}(x_1 + x_2 - 1)$ compute?
+    options:
+      - text: NAND
+        correct: true
+      - text: AND
+        why: AND is $\mathrm{ReLU}(x_1 + x_2 - 1)$ itself, which is 1 only for $(1, 1)$; here that case gives 0.
+      - text: OR
+        why: OR is 0 for $(0, 0)$, but $f(0, 0) = 1 - \mathrm{ReLU}(-1) = 1$.
+      - text: XOR
+        why: XOR is 0 for $(0, 0)$, but $f(0, 0) = 1$.
+    explanation: |
+      $\mathrm{ReLU}(x_1 + x_2 - 1)$ is 1 for $(1, 1)$ and 0 for the other three inputs, so
+      $f = 1 - \mathrm{ReLU}(\cdot)$ is 0 only for $(1, 1)$: the NAND gate [^1]. NAND is functionally
+      complete, so every Boolean function can be built by wiring NAND gates together [^2]. Stacking
+      such ReLU units therefore lets a deep enough ReLU network represent any Boolean function.
+    references:
+      - source: mit-ocw-67960
+        locator: Homework 1, Problem 7(c) (NAND gate and functional completeness)
+        url: https://ocw.mit.edu/courses/6-7960-deep-learning-fall-2024/resources/mit6_7960_f24_hw1_pdf/
+      - title: 'Wikipedia: Functional completeness'
+        locator: Minimal functionally complete operator sets
+        url: https://en.wikipedia.org/wiki/Functional_completeness
+    source:
+      id: mit-ocw-67960
+      ref: mit6_7960_f24_hw1#q7c
+      url: https://ocw.mit.edu/courses/6-7960-deep-learning-fall-2024/resources/mit6_7960_f24_hw1_pdf/
+    status: draft
+  - id: neural-networks-082
+    type: single
+    difficulty: hard
+    tags:
+      - backpropagation
+      - weight-sharing
+      - matrix-calculus
+    question: |
+      A weight matrix $W \in \mathbb{R}^{d \times d}$ is used twice:
+      $$y = Wx,\quad u = \mathrm{ReLU}(y),\quad v = u + Wu,\quad L = \tfrac12 \lVert v \rVert_2^2.$$
+      With $\Theta$ the elementwise step function ($\Theta(y_k) = 1$ if $y_k \ge 0$, else 0), which
+      expression is $\partial L / \partial W$?
+    options:
+      - text: $v u^\top + \mathrm{diag}(\Theta(y))\,(I + W^\top)\,v\,x^\top$
+        correct: true
+      - text: $\mathrm{diag}(\Theta(y))\,(I + W^\top)\,v\,x^\top$
+        why: This keeps only the path through $y = Wx$ and misses the direct use of $W$ in $v = u + Wu$, which contributes $v u^\top$.
+      - text: $v u^\top + \mathrm{diag}(\Theta(y))\,(I + W)\,v\,x^\top$
+        why: Backpropagating through $u \mapsto Wu$ multiplies the upstream gradient by $W^\top$, not $W$ [^1].
+      - text: $v u^\top + (I + W^\top)\,v\,x^\top$
+        why: This drops the ReLU's local derivative; units with $y_k < 0$ pass no gradient back to $W$.
+      - text: $v u^\top + (I + W^\top)\,\mathrm{diag}(\Theta(y))\,v\,x^\top$
+        why: The ReLU's derivative must act on $\partial L / \partial u = (I + W^\top)v$, i.e. after the multiplication by $I + W^\top$; the two matrices do not commute.
+    explanation: |
+      When a parameter is used in several places, the chain rule adds the gradients of all paths [^1].
+      Holding $u$ fixed, $v = u + Wu$ gives $\partial L / \partial W = v u^\top$. Through the other path,
+      $\partial L / \partial u = (I + W^\top) v$, the ReLU multiplies it by $\Theta(y)$ elementwise, and
+      $y = Wx$ turns the result into an outer product with $x$, giving
+      $\mathrm{diag}(\Theta(y))(I + W^\top) v\, x^\top$ [^2]. A finite-difference check on random
+      $3 \times 3$ matrices matches the sum of both terms to about $10^{-8}$.
+    references:
+      - source: d2l
+        locator: Sec. 5.3.3 Backpropagation
+        url: https://d2l.ai/chapter_multilayer-perceptrons/backprop.html#backpropagation
+      - source: mit-ocw-67960
+        locator: Homework 1, Backpropagation, Problem 8(b)
+        url: https://ocw.mit.edu/courses/6-7960-deep-learning-fall-2024/resources/mit6_7960_f24_hw1_pdf/
+    source:
+      id: mit-ocw-67960
+      ref: mit6_7960_f24_hw1#q8b
+      url: https://ocw.mit.edu/courses/6-7960-deep-learning-fall-2024/resources/mit6_7960_f24_hw1_pdf/
+    status: draft
+  - id: neural-networks-083
+    type: short_answer
+    difficulty: hard
+    tags:
+      - relu-network
+      - linear-regions
+      - hyperplane-arrangement
+    question: |
+      A network with 2-dimensional inputs has one hidden layer of $N = 4$ ReLU units,
+      $F(v) = \sum_{j=1}^{4} c_j\,\mathrm{ReLU}(w_j^\top v + b_j)$. Each unit switches on or off along the
+      line $w_j^\top v + b_j = 0$, and the four lines are in general position. At most how many flat
+      (linear) pieces can the graph of $F$ have?
+    answer:
+      numeric: 11
+      tolerance: 0
+      hint: a whole number
+      model: $\binom40 + \binom41 + \binom42 = 1 + 4 + 6 = 11$
+    explanation: |
+      Inside each region cut out by the four lines every unit is either on or off, so $F$ is linear
+      there [^1]. $N$ lines in general position split the plane into $1 + N + \binom{N}{2}$ regions, here
+      $1 + 4 + 6 = 11$ [^2]; a grid check over random lines finds the same 11 on/off patterns. In $m$
+      input dimensions the count is $\sum_{i=0}^{m}\binom{N}{i}$, which grows only polynomially with
+      width, while depth can multiply the number of pieces [^3].
+    references:
+      - source: mit-ocw-18065
+        locator: Problems for Lecture 26 (textbook Section VII.1), Problem 7
+        url: https://ocw.mit.edu/courses/18-065-matrix-methods-in-data-analysis-signal-processing-and-machine-learning-spring-2018/resources/18065-all-problem-sets-in-one-file/
+      - title: 'Wikipedia: Arrangement of lines'
+        locator: Complexity of arrangements
+        url: https://en.wikipedia.org/wiki/Arrangement_of_lines
+      - title: Montúfar et al. (2014), On the Number of Linear Regions of Deep Neural Networks, arXiv:1402.1869
+        locator: Abstract
+        url: https://arxiv.org/abs/1402.1869
+    source:
+      id: mit-ocw-18065
+      ref: MIT18_065S18PSets#lec26-q7
+      url: https://ocw.mit.edu/courses/18-065-matrix-methods-in-data-analysis-signal-processing-and-machine-learning-spring-2018/resources/18065-all-problem-sets-in-one-file/
+    status: draft
+  - id: neural-networks-084
+    type: multiple
+    difficulty: medium
+    tags:
+      - piecewise-linear
+      - relu-network
+      - function-composition
+    question: |
+      $F_1$ and $F_2$ are continuous piecewise linear (CPL) functions. Which of these are always CPL as
+      well? Select all that apply.
+    options:
+      - text: The maximum $\max(F_1, F_2)$
+        correct: true
+      - text: The sum $F_1 + F_2$
+        correct: true
+      - text: The composition $F_2(F_1(x))$, for one-variable $F_1$ and $F_2$
+        correct: true
+      - text: The product $F_1 F_2$
+        why: $F_1(x) = F_2(x) = x$ are linear, but their product $x^2$ is curved, not piecewise linear.
+      - text: The quotient $F_1 / F_2$ where $F_2 > 0$
+        why: $1/x$ on $x > 0$ is a quotient of linear functions but is curved everywhere.
+    explanation: |
+      On every region where both functions are linear, their maximum, sum and composition are again
+      linear, and only finitely many new breakpoints appear, so continuity and piecewise linearity are
+      kept [^1]. These closure rules are why every ReLU network is CPL: each layer adds linear
+      functions, takes $\max(0, \cdot)$ and composes with the next layer [^1][^2]. Products and quotients
+      create curvature, which ReLU networks can only approximate with many pieces.
+    references:
+      - source: mit-ocw-18065
+        locator: Problems for Lecture 26 (textbook Section VII.1), Problem 4
+        url: https://ocw.mit.edu/courses/18-065-matrix-methods-in-data-analysis-signal-processing-and-machine-learning-spring-2018/resources/18065-all-problem-sets-in-one-file/
+      - source: d2l
+        locator: Sec. 5.1.2.1 ReLU Function
+        url: https://d2l.ai/chapter_multilayer-perceptrons/mlp.html#relu-function
+    source:
+      id: mit-ocw-18065
+      ref: MIT18_065S18PSets#lec26-q4
+      url: https://ocw.mit.edu/courses/18-065-matrix-methods-in-data-analysis-signal-processing-and-machine-learning-spring-2018/resources/18065-all-problem-sets-in-one-file/
+    status: draft
+  - id: neural-networks-085
+    type: short_answer
+    difficulty: easy
+    tags:
+      - computational-graph
+      - backpropagation
+      - chain-rule
+    question: |
+      A computational graph computes $f(x, y) = x^3 (x - y)$ through the nodes $a = x^3$, $b = x - y$ and
+      $f = ab$. What is $\partial f / \partial x$ at $(x, y) = (2, 3)$?
+    answer:
+      numeric: -4
+      tolerance: 0.001
+      hint: a number (it may be negative)
+      model: $\frac{\partial f}{\partial a}\frac{\partial a}{\partial x} + \frac{\partial f}{\partial b}\frac{\partial b}{\partial x} = b \cdot 3x^2 + a \cdot 1 = (-1)(12) + 8 = -4$
+    explanation: |
+      The forward pass gives $a = 8$, $b = -1$ and $f = -8$ [^1]. Backpropagation sends
+      $\partial f/\partial a = b = -1$ and $\partial f/\partial b = a = 8$ back along the edges, and $x$ collects
+      the contributions of both paths: $-1 \cdot 3x^2 + 8 \cdot 1 = -12 + 8 = -4$ [^2]. Along the same pass,
+      $\partial f/\partial y = 8 \cdot (-1) = -8$; a finite-difference check confirms both values.
+    references:
+      - source: mit-ocw-18065
+        locator: Problems for Lecture 27 (textbook Section VII.2), Problem 5
+        url: https://ocw.mit.edu/courses/18-065-matrix-methods-in-data-analysis-signal-processing-and-machine-learning-spring-2018/resources/18065-all-problem-sets-in-one-file/
+      - source: d2l
+        locator: Sec. 5.3.3 Backpropagation
+        url: https://d2l.ai/chapter_multilayer-perceptrons/backprop.html#backpropagation
+    source:
+      id: mit-ocw-18065
+      ref: MIT18_065S18PSets#lec27-q5
+      url: https://ocw.mit.edu/courses/18-065-matrix-methods-in-data-analysis-signal-processing-and-machine-learning-spring-2018/resources/18065-all-problem-sets-in-one-file/
+    status: draft

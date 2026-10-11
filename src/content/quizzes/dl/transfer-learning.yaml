@@ -298,3 +298,884 @@ questions:
       ref: chapter_computer-vision/fine-tuning#ex4
       url: https://d2l.ai/chapter_computer-vision/fine-tuning.html#exercises
     status: draft
+  - id: transfer-learning-009
+    type: single
+    difficulty: hard
+    tags:
+      - vgg16
+      - freezing
+      - fine-tuning
+      - code-reading
+    question: |
+      Transfer learning with VGG-16 for 5 flower classes:
+
+      ```python
+      vgg16 = models.vgg16(pretrained=True)
+      for param in vgg16.features.parameters():
+          param.requires_grad = False
+      vgg16.classifier[6] = nn.Linear(4096, 5)
+      optimizer = optim.SGD(vgg16.classifier.parameters(), lr=0.001)
+      ```
+
+      `vgg16.classifier` holds three fully connected layers, the last of which was just replaced.
+      Which parameters change during training?
+    options:
+      - text: All three fully connected layers of the classifier
+        correct: true
+      - text: Only the new `nn.Linear(4096, 5)` layer
+        why: Only `features` was frozen; the first two classifier layers keep `requires_grad=True` and are passed to the optimizer too [^1].
+      - text: All layers, including the convolutional features
+        why: The feature parameters have `requires_grad=False` and are not in the optimizer, so they get no updates [^1].
+      - text: None of the pretrained layers, plus the new layer only after the first epoch
+        why: There is no warm-up rule in this code; every parameter in the optimizer is updated from the first step [^1].
+    explanation: |
+      Setting `requires_grad = False` freezes only the convolutional `features` block, which then
+      acts as a fixed feature extractor [^1]. The new output layer and the two pretrained fully
+      connected layers before it still require gradients, and `vgg16.classifier.parameters()` hands
+      all of them to SGD, so the whole classifier is fine-tuned [^1]. Fine-tuning the top layers on
+      the new data while reusing pretrained low-level features is the usual recipe [^2].
+    references:
+      - source: udacity-dl-pytorch
+        locator: Transfer Learning notebook, Define the Model (Freeze training for all features layers; Final Classifier Layer; Specify Loss Function and Optimizer)
+        url: https://github.com/udacity/deep-learning-v2-pytorch/blob/c9404fc86181fc3f0906b368697268257f348535/transfer-learning/Transfer_Learning_Solution.ipynb
+      - source: d2l
+        locator: Sec. 14.2.1 Steps (fine-tuning)
+        url: https://d2l.ai/chapter_computer-vision/fine-tuning.html#steps
+    source:
+      id: udacity-dl-pytorch
+      ref: transfer-learning/Transfer_Learning_Solution.ipynb#which-layers-train
+      url: https://github.com/udacity/deep-learning-v2-pytorch/blob/c9404fc86181fc3f0906b368697268257f348535/transfer-learning/Transfer_Learning_Solution.ipynb
+    status: draft
+  - id: transfer-learning-010
+    type: short_answer
+    difficulty: easy
+    tags:
+      - vgg16
+      - output-layer
+      - parameter-count
+    question: |
+      VGG-16's last layer, `classifier[6]`, maps 4096 features to the 1000 ImageNet classes. You
+      replace it with a new layer for 5 flower classes. How many parameters (weights and biases)
+      does the new layer have?
+    answer:
+      numeric: 20485
+      tolerance: 0
+      hint: a whole number
+      model: $4096 \times 5 + 5 = 20{,}485$
+    explanation: |
+      The new layer keeps the 4096 inputs that the unchanged part of the network produces and needs
+      one output per flower class, `nn.Linear(4096, 5)` [^1]: $4096 \cdot 5 = 20{,}480$ weights plus
+      5 biases. Only this new layer starts from random weights; the pretrained layers below it are
+      reused, which is why fine-tuning works with a small target dataset [^2].
+    references:
+      - source: udacity-dl-pytorch
+        locator: Transfer Learning notebook, Final Classifier Layer
+        url: https://github.com/udacity/deep-learning-v2-pytorch/blob/c9404fc86181fc3f0906b368697268257f348535/transfer-learning/Transfer_Learning_Solution.ipynb
+      - source: d2l
+        locator: Sec. 14.2.2.2 Defining and Initializing the Model
+        url: https://d2l.ai/chapter_computer-vision/fine-tuning.html#defining-and-initializing-the-model
+    source:
+      id: udacity-dl-pytorch
+      ref: transfer-learning/Transfer_Learning_Solution.ipynb#new-output-layer
+      url: https://github.com/udacity/deep-learning-v2-pytorch/blob/c9404fc86181fc3f0906b368697268257f348535/transfer-learning/Transfer_Learning_Solution.ipynb
+    status: draft
+  - id: transfer-learning-011
+    type: single
+    difficulty: easy
+    tags:
+      - normalization
+      - imagenet
+      - preprocessing
+    question: |
+      Before feeding images to an ImageNet-pretrained DenseNet, the notebook normalizes each colour
+      channel with the means `[0.485, 0.456, 0.406]` and standard deviations
+      `[0.229, 0.224, 0.225]`. Why these particular values?
+    options:
+      - text: The pretrained model was trained on inputs normalized this way
+        correct: true
+      - text: They are the statistics of the new cat-and-dog images
+        why: They are fixed ImageNet values; the point is to give the pretrained weights inputs on the scale they were trained on [^1].
+      - text: They make every pixel lie exactly in $[0, 1]$
+        why: Subtracting a mean and dividing by a standard deviation centres the values around 0; it does not map them into $[0, 1]$ [^1].
+      - text: They remove colour information so that the model focuses on shapes
+        why: Each channel is shifted and scaled separately; the colour information stays in the image [^1].
+    explanation: |
+      Most pretrained torchvision models expect $224 \times 224$ inputs normalized per channel
+      exactly as during their ImageNet training, so the notebook uses those means and standard
+      deviations for both training and test transforms [^1]. Feeding differently scaled inputs
+      would shift every activation away from what the pretrained filters learned to respond to,
+      which is also why d2l reuses the ImageNet statistics when fine-tuning [^2].
+    references:
+      - source: udacity-dl-pytorch
+        locator: Intro to PyTorch, Part 8 - Transfer Learning (Solution), data transforms
+        url: https://github.com/udacity/deep-learning-v2-pytorch/blob/c9404fc86181fc3f0906b368697268257f348535/intro-to-pytorch/Part%208%20-%20Transfer%20Learning%20(Solution).ipynb
+      - source: d2l
+        locator: Sec. 14.2.1 Steps (fine-tuning)
+        url: https://d2l.ai/chapter_computer-vision/fine-tuning.html#steps
+    source:
+      id: udacity-dl-pytorch
+      ref: intro-to-pytorch/Part 8 - Transfer Learning (Solution).ipynb#imagenet-normalization
+      url: https://github.com/udacity/deep-learning-v2-pytorch/blob/c9404fc86181fc3f0906b368697268257f348535/intro-to-pytorch/Part%208%20-%20Transfer%20Learning%20(Solution).ipynb
+    status: draft
+  - id: transfer-learning-012
+    type: single
+    difficulty: medium
+    tags:
+      - fine-tuning
+      - linear-probe
+      - pretrained-models
+    question: |
+      You adapt an ImageNet-pretrained ResNet to a new image task in two ways: fine-tuning all layers, or freezing the
+      network and training only a new final linear layer (a linear readout). When should you expect the two to
+      perform about equally well?
+    options:
+      - text: When the new images are close to the pretraining domain, so the frozen features already suit the task
+        correct: true
+      - text: When the new dataset is very large, since the frozen layers then adapt to it on their own
+        why: Frozen layers never change, whatever the dataset size; with plenty of target data, full fine-tuning tends to pull ahead.
+      - text: When the new images come from a very different domain, such as medical scans
+        why: A distant domain is where frozen ImageNet features fit worst and fine-tuning the whole network helps most.
+      - text: 'Never: training only the last layer is always clearly worse than full fine-tuning'
+        why: When source and target domains are close, the readout performs similarly while being much cheaper to train.
+    explanation: |
+      Fine-tuning can adjust every weight to the new data, while a linear readout keeps the pretrained features and only
+      learns how to combine them [^1]. If the target images resemble the pretraining data, those features are already
+      suitable and the readout does about as well, at a fraction of the training cost [^1][^2]. Fine-tuning the whole
+      network pays off more as the domains drift apart, because more of the weights then need to change [^1].
+    references:
+      - source: neuromatch-dl
+        locator: W2D2 Tutorial 1, Section 5 Transfer Learning, Exercise 5.5.2 Training only the classification layer
+        url: https://github.com/NeuromatchAcademy/course-content-dl/blob/caba36c513fb8139ac3c9e7503f7a769dadde25e/tutorials/W2D2_Convnets/instructor/W2D2_Tutorial1.ipynb
+      - source: d2l
+        locator: Sec. 14.2 Fine-Tuning
+        url: https://d2l.ai/chapter_computer-vision/fine-tuning.html
+    source:
+      id: neuromatch-dl
+      ref: W2D2_Convnets/W2D2_Tutorial1#ex5.5.2
+      url: https://github.com/NeuromatchAcademy/course-content-dl/blob/caba36c513fb8139ac3c9e7503f7a769dadde25e/tutorials/W2D2_Convnets/instructor/W2D2_Tutorial1.ipynb
+    status: draft
+  - id: transfer-learning-013
+    type: single
+    difficulty: medium
+    tags:
+      - pretraining
+      - domain-shift
+      - ossification
+    question: |
+      Pretraining on ImageNet and then fine-tuning usually beats training from scratch on a small dataset. In which
+      situation is pretraining least likely to help, and may even hurt?
+    options:
+      - text: The target domain is very different from the pretraining data and plenty of target data is available
+        correct: true
+      - text: The target dataset is small and its images resemble the pretraining images
+        why: 'This is the classic case where pretraining helps most: the features transfer and there is too little data to learn them from scratch.'
+      - text: The model is large and the pretraining dataset is very large
+        why: NMA lists larger models and more pretraining data among the conditions that make pretraining work better.
+      - text: The target task uses ImageNet classes, but the images have a lower resolution
+        why: A close domain with the same classes is a favourable case for transfer, not an unfavourable one.
+    explanation: |
+      Pretraining works better the closer the pretraining and target domains are, the more pretraining data there is,
+      and the larger the model that can use it [^1]. If the source domain is very different, the pretrained features
+      may be unhelpful, and with a lot of target data, starting from pretrained weights can even leave the model in a
+      worse solution than training from scratch [^1]. The Scaling Laws for Transfer paper calls this effect
+      ossification: pretraining can make the weights adapt less well to the fine-tuning distribution in the high-data
+      regime [^2].
+    references:
+      - source: neuromatch-dl
+        locator: W2D2 Tutorial 1, Exercise 5.5.1 Pretrained ResNet vs. ResNet trained from scratch
+        url: https://github.com/NeuromatchAcademy/course-content-dl/blob/caba36c513fb8139ac3c9e7503f7a769dadde25e/tutorials/W2D2_Convnets/instructor/W2D2_Tutorial1.ipynb
+      - title: Hernandez et al. (2021), Scaling Laws for Transfer
+        url: https://arxiv.org/abs/2102.01293
+        locator: Sec. 3.1 Ossification – can pre-training harm performance?
+    source:
+      id: neuromatch-dl
+      ref: W2D2_Convnets/W2D2_Tutorial1#ex5.5.1
+      url: https://github.com/NeuromatchAcademy/course-content-dl/blob/caba36c513fb8139ac3c9e7503f7a769dadde25e/tutorials/W2D2_Convnets/instructor/W2D2_Tutorial1.ipynb
+    status: draft
+  - id: transfer-learning-014
+    type: single
+    difficulty: medium
+    tags:
+      - self-supervised-learning
+      - few-shot
+      - simclr
+    question: |
+      On a shape-classification task, NMA trains a linear classifier on top of different encoders (all with the same
+      architecture) while keeping only a fraction of the labels. With 5% of the labels, the classifier on a SimCLR
+      encoder (pretrained without labels on all images) stays above 90% accuracy, while an encoder trained jointly with
+      the classifier on the labelled images drops to about 45%. What explains the gap?
+    options:
+      - text: SimCLR pretraining uses every image without labels, so the classifier only has to map useful features to classes
+        correct: true
+      - text: SimCLR encoders have more parameters than supervised ones, so they need fewer labels
+        why: The encoders share the same architecture; the difference is the data and the objective used to train them.
+      - text: The supervised encoder sees augmented images, which confuse it when labels are scarce
+        why: 'The issue is the amount of training signal: with 5% of the labels, the supervised encoder has only 5% of the examples to learn from.'
+      - text: A contrastive loss acts like label smoothing, which makes any classifier more accurate
+        why: A contrastive loss compares augmented views of images; it neither uses nor smooths labels.
+    explanation: |
+      The supervised encoder learns only from labelled examples, so cutting the labels to 5% cuts its training set to
+      5%, and its features stop generalizing [^1]. The SimCLR objective needs no labels: the encoder is pretrained on all
+      images to give two augmented views of the same image similar features and different images different features
+      [^1][^2]. If those features already separate shapes, a linear classifier can be fitted from very few labels, which
+      is why self-supervised pretraining helps most when labels are scarce [^1].
+    references:
+      - source: neuromatch-dl
+        locator: W3D3 Tutorial 1, Bonus 3 Good representations enable few-shot learning (Bonus Discussion 3.1.1)
+        url: https://github.com/NeuromatchAcademy/course-content-dl/blob/caba36c513fb8139ac3c9e7503f7a769dadde25e/tutorials/W3D3_UnsupervisedAndSelfSupervisedLearning/instructor/W3D3_Tutorial1.ipynb
+      - title: Chen et al. (2020), A Simple Framework for Contrastive Learning of Visual Representations (SimCLR)
+        url: https://arxiv.org/abs/2002.05709
+        locator: Sec. 2.1 The Contrastive Learning Framework
+    source:
+      id: neuromatch-dl
+      ref: W3D3_UnsupervisedAndSelfSupervisedLearning/W3D3_Tutorial1#think-bonus3.1.1
+      url: https://github.com/NeuromatchAcademy/course-content-dl/blob/caba36c513fb8139ac3c9e7503f7a769dadde25e/tutorials/W3D3_UnsupervisedAndSelfSupervisedLearning/instructor/W3D3_Tutorial1.ipynb
+    status: draft
+  - id: transfer-learning-015
+    type: short_answer
+    difficulty: medium
+    tags:
+      - simclr
+      - contrastive-loss
+      - code-reading
+    question: |
+      A SimCLR loss builds a $2N \times 2N$ cosine-similarity matrix `sim` for $N$ images, each seen in two augmented views
+      (rows $i$ and $i + N$ are the two views of image $i$):
+      ```python
+      pos = torch.roll(torch.eye(2 * N), N, 1)      # 1 where the column is the other view
+      neg = torch.ones(2 * N) - torch.eye(2 * N)    # 1 everywhere except the diagonal
+      numerator = torch.exp(sim / T)[pos.bool()]
+      denominator = torch.sum(torch.exp(sim / T) * neg, dim=1)
+      loss = torch.mean(-torch.log(numerator / denominator))
+      ```
+      With a batch of $N = 4$ images, how many terms are summed in each row of `denominator`?
+    answer:
+      numeric: 7
+      tolerance: 0
+      hint: an integer
+      model: '$2N - 1 = 7$: every view except the anchor itself (its positive plus $2N - 2 = 6$ views of other images)'
+    explanation: |
+      `neg` broadcasts to a $2N \times 2N$ matrix of ones with a zero diagonal, so each row of the denominator sums
+      $\exp(\mathrm{sim}/T)$ over all $2N - 1 = 7$ other views [^1]. One of them is the positive, the other view of the same
+      image, picked out by the rolled identity matrix; the remaining $2N - 2 = 6$ are negatives [^1][^2]. The loss is
+      thus a softmax cross-entropy asking the positive to win against the negatives; with too few negatives, NMA shows
+      that the features partially collapse toward being all alike [^1].
+    references:
+      - source: neuromatch-dl
+        locator: W3D3 Tutorial 1, Section 6 Coding Exercise 6.1.1 Complete a SimCLR loss function, and Bonus 2 Avoiding representational collapse
+        url: https://github.com/NeuromatchAcademy/course-content-dl/blob/caba36c513fb8139ac3c9e7503f7a769dadde25e/tutorials/W3D3_UnsupervisedAndSelfSupervisedLearning/instructor/W3D3_Tutorial1.ipynb
+      - title: Chen et al. (2020), A Simple Framework for Contrastive Learning of Visual Representations (SimCLR)
+        url: https://arxiv.org/abs/2002.05709
+        locator: Sec. 2.1 The Contrastive Learning Framework, Eq. (1)
+    source:
+      id: neuromatch-dl
+      ref: W3D3_UnsupervisedAndSelfSupervisedLearning/W3D3_Tutorial1#ex6.1.1
+      url: https://github.com/NeuromatchAcademy/course-content-dl/blob/caba36c513fb8139ac3c9e7503f7a769dadde25e/tutorials/W3D3_UnsupervisedAndSelfSupervisedLearning/instructor/W3D3_Tutorial1.ipynb
+    status: draft
+  - id: transfer-learning-016
+    type: single
+    difficulty: medium
+    tags:
+      - simclr
+      - contrastive-learning
+      - representational-collapse
+    question: |
+      A SimCLR encoder is pretrained once with the usual many negative pairs per image and once with only 2. With few
+      negatives, the features of most images become highly similar to each other, and a shape classifier on top can no
+      longer tell ovals from squares. What role do the negative pairs play?
+    options:
+      - text: They push the features of different images apart; without enough of them, mapping everything alike satisfies the loss
+        correct: true
+      - text: They provide labels for the classifier, so fewer negatives means fewer labelled examples
+        why: SimCLR never uses labels; negatives are simply the other images in the batch.
+      - text: They are extra augmentations, so fewer negatives means fewer augmented views of each image
+        why: Each image still gets its two augmented views; negatives only change what the anchor is contrasted against.
+      - text: They only speed up training; after enough epochs two negatives give the same features
+        why: 'NMA reports a different solution, not a slower one: too few negatives give a partially collapsed feature space.'
+    explanation: |
+      The positive term rewards giving two views of the same image the same features, which a constant encoder would
+      achieve trivially [^1]. Negative pairs counter this by asking that other images be encoded differently; with only
+      2 negatives that estimate is poor, and the feature space partially collapses, with pairwise similarities piling up
+      near 1 [^1]. In the loss, the negatives are the terms in the softmax denominator that the positive must beat [^2].
+    references:
+      - source: neuromatch-dl
+        locator: W3D3 Tutorial 1, Bonus 2 Avoiding representational collapse (Bonus Discussion 2.1.1)
+        url: https://github.com/NeuromatchAcademy/course-content-dl/blob/caba36c513fb8139ac3c9e7503f7a769dadde25e/tutorials/W3D3_UnsupervisedAndSelfSupervisedLearning/instructor/W3D3_Tutorial1.ipynb
+      - title: Chen et al. (2020), A Simple Framework for Contrastive Learning of Visual Representations (SimCLR)
+        url: https://arxiv.org/abs/2002.05709
+        locator: Sec. 2.1 The Contrastive Learning Framework, Eq. (1)
+    source:
+      id: neuromatch-dl
+      ref: W3D3_UnsupervisedAndSelfSupervisedLearning/W3D3_Tutorial1#think-bonus2.1.1
+      url: https://github.com/NeuromatchAcademy/course-content-dl/blob/caba36c513fb8139ac3c9e7503f7a769dadde25e/tutorials/W3D3_UnsupervisedAndSelfSupervisedLearning/instructor/W3D3_Tutorial1.ipynb
+    status: draft
+  - id: transfer-learning-017
+    type: single
+    difficulty: medium
+    tags:
+      - feature-extraction
+      - fine-tuning
+      - small-dataset
+    question: |
+      You have 300 labelled photos of everyday objects, similar to ImageNet, and an ImageNet-pretrained
+      CNN. Which strategy is usually the safest first choice?
+    options:
+      - text: Fine-tune all layers with a large learning rate so they adapt quickly
+        why: With so few examples, updating millions of weights with large steps quickly overfits and destroys the useful pretrained features.
+      - text: Keep the old 1,000-class output layer and map its predictions to your classes by hand
+        why: The new classes need a new output layer; reusing ImageNet's labels only works if the classes coincide.
+      - text: Freeze the pretrained layers and train only a new classifier on top of their features
+        correct: true
+      - text: Train the same architecture from scratch, since pretrained weights encode other classes
+        why: 300 images are far too few to learn good features from scratch; the pretrained features transfer well to similar images.
+    explanation: |
+      When the new dataset is small and similar to the original one, the pretrained features are
+      already relevant and fine-tuning the whole network risks overfitting, so training a linear
+      classifier on the frozen features is the recommended start [^1]. With more data, or data that
+      differ more, you fine-tune the pretrained layers too, using a smaller learning rate than for the
+      new output layer [^2][^3].
+    references:
+      - title: 'CS231n course notes: Transfer Learning'
+        url: https://cs231n.github.io/transfer-learning/
+        locator: Section "When and how to fine-tune?" (new dataset small and similar)
+      - source: d2l
+        locator: Sec. 14.2.1 Steps
+        url: https://d2l.ai/chapter_computer-vision/fine-tuning.html#steps
+      - source: ds-interviews
+        locator: theory.md, Neural networks for computer vision — "What is transfer learning? How does it work?"
+        url: https://github.com/alexeygrigorev/data-science-interviews/blob/919f44547ef5ffc2bd59674fd301940529f4c1a8/theory.md#neural-networks-for-computer-vision
+    source:
+      id: ds-interviews
+      ref: theory.md#q116
+      url: https://github.com/alexeygrigorev/data-science-interviews/blob/919f44547ef5ffc2bd59674fd301940529f4c1a8/theory.md#neural-networks-for-computer-vision
+    status: draft
+  - id: transfer-learning-018
+    type: single
+    difficulty: medium
+    tags:
+      - feature-extraction
+      - frozen-base
+      - fine-tuning
+    question: |
+      You attach a new, randomly initialized dense head to a convolutional base pretrained on
+      ImageNet, to classify cars and trucks. Why set `pretrained_base.trainable = False` before
+      training?
+    options:
+      - text: The random head's large gradients would wreck the pretrained features
+        correct: true
+      - text: A pretrained base cannot be trained any further once its weights have been loaded
+        why: The base can be trained further with fine-tuning; it is just risky to do it with a random head attached [^1].
+      - text: Freezing the base makes it learn new features suited to the cars and trucks
+        why: A frozen base learns nothing new; it keeps extracting the features it learned during pretraining [^2].
+      - text: The sigmoid output needs frozen layers below it to produce valid probabilities
+        why: The sigmoid turns any real output into a probability; freezing has nothing to do with it [^3].
+    explanation: |
+      When doing transfer learning, retraining the whole base is generally not a good idea at first:
+      the random weights of the head create large gradient updates that propagate back into the base
+      and destroy much of the pretraining [^1]. So the base is frozen, it keeps doing the feature
+      extraction it learned on ImageNet, and only the head learns which class goes with which
+      features [^2]. Because the head is small, accurate classifiers can be trained from relatively
+      little data. Training the base further, fine-tuning, is possible later but needs care [^1].
+    references:
+      - source: kaggle-learn
+        locator: Computer Vision, Lesson 1 exercise, Question 1 Define Pretrained Base (correct-answer message)
+        url: https://github.com/Kaggle/learntools/blob/e9ba66dc899d3e17b80d3a1b9a5d29f430d310cb/learntools/computer_vision/ex1.py
+      - source: kaggle-learn
+        locator: Computer Vision, Lesson 1 The Convolutional Classifier — tutorial, Training the Classifier
+        url: https://github.com/Kaggle/learntools/blob/e9ba66dc899d3e17b80d3a1b9a5d29f430d310cb/notebooks/computer_vision/raw/tut1.ipynb
+      - source: kaggle-learn
+        locator: Intro to Deep Learning, Lesson 6 Binary Classification — tutorial, Making Probabilities with the Sigmoid Function
+        url: https://github.com/Kaggle/learntools/blob/e9ba66dc899d3e17b80d3a1b9a5d29f430d310cb/notebooks/deep_learning_intro/raw/tut6.ipynb
+    source:
+      id: kaggle-learn
+      ref: computer_vision/ex1#q1
+      url: https://github.com/Kaggle/learntools/blob/e9ba66dc899d3e17b80d3a1b9a5d29f430d310cb/notebooks/computer_vision/raw/ex1.ipynb
+    status: draft
+  - id: transfer-learning-019
+    type: short_answer
+    difficulty: medium
+    tags:
+      - contrastive-learning
+      - self-supervised
+      - infonce
+    question: |
+      A contrastive loss for an anchor $x$ with one positive $y^+$ and one negative $y^-$ is
+      $$-\log \frac{e^{f(x)^\top f(y^+)}}{e^{f(x)^\top f(y^+)} + e^{f(x)^\top f(y^-)}},$$
+      where the encoder $f$ outputs unit vectors and there is no temperature. What is the smallest value
+      this loss can take?
+    answer:
+      numeric: 0.127
+      tolerance: 0.001
+      hint: a number, 3 decimals
+      model: Best case $f(x)^\top f(y^+) = 1$, $f(x)^\top f(y^-) = -1$, giving $\log(1 + e^{-2}) \approx 0.127$
+    explanation: |
+      The loss is a cross-entropy over two "classes", with the dot products as logits [^1]. For unit
+      vectors the logits lie in $[-1, 1]$, so the best case is a perfectly aligned positive and an
+      antipodal negative: $-\log \frac{e}{e + e^{-1}} = \log(1 + e^{-2}) \approx 0.127$. Even a perfect
+      encoder cannot reach zero loss, which is why practical contrastive losses divide the logits by a
+      small temperature [^2].
+    references:
+      - source: mit-ocw-67960
+        locator: Homework 4, Problems 2 and 5
+        url: https://ocw.mit.edu/courses/6-7960-deep-learning-fall-2024/resources/mit6_7960_f24_hw4_pdf/
+      - title: Chen et al. (2020), A Simple Framework for Contrastive Learning of Visual Representations, arXiv:2002.05709
+        locator: Sec. 2.1 The Contrastive Learning Framework (NT-Xent loss)
+        url: https://arxiv.org/abs/2002.05709
+    source:
+      id: mit-ocw-67960
+      ref: mit6_7960_f24_hw4#q2
+      url: https://ocw.mit.edu/courses/6-7960-deep-learning-fall-2024/resources/mit6_7960_f24_hw4_pdf/
+    status: draft
+  - id: transfer-learning-020
+    type: single
+    difficulty: medium
+    tags:
+      - contrastive-learning
+      - temperature
+      - self-supervised
+    question: |
+      Contrastive losses such as SimCLR's divide the dot products of unit-length features by a
+      temperature, for example $\tau = 0.07$, before the softmax. Why is this scaling needed?
+    options:
+      - text: Unit-vector logits lie in $[-1, 1]$, too narrow for a confident softmax
+        correct: true
+      - text: Dividing by $\tau$ is the step that normalizes the features to unit length
+        why: Normalization is a separate step before the dot product; $\tau$ only rescales the resulting logits.
+      - text: It makes the contrastive loss convex in the encoder's weights
+        why: The loss of a deep encoder is non-convex whatever the temperature.
+      - text: It reduces how many negatives each anchor is compared with
+        why: The set of negatives is fixed by the batch; $\tau$ changes how strongly each one counts, not how many there are.
+    explanation: |
+      With logits confined to $[-1, 1]$, the positive's softmax probability is at most
+      $e / (e + (N - 1)e^{-1})$, so the loss stays bounded away from zero even for a perfect encoder [^1].
+      Dividing by $\tau < 1$ widens the range to $[-1/\tau, 1/\tau]$ and sharpens the softmax [^2].
+      Dropping the normalization instead would let the encoder scale its outputs up to shrink the loss,
+      but the logits could then grow without bound and overflow [^1].
+    references:
+      - source: mit-ocw-67960
+        locator: Homework 4, Problem 5 (normalization in contrastive learning)
+        url: https://ocw.mit.edu/courses/6-7960-deep-learning-fall-2024/resources/mit6_7960_f24_hw4_pdf/
+      - title: Chen et al. (2020), A Simple Framework for Contrastive Learning of Visual Representations, arXiv:2002.05709
+        locator: Sec. 2.1 The Contrastive Learning Framework; Sec. 5.1 Normalized cross entropy loss with adjustable temperature
+        url: https://arxiv.org/abs/2002.05709
+    source:
+      id: mit-ocw-67960
+      ref: mit6_7960_f24_hw4#q5
+      url: https://ocw.mit.edu/courses/6-7960-deep-learning-fall-2024/resources/mit6_7960_f24_hw4_pdf/
+    status: draft
+  - id: transfer-learning-021
+    type: single
+    difficulty: hard
+    tags:
+      - contrastive-learning
+      - representation-geometry
+      - margin
+    question: |
+      An encoder $f$ maps data from $N$ groups to unit vectors; group $i$ lives on a finite set $S_i$.
+      Define $\mathrm{diameter}_i = \max_{s, t \in S_i}\lVert f(s) - f(t) \rVert$ and
+      $\mathrm{margin}_{i \to j} = \min_{s \in S_i,\, t \in S_j}\lVert f(s) - f(t) \rVert$. A contrastive
+      "classification" draws an anchor and a positive from group $i$ and one negative from every other
+      group, and is correct if the positive has the largest dot product with the anchor. Which
+      condition guarantees that every such classification is correct?
+    options:
+      - text: For every group $i$ and every other group $j$, $\mathrm{diameter}_i < \mathrm{margin}_{i \to j}$
+        correct: true
+      - text: For every group $i$ there is some other group $j$ with $\mathrm{diameter}_i < \mathrm{margin}_{i \to j}$
+        why: A negative drawn from a group that is closer than the diameter can still beat the positive.
+      - text: Some group $i^\star$ has a diameter smaller than every margin between groups
+        why: This constrains only one group; anchors from the other, wider groups can still be misclassified.
+      - text: The margins between all pairs of groups are equal
+        why: Equal margins say nothing about how spread out each group is; wide groups still fail.
+    explanation: |
+      For unit vectors $\lVert a - b \rVert^2 = 2 - 2a^\top b$, so the positive wins exactly when it is
+      closer to the anchor than every negative [^1]. The anchor–positive distance is at most
+      $\mathrm{diameter}_i$ and the distance to a negative from group $j$ is at least
+      $\mathrm{margin}_{i \to j}$, so the condition for all $i$ and all $j \ne i$ guarantees a correct answer.
+      Contrastive training therefore favours small diameters (alignment) and large margins [^2].
+    references:
+      - source: mit-ocw-67960
+        locator: Homework 4, Problem 4(a)–(c)
+        url: https://ocw.mit.edu/courses/6-7960-deep-learning-fall-2024/resources/mit6_7960_f24_hw4_pdf/
+      - title: Wang & Isola (2020), Understanding Contrastive Representation Learning through Alignment and Uniformity on the Hypersphere, arXiv:2005.10242
+        locator: Sec. 4 Feature distribution on the hypersphere (alignment and uniformity)
+        url: https://arxiv.org/abs/2005.10242
+    source:
+      id: mit-ocw-67960
+      ref: mit6_7960_f24_hw4#q4c
+      url: https://ocw.mit.edu/courses/6-7960-deep-learning-fall-2024/resources/mit6_7960_f24_hw4_pdf/
+    status: draft
+  - id: transfer-learning-022
+    type: single
+    difficulty: medium
+    tags:
+      - contrastive-learning
+      - alignment
+      - uniformity
+    question: |
+      Positive pairs come from groups with disjoint supports (for example, augmentations of the same
+      image). For unit-vector features, which geometry does contrastive learning favour?
+    options:
+      - text: Tight clusters per group, spread out over the sphere
+        correct: true
+      - text: Features spread uniformly over the sphere, ignoring the groups
+        why: The positive-pair term pulls members of the same group together, so groups form clusters rather than spreading out individually.
+      - text: All features collapse to a single point
+        why: Then negatives are as close as positives and the loss stays high; the negative term pushes different groups apart.
+      - text: Tight clusters per group, packed close together on one side
+        why: Small gaps between clusters make negatives almost as similar as positives; the loss rewards large margins.
+    explanation: |
+      Small group diameters (alignment) make the encoder invariant to the variations inside each
+      positive-pair distribution [^1]. Large margins between groups push the clusters apart, and on a
+      sphere the max-margin placement of $N$ points (Tammes' problem) is roughly uniform [^1]. Wang and
+      Isola show that the contrastive loss asymptotically optimizes exactly these two properties,
+      alignment and uniformity [^2].
+    references:
+      - source: mit-ocw-67960
+        locator: Homework 4, Problem 4(e) and the remark after it
+        url: https://ocw.mit.edu/courses/6-7960-deep-learning-fall-2024/resources/mit6_7960_f24_hw4_pdf/
+      - title: Wang & Isola (2020), Understanding Contrastive Representation Learning through Alignment and Uniformity on the Hypersphere, arXiv:2005.10242
+        locator: Sec. 4 Feature distribution on the hypersphere
+        url: https://arxiv.org/abs/2005.10242
+    source:
+      id: mit-ocw-67960
+      ref: mit6_7960_f24_hw4#q4e
+      url: https://ocw.mit.edu/courses/6-7960-deep-learning-fall-2024/resources/mit6_7960_f24_hw4_pdf/
+    status: draft
+  - id: transfer-learning-023
+    type: single
+    difficulty: medium
+    tags:
+      - contrastive-learning
+      - dual-encoder
+      - cross-entropy
+      - clip
+    question: |
+      A classifier computes the logits $g(x) = W^\top [g_{\text{feat}}(x); 1]$ for $C$ classes and is
+      trained with cross-entropy. Read it as dual-encoder (CLIP-style) contrastive learning between
+      inputs and class labels, with input encoder $f_1(x) = [g_{\text{feat}}(x); 1]$ and logits
+      $f_1(x)^\top f_2(c)$. What is the label encoder $f_2(c)$?
+    options:
+      - text: The $c$-th column of $W$, a learned embedding of class $c$
+        correct: true
+      - text: The one-hot vector of class $c$
+        why: A one-hot vector is fixed and has $C$ entries, while $f_2(c)$ must live in the feature space and is learned.
+      - text: The average feature vector of the training inputs of class $c$
+        why: That is a prototype (nearest-class-mean) classifier; cross-entropy training learns the class vectors as free parameters.
+      - text: The softmax probability that $x$ belongs to class $c$
+        why: That is a scalar output of the model, not an embedding of the class.
+    explanation: |
+      The logit for class $c$ is $[g_{\text{feat}}(x); 1]^\top W_{:,c}$: a dot product between an input
+      embedding and a class embedding, with the bias as an extra coordinate [^1]. The cross-entropy
+      over the $C$ classes is then a contrastive loss whose positive is the true class and whose
+      negatives are the other $C - 1$ class vectors [^1]. CLIP trains both encoders the same way on
+      image–text pairs, which lets it use free-text class names as the label side [^2].
+    references:
+      - source: mit-ocw-67960
+        locator: Homework 4, Problem 6
+        url: https://ocw.mit.edu/courses/6-7960-deep-learning-fall-2024/resources/mit6_7960_f24_hw4_pdf/
+      - title: Radford et al. (2021), Learning Transferable Visual Models From Natural Language Supervision, arXiv:2103.00020
+        locator: Sec. 2.3 Selecting an Efficient Pre-Training Method (Figure 3)
+        url: https://arxiv.org/abs/2103.00020
+    source:
+      id: mit-ocw-67960
+      ref: mit6_7960_f24_hw4#q6
+      url: https://ocw.mit.edu/courses/6-7960-deep-learning-fall-2024/resources/mit6_7960_f24_hw4_pdf/
+    status: draft
+  - id: transfer-learning-024
+    type: single
+    difficulty: medium
+    tags:
+      - contrastive-learning
+      - data-augmentation
+      - invariance
+    question: |
+      Images show one coloured shape each. For contrastive learning, a positive pair is two augmented
+      copies of the same image; the augmentation moves the shape to a random location and gives it a
+      random colour, but never changes the shape. Negatives are augmented copies of other images. What
+      should the learned representation be?
+    options:
+      - text: Invariant to location and colour, sensitive to shape
+        correct: true
+      - text: Invariant to shape, sensitive to location and colour
+        why: This reverses the roles; the factors that vary inside a positive pair are the ones the encoder learns to ignore.
+      - text: Invariant to location, colour and shape
+        why: Then every image would get the same code and could not be told apart from its negatives.
+      - text: Sensitive to location, colour and shape
+        why: Location and colour differ between the two copies of a positive pair, and the alignment term pulls such copies together.
+    explanation: |
+      The positive pairs define what the encoder should ignore: whatever changes between two views of
+      the same image is pulled to the same code [^1]. Everything else, here the shape, is what separates
+      an image from its negatives, so the encoder stays sensitive to it [^1]. Choosing the
+      augmentations is therefore choosing the invariances, which is why the augmentation recipe
+      matters so much in SimCLR [^2].
+    references:
+      - source: mit-ocw-67960
+        locator: Homework 4, Problem 8(b)
+        url: https://ocw.mit.edu/courses/6-7960-deep-learning-fall-2024/resources/mit6_7960_f24_hw4_pdf/
+      - title: Chen et al. (2020), A Simple Framework for Contrastive Learning of Visual Representations, arXiv:2002.05709
+        locator: Sec. 3 Data Augmentation for Contrastive Representation Learning
+        url: https://arxiv.org/abs/2002.05709
+    source:
+      id: mit-ocw-67960
+      ref: mit6_7960_f24_hw4#q8b
+      url: https://ocw.mit.edu/courses/6-7960-deep-learning-fall-2024/resources/mit6_7960_f24_hw4_pdf/
+    status: draft
+  - id: transfer-learning-025
+    type: single
+    difficulty: medium
+    tags:
+      - feature-extraction
+      - fine-tuning
+      - dataset-size
+      - domain-similarity
+    question: |
+      You have 500 labeled microscope images of cells, which look nothing like ImageNet photos, and a
+      CNN pretrained on ImageNet. Following the usual rules of thumb for transfer learning, what should
+      you try first?
+    options:
+      - text: Train the same architecture from scratch, since pretrained features cannot help on such data
+        why: Training from scratch is an option only for a large dataset, and even then pretrained initialization usually helps [^1]; features from a distant task still beat random ones [^2].
+      - text: Freeze the network and train a linear classifier on the features just before its old output layer
+        why: Those top features are the most specific to ImageNet's classes; this is the recipe for a small dataset that is *similar* to ImageNet [^1].
+      - text: Freeze the network and train a linear classifier on activations from an earlier layer
+        correct: true
+      - text: Fine-tune every layer end to end, since only full fine-tuning can adapt to such different images
+        why: With only a few hundred images, fine-tuning the whole network is likely to overfit [^1].
+    explanation: |
+      The choice depends mainly on the size of the new dataset and its similarity to the original one
+      [^1]. A small dataset rules out fine-tuning because of overfitting, so a linear classifier on
+      frozen features is the safe choice. Early layers compute generic features such as edge and color
+      blob detectors, while later layers become specific to the original classes [^1][^2]. For a small
+      and very different dataset, the classifier should therefore be trained on activations from
+      somewhere earlier in the network rather than from the top [^1].
+    references:
+      - title: 'Stanford CS231n notes: Transfer Learning'
+        url: https://cs231n.github.io/transfer-learning/#tf
+        locator: Transfer Learning, "When and how to fine-tune?" (the four scenarios)
+      - title: Yosinski et al. (2014), How transferable are features in deep neural networks?
+        url: https://arxiv.org/abs/1411.1792
+        locator: Abstract; Sec. 4.3 Random Weights
+    source:
+      id: original
+      ref: transfer-learning-025
+    status: draft
+  - id: transfer-learning-026
+    type: multiple
+    difficulty: hard
+    tags:
+      - feature-generality
+      - co-adaptation
+      - layer-transfer
+    question: |
+      Yosinski et al. measured how well the features of each layer of an ImageNet-trained CNN transfer to
+      another task. Which findings did they report? Select all that apply.
+    options:
+      - text: Transfer gets worse as the base and target tasks grow apart, but distant-task features still beat random ones
+        correct: true
+      - text: First-layer features such as Gabor-like filters and color blobs are general and transfer almost perfectly
+        correct: true
+      - text: After fine-tuning on the target data, a transferred initialization does no better than a random one
+        why: The opposite was found; initializing with transferred features gives a boost to generalization that lingers even after fine-tuning [^1].
+      - text: The top layers are the most general, so they are the ones to reuse when the tasks differ
+        why: Features go from general in the first layers to specific in the last ones, so the top layers are the most task-specific [^1][^2].
+      - text: Freezing copied middle layers hurt even when retraining on the original task, because co-adapted neurons were split
+        correct: true
+    explanation: |
+      Transferability suffers from two separate effects: higher-layer neurons specialize to the original
+      task, and splitting the network between co-adapted neurons creates optimization difficulties [^1].
+      The second effect appeared when the first $n$ layers of a network were copied, frozen, and the
+      rest retrained on the *same* task: performance dropped for layers 3–5, while letting the copied
+      layers fine-tune removed the drop [^2]. Layers 1 and 2 transferred almost perfectly between tasks
+      [^2], and even features from a dissimilar task beat random weights [^1].
+    references:
+      - title: Yosinski et al. (2014), How transferable are features in deep neural networks?
+        url: https://arxiv.org/abs/1411.1792
+        locator: Abstract; Sec. 5 Conclusions
+      - title: Yosinski et al. (2014), How transferable are features in deep neural networks?
+        url: https://arxiv.org/abs/1411.1792
+        locator: Sec. 4.1 Similar Datasets, Figure 2 and interpretations 2–4
+    source:
+      id: original
+      ref: transfer-learning-026
+    status: draft
+  - id: transfer-learning-027
+    type: short_answer
+    difficulty: easy
+    tags:
+      - ulmfit
+      - discriminative-fine-tuning
+      - learning-rate
+    question: |
+      ULMFiT fine-tunes each layer with its own learning rate (discriminative fine-tuning). It first
+      picks the rate $\eta^L$ of the last layer and then sets $\eta^{l-1} = \eta^{l}/2.6$ for each lower
+      layer. If $\eta^L = 0.01$, what learning rate does layer $L-3$ get?
+    answer:
+      numeric: 0.000569
+      tolerance: 0.0000015
+      hint: a number with 3 significant figures, e.g. 0.000123
+      model: $\eta^{L-3} = 0.01 / 2.6^3 = 0.01 / 17.576 \approx 0.000569$
+    explanation: |
+      Different layers capture different types of information, so ULMFiT tunes them to different
+      extents: the last layer with $\eta^L$ and each lower layer with a rate 2.6 times smaller [^1].
+      Three layers down, the rate is $0.01/2.6^3 \approx 5.7 \times 10^{-4}$, so the general features of
+      the lower layers change slowly [^2]. ULMFiT combines this with slanted triangular learning rates (a
+      short linear increase, then a long linear decay) [^1] and with gradual unfreezing from the last
+      layer down, which avoids the risk of catastrophic forgetting when all layers are fine-tuned at
+      once [^3].
+    references:
+      - title: Howard & Ruder (2018), Universal Language Model Fine-tuning for Text Classification
+        url: https://arxiv.org/abs/1801.06146
+        locator: Sec. 3.2 Target task LM fine-tuning, "Discriminative fine-tuning" Eq. (2) and "Slanted triangular learning rates"
+      - title: Yosinski et al. (2014), How transferable are features in deep neural networks?
+        url: https://arxiv.org/abs/1411.1792
+        locator: Abstract
+      - title: Howard & Ruder (2018), Universal Language Model Fine-tuning for Text Classification
+        url: https://arxiv.org/abs/1801.06146
+        locator: Sec. 3.3 Target task classifier fine-tuning, "Gradual unfreezing"
+    source:
+      id: original
+      ref: transfer-learning-027
+    status: draft
+  - id: transfer-learning-028
+    type: single
+    difficulty: medium
+    tags:
+      - distribution-shift
+      - label-shift
+      - domain-shift
+    question: |
+      A pneumonia classifier was trained on chest X-rays from a hospital where 10% of patients have
+      pneumonia. It is deployed at a clinic during flu season, where 40% do. How pneumonia looks on an
+      X-ray is the same in both places. Which kind of distribution shift is this, and what is the
+      matching correction?
+    options:
+      - text: Label shift; reweight by $p(y)/q(y)$, estimating the new $p(y)$ with a confusion matrix
+        correct: true
+      - text: Concept shift; relabel the clinic's data, since the definition of pneumonia has changed
+        why: Concept shift means the definitions of the labels change; here pneumonia means the same thing and only its frequency differs [^1].
+      - text: Covariate shift; reweight by $p(\mathbf{x})/q(\mathbf{x})$ estimated with a domain classifier
+        why: Covariate shift assumes $P(y \mid \mathbf{x})$ stays fixed. Here the prevalence changes, so the same X-ray has a different chance of showing pneumonia; what stays fixed is $P(\mathbf{x} \mid y)$ [^1].
+      - text: No shift, because each class looks the same in both places, so no correction is needed
+        why: An unchanged class-conditional distribution is exactly the label-shift assumption; the prior $P(y)$ still changes, so the model's predicted probabilities are off [^1][^2].
+    explanation: |
+      Label shift means the label distribution $P(y)$ changes while the class-conditional distribution
+      $P(\mathbf{x} \mid y)$ stays fixed; it is the natural assumption when $y$ causes $\mathbf{x}$, as
+      diseases cause symptoms [^1]. The correction weights each training example by
+      $\beta_i = p(y_i)/q(y_i)$, here $0.4/0.1 = 4$ for pneumonia and $0.6/0.9 \approx 0.67$ for healthy
+      patients [^2]. In practice the new prior is unknown: average the model's predictions on test
+      inputs, $\mu(\hat{\mathbf{y}})$, and solve $\mathbf{C}\,p(\mathbf{y}) = \mu(\hat{\mathbf{y}})$ with
+      the confusion matrix $\mathbf{C}$ from validation data [^2].
+    references:
+      - source: d2l
+        locator: Sec. 4.7.1 Types of Distribution Shift (4.7.1.1 Covariate Shift, 4.7.1.2 Label Shift, 4.7.1.3 Concept Shift)
+        url: https://d2l.ai/chapter_linear-classification/environment-and-distribution-shift.html#label-shift
+      - source: d2l
+        locator: Sec. 4.7.3.3 Label Shift Correction
+        url: https://d2l.ai/chapter_linear-classification/environment-and-distribution-shift.html#label-shift-correction
+    source:
+      id: original
+      ref: transfer-learning-028
+    status: draft
+  - id: transfer-learning-029
+    type: short_answer
+    difficulty: hard
+    tags:
+      - fine-tuning
+      - parameter-count
+      - resnet
+      - batch-normalization
+      - code-reading
+    question: |
+      You fine-tune only the last stage and the new head of a torchvision ResNet-18:
+
+      ```python
+      model = torchvision.models.resnet18(weights="IMAGENET1K_V1")
+      model.fc = nn.Linear(512, 2)
+      for name, p in model.named_parameters():
+          p.requires_grad = name.startswith(("layer4.", "fc."))
+      n = sum(p.numel() for p in model.parameters() if p.requires_grad)
+      ```
+
+      `layer4` has two residual blocks. Block 1: a 3×3 conv 256→512 (stride 2), BatchNorm(512), a 3×3
+      conv 512→512, BatchNorm(512), and a shortcut made of a 1×1 conv 256→512 and BatchNorm(512).
+      Block 2: two 3×3 convs 512→512, each followed by BatchNorm(512). All convolutions have
+      `bias=False`; each BatchNorm has a learnable scale and shift per channel. What is `n`?
+    answer:
+      numeric: 8394754
+      tolerance: 0
+      hint: a whole number
+      model: 'block 1: $1\,179\,648 + 2\,359\,296 + 131\,072 + 3 \times 1024 = 3\,673\,088$; block 2: $2 \times (2\,359\,296 + 1024) = 4\,720\,640$; `fc`: $512 \times 2 + 2 = 1026$; total $8\,394\,754$'
+    explanation: |
+      A $k \times k$ convolution from $c_i$ to $c_o$ channels has $c_o c_i k^2$ weights [^1], and
+      torchvision builds these convolutions without bias [^5]:
+      $3 \cdot 3 \cdot 256 \cdot 512 = 1\,179\,648$, $3 \cdot 3 \cdot 512 \cdot 512 = 2\,359\,296$, and
+      $256 \cdot 512 = 131\,072$ for the 1×1 shortcut. Each BatchNorm adds a learnable $\gamma$ and
+      $\beta$ per channel, 1024 parameters [^2]; its running mean and variance are buffers, not
+      parameters, so they are not counted [^3]. `layer4` alone has 8,393,728 parameters, about 72% of
+      the 11.7 million in ResNet-18 [^4], so unfreezing just the last stage already trains most of the
+      weights. Note that freezing does not stop the BatchNorm layers of the frozen stages from updating
+      their running statistics in training mode [^2].
+    references:
+      - source: d2l
+        locator: Sec. 7.4 Multiple Input and Multiple Output Channels
+        url: https://d2l.ai/chapter_convolutional-neural-networks/channels.html
+      - title: 'PyTorch docs: torch.nn.BatchNorm2d'
+        url: https://docs.pytorch.org/docs/stable/generated/torch.nn.BatchNorm2d.html
+        locator: Class description (learnable γ and β of size C; running estimates kept during training)
+      - title: 'PyTorch docs: torch.nn.Module.register_buffer'
+        url: https://docs.pytorch.org/docs/stable/generated/torch.nn.Module.html#torch.nn.Module.register_buffer
+        locator: register_buffer ("BatchNorm's running_mean is not a parameter")
+      - title: 'torchvision docs: resnet18'
+        url: https://docs.pytorch.org/vision/stable/models/generated/torchvision.models.resnet18.html
+        locator: ResNet18_Weights.IMAGENET1K_V1 (num_params 11689512)
+      - title: 'torchvision source: models/resnet.py'
+        url: https://github.com/pytorch/vision/blob/main/torchvision/models/resnet.py
+        locator: conv3x3 / conv1x1 (bias=False), BasicBlock, ResNet._make_layer (downsample shortcut)
+    source:
+      id: original
+      ref: transfer-learning-029
+    status: draft
+  - id: transfer-learning-030
+    type: single
+    difficulty: hard
+    tags:
+      - linear-probing
+      - fine-tuning
+      - lp-ft
+      - out-of-distribution
+    question: |
+      A model with good pretrained features is adapted to a task whose test data come from a shifted
+      distribution. Kumar et al. compare full fine-tuning (randomly initialized head, all layers
+      trained) with linear probing (frozen features, only the head trained), and recommend LP-FT:
+      linear probing first, then full fine-tuning. Why does LP-FT help?
+    options:
+      - text: Linear probing reaches the better in-distribution accuracy, which fine-tuning then keeps
+        why: Full fine-tuning is usually more accurate in-distribution than linear probing; linear probing can win out-of-distribution [^1].
+      - text: LP-FT can use a much larger learning rate, which lets the backbone escape the pretrained solution
+        why: The goal is to stay close to the good pretrained features; with a random head, features get distorted even with an infinitesimally small learning rate [^2].
+      - text: Linear probing shrinks the backbone's weights first, which regularizes the later fine-tuning
+        why: Linear probing does not touch the backbone at all; it trains only the head on frozen features [^1].
+      - text: Starting from a trained head, fine-tuning distorts the pretrained features less
+        correct: true
+    explanation: |
+      Across ten distribution-shift benchmarks, fine-tuning was about 2% more accurate than linear
+      probing in-distribution but 7% less accurate out-of-distribution [^1]. With a random head, the head
+      and the feature extractor change together: the features of the training data get distorted while
+      those of OOD inputs change less, and the head fits only the distorted features [^2]. A
+      linear-probed head is already well aligned, so fine-tuning from it updates the features without
+      raising the OOD error much [^3]. Empirically LP-FT was about 1% better ID and 10% better OOD than
+      full fine-tuning [^1].
+    references:
+      - title: Kumar et al. (2022), Fine-Tuning can Distort Pretrained Features and Underperform Out-of-Distribution
+        url: https://arxiv.org/abs/2202.10054
+        locator: Abstract
+      - title: Kumar et al. (2022), Fine-Tuning can Distort Pretrained Features and Underperform Out-of-Distribution
+        url: https://arxiv.org/abs/2202.10054
+        locator: Sec. 1 Introduction
+      - title: Kumar et al. (2022), Fine-Tuning can Distort Pretrained Features and Underperform Out-of-Distribution
+        url: https://arxiv.org/abs/2202.10054
+        locator: 'Sec. 3.4 Linear probing then fine-tuning: a simple variant to mitigate tradeoffs'
+    source:
+      id: original
+      ref: transfer-learning-030
+    status: draft

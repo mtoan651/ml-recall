@@ -1232,3 +1232,739 @@ questions:
       ref: lectures/notes/08_llms-applications.ipynb#ex7.3
       url: https://github.com/UBC-MDS/DSCI_575_adv-mach-learn/blob/af9d47c5fdaa26aa9a50e0f50cd991cf325f1972/lectures/notes/08_llms-applications.ipynb
     status: draft
+  - id: transformers-038
+    type: short_answer
+    difficulty: easy
+    tags:
+      - causal-mask
+      - masked-self-attention
+      - gpt
+    question: |
+      A GPT-style decoder applies left-to-right (causal) masking to a sequence of 6 tokens: token
+      $t$ may attend only to tokens $1, \dots, t$. How many of the 36 entries of the
+      $6 \times 6$ attention-weight matrix can be non-zero?
+    answer:
+      numeric: 21
+      tolerance: 0
+      hint: a whole number
+      model: 'Row $t$ has $t$ allowed entries: $1 + 2 + \dots + 6 = 21$'
+    explanation: |
+      The mask is lower-triangular: $\text{mask}[t_x, t_z] = 1$ if $t_z \le t_x$ and 0 otherwise,
+      so row $t$ keeps $t$ entries [^1]. For $\ell = 6$ that is $6 \cdot 7 / 2 = 21$ entries, the
+      other 15 (the future tokens) get weight exactly 0. This is what lets the output at position
+      $t$ depend only on $\mathbf{X}[1{:}t]$ and be trained to predict token $t + 1$ [^1].
+    references:
+      - source: trusthlt-nlp
+        locator: Lecture 9 slides, frames 'Uni-directional masking for self-attention' and 'Left-to-right masked self-attention'
+        url: https://github.com/trusthlt/nlp-with-deep-learning-lectures/blob/751182ea7a6a6f2246bbd8313329ecd09d270dbc/lectures/lecture09/pdf/nlpwdl2025-lecture09-handout.pdf
+    source:
+      id: trusthlt-nlp
+      ref: lectures/lecture09/nlpwdl2025-lecture09.tex#causal-mask
+      url: https://github.com/trusthlt/nlp-with-deep-learning-lectures/blob/751182ea7a6a6f2246bbd8313329ecd09d270dbc/lectures/lecture09/pdf/nlpwdl2025-lecture09-handout.pdf
+    status: draft
+  - id: transformers-039
+    type: single
+    difficulty: medium
+    tags:
+      - causal-mask
+      - softmax
+      - masked-self-attention
+    question: |
+      To stop tokens from attending to future positions, a decoder sets the scaled scores of future
+      positions to $-\infty$ **before** the row-wise softmax. Why not instead compute the softmax
+      normally and then set the future weights to 0?
+    options:
+      - text: Each row's weights would no longer sum to 1
+        correct: true
+      - text: The softmax of $-\infty$ is undefined, so the masking must happen afterwards
+        why: $e^{-\infty} = 0$, so masked positions simply get weight 0 and the rest is renormalized; this is exactly why $-\infty$ is used [^1].
+      - text: Both ways give exactly the same attention weights
+        why: Zeroing after the softmax leaves the remaining weights unchanged, so they sum to less than 1 and differ from the renormalized ones [^1].
+      - text: Future tokens would still change the value vectors of earlier positions
+        why: Value vectors are computed per token from its own input; the problem is only in the weights, which would not be renormalized [^1].
+    explanation: |
+      The masked scores are replaced by $-\infty$ so that the softmax assigns them exactly zero
+      probability while the allowed positions share all of the probability mass [^1]. Zeroing after
+      the softmax would leave weights that were normalized over all positions, including the future
+      ones, so each row would sum to less than 1 and the output would be a shrunken average.
+    references:
+      - source: trusthlt-nlp
+        locator: Lecture 9 slides, frames 'We want to attend only to previous tokens' and 'Left-to-right masked self-attention'
+        url: https://github.com/trusthlt/nlp-with-deep-learning-lectures/blob/751182ea7a6a6f2246bbd8313329ecd09d270dbc/lectures/lecture09/pdf/nlpwdl2025-lecture09-handout.pdf
+    source:
+      id: trusthlt-nlp
+      ref: lectures/lecture09/nlpwdl2025-lecture09.tex#minus-infinity
+      url: https://github.com/trusthlt/nlp-with-deep-learning-lectures/blob/751182ea7a6a6f2246bbd8313329ecd09d270dbc/lectures/lecture09/pdf/nlpwdl2025-lecture09-handout.pdf
+    status: draft
+  - id: transformers-040
+    type: short_answer
+    difficulty: medium
+    tags:
+      - dot-product-attention
+      - softmax
+      - numerical-stability
+    question: |
+      A decoder scores four encoder states by dot product and gets the raw scores
+      $(927, 397, 148, 929)$. What attention weight does the softmax give to the first encoder
+      state?
+    answer:
+      numeric: 0.119
+      tolerance: 0.002
+      hint: a number, 3 decimals
+      model: $\frac{e^{927}}{e^{927} + e^{397} + e^{148} + e^{929}} \approx \frac{1}{1 + e^{2}} \approx 0.119$
+    explanation: |
+      Dividing numerator and denominator by $e^{929}$ gives $e^{-2}/(e^{-2} + e^{-532} + e^{-781} + 1)
+      \approx 0.119$, and the fourth state gets about 0.881 [^1]. A score difference of only 2
+      already splits the weight 12/88, and states 2 and 3 are effectively ignored [^1]. Computing
+      `np.exp(929)` directly overflows float64 to `inf` (the notebook switches to float128), which
+      is why softmax implementations subtract the maximum score first [^2].
+    references:
+      - source: udacity-dl-pytorch
+        locator: Attention Basics notebook, Attention Scoring; Softmax
+        url: https://github.com/udacity/deep-learning-v2-pytorch/blob/c9404fc86181fc3f0906b368697268257f348535/attention/Attention_Basics_Solution.ipynb
+      - source: d2l
+        locator: Sec. 4.5.2 Softmax Revisited (overflow, subtracting the maximum)
+        url: https://d2l.ai/chapter_linear-classification/softmax-regression-concise.html#softmax-revisited
+    source:
+      id: udacity-dl-pytorch
+      ref: attention/Attention_Basics_Solution.ipynb#softmax-weights
+      url: https://github.com/udacity/deep-learning-v2-pytorch/blob/c9404fc86181fc3f0906b368697268257f348535/attention/Attention_Basics_Solution.ipynb
+    status: draft
+  - id: transformers-041
+    type: single
+    difficulty: medium
+    tags:
+      - attention
+      - complexity
+      - encoder-decoder
+    question: |
+      An encoder–decoder transformer reads $n$ input words and generates $m$ output words, with key/query/value
+      dimension $p$. Counting the attention computations (encoder self-attention, decoder self-attention over the
+      output prefix, and encoder–decoder attention), what is the time complexity of encoding the input and generating
+      the whole output?
+    options:
+      - text: $\mathcal{O}(p\,(n^2 + m^2 + nm))$
+        correct: true
+      - text: $\mathcal{O}(p\,(n + m))$
+        why: Each attention layer compares every query with every key, which is quadratic in the sequence lengths, not linear.
+      - text: $\mathcal{O}(p\,nm)$
+        why: This counts only the encoder–decoder attention and leaves out self-attention over the input ($n^2$) and over the output ($m^2$).
+      - text: $\mathcal{O}(p^2\,(n + m)^2)$
+        why: A dot product of two $p$-dimensional vectors costs $\mathcal{O}(p)$, not $\mathcal{O}(p^2)$; the attention scores are linear in $p$.
+    explanation: |
+      Attention appears at three points [^1]. Self-attention among the $n$ input words compares $n$ queries with $n$ keys
+      using $p$-dimensional dot products, $\mathcal{O}(n^2 p)$ [^2]; self-attention among the $m$ output words costs
+      $\mathcal{O}(m^2 p)$, assuming each output position's attention is computed once as the sequence grows; and attention
+      from output words to input words costs $\mathcal{O}(nmp)$ [^1]. The total is $\mathcal{O}(p(n^2 + m^2 + nm))$ [^1]. The
+      linear projections and feed-forward layers add $\mathcal{O}((n + m)p^2)$, which this count of attention leaves out.
+    references:
+      - source: neuromatch-dl
+        locator: W3D1 Tutorial 1, Section 5 Transformer overview II, Think! 5 Complexity of decoding
+        url: https://github.com/NeuromatchAcademy/course-content-dl/blob/caba36c513fb8139ac3c9e7503f7a769dadde25e/tutorials/W3D1_AttentionAndTransformers/instructor/W3D1_Tutorial1.ipynb
+      - source: d2l
+        locator: Sec. 11.6.2 Comparing CNNs, RNNs, and Self-Attention
+        url: https://d2l.ai/chapter_attention-mechanisms-and-transformers/self-attention-and-positional-encoding.html#comparing-cnns-rnns-and-self-attention
+    source:
+      id: neuromatch-dl
+      ref: W3D1_AttentionAndTransformers/W3D1_Tutorial1#think5
+      url: https://github.com/NeuromatchAcademy/course-content-dl/blob/caba36c513fb8139ac3c9e7503f7a769dadde25e/tutorials/W3D1_AttentionAndTransformers/instructor/W3D1_Tutorial1.ipynb
+    status: draft
+  - id: transformers-042
+    type: short_answer
+    difficulty: medium
+    tags:
+      - multi-head-attention
+      - parameter-count
+    question: |
+      NMA's multi-head self-attention layer gives every head the full embedding size `k`:
+      ```python
+      class SelfAttention(nn.Module):
+          def __init__(self, k, heads=8):
+              super().__init__()
+              self.to_keys = nn.Linear(k, k * heads, bias=False)
+              self.to_queries = nn.Linear(k, k * heads, bias=False)
+              self.to_values = nn.Linear(k, k * heads, bias=False)
+              self.unify_heads = nn.Linear(k * heads, k)
+      ```
+      How many learnable parameters does `SelfAttention(k=64, heads=8)` have?
+    answer:
+      numeric: 131136
+      tolerance: 0
+      hint: an integer
+      model: $3 \cdot 64 \cdot 512 + 512 \cdot 64 + 64 = 131136$
+    explanation: |
+      Each of the three projections is a bias-free $64 \to 512$ map with $64 \cdot 512 = 32768$ weights, and `unify_heads`
+      maps $512 \to 64$ with $32768$ weights plus 64 biases [^1]. The total is $4 \cdot 32768 + 64 = 131136$. The original
+      transformer instead splits the model dimension across the heads (each head gets $k/h$ dimensions), so multi-head
+      attention costs about as much as one full-width head [^2][^3]; in this "wide" version the parameter count grows
+      linearly with the number of heads.
+    references:
+      - source: neuromatch-dl
+        locator: W3D1 Tutorial 1, Section 3 Multihead attention, Coding Exercise 3 Q, K, V attention
+        url: https://github.com/NeuromatchAcademy/course-content-dl/blob/caba36c513fb8139ac3c9e7503f7a769dadde25e/tutorials/W3D1_AttentionAndTransformers/instructor/W3D1_Tutorial1.ipynb
+      - source: d2l
+        locator: Sec. 11.5.1 Model
+        url: https://d2l.ai/chapter_attention-mechanisms-and-transformers/multihead-attention.html#model
+      - title: Vaswani et al. (2017), Attention Is All You Need
+        url: https://arxiv.org/abs/1706.03762
+        locator: Sec. 3.2.2 Multi-Head Attention
+    source:
+      id: neuromatch-dl
+      ref: W3D1_AttentionAndTransformers/W3D1_Tutorial1#ex3
+      url: https://github.com/NeuromatchAcademy/course-content-dl/blob/caba36c513fb8139ac3c9e7503f7a769dadde25e/tutorials/W3D1_AttentionAndTransformers/instructor/W3D1_Tutorial1.ipynb
+    status: draft
+  - id: transformers-043
+    type: single
+    difficulty: medium
+    tags:
+      - transformer-block
+      - layer-normalization
+      - residual-connections
+    question: |
+      A transformer encoder block is written as
+      ```python
+      def forward(self, x):
+          attended = self.attention(x)
+          x = self.norm_1(attended + x)
+          feedforward = self.mlp(x)
+          x = self.norm_2(feedforward + x)
+          return x
+      ```
+      Which description matches it?
+    options:
+      - text: Each sublayer output is added to its input and the sum is layer-normalized ("add & norm" after each sublayer)
+        correct: true
+      - text: Each sublayer receives a layer-normalized input, and the raw input is added back afterwards
+        why: That is the pre-norm variant, `x = x + sublayer(norm(x))`; here the norm is applied after the addition.
+      - text: Attention and the MLP both read the raw input `x` in parallel, and their outputs are summed
+        why: '`self.mlp` is applied to the updated `x = norm_1(attended + x)`, so the two sublayers run one after the other.'
+      - text: 'The block has no residual connections: sublayer outputs replace their inputs'
+        why: Each line adds the sublayer output to its own input (`attended + x`, `feedforward + x`) before normalizing.
+    explanation: |
+      The block has two sublayers, self-attention and a position-wise MLP, each followed by "add & norm": its output is
+      added to its input through a residual connection and the sum goes through `nn.LayerNorm` [^1]. This is the
+      original transformer's post-norm arrangement, $\mathrm{LayerNorm}(x + \mathrm{Sublayer}(x))$ [^2][^3]. Many later models
+      move the normalization in front of each sublayer (pre-norm), which tends to make deep stacks easier to train [^4];
+      the code here is not that variant.
+    references:
+      - source: neuromatch-dl
+        locator: W3D1 Tutorial 1, Section 4 Transformer overview I, Coding Exercise 4 Transformer encoder
+        url: https://github.com/NeuromatchAcademy/course-content-dl/blob/caba36c513fb8139ac3c9e7503f7a769dadde25e/tutorials/W3D1_AttentionAndTransformers/instructor/W3D1_Tutorial1.ipynb
+      - source: d2l
+        locator: Sec. 11.7.1 Model and Sec. 11.7.3 Residual Connection and Layer Normalization
+        url: https://d2l.ai/chapter_attention-mechanisms-and-transformers/transformer.html#residual-connection-and-layer-normalization
+      - title: Vaswani et al. (2017), Attention Is All You Need
+        url: https://arxiv.org/abs/1706.03762
+        locator: Sec. 3.1 Encoder and Decoder Stacks
+      - title: Xiong et al. (2020), On Layer Normalization in the Transformer Architecture
+        url: https://arxiv.org/abs/2002.04745
+        locator: Abstract
+    source:
+      id: neuromatch-dl
+      ref: W3D1_AttentionAndTransformers/W3D1_Tutorial1#ex4
+      url: https://github.com/NeuromatchAcademy/course-content-dl/blob/caba36c513fb8139ac3c9e7503f7a769dadde25e/tutorials/W3D1_AttentionAndTransformers/instructor/W3D1_Tutorial1.ipynb
+    status: draft
+  - id: transformers-044
+    type: short_answer
+    difficulty: easy
+    tags:
+      - pooling
+      - text-classification
+      - tensor-shapes
+    question: |
+      A transformer classifier turns the encoder output `x`, of shape `(b, t, k)` (batch, tokens, embedding size),
+      into one vector per sentence by averaging over the tokens. Fill in the non-negative dimension index so that
+      `sequence_avg` has shape `(b, k)`: `sequence_avg = x.mean(dim=`{{1}}`)`
+    answer:
+      blanks:
+        - numeric: 1
+          tolerance: 0
+          hint: an integer
+      model: '`x.mean(dim=1)` averages over the $t$ token positions'
+    explanation: |
+      Averaging over a dimension removes it, so the token dimension, index 1 in `(b, t, k)`, must be averaged away to
+      leave `(b, k)` [^1]. NMA's classifier does exactly this: the encoder outputs one vector per token, the mean over
+      tokens gives a sentence embedding, and a linear layer with `log_softmax` turns it into class log-probabilities
+      [^1]. (`dim=-2` would also work; `dim=2` would average over the embedding instead, leaving `(b, t)`.) A common
+      alternative is to use the output of a special classification token instead of the mean, as BERT does [^2].
+    references:
+      - source: neuromatch-dl
+        locator: W3D1 Tutorial 1, Section 7 Training Transformers, Coding Exercise 7 Transformer Architecture for classification
+        url: https://github.com/NeuromatchAcademy/course-content-dl/blob/caba36c513fb8139ac3c9e7503f7a769dadde25e/tutorials/W3D1_AttentionAndTransformers/instructor/W3D1_Tutorial1.ipynb
+      - source: d2l
+        locator: Sec. 11.9.1.2 Fine-Tuning BERT
+        url: https://d2l.ai/chapter_attention-mechanisms-and-transformers/large-pretraining-transformers.html#fine-tuning-bert
+    source:
+      id: neuromatch-dl
+      ref: W3D1_AttentionAndTransformers/W3D1_Tutorial1#ex7
+      url: https://github.com/NeuromatchAcademy/course-content-dl/blob/caba36c513fb8139ac3c9e7503f7a769dadde25e/tutorials/W3D1_AttentionAndTransformers/instructor/W3D1_Tutorial1.ipynb
+    status: draft
+  - id: transformers-045
+    type: short_answer
+    difficulty: medium
+    tags:
+      - positional-encoding
+      - sinusoidal
+    question: |
+      The sinusoidal positional encoding is $PE_{(pos,\,2i)} = \sin(pos/10000^{2i/d})$ and
+      $PE_{(pos,\,2i+1)} = \cos(pos/10000^{2i/d})$. With $d = 4$, what is the entry in dimension 2 (counting from 0) of
+      the encoding of position $pos = 2$?
+    answer:
+      numeric: 0.020
+      tolerance: 0.0005
+      hint: a number, 3 decimals
+      model: 'Dimension 2 is $2i$ with $i = 1$: $\sin(2/10000^{2/4}) = \sin(0.02) \approx 0.020$'
+    explanation: |
+      Dimension 2 is even, $2i = 2$, so $i = 1$ and the frequency is $1/10000^{2/4} = 1/100$; the entry is
+      $\sin(2/100) = \sin(0.02) \approx 0.020$ [^1][^2]. Dimensions 0 and 1 use frequency 1 ($\sin 2 \approx 0.909$,
+      $\cos 2 \approx -0.416$): low dimensions oscillate fast and high dimensions slowly, a continuous analogue of
+      binary counting [^2]. NMA adds this fixed encoding to the token embeddings because self-attention by itself
+      ignores word order [^1].
+    references:
+      - source: neuromatch-dl
+        locator: W3D1 Tutorial 1, Section 6 Positional encoding
+        url: https://github.com/NeuromatchAcademy/course-content-dl/blob/caba36c513fb8139ac3c9e7503f7a769dadde25e/tutorials/W3D1_AttentionAndTransformers/instructor/W3D1_Tutorial1.ipynb
+      - source: d2l
+        locator: Sec. 11.6.3 Positional Encoding
+        url: https://d2l.ai/chapter_attention-mechanisms-and-transformers/self-attention-and-positional-encoding.html#positional-encoding
+    source:
+      id: neuromatch-dl
+      ref: W3D1_AttentionAndTransformers/W3D1_Tutorial1#sec6
+      url: https://github.com/NeuromatchAcademy/course-content-dl/blob/caba36c513fb8139ac3c9e7503f7a769dadde25e/tutorials/W3D1_AttentionAndTransformers/instructor/W3D1_Tutorial1.ipynb
+    status: draft
+  - id: transformers-046
+    type: short_answer
+    difficulty: hard
+    tags:
+      - multi-head-attention
+      - parameter-count
+      - vit
+    question: |
+      ViT-Base uses `nn.MultiheadAttention(embed_dim=768, num_heads=12)` (with biases) in each encoder
+      layer. How many parameters does this attention module have?
+    answer:
+      numeric: 2362368
+      tolerance: 0
+      hint: a whole number
+      model: $4\,(768^2 + 768) = 2{,}362{,}368$, independent of the number of heads
+    explanation: |
+      The module has a query, a key, a value and an output projection, each a $768 \times 768$ matrix
+      plus a bias of 768: $4(768^2 + 768) = 2{,}362{,}368$ [^1][^2]. Splitting into 12 heads does not add
+      parameters, because each head of size $768/12 = 64$ just uses a slice of the same projections
+      [^2]. That count matches the summary printed in the ViT solution [^3].
+    references:
+      - title: torch.nn.MultiheadAttention (PyTorch documentation)
+        url: https://pytorch.org/docs/stable/generated/torch.nn.MultiheadAttention.html
+        locator: Parameters `embed_dim`, `num_heads` ("embed_dim will be split across num_heads") and `bias` (biases of the input/output projections)
+      - source: d2l
+        locator: Sec. 11.5.1 Model (multi-head attention with $p_q h = p_k h = p_v h = p_o$)
+        url: https://d2l.ai/chapter_attention-mechanisms-and-transformers/multihead-attention.html
+      - source: learn-pytorch
+        locator: 08 PyTorch Paper Replicating exercise solutions, Exercise 1 (torchinfo summary of the encoder layer)
+        url: https://github.com/mrdbourke/pytorch-deep-learning/blob/a16552001d963d078390d5bbdfc321e7e7c94bd1/extras/solutions/08_pytorch_paper_replicating_exercise_solutions.ipynb
+    source:
+      id: learn-pytorch
+      ref: extras/solutions/08_pytorch_paper_replicating_exercise_solutions.ipynb#ex1
+      url: https://github.com/mrdbourke/pytorch-deep-learning/blob/a16552001d963d078390d5bbdfc321e7e7c94bd1/extras/solutions/08_pytorch_paper_replicating_exercise_solutions.ipynb
+    status: draft
+  - id: transformers-047
+    type: short_answer
+    difficulty: medium
+    tags:
+      - vit
+      - patch-embedding
+      - conv2d
+      - parameter-count
+    question: |
+      A ViT turns $224 \times 224$ RGB images into patch embeddings with
+      `nn.Conv2d(in_channels=3, out_channels=768, kernel_size=16, stride=16)`, which embeds each
+      $16 \times 16$ patch into a 768-dimensional vector. How many parameters does this layer have?
+    answer:
+      numeric: 590592
+      tolerance: 0
+      hint: a whole number
+      model: $768 \cdot 3 \cdot 16 \cdot 16 + 768 = 590{,}592$
+    explanation: |
+      A convolution has $c_o \times c_i \times k_h \times k_w$ weights plus one bias per output channel
+      [^1]: $768 \cdot 3 \cdot 16 \cdot 16 + 768 = 590{,}592$. With kernel size equal to stride, the
+      patches do not overlap, so this is the same as flattening each patch to $3 \cdot 16 \cdot 16 = 768$
+      numbers and applying one shared linear layer; the image becomes $14 \times 14 = 196$ patch tokens
+      [^2][^3].
+    references:
+      - source: d2l
+        locator: Sec. 7.4 Multiple Input and Multiple Output Channels
+        url: https://d2l.ai/chapter_convolutional-neural-networks/channels.html
+      - source: d2l
+        locator: Sec. 11.8.1 Model; 11.8.2 Patch Embedding
+        url: https://d2l.ai/chapter_attention-mechanisms-and-transformers/vision-transformer.html
+      - source: learn-pytorch
+        locator: 08 PyTorch Paper Replicating exercise solutions, Exercise 1 (PatchEmbedding; summary shows 590,592)
+        url: https://github.com/mrdbourke/pytorch-deep-learning/blob/a16552001d963d078390d5bbdfc321e7e7c94bd1/extras/solutions/08_pytorch_paper_replicating_exercise_solutions.ipynb
+    source:
+      id: learn-pytorch
+      ref: extras/solutions/08_pytorch_paper_replicating_exercise_solutions.ipynb#ex1-b
+      url: https://github.com/mrdbourke/pytorch-deep-learning/blob/a16552001d963d078390d5bbdfc321e7e7c94bd1/extras/solutions/08_pytorch_paper_replicating_exercise_solutions.ipynb
+    status: draft
+  - id: transformers-048
+    type: multiple
+    difficulty: medium
+    tags:
+      - self-attention
+      - rnn
+      - complexity
+      - parallelism
+    question: |
+      A sequence has length $T$. Compare one RNN layer with one self-attention layer, counting only how
+      the cost grows with $T$. Select all statements that are true.
+    options:
+      - text: The RNN's forward pass needs $O(T)$ operations
+        correct: true
+      - text: The self-attention forward pass needs $O(T^2)$ operations, one score per pair of positions
+        correct: true
+      - text: The RNN can process all $T$ positions in parallel, because its weights are shared across time
+        why: Each $h_t$ needs $h_{t-1}$, so the RNN takes $T$ sequential steps; sharing weights does not remove that dependency [^1].
+      - text: Self-attention needs $O(T)$ sequential steps, one per query
+        why: All queries use the same keys and values and do not depend on each other, so they are computed at once; only $O(1)$ sequential steps are needed [^1].
+    explanation: |
+      An RNN does a constant amount of work per step but has to take the $T$ steps one after another
+      [^1]. Self-attention compares every query with every key, $O(T^2)$ work, yet all of it can run in
+      parallel, so with enough parallel hardware a transformer's forward pass is faster [^1][^2]. For
+      very long sequences the quadratic time and memory of attention become the bottleneck, while an
+      RNN keeps a fixed-size state.
+    references:
+      - source: d2l
+        locator: Sec. 11.6.2 Comparing CNNs, RNNs, and Self-Attention
+        url: https://d2l.ai/chapter_attention-mechanisms-and-transformers/self-attention-and-positional-encoding.html#comparing-cnns-rnns-and-self-attention
+      - source: mit-ocw-67960
+        locator: Homework 3, Problem 1(e)–(f)
+        url: https://ocw.mit.edu/courses/6-7960-deep-learning-fall-2024/resources/mit6_7960_f24_hw3_pdf/
+    source:
+      id: mit-ocw-67960
+      ref: mit6_7960_f24_hw3#q1e
+      url: https://ocw.mit.edu/courses/6-7960-deep-learning-fall-2024/resources/mit6_7960_f24_hw3_pdf/
+    status: draft
+  - id: transformers-049
+    type: single
+    difficulty: easy
+    tags:
+      - attention-mask
+      - softmax
+    question: |
+      In self-attention, $A = \mathrm{softmax}(QK^\top / \sqrt{d_k})$ row by row, and token $i$ must not
+      attend to token $j$. What do you do to the score in row $i$, column $j$ so that $A_{ij} = 0$ and
+      every row of $A$ still sums to 1?
+    options:
+      - text: Set it to $-\infty$ before the softmax
+        correct: true
+      - text: Set it to $0$ before the softmax
+        why: A score of 0 still gets the weight $e^0 / \sum_k e^{s_k} > 0$, so token $j$ keeps influencing token $i$.
+      - text: Set $A_{ij}$ to 0 after the softmax
+        why: The row then sums to less than 1 unless it is renormalized, which is what the $-\infty$ score does automatically.
+      - text: Set the value vector of token $j$ to zero instead
+        why: The weight $A_{ij}$ stays positive and its mass is wasted, and the value of token $j$ is still needed by the tokens allowed to see it.
+    explanation: |
+      The softmax maps a score of $-\infty$ (in practice a very large negative number) to zero weight, and the other weights in the row
+      are renormalized among themselves, so they still sum to 1 [^1]. Implementations use a large
+      negative constant such as $-10^6$, whose exponential underflows to 0 [^1]. The same trick builds
+      the causal mask of a decoder and hides padding tokens [^2].
+    references:
+      - source: d2l
+        locator: Sec. 11.3.2.1 Masked Softmax Operation
+        url: https://d2l.ai/chapter_attention-mechanisms-and-transformers/attention-scoring-functions.html#masked-softmax-operation
+      - source: mit-ocw-67960
+        locator: Homework 3, Problem 2(a)
+        url: https://ocw.mit.edu/courses/6-7960-deep-learning-fall-2024/resources/mit6_7960_f24_hw3_pdf/
+    source:
+      id: mit-ocw-67960
+      ref: mit6_7960_f24_hw3#q2a
+      url: https://ocw.mit.edu/courses/6-7960-deep-learning-fall-2024/resources/mit6_7960_f24_hw3_pdf/
+    status: draft
+  - id: transformers-050
+    type: short_answer
+    difficulty: easy
+    tags:
+      - multi-head-attention
+      - parameter-count
+    question: |
+      Multi-head attention concatenates the outputs of $n = 8$ heads, each of dimension $d_k = 64$,
+      and projects the result back to the model dimension $d = 512$:
+      $\mathrm{MultiHead}(x) = \mathrm{Concat}(\mathrm{head}_1, \ldots, \mathrm{head}_8)\, W_O$.
+      How many weights does $W_O$ have (no bias)?
+    answer:
+      numeric: 262144
+      tolerance: 0
+      hint: a whole number
+      model: $W_O \in \mathbb{R}^{(8 \cdot 64) \times 512} = \mathbb{R}^{512 \times 512}$, so $262{,}144$ weights
+    explanation: |
+      The concatenation has $n d_k = 8 \times 64 = 512$ entries per token, and $W_O$ maps them to the
+      model dimension, so it is $512 \times 512$ [^1]. Choosing $d_k = d / n$ is the usual design: the
+      total cost of all heads is then about that of one full-width head, and $W_O$ is square [^2]. Its
+      job is to mix the information the separate heads gathered.
+    references:
+      - source: d2l
+        locator: Sec. 11.5.1 Model
+        url: https://d2l.ai/chapter_attention-mechanisms-and-transformers/multihead-attention.html#model
+      - title: Vaswani et al. (2017), Attention Is All You Need, arXiv:1706.03762
+        locator: Sec. 3.2.2 Multi-Head Attention
+        url: https://arxiv.org/abs/1706.03762
+      - source: mit-ocw-67960
+        locator: Homework 3, Problem 2(b)
+        url: https://ocw.mit.edu/courses/6-7960-deep-learning-fall-2024/resources/mit6_7960_f24_hw3_pdf/
+    source:
+      id: mit-ocw-67960
+      ref: mit6_7960_f24_hw3#q2b
+      url: https://ocw.mit.edu/courses/6-7960-deep-learning-fall-2024/resources/mit6_7960_f24_hw3_pdf/
+    status: draft
+  - id: transformers-051
+    type: single
+    difficulty: medium
+    tags:
+      - vision-transformer
+      - patch-embedding
+      - conv2d
+    question: |
+      A vision transformer turns a $3 \times 32 \times 32$ image into non-overlapping $4 \times 4$
+      patches, flattens each patch and projects it linearly to 128 dimensions. Which single PyTorch
+      layer computes exactly these patch embeddings?
+    options:
+      - text: '`nn.Conv2d(3, 128, kernel_size=4, stride=4)`'
+        correct: true
+      - text: '`nn.Conv2d(3, 128, kernel_size=4, stride=1)`'
+        why: Stride 1 makes the windows overlap and gives a $29 \times 29$ grid, not the $8 \times 8$ grid of separate patches.
+      - text: '`nn.Conv2d(3, 128, kernel_size=8, stride=4)`'
+        why: An $8 \times 8$ kernel with stride 4 reads overlapping $8 \times 8$ windows, not $4 \times 4$ patches.
+      - text: '`nn.Conv2d(48, 128, kernel_size=1)`'
+        why: The image has 3 input channels; a $1 \times 1$ convolution over 48 channels would need the patches cut out and stacked first.
+    explanation: |
+      A convolution whose kernel size and stride both equal the patch size visits each $4 \times 4$
+      patch exactly once and applies the same linear map to its $3 \cdot 4 \cdot 4 = 48$ values [^1].
+      The output is a $128 \times 8 \times 8$ map, i.e. 64 patch tokens of dimension 128, using
+      $48 \times 128 + 128 = 6{,}272$ parameters. Flattening the $8 \times 8$ grid gives the token
+      sequence the transformer reads [^2].
+    references:
+      - source: d2l
+        locator: Sec. 11.8.2 Patch Embedding
+        url: https://d2l.ai/chapter_attention-mechanisms-and-transformers/vision-transformer.html#patch-embedding
+      - source: mit-ocw-67960
+        locator: Homework 3, Problem 3(a)
+        url: https://ocw.mit.edu/courses/6-7960-deep-learning-fall-2024/resources/mit6_7960_f24_hw3_pdf/
+    source:
+      id: mit-ocw-67960
+      ref: mit6_7960_f24_hw3#q3a
+      url: https://ocw.mit.edu/courses/6-7960-deep-learning-fall-2024/resources/mit6_7960_f24_hw3_pdf/
+    status: draft
+  - id: transformers-052
+    type: single
+    difficulty: hard
+    tags:
+      - vision-transformer
+      - positional-embedding
+      - resolution
+    question: |
+      A ViT was pretrained on $224 \times 224$ images with $16 \times 16$ patches and learned position
+      embeddings for its $14 \times 14$ patch grid. You fine-tune it on $384 \times 384$ images with the
+      same patch size, which gives a $24 \times 24$ grid. What do you do with the position embeddings?
+    options:
+      - text: Interpolate them in 2D to the new $24 \times 24$ grid
+        correct: true
+      - text: Keep them unchanged, since attention works for any number of tokens
+        why: Attention does accept more tokens, but there are only 196 learned embeddings and the new grid has 576 positions.
+      - text: Use $27 \times 27$ patches so that the grid stays $14 \times 14$
+        why: The patch-embedding layer was trained on $16 \times 16$ patches; a different patch size changes its input size and its weights no longer fit.
+      - text: Center-crop the images to $224 \times 224$
+        why: This keeps the shapes valid but throws away the extra resolution that was the reason for larger images.
+    explanation: |
+      Learned position embeddings form a grid of vectors tied to patch locations, so a larger grid has
+      positions that were never trained [^1]. The ViT authors resize them by 2D interpolation according
+      to their location in the image; together with the patch extraction, this is the only place where
+      the 2D structure of images is put in by hand [^1]. A CNN needs no such step: its kernels slide over any image size and global pooling
+      removes the dependence on the grid [^2].
+    references:
+      - title: Dosovitskiy et al. (2021), An Image is Worth 16x16 Words, arXiv:2010.11929
+        locator: Sec. 3.2 Fine-tuning and Higher Resolution
+        url: https://arxiv.org/abs/2010.11929
+      - source: mit-ocw-67960
+        locator: Homework 3, Problem 3(e)
+        url: https://ocw.mit.edu/courses/6-7960-deep-learning-fall-2024/resources/mit6_7960_f24_hw3_pdf/
+    source:
+      id: mit-ocw-67960
+      ref: mit6_7960_f24_hw3#q3e-resolution
+      url: https://ocw.mit.edu/courses/6-7960-deep-learning-fall-2024/resources/mit6_7960_f24_hw3_pdf/
+    status: draft
+  - id: transformers-053
+    type: single
+    difficulty: medium
+    tags:
+      - kv-cache
+      - inference
+      - autoregressive-generation
+    question: |
+      A decoder-only transformer generates text one token at a time and uses a KV cache. What does the
+      cache store?
+    options:
+      - text: Keys and values of earlier tokens, for every attention layer
+        correct: true
+      - text: The queries of all earlier tokens, so attention need not recompute them
+        why: An earlier token's query was only needed to compute that token's own output; the new token's output needs only the new query [^1].
+      - text: The attention weight matrices of the earlier steps
+        why: The new token's attention row is new at every step, and the old rows are never needed again.
+      - text: The output logits of the earlier steps
+        why: Old logits were used to pick old tokens and play no further role in later steps.
+    explanation: |
+      With causal attention the keys and values of past tokens never change, so they can be computed
+      once and appended to at each step [^1]. A new step then computes the query, key and value of the
+      new token only, and attends with its query to the cached keys and values, per layer [^1]. This
+      makes the attention cost per generated token linear instead of quadratic in the sequence length,
+      at the price of memory that grows with the context [^1][^2].
+    references:
+      - title: 'Hugging Face Transformers documentation: How caching works'
+        locator: Attention matrices; Cache storage implementation
+        url: https://huggingface.co/docs/transformers/en/cache_explanation
+      - source: mit-ocw-67960
+        locator: Homework 3, Problem 4(i)
+        url: https://ocw.mit.edu/courses/6-7960-deep-learning-fall-2024/resources/mit6_7960_f24_hw3_pdf/
+    source:
+      id: mit-ocw-67960
+      ref: mit6_7960_f24_hw3#q4i
+      url: https://ocw.mit.edu/courses/6-7960-deep-learning-fall-2024/resources/mit6_7960_f24_hw3_pdf/
+    status: draft
+  - id: transformers-054
+    type: short_answer
+    difficulty: medium
+    tags:
+      - attention
+      - dot-product-attention
+      - softmax
+    question: |
+      A decoder attends over three encoder hidden states $\mathbf{h}_1 = (1, 2)$,
+      $\mathbf{h}_2 = (3, 4)$, $\mathbf{h}_3 = (5, 6)$ with the decoder state $\mathbf{s} = (0.5, 1)$.
+      The scores are the plain dot products $\mathbf{s}^\top \mathbf{h}_i$ (no scaling), and the
+      attention weights are their softmax. What weight does $\mathbf{h}_3$ get?
+    answer:
+      numeric: 0.950
+      tolerance: 0.001
+      hint: a number, 3 decimals
+      model: Scores $2.5, 5.5, 8.5$; weight $\frac{e^{8.5}}{e^{2.5} + e^{5.5} + e^{8.5}} \approx 0.950$
+    explanation: |
+      The scores are $0.5 + 2 = 2.5$, $1.5 + 4 = 5.5$ and $2.5 + 6 = 8.5$ [^1]. Softmax turns them
+      into weights $(0.0024, 0.0473, 0.9503)$, so almost all attention goes to $\mathbf{h}_3$ [^2].
+      Each score gap of 3 multiplies the weight by $e^3 \approx 20$; this sharpness grows with the
+      dimension, which is why transformers divide dot products by $\sqrt{d}$ [^2].
+    references:
+      - source: nptel-intro-llms
+        locator: Assignment 5, Q8 (dot-product attention weights 0.00235, 0.04731, 0.9503)
+        url: https://archive.nptel.ac.in/content/storage2/courses/downloads_new/106102576/noc25_cs45_assignment_Week_5.png
+      - source: d2l
+        locator: Sec. 11.3.1 Dot Product Attention and 11.3.3 Scaled Dot Product Attention
+        url: https://d2l.ai/chapter_attention-mechanisms-and-transformers/attention-scoring-functions.html#dot-product-attention
+    source:
+      id: nptel-intro-llms
+      ref: intro-llms/assignment5#q8
+      url: https://archive.nptel.ac.in/content/storage2/courses/downloads_new/106102576/noc25_cs45_assignment_Week_5.png
+    status: draft
+  - id: transformers-055
+    type: short_answer
+    difficulty: medium
+    tags:
+      - masked-self-attention
+      - causal-mask
+      - softmax
+    question: |
+      In a decoder with masked (causal) self-attention, token $w_3$ of the sequence
+      $(w_1, w_2, w_3, w_4)$ has the unmasked attention scores $(5, 2, 1, 3)$ for $w_1, \dots, w_4$.
+      After masking, what attention weight does $w_3$ give to $w_1$?
+    answer:
+      numeric: 0.936
+      tolerance: 0.001
+      hint: a number, 3 decimals
+      model: Mask $w_4$; $\frac{e^5}{e^5 + e^2 + e^1} \approx 0.936$, giving weights $(0.936, 0.047, 0.017, 0)$
+    explanation: |
+      The causal mask stops a token from attending to later positions, here $w_4$, by setting its
+      score to $-\infty$ before the softmax [^2]. The remaining scores $(5, 2, 1)$ give
+      $e^5 / (e^5 + e^2 + e^1) = 148.4 / 158.5 \approx 0.936$ for $w_1$, then $0.047$ and $0.017$, and
+      exactly 0 for $w_4$ [^1]. Masking during training keeps the model from seeing the tokens it must
+      predict.
+    references:
+      - source: nptel-intro-llms
+        locator: Assignment 6, Q5 (masked self-attention weights for w3, accepted [0.9362, 0.0466, 0.0171, 0])
+        url: https://archive.nptel.ac.in/content/storage2/courses/downloads_new/106102576/noc25_cs45_assignment_Week_6.png
+      - source: d2l
+        locator: Sec. 11.3.2.1 Masked Softmax Operation
+        url: https://d2l.ai/chapter_attention-mechanisms-and-transformers/attention-scoring-functions.html#masked-softmax-operation
+    source:
+      id: nptel-intro-llms
+      ref: intro-llms/assignment6#q5
+      url: https://archive.nptel.ac.in/content/storage2/courses/downloads_new/106102576/noc25_cs45_assignment_Week_6.png
+    status: draft
+  - id: transformers-056
+    type: single
+    difficulty: medium
+    tags:
+      - positional-encoding
+      - sinusoidal
+    question: |
+      The sinusoidal positional encoding is $PE(p, 2i) = \sin\left(p / 10000^{2i/d}\right)$ and
+      $PE(p, 2i+1) = \cos\left(p / 10000^{2i/d}\right)$. With $d = 512$, what are the entries of
+      position $p = 10$ in dimensions 2 and 3?
+    options:
+      - text: $\sin\left(10 / 10000^{1/256}\right)$ and $\cos\left(10 / 10000^{1/256}\right)$
+        correct: true
+      - text: $\sin\left(10 / 10000^{2/512}\right)$ and $\cos\left(10 / 10000^{3/512}\right)$
+        why: Dimensions $2i$ and $2i+1$ share the frequency set by $i$; dimension 3 has $i = 1$, not an exponent of $3/512$.
+      - text: $\cos\left(10 / 10000^{1/256}\right)$ and $\sin\left(10 / 10000^{1/256}\right)$
+        why: Even dimensions use sine and odd dimensions cosine, not the other way round.
+      - text: $\sin\left(10 / 10000^{1/512}\right)$ and $\cos\left(10 / 10000^{1/512}\right)$
+        why: For $i = 1$ the exponent is $2i/d = 2/512 = 1/256$, not $1/512$.
+    explanation: |
+      Dimension 2 is $2i$ with $i = 1$ and dimension 3 is $2i + 1$ with the same $i = 1$, so both use
+      the angle $10 / 10000^{2/512} = 10 / 10000^{1/256}$, sine for the even and cosine for the odd
+      dimension [^1][^2]. Each pair of dimensions is one rotating sinusoid, and the wavelengths grow
+      geometrically along the dimensions, which also lets the model express relative offsets as
+      linear maps [^2].
+    references:
+      - source: nptel-intro-llms
+        locator: Assignment 6, Q8 (sinusoidal positional encoding, d_model = 512, p = 10)
+        url: https://archive.nptel.ac.in/content/storage2/courses/downloads_new/106102576/noc25_cs45_assignment_Week_6.png
+      - source: d2l
+        locator: Sec. 11.6.3 Positional Encoding (11.6.3.1, 11.6.3.2)
+        url: https://d2l.ai/chapter_attention-mechanisms-and-transformers/self-attention-and-positional-encoding.html#positional-encoding
+    source:
+      id: nptel-intro-llms
+      ref: intro-llms/assignment6#q8
+      url: https://archive.nptel.ac.in/content/storage2/courses/downloads_new/106102576/noc25_cs45_assignment_Week_6.png
+    status: draft
+  - id: transformers-057
+    type: multiple
+    difficulty: medium
+    tags:
+      - rope
+      - rotary-position-embedding
+      - positional-encoding
+    question: Which statements about Rotary Position Embedding (RoPE) are true? Select all that apply.
+    options:
+      - text: It multiplies queries and keys by a position-dependent rotation matrix
+        correct: true
+      - text: Each rotated vector encodes its absolute position, while their dot product depends only on the relative offset
+        correct: true
+      - text: Like sinusoidal encodings, it is added to the token embeddings at the input layer
+        why: RoPE is applied multiplicatively to the queries and keys inside each attention layer, not added to the input [^2].
+      - text: It removes the need for any positional information in the model
+        why: RoPE is itself a way of supplying positional information to attention [^2].
+    explanation: |
+      RoPE splits each query and key into 2-D pairs and rotates pair $j$ of the vector at position $m$
+      by the angle $m\theta_j$ [^2]. A rotated vector thus carries its absolute position, and because
+      rotations compose, $\langle R_m \mathbf{q}, R_n \mathbf{k} \rangle$ depends on $m - n$ only, so
+      attention scores see relative positions [^1][^2]. Since the rotation multiplies the vectors
+      inside attention, nothing is added to the embeddings.
+    references:
+      - source: nptel-intro-llms
+        locator: Assignment 6, Q4 (statements about RoPE)
+        url: https://archive.nptel.ac.in/content/storage2/courses/downloads_new/106102576/noc25_cs45_assignment_Week_6.png
+      - title: 'Su et al. (2021), RoFormer: Enhanced Transformer with Rotary Position Embedding, arXiv:2104.09864'
+        url: https://arxiv.org/abs/2104.09864
+        locator: Abstract; Sec. 3.2 Rotary position embedding
+    source:
+      id: nptel-intro-llms
+      ref: intro-llms/assignment6#q4
+      url: https://archive.nptel.ac.in/content/storage2/courses/downloads_new/106102576/noc25_cs45_assignment_Week_6.png
+    status: draft

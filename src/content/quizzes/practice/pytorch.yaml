@@ -1648,3 +1648,941 @@ questions:
       ref: chapter_linear-classification/image-classification-dataset#ex1
       url: https://d2l.ai/chapter_linear-classification/image-classification-dataset.html#exercises
     status: draft
+  - id: pytorch-040
+    type: single
+    difficulty: medium
+    tags:
+      - log-softmax
+      - nll-loss
+      - cross-entropy-loss
+      - code-reading
+    question: |
+      A pretrained DenseNet gets a new classifier and loss:
+
+      ```python
+      model.classifier = nn.Sequential(nn.Linear(1024, 256), nn.ReLU(), nn.Dropout(0.2),
+                                       nn.Linear(256, 2), nn.LogSoftmax(dim=1))
+      criterion = nn.NLLLoss()
+      ```
+
+      Why is `NLLLoss` the right loss here rather than `nn.CrossEntropyLoss`?
+    options:
+      - text: The outputs are already log-probabilities; `CrossEntropyLoss` would normalize again
+        correct: true
+      - text: '`CrossEntropyLoss` only works for more than two classes'
+        why: '`CrossEntropyLoss` works for any number of classes, two included [^1].'
+      - text: '`NLLLoss` applies the softmax that the model is missing'
+        why: '`NLLLoss` applies no softmax; it just picks the negative log-probability of the true class from its input [^1].'
+      - text: '`CrossEntropyLoss` needs one-hot encoded targets, while `NLLLoss` takes class indices'
+        why: Both accept class-index targets [^1].
+    explanation: |
+      `CrossEntropyLoss` combines `LogSoftmax` and `NLLLoss` and expects raw logits [^1]. The
+      classifier here ends in `LogSoftmax`, so its outputs are already log-probabilities, and
+      `NLLLoss` completes the cross-entropy; `torch.exp(output)` recovers probabilities for
+      accuracy [^2]. Feeding log-probabilities to `CrossEntropyLoss` would normalize twice.
+    references:
+      - title: 'PyTorch documentation: CrossEntropyLoss'
+        url: https://pytorch.org/docs/stable/generated/torch.nn.CrossEntropyLoss.html
+        locator: description (input is unnormalized logits; LogSoftmax + NLLLoss)
+      - source: udacity-dl-pytorch
+        locator: Intro to PyTorch, Part 8 - Transfer Learning (Solution), classifier and training loop
+        url: https://github.com/udacity/deep-learning-v2-pytorch/blob/c9404fc86181fc3f0906b368697268257f348535/intro-to-pytorch/Part%208%20-%20Transfer%20Learning%20(Solution).ipynb
+    source:
+      id: udacity-dl-pytorch
+      ref: intro-to-pytorch/Part 8 - Transfer Learning (Solution).ipynb#logsoftmax-nllloss
+      url: https://github.com/udacity/deep-learning-v2-pytorch/blob/c9404fc86181fc3f0906b368697268257f348535/intro-to-pytorch/Part%208%20-%20Transfer%20Learning%20(Solution).ipynb
+    status: draft
+  - id: pytorch-041
+    type: short_answer
+    difficulty: medium
+    tags:
+      - lstm
+      - reshape
+      - shapes
+      - code-reading
+    question: |
+      A character-level LSTM with `batch_first=True` and `n_hidden = 256` processes a batch of 10
+      sequences of 50 characters over a vocabulary of 83 characters:
+
+      ```python
+      r_output, hidden = self.lstm(x, hidden)          # r_output: (10, 50, 256)
+      out = r_output.contiguous().view(-1, self.n_hidden)
+      out = self.fc(out)                               # fc = nn.Linear(256, 83)
+      ```
+
+      What is the shape of `out`?
+    answer:
+      accept:
+        - (500, 83)
+      pattern: \(?\s*500\s*[,x×]\s*83\s*\)?
+      hint: two numbers, e.g. (64, 10)
+      model: '`view(-1, 256)` stacks all $10 \times 50 = 500$ time steps: $(500, 256) \to$ `fc` $\to (500, 83)$'
+    explanation: |
+      `view(-1, n_hidden)` stacks the outputs of every time step of every sequence into rows,
+      $10 \cdot 50 = 500$ rows of 256 values (`contiguous()` is needed first because the LSTM output
+      may not be stored contiguously) [^1]. The linear layer maps each row to 83 character scores,
+      so one cross-entropy loss covers all 500 next-character predictions, with the targets flattened
+      the same way [^1].
+    references:
+      - source: udacity-dl-pytorch
+        locator: Character-Level LSTM notebook, Defining the network with PyTorch (CharRNN.forward) and Time to train
+        url: https://github.com/udacity/deep-learning-v2-pytorch/blob/c9404fc86181fc3f0906b368697268257f348535/recurrent-neural-networks/char-rnn/Character_Level_RNN_Solution.ipynb
+    source:
+      id: udacity-dl-pytorch
+      ref: recurrent-neural-networks/char-rnn/Character_Level_RNN_Solution.ipynb#output-shape
+      url: https://github.com/udacity/deep-learning-v2-pytorch/blob/c9404fc86181fc3f0906b368697268257f348535/recurrent-neural-networks/char-rnn/Character_Level_RNN_Solution.ipynb
+    status: draft
+  - id: pytorch-042
+    type: true_false
+    difficulty: medium
+    tags:
+      - numpy-interop
+      - memory-sharing
+    question: |
+      ```python
+      x = torch.zeros(3)      # a CPU tensor
+      y = x.numpy()
+      x[0] = 5.0
+      ```
+      True or false: after the last line, `y[0]` is also `5.0`.
+    options:
+      - text: 'True'
+        correct: true
+      - text: 'False'
+        why: '`Tensor.numpy()` returns an array that shares storage with the CPU tensor, so in-place changes to one are visible in the other.'
+    explanation: |
+      For a CPU tensor, `Tensor.numpy()` returns a NumPy array that shares the tensor's storage, so changing `x` in place
+      also changes `y` [^1][^2]. NMA's tutorial states that the converted result does not share memory; that holds for
+      `torch.tensor(y)`, which always copies, but not for `.numpy()` or `torch.from_numpy` [^1][^3]. Use `x.numpy().copy()`
+      or `x.clone().numpy()` when you need an independent array.
+    references:
+      - title: 'PyTorch documentation: torch.Tensor.numpy'
+        url: https://docs.pytorch.org/docs/stable/generated/torch.Tensor.numpy.html
+        locator: Description (the returned ndarray and the tensor share their storage)
+      - source: d2l
+        locator: Sec. 2.1.6 Conversion to Other Python Objects
+        url: https://d2l.ai/chapter_preliminaries/ndarray.html#conversion-to-other-python-objects
+      - source: neuromatch-dl
+        locator: W1D1 Tutorial 1, Section 2.3 Manipulating Tensors in Pytorch, Conversion to Other Python Objects
+        url: https://github.com/NeuromatchAcademy/course-content-dl/blob/caba36c513fb8139ac3c9e7503f7a769dadde25e/tutorials/W1D1_BasicsAndPytorch/instructor/W1D1_Tutorial1.ipynb
+    source:
+      id: neuromatch-dl
+      ref: W1D1_BasicsAndPytorch/W1D1_Tutorial1#sec2.3-conversion
+      url: https://github.com/NeuromatchAcademy/course-content-dl/blob/caba36c513fb8139ac3c9e7503f7a769dadde25e/tutorials/W1D1_BasicsAndPytorch/instructor/W1D1_Tutorial1.ipynb
+    status: draft
+  - id: pytorch-043
+    type: short_answer
+    difficulty: easy
+    tags:
+      - tensor-creation
+      - arange
+    question: |
+      NMA asks for "a 1D tensor containing the even numbers between 4 and 40 inclusive" and gives
+      `D = torch.arange(4, 41, step=2)`. How many elements does `D` have?
+    answer:
+      numeric: 19
+      tolerance: 0
+      hint: an integer
+      model: '$4, 6, \dots, 40$: $(40 - 4)/2 + 1 = 19$; the end value 41 is excluded'
+    explanation: |
+      `torch.arange(start, end, step)` returns the values from `start` up to but not including `end`, so its size is
+      $\lceil (\text{end} - \text{start})/\text{step} \rceil = \lceil 37/2 \rceil = 19$ [^1][^2]. With end 41 the last value is 40, so
+      the tensor holds $4, 6, \dots, 40$ [^1]. Writing `torch.arange(4, 40, step=2)` would silently drop 40, a common
+      off-by-one error.
+    references:
+      - source: neuromatch-dl
+        locator: W1D1 Tutorial 1, Section 2.1 Creating Tensors, Coding Exercise 2.1
+        url: https://github.com/NeuromatchAcademy/course-content-dl/blob/caba36c513fb8139ac3c9e7503f7a769dadde25e/tutorials/W1D1_BasicsAndPytorch/instructor/W1D1_Tutorial1.ipynb
+      - title: 'PyTorch documentation: torch.arange'
+        url: https://docs.pytorch.org/docs/stable/generated/torch.arange.html
+        locator: Description (values from the interval [start, end))
+    source:
+      id: neuromatch-dl
+      ref: W1D1_BasicsAndPytorch/W1D1_Tutorial1#ex2.1
+      url: https://github.com/NeuromatchAcademy/course-content-dl/blob/caba36c513fb8139ac3c9e7503f7a769dadde25e/tutorials/W1D1_BasicsAndPytorch/instructor/W1D1_Tutorial1.ipynb
+    status: draft
+  - id: pytorch-044
+    type: short_answer
+    difficulty: easy
+    tags:
+      - indexing
+      - tensor-shapes
+    question: '`x = torch.rand(1, 2, 3, 4, 5)`. What is `x[0][0][0].shape`?'
+    answer:
+      accept:
+        - (4, 5)
+      pattern: (torch\.size\()?[\(\[]*\s*4\s*[,x×]\s*5\s*[\)\]]*
+      hint: Two numbers, e.g. (2, 3)
+      model: '$(4, 5)$: each `[0]` removes the leading dimension'
+    explanation: |
+      Indexing a tensor with a single integer selects along its first dimension and drops that dimension, as in NumPy
+      [^1][^2]. Three successive `[0]` remove the dimensions of size 1, 2 and 3, leaving shape $(4, 5)$ [^1]. Indexing does
+      not squeeze any other singleton dimensions: if `x` had shape $(1, 10)$, `x[0]` would be the whole row of 10 values,
+      not its first number [^1].
+    references:
+      - source: neuromatch-dl
+        locator: W1D1 Tutorial 1, Section 2.3 Manipulating Tensors in Pytorch (Indexing, Squeezing tensors)
+        url: https://github.com/NeuromatchAcademy/course-content-dl/blob/caba36c513fb8139ac3c9e7503f7a769dadde25e/tutorials/W1D1_BasicsAndPytorch/instructor/W1D1_Tutorial1.ipynb
+      - source: d2l
+        locator: Sec. 2.1.2 Indexing and Slicing
+        url: https://d2l.ai/chapter_preliminaries/ndarray.html#indexing-and-slicing
+    source:
+      id: neuromatch-dl
+      ref: W1D1_BasicsAndPytorch/W1D1_Tutorial1#sec2.3-indexing
+      url: https://github.com/NeuromatchAcademy/course-content-dl/blob/caba36c513fb8139ac3c9e7503f7a769dadde25e/tutorials/W1D1_BasicsAndPytorch/instructor/W1D1_Tutorial1.ipynb
+    status: draft
+  - id: pytorch-045
+    type: single
+    difficulty: medium
+    tags:
+      - permute
+      - image-tensors
+      - matplotlib
+    question: |
+      `image` is a CIFAR-10 image tensor of shape `(3, 32, 32)` (channels, height, width), as produced by
+      `transforms.ToTensor()`. `plt.imshow(image)` fails. Which call displays the image correctly?
+    options:
+      - text: '`plt.imshow(image.permute(1, 2, 0))`'
+        correct: true
+      - text: '`plt.imshow(image.permute(2, 1, 0))`'
+        why: This also gives shape (32, 32, 3) but swaps height and width, so the picture appears transposed.
+      - text: '`plt.imshow(image.reshape(32, 32, 3))`'
+        why: '`reshape` keeps the memory order, so it regroups the numbers instead of moving the channel axis; pixels and colours get scrambled.'
+      - text: '`plt.imshow(image.permute(0, 2, 1))`'
+        why: This only swaps height and width; the channel axis stays first, which `imshow` still rejects.
+    explanation: |
+      Matplotlib's `imshow` expects a colour image as (height, width, channels), while PyTorch image tensors are
+      (channels, height, width) [^1][^2]. `permute(1, 2, 0)` builds the new order from old dimensions 1, 2 and 0, giving
+      $(32, 32, 3)$ [^1]. NMA's text says that `imshow` expects C×H×W; in fact it is the tensor that has this layout, and
+      `imshow` wants H×W×C, which is why the permutation is needed [^1][^2].
+    references:
+      - source: neuromatch-dl
+        locator: W1D1 Tutorial 1, Section 2.3 (Permutation) and Coding Exercise 2.5 Display an image from the dataset
+        url: https://github.com/NeuromatchAcademy/course-content-dl/blob/caba36c513fb8139ac3c9e7503f7a769dadde25e/tutorials/W1D1_BasicsAndPytorch/instructor/W1D1_Tutorial1.ipynb
+      - title: 'Matplotlib documentation: matplotlib.pyplot.imshow'
+        url: https://matplotlib.org/stable/api/_as_gen/matplotlib.pyplot.imshow.html
+        locator: Parameters, X (shape (M, N, 3) for RGB)
+    source:
+      id: neuromatch-dl
+      ref: W1D1_BasicsAndPytorch/W1D1_Tutorial1#ex2.5
+      url: https://github.com/NeuromatchAcademy/course-content-dl/blob/caba36c513fb8139ac3c9e7503f7a769dadde25e/tutorials/W1D1_BasicsAndPytorch/instructor/W1D1_Tutorial1.ipynb
+    status: draft
+  - id: pytorch-046
+    type: single
+    difficulty: medium
+    tags:
+      - gpu
+      - performance
+    question: |
+      You time a function that multiplies small matrices many times, once on the CPU and once on a GPU. As you shrink the
+      matrices and increase the number of iterations, the CPU version eventually becomes faster. What is the main
+      reason?
+    options:
+      - text: Each GPU operation has a fixed overhead (kernel launch, synchronization, data transfer) that dominates tiny workloads
+        correct: true
+      - text: GPUs switch to lower precision for small matrices, which forces extra correction steps
+        why: Precision is set by the tensor dtype, not by matrix size; the slowdown comes from per-operation overhead.
+      - text: Small matrices do not fit into GPU memory, so they are swapped out to the CPU
+        why: Small matrices fit easily; it is large ones that can exhaust GPU memory.
+      - text: The CPU caches the result of the first iteration and skips the remaining ones
+        why: PyTorch recomputes every operation; it does not memoize results across calls.
+    explanation: |
+      A GPU wins by running thousands of arithmetic operations in parallel, but every operation also pays fixed costs:
+      launching a kernel, synchronizing with the CPU and moving data between host and device memory [^1][^2]. For large
+      matrices these costs are negligible next to the arithmetic; for tiny ones they dominate, and the CPU, with fast
+      cores and no transfers, finishes first [^1]. Fusing or batching many small operations into fewer large ones is the
+      usual remedy [^2].
+    references:
+      - source: neuromatch-dl
+        locator: W1D1 Tutorial 1, Section 2.4 GPUs, Coding Exercise 2.4 Just how much faster are GPUs? (Discuss!)
+        url: https://github.com/NeuromatchAcademy/course-content-dl/blob/caba36c513fb8139ac3c9e7503f7a769dadde25e/tutorials/W1D1_BasicsAndPytorch/instructor/W1D1_Tutorial1.ipynb
+      - title: PyTorch Performance Tuning Guide
+        url: https://docs.pytorch.org/tutorials/recipes/recipes/tuning_guide.html
+        locator: Fuse operations; Use CUDA Graphs; Avoid unnecessary CPU-GPU synchronization
+    source:
+      id: neuromatch-dl
+      ref: W1D1_BasicsAndPytorch/W1D1_Tutorial1#ex2.4
+      url: https://github.com/NeuromatchAcademy/course-content-dl/blob/caba36c513fb8139ac3c9e7503f7a769dadde25e/tutorials/W1D1_BasicsAndPytorch/instructor/W1D1_Tutorial1.ipynb
+    status: draft
+  - id: pytorch-047
+    type: true_false
+    difficulty: easy
+    tags:
+      - eval-mode
+      - train-mode
+    question: |
+      An MLP is built only from `nn.Linear` and `nn.ReLU` layers. True or false: calling `net.eval()` before computing
+      its test predictions changes the predictions compared with leaving it in training mode.
+    options:
+      - text: 'True'
+        why: '`eval()` only changes layers whose behaviour differs between training and testing, such as dropout and batch normalization; this net has none.'
+      - text: 'False'
+        correct: true
+    explanation: |
+      `net.eval()` sets the module and its children to evaluation mode, which matters only for layers with
+      mode-dependent behaviour, such as `nn.Dropout` and `nn.BatchNorm` [^1][^2]. Linear and ReLU layers compute the same
+      function in both modes, so the predictions are identical [^1]. Calling `eval()` (and `train()` again before
+      training) is still good practice, because adding dropout or batch normalization later would otherwise change the
+      results silently [^1]. `eval()` also does not turn off gradient tracking; that is what `torch.no_grad()` does [^2].
+    references:
+      - source: neuromatch-dl
+        locator: W1D3 Tutorial 1, Section 2.3 Training and Evaluation, Think! 2.3.1 What's the point of .eval() and .train()?
+        url: https://github.com/NeuromatchAcademy/course-content-dl/blob/caba36c513fb8139ac3c9e7503f7a769dadde25e/tutorials/W1D3_MultiLayerPerceptrons/instructor/W1D3_Tutorial1.ipynb
+      - title: 'PyTorch documentation: torch.nn.Module.eval'
+        url: https://docs.pytorch.org/docs/stable/generated/torch.nn.Module.html#torch.nn.Module.eval
+        locator: Module.eval
+    source:
+      id: neuromatch-dl
+      ref: W1D3_MultiLayerPerceptrons/W1D3_Tutorial1#think2.3.1
+      url: https://github.com/NeuromatchAcademy/course-content-dl/blob/caba36c513fb8139ac3c9e7503f7a769dadde25e/tutorials/W1D3_MultiLayerPerceptrons/instructor/W1D3_Tutorial1.ipynb
+    status: draft
+  - id: pytorch-048
+    type: short_answer
+    difficulty: medium
+    tags:
+      - lr-scheduler
+      - steplr
+      - learning-rate-decay
+    question: |
+      ```python
+      optimizer = torch.optim.SGD(model.parameters(), lr=0.1)
+      scheduler = torch.optim.lr_scheduler.StepLR(optimizer, step_size=30, gamma=0.1)
+      for epoch in range(100):
+          train_one_epoch(model, optimizer)
+          scheduler.step()
+      ```
+      What learning rate does the optimizer use during the epoch with `epoch == 65`?
+    answer:
+      numeric: 0.001
+      tolerance: 0.0000001
+      hint: a number, e.g. 0.05
+      model: $0.1 \cdot 0.1^{\lfloor 65/30 \rfloor} = 0.1 \cdot 0.01 = 0.001$
+    explanation: |
+      `StepLR` multiplies the learning rate by `gamma` every `step_size` calls of `scheduler.step()`,
+      so after 65 epochs it has decayed $\lfloor 65/30\rfloor = 2$ times: $0.1 \to 0.01 \to 0.001$ [^1].
+      The epochs 0–29 use 0.1, 30–59 use 0.01 and 60–89 use 0.001. Starting large and decaying the
+      learning rate in steps is a classic schedule: big steps make fast progress early, small steps let
+      the parameters settle later [^2].
+    references:
+      - title: torch.optim.lr_scheduler.StepLR (PyTorch documentation)
+        url: https://pytorch.org/docs/stable/generated/torch.optim.lr_scheduler.StepLR.html
+        locator: StepLR (parameters `step_size`, `gamma`)
+      - source: d2l
+        locator: Sec. 12.11.3.2 Multi Factor Scheduler
+        url: https://d2l.ai/chapter_optimization/lr-scheduler.html#multi-factor-scheduler
+    source:
+      id: ds-interviews
+      ref: theory.md#q102
+      url: https://github.com/alexeygrigorev/data-science-interviews/blob/919f44547ef5ffc2bd59674fd301940529f4c1a8/theory.md#optimization-in-neural-networks
+    status: draft
+  - id: pytorch-049
+    type: short_answer
+    difficulty: easy
+    tags:
+      - matmul
+      - tensor-shapes
+      - transpose
+    question: |
+      ```python
+      X = torch.rand(7, 7)
+      Y = torch.rand(1, 7)
+      Z = torch.matmul(X, Y.T)
+      ```
+      `torch.matmul(X, Y)` would raise a shape error. What is the shape of `Z`?
+    answer:
+      accept:
+        - (7, 1)
+      pattern: '[(\[]?\s*7(?:\s*[,x×*]\s*|\s+)1\s*[)\]]?'
+      hint: Two dimensions, e.g. (3, 4)
+      model: $(7, 1)$ — $(7 \times 7) \cdot (7 \times 1)$
+    explanation: |
+      A matrix product needs the inner dimensions to match: $(7 \times 7)$ times $(1 \times 7)$ fails
+      because $7 \neq 1$ [^1]. Transposing `Y` gives shape $(7, 1)$, so the product is
+      $(7 \times 7)(7 \times 1) = (7 \times 1)$ [^1][^2]. Checking the inner and outer dimensions is the
+      quickest way to debug most shape errors.
+    references:
+      - title: torch.matmul (PyTorch documentation)
+        url: https://pytorch.org/docs/stable/generated/torch.matmul.html
+        locator: torch.matmul (2-D × 2-D is the matrix-matrix product)
+      - source: learn-pytorch
+        locator: 00 PyTorch Fundamentals exercise solutions, Exercise 3
+        url: https://github.com/mrdbourke/pytorch-deep-learning/blob/a16552001d963d078390d5bbdfc321e7e7c94bd1/extras/solutions/00_pytorch_fundamentals_exercise_solutions.ipynb
+    source:
+      id: learn-pytorch
+      ref: extras/solutions/00_pytorch_fundamentals_exercise_solutions.ipynb#ex3
+      url: https://github.com/mrdbourke/pytorch-deep-learning/blob/a16552001d963d078390d5bbdfc321e7e7c94bd1/extras/solutions/00_pytorch_fundamentals_exercise_solutions.ipynb
+    status: draft
+  - id: pytorch-050
+    type: short_answer
+    difficulty: easy
+    tags:
+      - argmax
+      - flattened-index
+      - code-reading
+    question: |
+      ```python
+      C = torch.tensor([[0.36, 0.47],
+                        [0.52, 0.56]])
+      print(torch.argmax(C))
+      ```
+      What number does `torch.argmax(C)` return?
+    answer:
+      numeric: 3
+      tolerance: 0
+      hint: a whole number
+      model: 3 — without `dim`, argmax indexes the flattened tensor `[0.36, 0.47, 0.52, 0.56]`
+    explanation: |
+      Without a `dim` argument, `torch.argmax` returns the index of the maximum in the *flattened*
+      tensor [^1]. Flattened row by row, `C` is `[0.36, 0.47, 0.52, 0.56]`, so the answer is 3, not the
+      pair (1, 1). Use `dim=0` or `dim=1` to get per-column or per-row indices, as when picking the
+      predicted class of each example with `logits.argmax(dim=1)` [^1][^2].
+    references:
+      - title: torch.argmax (PyTorch documentation)
+        url: https://pytorch.org/docs/stable/generated/torch.argmax.html
+        locator: torch.argmax ("returns the indices of the maximum value of all elements in the input tensor")
+      - source: learn-pytorch
+        locator: 00 PyTorch Fundamentals exercise solutions, Exercise 9
+        url: https://github.com/mrdbourke/pytorch-deep-learning/blob/a16552001d963d078390d5bbdfc321e7e7c94bd1/extras/solutions/00_pytorch_fundamentals_exercise_solutions.ipynb
+    source:
+      id: learn-pytorch
+      ref: extras/solutions/00_pytorch_fundamentals_exercise_solutions.ipynb#ex9
+      url: https://github.com/mrdbourke/pytorch-deep-learning/blob/a16552001d963d078390d5bbdfc321e7e7c94bd1/extras/solutions/00_pytorch_fundamentals_exercise_solutions.ipynb
+    status: draft
+  - id: pytorch-051
+    type: short_answer
+    difficulty: medium
+    tags:
+      - squeeze
+      - tensor-shapes
+    question: |
+      ```python
+      x = torch.rand(1, 1, 1, 10)
+      a = x.squeeze()
+      b = x.squeeze(0)
+      ```
+      `a` has shape `(10,)`. What is the shape of `b`?
+    answer:
+      accept:
+        - (1, 1, 10)
+      pattern: '[(\[]?\s*1(?:\s*[,x×*]\s*|\s+)1(?:\s*[,x×*]\s*|\s+)10\s*[)\]]?'
+      hint: Three dimensions, e.g. (2, 3, 4)
+      model: $(1, 1, 10)$ — only dimension 0 is removed
+    explanation: |
+      `squeeze()` without arguments removes *every* dimension of size 1, giving `(10,)` [^1]. With a
+      dimension argument it removes only that dimension (if its size is 1), so `squeeze(0)` turns
+      `(1, 1, 1, 10)` into `(1, 1, 10)` [^1][^2]. Passing the dimension explicitly is safer in models,
+      because a plain `squeeze()` also removes a batch dimension that happens to be 1.
+    references:
+      - title: torch.squeeze (PyTorch documentation)
+        url: https://pytorch.org/docs/stable/generated/torch.squeeze.html
+        locator: torch.squeeze (parameter `dim`)
+      - source: learn-pytorch
+        locator: 00 PyTorch Fundamentals exercise solutions, Exercise 10
+        url: https://github.com/mrdbourke/pytorch-deep-learning/blob/a16552001d963d078390d5bbdfc321e7e7c94bd1/extras/solutions/00_pytorch_fundamentals_exercise_solutions.ipynb
+    source:
+      id: learn-pytorch
+      ref: extras/solutions/00_pytorch_fundamentals_exercise_solutions.ipynb#ex10
+      url: https://github.com/mrdbourke/pytorch-deep-learning/blob/a16552001d963d078390d5bbdfc321e7e7c94bd1/extras/solutions/00_pytorch_fundamentals_exercise_solutions.ipynb
+    status: draft
+  - id: pytorch-052
+    type: single
+    difficulty: medium
+    tags:
+      - device
+      - tensor-to
+      - module-to
+      - code-reading
+    question: |
+      On a machine with a GPU:
+
+      ```python
+      t = torch.rand(2, 3)
+      t.to("cuda")
+      model = nn.Linear(3, 1)
+      model.to("cuda")
+      print(t.device, next(model.parameters()).device)
+      ```
+      What is printed?
+    options:
+      - text: '`cuda:0 cuda:0`'
+        why: '`Tensor.to` returns a new tensor and leaves `t` unchanged; you must write `t = t.to("cuda")` [^1].'
+      - text: '`cpu cuda:0`'
+        correct: true
+      - text: '`cpu cpu`'
+        why: "`nn.Module.to` moves the module's parameters in place, so the model is on the GPU even without reassignment [^2]."
+      - text: '`cuda:0 cpu`'
+        why: It is the other way round; only the module call works in place [^1][^2].
+    explanation: |
+      `Tensor.to(device)` returns a copy on the target device and does not change the original tensor,
+      so the result must be assigned [^1]. `nn.Module.to(device)` modifies the module in place (and
+      returns it for convenience), so its parameters do move [^2]. That asymmetry explains why
+      solution code writes `X = X.to(device)` for data but often just `model.to(device)` [^3].
+    references:
+      - title: torch.Tensor.to (PyTorch documentation)
+        url: https://pytorch.org/docs/stable/generated/torch.Tensor.to.html
+        locator: torch.Tensor.to (returns a tensor; `self` if already on the device)
+      - title: torch.nn.Module (PyTorch documentation)
+        url: https://pytorch.org/docs/stable/generated/torch.nn.Module.html#torch.nn.Module.to
+        locator: Module.to ("This method modifies the module in-place.")
+      - source: learn-pytorch
+        locator: 00 PyTorch Fundamentals exercise solutions, Exercise 6; 01 PyTorch Workflow exercise solutions, Exercise 2
+        url: https://github.com/mrdbourke/pytorch-deep-learning/blob/a16552001d963d078390d5bbdfc321e7e7c94bd1/extras/solutions/00_pytorch_fundamentals_exercise_solutions.ipynb
+    source:
+      id: learn-pytorch
+      ref: extras/solutions/00_pytorch_fundamentals_exercise_solutions.ipynb#ex6
+      url: https://github.com/mrdbourke/pytorch-deep-learning/blob/a16552001d963d078390d5bbdfc321e7e7c94bd1/extras/solutions/00_pytorch_fundamentals_exercise_solutions.ipynb
+    status: draft
+  - id: pytorch-053
+    type: short_answer
+    difficulty: hard
+    tags:
+      - l1-loss
+      - gradients
+      - sgd
+    question: |
+      A linear model `y_pred = w * X + b` starts at $w = 0.3367$, $b = 0.1288$ and is trained with
+      `nn.L1Loss()` and `torch.optim.SGD(lr=0.01)` on data from $y = 0.3x + 0.9$ with $x \in [0, 0.8)$.
+      At the start every prediction is *below* its target. What is $b$ after the first optimizer step?
+      Give 4 decimals.
+    answer:
+      numeric: 0.1388
+      tolerance: 0.00005
+      hint: a number, 4 decimals
+      model: $\partial L/\partial b = \frac1n\sum \operatorname{sign}(\hat y_i - y_i) = -1$, so $b = 0.1288 + 0.01 = 0.1388$
+    explanation: |
+      The L1 loss is the mean of $|\hat y_i - y_i|$, whose derivative with respect to $\hat y_i$ is the
+      sign of the error [^1]. With all predictions too low, every sign is $-1$, so
+      $\partial L/\partial b = -1$ and SGD adds $\text{lr} \cdot 1 = 0.01$ to $b$ [^2]. Unlike the squared
+      loss, the step size does not shrink as the error shrinks, which is why L1 training with a constant
+      learning rate tends to jitter around the optimum [^1].
+    references:
+      - title: torch.nn.L1Loss (PyTorch documentation)
+        url: https://pytorch.org/docs/stable/generated/torch.nn.L1Loss.html
+        locator: torch.nn.L1Loss (mean absolute error)
+      - source: learn-pytorch
+        locator: 01 PyTorch Workflow exercise solutions, Exercises 2–3 (model, L1 loss, SGD with lr = 0.01)
+        url: https://github.com/mrdbourke/pytorch-deep-learning/blob/a16552001d963d078390d5bbdfc321e7e7c94bd1/extras/solutions/01_pytorch_workflow_exercise_solutions.ipynb
+    source:
+      id: learn-pytorch
+      ref: extras/solutions/01_pytorch_workflow_exercise_solutions.ipynb#ex3
+      url: https://github.com/mrdbourke/pytorch-deep-learning/blob/a16552001d963d078390d5bbdfc321e7e7c94bd1/extras/solutions/01_pytorch_workflow_exercise_solutions.ipynb
+    status: draft
+  - id: pytorch-054
+    type: short_answer
+    difficulty: easy
+    tags:
+      - parameter-count
+      - nn-linear
+      - mlp
+    question: |
+      ```python
+      class MoonModel(nn.Module):
+          def __init__(self):
+              super().__init__()
+              self.layer1 = nn.Linear(2, 10)
+              self.layer2 = nn.Linear(10, 10)
+              self.layer3 = nn.Linear(10, 1)
+              self.relu = nn.ReLU()
+          def forward(self, x):
+              return self.layer3(self.relu(self.layer2(self.relu(self.layer1(x)))))
+      ```
+      How many trainable parameters does `MoonModel()` have?
+    answer:
+      numeric: 151
+      tolerance: 0
+      hint: a whole number
+      model: $(2\cdot10+10) + (10\cdot10+10) + (10\cdot1+1) = 30 + 110 + 11 = 151$
+    explanation: |
+      An `nn.Linear(in, out)` layer has an `out × in` weight matrix plus `out` biases [^1]. The three
+      layers have $30 + 110 + 11 = 151$ parameters, and `nn.ReLU` has none [^1][^2]. The single `relu`
+      module can be reused between layers because it holds no state.
+    references:
+      - title: torch.nn.Linear (PyTorch documentation)
+        url: https://pytorch.org/docs/stable/generated/torch.nn.Linear.html
+        locator: torch.nn.Linear (weight of shape (out_features, in_features), bias of shape (out_features))
+      - source: learn-pytorch
+        locator: 02 PyTorch Classification exercise solutions, Exercise 2 (MoonModelV0)
+        url: https://github.com/mrdbourke/pytorch-deep-learning/blob/a16552001d963d078390d5bbdfc321e7e7c94bd1/extras/solutions/02_pytorch_classification_exercise_solutions.ipynb
+    source:
+      id: learn-pytorch
+      ref: extras/solutions/02_pytorch_classification_exercise_solutions.ipynb#ex2
+      url: https://github.com/mrdbourke/pytorch-deep-learning/blob/a16552001d963d078390d5bbdfc321e7e7c94bd1/extras/solutions/02_pytorch_classification_exercise_solutions.ipynb
+    status: draft
+  - id: pytorch-055
+    type: single
+    difficulty: medium
+    tags:
+      - tanh
+      - overflow
+      - float32
+      - numerical-stability
+    question: |
+      ```python
+      x = torch.arange(-100, 100)          # integers -100 ... 99
+      def tanh(x):
+          return (torch.exp(x) - torch.exp(-x)) / (torch.exp(x) + torch.exp(-x))
+      y = tanh(x)
+      ```
+      What does `y` contain at `x = 99` and at `x = -100`, where `torch.tanh` would give 1 and −1?
+    options:
+      - text: Exactly 1 and −1, as with `torch.tanh`
+        why: '`torch.exp(99)` exceeds the largest float32 value (about $3.4 \times 10^{38}$) and becomes `inf`; `inf/inf` is `nan` [^1][^2].'
+      - text: '`nan` at both ends'
+        correct: true
+      - text: '`inf` and `-inf`'
+        why: The numerator and the denominator both overflow, and dividing infinity by infinity gives `nan`, not `inf` [^2].
+      - text: 0 at both ends, because the exponentials underflow
+        why: $e^{-99} \approx 10^{-43}$ is tiny but still representable, while $e^{99}$ overflows, so the ratio is `inf/inf`.
+    explanation: |
+      `torch.exp` of an integer tensor returns float32, whose largest value is about $3.4 \times 10^{38}$,
+      so $e^{x}$ overflows to `inf` once $x \ge 89$ [^1]. For $x = 99$ the formula computes
+      $(\infty - \varepsilon)/(\infty + \varepsilon) = \infty/\infty = \text{nan}$ with a tiny
+      $\varepsilon = e^{-99}$, and symmetrically for $x = -100$ [^2]. Library functions
+      such as `torch.tanh` use numerically stable formulations and saturate correctly at ±1 [^3].
+    references:
+      - title: 'Wikipedia: Single-precision floating-point format'
+        url: https://en.wikipedia.org/wiki/Single-precision_floating-point_format
+        locator: Introduction (largest finite value $\approx 3.4028235 \times 10^{38}$)
+      - title: 'Wikipedia: NaN'
+        url: https://en.wikipedia.org/wiki/NaN#Operations_generating_NaN
+        locator: Section "Operations generating NaN" ($\infty/\infty$)
+      - source: learn-pytorch
+        locator: 02 PyTorch Classification exercise solutions, Exercise 6 (replicate tanh in pure PyTorch)
+        url: https://github.com/mrdbourke/pytorch-deep-learning/blob/a16552001d963d078390d5bbdfc321e7e7c94bd1/extras/solutions/02_pytorch_classification_exercise_solutions.ipynb
+    source:
+      id: learn-pytorch
+      ref: extras/solutions/02_pytorch_classification_exercise_solutions.ipynb#ex6
+      url: https://github.com/mrdbourke/pytorch-deep-learning/blob/a16552001d963d078390d5bbdfc321e7e7c94bd1/extras/solutions/02_pytorch_classification_exercise_solutions.ipynb
+    status: draft
+  - id: pytorch-056
+    type: true_false
+    difficulty: easy
+    tags:
+      - softmax
+      - argmax
+      - predictions
+    question: |
+      For a multi-class model, `torch.softmax(logits, dim=1).argmax(dim=1)` and
+      `logits.argmax(dim=1)` can return different predicted labels.
+    options:
+      - text: 'True'
+        why: Softmax is strictly increasing in each logit within a row, so it never changes which entry is largest [^1].
+      - text: 'False'
+        correct: true
+    explanation: |
+      Softmax exponentiates and normalizes each row, a strictly monotonic transformation that keeps the
+      order of the logits [^1]. The largest logit therefore always has the largest probability, so both
+      expressions give the same labels; the softmax is only needed when you want the probabilities
+      themselves [^1][^2].
+    references:
+      - source: d2l
+        locator: Sec. 4.1.1.2 The Softmax (softmax preserves the ordering of its arguments)
+        url: https://d2l.ai/chapter_linear-classification/softmax-regression.html#the-softmax
+      - source: learn-pytorch
+        locator: 02 PyTorch Classification exercise solutions, Exercise 5 (`plot_decision_boundary`)
+        url: https://github.com/mrdbourke/pytorch-deep-learning/blob/a16552001d963d078390d5bbdfc321e7e7c94bd1/extras/solutions/02_pytorch_classification_exercise_solutions.ipynb
+    source:
+      id: learn-pytorch
+      ref: extras/solutions/02_pytorch_classification_exercise_solutions.ipynb#ex5
+      url: https://github.com/mrdbourke/pytorch-deep-learning/blob/a16552001d963d078390d5bbdfc321e7e7c94bd1/extras/solutions/02_pytorch_classification_exercise_solutions.ipynb
+    status: draft
+  - id: pytorch-057
+    type: short_answer
+    difficulty: medium
+    tags:
+      - cross-entropy
+      - initial-loss
+      - sanity-check
+    question: |
+      A freshly initialized 3-class classifier outputs logits that are all (close to) 0. What value of
+      `nn.CrossEntropyLoss()` should you expect at the very first training step? Give 3 decimals.
+    answer:
+      numeric: 1.099
+      tolerance: 0.002
+      hint: a number, 3 decimals
+      model: $-\ln(1/3) = \ln 3 \approx 1.099$
+    explanation: |
+      Equal logits give the uniform distribution $1/3$ over the classes, so the cross-entropy of any
+      label is $-\ln(1/3) = \ln 3 \approx 1.099$ [^1][^2]. Checking that the first loss is near
+      $\ln K$ for $K$ classes (0.693 for binary classification) is a quick sanity test of a training
+      loop; a much larger value suggests a bug such as applying softmax twice or wrong targets.
+    references:
+      - title: torch.nn.CrossEntropyLoss (PyTorch documentation)
+        url: https://pytorch.org/docs/stable/generated/torch.nn.CrossEntropyLoss.html
+        locator: torch.nn.CrossEntropyLoss (loss for class-index targets)
+      - source: d2l
+        locator: Sec. 4.1.2.2 Softmax and Cross-Entropy Loss
+        url: https://d2l.ai/chapter_linear-classification/softmax-regression.html
+    source:
+      id: learn-pytorch
+      ref: extras/solutions/02_pytorch_classification_exercise_solutions.ipynb#ex7
+      url: https://github.com/mrdbourke/pytorch-deep-learning/blob/a16552001d963d078390d5bbdfc321e7e7c94bd1/extras/solutions/02_pytorch_classification_exercise_solutions.ipynb
+    status: draft
+  - id: pytorch-058
+    type: single
+    difficulty: medium
+    tags:
+      - cross-entropy
+      - targets
+      - dtype
+    question: |
+      A spiral dataset has 240 training points in 3 classes. The model returns logits of shape
+      `(240, 3)` and you use `nn.CrossEntropyLoss()` with class-index targets. What must the target
+      tensor `y` look like?
+    options:
+      - text: Shape `(240,)` with integer (`torch.long`) class indices 0, 1 or 2
+        correct: true
+      - text: Shape `(240, 1)` with float values 0.0, 1.0 or 2.0
+        why: Class-index targets are a 1-D tensor of integers; float targets are interpreted as class probabilities of shape `(240, 3)` [^1].
+      - text: Shape `(240, 3)` holding the softmax probabilities predicted by the model
+        why: The targets come from the labels, not from the model; and the loss applies log-softmax to the raw logits itself [^1].
+      - text: Shape `(3,)` holding the number of examples in each class
+        why: The loss needs one target per example, not class counts.
+    explanation: |
+      For class-index targets, `CrossEntropyLoss` expects input of shape $(N, C)$ with raw logits and a
+      target of shape $(N,)$ with integer class indices in $[0, C)$ [^1]. That is why the solution casts
+      the labels with `torch.from_numpy(y).type(torch.LongTensor)` [^2]. The loss applies log-softmax
+      internally, so the model must not end with a softmax layer.
+    references:
+      - title: torch.nn.CrossEntropyLoss (PyTorch documentation)
+        url: https://pytorch.org/docs/stable/generated/torch.nn.CrossEntropyLoss.html
+        locator: Shape section (Input $(N, C)$, Target $(N)$ with class indices)
+      - source: learn-pytorch
+        locator: 02 PyTorch Classification exercise solutions, Exercise 7 (spirals, labels as LongTensor)
+        url: https://github.com/mrdbourke/pytorch-deep-learning/blob/a16552001d963d078390d5bbdfc321e7e7c94bd1/extras/solutions/02_pytorch_classification_exercise_solutions.ipynb
+    source:
+      id: learn-pytorch
+      ref: extras/solutions/02_pytorch_classification_exercise_solutions.ipynb#ex7-b
+      url: https://github.com/mrdbourke/pytorch-deep-learning/blob/a16552001d963d078390d5bbdfc321e7e7c94bd1/extras/solutions/02_pytorch_classification_exercise_solutions.ipynb
+    status: draft
+  - id: pytorch-059
+    type: single
+    difficulty: easy
+    tags:
+      - image-tensors
+      - chw
+      - permute
+      - matplotlib
+    question: |
+      `img` is an RGB image tensor of shape `(3, 64, 64)` in PyTorch's channels-first layout.
+      `plt.imshow` expects height × width × channels. Which call gives a correct picture?
+    options:
+      - text: '`plt.imshow(img.reshape(64, 64, 3))`'
+        why: '`reshape` keeps the memory order, so it mixes values from different channels into each pixel instead of moving the channel axis [^2].'
+      - text: '`plt.imshow(img.squeeze())`'
+        why: '`squeeze` only removes size-1 dimensions; it works for a `(1, 28, 28)` grayscale image but leaves `(3, 64, 64)` unchanged.'
+      - text: '`plt.imshow(img.permute(1, 2, 0))`'
+        correct: true
+      - text: '`plt.imshow(img.permute(2, 0, 1))`'
+        why: This gives shape `(64, 3, 64)`, which is not an image layout at all.
+    explanation: |
+      PyTorch stores images as (channels, height, width), while Matplotlib wants (height, width,
+      channels) [^1]. `permute(1, 2, 0)` reorders the axes to $(64, 64, 3)$ and keeps each pixel's three
+      color values together [^2]. A `reshape` to the same shape would scramble the pixels, because it
+      reinterprets the data in memory order instead of swapping axes [^2].
+    references:
+      - source: learn-pytorch
+        locator: 03 PyTorch Computer Vision exercise solutions, Exercises 5–6 (CHW vs HWC note)
+        url: https://github.com/mrdbourke/pytorch-deep-learning/blob/a16552001d963d078390d5bbdfc321e7e7c94bd1/extras/solutions/03_pytorch_computer_vision_exercise_solutions.ipynb
+      - title: torch.permute (PyTorch documentation)
+        url: https://pytorch.org/docs/stable/generated/torch.permute.html
+        locator: torch.permute (returns a view with the dimensions permuted)
+    source:
+      id: learn-pytorch
+      ref: extras/solutions/03_pytorch_computer_vision_exercise_solutions.ipynb#ex6
+      url: https://github.com/mrdbourke/pytorch-deep-learning/blob/a16552001d963d078390d5bbdfc321e7e7c94bd1/extras/solutions/03_pytorch_computer_vision_exercise_solutions.ipynb
+    status: draft
+  - id: pytorch-060
+    type: short_answer
+    difficulty: medium
+    tags:
+      - cnn
+      - flatten
+      - tensor-shapes
+      - tinyvgg
+    question: |
+      A TinyVGG-style model gets RGB images of $64 \times 64$ pixels. It has two blocks, each made of two
+      `nn.Conv2d(..., out_channels=10, kernel_size=3, stride=1, padding=1)` + ReLU followed by
+      `nn.MaxPool2d(kernel_size=2)`. Then `nn.Flatten()` feeds an `nn.Linear(in_features=?, 10)`.
+      What must `in_features` be?
+    answer:
+      numeric: 2560
+      tolerance: 0
+      hint: a whole number
+      model: $64 \to 32 \to 16$ after the two poolings, so $10 \cdot 16 \cdot 16 = 2560$
+    explanation: |
+      A $3 \times 3$ convolution with padding 1 and stride 1 keeps the height and width, and each
+      $2 \times 2$ max-pooling halves them: $64 \to 32 \to 16$ [^1]. The last block outputs
+      $10 \times 16 \times 16$, which `Flatten` turns into $2560$ features per image [^1][^2]. For
+      $28 \times 28$ MNIST images the same model needs $10 \cdot 7 \cdot 7 = 490$.
+    references:
+      - source: d2l
+        locator: Sec. 7.3 Padding and Stride; Sec. 7.5 Pooling
+        url: https://d2l.ai/chapter_convolutional-neural-networks/padding-and-strides.html
+      - source: learn-pytorch
+        locator: 03 PyTorch Computer Vision exercise solutions, Exercise 8 (TinyVGG, `hidden_units*7*7`)
+        url: https://github.com/mrdbourke/pytorch-deep-learning/blob/a16552001d963d078390d5bbdfc321e7e7c94bd1/extras/solutions/03_pytorch_computer_vision_exercise_solutions.ipynb
+    source:
+      id: learn-pytorch
+      ref: extras/solutions/03_pytorch_computer_vision_exercise_solutions.ipynb#ex8
+      url: https://github.com/mrdbourke/pytorch-deep-learning/blob/a16552001d963d078390d5bbdfc321e7e7c94bd1/extras/solutions/03_pytorch_computer_vision_exercise_solutions.ipynb
+    status: draft
+  - id: pytorch-061
+    type: short_answer
+    difficulty: hard
+    tags:
+      - broadcasting
+      - silent-bug
+      - ddpg
+    question: |
+      In a DDPG implementation the critic forgets to squeeze its output:
+
+      ```python
+      r, d = batch["rew"], batch["done"]       # both shape (100,)
+      q_pi_targ = q_targ(o2, pi_targ(o2))      # shape (100, 1) -- not squeezed
+      backup = r + gamma * (1 - d) * q_pi_targ
+      ```
+      What is the shape of `backup`?
+    answer:
+      accept:
+        - (100, 100)
+      pattern: '[(\[]?\s*100(?:\s*[,x×*]\s*|\s+)100\s*[)\]]?'
+      hint: Two dimensions, e.g. (8, 4)
+      model: $(100, 100)$ — shapes $(100,)$ and $(100, 1)$ broadcast to a $100 \times 100$ matrix
+    explanation: |
+      Broadcasting aligns trailing dimensions: a $(100,)$ tensor acts like a row $(1, 100)$, and combined
+      with a $(100, 1)$ column it expands to $(100, 100)$ [^1]. So `(1 - d) * q_pi_targ` becomes an outer
+      product, $z_{ij} = r_j + \gamma(1-d_j)q'_i$, and the critic's loss averages over all $n^2$
+      mismatched pairs instead of $n$ matched ones [^2]. The code runs without any error, but DDPG then
+      learns poorly — a typical silent RL bug [^2].
+    references:
+      - title: 'PyTorch documentation: Broadcasting semantics'
+        url: https://pytorch.org/docs/stable/notes/broadcasting.html
+        locator: General semantics
+      - source: spinning-up
+        locator: Solution to Exercise 2.2 (Silent Bug in DDPG), "How it Gums Up the Works"
+        url: https://spinningup.openai.com/en/latest/spinningup/exercise2_2_soln.html
+    source:
+      id: spinning-up
+      ref: docs/spinningup/exercises.rst#q5
+      url: https://github.com/openai/spinningup/blob/038665d62d569055401d91856abb287263096178/docs/spinningup/exercises.rst
+    status: draft
+  - id: pytorch-062
+    type: single
+    difficulty: easy
+    tags:
+      - causal-mask
+      - attention-mask
+      - torch-tril
+    question: |
+      In an attention module, `attn_mask[i, j] = 1` means token `i` may attend to token `j`, and 0 means
+      it may not. Which line builds the mask that a GPT-style language model needs for a sequence of
+      length `T`?
+    options:
+      - text: '`attn_mask = torch.tril(torch.ones(T, T))`'
+        correct: true
+      - text: '`attn_mask = torch.triu(torch.ones(T, T))`'
+        why: The upper triangle lets each token see itself and all later tokens, exactly the future it must predict.
+      - text: '`attn_mask = torch.eye(T)`'
+        why: Each token would see only itself and none of the earlier context.
+      - text: '`attn_mask = torch.ones(T, T)`'
+        why: A full mask is bidirectional attention, as in a BERT-style encoder; the model could read the next token directly.
+    explanation: |
+      A causal language model predicts token $i + 1$ from tokens $1, \ldots, i$, so row $i$ of the mask
+      must allow columns $j \le i$: the lower triangle including the diagonal [^1]. `torch.tril` keeps
+      exactly that part of a matrix of ones [^2]. The same lower-triangular mask is what lets training
+      compute all next-token predictions of a sequence in one forward pass [^1].
+    references:
+      - source: d2l
+        locator: Sec. 11.9.3 Decoder-Only
+        url: https://d2l.ai/chapter_attention-mechanisms-and-transformers/large-pretraining-transformers.html#decoder-only
+      - title: 'PyTorch documentation: torch.tril'
+        locator: torch.tril
+        url: https://docs.pytorch.org/docs/stable/generated/torch.tril.html
+      - source: mit-ocw-67960
+        locator: Homework 3, Problem 4(c)
+        url: https://ocw.mit.edu/courses/6-7960-deep-learning-fall-2024/resources/mit6_7960_f24_hw3_pdf/
+    source:
+      id: mit-ocw-67960
+      ref: mit6_7960_f24_hw3#q4c
+      url: https://ocw.mit.edu/courses/6-7960-deep-learning-fall-2024/resources/mit6_7960_f24_hw3_pdf/
+    status: draft
+  - id: pytorch-063
+    type: single
+    difficulty: medium
+    tags:
+      - language-modeling
+      - cross-entropy
+      - label-shift
+    question: |
+      A GPT-style model returns `logits` of shape `(B, T, V)` for `input_ids` of shape `(B, T)`, and
+      every row of `input_ids` starts with a `<start>` token. The logits at position `i` must predict
+      the token at position `i + 1`. Which pair do you pass to `F.cross_entropy` (after flattening)?
+    options:
+      - text: '`logits[:, :-1]` with targets `input_ids[:, 1:]`'
+        correct: true
+      - text: '`logits[:, 1:]` with targets `input_ids[:, :-1]`'
+        why: This asks each position to predict the previous token, which it can already see.
+      - text: '`logits` with targets `input_ids`'
+        why: Each position would predict its own input token, which the model can simply copy.
+      - text: '`logits[:, :-1]` with targets `input_ids[:, :-1]`'
+        why: The targets are not shifted, so again each position is asked for the token it was given.
+    explanation: |
+      A sequence of $T$ tokens yields $T - 1$ next-token classification problems: the logits at
+      positions $0, \ldots, T - 2$ are scored against the tokens at $1, \ldots, T - 1$ [^1]. The start
+      token is never a target and the last logit has no target. Padding targets are dropped by
+      multiplying the per-token losses with the shifted mask `input_mask[:, 1:]` before averaging [^2].
+    references:
+      - source: mit-ocw-67960
+        locator: Homework 3, Problem 4(d)
+        url: https://ocw.mit.edu/courses/6-7960-deep-learning-fall-2024/resources/mit6_7960_f24_hw3_pdf/
+      - source: d2l
+        locator: Sec. 11.9.3 Decoder-Only
+        url: https://d2l.ai/chapter_attention-mechanisms-and-transformers/large-pretraining-transformers.html#decoder-only
+    source:
+      id: mit-ocw-67960
+      ref: mit6_7960_f24_hw3#q4d
+      url: https://ocw.mit.edu/courses/6-7960-deep-learning-fall-2024/resources/mit6_7960_f24_hw3_pdf/
+    status: draft
+  - id: pytorch-064
+    type: short_answer
+    difficulty: medium
+    tags:
+      - contrastive-learning
+      - cross-entropy
+      - in-batch-negatives
+    question: |
+      A batch holds $b$ images `x` and their augmented copies `x_pos`. For row `i`, `x_pos[i]` is the
+      positive and the other $b - 1$ rows of `x_pos` are its negatives:
+      ```python
+      z1 = F.normalize(f(x), dim=1)        # (b, d)
+      z2 = F.normalize(f(x_pos), dim=1)    # (b, d)
+      logits = z1 @ z2.T / tau             # (b, b)
+      ```
+      Complete the loss: `loss = F.cross_entropy(logits, torch.`{{1}}`(b))`
+    answer:
+      blanks:
+        - accept:
+            - arange
+          hint: a torch function name
+      model: '`torch.arange(b)`: the positive for row `i` sits in column `i`'
+    explanation: |
+      Row $i$ of `logits` holds the similarities of anchor $i$ to all $b$ copies, and its positive is the
+      diagonal entry, so the target class of row $i$ is $i$ [^1]. One matrix product thus gives every
+      anchor $b - 1$ in-batch negatives for free [^2]. `F.cross_entropy` expects integer class indices,
+      which `torch.arange(b)` provides [^3].
+    references:
+      - source: mit-ocw-67960
+        locator: Homework 4, Problem 8(a) (implementation notes)
+        url: https://ocw.mit.edu/courses/6-7960-deep-learning-fall-2024/resources/mit6_7960_f24_hw4_pdf/
+      - title: Chen et al. (2020), A Simple Framework for Contrastive Learning of Visual Representations, arXiv:2002.05709
+        locator: Sec. 2.1 The Contrastive Learning Framework
+        url: https://arxiv.org/abs/2002.05709
+      - title: 'PyTorch documentation: torch.nn.functional.cross_entropy'
+        locator: torch.nn.functional.cross_entropy
+        url: https://docs.pytorch.org/docs/stable/generated/torch.nn.functional.cross_entropy.html
+    source:
+      id: mit-ocw-67960
+      ref: mit6_7960_f24_hw4#q8a
+      url: https://ocw.mit.edu/courses/6-7960-deep-learning-fall-2024/resources/mit6_7960_f24_hw4_pdf/
+    status: draft

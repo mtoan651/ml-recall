@@ -779,3 +779,726 @@ questions:
       ref: lectures/notes/10_regression-metrics.ipynb#ex10.2
       url: https://github.com/UBC-CS/cpsc330-2025W1/blob/a89d6131a0e2ae5f7ab36f207a3809a5b7137aef/lectures/notes/10_regression-metrics.ipynb
     status: draft
+  - id: metrics-027
+    type: single
+    difficulty: easy
+    question: Which one of the following statements is true concerning alternative forecast accuracy measures?
+    options:
+      - text: Mean squared error is expressed in the same units as the forecast variable
+        why: MSE is in squared units of the data; only its square root, the RMSE, is on the original scale [^2].
+      - text: Mean absolute error provides a quadratic loss function
+        why: MAE is a linear (absolute-value) loss; the quadratic loss is the MSE.
+      - text: Mean absolute percentage error is a useful measure for evaluating asset return forecasts
+        why: Returns are often close to zero, and percentage errors become extreme or undefined when the actual value is near or equal to zero [^3].
+      - text: Mean squared error penalises large forecast errors disproportionately more than small forecast errors
+        correct: true
+    explanation: 'MSE averages *squared* errors, so an error twice as large costs four times as much and a few large misses dominate the score [^2]. MAE grows only linearly with the size of an error, which makes it less sensitive to outliers: minimising MAE leads to forecasts of the median, minimising MSE to forecasts of the mean [^3][^1].'
+    references:
+      - source: mmlu-redux
+        locator: econometrics row 62
+      - title: 'Wikipedia: Mean squared error'
+        url: https://en.wikipedia.org/wiki/Mean_squared_error
+        locator: Introduction; Loss function, Criticism
+      - title: 'Hyndman & Athanasopoulos, Forecasting: Principles and Practice (3rd ed.)'
+        url: https://otexts.com/fpp3/accuracy.html
+        locator: Sec. 5.8 Evaluating point forecast accuracy, Scale-dependent errors and Percentage errors
+    source:
+      id: mmlu-redux
+      ref: econometrics/62
+      url: https://huggingface.co/datasets/edinburgh-dawg/mmlu-redux-2.0/viewer/econometrics/test?row=62
+    status: draft
+  - id: metrics-028
+    type: short_answer
+    difficulty: medium
+    tags:
+      - accuracy
+      - precision
+      - confusion-matrix
+      - class-imbalance
+    question: |
+      Two classifiers are tested on 100 examples, 95 negative and 5 positive. Rows are the true
+      class, columns the predicted class:
+
+      | Method A | predicted negative | predicted positive |
+      | --- | --- | --- |
+      | **negative** | 90 | 5 |
+      | **positive** | 5 | 0 |
+
+      | Method B | predicted negative | predicted positive |
+      | --- | --- | --- |
+      | **negative** | 80 | 15 |
+      | **positive** | 0 | 5 |
+
+      Method A has accuracy {{1}} and precision {{2}}; method B has accuracy {{3}} and precision {{4}}.
+    answer:
+      blanks:
+        - numeric: 0.9
+          tolerance: 0.001
+          hint: e.g. 0.75
+        - numeric: 0
+          tolerance: 0.001
+          hint: e.g. 0.75
+        - numeric: 0.85
+          tolerance: 0.001
+          hint: e.g. 0.75
+        - numeric: 0.25
+          tolerance: 0.001
+          hint: e.g. 0.75
+      model: 'A: accuracy $90/100 = 0.90$, precision $0/(0+5) = 0$; B: accuracy $85/100 = 0.85$, precision $5/(5+15) = 0.25$'
+    explanation: |
+      Accuracy is the fraction of all predictions that are correct, while precision is
+      $TP/(TP + FP)$, the fraction of predicted positives that are really positive [^1]. Method A
+      wins on accuracy (0.90 vs 0.85) only because it gets the many negatives right; it never finds
+      a positive, so its precision (and recall) is 0. Method B catches all 5 positives with precision
+      0.25. This is the course's counterexample to "higher accuracy implies higher precision" [^2].
+    references:
+      - source: ubc-dsci573
+        locator: Lecture 1 notes, Confusion matrix; Precision, recall, f1 score
+        url: https://github.com/UBC-MDS/DSCI_573_feat-model-select/blob/741d72d4f4dd495a86352d4d6ee990dea41914ac/lectures/01_classification-metrics.ipynb
+      - source: ubc-dsci573
+        locator: Lecture 1 notes, iClicker Exercise 1.1 (answer with methods A and B)
+        url: https://github.com/UBC-MDS/DSCI_573_feat-model-select/blob/741d72d4f4dd495a86352d4d6ee990dea41914ac/lectures/01_classification-metrics.ipynb
+    source:
+      id: ubc-dsci573
+      ref: lectures/01_classification-metrics.ipynb#ex1.1
+      url: https://github.com/UBC-MDS/DSCI_573_feat-model-select/blob/741d72d4f4dd495a86352d4d6ee990dea41914ac/lectures/01_classification-metrics.ipynb
+    status: draft
+  - id: metrics-029
+    type: multiple
+    difficulty: medium
+    tags:
+      - average-precision
+      - f1-score
+      - roc-curve
+      - class-weight
+    question: |
+      You evaluate a fraud classifier with threshold-based metrics and try to fix its class
+      imbalance. Which statements are true? Select all that apply.
+    options:
+      - text: The average precision (AP) score at threshold 0.5 is the same as the F1 score
+        why: F1 is computed at one threshold from hard predictions; AP summarizes precision and recall over all thresholds of `predict_proba`, so it has no threshold [^1].
+      - text: '`class_weight="balanced"` is likely to decrease false negatives but increase false positives'
+        correct: true
+      - text: Along an ROC curve, the threshold goes from 1 at the lower left to 0 at the upper right
+        correct: true
+      - text: A macro-averaged recall gives every class the same weight, whatever its size
+        correct: true
+    explanation: |
+      F1 measures the quality of `predict` at a single threshold, while AP is a summary across
+      thresholds that measures the quality of `predict_proba` [^1]. On an ROC curve a threshold of 1
+      labels nothing positive (FPR = TPR = 0) and a threshold of 0 labels everything positive
+      (FPR = TPR = 1) [^1]. Balanced class weights make errors on the rare positive class costlier,
+      so the model predicts it more often: fewer false negatives, more false positives [^2]. Macro
+      averaging takes the plain mean over classes, unlike weighted averaging [^1].
+    references:
+      - source: ubc-dsci573
+        locator: Lecture 1 notes, AP score; AP vs. F1-score; ROC curve; (Optional) Macro average and weighted average
+        url: https://github.com/UBC-MDS/DSCI_573_feat-model-select/blob/741d72d4f4dd495a86352d4d6ee990dea41914ac/lectures/01_classification-metrics.ipynb
+      - source: ubc-dsci573
+        locator: 'Lecture 1 notes, Dealing with class imbalance: class_weight="balanced"'
+        url: https://github.com/UBC-MDS/DSCI_573_feat-model-select/blob/741d72d4f4dd495a86352d4d6ee990dea41914ac/lectures/01_classification-metrics.ipynb
+    source:
+      id: ubc-dsci573
+      ref: lectures/02_regression-metrics.ipynb#ex2.1
+      url: https://github.com/UBC-MDS/DSCI_573_feat-model-select/blob/741d72d4f4dd495a86352d4d6ee990dea41914ac/lectures/02_regression-metrics.ipynb
+    status: draft
+  - id: metrics-030
+    type: short_answer
+    difficulty: easy
+    tags:
+      - class-imbalance
+      - class-weight
+    question: |
+      A training set has 950 non-fraud and 50 fraud transactions. scikit-learn's
+      `class_weight="balanced"` gives class $c$ the weight
+      $\frac{n_\text{samples}}{n_\text{classes} \cdot n_c}$. What weight does the fraud class get?
+    answer:
+      numeric: 10
+      tolerance: 0.001
+      hint: a number
+      model: $1000 / (2 \times 50) = 10$ (and $1000 / (2 \times 950) \approx 0.53$ for non-fraud)
+    explanation: |
+      `class_weight` tells the classifier that errors on some classes matter more, for example a
+      false negative ten times more than a false positive [^1]. The "balanced" setting picks weights
+      inversely proportional to the class frequencies, $n_\text{samples} / (n_\text{classes}\,n_c)$
+      [^1]: $1000/(2 \cdot 50) = 10$ for fraud and $1000/(2 \cdot 950) \approx 0.53$ for non-fraud,
+      so both classes carry the same total weight of 500.
+    references:
+      - source: ubc-dsci573
+        locator: Lecture 1 notes, Changing the training procedure; class_weight="balanced"
+        url: https://github.com/UBC-MDS/DSCI_573_feat-model-select/blob/741d72d4f4dd495a86352d4d6ee990dea41914ac/lectures/01_classification-metrics.ipynb
+    source:
+      id: ubc-dsci573
+      ref: lectures/01_classification-metrics.ipynb#class-weight-balanced
+      url: https://github.com/UBC-MDS/DSCI_573_feat-model-select/blob/741d72d4f4dd495a86352d4d6ee990dea41914ac/lectures/01_classification-metrics.ipynb
+    status: draft
+  - id: metrics-031
+    type: short_answer
+    difficulty: easy
+    tags:
+      - accuracy
+      - confusion-matrix
+      - multi-class
+    question: |
+      A part-of-speech tagger with three tags has this confusion matrix (rows: true tag, columns:
+      predicted tag):
+
+      | | NN | VB | ADJ |
+      | --- | --- | --- | --- |
+      | **NN** | 25 | 5 | 1 |
+      | **VB** | 2 | 15 | 12 |
+      | **ADJ** | 1 | 6 | 0 |
+
+      What is its accuracy?
+    answer:
+      numeric: 0.597
+      tolerance: 0.002
+      hint: a number, 3 decimals
+      model: $(25 + 15 + 0) / 67 = 40/67 \approx 0.597$
+    explanation: |
+      Accuracy is the share of correct predictions, i.e. the diagonal of the confusion matrix
+      divided by the total count [^1]. The diagonal holds $25 + 15 + 0 = 40$ of the
+      $31 + 29 + 7 = 67$ tagged words, so the accuracy is $40/67 \approx 0.597$ [^2]. Per-class
+      metrics show that this hides a complete failure on ADJ.
+    references:
+      - source: trusthlt-nlp
+        locator: Lecture 1 slides, frames 'Accuracy' and 'Confusion matrix -- multi-class'
+        url: https://github.com/trusthlt/nlp-with-deep-learning-lectures/blob/751182ea7a6a6f2246bbd8313329ecd09d270dbc/lectures/lecture01/pdf/nlpwdl2025-lecture01-handout.pdf
+      - source: trusthlt-nlp
+        locator: Exercise 1 (2025), Sec. 1 Classification evaluation, Task 1 (solution sheet)
+        url: https://github.com/trusthlt/nlp-with-deep-learning-lectures/blob/751182ea7a6a6f2246bbd8313329ecd09d270dbc/exercises/ex01/solution/solution_01.pdf
+    source:
+      id: trusthlt-nlp
+      ref: exercises/ex01/solution/solution_01.pdf#task1-accuracy
+      url: https://github.com/trusthlt/nlp-with-deep-learning-lectures/blob/751182ea7a6a6f2246bbd8313329ecd09d270dbc/exercises/ex01/solution/solution_01.pdf
+    status: draft
+  - id: metrics-032
+    type: short_answer
+    difficulty: medium
+    tags:
+      - precision
+      - recall
+      - multi-class
+    question: |
+      A part-of-speech tagger with three tags has this confusion matrix (rows: true tag, columns:
+      predicted tag):
+
+      | | NN | VB | ADJ |
+      | --- | --- | --- | --- |
+      | **NN** | 25 | 5 | 1 |
+      | **VB** | 2 | 15 | 12 |
+      | **ADJ** | 1 | 6 | 0 |
+
+      For the tag VB, the precision is {{1}} and the recall is {{2}}.
+    answer:
+      blanks:
+        - numeric: 0.577
+          tolerance: 0.002
+          hint: 3 decimals
+        - numeric: 0.517
+          tolerance: 0.002
+          hint: 3 decimals
+      model: $P_{VB} = 15/(5 + 15 + 6) = 15/26 \approx 0.577$; $R_{VB} = 15/(2 + 15 + 12) = 15/29 \approx 0.517$
+    explanation: |
+      For class $i$, precision divides the diagonal entry by its **column** sum (everything predicted
+      as $i$) and recall divides it by its **row** sum (everything that truly is $i$) [^1]. Column VB
+      sums to $5 + 15 + 6 = 26$, row VB to $2 + 15 + 12 = 29$, so $P = 15/26 \approx 0.58$ and
+      $R = 15/29 \approx 0.52$, matching the exercise's solution [^2]. Swapping row and column is
+      the most common slip in such calculations.
+    references:
+      - source: trusthlt-nlp
+        locator: Lecture 1 slides, frames 'Precision, recall, F-1 score' and 'Confusion matrix --- multi-class'
+        url: https://github.com/trusthlt/nlp-with-deep-learning-lectures/blob/751182ea7a6a6f2246bbd8313329ecd09d270dbc/lectures/lecture01/pdf/nlpwdl2025-lecture01-handout.pdf
+      - source: trusthlt-nlp
+        locator: 'Exercise 1 (2025), Sec. 1, Task 1 (solution sheet: P_VB, R_VB)'
+        url: https://github.com/trusthlt/nlp-with-deep-learning-lectures/blob/751182ea7a6a6f2246bbd8313329ecd09d270dbc/exercises/ex01/solution/solution_01.pdf
+    source:
+      id: trusthlt-nlp
+      ref: exercises/ex01/solution/solution_01.pdf#task1-vb
+      url: https://github.com/trusthlt/nlp-with-deep-learning-lectures/blob/751182ea7a6a6f2246bbd8313329ecd09d270dbc/exercises/ex01/solution/solution_01.pdf
+    status: draft
+  - id: metrics-033
+    type: short_answer
+    difficulty: hard
+    tags:
+      - macro-f1
+      - f1-score
+      - multi-class
+    question: |
+      A part-of-speech tagger with three tags has this confusion matrix (rows: true tag, columns:
+      predicted tag):
+
+      | | NN | VB | ADJ |
+      | --- | --- | --- | --- |
+      | **NN** | 25 | 5 | 1 |
+      | **VB** | 2 | 15 | 12 |
+      | **ADJ** | 1 | 6 | 0 |
+
+      Compute the macro-F1 score as the plain average of the three per-class F1 scores. ADJ has
+      precision and recall 0; count its F1 as 0.
+    answer:
+      numeric: 0.464
+      tolerance: 0.003
+      hint: a number, 3 decimals
+      model: $F1_{NN} = \frac{2 \cdot 0.893 \cdot 0.806}{0.893 + 0.806} \approx 0.847$, $F1_{VB} \approx 0.545$, $F1_{ADJ} = 0$; mean $\approx 0.464$
+    explanation: |
+      $F1 = 2PR/(P + R)$ for each class [^1]. NN has $P = 25/28 \approx 0.893$ and
+      $R = 25/31 \approx 0.806$, so $F1 \approx 0.847$; VB has $P = 15/26$, $R = 15/29$, so
+      $F1 \approx 0.545$; ADJ is never predicted correctly, so its F1 is 0 [^2]. Macro-averaging
+      gives every class the same weight: $(0.847 + 0.545 + 0)/3 \approx 0.464$, far below the
+      accuracy of about 0.60, because the rare tag ADJ counts as much as the frequent ones.
+    references:
+      - source: trusthlt-nlp
+        locator: Lecture 1 slides, frame 'Precision, recall, F-1 score'
+        url: https://github.com/trusthlt/nlp-with-deep-learning-lectures/blob/751182ea7a6a6f2246bbd8313329ecd09d270dbc/lectures/lecture01/pdf/nlpwdl2025-lecture01-handout.pdf
+      - source: trusthlt-nlp
+        locator: Exercise 1 (2025), Sec. 1, Task 1 solution and Task 3 (macro-F1); reference code solution/confusion-matrix.py
+        url: https://github.com/trusthlt/nlp-with-deep-learning-lectures/blob/751182ea7a6a6f2246bbd8313329ecd09d270dbc/exercises/ex01/solution/solution_01.pdf
+    source:
+      id: trusthlt-nlp
+      ref: exercises/ex01/solution/solution_01.pdf#task3
+      url: https://github.com/trusthlt/nlp-with-deep-learning-lectures/blob/751182ea7a6a6f2246bbd8313329ecd09d270dbc/exercises/ex01/solution/solution_01.pdf
+    status: draft
+  - id: metrics-034
+    type: single
+    difficulty: hard
+    tags:
+      - class-imbalance
+      - macro-f1
+      - accuracy
+      - recall
+    question: |
+      A test set has 990 examples of class A and 10 of class B. Model-One labels everything A.
+      Model-Two flips a fair coin for each example. Taking expected counts for Model-Two and
+      counting an undefined precision as 0, which statement is true?
+    options:
+      - text: Model-One wins on both accuracy and macro-F1, yet never finds a B
+        correct: true
+      - text: Macro-F1 ranks Model-Two above Model-One, because it gives both classes equal weight
+        why: Model-Two's macro-F1 is about $(0.664 + 0.020)/2 \approx 0.34$, below Model-One's $(0.995 + 0)/2 \approx 0.50$ [^1].
+      - text: Model-Two's expected recall for class B is 0.01
+        why: Model-Two finds half of the B examples, recall 0.5; 0.01 is its expected precision for B, $5/500$ [^1].
+      - text: Both models have the same expected accuracy
+        why: Model-One is right on all 990 A's (accuracy 0.99); Model-Two is right half of the time (0.5) [^1].
+    explanation: |
+      Model-One: accuracy $990/1000 = 0.99$; for A, $P = 0.99$, $R = 1$, $F1 \approx 0.995$; for B
+      nothing is predicted, so $R = 0$ and $F1 = 0$; macro-F1 $\approx 0.497$ [^1]. Model-Two: about
+      495 A's and 5 B's are right; for A, $P = 495/500$, $R = 0.5$, $F1 \approx 0.664$; for B,
+      $P = 5/500 = 0.01$, $R = 0.5$, $F1 \approx 0.020$; macro-F1 $\approx 0.342$. Neither accuracy
+      nor macro-F1 alone exposes Model-One; the recall of the rare class does [^2].
+    references:
+      - source: trusthlt-nlp
+        locator: Exercise 1 (2025), Sec. 1 Classification evaluation, Task 4
+        url: https://github.com/trusthlt/nlp-with-deep-learning-lectures/blob/751182ea7a6a6f2246bbd8313329ecd09d270dbc/exercises/ex01/blank/blank_01.pdf
+      - source: trusthlt-nlp
+        locator: Lecture 1 slides, frames 'Accuracy' and 'Precision, recall, F-1 score'
+        url: https://github.com/trusthlt/nlp-with-deep-learning-lectures/blob/751182ea7a6a6f2246bbd8313329ecd09d270dbc/lectures/lecture01/pdf/nlpwdl2025-lecture01-handout.pdf
+    source:
+      id: trusthlt-nlp
+      ref: exercises/ex01/blank/blank_01.pdf#task4-compare
+      url: https://github.com/trusthlt/nlp-with-deep-learning-lectures/blob/751182ea7a6a6f2246bbd8313329ecd09d270dbc/exercises/ex01/blank/blank_01.pdf
+    status: draft
+  - id: metrics-035
+    type: short_answer
+    difficulty: medium
+    tags:
+      - precision
+      - class-imbalance
+      - random-baseline
+    question: |
+      A test set has 990 examples of class A and 10 of class B. A model flips a fair coin for each
+      example and predicts B on heads. Using expected counts, what is its precision for class B?
+    answer:
+      numeric: 0.01
+      tolerance: 0.0005
+      hint: a number, e.g. 0.05
+      model: 'About 500 B predictions, of which $10 \times 0.5 = 5$ are true B: $P_B = 5/500 = 0.01$'
+    explanation: |
+      Precision is $TP/(TP + FP)$ [^1]. The coin predicts B for about half of all 1000 examples,
+      i.e. 500 times; only 5 of those are real B's (half of the 10), so $P_B = 5/500 = 0.01$, while
+      the recall for B is $5/10 = 0.5$ [^2]. A random classifier's precision for a class is just
+      that class's share of the data, which is why precision is so low for rare classes.
+    references:
+      - source: trusthlt-nlp
+        locator: Lecture 1 slides, frame 'Precision, recall, F-1 score'
+        url: https://github.com/trusthlt/nlp-with-deep-learning-lectures/blob/751182ea7a6a6f2246bbd8313329ecd09d270dbc/lectures/lecture01/pdf/nlpwdl2025-lecture01-handout.pdf
+      - source: trusthlt-nlp
+        locator: Exercise 1 (2025), Sec. 1 Classification evaluation, Task 4 (Model-Two)
+        url: https://github.com/trusthlt/nlp-with-deep-learning-lectures/blob/751182ea7a6a6f2246bbd8313329ecd09d270dbc/exercises/ex01/blank/blank_01.pdf
+    source:
+      id: trusthlt-nlp
+      ref: exercises/ex01/blank/blank_01.pdf#task4-model-two
+      url: https://github.com/trusthlt/nlp-with-deep-learning-lectures/blob/751182ea7a6a6f2246bbd8313329ecd09d270dbc/exercises/ex01/blank/blank_01.pdf
+    status: draft
+  - id: metrics-036
+    type: short_answer
+    difficulty: easy
+    tags:
+      - precision
+      - recall
+      - f1-score
+    question: |
+      A spam filter flags 40 emails, of which 30 really are spam. The test set contains 60 spam emails
+      in total. What is the filter's F1 score?
+    answer:
+      numeric: 0.6
+      tolerance: 0.001
+      hint: a number between 0 and 1
+      model: $P = 30/40 = 0.75$, $R = 30/60 = 0.5$, $F_1 = \frac{2PR}{P+R} = \frac{0.75}{1.25} = 0.6$
+    explanation: |
+      Precision is $TP/(TP+FP) = 30/40 = 0.75$ and recall is $TP/(TP+FN) = 30/60 = 0.5$ [^1]. The F1
+      score is their harmonic mean, $2PR/(P+R) = 0.6$ [^1][^2]. The harmonic mean sits closer to the
+      smaller of the two values than the arithmetic mean ($0.625$) would, so a model cannot hide a poor
+      recall behind a high precision.
+    references:
+      - source: ds-interviews
+        locator: theory.md, Classification — "What are precision, recall, and F1-score?"
+        url: https://github.com/alexeygrigorev/data-science-interviews/blob/919f44547ef5ffc2bd59674fd301940529f4c1a8/theory.md#classification
+      - title: 'Wikipedia: F-score'
+        url: https://en.wikipedia.org/wiki/F-score
+        locator: Section "Definition"
+    source:
+      id: ds-interviews
+      ref: theory.md#q29
+      url: https://github.com/alexeygrigorev/data-science-interviews/blob/919f44547ef5ffc2bd59674fd301940529f4c1a8/theory.md#classification
+    status: draft
+  - id: metrics-037
+    type: short_answer
+    difficulty: medium
+    tags:
+      - roc-auc
+      - ranking
+      - pairwise
+    question: |
+      A classifier gives these scores on a test set:
+
+      | | scores |
+      | --- | --- |
+      | positives | 0.9, 0.6, 0.35 |
+      | negatives | 0.7, 0.4, 0.2, 0.1 |
+
+      What is its ROC AUC?
+    answer:
+      numeric: 0.75
+      tolerance: 0.001
+      hint: a number between 0 and 1
+      model: 9 of the $3 \times 4 = 12$ positive–negative pairs are ranked correctly, so AUC $= 9/12 = 0.75$
+    explanation: |
+      The ROC AUC equals the probability that a randomly chosen positive gets a higher score than a
+      randomly chosen negative [^1]. Counting pairs: 0.9 beats all 4 negatives, 0.6 beats 3 (not 0.7)
+      and 0.35 beats 2, so $9$ of $12$ pairs are ordered correctly and AUC $= 0.75$. The value only
+      depends on the ranking of the scores, not on their size, which is why AUC measures how well the
+      model separates the classes [^2].
+    references:
+      - title: 'Wikipedia: Receiver operating characteristic'
+        url: https://en.wikipedia.org/wiki/Receiver_operating_characteristic#Area_under_the_curve
+        locator: Section "Area under the curve"
+      - source: ds-interviews
+        locator: theory.md, Classification — "What is AUC (AU ROC)? When to use it?"
+        url: https://github.com/alexeygrigorev/data-science-interviews/blob/919f44547ef5ffc2bd59674fd301940529f4c1a8/theory.md#classification
+    source:
+      id: ds-interviews
+      ref: theory.md#q33
+      url: https://github.com/alexeygrigorev/data-science-interviews/blob/919f44547ef5ffc2bd59674fd301940529f4c1a8/theory.md#classification
+    status: draft
+  - id: metrics-038
+    type: short_answer
+    difficulty: medium
+    tags:
+      - pr-auc
+      - class-imbalance
+      - baseline
+    question: |
+      In a fraud dataset only 2% of the transactions are fraudulent. A useless model outputs random
+      scores, so its ROC AUC is about 0.5. About what area under the precision–recall curve
+      (positive class = fraud) does it get?
+    answer:
+      numeric: 0.02
+      tolerance: 0.005
+      hint: a number between 0 and 1
+      model: About $0.02$ — a random ranker has precision equal to the positive rate at every recall
+    explanation: |
+      A random ranker's precision at any threshold is just the fraction of positives, so its PR curve
+      is a flat line at $P/(P+N) = 0.02$ and the area under it is about $0.02$ [^1]. Its ROC AUC stays at
+      0.5 whatever the class balance. That is why, when you care about a rare positive class and true
+      negatives are plentiful, the PR curve shows much more clearly how far a model is from random
+      [^1][^2].
+    references:
+      - title: Saito & Rehmsmeier (2015), The Precision-Recall Plot Is More Informative than the ROC Plot When Evaluating Binary Classifiers on Imbalanced Datasets, PLoS ONE 10(3)
+        url: https://doi.org/10.1371/journal.pone.0118432
+        locator: Section "Precision-recall plot" (baseline $y = P/(P+N)$) and Fig. 2
+      - source: ds-interviews
+        locator: theory.md, Classification — "In which cases AU PR is better than AU ROC?"
+        url: https://github.com/alexeygrigorev/data-science-interviews/blob/919f44547ef5ffc2bd59674fd301940529f4c1a8/theory.md#classification
+    source:
+      id: ds-interviews
+      ref: theory.md#q36
+      url: https://github.com/alexeygrigorev/data-science-interviews/blob/919f44547ef5ffc2bd59674fd301940529f4c1a8/theory.md#classification
+    status: draft
+  - id: metrics-039
+    type: short_answer
+    difficulty: easy
+    tags:
+      - ranking
+      - recall-at-k
+      - information-retrieval
+    question: |
+      For a search query, 4 products in the shop are relevant. Your ranking shows 3 of them among its top
+      10 results. What is recall@10?
+    answer:
+      numeric: 0.75
+      tolerance: 0.001
+      hint: a number between 0 and 1
+      model: recall@10 $= 3/4 = 0.75$ (precision@10 would be $3/10 = 0.3$)
+    explanation: |
+      Recall@k is the share of all relevant items that appear in the top $k$: $3/4 = 0.75$ [^1][^2].
+      Precision@k divides by $k$ instead, giving $3/10 = 0.3$. Both ignore the order inside the top $k$,
+      which is why rank-aware metrics such as average precision and NDCG are also used [^2].
+    references:
+      - source: ds-interviews
+        locator: theory.md, Ranking and search — "What is precision and recall at k?"
+        url: https://github.com/alexeygrigorev/data-science-interviews/blob/919f44547ef5ffc2bd59674fd301940529f4c1a8/theory.md#ranking-and-search
+      - title: 'Wikipedia: Evaluation measures (information retrieval)'
+        url: https://en.wikipedia.org/wiki/Evaluation_measures_(information_retrieval)#Precision_at_k
+        locator: Sections "Precision at k" and "Recall"
+    source:
+      id: ds-interviews
+      ref: theory.md#q146
+      url: https://github.com/alexeygrigorev/data-science-interviews/blob/919f44547ef5ffc2bd59674fd301940529f4c1a8/theory.md#ranking-and-search
+    status: draft
+  - id: metrics-040
+    type: short_answer
+    difficulty: medium
+    tags:
+      - ranking
+      - average-precision
+      - map
+    question: |
+      A query has 3 relevant documents. The ranking's top 6 results have relevance
+      $[1, 0, 1, 0, 0, 1]$ (1 = relevant), so all 3 are retrieved. Using
+      $\mathrm{AP} = \frac{1}{R}\sum_{k} P@k \cdot \mathrm{rel}_k$ with $R = 3$, what is the average
+      precision? Give 3 decimals.
+    answer:
+      numeric: 0.722
+      tolerance: 0.001
+      hint: a number between 0 and 1, 3 decimals
+      model: $\frac13\left(\frac11 + \frac23 + \frac36\right) = 0.722$
+    explanation: |
+      Average precision averages precision@k over the positions $k$ of the relevant documents [^1]. They
+      sit at ranks 1, 3 and 6, where precision@k is $1/1$, $2/3$ and $3/6$, so
+      $\mathrm{AP} = (1 + 0.667 + 0.5)/3 = 0.722$. Unlike precision@k, AP rewards putting relevant
+      documents higher; the mean of AP over many queries is MAP [^1].
+    references:
+      - title: 'Wikipedia: Evaluation measures (information retrieval)'
+        url: https://en.wikipedia.org/wiki/Evaluation_measures_(information_retrieval)#Average_precision
+        locator: Sections "Average precision" and "Mean average precision"
+    source:
+      id: ds-interviews
+      ref: theory.md#q147
+      url: https://github.com/alexeygrigorev/data-science-interviews/blob/919f44547ef5ffc2bd59674fd301940529f4c1a8/theory.md#ranking-and-search
+    status: draft
+  - id: metrics-041
+    type: short_answer
+    difficulty: hard
+    tags:
+      - ranking
+      - ndcg
+      - graded-relevance
+    question: |
+      A ranking returns 4 documents with graded relevance $[3, 2, 0, 1]$ (in rank order). Using
+      $\mathrm{DCG} = \sum_{i=1}^{4} \frac{\mathrm{rel}_i}{\log_2(i+1)}$ and normalizing by the DCG of
+      the ideal order $[3, 2, 1, 0]$, what is the NDCG? Give 3 decimals.
+    answer:
+      numeric: 0.985
+      tolerance: 0.001
+      hint: a number between 0 and 1, 3 decimals
+      model: $\mathrm{DCG} = 3 + 2/1.585 + 0 + 1/2.322 = 4.693$, $\mathrm{IDCG} = 3 + 1.262 + 0.5 = 4.762$, NDCG $= 0.985$
+    explanation: |
+      DCG adds the relevance of each result, discounted by $\log_2$ of its position plus one, so
+      mistakes near the top cost most [^1]. The ranking scores $3 + 1.262 + 0 + 0.431 = 4.693$ and the
+      ideal order $3 + 1.262 + 0.5 + 0 = 4.762$; their ratio is $0.985$. Only the swap of the two lowest
+      results is penalized, and only lightly, because it happens far down the list [^1].
+    references:
+      - title: 'Wikipedia: Discounted cumulative gain'
+        url: https://en.wikipedia.org/wiki/Discounted_cumulative_gain#Normalized_DCG
+        locator: Sections "Discounted Cumulative Gain" and "Normalized DCG"
+    source:
+      id: ds-interviews
+      ref: theory.md#q145
+      url: https://github.com/alexeygrigorev/data-science-interviews/blob/919f44547ef5ffc2bd59674fd301940529f4c1a8/theory.md#ranking-and-search
+    status: draft
+  - id: metrics-042
+    type: short_answer
+    difficulty: medium
+    tags:
+      - matthews-correlation
+      - binary-classification
+    question: |
+      A binary classifier has the confusion counts TP = 40, FN = 10, FP = 10, TN = 40. What is its
+      Matthews correlation coefficient,
+      $\mathrm{MCC} = \frac{TP\cdot TN - FP\cdot FN}{\sqrt{(TP+FP)(TP+FN)(TN+FP)(TN+FN)}}$?
+    answer:
+      numeric: 0.6
+      tolerance: 0.001
+      hint: a number between -1 and 1
+      model: $(1600 - 100)/\sqrt{50^4} = 1500/2500 = 0.6$
+    explanation: |
+      The numerator is $40 \cdot 40 - 10 \cdot 10 = 1500$ and each of the four sums is 50, so
+      $\mathrm{MCC} = 1500/2500 = 0.6$ [^1]. MCC ranges from $-1$ (always wrong) through 0 (no better than
+      random) to $+1$ (perfect) and uses all four cells, so it stays informative when the classes are
+      imbalanced [^1][^2]. Here accuracy is 0.8, while MCC reports a moderate correlation of 0.6.
+    references:
+      - title: 'Wikipedia: Phi coefficient (Matthews correlation coefficient)'
+        url: https://en.wikipedia.org/wiki/Phi_coefficient#Machine_learning
+        locator: Section "Machine learning"
+      - source: galaxy-training
+        locator: Fine-tuning a LLM for DNA Sequence Classification — Evaluate Model Performance
+        url: https://training.galaxyproject.org/training-material/topics/statistics/tutorials/genomic-llm-finetuning/tutorial.html
+    source:
+      id: galaxy-training
+      ref: genomic-llm-finetuning#q11
+      url: https://github.com/galaxyproject/training-material/blob/917e68d1d61c2915c7a970d75468b8494be90c0d/topics/statistics/tutorials/genomic-llm-finetuning/tutorial.md
+    status: draft
+  - id: metrics-043
+    type: short_answer
+    difficulty: easy
+    tags:
+      - class-imbalance
+      - recall
+      - accuracy
+    question: |
+      On an imbalanced test set with 300 negatives and 30 positives, a classifier gets TN = 299, FP = 1,
+      FN = 24 and TP = 6, i.e. an accuracy of 0.92. What is its recall on the positive class?
+    answer:
+      numeric: 0.2
+      tolerance: 0.001
+      hint: a number between 0 and 1
+      model: $TP/(TP+FN) = 6/30 = 0.2$
+    explanation: |
+      Recall is $TP/(TP+FN) = 6/30 = 0.2$: the model finds only one positive in five [^1]. Accuracy,
+      $(299+6)/330 = 0.92$, looks good only because negatives dominate — always predicting "negative"
+      would already reach 0.91 [^1][^2]. On imbalanced data, report recall, precision or similar metrics
+      for the minority class, or use class weights during training [^1].
+    references:
+      - source: galaxy-training
+        locator: Foundational Aspects of Machine Learning using Python — Logistic regression, Imbalanced dataset
+        url: https://training.galaxyproject.org/training-material/topics/statistics/tutorials/intro-to-ml-with-python/tutorial.html
+      - title: 'Wikipedia: Precision and recall'
+        url: https://en.wikipedia.org/wiki/Precision_and_recall#Accuracy,_imbalanced_data,_and_balanced_accuracy
+        locator: Section "Accuracy, imbalanced data, and balanced accuracy"
+    source:
+      id: galaxy-training
+      ref: intro-to-ml-with-python#q19
+      url: https://github.com/galaxyproject/training-material/blob/917e68d1d61c2915c7a970d75468b8494be90c0d/topics/statistics/tutorials/intro-to-ml-with-python/tutorial.md
+    status: draft
+  - id: metrics-044
+    type: short_answer
+    difficulty: medium
+    tags:
+      - multiclass
+      - macro-average
+      - recall
+      - confusion-matrix
+    question: |
+      A 3-class classifier has this confusion matrix (rows: true class, columns: predicted class):
+
+      | true \ predicted | 0 | 1 | 2 |
+      | ---: | ---: | ---: | ---: |
+      | 0 | 84 | 0 | 0 |
+      | 1 | 0 | 73 | 10 |
+      | 2 | 0 | 32 | 51 |
+
+      What is its macro-averaged recall (the unweighted mean of the three per-class recalls)? Give 3
+      decimals.
+    answer:
+      numeric: 0.831
+      tolerance: 0.001
+      hint: a number between 0 and 1, 3 decimals
+      model: $(84/84 + 73/83 + 51/83)/3 = (1 + 0.880 + 0.614)/3 \approx 0.831$
+    explanation: |
+      Each class's recall is its diagonal count divided by its row total (the number of true members):
+      $84/84 = 1$, $73/83 = 0.880$ and $51/83 = 0.614$ [^1][^2]. The macro average weights the three
+      classes equally, $0.831$ [^2]. Classes 1 and 2 are often confused with each other (10 and 32
+      errors), while class 0 is always recognized.
+    references:
+      - source: galaxy-training
+        locator: 'Foundational Aspects of Machine Learning using Python — Decision tree modeling, Simple decision tree for classification: Toy dataset (three-class cross-tabulation)'
+        url: https://training.galaxyproject.org/training-material/topics/statistics/tutorials/intro-to-ml-with-python/tutorial.html
+      - title: scikit-learn User Guide
+        url: https://scikit-learn.org/stable/modules/model_evaluation.html#multiclass-and-multilabel-classification
+        locator: Precision, recall and F-measures — Multiclass and multilabel classification (macro averaging)
+    source:
+      id: galaxy-training
+      ref: intro-to-ml-with-python#q20
+      url: https://github.com/galaxyproject/training-material/blob/917e68d1d61c2915c7a970d75468b8494be90c0d/topics/statistics/tutorials/intro-to-ml-with-python/tutorial.md
+    status: draft
+  - id: metrics-045
+    type: short_answer
+    difficulty: medium
+    tags:
+      - rmse
+      - r-squared
+      - regression-metrics
+    question: |
+      A linear regression on many training examples has training RMSE $= 0.562$, while the standard
+      deviation of the target is $3.494$. Using $R^2 = 1 - \mathrm{MSE}/\mathrm{Var}(y)$, what is the
+      training $R^2$ approximately? Give 2 decimals.
+    answer:
+      numeric: 0.97
+      tolerance: 0.005
+      hint: a number, 2 decimals
+      model: $1 - (0.562/3.494)^2 = 1 - 0.026 \approx 0.97$
+    explanation: |
+      $R^2$ compares the model's squared error with that of always predicting the mean, whose MSE is the
+      variance of $y$ [^1]. Since $\mathrm{RMSE}/\mathrm{SD} = 0.161$, the ratio of the squares is $0.026$,
+      so $R^2 \approx 0.97$ [^1]. That is why an RMSE much smaller than the target's standard deviation
+      signals a good fit — on the training data; overfitting is checked by computing the same numbers on
+      test data [^2].
+    references:
+      - title: 'Wikipedia: Coefficient of determination'
+        url: https://en.wikipedia.org/wiki/Coefficient_of_determination#Definitions
+        locator: Section "Definitions"
+      - source: galaxy-training
+        locator: 'Introduction to Machine Learning using R — Supervised Learning II: regression, Linear regression (RMSE vs. standard deviation)'
+        url: https://training.galaxyproject.org/training-material/topics/statistics/tutorials/intro-to-ml-with-r/tutorial.html
+    source:
+      id: galaxy-training
+      ref: intro-to-ml-with-r#q6
+      url: https://github.com/galaxyproject/training-material/blob/917e68d1d61c2915c7a970d75468b8494be90c0d/topics/statistics/tutorials/intro-to-ml-with-r/tutorial.md
+    status: draft
+  - id: metrics-046
+    type: short_answer
+    difficulty: medium
+    tags:
+      - validation-error
+      - data-leakage
+      - knn
+    question: |
+      A dataset of 1000 cases is split into 600 training and 400 validation cases. A 1-nearest-neighbour
+      classifier has an 8% error rate on the validation set. You then discover that 100 training
+      cases had accidentally been copied over 100 validation cases, so 100 validation cases are exact
+      duplicates of training cases. What is the error rate on the 300 genuine validation cases?
+    answer:
+      numeric: 0.1067
+      tolerance: 0.002
+      hint: a fraction between 0 and 1, 3 decimals
+      model: $0.08 \times 400 = 32$ errors, all among the 300 genuine cases, so $32/300 \approx 0.107$
+    explanation: |
+      The 8% rate means $0.08 \times 400 = 32$ validation errors. A duplicated case has itself in
+      the training set at distance 0, so 1-NN predicts its own label and gets it right [^1]. All 32
+      errors therefore come from the 300 genuine cases, and the honest error rate is
+      $32/300 \approx 10.7\%$ (the published solution's "21/300" is a typo) [^1]. Leaked duplicates
+      make a validation estimate optimistic, most of all for models that memorize the training set
+      such as 1-NN [^2].
+    references:
+      - source: mit-ocw-15062
+        locator: Midterm (2003) solutions, Problem 2
+        url: https://ocw.mit.edu/courses/15-062-data-mining-spring-2003/resources/midterm2003solutions/
+      - title: 'Wikipedia: Cross-validation (statistics)'
+        locator: Computational issues (the validation set must stay blind to the training procedure, otherwise bias may result)
+        url: https://en.wikipedia.org/wiki/Cross-validation_(statistics)#Computational_issues
+    source:
+      id: mit-ocw-15062
+      ref: midterm2003#q2
+      url: https://ocw.mit.edu/courses/15-062-data-mining-spring-2003/resources/midterm2003solutions/
+    status: draft

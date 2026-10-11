@@ -14,13 +14,17 @@ from .common import Item, collapse_ws, fetch
 
 SOURCE_ID = "mmlu-redux"
 DATASET = "edinburgh-dawg/mmlu-redux-2.0"
-# subset -> default topic (curation assigns the final topic per row). Only machine_learning uses
-# LaTeX; in the other subsets "$" means dollars and is escaped so KaTeX leaves it alone.
+# subset -> default topic (curation assigns the final topic per row). machine_learning and
+# econometrics use LaTeX; in the other subsets "$" means dollars and is escaped so KaTeX leaves it
+# alone.
 CONFIGS = {
     "machine_learning": "ml-basics",
     "high_school_statistics": "statistics",
     "college_mathematics": "linear-algebra",
+    "econometrics": "time-series",  # keep-list only (curation `exclude_prefixes`)
+    "college_computer_science": "search",  # keep-list only
 }
+LATEX_CONFIGS = {"machine_learning", "econometrics"}
 
 _STATEMENT_RE = re.compile(r"\s*Statement\s*(\d)\s*\|\s*")
 
@@ -28,7 +32,7 @@ _STATEMENT_RE = re.compile(r"\s*Statement\s*(\d)\s*\|\s*")
 def load_items(pinned: str) -> list[Item]:
     items = []
     for config, topic in CONFIGS.items():
-        latex = config == "machine_learning"
+        latex = config in LATEX_CONFIGS
         url = (
             f"https://huggingface.co/datasets/{DATASET}/resolve/{pinned}"
             f"/{config}/data-00000-of-00001.arrow"

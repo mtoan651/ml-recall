@@ -962,3 +962,901 @@ questions:
       ref: questions/ml.yml#q3
       url: https://github.com/dsgiitr/ML-InterviewQs/blob/8c6d228b051af7ceb429e6322befda068964e6b5/questions/ml.yml
     status: draft
+  - id: trees-ensembles-029
+    type: short_answer
+    difficulty: easy
+    tags:
+      - decision-tree
+      - predict-proba
+      - certainty
+    question: |
+      A depth-2 decision tree for SMS spam uses binary word features (1 = the word occurs). The
+      training counts in each leaf are given as [ham, spam]:
+
+      - `call` = 0 and `txt` = 0 → [3649, 229]
+      - `call` = 0 and `txt` = 1 → [10, 120]
+      - `call` = 1 and `me` = 0 → [108, 262]
+      - `call` = 1 and `me` = 1 → [76, 3]
+
+      The message "Call me" reaches the leaf for `call` = 1, `me` = 1, so the tree predicts "ham". If
+      the tree reports its certainty as the fraction of training examples in the leaf that share the
+      predicted class, how certain is it?
+    answer:
+      numeric: 0.962
+      tolerance: 0.002
+      hint: a probability, 3 decimals
+      model: $76 / (76 + 3) = 76/79 \approx 0.962$
+    explanation: |
+      The course asks how a decision tree could quantify the certainty of its prediction at a leaf
+      [^1]. A natural answer, and what scikit-learn's `predict_proba` does, is the class fractions
+      of the training examples in that leaf [^2]: 76 ham and 3 spam give $P(\text{ham}) = 76/79
+      \approx 0.962$. A leaf such as [108, 262] would predict spam with a much lower certainty of
+      about 0.71.
+    references:
+      - source: ubc-dsci571
+        locator: 'Lecture 7 notes, Exercise 7.1.1 Decision trees: Quantifying the level of certainty of predictions'
+        url: https://github.com/UBC-MDS/DSCI_571_sup-learn-1/blob/70be2d76ec40e11fe7ddcff2a8c9e602a2698129/lectures/notes/07_naive-Bayes.ipynb
+      - title: 'scikit-learn documentation: DecisionTreeClassifier.predict_proba'
+        url: https://scikit-learn.org/stable/modules/generated/sklearn.tree.DecisionTreeClassifier.html#sklearn.tree.DecisionTreeClassifier.predict_proba
+        locator: predict_proba ("the fraction of samples of the same class in a leaf")
+    source:
+      id: ubc-dsci571
+      ref: lectures/notes/07_naive-Bayes.ipynb#ex7.1.1
+      url: https://github.com/UBC-MDS/DSCI_571_sup-learn-1/blob/70be2d76ec40e11fe7ddcff2a8c9e602a2698129/lectures/notes/07_naive-Bayes.ipynb
+    status: draft
+  - id: trees-ensembles-030
+    type: short_answer
+    difficulty: medium
+    tags:
+      - gini-impurity
+      - decision-trees
+      - splitting
+    question: |
+      A decision-tree node holds 10 examples: 6 of class A and 4 of class B (Gini impurity 0.48). A
+      candidate split sends 5 A to the left child and 1 A plus 4 B to the right child. What is the
+      weighted Gini impurity of the two children (weights = fraction of examples in each child)?
+    answer:
+      numeric: 0.16
+      tolerance: 0.001
+      hint: a number, 2 decimals
+      model: 'Left: $0$; right: $1 - 0.2^2 - 0.8^2 = 0.32$; weighted: $0.5 \cdot 0 + 0.5 \cdot 0.32 = 0.16$'
+    explanation: |
+      Gini impurity is $1 - \sum_k p_k^2$ [^1]. The left child is pure (impurity 0); the right child has
+      $p = (0.2, 0.8)$ and impurity $0.32$. Weighting each child by its share of the examples gives
+      $0.16$, a decrease of $0.48 - 0.16 = 0.32$ from the parent. Training greedily picks, at each
+      node, the feature and threshold with the largest such decrease [^1][^2].
+    references:
+      - title: 'scikit-learn User Guide: Decision Trees'
+        url: https://scikit-learn.org/stable/modules/tree.html#classification-criteria
+        locator: Sec. 1.10.7.1 Classification criteria (Gini)
+      - source: ds-interviews
+        locator: theory.md, Decision trees — "How do we train decision trees?"
+        url: https://github.com/alexeygrigorev/data-science-interviews/blob/919f44547ef5ffc2bd59674fd301940529f4c1a8/theory.md#decision-trees
+    source:
+      id: ds-interviews
+      ref: theory.md#q61
+      url: https://github.com/alexeygrigorev/data-science-interviews/blob/919f44547ef5ffc2bd59674fd301940529f4c1a8/theory.md#decision-trees
+    status: draft
+  - id: trees-ensembles-031
+    type: single
+    difficulty: hard
+    tags:
+      - extra-trees
+      - random-forest
+      - random-splits
+    question: |
+      Instead of searching every threshold of each candidate feature for the best split, a tree
+      ensemble draws **one random threshold per candidate feature** and keeps the best of these random
+      splits. What is this method, and what is its usual effect compared with a random forest?
+    options:
+      - text: Bagging; each tree sees a bootstrap sample but uses exhaustive splits
+        why: Plain bagging still searches for the best threshold; it randomizes only the training sample.
+      - text: Extremely randomized trees; training is faster and variance drops a bit more, at a small cost in bias
+        correct: true
+      - text: Extremely randomized trees; they always overfit more than a random forest because every split is random
+        why: Random thresholds act as extra regularization; they usually reduce variance, not increase overfitting [^1].
+      - text: Gradient boosting; each tree corrects the residual errors of the previous ones
+        why: Boosting is about fitting trees sequentially to residuals, not about how thresholds are chosen.
+    explanation: |
+      This is Extra-Trees (extremely randomized trees): like a random forest it considers a random
+      subset of features, but it draws thresholds at random and picks the best of them instead of
+      optimizing them [^1][^2]. Skipping the threshold search makes training faster, and the extra
+      randomness decorrelates the trees further, which usually lowers variance slightly at the cost of
+      a slightly higher bias [^1].
+    references:
+      - title: scikit-learn User Guide
+        url: https://scikit-learn.org/stable/modules/ensemble.html#extremely-randomized-trees
+        locator: Sec. 1.11.2.2 Extremely Randomized Trees
+      - title: Geurts, Ernst & Wehenkel (2006), Extremely randomized trees, Machine Learning 63(1)
+        url: https://doi.org/10.1007/s10994-006-6226-1
+        locator: Sec. 2 Extra-Trees algorithm
+    source:
+      id: ds-interviews
+      ref: theory.md#q73
+      url: https://github.com/alexeygrigorev/data-science-interviews/blob/919f44547ef5ffc2bd59674fd301940529f4c1a8/theory.md#random-forest
+    status: draft
+  - id: trees-ensembles-032
+    type: short_answer
+    difficulty: medium
+    tags:
+      - gradient-boosting
+      - residuals
+      - learning-rate
+    question: |
+      Gradient boosting with squared loss starts from the constant prediction $F_0$ = mean of the targets
+      $y = (3, 5, 10)$. The first regression tree fits the residuals perfectly, and the learning rate is
+      $0.1$. What is the model's prediction $F_1$ for the third example ($y = 10$)?
+    answer:
+      numeric: 6.4
+      tolerance: 0.001
+      hint: a number
+      model: $F_0 = 6$, residual $10 - 6 = 4$, $F_1 = 6 + 0.1 \cdot 4 = 6.4$
+    explanation: |
+      For squared loss the negative gradient is the residual $y - F_0$, here $(-3, -1, 4)$, and each new
+      tree is fit to it [^1]. The tree's output is added after scaling by the learning rate (shrinkage),
+      so the third prediction moves from $6$ to $6 + 0.1 \cdot 4 = 6.4$ [^1]. Trees are built one after
+      another, each correcting what the ensemble so far gets wrong — unlike a random forest, whose
+      trees are independent [^2].
+    references:
+      - title: scikit-learn User Guide
+        url: https://scikit-learn.org/stable/modules/ensemble.html#mathematical-formulation
+        locator: Sec. 1.11.1.2.3 Mathematical formulation and 1.11.1.2.5 Shrinkage via learning rate
+      - source: ds-interviews
+        locator: theory.md, Gradient boosting — "What's the difference between random forest and gradient boosting?"
+        url: https://github.com/alexeygrigorev/data-science-interviews/blob/919f44547ef5ffc2bd59674fd301940529f4c1a8/theory.md#gradient-boosting
+    source:
+      id: ds-interviews
+      ref: theory.md#q75
+      url: https://github.com/alexeygrigorev/data-science-interviews/blob/919f44547ef5ffc2bd59674fd301940529f4c1a8/theory.md#gradient-boosting
+    status: draft
+  - id: trees-ensembles-033
+    type: single
+    difficulty: medium
+    tags:
+      - gradient-boosting
+      - parallelism
+      - xgboost
+    question: |
+      You want to speed up training on many CPU cores. Which statement about parallelizing tree
+      ensembles is correct?
+    options:
+      - text: Gradient boosting trains all its trees at once on separate cores, since each tree sees its own bootstrap sample
+        why: Each boosted tree is fit to the residuals of the ensemble so far, so tree $m$ cannot start before tree $m-1$ is done.
+      - text: Neither method can use more than one core, because tree growing is inherently sequential
+        why: Libraries parallelize random forests across trees and gradient boosting within each tree [^1][^2].
+      - text: Gradient boosting adds trees one by one, so it parallelizes the work inside each tree, e.g. the split search
+        correct: true
+      - text: A random forest cannot be parallelized because every tree depends on the previous one
+        why: Random-forest trees are grown independently, so they can be trained in parallel across cores [^2].
+    explanation: |
+      Boosting is sequential across trees, so libraries such as XGBoost parallelize the expensive part
+      of building one tree: sorting or histogramming each feature and evaluating candidate splits, which
+      can be done for many features at once [^1]. A random forest's trees are independent, which makes it
+      embarrassingly parallel across trees (`n_jobs` in scikit-learn) [^2].
+    references:
+      - title: 'Chen & Guestrin (2016), XGBoost: A Scalable Tree Boosting System, arXiv:1603.02754'
+        url: https://arxiv.org/abs/1603.02754
+        locator: Sec. 4.1 Column Block for Parallel Learning
+      - title: scikit-learn User Guide
+        url: https://scikit-learn.org/stable/modules/ensemble.html#parallelization
+        locator: Sec. 1.11.2.4 Parallelization
+    source:
+      id: ds-interviews
+      ref: theory.md#q77
+      url: https://github.com/alexeygrigorev/data-science-interviews/blob/919f44547ef5ffc2bd59674fd301940529f4c1a8/theory.md#gradient-boosting
+    status: draft
+  - id: trees-ensembles-034
+    type: single
+    difficulty: hard
+    tags:
+      - feature-importance
+      - impurity-importance
+      - cardinality
+    question: |
+      A gradient-boosted tree model is trained on a binary feature and on a continuous feature with
+      thousands of distinct values; both are pure noise, unrelated to the target. Which feature will the
+      impurity-based (split-gain) importance typically rank higher?
+    options:
+      - text: Neither; impurity importance gives every noise feature exactly zero
+        why: Impurity importance is computed on the training data, where splits on noise still reduce the training loss a little [^1].
+      - text: Both equally, because split-gain importance is normalized by each feature's number of distinct values
+        why: Impurity importances are not corrected for cardinality, which is exactly why they are biased [^1].
+      - text: The continuous feature, because its many possible split points let it fit noise more often
+        correct: true
+      - text: The binary feature, because a single clean split is more informative
+        why: A noise feature has no real information either way; the bias comes from how many split candidates a feature offers.
+    explanation: |
+      Impurity-based importances add up the training-loss reductions of all splits on a feature [^1].
+      A high-cardinality (e.g. continuous) feature offers many more thresholds, so by chance it finds
+      splits that reduce the training loss and collects importance even when it is useless; scikit-learn
+      warns that these importances favour high-cardinality features [^1][^2]. Permutation importance
+      measured on held-out data does not have this bias [^1].
+    references:
+      - title: 'scikit-learn: Permutation Importance vs Random Forest Feature Importance (MDI)'
+        url: https://scikit-learn.org/stable/auto_examples/inspection/plot_permutation_importance.html
+        locator: Introduction and section "Tree's Feature Importance from Mean Decrease in Impurity (MDI)"
+      - title: scikit-learn User Guide
+        url: https://scikit-learn.org/stable/modules/permutation_importance.html#relation-to-impurity-based-importance-in-trees
+        locator: Sec. 5.2.2 Relation to impurity-based importance in trees
+    source:
+      id: ds-interviews
+      ref: theory.md#q79
+      url: https://github.com/alexeygrigorev/data-science-interviews/blob/919f44547ef5ffc2bd59674fd301940529f4c1a8/theory.md#gradient-boosting
+    status: draft
+  - id: trees-ensembles-035
+    type: single
+    difficulty: medium
+    tags:
+      - gradient-boosting
+      - learning-rate
+      - n-estimators
+    question: |
+      A gradient-boosting model reaches a good validation score with learning rate $0.1$ and 200 trees.
+      You lower the learning rate to $0.05$. What should you expect?
+    options:
+      - text: You will need half as many trees, since each tree is now more accurate
+        why: Each tree's contribution is scaled down, so more of them are needed, not fewer [^1].
+      - text: You will need roughly twice as many trees to reach a similar training fit
+        correct: true
+      - text: The trees will be grown deeper automatically to compensate
+        why: Tree depth is a separate hyperparameter; the learning rate only scales each tree's output.
+      - text: The number of trees no longer matters, because a small learning rate prevents overfitting
+        why: Boosting can still overfit with enough trees; the number of trees is tuned together with the learning rate, e.g. by early stopping [^1].
+    explanation: |
+      The learning rate (shrinkage) multiplies each tree's contribution, so with half the step size the
+      ensemble needs about twice as many steps to get as far [^1]. scikit-learn notes that smaller
+      learning rates need more weak learners for the same training error, and usually generalize better
+      [^1]. Both hyperparameters are therefore tuned together, with the number of trees picked on
+      validation data [^2].
+    references:
+      - title: scikit-learn User Guide
+        url: https://scikit-learn.org/stable/modules/ensemble.html#shrinkage-via-learning-rate
+        locator: Sec. 1.11.1.2.5 Shrinkage via learning rate
+      - source: ds-interviews
+        locator: theory.md, Gradient boosting — "What are the main parameters in the gradient boosting model?"
+        url: https://github.com/alexeygrigorev/data-science-interviews/blob/919f44547ef5ffc2bd59674fd301940529f4c1a8/theory.md#gradient-boosting
+    source:
+      id: ds-interviews
+      ref: theory.md#q80
+      url: https://github.com/alexeygrigorev/data-science-interviews/blob/919f44547ef5ffc2bd59674fd301940529f4c1a8/theory.md#gradient-boosting
+    status: draft
+  - id: trees-ensembles-036
+    type: single
+    difficulty: medium
+    tags:
+      - n-estimators
+      - overfitting
+      - random-forest
+      - gradient-boosting
+    question: |
+      You keep all other settings fixed and only increase the number of trees from 100 to 5000. Which
+      ensemble can start to overfit because of this?
+    options:
+      - text: Neither; more trees can only help
+        why: Each boosting step reduces the training loss further, so with enough trees it eventually fits the noise [^2].
+      - text: A random forest, but not gradient boosting
+        why: A random forest averages independent trees, so its test error converges as trees are added instead of rising [^1].
+      - text: Gradient boosting, but not a random forest
+        correct: true
+      - text: Both, to about the same degree
+        why: Only boosting keeps fitting the training data more closely with every tree; averaging more forest trees just reduces the variance of the average [^1][^2].
+    explanation: |
+      Adding trees to a random forest only averages more independent, identically built trees; Breiman
+      showed the generalization error converges, so more trees cost time but do not overfit [^1]. In
+      gradient boosting each tree reduces the training loss further, so too many trees overfit, and the
+      number of trees is chosen by validation or early stopping [^2].
+    references:
+      - title: Breiman, Random Forests (UC Berkeley technical report, Jan. 2001)
+        url: https://www.stat.berkeley.edu/~breiman/randomforest2001.pdf
+        locator: Sec. 2.1 Random Forests Converge, Theorem 1.2, p. 4
+      - title: scikit-learn User Guide
+        url: https://scikit-learn.org/stable/modules/ensemble.html#shrinkage-via-learning-rate
+        locator: Sec. 1.11.1.2.5 Shrinkage via learning rate (n_estimators chosen large enough for early stopping)
+    source:
+      id: ds-interviews
+      ref: theory.md#q82
+      url: https://github.com/alexeygrigorev/data-science-interviews/blob/919f44547ef5ffc2bd59674fd301940529f4c1a8/theory.md#gradient-boosting
+    status: draft
+  - id: trees-ensembles-037
+    type: short_answer
+    difficulty: medium
+    tags:
+      - decision-tree
+      - entropy
+      - split-selection
+    question: |
+      Training data in two features $(f_1, f_2)$: negatives $(-1, 0)$, $(2, 1)$, $(2, -2)$; positives
+      $(0, 0)$, $(1, 0)$. Candidate tests are thresholds halfway between adjacent distinct values of
+      one feature. The tree picks the test with the lowest average entropy
+      $\sum_{\text{sides}} \frac{n_\text{side}}{n} H(\text{side})$ (base-2 logarithms). What is that
+      lowest average entropy? Round to 3 decimals.
+    answer:
+      numeric: 0.551
+      tolerance: 0.002
+      hint: a decimal, 3 decimal places
+      model: $f_1 > 1.5$ splits into $\{-,+,+\}$ and $\{-,-\}$; $\frac{3}{5} H(\tfrac{2}{3}) + \frac{2}{5} \cdot 0 = 0.6 \times 0.918 \approx 0.551$
+    explanation: |
+      The candidates are $f_1 > -0.5, 0.5, 1.5$ and $f_2 > -1, 0.5$ [^1]. $f_1 > -0.5$, $f_2 > -1$
+      and $f_2 > 0.5$ each split off one pure point and leave a 2–2 mix, giving
+      $\frac{4}{5} \cdot 1 = 0.8$; $f_1 > 0.5$ gives about 0.951. $f_1 > 1.5$ puts both points with
+      $f_1 = 2$ (negative) on a pure side and wins with $0.6 \cdot H(2/3) \approx 0.551$ [^2].
+    references:
+      - title: 'Wikipedia: Decision tree learning'
+        url: https://en.wikipedia.org/wiki/Decision_tree_learning#Information_gain
+        locator: Information gain
+      - source: mit-ocw-6034-s05
+        locator: Quiz 2 (Spring 2005) solutions, Problem 1 Decision Trees, part 3
+        url: https://ocw.mit.edu/courses/6-034-artificial-intelligence-spring-2005/resources/q2_soln/
+    source:
+      id: mit-ocw-6034-s05
+      ref: q2_soln#q1.3
+      url: https://ocw.mit.edu/courses/6-034-artificial-intelligence-spring-2005/resources/q2_soln/
+    status: draft
+  - id: trees-ensembles-038
+    type: single
+    difficulty: medium
+    tags:
+      - decision-tree
+      - entropy
+      - split-selection
+    question: |
+      One-dimensional data, with class 1 at $x = 2, 3, 6, 7, 11$ and class 0 at $x = 1, 4, 10$. Which
+      test does a decision tree choose for its root if it minimizes the weighted average entropy?
+    options:
+      - text: All three tests are equally good, because each misclassifies some points
+        why: Average entropy, not the error count, ranks the tests, and the three values differ.
+      - text: $x \le 5$
+        why: It splits into 2–2 and 3–1 mixtures, average entropy about 0.91, the worst of the three.
+      - text: $x \le 1.5$
+        correct: true
+      - text: $x \le 10.5$
+        why: It leaves a 4–3 mix of 7 points on one side, average entropy about 0.86.
+    explanation: |
+      $x \le 1.5$ isolates one pure point and leaves 5 of class 1 and 2 of class 0:
+      $\frac{7}{8} H(\tfrac{5}{7}) \approx 0.755$ [^1]. $x \le 10.5$ gives
+      $\frac{7}{8} H(\tfrac{4}{7}) \approx 0.862$ and $x \le 5$ gives
+      $\frac{4}{8} \cdot 1 + \frac{4}{8} H(\tfrac{3}{4}) \approx 0.906$, so the tree starts with
+      $x \le 1.5$ [^2].
+    references:
+      - title: 'Wikipedia: Decision tree learning'
+        url: https://en.wikipedia.org/wiki/Decision_tree_learning#Information_gain
+        locator: Information gain
+      - source: mit-ocw-6034-s05
+        locator: Quiz 2 review solutions, Problem 4.2 Decision Trees
+        url: https://ocw.mit.edu/courses/6-034-artificial-intelligence-spring-2005/resources/quiz2_review_sol/
+    source:
+      id: mit-ocw-6034-s05
+      ref: quiz2_review_sol#q4.2
+      url: https://ocw.mit.edu/courses/6-034-artificial-intelligence-spring-2005/resources/quiz2_review_sol/
+    status: draft
+  - id: trees-ensembles-039
+    type: multiple
+    difficulty: medium
+    tags:
+      - decision-tree
+      - pruning
+      - validation
+      - cross-validation
+    question: |
+      A decision tree is grown until its leaves are (nearly) pure, then leaves are pruned one at a
+      time while a score does not get worse. Which scores are sensible for deciding the pruning?
+      Select all that apply.
+    options:
+      - text: Training accuracy minus $C$ times the number of nodes, with $C$ chosen to minimize training error
+        why: Training error is lowest for $C = 0$, which again means no pruning at all.
+      - text: The cross-validated accuracy of the current tree
+        why: Cross-validation builds new trees on each fold; it evaluates a learning procedure, not this particular tree's nodes.
+      - text: Accuracy on the training set
+        why: The tree was grown to fit the training set, so any pruning lowers this score; it never prunes.
+      - text: Training accuracy minus $C$ times the number of nodes, with $C$ chosen by cross-validation
+        correct: true
+      - text: Accuracy on a separate validation set
+        correct: true
+    explanation: |
+      Pruning needs an estimate of performance on unseen data [^1]. A held-out validation set gives
+      one directly (reduced-error pruning). When data are scarce, a complexity penalty
+      $\text{accuracy} - C \cdot \#\text{nodes}$ works if $C$ itself is tuned by cross-validation of
+      the whole grow-and-prune procedure [^1][^2].
+    references:
+      - title: 'Wikipedia: Decision tree pruning'
+        url: https://en.wikipedia.org/wiki/Decision_tree_pruning#Reduced_error_pruning
+        locator: Reduced error pruning; Cost complexity pruning
+      - source: mit-ocw-6034-s05
+        locator: Quiz 2 review solutions, Problem 6 Pruning Trees
+        url: https://ocw.mit.edu/courses/6-034-artificial-intelligence-spring-2005/resources/quiz2_review_sol/
+    source:
+      id: mit-ocw-6034-s05
+      ref: quiz2_review_sol#q6-pruning
+      url: https://ocw.mit.edu/courses/6-034-artificial-intelligence-spring-2005/resources/quiz2_review_sol/
+    status: draft
+  - id: trees-ensembles-040
+    type: single
+    difficulty: medium
+    tags:
+      - boosting
+      - adaboost
+      - weak-learners
+    question: |
+      Boosting runs on 10 training points with these weak classifiers, each listed with the points it
+      misclassifies:
+
+      | classifier | A | B | C | D | E | G |
+      |---|---|---|---|---|---|---|
+      | misclassified | 2, 3, 4, 5 | 1, 6, 7, 9 | 3, 4, 5, 8 | 1, 2, 4, 5, 6, 7, 8 | 3, 10 | 8, 9, 10 |
+
+      Weights start at $1/10$. Each round picks the classifier with the smallest weighted error
+      $\varepsilon$ (ties go to the earlier letter); then the misclassified points are rescaled to
+      total weight $1/2$ and the correct ones to total weight $1/2$. Which classifier is picked in
+      round 2?
+    options:
+      - text: A, with weighted error 7/16
+        why: A misclassifies point 3, which now weighs 1/4, so its error is 3/16 + 1/4 = 7/16.
+      - text: G, with weighted error 3/8
+        why: Point 10, already misclassified by E, now weighs 1/4, so G's error 1/16 + 1/16 + 1/4 = 3/8 loses to B.
+      - text: B, with weighted error 1/4
+        correct: true
+      - text: E again, with weighted error 1/2
+        why: After round 1, E's mistakes carry exactly half the weight, so its error is 1/2, the worst possible.
+    explanation: |
+      Round 1 picks E ($\varepsilon = 0.2$). Rescaling gives points 3 and 10 weight $1/4$ each and the
+      other eight $1/16$ each, so a classifier is penalized heavily for repeating E's mistakes [^1][^2].
+      B misclassifies only light points: $\varepsilon = 4/16 = 1/4$, below G (3/8) and A, C, D
+      (7/16 each), so B is chosen, with $\alpha = \tfrac{1}{2}\ln 3 \approx 0.55$.
+    references:
+      - title: 'Wikipedia: AdaBoost'
+        url: https://en.wikipedia.org/wiki/AdaBoost#Example_algorithm_(Discrete_AdaBoost)
+        locator: Example algorithm (Discrete AdaBoost)
+      - source: mit-ocw-6034
+        locator: Quiz 4 (2009), Question 2 Boosting, Parts A–C
+        url: https://ocw.mit.edu/courses/6-034-artificial-intelligence-fall-2010/resources/mit6_034f10_quiz4_2009/
+    source:
+      id: mit-ocw-6034
+      ref: mit6_034f10_quiz4_2009#q2c
+      url: https://ocw.mit.edu/courses/6-034-artificial-intelligence-fall-2010/resources/mit6_034f10_quiz4_2009/
+    status: draft
+  - id: trees-ensembles-041
+    type: short_answer
+    difficulty: hard
+    tags:
+      - boosting
+      - adaboost
+      - ensemble-vote
+    question: |
+      Three rounds of boosting on 10 points produce
+      $H(x) = \operatorname{sign}(0.693\,h_E(x) + 0.549\,h_B(x) + 0.444\,h_A(x))$, where each $h$
+      outputs $\pm 1$ and the weak classifiers misclassify these points: $h_E$: 3, 10;
+      $h_B$: 1, 6, 7, 9; $h_A$: 2, 3, 4, 5. How many of the 10 training points does $H$ classify
+      correctly?
+    answer:
+      numeric: 9
+      tolerance: 0
+      hint: a whole number
+      model: Only point 3 (wrong for E and A) is misclassified, since $-0.693 + 0.549 - 0.444 < 0$; every other point has at most one wrong classifier, and no single weight exceeds the sum of the other two.
+    explanation: |
+      A point is classified correctly when the $\alpha$-weighted votes of the classifiers that get it
+      right outweigh those that get it wrong [^1]. Points with one wrong vote are fine, because each
+      $\alpha$ is smaller than the sum of the other two ($0.693 < 0.993$). Point 3 is wrong for E and
+      A: $0.549 - 0.693 - 0.444 < 0$, so 9 of 10 points are correct [^2].
+    references:
+      - title: 'Wikipedia: AdaBoost'
+        url: https://en.wikipedia.org/wiki/AdaBoost#Training
+        locator: Training (weighted vote of weak classifiers)
+      - source: mit-ocw-6034
+        locator: Quiz 4 (2009), Question 2 Boosting, Part D
+        url: https://ocw.mit.edu/courses/6-034-artificial-intelligence-fall-2010/resources/mit6_034f10_quiz4_2009/
+    source:
+      id: mit-ocw-6034
+      ref: mit6_034f10_quiz4_2009#q2d
+      url: https://ocw.mit.edu/courses/6-034-artificial-intelligence-fall-2010/resources/mit6_034f10_quiz4_2009/
+    status: draft
+  - id: trees-ensembles-042
+    type: single
+    difficulty: hard
+    tags:
+      - boosting
+      - ensemble-vote
+      - weak-learners
+    question: |
+      Ten points (friends vs. enemies) and ten weak classifiers, each listed with the points it
+      misclassifies:
+
+      | A | B | C | D | E |
+      |---|---|---|---|---|
+      | 2, 3, 4, 5, 6, 7, 9 | 1, 5, 6, 9 | 2, 3, 8, 9 | 1, 4, 7, 8 | 1, 2, 3, 4, 6, 8, 9, 10 |
+
+      | F | G | H | I | J |
+      |---|---|---|---|---|
+      | 2, 7 | 1, 3, 4, 7, 8 | 3, 8 | 2, 3, 8, 10 | 1, 4, 5, 6, 7, 9 |
+
+      Which three classifiers make the unweighted vote
+      $H(x) = \operatorname{sign}(h_1(x) + h_2(x) + h_3(x))$ correct on all 10 points?
+    options:
+      - text: D, F, H
+        why: D shares point 7 with F and point 8 with H.
+      - text: F, H, I
+        why: H and I are both wrong on points 3 and 8, so the vote is 2 to 1 against the truth there.
+      - text: B, F, H
+        correct: true
+      - text: B, D, F
+        why: B and D are both wrong on point 1, and D and F both on point 7.
+    explanation: |
+      A majority of three is right on a point as long as at most one of the three is wrong there, so
+      their error sets must be pairwise disjoint [^1]. F {2, 7}, H {3, 8} and B {1, 5, 6, 9} share no
+      point, so every point gets at least two correct votes. This is the intuition behind boosting:
+      weak classifiers whose mistakes fall on different points add up to a strong one [^1][^2].
+    references:
+      - title: 'Wikipedia: AdaBoost'
+        url: https://en.wikipedia.org/wiki/AdaBoost#Training
+        locator: Training (weighted vote of weak classifiers)
+      - source: mit-ocw-6034
+        locator: Quiz 4 (2010), Problem 2 Boosting, Part C Boost by Inspection
+        url: https://ocw.mit.edu/courses/6-034-artificial-intelligence-fall-2010/resources/mit6_034f10_quiz4_2010/
+    source:
+      id: mit-ocw-6034
+      ref: mit6_034f10_quiz4_2010#q2c
+      url: https://ocw.mit.edu/courses/6-034-artificial-intelligence-fall-2010/resources/mit6_034f10_quiz4_2010/
+    status: draft
+  - id: trees-ensembles-043
+    type: short_answer
+    difficulty: hard
+    tags:
+      - boosting
+      - adaboost
+      - weighted-error
+    question: |
+      Boosting on 10 points uses four weak classifiers, misclassifying B: {1, 5, 6, 9},
+      D: {1, 4, 7, 8}, F: {2, 7}, I: {2, 3, 8, 10}. Weights start at $1/10$; each round picks the
+      smallest weighted error (ties alphabetically) and then rescales the misclassified points to
+      total weight $1/2$ and the rest to $1/2$. Round 1 picks F and round 2 picks B. What is the
+      weighted error of the classifier picked in round 3? Round to 3 decimals.
+    answer:
+      numeric: 0.292
+      tolerance: 0.002
+      hint: a decimal, 3 decimal places
+      model: Round-3 weights 1/8 for 1, 5, 6, 9; 1/6 for 2, 7; 1/24 for 3, 4, 8, 10; errors B 1/2, D 3/8, F 1/3, I 7/24 ≈ 0.292, so I is picked.
+    explanation: |
+      After round 1 (F, $\varepsilon = 1/5$) points 2 and 7 weigh $1/4$, the others $1/16$; B's error
+      is then $4/16 = 1/4$ [^1]. Rescaling for B gives weights $1/8$ (B's mistakes), $1/6$ (points 2
+      and 7) and $1/24$ (points 3, 4, 8, 10). I misclassifies 2, 3, 8, 10:
+      $1/6 + 3/24 = 7/24 \approx 0.292$, beating F (1/3), D (3/8) and B (1/2) [^2].
+    references:
+      - title: 'Wikipedia: AdaBoost'
+        url: https://en.wikipedia.org/wiki/AdaBoost#Example_algorithm_(Discrete_AdaBoost)
+        locator: Example algorithm (Discrete AdaBoost)
+      - source: mit-ocw-6034
+        locator: Quiz 4 (2010), Problem 2 Boosting, Part B1
+        url: https://ocw.mit.edu/courses/6-034-artificial-intelligence-fall-2010/resources/mit6_034f10_quiz4_2010/
+    source:
+      id: mit-ocw-6034
+      ref: mit6_034f10_quiz4_2010#q2b1
+      url: https://ocw.mit.edu/courses/6-034-artificial-intelligence-fall-2010/resources/mit6_034f10_quiz4_2010/
+    status: draft
+  - id: trees-ensembles-044
+    type: single
+    difficulty: easy
+    tags:
+      - decision-tree
+      - interpretability
+      - algorithm-choice
+    question: |
+      A classifier will recommend which kindergarten children are assigned to special education
+      classes, and its decision rule must be justified to the board of education before use. Which
+      learner fits best?
+    options:
+      - text: A neural network
+        why: Its decisions come from many interacting weights, which are hard to explain to a board.
+      - text: An SVM with an RBF kernel
+        why: Its boundary is a weighted sum of kernels around support vectors, hard to state as rules.
+      - text: k-nearest neighbors
+        why: It offers "similar past cases" but no general rule that can be reviewed in advance.
+      - text: A decision tree
+        correct: true
+    explanation: |
+      A decision tree is a set of readable if–then tests on the input features, so the whole decision
+      rule can be inspected and justified before deployment [^1][^2]. The other learners may be as
+      accurate, but their decision rules are much harder to communicate.
+    references:
+      - title: 'Wikipedia: Decision tree learning'
+        url: https://en.wikipedia.org/wiki/Decision_tree_learning#Advantages
+        locator: Advantages (simple to understand and interpret)
+      - source: mit-ocw-6034-s05
+        locator: Quiz 2 (Spring 2005) solutions, Problem 6 Learning algorithms, part 2
+        url: https://ocw.mit.edu/courses/6-034-artificial-intelligence-spring-2005/resources/q2_soln/
+    source:
+      id: mit-ocw-6034-s05
+      ref: q2_soln#q6.2
+      url: https://ocw.mit.edu/courses/6-034-artificial-intelligence-spring-2005/resources/q2_soln/
+    status: draft
+  - id: trees-ensembles-045
+    type: single
+    difficulty: easy
+    tags:
+      - xgboost
+      - gradient-boosting
+      - hyperparameters
+    question: |
+      An `XGBRegressor` with default settings (100 trees, learning rate 0.1) gives a baseline
+      validation error. Which single change is most likely to make the validation error clearly
+      worse?
+    options:
+      - text: Setting `n_estimators=1`
+        correct: true
+      - text: Setting `n_estimators=1000` with `early_stopping_rounds=5` on a validation set
+        why: Early stopping halts once the validation score stops improving, so many trees with early stopping usually help rather than hurt [^1].
+      - text: Setting `learning_rate=0.05` together with more trees
+        why: A small learning rate with many estimators generally gives more accurate models, at the cost of training time [^1].
+      - text: Setting `n_jobs=4` to train on four cores
+        why: Parallelism only speeds up fitting; the resulting model is no better and no worse [^1].
+    explanation: |
+      Gradient boosting builds its ensemble one model at a time, and `n_estimators` is the number of
+      cycles [^1]. Too low a value causes underfitting: one tree whose predictions are multiplied by the
+      learning rate of 0.1 barely moves away from the naive initial prediction [^1]. The other changes
+      are the usual ways to improve or speed up XGBoost, which the exercise asks you to contrast with a
+      deliberately broken model [^2].
+    references:
+      - source: kaggle-learn
+        locator: Intermediate Machine Learning, Lesson 6 XGBoost — tutorial, Gradient Boosting; Parameter Tuning
+        url: https://github.com/Kaggle/learntools/blob/e9ba66dc899d3e17b80d3a1b9a5d29f430d310cb/notebooks/ml_intermediate/raw/tut6.ipynb
+      - source: kaggle-learn
+        locator: Intermediate Machine Learning, Lesson 6 exercise, Step 3 Break the model
+        url: https://github.com/Kaggle/learntools/blob/e9ba66dc899d3e17b80d3a1b9a5d29f430d310cb/notebooks/ml_intermediate/raw/ex6.ipynb
+    source:
+      id: kaggle-learn
+      ref: ml_intermediate/ex6#q3
+      url: https://github.com/Kaggle/learntools/blob/e9ba66dc899d3e17b80d3a1b9a5d29f430d310cb/notebooks/ml_intermediate/raw/ex6.ipynb
+    status: draft
+  - id: trees-ensembles-046
+    type: short_answer
+    difficulty: easy
+    tags:
+      - adaboost
+      - classifier-weight
+    question: |
+      AdaBoost starts with equal weights $1/8$ on 8 training points. The first decision stump
+      misclassifies exactly one of them. Its vote is $\alpha_1 = \frac{1}{2}\ln\frac{1 - \epsilon_1}{\epsilon_1}$,
+      where $\epsilon_1$ is its weighted training error. What is $\alpha_1$?
+    answer:
+      numeric: 0.973
+      tolerance: 0.002
+      hint: a number, 3 decimals
+      model: $\epsilon_1 = 1/8$, so $\alpha_1 = \tfrac12\ln 7 \approx 0.973$
+    explanation: |
+      The weighted error is the total weight of the misclassified points, $\epsilon_1 = 1/8$ [^1].
+      Then $\alpha_1 = \frac{1}{2}\ln\frac{7/8}{1/8} = \frac{1}{2}\ln 7 \approx 0.973$ [^2]. (The exam
+      writes the vote with $\log_2$, giving $\frac{1}{2}\log_2 7$; the base only rescales all votes and
+      does not change the classifier.) A stump with error below $1/2$ always gets a positive vote [^1].
+    references:
+      - source: mit-ocw-6867
+        locator: Mid-term exam (Fall 2002) solutions, Problem 5, part 1
+        url: https://ocw.mit.edu/courses/6-867-machine-learning-fall-2006/resources/midterm_f02soln/
+      - title: 'Wikipedia: AdaBoost'
+        locator: Example algorithm (Discrete AdaBoost)
+        url: https://en.wikipedia.org/wiki/AdaBoost#Example_algorithm_(Discrete_AdaBoost)
+    source:
+      id: mit-ocw-6867
+      ref: midterm_f02soln#q5.1
+      url: https://ocw.mit.edu/courses/6-867-machine-learning-fall-2006/resources/midterm_f02soln/
+    status: draft
+  - id: trees-ensembles-047
+    type: short_answer
+    difficulty: medium
+    tags:
+      - adaboost
+      - example-weights
+      - reweighting
+    question: |
+      AdaBoost runs on 4 training examples with equal initial weights $1/4$. The first decision stump
+      misclassifies exactly one of them. After AdaBoost's reweighting (and normalization), what is the
+      weight of that misclassified example?
+    answer:
+      numeric: 0.5
+      tolerance: 0.001
+      hint: a weight between 0 and 1
+      model: $1/2$; the three correct examples get $1/6$ each
+    explanation: |
+      AdaBoost reweights so that the stump just chosen has weighted error exactly $1/2$ under the new
+      weights, i.e. it performs at chance level on them [^1]. With a single misclassified example, its
+      new weight must be $1/2$, and the other three share the remaining $1/2$ equally, $1/6$ each
+      [^1]. Directly: the weights are multiplied by $e^{\pm\alpha}$ with $e^{\alpha} = \sqrt{3}$, which
+      gives $\frac{1}{4}\sqrt{3}$ against $3 \cdot \frac{1}{4}/\sqrt{3}$, two equal halves [^2].
+    references:
+      - source: mit-ocw-6867
+        locator: Mid-term exam (Fall 2001) solutions, Problem 4, part 1; Final exam (Fall 2004) solutions, Problem 1, part 3
+        url: https://ocw.mit.edu/courses/6-867-machine-learning-fall-2006/resources/midterm_f01soln/
+      - title: 'Wikipedia: AdaBoost'
+        locator: Example algorithm (Discrete AdaBoost)
+        url: https://en.wikipedia.org/wiki/AdaBoost#Example_algorithm_(Discrete_AdaBoost)
+    source:
+      id: mit-ocw-6867
+      ref: midterm_f01soln#q4.1
+      url: https://ocw.mit.edu/courses/6-867-machine-learning-fall-2006/resources/midterm_f01soln/
+    status: draft
+  - id: trees-ensembles-048
+    type: single
+    difficulty: medium
+    tags:
+      - adaboost
+      - weak-learners
+      - reweighting
+    question: |
+      AdaBoost picks, in every round, the weak classifier (from a finite set, e.g. all decision
+      stumps on binary features) with the lowest weighted error. Which statement about choosing the
+      same weak classifier more than once is correct?
+    options:
+      - text: It can never be chosen again, because AdaBoost removes it from the pool
+        why: Nothing is removed; re-selecting a weak classifier is the only way AdaBoost can later correct its vote.
+      - text: It is chosen again in the next round whenever it had the lowest error before
+        why: After reweighting its weighted error is exactly $1/2$, the worst useful value, so another classifier always does at least as well.
+      - text: It can be chosen again in a later round, but never in the very next round
+        correct: true
+      - text: It can be chosen again only with a negative vote
+        why: A classifier with weighted error below $1/2$ always gets a positive vote; a flipped classifier is simply another member of the pool.
+    explanation: |
+      After round $k$ the weights are updated so that the classifier just chosen has weighted error
+      exactly $1/2$ [^1], so it cannot be the best choice in round $k + 1$ (if nothing beat chance any
+      more, boosting would stop). Its vote is never
+      re-optimized jointly with the others, though, so a later round may pick the same classifier
+      again, which adds to its total vote [^1]. With a discrete pool such as one stump per word and
+      label, this happens in practice [^2].
+    references:
+      - source: mit-ocw-6867
+        locator: Final exam (Fall 2004) solutions, Problem 1, part 3; Final exam (Fall 2003) solutions, Problem 3.3
+        url: https://ocw.mit.edu/courses/6-867-machine-learning-fall-2006/resources/final_f03soln/
+      - title: 'Wikipedia: AdaBoost'
+        locator: Training — Weighting
+        url: https://en.wikipedia.org/wiki/AdaBoost#Weighting
+    source:
+      id: mit-ocw-6867
+      ref: final_f03soln#q3.3
+      url: https://ocw.mit.edu/courses/6-867-machine-learning-fall-2006/resources/final_f03soln/
+    status: draft
+  - id: trees-ensembles-049
+    type: multiple
+    difficulty: medium
+    tags:
+      - adaboost
+      - overfitting
+      - votes
+    question: Which statements about AdaBoost with decision stumps are true? Select all that apply.
+    options:
+      - text: Its votes give the largest possible training margins of any weighting of the same stumps
+        why: The votes are set one at a time and never re-optimized, so another weighting of the same stumps can give larger margins [^1].
+      - text: Given enough rounds it always reaches zero training error, whatever the weak learners
+        why: If no weighted combination of the available weak classifiers separates the training set, the training error cannot reach zero [^1].
+      - text: The votes $\alpha_k$ it assigns are never negative
+        correct: true
+      - text: The training errors of the new stump and of the combined classifier move in concert
+        why: The combined classifier's training error usually falls while each new stump's weighted error rises toward $1/2$ [^1].
+      - text: The weighted error of each new stump tends to increase over the rounds
+        correct: true
+    explanation: |
+      AdaBoost only adds weak classifiers with weighted error below $1/2$ (a worse one can be
+      flipped), so every vote $\frac{1}{2}\ln\frac{1 - \epsilon}{\epsilon}$ is non-negative [^1] [^2]. The
+      reweighting concentrates on the examples that are hard to classify, so later stumps face harder
+      weighted problems and their errors drift toward $1/2$, and their votes shrink [^1]. The
+      combination is built greedily, so it can neither guarantee zero training error for every weak
+      learner class nor optimal margins [^1].
+    references:
+      - source: mit-ocw-6867
+        locator: Mid-term exam (Fall 2002) solutions, Problem 5, parts 2–4; Mid-term exam (Fall 2001) solutions, Problem 4, parts 2–3
+        url: https://ocw.mit.edu/courses/6-867-machine-learning-fall-2006/resources/midterm_f02soln/
+      - title: 'Wikipedia: AdaBoost'
+        locator: Example algorithm (Discrete AdaBoost)
+        url: https://en.wikipedia.org/wiki/AdaBoost#Example_algorithm_(Discrete_AdaBoost)
+    source:
+      id: mit-ocw-6867
+      ref: midterm_f02soln#q5.4
+      url: https://ocw.mit.edu/courses/6-867-machine-learning-fall-2006/resources/midterm_f02soln/
+    status: draft
+  - id: trees-ensembles-050
+    type: short_answer
+    difficulty: hard
+    tags:
+      - boosting
+      - logistic-loss
+      - outliers
+      - example-weights
+    question: |
+      A boosting algorithm gives example $t$ the unnormalized weight $-L'(z_t)$, where $z_t$ is the
+      example's current margin $y_t h(x_t)$ and $L$ the margin loss. With the logistic loss
+      $L(z) = \ln(1 + e^{-z})$, how many times larger is the weight of a badly misclassified example
+      ($z = -5$) than that of a barely misclassified one ($z = -0.1$)?
+    answer:
+      numeric: 1.892
+      tolerance: 0.005
+      hint: a ratio, 3 decimals
+      model: $-L'(z) = \frac{e^{-z}}{1 + e^{-z}} = \sigma(-z)$, and $\sigma(5)/\sigma(0.1) \approx 0.9933/0.5250 \approx 1.892$
+    explanation: |
+      The weight is $-L'(z) = e^{-z}/(1 + e^{-z})$, which lies between 0 and 1 [^1]. For $z = -5$ it is
+      $0.9933$ and for $z = -0.1$ it is $0.5250$, a ratio of about $1.89$. Under AdaBoost's
+      exponential loss the weight is $e^{-z}$, and the same ratio is $e^{4.9} \approx 134$ [^2]. Because
+      the logistic weights are bounded, a few badly misclassified outliers cannot take over the
+      weighted training set, which makes this variant more forgiving than AdaBoost [^1].
+    references:
+      - source: mit-ocw-6867
+        locator: Problem set 4 solutions, Problem 3 (a)
+        url: https://ocw.mit.edu/courses/6-867-machine-learning-fall-2006/resources/hw4_soln/
+      - title: 'Wikipedia: AdaBoost'
+        locator: Statistical understanding of boosting (AdaBoost's error function is e^(−y f(x)))
+        url: https://en.wikipedia.org/wiki/AdaBoost#Statistical_understanding_of_boosting
+    source:
+      id: mit-ocw-6867
+      ref: hw4_soln#q3a
+      url: https://ocw.mit.edu/courses/6-867-machine-learning-fall-2006/resources/hw4_soln/
+    status: draft
+  - id: trees-ensembles-051
+    type: single
+    difficulty: medium
+    tags:
+      - boosting
+      - base-learners
+      - separable-data
+    question: |
+      A boosting algorithm with the logistic loss chooses each vote by minimizing
+      $\sum_t \ln\big(1 + e^{-y_t(h_{m-1}(x_t) + \alpha_m h(x_t; \hat\theta_m))}\big)$ over $\alpha_m \ge 0$. The
+      base learner is a linear SVM, and the training set is linearly separable. What is $\hat\alpha_1$
+      in the first round ($h_0 = 0$)?
+    options:
+      - text: It is finite, because the logistic loss flattens out for large margins
+        why: 'Flattening is not enough: $\ln(1 + e^{-z})$ keeps decreasing toward 0 as $z$ grows, so every increase of $\alpha_1$ still lowers the loss.'
+      - text: It is 1, the scale at which the SVM's margin constraints are tight
+        why: The objective keeps decreasing beyond $\alpha_1 = 1$, because every margin $y_t h(x_t)$ is positive.
+      - text: It is 0, because a perfect base learner needs no reweighting
+        why: $\alpha_1 = 0$ leaves the loss at $n\ln 2$; any positive vote does better.
+      - text: It is infinite, since a larger $\alpha_1$ lowers every example's loss
+        correct: true
+    explanation: |
+      The SVM separates the training set, so $y_t h(x_t; \hat\theta_1) > 0$ for every $t$ [^1]. Each
+      term $\ln(1 + e^{-\alpha_1 y_t h(x_t)})$ then decreases strictly as $\alpha_1$ grows, so the
+      minimum is approached only as $\alpha_1 \to \infty$ [^1]. Boosting is meant for weak learners;
+      a strong learner that already fits the training data leaves nothing to combine [^2].
+    references:
+      - source: mit-ocw-6867
+        locator: Problem set 4 solutions, Problem 3 (b)
+        url: https://ocw.mit.edu/courses/6-867-machine-learning-fall-2006/resources/hw4_soln/
+      - title: 'Wikipedia: AdaBoost'
+        locator: Introduction (combining weak learners)
+        url: https://en.wikipedia.org/wiki/AdaBoost
+    source:
+      id: mit-ocw-6867
+      ref: hw4_soln#q3b
+      url: https://ocw.mit.edu/courses/6-867-machine-learning-fall-2006/resources/hw4_soln/
+    status: draft
+  - id: trees-ensembles-052
+    type: single
+    difficulty: medium
+    tags:
+      - boosting
+      - feature-selection
+      - mutual-information
+    question: |
+      For text classification with binary word features, you rank words in two ways: (a) by the
+      order in which boosting with one-word weak classifiers ($h(\phi) = \pm\phi_i$) first selects them,
+      or (b) by each word's estimated mutual information with the label. Which ranking is likely to be
+      more useful for a linear classifier, and why?
+    options:
+      - text: (a), as boosting scores each word against the combination built so far
+        correct: true
+      - text: (b), because mutual information measures the dependence on the label exactly
+        why: It does, but one word at a time; it cannot see that a word is redundant with, or complementary to, words already chosen.
+      - text: They give the same ranking, because both favour words that predict the label
+        why: They differ whenever words interact, e.g. two near-duplicate words both have high mutual information but only one helps boosting.
+      - text: (b), because boosting can select the same word several times
+        why: Re-selection only adjusts that word's vote; it does not make the ranking less useful.
+    explanation: |
+      Boosting builds a linear combination of weak classifiers, here single features, and each new
+      feature is chosen for how much it improves the current weighted combination [^1]. Mutual
+      information scores each feature on its own and cannot recognize how several features work
+      together in a linear predictor, such as redundancy between two copies of the same word [^1] [^2].
+    references:
+      - source: mit-ocw-6867
+        locator: Final exam (Fall 2003) solutions, Problem 3.4
+        url: https://ocw.mit.edu/courses/6-867-machine-learning-fall-2006/resources/final_f03soln/
+      - title: 'Wikipedia: Feature selection'
+        locator: Minimum-redundancy-maximum-relevance (mRMR) feature selection
+        url: https://en.wikipedia.org/wiki/Feature_selection#Minimum-redundancy-maximum-relevance_(mRMR)_feature_selection
+    source:
+      id: mit-ocw-6867
+      ref: final_f03soln#q3.4
+      url: https://ocw.mit.edu/courses/6-867-machine-learning-fall-2006/resources/final_f03soln/
+    status: draft

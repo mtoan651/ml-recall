@@ -36,6 +36,9 @@ pnpm lint && pnpm test && pnpm check && pnpm build   # must pass before committi
 - New or generated questions are `draft`. Only mark `reviewed` when the user has verified them;
   reviewed questions need `difficulty` and an explanation that cites `[^n]` references.
 - Never use a `reference`-only source as `source.id`; write an original question and cite it.
+- The project is non-commercial (study and research). Sources under NonCommercial licences
+  without ND (e.g. CC BY-NC-SA) may be adapted; each question keeps its source's licence. ND,
+  all-rights-reserved and unlicensed material stays reference-only (the repo and site are public).
 - When generating questions, follow `prompts/generate-questions.md` and
   `docs/content-pipeline.md#writing-good-questions`. Verify facts against the cited source.
 - Do not fetch pages whose terms forbid ingestion by LLMs/AI (e.g. all OpenStax books, checked

@@ -56,6 +56,7 @@ COURSES = {
             "problem-framing": "ml-basics",
             "recommendation": "ml-basics",
             "managing-ml-projects": "ml-basics",
+            "intro-to-ml": "ml-basics",
         },
         default_topic="ml-basics",
     ),

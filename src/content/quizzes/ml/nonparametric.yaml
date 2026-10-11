@@ -836,3 +836,549 @@ questions:
       ref: lectures/notes/04_kNNs-SVM-RBF.ipynb#ex4.1
       url: https://github.com/UBC-CS/cpsc330-2025W1/blob/a89d6131a0e2ae5f7ab36f207a3809a5b7137aef/lectures/notes/04_kNNs-SVM-RBF.ipynb
     status: draft
+  - id: nonparametric-022
+    type: short_answer
+    difficulty: easy
+    tags:
+      - knn
+      - predict-proba
+      - certainty
+    question: |
+      A 5-nearest-neighbour classifier labels the SMS "Good. No cellphones allowed :)". Its five
+      nearest training messages have the labels ham, spam, ham, ham, ham. With uniform weights, what
+      probability does the classifier give to its predicted class?
+    answer:
+      numeric: 0.8
+      tolerance: 0.001
+      hint: a probability, e.g. 0.6
+      model: 'Majority vote: ham, with $4/5 = 0.8$'
+    explanation: |
+      $k$-NN predicts by a vote among the $k$ nearest training examples, and the course asks how it
+      could also express how certain it is [^1]. The natural score is the fraction of neighbours
+      that agree with the prediction; with uniform weights this is what scikit-learn's
+      `predict_proba` returns [^2]. Four of the five neighbours are ham, so the prediction is ham
+      with probability 0.8. Distance weighting would change this score.
+    references:
+      - source: ubc-dsci571
+        locator: 'Lecture 7 notes, Exercise 7.1.2 KNNs: Quantifying the level of certainty of predictions'
+        url: https://github.com/UBC-MDS/DSCI_571_sup-learn-1/blob/70be2d76ec40e11fe7ddcff2a8c9e602a2698129/lectures/notes/07_naive-Bayes.ipynb
+      - title: 'scikit-learn documentation: KNeighborsClassifier'
+        url: https://scikit-learn.org/stable/modules/generated/sklearn.neighbors.KNeighborsClassifier.html
+        locator: weights='uniform' and predict_proba
+    source:
+      id: ubc-dsci571
+      ref: lectures/notes/07_naive-Bayes.ipynb#ex7.1.2
+      url: https://github.com/UBC-MDS/DSCI_571_sup-learn-1/blob/70be2d76ec40e11fe7ddcff2a8c9e602a2698129/lectures/notes/07_naive-Bayes.ipynb
+    status: draft
+  - id: nonparametric-023
+    type: short_answer
+    difficulty: medium
+    tags:
+      - curse-of-dimensionality
+      - knn
+      - locality
+    question: |
+      Inputs are uniformly distributed in the 10-dimensional unit hypercube. A nearest-neighbour method
+      looks at a small sub-cube around a query point that should contain 1% of the data. What edge length
+      must that sub-cube have? Give 2 decimals.
+    answer:
+      numeric: 0.63
+      tolerance: 0.005
+      hint: a number between 0 and 1, 2 decimals
+      model: $e = 0.01^{1/10} \approx 0.63$
+    explanation: |
+      A sub-cube of edge $e$ holds the fraction $e^{p}$ of uniformly spread data in $p$ dimensions, so
+      capturing a fraction $r$ needs $e = r^{1/p}$ [^1]. For $r = 0.01$ and $p = 10$ that is $0.63$:
+      the "local" neighbourhood spans 63% of the range of every input, so it is no longer local [^1][^2].
+      This is the curse of dimensionality: the data needed to keep neighbourhoods small grows
+      exponentially with the dimension [^3].
+    references:
+      - title: Hastie, Tibshirani & Friedman, The Elements of Statistical Learning (2nd ed.)
+        url: https://hastie.su.domains/ElemStatLearn/
+        locator: Sec. 2.5 Local Methods in High Dimensions
+      - title: 'Wikipedia: Curse of dimensionality'
+        url: https://en.wikipedia.org/wiki/Curse_of_dimensionality#k-nearest_neighbor_classification
+        locator: Section "k-nearest neighbor classification"
+      - source: ds-interviews
+        locator: theory.md, Classification — "What is 'curse of dimensionality'?"
+        url: https://github.com/alexeygrigorev/data-science-interviews/blob/919f44547ef5ffc2bd59674fd301940529f4c1a8/theory.md#classification
+    source:
+      id: ds-interviews
+      ref: theory.md#q39
+      url: https://github.com/alexeygrigorev/data-science-interviews/blob/919f44547ef5ffc2bd59674fd301940529f4c1a8/theory.md#classification
+    status: draft
+  - id: nonparametric-024
+    type: short_answer
+    difficulty: medium
+    tags:
+      - collaborative-filtering
+      - recommender-systems
+      - nearest-neighbours
+    question: |
+      User-based collaborative filtering predicts Ann's rating of a film from her two most similar users:
+      Bob (similarity 0.9) rated it 4 and Cara (similarity 0.5) rated it 2. Using the similarity-weighted
+      average $\hat r = \sum_v s_v r_v / \sum_v |s_v|$, what rating is predicted? Give 2 decimals.
+    answer:
+      numeric: 3.29
+      tolerance: 0.01
+      hint: a number, 2 decimals
+      model: $(0.9 \cdot 4 + 0.5 \cdot 2)/(0.9 + 0.5) = 4.6/1.4 \approx 3.29$
+    explanation: |
+      Memory-based collaborative filtering is a nearest-neighbour method: it predicts from the ratings
+      of the most similar users, weighting each by its similarity [^1][^2]. Here $4.6/1.4 = 3.29$, pulled
+      towards Bob's 4 because he is more similar. Real systems also subtract each user's mean rating
+      first, because some users rate everything higher than others [^1].
+    references:
+      - title: 'Wikipedia: Collaborative filtering'
+        url: https://en.wikipedia.org/wiki/Collaborative_filtering#Memory-based
+        locator: Section "Memory-based"
+      - source: d2l
+        locator: Sec. 21.1.1 Collaborative Filtering
+        url: https://d2l.ai/chapter_recommender-systems/recsys-intro.html#collaborative-filtering
+    source:
+      id: ds-interviews
+      ref: theory.md#q156
+      url: https://github.com/alexeygrigorev/data-science-interviews/blob/919f44547ef5ffc2bd59674fd301940529f4c1a8/theory.md#recommender-systems
+    status: draft
+  - id: nonparametric-025
+    type: multiple
+    difficulty: easy
+    tags:
+      - knn
+      - lazy-learning
+      - feature-scaling
+    question: |
+      You consider a $k$-nearest-neighbour classifier for a table of one million training examples whose
+      features include age in years, income in dollars and a few columns unrelated to the label. Which
+      statements are true? Select all that apply.
+    options:
+      - text: Irrelevant features hurt it, because they still count in every distance
+        correct: true
+      - text: Its trained model is a compact set of weights whose size does not depend on the data
+        why: The "model" is the whole training set, so memory grows with the number of examples [^1][^2].
+      - text: Training just stores the data, so prediction gets slower as the training set grows
+        correct: true
+      - text: Without feature scaling, features with large numeric ranges dominate the distances
+        correct: true
+      - text: It assumes that the classes can be separated by a linear boundary
+        why: $k$-NN makes no linearity assumption; its decision boundary can take any shape [^1].
+    explanation: |
+      $k$-NN is a lazy, instance-based method: it stores the training set and, for each query, searches
+      for the nearest examples, so memory and prediction time grow with the data [^1][^2]. It needs no
+      linearity assumption and can model complex boundaries, but distances are sensitive to the scale of
+      the features and to irrelevant features, and it suffers from the curse of dimensionality [^1].
+    references:
+      - source: galaxy-training
+        locator: Classification in Machine Learning — K-Nearest Neighbor (KNN), advantages and disadvantages
+        url: https://training.galaxyproject.org/training-material/topics/statistics/tutorials/classification_machinelearning/tutorial.html
+      - title: scikit-learn User Guide
+        url: https://scikit-learn.org/stable/modules/neighbors.html#nearest-neighbors-classification
+        locator: Sec. 1.6.2 Nearest Neighbors Classification
+    source:
+      id: galaxy-training
+      ref: classification_machinelearning#q3
+      url: https://github.com/galaxyproject/training-material/blob/917e68d1d61c2915c7a970d75468b8494be90c0d/topics/statistics/tutorials/classification_machinelearning/tutorial.md
+    status: draft
+  - id: nonparametric-026
+    type: single
+    difficulty: easy
+    tags:
+      - knn
+      - classification
+    question: |
+      Training data: negatives $(-1, 0)$, $(2, 1)$, $(2, -2)$; positives $(0, 0)$, $(1, 0)$. With
+      Euclidean distance, how do 1-NN and 3-NN classify the new point $(1, -1.01)$?
+    options:
+      - text: 1-NN negative, 3-NN positive
+        why: The single nearest point is $(1, 0)$ at distance 1.01, which is positive.
+      - text: 1-NN negative, 3-NN negative
+        why: Both the nearest neighbor and the majority of the three nearest are positive.
+      - text: 1-NN positive, 3-NN positive
+        correct: true
+      - text: 1-NN positive, 3-NN negative
+        why: The three nearest are $(1, 0)$+, $(2, -2)$− and $(0, 0)$+, so the vote is 2 to 1 for positive.
+    explanation: |
+      The distances are 1.01 to $(1, 0)$, about 1.41 to $(2, -2)$ and about 1.42 to $(0, 0)$, with the
+      other two points farther away [^1]. 1-NN copies the label of $(1, 0)$; 3-NN takes a majority
+      vote of $\{+, -, +\}$. Both say positive, although the second neighbor alone is negative [^2].
+    references:
+      - title: 'Wikipedia: k-nearest neighbors algorithm'
+        url: https://en.wikipedia.org/wiki/K-nearest_neighbors_algorithm#Algorithm
+        locator: Algorithm
+      - source: mit-ocw-6034-s05
+        locator: Quiz 2 (Spring 2005) solutions, Problem 2 Nearest Neighbors
+        url: https://ocw.mit.edu/courses/6-034-artificial-intelligence-spring-2005/resources/q2_soln/
+    source:
+      id: mit-ocw-6034-s05
+      ref: q2_soln#q2
+      url: https://ocw.mit.edu/courses/6-034-artificial-intelligence-spring-2005/resources/q2_soln/
+    status: draft
+  - id: nonparametric-027
+    type: short_answer
+    difficulty: medium
+    tags:
+      - knn
+      - cross-validation
+      - leave-one-out
+    question: |
+      One-dimensional data: class O at $f = 1, 2, 7, 10, 11$ and class X at $f = 3, 6, 6$ (two X
+      points share $f = 6$). Run 8-fold (leave-one-out) cross-validation of 1-NN, breaking distance
+      ties in favor of the point on the left. What accuracy is predicted? Give a fraction between 0
+      and 1.
+    answer:
+      numeric: 0.75
+      tolerance: 0.001
+      hint: a decimal between 0 and 1
+      model: 'Wrong only for 3 (nearest 2 is O) and 7 (nearest 6 is X): 6 of 8 = 0.75'
+    explanation: |
+      Each point is classified by its nearest other point [^1]. 1 → 2 (O, right), 2 → 1 (tie with 3,
+      left wins; O, right), 3 → 2 (O, wrong), each 6 → the other 6 (X, right), 7 → 6 (X, wrong),
+      10 ↔ 11 (O, right). That is 6 correct out of 8, an estimated accuracy of 75% [^2].
+    references:
+      - title: 'Wikipedia: Cross-validation (statistics)'
+        url: https://en.wikipedia.org/wiki/Cross-validation_(statistics)#Leave-one-out_cross-validation
+        locator: Leave-one-out cross-validation
+      - source: mit-ocw-6034-s05
+        locator: Quiz 2 review solutions, Problem 1 Classification, Part A3
+        url: https://ocw.mit.edu/courses/6-034-artificial-intelligence-spring-2005/resources/quiz2_review_sol/
+    source:
+      id: mit-ocw-6034-s05
+      ref: quiz2_review_sol#q1a3
+      url: https://ocw.mit.edu/courses/6-034-artificial-intelligence-spring-2005/resources/quiz2_review_sol/
+    status: draft
+  - id: nonparametric-028
+    type: single
+    difficulty: hard
+    tags:
+      - knn
+      - voronoi
+      - condensed-nearest-neighbor
+    question: |
+      To speed up a two-class 1-nearest-neighbor classifier you remove "redundant" training points,
+      whose removal changes the prediction for no possible query. Which condition makes a point
+      redundant?
+    options:
+      - text: Its Voronoi cell borders only cells of its own class
+        correct: true
+      - text: It is farther than average from the training points of the other class
+        why: Distance on average says nothing about whether its cell touches the decision boundary somewhere.
+      - text: Its own nearest neighbor has the same class
+        why: Its cell can still border a cell of the other class elsewhere, and removing it would move that part of the boundary.
+      - text: It lies inside the convex hull of its own class
+        why: Points of the other class can lie inside that hull too, so the cell may still touch them.
+    explanation: |
+      1-NN partitions the plane into Voronoi cells, and the decision boundary consists of the cell
+      walls between points of different classes [^1]. If every neighboring cell has the same class,
+      deleting the point only redistributes its cell among same-class neighbors, so no prediction
+      changes; this is the idea behind condensed nearest neighbor editing [^2].
+    references:
+      - title: 'Wikipedia: k-nearest neighbors algorithm'
+        url: https://en.wikipedia.org/wiki/K-nearest_neighbors_algorithm#Decision_boundary
+        locator: Decision boundary
+      - source: mit-ocw-6034-s05
+        locator: Quiz 2 review solutions, Problem 4 Learning, Part A
+        url: https://ocw.mit.edu/courses/6-034-artificial-intelligence-spring-2005/resources/quiz2_review_sol/
+    source:
+      id: mit-ocw-6034-s05
+      ref: quiz2_review_sol#q4a-learning
+      url: https://ocw.mit.edu/courses/6-034-artificial-intelligence-spring-2005/resources/quiz2_review_sol/
+    status: draft
+  - id: nonparametric-029
+    type: single
+    difficulty: medium
+    tags:
+      - knn
+      - algorithm-choice
+      - scalability
+    question: |
+      You have about one million labeled examples in a 6-dimensional feature space and expect to
+      classify only about 100 new points. Which learner is the most sensible default?
+    options:
+      - text: Naive Bayes
+        why: It is cheap, but its independence assumption usually makes it less accurate than kNN in a dense, low-dimensional space.
+      - text: An SVM with an RBF kernel
+        why: Kernel SVM training scales badly with a million examples, and the cost is not repaid by only 100 predictions.
+      - text: A neural network trained by backpropagation
+        why: Many passes over a million examples are expensive; training cost dominates for so few queries.
+      - text: k-nearest neighbors
+        correct: true
+    explanation: |
+      kNN has essentially no training cost and works well when the dimension is low and data are
+      plentiful [^1]. Its weakness, slow prediction, hardly matters for 100 queries, and in 6
+      dimensions a k-d tree can speed up the search further [^2].
+    references:
+      - source: mit-ocw-6034-s05
+        locator: Quiz 2 (Spring 2005) solutions, Problem 6 Learning algorithms, part 1
+        url: https://ocw.mit.edu/courses/6-034-artificial-intelligence-spring-2005/resources/q2_soln/
+      - title: 'Wikipedia: k-nearest neighbors algorithm'
+        url: https://en.wikipedia.org/wiki/K-nearest_neighbors_algorithm#Algorithm
+        locator: Algorithm (lazy learning; search structures)
+    source:
+      id: mit-ocw-6034-s05
+      ref: q2_soln#q6.1
+      url: https://ocw.mit.edu/courses/6-034-artificial-intelligence-spring-2005/resources/q2_soln/
+    status: draft
+  - id: nonparametric-030
+    type: single
+    difficulty: medium
+    tags:
+      - knn
+      - curse-of-dimensionality
+      - feature-selection
+    question: |
+      A spam filter represents each email as a vector of word counts over the whole vocabulary (tens
+      of thousands of features, most irrelevant). Why is a decision tree likely to beat 1-nearest
+      neighbor here?
+    options:
+      - text: Decision trees cannot overfit, while nearest neighbor always overfits
+        why: Unpruned trees overfit easily too; the issue is which features drive the decision.
+      - text: Nearest neighbor cannot handle count-valued features, only binary ones
+        why: Distances work on counts just fine; the problem is that thousands of irrelevant counts swamp them.
+      - text: The tree needs no training data, while nearest neighbor stores all of it
+        why: Trees are learned from the training data; storing the data is NN's prediction-time cost, not its accuracy problem.
+      - text: Trees pick informative words; NN distance is swamped by irrelevant words
+        correct: true
+    explanation: |
+      In high dimension with many irrelevant features, Euclidean distance is mostly noise, so the
+      "nearest" email need not be similar in the words that matter [^1][^2]. A decision tree chooses
+      the words with the best splits and ignores the rest, and it also predicts far faster than
+      comparing against every stored email; naive Bayes is a strong third option for text [^2].
+    references:
+      - title: 'Wikipedia: Curse of dimensionality'
+        url: https://en.wikipedia.org/wiki/Curse_of_dimensionality#Distance_function
+        locator: Distance function
+      - source: mit-ocw-6034-s05
+        locator: Quiz 2 review solutions, Problem 3 Spaminator, Part A
+        url: https://ocw.mit.edu/courses/6-034-artificial-intelligence-spring-2005/resources/quiz2_review_sol/
+    source:
+      id: mit-ocw-6034-s05
+      ref: quiz2_review_sol#q3a-spam
+      url: https://ocw.mit.edu/courses/6-034-artificial-intelligence-spring-2005/resources/quiz2_review_sol/
+    status: draft
+  - id: nonparametric-031
+    type: single
+    difficulty: easy
+    tags:
+      - knn
+      - choice-of-k
+      - underfitting
+    question: |
+      A kNN classifier with plain majority voting is trained on $N$ labeled points. What happens if
+      you set $k = N$?
+    options:
+      - text: The decision boundary becomes the Voronoi diagram of the training points
+        why: The Voronoi boundary belongs to 1-NN; with $k = N$ there is no boundary at all.
+      - text: The prediction becomes undefined because of ties
+        why: Ties only arise if the classes are exactly balanced; otherwise the majority class wins everywhere.
+      - text: Every query gets the majority class of the training set
+        correct: true
+      - text: The classifier memorizes the training set exactly, as with $k = 1$
+        why: That is the $k = 1$ extreme; with $k = N$ every point votes on every query.
+    explanation: |
+      Small $k$ follows every noisy point (overfitting), while large $k$ averages over more and more
+      distant points [^1]. At $k = N$ all training points vote for every query, so the classifier
+      ignores the input and always predicts the majority class, the extreme of underfitting; $k$ is
+      usually chosen by cross-validation in between [^1][^2].
+    references:
+      - title: 'Wikipedia: k-nearest neighbors algorithm'
+        url: https://en.wikipedia.org/wiki/K-nearest_neighbors_algorithm#Parameter_selection
+        locator: Parameter selection
+      - source: mit-ocw-6034
+        locator: Quiz 3 (2010), Problem 1 Learning, Part A2 More KNN
+        url: https://ocw.mit.edu/courses/6-034-artificial-intelligence-fall-2010/resources/mit6_034f10_quiz3_2010/
+    source:
+      id: mit-ocw-6034
+      ref: mit6_034f10_quiz3_2010#q1a2
+      url: https://ocw.mit.edu/courses/6-034-artificial-intelligence-fall-2010/resources/mit6_034f10_quiz3_2010/
+    status: draft
+  - id: nonparametric-032
+    type: single
+    difficulty: medium
+    tags:
+      - kernel-ridge-regression
+      - rbf-kernel
+      - interpolation
+    question: |
+      Kernel ridge regression predicts $y(x) = \sum_{t=1}^{n} (\hat\alpha_t / \lambda) K(x_t, x)$ with
+      $\hat{\boldsymbol\alpha} = \lambda(\lambda I + K)^{-1}\mathbf{y}$, where $K$ is the Gram matrix of the
+      $n$ training inputs. The kernel is $K(x, x') = \exp(-\beta\lVert x - x'\rVert^2 / 2)$ and the
+      inputs are distinct. What happens to the training error as $\lambda \to 0$?
+    options:
+      - text: It becomes exactly zero, since the fit interpolates the targets
+        correct: true
+      - text: It tends to the noise variance of the targets
+        why: That is the typical *test* error of a well-chosen model; without regularization the RBF predictor fits every training target exactly.
+      - text: It is undefined, because the Gram matrix becomes singular
+        why: For distinct inputs the Gaussian Gram matrix is non-singular, so the limit $K^{-1}\mathbf{y}$ exists [^2].
+      - text: It tends to the training error of ordinary least squares on the raw inputs
+        why: The RBF feature space is infinite-dimensional, so the unregularized fit is far more flexible than a linear fit on the raw inputs.
+    explanation: |
+      Writing $A = (\lambda I + K)^{-1}\mathbf{y}$ gives $y(x) = \sum_t A_t K(x_t, x)$, and as
+      $\lambda \to 0$, $A \to K^{-1}\mathbf{y}$ [^1]. The limit exists because the Gaussian kernel is
+      strictly positive definite, so its Gram matrix on distinct points is invertible [^2]. At a
+      training input, $y(x_s) = \sum_t (K^{-1}\mathbf{y})_t K_{ts} = y_s$: the predictor
+      interpolates, and the training error is exactly zero [^1]. That is overfitting; the test error
+      is lowest at an intermediate $\lambda$.
+    references:
+      - source: mit-ocw-6867
+        locator: Problem set 2 solutions, Problem 2 (a)–(d)
+        url: https://ocw.mit.edu/courses/6-867-machine-learning-fall-2006/resources/hw2_soln/
+      - title: 'Wikipedia: Radial basis function interpolation'
+        locator: Motivation (the Gaussian is strictly positive definite, so the interpolation matrix is non-singular)
+        url: https://en.wikipedia.org/wiki/Radial_basis_function_interpolation#Motivation
+    source:
+      id: mit-ocw-6867
+      ref: hw2_soln#q2
+      url: https://ocw.mit.edu/courses/6-867-machine-learning-fall-2006/resources/hw2_soln/
+    status: draft
+  - id: nonparametric-033
+    type: single
+    difficulty: medium
+    tags:
+      - kernel-perceptron
+      - dual-representation
+    question: |
+      The perceptron updates $\theta \leftarrow \theta + y_t\phi(x_t)$ whenever $y_t\theta^\top\phi(x_t) \le 0$,
+      starting from $\theta = 0$. Its kernel form keeps the discriminant as
+      $f(x) = \sum_{i=1}^{n} w_i\, y_i\, K(x_i, x)$. What is $w_i$?
+    options:
+      - text: A Lagrange multiplier between 0 and a constant $C$
+        why: That describes the SVM dual. The perceptron has no optimization problem; it only counts updates.
+      - text: How many updates (mistakes) were made on $x_i$ so far
+        correct: true
+      - text: 1 if $x_i$ is a support vector and 0 otherwise
+        why: Coefficients are integers that can exceed 1, since an example can trigger several updates.
+      - text: The kernel value $K(x_i, x_i)$
+        why: $K(x_i, x_i)$ is fixed by the kernel; the coefficients change during training.
+    explanation: |
+      $\theta$ is always a sum of the vectors $y_t\phi(x_t)$ added at the mistakes, so
+      $\theta = \sum_i w_i y_i \phi(x_i)$ with $w_i$ the number of updates made on example $i$ [^1].
+      Then $\theta^\top\phi(x) = \sum_i w_i y_i K(x_i, x)$, and a mistake on $x_t$ simply increments
+      $w_t$, i.e. $f(x) \leftarrow f(x) + y_t K(x_t, x)$ [^1]. Most $w_i$ stay 0. With an RBF kernel
+      the data are always separable in feature space, so the algorithm stops after finitely many
+      updates [^2].
+    references:
+      - source: mit-ocw-6867
+        locator: Problem set 2 solutions, Problem 3 (a)–(c)
+        url: https://ocw.mit.edu/courses/6-867-machine-learning-fall-2006/resources/hw2_soln/
+      - title: 'Wikipedia: Kernel perceptron'
+        locator: Algorithm
+        url: https://en.wikipedia.org/wiki/Kernel_perceptron#Algorithm
+    source:
+      id: mit-ocw-6867
+      ref: hw2_soln#q3
+      url: https://ocw.mit.edu/courses/6-867-machine-learning-fall-2006/resources/hw2_soln/
+    status: draft
+  - id: nonparametric-034
+    type: short_answer
+    difficulty: hard
+    tags:
+      - rbf-interpolation
+      - extrapolation
+    question: |
+      One-dimensional RBF interpolation uses $f(x) = \sum_{i=1}^{3} c_i\,|x - x_i|$ with nodes
+      $x_1 = 0$, $x_2 = 3$, $x_3 = 4$, and the coefficients are chosen so that $f(0) = 1$,
+      $f(3) = 4$ and $f(4) = 3$. What is $f(6)$?
+    answer:
+      numeric: 5
+      tolerance: 0.001
+      hint: a number
+      model: $c = (1, -1, 1)$, so $f(x) = |x| - |x - 3| + |x - 4|$ and $f(6) = 6 - 3 + 2 = 5$
+    explanation: |
+      The interpolation conditions give the linear system $K\mathbf{c} = \mathbf{y}$ with
+      $K_{ij} = |x_i - x_j|$ [^2]:
+      $3c_2 + 4c_3 = 1$, $3c_1 + c_3 = 4$, $4c_1 + c_2 = 3$, whose solution is $c = (1, -1, 1)$ [^1].
+      Each basis function is piecewise linear with a kink at its node, so between the nodes $f$
+      just joins the data points with straight lines. Beyond $x = 4$ all terms are linear with total
+      slope $c_1 + c_2 + c_3 = 1$, so $f(6) = f(4) + 2 = 5$.
+    references:
+      - source: mit-ocw-9520
+        locator: Problem set 2, Problem 2.1 (RBF interpolation with K(x) = |x|)
+        url: https://ocw.mit.edu/courses/9-520-statistical-learning-theory-and-applications-spring-2003/resources/second_set/
+      - title: 'Wikipedia: Radial basis function interpolation'
+        locator: Introduction (interpolant as a weighted sum of radial basis functions; linear system for the weights)
+        url: https://en.wikipedia.org/wiki/Radial_basis_function_interpolation
+    source:
+      id: mit-ocw-9520
+      ref: second_set#q2.1
+      url: https://ocw.mit.edu/courses/9-520-statistical-learning-theory-and-applications-spring-2003/resources/second_set/
+    status: draft
+  - id: nonparametric-035
+    type: multiple
+    difficulty: medium
+    tags:
+      - positive-definite-kernel
+      - kernel-construction
+    question: |
+      $k_1$ and $k_2$ are positive semidefinite (PSD) kernels on a set $\mathcal{X}$ and
+      $g:\mathcal{X}\to\mathbb{R}$ is any function. Which of the following kernels are guaranteed
+      to be PSD? Select all that apply.
+    options:
+      - text: $k(u, v) = g(u)\,g(v)$
+        correct: true
+      - text: $k(u, v) = \exp\big(k_1(u, v)\big)$
+        correct: true
+      - text: $k(u, v) = k_1(u, v) - k_2(u, v)$
+        why: 'Take $k_2 = 2k_1$: the difference is $-k_1$, whose Gram matrices are negative semidefinite.'
+      - text: $k(u, v) = k_1(u, v)^2 - k_1(u, v)$
+        why: 'A polynomial with a negative coefficient can break PSD-ness: for the constant kernel $k_1 = 1/2$ it gives the constant $-1/4$.'
+      - text: $k(u, v) = k_1(u, v)\,k_2(u, v)$
+        correct: true
+    explanation: |
+      The Gram matrix of $k_1 k_2$ is the entrywise (Hadamard) product of two PSD matrices, which is
+      PSD (it is a principal submatrix of their Kronecker product) [^1]. PSD kernels are closed under
+      sums with nonnegative weights, products and limits, so any polynomial with nonnegative
+      coefficients in $k_1$, and hence $\exp(k_1)$ as a limit of its Taylor polynomials, is PSD [^1]
+      [^2]. $g(u)g(v)$ has Gram matrix $\mathbf{g}\mathbf{g}^\top$, which is PSD [^1]. Combining
+      these shows that the Gaussian kernel $\exp(-\lVert u - v \rVert^2)$ is PSD [^1].
+    references:
+      - source: mit-ocw-18657
+        locator: Problem set 3 solutions, Problem 1 (1)–(5)
+        url: https://ocw.mit.edu/courses/18-657-mathematics-of-machine-learning-fall-2015/resources/assignment-3-solution/
+      - title: 'Wikipedia: Positive-definite kernel'
+        locator: Some general properties (conical sums, products and limits of p.d. kernels are p.d.)
+        url: https://en.wikipedia.org/wiki/Positive-definite_kernel#Some_general_properties
+    source:
+      id: mit-ocw-18657
+      ref: assignment-3#q1
+      url: https://ocw.mit.edu/courses/18-657-mathematics-of-machine-learning-fall-2015/resources/assignment-3-solution/
+    status: draft
+  - id: nonparametric-036
+    type: single
+    difficulty: medium
+    tags:
+      - gaussian-process
+      - missing-values
+      - marginalization
+    question: |
+      Each gene's expression curve is modelled as a sample from a Gaussian process: the measurements
+      $\mathbf{y}$ at time points $t_1, \dots, t_r$ have distribution $\mathcal{N}(\mathbf{0}, K)$, where
+      $K_{kl} = k(t_k, t_l) + \sigma_n^2\delta_{kl}$. For some genes, a few of the $r$ measurements are
+      missing. How should the likelihood of such a gene be computed?
+    options:
+      - text: Fill the missing entries with 0, the prior mean, and use the full $r \times r$ matrix $K$
+        why: Imputed zeros are treated as if they had been measured, which distorts the likelihood and the posterior over the curve.
+      - text: Drop every gene that has a missing value from the analysis
+        why: That throws away the gene's observed values, which the model can use directly.
+      - text: Use only the observed entries of $\mathbf{y}$ and the matching rows and columns of $K$
+        correct: true
+      - text: Set the rows and columns of $K$ for the missing times to zero and keep its size
+        why: Then $K$ is no longer a valid (positive definite) covariance matrix, and the zeros still enter the density.
+    explanation: |
+      Any finite set of function values of a Gaussian process is jointly Gaussian, and the
+      marginal of a multivariate normal over a subset of its coordinates is the normal with the
+      corresponding sub-vector of the mean and sub-matrix of the covariance [^2]. So a gene observed
+      at 8 of 10 time points is scored with the 8-dimensional Gaussian built from the Gram matrix of
+      those 8 times [^1]. Missing values need no imputation in this model.
+    references:
+      - source: mit-ocw-6867
+        locator: Problem set 5 solutions, Problem 2 (e)
+        url: https://ocw.mit.edu/courses/6-867-machine-learning-fall-2006/resources/hw5_soln/
+      - title: 'Wikipedia: Multivariate normal distribution'
+        locator: Properties — Marginal distributions
+        url: https://en.wikipedia.org/wiki/Multivariate_normal_distribution#Marginal_distributions
+    source:
+      id: mit-ocw-6867
+      ref: hw5_soln#q2e
+      url: https://ocw.mit.edu/courses/6-867-machine-learning-fall-2006/resources/hw5_soln/
+    status: draft

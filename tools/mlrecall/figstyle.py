@@ -20,7 +20,7 @@ matplotlib.use("svg")
 import matplotlib.pyplot as plt  # noqa: E402
 import numpy as np  # noqa: E402
 from matplotlib.backends.backend_agg import FigureCanvasAgg  # noqa: E402
-from matplotlib.patches import FancyArrowPatch, FancyBboxPatch  # noqa: E402
+from matplotlib.patches import Circle, FancyArrowPatch, FancyBboxPatch, Rectangle  # noqa: E402
 
 # Colour-blind-safe palette (Okabe–Ito inspired), darker shades for lines on white.
 BLUE = "#1f6fb5"
@@ -327,3 +327,141 @@ def equation_parts(
         )
         spans.append((x0, x1))
     return spans
+
+
+# --------------------------------------------------------------------------- graphs
+
+_FACTOR_LABEL = {
+    "above": (0, 0.2, "center", "bottom"),
+    "below": (0, -0.2, "center", "top"),
+    "left": (-0.2, 0, "right", "center"),
+    "right": (0.2, 0, "left", "center"),
+}
+
+
+def graph_figure(
+    panels: Sequence[dict],
+    figsize: tuple[float, float],
+    fontsize: int = 12,
+    node_radius: float = 0.3,
+    pad: float = 0.5,
+) -> plt.Figure:
+    """Graphical-model diagrams, one panel per dict, side by side.
+
+    A panel has `nodes` {name: (x, y, label)} drawn as circles (names in `shaded` are filled, i.e.
+    observed), optional `factors` {name: (x, y, label, side)} drawn as small black squares with
+    the label above/below/left/right, and `edges` [(a, b, kind, rad)] where kind "d" is an arrow
+    and "u" a line, bent by `rad` (0 = straight). Optional `title` (under the panel) and `top`
+    (extra headroom). Coordinates are data units; give them as in the source figure. `pad` is the
+    margin around the outermost nodes.
+    """
+    fig, axes = plt.subplots(1, len(panels), figsize=figsize, squeeze=False)
+    for ax, panel in zip(axes[0], panels, strict=False):
+        _draw_graph(ax, panel, fontsize, node_radius)
+        points = [v[:2] for v in [*panel["nodes"].values(), *panel.get("factors", {}).values()]]
+        xs, ys = [x for x, _ in points], [y for _, y in points]
+        bottom = 0.75 if panel.get("title") else 0
+        ax.set_xlim(min(xs) - pad, max(xs) + pad)
+        ax.set_ylim(min(ys) - pad - bottom, max(ys) + pad + panel.get("top", 0))
+    return fig
+
+
+def _draw_graph(ax: plt.Axes, panel: dict, fontsize: int, radius: float) -> None:
+    nodes, patches = panel["nodes"], {}
+    for name, (x, y, label) in nodes.items():
+        shaded = name in panel.get("shaded", ())
+        c = Circle((x, y), radius, fc=LIGHT if shaded else "white", ec=INK, lw=1.4, zorder=3)
+        ax.add_patch(c)
+        patches[name] = c
+        ax.text(x, y, label, ha="center", va="center", fontsize=fontsize, color=INK, zorder=4)
+    for name, (x, y, label, side) in panel.get("factors", {}).items():
+        s = 0.16
+        sq = Rectangle((x - s / 2, y - s / 2), s, s, fc=INK, ec=INK, zorder=3)
+        ax.add_patch(sq)
+        patches[name] = sq
+        dx, dy, ha, va = _FACTOR_LABEL[side]
+        ax.text(x + dx, y + dy, label, ha=ha, va=va, fontsize=fontsize - 1, color=INK)
+    centers = {k: v[:2] for k, v in {**nodes, **panel.get("factors", {})}.items()}
+    for a, b, kind, rad in panel["edges"]:
+        ax.add_patch(
+            FancyArrowPatch(
+                posA=centers[a],
+                posB=centers[b],
+                patchA=patches[a],
+                patchB=patches[b],
+                arrowstyle="-|>" if kind == "d" else "-",
+                mutation_scale=14,
+                connectionstyle=f"arc3,rad={rad}",
+                color=INK,
+                lw=1.5,
+                zorder=2,
+            )
+        )
+    if panel.get("title"):
+        points = [v[:2] for v in [*nodes.values(), *panel.get("factors", {}).values()]]
+        xs, ys = [x for x, _ in points], [y for _, y in points]
+        ax.text(
+            (min(xs) + max(xs)) / 2,
+            min(ys) - radius - 0.35,
+            panel["title"],
+            ha="center",
+            va="top",
+            fontsize=fontsize,
+            color=INK,
+            fontweight="bold",
+        )
+    ax.set_aspect("equal")
+    ax.axis("off")
+    ax.autoscale_view()
+
+
+def game_tree(
+    children: dict,
+    values: dict,
+    xs: dict,
+    levels: Sequence[str],
+    figsize: tuple[float, float],
+    radius: float = 0.3,
+    fontsize: int = 12,
+    labels: dict | None = None,
+) -> plt.Figure:
+    """A game tree for minimax / alpha-beta questions, drawn with `graph_figure`.
+
+    `children` maps a node to its children, `values` a leaf to its static value (printed under it),
+    `xs` a node to its x position; `levels` names the rows from the root down ("MAX", "MIN", …).
+    """
+    depth = {}
+    root = next(n for n in children if all(n not in k for k in children.values()))
+    stack = [(root, 0)]
+    while stack:
+        n, d = stack.pop()
+        depth[n] = d
+        stack += [(k, d + 1) for k in children.get(n, [])]
+    nodes = {n: (xs[n], -1.3 * d, (labels or {}).get(n, n)) for n, d in depth.items()}
+    edges = [(a, b, "u", 0.0) for a, ks in children.items() for b in ks]
+    fig = graph_figure(
+        [{"nodes": nodes, "edges": edges}],
+        figsize=figsize,
+        node_radius=radius,
+        fontsize=fontsize,
+        pad=0.6,
+    )
+    ax = fig.axes[0]
+    for n, v in values.items():
+        x, y, _ = nodes[n]
+        ax.text(
+            x,
+            y - radius - 0.22,
+            str(v),
+            ha="center",
+            va="center",
+            fontsize=fontsize,
+            color=INK,
+            fontweight="bold",
+        )
+    left = min(x for x, _, _ in nodes.values()) - 1.0
+    for d, name in enumerate(levels):
+        ax.text(left, -1.3 * d, name, ha="center", va="center", fontsize=fontsize - 2, color=MUTED)
+    ax.set_xlim(left - 0.5, max(x for x, _, _ in nodes.values()) + 0.6)
+    ax.set_ylim(-1.3 * (len(levels) - 1) - 0.9, 0.6)
+    return fig

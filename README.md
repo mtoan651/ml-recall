@@ -8,10 +8,10 @@ mock exams and spaced repetition. Free static site on GitHub Pages.
 
 ## What's inside
 
-- **1641 questions** across 10 domains — 954 imported from open-licensed quiz sets, 599 adapted
-  from open-licensed exercises (d2l 371, Gutmann's pen-and-paper exercises 91, UBC CPSC 330 / DSCI
-  575 92, forall x 38, others 7), 51 paraphrased from CE6146 course exercises, 37 original;
-  56 reviewed.
+- **2520 questions** across 10 domains — 993 imported from open-licensed quiz sets, 964 adapted
+  from open-licensed exercises and courses (d2l, Gutmann, UBC, Neuromatch, Kaggle Learn, forall x,
+  …), 374 adapted from non-commercial course material (MIT OpenCourseWare, NPTEL), 51
+  paraphrased from CE6146 course exercises, 138 original; 56 reviewed.
 - Four question types: `single`, `multiple` (select all), `true_false`, `short_answer`
   (auto-graded fill-in: a number, a word or phrase, or a gap-fill with several blanks).
 - **Timed tests** for every topic and tag: up to 20 random questions, one minute each, scored and
@@ -21,17 +21,17 @@ mock exams and spaced repetition. Free static site on GitHub Pages.
 
 | Domain | Topics | Questions | Reviewed |
 | --- | ---: | ---: | ---: |
-| Artificial Intelligence | 6 | 105 | 1 |
-| Mathematics for ML | 5 | 309 | 9 |
-| Machine Learning | 14 | 520 | 14 |
-| Deep Learning | 8 | 251 | 32 |
-| Computer Vision | 3 | 38 | 0 |
-| Natural Language Processing | 5 | 102 | 0 |
-| Generative Models | 2 | 22 | 0 |
-| Large Language Models | 4 | 58 | 0 |
-| Reinforcement Learning | 3 | 62 | 0 |
-| Practical Tools | 3 | 174 | 0 |
-| **Total** | | **1641** | **56** |
+| Artificial Intelligence | 6 | 281 | 1 |
+| Mathematics for ML | 5 | 329 | 9 |
+| Machine Learning | 14 | 809 | 14 |
+| Deep Learning | 8 | 377 | 32 |
+| Computer Vision | 3 | 49 | 0 |
+| Natural Language Processing | 5 | 162 | 0 |
+| Generative Models | 3 | 89 | 0 |
+| Large Language Models | 4 | 132 | 0 |
+| Reinforcement Learning | 3 | 93 | 0 |
+| Practical Tools | 3 | 199 | 0 |
+| **Total** | | **2520** | **56** |
 
 Imported so far: Hugging Face LLM, Deep RL and AI Agents courses; Microsoft AI, ML and Data
 Science for Beginners; Google's ML Crash Course and ML courses; MMLU-Redux; 100 NumPy exercises;
@@ -111,6 +111,6 @@ docs/                   project handbook
 
 ## License
 
-Code: [MIT](LICENSE). Content: each question under its source's license; original questions
+Code: [MIT](LICENSE). Content: each question under its source's license (some non-commercial); original questions
 CC BY-SA 4.0 — see [LICENSE-CONTENT.md](LICENSE-CONTENT.md) and
 [THIRD_PARTY_NOTICES.md](THIRD_PARTY_NOTICES.md).
