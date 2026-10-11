@@ -2939,3 +2939,1944 @@ questions:
       ref: q100
       url: https://github.com/rougier/numpy-100/blob/8ca28aaefca69a32ad3ccbbd01c7c9a785c2d5c1/100_Numpy_exercises_with_solutions.md
     status: draft
+  - id: numpy-065
+    type: short_answer
+    difficulty: easy
+    question: |
+      Create a custom dtype that describes a color as four unsigned bytes (RGBA):
+      `color = np.`{{1}}`([("r", np.ubyte), ("g", np.ubyte), ("b", np.ubyte), ("a", np.ubyte)])`.
+      `np.ubyte` is the C `unsigned char` type, also available under the sized name `np.`{{2}},
+      and one `color` element takes {{3}} bytes.
+    answer:
+      model: |
+        ```python
+        color = np.dtype([("r", np.ubyte),
+                          ("g", np.ubyte),
+                          ("b", np.ubyte),
+                          ("a", np.ubyte)])
+        ```
+      blanks:
+        - accept:
+            - dtype
+            - np.dtype
+            - numpy.dtype
+          hint: a NumPy class name
+        - accept:
+            - uint8
+            - np.uint8
+            - numpy.uint8
+          hint: a sized type name
+        - numeric: 4
+          hint: a number
+    explanation: |
+      `np.dtype` builds a data type object, and a list of `(name, type)` tuples, one per field,
+      gives a structured datatype [^2][^3]. `np.ubyte` is NumPy's unsigned C char, and on common
+      platforms its sized alias is `np.uint8`, an 8-bit unsigned integer from 0 to 255 [^4].
+      Without `align=True` the fields are packed back to back, so four 1-byte fields make a 4-byte
+      element [^3]. This is the numpy-100 solution [^1].
+    references:
+      - source: numpy-100
+        url: https://github.com/rougier/numpy-100/blob/8ca28aaefca69a32ad3ccbbd01c7c9a785c2d5c1/100_Numpy_exercises_with_solutions.md
+        locator: Exercise 23
+      - title: numpy.dtype (NumPy documentation)
+        url: https://numpy.org/doc/stable/reference/generated/numpy.dtype.html
+        locator: Class description; itemsize attribute
+      - title: Structured arrays (NumPy user guide)
+        url: https://numpy.org/doc/stable/user/basics.rec.html#structured-datatype-creation
+        locator: Structured datatype creation (a list of tuples); Automatic byte offsets and alignment
+      - title: Scalars (NumPy documentation)
+        url: https://numpy.org/doc/stable/reference/arrays.scalars.html#unsigned-integer-types
+        locator: Unsigned integer types, numpy.ubyte (alias numpy.uint8)
+    source:
+      id: numpy-100
+      ref: q23
+      url: https://github.com/rougier/numpy-100/blob/8ca28aaefca69a32ad3ccbbd01c7c9a785c2d5c1/100_Numpy_exercises_with_solutions.md
+    status: draft
+  - id: numpy-066
+    type: short_answer
+    difficulty: medium
+    question: |
+      What is the output of this script?
+
+      ```python
+      print(sum(range(5), -1))
+      from numpy import *
+      print(sum(range(5), -1))
+      ```
+
+      The first line prints {{1}}. The second prints {{2}}, because `from numpy import *` replaces
+      the built-in `sum` with `np.sum`, whose second positional parameter is the {{3}}.
+    answer:
+      model: |
+        ```python
+        print(sum(range(5), -1))   # 9: built-in sum(iterable, start)
+        from numpy import *
+        print(sum(range(5), -1))   # 10: numpy.sum(a, axis=-1)
+        ```
+      blanks:
+        - numeric: 9
+          hint: a number
+        - numeric: 10
+          hint: a number
+        - accept:
+            - axis
+          hint: a parameter name
+    explanation: |
+      Python's built-in `sum(iterable, start)` adds the items to the start value, so it returns
+      $-1 + 0 + 1 + 2 + 3 + 4 = 9$ [^2]. The star import binds the name `sum` to
+      `numpy.sum(a, axis=None, ...)`, so `-1` is read as the axis; a negative axis counts from the
+      last one, and summing the only axis gives the plain total 10 [^3]. numpy-100 uses this script
+      to show how a star import silently shadows a built-in [^1].
+    references:
+      - source: numpy-100
+        url: https://github.com/rougier/numpy-100/blob/8ca28aaefca69a32ad3ccbbd01c7c9a785c2d5c1/100_Numpy_exercises_with_solutions.md
+        locator: Exercise 26
+      - title: Built-in Functions, sum (Python documentation)
+        url: https://docs.python.org/3/library/functions.html#sum
+        locator: sum(iterable, /, start=0)
+      - title: numpy.sum (NumPy documentation)
+        url: https://numpy.org/doc/stable/reference/generated/numpy.sum.html
+        locator: Signature; axis parameter
+    source:
+      id: numpy-100
+      ref: q26
+      url: https://github.com/rougier/numpy-100/blob/8ca28aaefca69a32ad3ccbbd01c7c9a785c2d5c1/100_Numpy_exercises_with_solutions.md
+    status: draft
+  - id: numpy-067
+    type: short_answer
+    difficulty: medium
+    question: |
+      Consider an integer vector `Z = np.arange(3)`. Which of these expressions are legal?
+
+      ```python
+      Z**Z
+      2 << Z >> 2
+      Z <- Z
+      1j*Z
+      Z/1/1
+      Z<Z>Z
+      ```
+
+      Exactly one of them raises an exception: {{1}} (type the expression). Python evaluates a
+      chained comparison `a < b > c` as `(a < b)` {{2}} `(b > c)`, which needs the truth value of
+      a whole array, and NumPy raises a {{3}}. The odd-looking `Z <- Z` is legal: it is
+      `Z < (-Z)`.
+    answer:
+      model: |
+        ```python
+        Z = np.arange(3)
+        Z**Z         # array([1, 1, 4])
+        2 << Z >> 2  # array([0, 1, 2])
+        Z <- Z       # Z < -Z: array([False, False, False])
+        1j*Z         # array([0.+0.j, 0.+1.j, 0.+2.j])
+        Z/1/1        # array([0., 1., 2.])
+        Z<Z>Z        # ValueError: the truth value of an array with more than one element is ambiguous
+        ```
+      blanks:
+        - accept:
+            - Z<Z>Z
+          pattern: Z\s*<\s*Z\s*>\s*Z
+          hint: one of the six expressions, as written
+        - accept:
+            - and
+          hint: a Python keyword
+        - accept:
+            - ValueError
+          hint: an exception class name
+    explanation: |
+      Powers, the shifts `<<` and `>>`, multiplication by the complex scalar `1j` and true division
+      all work element-wise on an integer array; `Z**Z` is fine here because no exponent is negative,
+      since integers raised to negative integer powers raise an error [^4]. `Z <- Z` is a comparison
+      with a unary minus [^2]. A chained comparison is defined as the comparisons joined by `and` [^2],
+      and `and` needs the truth value of the first array; NumPy raises a ValueError for the truth
+      value of an array with more than one element because it is ambiguous, and suggests `.any()` or
+      `.all()` [^3]. numpy-100 poses this as a puzzle on operator parsing [^1].
+    references:
+      - source: numpy-100
+        url: https://github.com/rougier/numpy-100/blob/8ca28aaefca69a32ad3ccbbd01c7c9a785c2d5c1/100_Numpy_exercises_with_solutions.md
+        locator: Exercise 27
+      - title: The Python Language Reference, Expressions
+        url: https://docs.python.org/3/reference/expressions.html#comparisons
+        locator: 6.10 Comparisons (chaining); 6.6 Unary arithmetic and bitwise operations
+      - title: The N-dimensional array (ndarray) (NumPy documentation)
+        url: https://numpy.org/doc/stable/reference/arrays.ndarray.html#special-methods
+        locator: Special methods, Truth value of an array (bool()), note
+      - title: numpy.power (NumPy documentation)
+        url: https://numpy.org/doc/stable/reference/generated/numpy.power.html
+        locator: Function description (negative integer powers raise ValueError)
+    source:
+      id: numpy-100
+      ref: q27
+      url: https://github.com/rougier/numpy-100/blob/8ca28aaefca69a32ad3ccbbd01c7c9a785c2d5c1/100_Numpy_exercises_with_solutions.md
+    status: draft
+  - id: numpy-068
+    type: short_answer
+    difficulty: medium
+    question: |
+      How to round away from zero a float array `Z = np.random.uniform(-10, +10, 10)`?
+      `np.`{{1}}`(np.ceil(np.abs(Z)), Z)` takes the ceiling of the magnitudes and puts the
+      original signs back. The more readable `np.where(Z > 0, np.ceil(Z), np.`{{2}}`(Z))` does the
+      same. Rounding -2.5 away from zero gives {{3}}.
+    answer:
+      model: |
+        ```python
+        # Author: Charles R Harris
+
+        Z = np.random.uniform(-10,+10,10)
+        print(np.copysign(np.ceil(np.abs(Z)), Z))
+
+        # More readable but less efficient
+        print(np.where(Z>0, np.ceil(Z), np.floor(Z)))
+        ```
+      blanks:
+        - accept:
+            - copysign
+            - np.copysign
+            - numpy.copysign
+          hint: a NumPy function name
+        - accept:
+            - floor
+            - np.floor
+            - numpy.floor
+          hint: a NumPy function name
+        - numeric: -3
+          hint: a number
+    explanation: |
+      `np.copysign(x1, x2)` changes the sign of `x1` to that of `x2`, element-wise [^2], so the
+      ceiling of $|z|$ [^3] gets the sign of $z$ back. The `np.where` version picks the ceiling, the
+      smallest integer $\ge z$, where `Z > 0` and otherwise the floor, the largest integer
+      $\le z$ [^3][^4][^5]. For $-2.5$ both give $-3$. numpy-100 gives both solutions [^1].
+    references:
+      - source: numpy-100
+        url: https://github.com/rougier/numpy-100/blob/8ca28aaefca69a32ad3ccbbd01c7c9a785c2d5c1/100_Numpy_exercises_with_solutions.md
+        locator: Exercise 29
+      - title: numpy.copysign (NumPy documentation)
+        url: https://numpy.org/doc/stable/reference/generated/numpy.copysign.html
+        locator: Function description
+      - title: numpy.ceil (NumPy documentation)
+        url: https://numpy.org/doc/stable/reference/generated/numpy.ceil.html
+        locator: Function description
+      - title: numpy.where (NumPy documentation)
+        url: https://numpy.org/doc/stable/reference/generated/numpy.where.html
+        locator: Function description (condition, x, y)
+      - title: numpy.floor (NumPy documentation)
+        url: https://numpy.org/doc/stable/reference/generated/numpy.floor.html
+        locator: Function description; Notes (floor(-2.5) == -3)
+    source:
+      id: numpy-100
+      ref: q29
+      url: https://github.com/rougier/numpy-100/blob/8ca28aaefca69a32ad3ccbbd01c7c9a785c2d5c1/100_Numpy_exercises_with_solutions.md
+    status: draft
+  - id: numpy-069
+    type: short_answer
+    difficulty: medium
+    question: |
+      How to ignore all NumPy floating-point warnings (not recommended)? Globally,
+      `defaults = np.`{{1}}`(all="ignore")` switches them off and returns the old settings, which
+      `np.seterr(**defaults)` restores later. Locally, `with np.`{{2}}`(all="ignore"):` ignores
+      them only inside the block. With the warnings off, `np.ones(1) / 0` silently returns an
+      array holding {{3}}.
+    answer:
+      model: |
+        ```python
+        # Suicide mode on
+        defaults = np.seterr(all="ignore")
+        Z = np.ones(1) / 0
+
+        # Back to sanity
+        _ = np.seterr(**defaults)
+
+        # Equivalently with a context manager
+        with np.errstate(all="ignore"):
+            np.arange(3) / 0
+        ```
+      blanks:
+        - accept:
+            - seterr
+            - np.seterr
+            - numpy.seterr
+          hint: a NumPy function name
+        - accept:
+            - errstate
+            - np.errstate
+            - numpy.errstate
+          hint: a NumPy context manager name
+        - accept:
+            - inf
+            - np.inf
+            - numpy.inf
+            - infinity
+          hint: a number or special value
+    explanation: |
+      `np.seterr` sets how floating-point errors (divide, over, under, invalid) are handled, `all`
+      sets every kind at once, and it returns a dictionary with the old settings [^2]. `np.errstate`
+      is the context-manager form: on entry it sets the handling with `seterr`, and on exit it
+      restores the previous state, so the change cannot leak out of the block [^3]. By default NumPy
+      warns on divide, overflow and invalid [^4]; division by zero gives an infinite result [^2], and
+      ignoring the error only hides the RuntimeWarning. numpy-100 shows both forms [^1].
+    references:
+      - source: numpy-100
+        url: https://github.com/rougier/numpy-100/blob/8ca28aaefca69a32ad3ccbbd01c7c9a785c2d5c1/100_Numpy_exercises_with_solutions.md
+        locator: Exercise 31
+      - title: numpy.seterr (NumPy documentation)
+        url: https://numpy.org/doc/stable/reference/generated/numpy.seterr.html
+        locator: Parameters (all, divide, ...); Returns old_settings; Notes (division by zero)
+      - title: numpy.errstate (NumPy documentation)
+        url: https://numpy.org/doc/stable/reference/generated/numpy.errstate.html
+        locator: Class description
+      - title: Floating point error handling (NumPy documentation)
+        url: https://numpy.org/doc/stable/reference/routines.err.html#how-numpy-handles-numerical-exceptions
+        locator: How numpy handles numerical exceptions
+    source:
+      id: numpy-100
+      ref: q31
+      url: https://github.com/rougier/numpy-100/blob/8ca28aaefca69a32ad3ccbbd01c7c9a785c2d5c1/100_Numpy_exercises_with_solutions.md
+    status: draft
+  - id: numpy-070
+    type: short_answer
+    difficulty: easy
+    question: |
+      Is the following expression true?
+
+      ```python
+      np.sqrt(-1) == np.emath.sqrt(-1)
+      ```
+
+      `np.sqrt(-1)` returns {{1}} (with a RuntimeWarning), `np.emath.sqrt(-1)` returns the complex
+      number {{2}}, so the comparison is {{3}}.
+    answer:
+      model: |
+        ```python
+        np.sqrt(-1)                       # nan (RuntimeWarning: invalid value encountered in sqrt)
+        np.emath.sqrt(-1)                 # 1j
+        np.sqrt(-1) == np.emath.sqrt(-1)  # False
+        ```
+      blanks:
+        - accept:
+            - nan
+            - np.nan
+            - numpy.nan
+          hint: a number or nan
+        - accept:
+            - 1j
+            - 0+1j
+            - 0.+1.j
+            - j
+          hint: a complex number in Python notation
+          pattern: \(?\s*(0(\.0*)?\s*\+\s*)?(1(\.0*)?)?j\s*\)?
+        - accept:
+            - 'False'
+          hint: True or False
+    explanation: |
+      For real input `np.sqrt` returns real output, and negative elements give `nan` [^2]; NumPy
+      reports this as an "invalid" floating-point error, a RuntimeWarning by default [^4].
+      `np.emath.sqrt` returns a complex value for negative input, so `np.emath.sqrt(-1)` is `1j` [^3].
+      Since `nan` is not equal to `1j`, the comparison numpy-100 asks about evaluates to
+      `False` [^1].
+    references:
+      - source: numpy-100
+        url: https://github.com/rougier/numpy-100/blob/8ca28aaefca69a32ad3ccbbd01c7c9a785c2d5c1/100_Numpy_exercises_with_solutions.md
+        locator: Exercise 32
+      - title: numpy.sqrt (NumPy documentation)
+        url: https://numpy.org/doc/stable/reference/generated/numpy.sqrt.html
+        locator: Returns (negative elements return nan)
+      - title: numpy.emath.sqrt (NumPy documentation)
+        url: https://numpy.org/doc/stable/reference/generated/numpy.emath.sqrt.html
+        locator: Function description and examples
+      - title: Floating point error handling (NumPy documentation)
+        url: https://numpy.org/doc/stable/reference/routines.err.html#how-numpy-handles-numerical-exceptions
+        locator: How numpy handles numerical exceptions (invalid, default 'warn')
+    source:
+      id: numpy-100
+      ref: q32
+      url: https://github.com/rougier/numpy-100/blob/8ca28aaefca69a32ad3ccbbd01c7c9a785c2d5c1/100_Numpy_exercises_with_solutions.md
+    status: draft
+  - id: numpy-071
+    type: short_answer
+    difficulty: easy
+    question: |
+      How to get the dates of yesterday, today and tomorrow? `today = np.`{{1}}`('today')` gives
+      the current date with day precision, `yesterday = today - np.timedelta64(1, '`{{2}}`')`
+      subtracts one day, and `tomorrow` adds the same timedelta. `tomorrow - yesterday` is then a
+      timedelta of {{3}} days.
+    answer:
+      model: |
+        ```python
+        yesterday = np.datetime64('today') - np.timedelta64(1, 'D')
+        today     = np.datetime64('today')
+        tomorrow  = np.datetime64('today') + np.timedelta64(1, 'D')
+        ```
+      blanks:
+        - accept:
+            - datetime64
+            - np.datetime64
+            - numpy.datetime64
+          hint: a NumPy type name
+        - accept:
+            - D
+          hint: a one-letter unit code
+        - numeric: 2
+          hint: a number
+    explanation: |
+      `np.datetime64('today')` returns the current UTC date with day precision [^2]. Date
+      arithmetic uses `np.timedelta64`, whose arguments are a number and a unit such as `'D'` for
+      days [^2]; the difference of two dates is again a timedelta, here 2 days. numpy-100 writes
+      `np.timedelta64(1)` without a unit [^1], but generic timedelta units are deprecated since
+      NumPy 2.5 and the docs ask for an explicit unit [^2].
+    references:
+      - source: numpy-100
+        url: https://github.com/rougier/numpy-100/blob/8ca28aaefca69a32ad3ccbbd01c7c9a785c2d5c1/100_Numpy_exercises_with_solutions.md
+        locator: Exercise 33
+      - title: Datetimes and timedeltas (NumPy documentation)
+        url: https://numpy.org/doc/stable/reference/arrays.datetime.html
+        locator: Basic datetimes ('today'); Datetime and timedelta arithmetic; Migration guide for deprecation of generic units
+    source:
+      id: numpy-100
+      ref: q33
+      url: https://github.com/rougier/numpy-100/blob/8ca28aaefca69a32ad3ccbbd01c7c9a785c2d5c1/100_Numpy_exercises_with_solutions.md
+    status: draft
+  - id: numpy-072
+    type: short_answer
+    difficulty: medium
+    question: |
+      How to get all the dates corresponding to the month of July 2016?
+      `Z = np.arange('2016-07', '2016-08', dtype='`{{1}}`')` returns one date per day, and `Z`
+      has {{2}} elements.
+    answer:
+      model: |
+        ```python
+        Z = np.arange('2016-07', '2016-08', dtype='datetime64[D]')
+        print(Z)
+        ```
+      blanks:
+        - accept:
+            - datetime64[D]
+            - M8[D]
+          hint: a datetime dtype string with its unit
+        - numeric: 31
+          hint: a number
+    explanation: |
+      `np.arange` works with datetimes when it is given a datetime dtype, and the NumPy docs use
+      exactly this pattern to list all the days of one month [^2]. The unit in brackets matters:
+      `[D]` asks for day steps, whereas a bare string such as '2016-07' gets its unit (here months)
+      from its own form [^2]. As for integers, `arange` generates values in the half-open interval
+      [start, stop) [^3], so the range runs from 2016-07-01 to 2016-07-31: 31 dates, as in the
+      numpy-100 solution [^1].
+    references:
+      - source: numpy-100
+        url: https://github.com/rougier/numpy-100/blob/8ca28aaefca69a32ad3ccbbd01c7c9a785c2d5c1/100_Numpy_exercises_with_solutions.md
+        locator: Exercise 34
+      - title: Datetimes and timedeltas (NumPy documentation)
+        url: https://numpy.org/doc/stable/reference/arrays.datetime.html#basic-datetimes
+        locator: Basic datetimes (unit from the string form; arange example "All the dates for one month")
+      - title: numpy.arange (NumPy documentation)
+        url: https://numpy.org/doc/stable/reference/generated/numpy.arange.html
+        locator: Function description (half-open interval)
+    source:
+      id: numpy-100
+      ref: q34
+      url: https://github.com/rougier/numpy-100/blob/8ca28aaefca69a32ad3ccbbd01c7c9a785c2d5c1/100_Numpy_exercises_with_solutions.md
+    status: draft
+  - id: numpy-073
+    type: short_answer
+    difficulty: medium
+    question: |
+      Extract the integer part of a random array of positive numbers
+      `Z = np.random.uniform(0, 10, 10)` using 4 different methods: `Z - Z%1`, `Z //` {{1}},
+      `np.`{{2}}`(Z)` (rounds down) and `Z.`{{3}}`(int)`. For positive numbers they all agree.
+      For negative numbers they do not: rounding -2.5 down gives -3, while dropping its
+      fractional part (`np.trunc`) gives {{4}}.
+    answer:
+      model: |
+        ```python
+        Z = np.random.uniform(0,10,10)
+
+        print(Z - Z%1)
+        print(Z // 1)
+        print(np.floor(Z))
+        print(Z.astype(int))
+        print(np.trunc(Z))
+        ```
+      blanks:
+        - numeric: 1
+          hint: a number
+        - accept:
+            - floor
+            - np.floor
+            - numpy.floor
+          hint: a NumPy function name
+        - accept:
+            - astype
+          hint: an ndarray method name
+        - numeric: -2
+          hint: a number
+    explanation: |
+      `Z % 1` is the fractional part and `Z // 1` the floor division by 1; NumPy defines the pair so
+      that `a = a % b + b * (a // b)` [^2]. `np.floor` returns the largest integer $\le x$ [^3], and
+      `astype(int)` casts the floats to integers, a conversion allowed by its default `'unsafe'`
+      casting [^4]. For $-2.5$ the floor is $-3$ (NumPy does not use "floor towards zero") [^3],
+      while `np.trunc` discards the fractional part and gives $-2$ [^5]. numpy-100 lists these
+      methods and `np.trunc` [^1].
+    references:
+      - source: numpy-100
+        url: https://github.com/rougier/numpy-100/blob/8ca28aaefca69a32ad3ccbbd01c7c9a785c2d5c1/100_Numpy_exercises_with_solutions.md
+        locator: Exercise 36
+      - title: numpy.floor_divide (NumPy documentation)
+        url: https://numpy.org/doc/stable/reference/generated/numpy.floor_divide.html
+        locator: Function description (the // operator and % pair)
+      - title: numpy.floor (NumPy documentation)
+        url: https://numpy.org/doc/stable/reference/generated/numpy.floor.html
+        locator: Function description; Notes (floor(-2.5) == -3)
+      - title: numpy.ndarray.astype (NumPy documentation)
+        url: https://numpy.org/doc/stable/reference/generated/numpy.ndarray.astype.html
+        locator: casting parameter (default 'unsafe')
+      - title: numpy.trunc (NumPy documentation)
+        url: https://numpy.org/doc/stable/reference/generated/numpy.trunc.html
+        locator: Function description
+    source:
+      id: numpy-100
+      ref: q36
+      url: https://github.com/rougier/numpy-100/blob/8ca28aaefca69a32ad3ccbbd01c7c9a785c2d5c1/100_Numpy_exercises_with_solutions.md
+    status: draft
+  - id: numpy-074
+    type: short_answer
+    difficulty: easy
+    question: |
+      Consider a generator function that generates 10 integers and use it to build an array:
+
+      ```python
+      def generate():
+          for x in range(10):
+              yield x
+      ```
+
+      `Z = np.`{{1}}`(generate(), dtype=float, count=-1)` reads the generator into a 1-D array of
+      ten floats. Passing the generator to `np.array` instead does not iterate it: the result is
+      a 0-d array of dtype {{2}}.
+    answer:
+      model: |
+        ```python
+        def generate():
+            for x in range(10):
+                yield x
+        Z = np.fromiter(generate(),dtype=float,count=-1)
+        print(Z)
+        ```
+      blanks:
+        - accept:
+            - fromiter
+            - np.fromiter
+            - numpy.fromiter
+          hint: a NumPy function name
+        - accept:
+            - object
+            - O
+            - np.object_
+          hint: a dtype name
+    explanation: |
+      `np.fromiter` creates a new 1-D array from any iterable object; `count=-1`, the default, reads
+      all items, and passing the real count lets NumPy pre-allocate the output [^2]. `np.array`
+      expects an array-like or a (nested) sequence and treats any other object as a scalar,
+      returning a 0-dimensional array that contains it [^3]; a generator is not a sequence, so the
+      result is a 0-d object array rather than numbers. numpy-100 uses `fromiter` [^1].
+    references:
+      - source: numpy-100
+        url: https://github.com/rougier/numpy-100/blob/8ca28aaefca69a32ad3ccbbd01c7c9a785c2d5c1/100_Numpy_exercises_with_solutions.md
+        locator: Exercise 38
+      - title: numpy.fromiter (NumPy documentation)
+        url: https://numpy.org/doc/stable/reference/generated/numpy.fromiter.html
+        locator: Function description; count parameter; Notes
+      - title: numpy.array (NumPy documentation)
+        url: https://numpy.org/doc/stable/reference/generated/numpy.array.html
+        locator: object parameter (a scalar gives a 0-dimensional array)
+    source:
+      id: numpy-100
+      ref: q38
+      url: https://github.com/rougier/numpy-100/blob/8ca28aaefca69a32ad3ccbbd01c7c9a785c2d5c1/100_Numpy_exercises_with_solutions.md
+    status: draft
+  - id: numpy-075
+    type: short_answer
+    difficulty: medium
+    question: |
+      How to sum a small array faster than `np.sum`? Call the ufunc method directly:
+      `np.add.`{{1}}`(Z)`. The same method exists on every binary ufunc, so
+      `np.multiply.reduce(np.arange(1, 6))` returns {{2}}.
+    answer:
+      model: |
+        ```python
+        # Author: Evgeni Burovski
+
+        Z = np.arange(10)
+        np.add.reduce(Z)
+        ```
+      blanks:
+        - accept:
+            - reduce
+          hint: a ufunc method name
+        - numeric: 120
+          hint: a number
+    explanation: |
+      `ufunc.reduce` reduces an array's dimension by one by applying the ufunc repeatedly along an
+      axis, and the docs note that `add.reduce()` is equivalent to `sum()` [^2]; the `np.sum` page
+      likewise lists `numpy.add.reduce` as its equivalent function [^3]. numpy-100 recommends the
+      direct call to sum small arrays faster than `np.sum` [^1]; the saving is a fixed cost per
+      call, so it only matters for tiny arrays. With `multiply` the reduction is the product
+      $1 \cdot 2 \cdot 3 \cdot 4 \cdot 5 = 120$ [^2].
+    references:
+      - source: numpy-100
+        url: https://github.com/rougier/numpy-100/blob/8ca28aaefca69a32ad3ccbbd01c7c9a785c2d5c1/100_Numpy_exercises_with_solutions.md
+        locator: Exercise 41
+      - title: numpy.ufunc.reduce (NumPy documentation)
+        url: https://numpy.org/doc/stable/reference/generated/numpy.ufunc.reduce.html
+        locator: Method description (add.reduce() is equivalent to sum())
+      - title: numpy.sum (NumPy documentation)
+        url: https://numpy.org/doc/stable/reference/generated/numpy.sum.html
+        locator: See also (add, numpy.add.reduce equivalent function)
+    source:
+      id: numpy-100
+      ref: q41
+      url: https://github.com/rougier/numpy-100/blob/8ca28aaefca69a32ad3ccbbd01c7c9a785c2d5c1/100_Numpy_exercises_with_solutions.md
+    status: draft
+  - id: numpy-076
+    type: short_answer
+    difficulty: medium
+    question: |
+      Create a structured array with `x` and `y` coordinates covering the [0,1]x[0,1] area:
+      `Z = np.zeros((5,5), [('x', float), ('y', float)])` makes a 5x5 array whose elements take
+      {{1}} bytes each. Then `Z['x'], Z['y'] = np.`{{2}}`(np.linspace(0,1,5), np.linspace(0,1,5))`
+      fills the grid. With the default `'xy'` indexing, `Z['x'][4, 0]` is {{3}}.
+    answer:
+      model: |
+        ```python
+        Z = np.zeros((5,5), [('x',float),('y',float)])
+        Z['x'], Z['y'] = np.meshgrid(np.linspace(0,1,5),
+                                     np.linspace(0,1,5))
+        print(Z)
+        ```
+      blanks:
+        - numeric: 16
+          hint: a number
+        - accept:
+            - meshgrid
+            - np.meshgrid
+            - numpy.meshgrid
+          hint: a NumPy function name
+        - numeric: 0
+          hint: a number
+    explanation: |
+      A structured datatype made from `(name, type)` tuples packs its fields back to back, so two
+      float64 fields give a 16-byte element [^2]. Indexing a structured array with a field name
+      returns a view of that field, so `Z['x']` and `Z['y']` can be assigned like plain 5x5
+      arrays [^2]. `np.meshgrid` returns coordinate matrices; with Cartesian `'xy'` indexing (the
+      default) the element for the i-th x value and j-th y value sits at `[j, i]` [^3], so x
+      changes along the columns and `Z['x'][4, 0]` is the first x value, 0. This is the numpy-100
+      solution [^1].
+    references:
+      - source: numpy-100
+        url: https://github.com/rougier/numpy-100/blob/8ca28aaefca69a32ad3ccbbd01c7c9a785c2d5c1/100_Numpy_exercises_with_solutions.md
+        locator: Exercise 46
+      - title: Structured arrays (NumPy user guide)
+        url: https://numpy.org/doc/stable/user/basics.rec.html#accessing-individual-fields
+        locator: Automatic byte offsets and alignment; Accessing individual fields
+      - title: numpy.meshgrid (NumPy documentation)
+        url: https://numpy.org/doc/stable/reference/generated/numpy.meshgrid.html
+        locator: indexing parameter; Notes ('xy' vs 'ij')
+    source:
+      id: numpy-100
+      ref: q46
+      url: https://github.com/rougier/numpy-100/blob/8ca28aaefca69a32ad3ccbbd01c7c9a785c2d5c1/100_Numpy_exercises_with_solutions.md
+    status: draft
+  - id: numpy-077
+    type: short_answer
+    difficulty: medium
+    question: |
+      Print the minimum and maximum representable values for each NumPy scalar type. For integer
+      types the limits are `np.`{{1}}`(dtype).min` and `.max`; for `np.int8` the maximum is {{2}}.
+      For floating-point types, `np.`{{3}}`(dtype)` gives `.min`, `.max` and `.eps`, the gap between
+      1.0 and the next larger representable float.
+    answer:
+      model: |
+        ```python
+        for dtype in [np.int8, np.int32, np.int64]:
+           print(np.iinfo(dtype).min)
+           print(np.iinfo(dtype).max)
+        for dtype in [np.float32, np.float64]:
+           print(np.finfo(dtype).min)
+           print(np.finfo(dtype).max)
+           print(np.finfo(dtype).eps)
+        ```
+      blanks:
+        - accept:
+            - iinfo
+            - np.iinfo
+            - numpy.iinfo
+          hint: a NumPy function name
+        - numeric: 127
+          hint: a number
+        - accept:
+            - finfo
+            - np.finfo
+            - numpy.finfo
+          hint: a NumPy function name
+    explanation: |
+      `np.iinfo` gives the machine limits of an integer type through its `min` and `max`
+      attributes [^2]; `np.int8` is an 8-bit signed integer ranging from -128 to 127 [^4].
+      `np.finfo` does the same for floating-point types, and its `eps` is the difference between
+      1.0 and the next representable float above it, about $2.22 \times 10^{-16}$ for float64 [^3].
+      numpy-100 loops over int8/int32/int64 and float32/float64 [^1].
+    references:
+      - source: numpy-100
+        url: https://github.com/rougier/numpy-100/blob/8ca28aaefca69a32ad3ccbbd01c7c9a785c2d5c1/100_Numpy_exercises_with_solutions.md
+        locator: Exercise 48
+      - title: numpy.iinfo (NumPy documentation)
+        url: https://numpy.org/doc/stable/reference/generated/numpy.iinfo.html
+        locator: Class description; min and max attributes
+      - title: numpy.finfo (NumPy documentation)
+        url: https://numpy.org/doc/stable/reference/generated/numpy.finfo.html
+        locator: Class description; eps attribute
+      - title: Scalars (NumPy documentation)
+        url: https://numpy.org/doc/stable/reference/arrays.scalars.html#signed-integer-types
+        locator: Signed integer types, numpy.byte (alias numpy.int8, -128 to 127)
+    source:
+      id: numpy-100
+      ref: q48
+      url: https://github.com/rougier/numpy-100/blob/8ca28aaefca69a32ad3ccbbd01c7c9a785c2d5c1/100_Numpy_exercises_with_solutions.md
+    status: draft
+  - id: numpy-078
+    type: short_answer
+    difficulty: easy
+    question: |
+      How to print all the values of an array? By default NumPy summarizes (with `...`) any array
+      with more than {{1}} elements. `np.`{{2}}`(threshold=sys.maxsize)` turns the summary off, so
+      `print(np.zeros((40,40)))` then shows all 1600 values.
+    answer:
+      model: |
+        ```python
+        np.set_printoptions(threshold=float("inf"))
+        Z = np.zeros((40,40))
+        print(Z)
+        ```
+      blanks:
+        - numeric: 1000
+          hint: a number
+        - accept:
+            - set_printoptions
+            - np.set_printoptions
+            - numpy.set_printoptions
+          hint: a NumPy function name
+    explanation: |
+      The `threshold` print option is the total number of array elements that triggers a summary
+      instead of the full repr; its default is 1000 [^2]. `np.set_printoptions` changes it globally,
+      and the docs say to pass `sys.maxsize` to always get the full repr [^2]; numpy-100 passes
+      `float("inf")`, which has the same effect [^1]. To change it only for a block of code,
+      `np.printoptions` is the context-manager version [^3].
+    references:
+      - source: numpy-100
+        url: https://github.com/rougier/numpy-100/blob/8ca28aaefca69a32ad3ccbbd01c7c9a785c2d5c1/100_Numpy_exercises_with_solutions.md
+        locator: Exercise 49
+      - title: numpy.set_printoptions (NumPy documentation)
+        url: https://numpy.org/doc/stable/reference/generated/numpy.set_printoptions.html
+        locator: threshold parameter (default 1000; pass sys.maxsize)
+      - title: numpy.printoptions (NumPy documentation)
+        url: https://numpy.org/doc/stable/reference/generated/numpy.printoptions.html
+        locator: Context manager for setting print options
+    source:
+      id: numpy-100
+      ref: q49
+      url: https://github.com/rougier/numpy-100/blob/8ca28aaefca69a32ad3ccbbd01c7c9a785c2d5c1/100_Numpy_exercises_with_solutions.md
+    status: draft
+  - id: numpy-079
+    type: short_answer
+    difficulty: medium
+    question: |
+      Create a structured array representing a position (x,y) and a color (r,g,b):
+
+      ```python
+      Z = np.zeros(10, [('position', [('x', float), ('y', float)]),
+                        ('color',    [('r', float), ('g', float), ('b', float)])])
+      ```
+
+      Each element takes {{1}} bytes. The top-level field names are listed by `Z.dtype.`{{2}}, and
+      the red values of all ten elements, `Z['color']['r']`, form an array of shape {{3}}.
+    answer:
+      model: |
+        ```python
+        Z = np.zeros(10, [ ('position', [ ('x', float),
+                                          ('y', float)]),
+                           ('color',    [ ('r', float),
+                                          ('g', float),
+                                          ('b', float)])])
+        print(Z)
+        ```
+      blanks:
+        - numeric: 40
+          hint: a number
+        - accept:
+            - names
+          hint: a dtype attribute
+        - accept:
+            - (10,)
+          pattern: \(?\s*10\s*,?\s*\)?
+          hint: a shape, e.g. (5,)
+    explanation: |
+      A field's datatype may itself be a structured datatype, so fields can be nested [^2]. By
+      default the fields are packed contiguously, so the five float64 values make a 40-byte
+      element [^2]. The `names` attribute of a structured dtype lists its field names in order, here
+      `('position', 'color')` [^2]. Indexing by a field name returns a view with the array's shape,
+      so `Z['color']` is a nested structured array of shape (10,), and indexing it by `'r'` gives a
+      plain float array of shape (10,) [^2]. numpy-100 builds the same dtype [^1].
+    references:
+      - source: numpy-100
+        url: https://github.com/rougier/numpy-100/blob/8ca28aaefca69a32ad3ccbbd01c7c9a785c2d5c1/100_Numpy_exercises_with_solutions.md
+        locator: Exercise 51
+      - title: Structured arrays (NumPy user guide)
+        url: https://numpy.org/doc/stable/user/basics.rec.html#structured-datatypes
+        locator: Structured datatypes; Automatic byte offsets and alignment; Manipulating and displaying structured datatypes (names); Accessing individual fields
+    source:
+      id: numpy-100
+      ref: q51
+      url: https://github.com/rougier/numpy-100/blob/8ca28aaefca69a32ad3ccbbd01c7c9a785c2d5c1/100_Numpy_exercises_with_solutions.md
+    status: draft
+  - id: numpy-080
+    type: short_answer
+    difficulty: hard
+    question: |
+      How to convert a float (32 bits) array into an integer (32 bits) array in place? For
+      `Z = np.array([1.7, 42.5, 99.9], dtype=np.float32)`, `Y = Z.`{{1}}`(np.int32)` gives a second
+      array on the same memory without copying, which keeps the shape because both types take {{2}}
+      bytes per element. `Y[:] = Z` then writes the converted values into that memory, so `Y[2]`
+      is {{3}}.
+    answer:
+      model: |
+        ```python
+        # Thanks Vikas (https://stackoverflow.com/a/10622758/5989906)
+        # & unutbu (https://stackoverflow.com/a/4396247/5989906)
+        Z = (np.random.rand(10)*100).astype(np.float32)
+        Y = Z.view(np.int32)
+        Y[:] = Z
+        print(Y)
+        ```
+      blanks:
+        - accept:
+            - view
+          hint: an ndarray method name
+        - numeric: 4
+          hint: a number
+        - numeric: 99
+          hint: a number
+    explanation: |
+      `a.view(some_dtype)` constructs a view of the array's memory with a different data type, which
+      reinterprets the bytes; when the item sizes match, the shape stays the same [^2]. Assigning
+      floats into an integer array converts them and drops the fractional part, e.g. 1.2 becomes
+      1 [^3], so `Y` ends as `[1, 42, 99]` and the float data in that buffer are overwritten.
+      `Z.astype(np.int32)` would give the same numbers in a newly allocated array instead [^4].
+      This is the numpy-100 solution [^1].
+    references:
+      - source: numpy-100
+        url: https://github.com/rougier/numpy-100/blob/8ca28aaefca69a32ad3ccbbd01c7c9a785c2d5c1/100_Numpy_exercises_with_solutions.md
+        locator: Exercise 53
+      - title: numpy.ndarray.view (NumPy documentation)
+        url: https://numpy.org/doc/stable/reference/generated/numpy.ndarray.view.html
+        locator: Notes (a.view(some_dtype) reinterprets the memory)
+      - title: Indexing on ndarrays (NumPy user guide)
+        url: https://numpy.org/doc/stable/user/basics.indexing.html#assigning-values-to-indexed-arrays
+        locator: Assigning values to indexed arrays (floats to ints)
+      - title: numpy.ndarray.astype (NumPy documentation)
+        url: https://numpy.org/doc/stable/reference/generated/numpy.ndarray.astype.html
+        locator: Method description; copy parameter (always a newly allocated array by default)
+    source:
+      id: numpy-100
+      ref: q53
+      url: https://github.com/rougier/numpy-100/blob/8ca28aaefca69a32ad3ccbbd01c7c9a785c2d5c1/100_Numpy_exercises_with_solutions.md
+    status: draft
+  - id: numpy-081
+    type: short_answer
+    difficulty: medium
+    question: |
+      How to read this file, which has missing values, from a file object `s`?
+
+      ```
+      1, 2, 3, 4, 5
+      6,  ,  , 7, 8
+       ,  , 9,10,11
+      ```
+
+      `Z = np.`{{1}}`(s, delimiter=",", dtype=int, `{{2}}`=0)` reads it and puts 0 in the empty
+      fields. Without that last argument, a missing entry in an integer column would become {{3}}.
+    answer:
+      model: |
+        ```python
+        from io import StringIO
+
+        # Fake file
+        s = StringIO('''1, 2, 3, 4, 5
+
+                        6,  ,  , 7, 8
+
+                         ,  , 9,10,11
+        ''')
+        Z = np.genfromtxt(s, delimiter=",", dtype = int, filling_values = 0)
+        print(Z)
+        ```
+      blanks:
+        - accept:
+            - genfromtxt
+            - np.genfromtxt
+            - numpy.genfromtxt
+          hint: a NumPy function name
+        - accept:
+            - filling_values
+          hint: a keyword argument name
+        - numeric: -1
+          hint: a number
+    explanation: |
+      `np.genfromtxt` loads data from a text file "with missing values handled as specified" [^2]; by
+      default any empty string is marked as missing [^3]. `filling_values` sets the value used for
+      the missing entries; without it the default depends on the expected type: -1 for int, `nan`
+      for float, `'???'` for strings [^3]. `np.loadtxt` is meant for simply formatted files and points
+      to `genfromtxt` for lines with missing values [^4]. numpy-100 reads the file this way [^1].
+    references:
+      - source: numpy-100
+        url: https://github.com/rougier/numpy-100/blob/8ca28aaefca69a32ad3ccbbd01c7c9a785c2d5c1/100_Numpy_exercises_with_solutions.md
+        locator: Exercise 54
+      - title: numpy.genfromtxt (NumPy documentation)
+        url: https://numpy.org/doc/stable/reference/generated/numpy.genfromtxt.html
+        locator: Function description; filling_values parameter
+      - title: Importing data with genfromtxt (NumPy user guide)
+        url: https://numpy.org/doc/stable/user/basics.io.genfromtxt.html#using-missing-and-filling-values
+        locator: Using missing and filling values (missing_values, filling_values default table)
+      - title: numpy.loadtxt (NumPy documentation)
+        url: https://numpy.org/doc/stable/reference/generated/numpy.loadtxt.html
+        locator: Notes (fast reader for simply formatted files; see genfromtxt)
+    source:
+      id: numpy-100
+      ref: q54
+      url: https://github.com/rougier/numpy-100/blob/8ca28aaefca69a32ad3ccbbd01c7c9a785c2d5c1/100_Numpy_exercises_with_solutions.md
+    status: draft
+  - id: numpy-082
+    type: short_answer
+    difficulty: medium
+    question: |
+      How to randomly place `p` elements in a 2D array? With `n, p = 10, 3` and
+      `Z = np.zeros((n,n))`, `np.`{{1}}`(Z, np.random.choice(range(n*n), p, `{{2}}`=False), 1)` sets
+      `p` cells to 1, using indices into the flattened array. Because the indices are distinct,
+      `Z.sum()` is then {{3}}.
+    answer:
+      model: |
+        ```python
+        # Author: Divakar
+
+        n = 10
+        p = 3
+        Z = np.zeros((n,n))
+        np.put(Z, np.random.choice(range(n*n), p, replace=False),1)
+        print(Z)
+        ```
+      blanks:
+        - accept:
+            - put
+            - np.put
+            - numpy.put
+          hint: a NumPy function name
+        - accept:
+            - replace
+          hint: a keyword argument name
+        - numeric: 3
+          hint: a number
+    explanation: |
+      `np.put(a, ind, v)` replaces the elements at the given indices, and the indexing works on the
+      flattened array, roughly like `a.flat[ind] = v` [^2]. `np.random.choice(a, size,
+      replace=False)` samples without replacement [^3], so the three flat indices are distinct; with
+      the default `replace=True` two picks could coincide and fewer than `p` cells would be set.
+      Exactly 3 cells hold a 1, so `Z.sum()` is 3.0, as in the numpy-100 solution [^1].
+    references:
+      - source: numpy-100
+        url: https://github.com/rougier/numpy-100/blob/8ca28aaefca69a32ad3ccbbd01c7c9a785c2d5c1/100_Numpy_exercises_with_solutions.md
+        locator: Exercise 57
+      - title: numpy.put (NumPy documentation)
+        url: https://numpy.org/doc/stable/reference/generated/numpy.put.html
+        locator: Function description (indexing works on the flattened target array)
+      - title: numpy.random.choice (NumPy documentation)
+        url: https://numpy.org/doc/stable/reference/random/generated/numpy.random.choice.html
+        locator: replace parameter
+    source:
+      id: numpy-100
+      ref: q57
+      url: https://github.com/rougier/numpy-100/blob/8ca28aaefca69a32ad3ccbbd01c7c9a785c2d5c1/100_Numpy_exercises_with_solutions.md
+    status: draft
+  - id: numpy-083
+    type: short_answer
+    difficulty: medium
+    question: |
+      Find the nearest value from a given value in an array. For the 2-D array
+      `Z = np.array([[0.1, 0.9], [0.45, 0.7]])` and `z = 0.5`, `i = np.abs(Z - z).argmin()` is
+      {{1}}, because without an `axis` argument `argmin` returns an index into the flattened array.
+      The value is then read with `m = Z.`{{2}}`[i]`, which gives 0.45.
+    answer:
+      model: |
+        ```python
+        Z = np.random.uniform(0,1,10)
+        z = 0.5
+        m = Z.flat[np.abs(Z - z).argmin()]
+        print(m)
+        ```
+      blanks:
+        - numeric: 2
+          hint: a number
+        - accept:
+            - flat
+            - ravel()
+            - flatten()
+            - reshape(-1)
+          hint: an ndarray attribute
+    explanation: |
+      By default `argmin` returns the index into the flattened array [^2]: the distances in
+      row-major order are 0.4, 0.4, 0.05 and 0.2, so the minimum is at flat index 2. `Z.flat` is a
+      1-D iterator over the array that accepts such a flat index [^3], whereas `Z[2]` would fail on
+      this 2x2 array. numpy-100's solution reads the value through `Z.flat` [^1], which is what
+      makes it work for arrays of any shape (the 1-D version of this task is Exercise 50).
+    references:
+      - source: numpy-100
+        url: https://github.com/rougier/numpy-100/blob/8ca28aaefca69a32ad3ccbbd01c7c9a785c2d5c1/100_Numpy_exercises_with_solutions.md
+        locator: Exercise 61
+      - title: numpy.argmin (NumPy documentation)
+        url: https://numpy.org/doc/stable/reference/generated/numpy.argmin.html
+        locator: axis parameter (by default the index is into the flattened array)
+      - title: numpy.ndarray.flat (NumPy documentation)
+        url: https://numpy.org/doc/stable/reference/generated/numpy.ndarray.flat.html
+        locator: Attribute description and examples
+    source:
+      id: numpy-100
+      ref: q61
+      url: https://github.com/rougier/numpy-100/blob/8ca28aaefca69a32ad3ccbbd01c7c9a785c2d5c1/100_Numpy_exercises_with_solutions.md
+    status: draft
+  - id: numpy-084
+    type: short_answer
+    difficulty: hard
+    question: |
+      Considering two arrays with shape (1,3) and (3,1), how to compute their sum using an
+      iterator? With `A = np.arange(3).reshape(3,1)` and `B = np.arange(3).reshape(1,3)`,
+      `it = np.`{{1}}`([A, B, None])` broadcasts the operands and allocates the `None` operand as an
+      output of shape {{2}}. After `for x, y, z in it: z[...] = x + y`, the entry
+      `it.operands[2][2, 2]` is {{3}}.
+    answer:
+      model: |
+        ```python
+        A = np.arange(3).reshape(3,1)
+        B = np.arange(3).reshape(1,3)
+        it = np.nditer([A,B,None])
+        for x,y,z in it: z[...] = x + y
+        print(it.operands[2])
+        ```
+      blanks:
+        - accept:
+            - nditer
+            - np.nditer
+            - numpy.nditer
+          hint: a NumPy class name
+        - accept:
+            - (3, 3)
+          pattern: \(?\s*3\s*[,x×]\s*3\s*\)?
+          hint: a shape, e.g. (2, 4)
+        - numeric: 4
+          hint: a number
+    explanation: |
+      `np.nditer` is NumPy's multi-dimensional iterator, and it applies the broadcasting rules to
+      its operands [^2][^3]. An operand passed as `None` gets the flags 'allocate' and 'writeonly',
+      so the iterator creates it with the broadcast shape [^3]; shapes (3,1) and (1,3) broadcast to
+      (3,3) [^4]. Writing through `z[...]` fills that output, so entry [2, 2] holds 2 + 2 = 4, and
+      `it.operands[2]` returns it, as in the numpy-100 solution [^1].
+    references:
+      - source: numpy-100
+        url: https://github.com/rougier/numpy-100/blob/8ca28aaefca69a32ad3ccbbd01c7c9a785c2d5c1/100_Numpy_exercises_with_solutions.md
+        locator: Exercise 62
+      - title: numpy.nditer (NumPy documentation)
+        url: https://numpy.org/doc/stable/reference/generated/numpy.nditer.html
+        locator: Class description
+      - title: Iterating over arrays (NumPy documentation)
+        url: https://numpy.org/doc/stable/reference/arrays.nditer.html#iterator-allocated-output-arrays
+        locator: Broadcasting array iteration; Iterator-allocated output arrays
+      - title: Broadcasting (NumPy user guide)
+        url: https://numpy.org/doc/stable/user/basics.broadcasting.html#general-broadcasting-rules
+        locator: General broadcasting rules
+    source:
+      id: numpy-100
+      ref: q62
+      url: https://github.com/rougier/numpy-100/blob/8ca28aaefca69a32ad3ccbbd01c7c9a785c2d5c1/100_Numpy_exercises_with_solutions.md
+    status: draft
+  - id: numpy-085
+    type: short_answer
+    difficulty: hard
+    question: |
+      Create an array class that has a `name` attribute. In `class NamedArray(np.ndarray)`, the
+      `__new__` method turns the input into an instance of the subclass with
+      `obj = np.asarray(array).`{{1}}`(cls)` and sets `obj.name = name`. Arrays derived from it,
+      such as slices, get the attribute in the method `def `{{2}}`(self, obj):`, which copies
+      `getattr(obj, 'name', "no name")`. Without that method, `Z[2:5].name` would raise an
+      {{3}}.
+    answer:
+      model: |
+        ```python
+        class NamedArray(np.ndarray):
+            def __new__(cls, array, name="no name"):
+                obj = np.asarray(array).view(cls)
+                obj.name = name
+                return obj
+            def __array_finalize__(self, obj):
+                if obj is None: return
+                self.name = getattr(obj, 'name', "no name")
+
+        Z = NamedArray(np.arange(10), "range_10")
+        print (Z.name)
+        ```
+      blanks:
+        - accept:
+            - view
+          hint: an ndarray method name
+        - accept:
+            - __array_finalize__
+          hint: a special method name
+        - accept:
+            - AttributeError
+          hint: an exception class name
+    explanation: |
+      View casting, `arr.view(SubClass)`, is the standard way to return an existing array's data as
+      an instance of a subclass [^2]. `__new__` runs only for an explicit constructor call, while
+      `__array_finalize__` is called for all three ways a subclass instance appears (constructor,
+      view casting, and new-from-template such as slicing), so it is where defaults for new
+      attributes go [^2]. A slice is a new `NamedArray` instance; without `__array_finalize__` its
+      `name` is never set and reading it raises AttributeError. numpy-100's solution follows this
+      pattern [^1].
+    references:
+      - source: numpy-100
+        url: https://github.com/rougier/numpy-100/blob/8ca28aaefca69a32ad3ccbbd01c7c9a785c2d5c1/100_Numpy_exercises_with_solutions.md
+        locator: Exercise 63
+      - title: Subclassing ndarray (NumPy user guide)
+        url: https://numpy.org/doc/stable/user/basics.subclassing.html#the-role-of-array-finalize
+        locator: View casting; Creating new from template; The role of __array_finalize__
+    source:
+      id: numpy-100
+      ref: q63
+      url: https://github.com/rougier/numpy-100/blob/8ca28aaefca69a32ad3ccbbd01c7c9a785c2d5c1/100_Numpy_exercises_with_solutions.md
+    status: draft
+  - id: numpy-086
+    type: short_answer
+    difficulty: medium
+    question: |
+      Considering a (w,h,3) array `I` of RGB pixels (dtype=ubyte), compute the number of unique
+      colors:
+      `colors = np.`{{1}}`(I.reshape(`{{2}}`, 3), axis=0)` and `n = len(colors)`. A faster variant
+      packs each pixel into a single 24-bit integer with
+      `I24 = np.dot(I.astype(np.uint32), [1, 256, `{{3}}`])` and counts the unique integers.
+    answer:
+      model: |
+        ```python
+        # Author: Fisher Wang
+
+        w, h = 256, 256
+        I = np.random.randint(0, 4, (h, w, 3)).astype(np.ubyte)
+        colors = np.unique(I.reshape(-1, 3), axis=0)
+        n = len(colors)
+        print(n)
+
+        # Faster version
+        # Author: Mark Setchell
+        # https://stackoverflow.com/a/59671950/2836621
+
+        w, h = 256, 256
+        I = np.random.randint(0,4,(h,w,3), dtype=np.uint8)
+
+        # View each pixel as a single 24-bit integer, rather than three 8-bit bytes
+        I24 = np.dot(I.astype(np.uint32),[1,256,65536])
+
+        # Count unique colours
+        n = len(np.unique(I24))
+        print(n)
+        ```
+      blanks:
+        - accept:
+            - unique
+            - np.unique
+            - numpy.unique
+          hint: a NumPy function name
+        - numeric: -1
+          hint: a number
+        - numeric: 65536
+          hint: a number
+    explanation: |
+      In a reshape one dimension can be -1, and NumPy infers it, so `I.reshape(-1, 3)` is a list of
+      $w \cdot h$ RGB rows [^2]. With `axis=0`, `np.unique` treats each row as one element and returns
+      the distinct rows [^3]. `np.dot` of an N-D array with a 1-D array is a sum product over the last
+      axis [^4], so each pixel becomes $r + 256g + 256^2 b$ with $256^2 = 65536$; since every channel
+      is below 256, different colors give different integers. numpy-100 shows both versions [^1].
+    references:
+      - source: numpy-100
+        url: https://github.com/rougier/numpy-100/blob/8ca28aaefca69a32ad3ccbbd01c7c9a785c2d5c1/100_Numpy_exercises_with_solutions.md
+        locator: Exercise 66
+      - title: numpy.reshape (NumPy documentation)
+        url: https://numpy.org/doc/stable/reference/generated/numpy.reshape.html
+        locator: shape parameter (one dimension can be -1)
+      - title: numpy.unique (NumPy documentation)
+        url: https://numpy.org/doc/stable/reference/generated/numpy.unique.html
+        locator: axis parameter
+      - title: numpy.dot (NumPy documentation)
+        url: https://numpy.org/doc/stable/reference/generated/numpy.dot.html
+        locator: Function description (N-D array with 1-D array)
+    source:
+      id: numpy-100
+      ref: q66
+      url: https://github.com/rougier/numpy-100/blob/8ca28aaefca69a32ad3ccbbd01c7c9a785c2d5c1/100_Numpy_exercises_with_solutions.md
+    status: draft
+  - id: numpy-087
+    type: short_answer
+    difficulty: hard
+    question: |
+      Consider a set of triplets describing triangles (with shared vertices), e.g.
+      `faces = np.random.randint(0, 100, (10, 3))`, and find the set of unique line segments
+      composing all the triangles. numpy-100's solution:
+
+      ```python
+      F = ...                                # line (1): each (a,b,c) -> (a,b,b,c,c,a)
+      F = F.reshape(len(F)*3, 2)             # one row per edge
+      F = ...                                # line (2): make (b,a) equal to (a,b)
+      G = F.view(dtype=[('p0', F.dtype), ('p1', F.dtype)])
+      G = np.unique(G)
+      ```
+
+      Line (1) is `F = np.`{{1}}`(faces.repeat(2, axis=1), -1, axis=1)` and line (2) is
+      `F = np.`{{2}}`(F, axis=1)`. For the two triangles `faces = np.array([[0, 1, 2], [1, 2, 3]])`,
+      `G` has {{3}} elements.
+    answer:
+      model: |
+        ```python
+        # Author: Nicolas P. Rougier
+
+        faces = np.random.randint(0,100,(10,3))
+        F = np.roll(faces.repeat(2,axis=1),-1,axis=1)
+        F = F.reshape(len(F)*3,2)
+        F = np.sort(F,axis=1)
+        G = F.view( dtype=[('p0',F.dtype),('p1',F.dtype)] )
+        G = np.unique(G)
+        print(G)
+        ```
+      blanks:
+        - accept:
+            - roll
+            - np.roll
+            - numpy.roll
+          hint: a NumPy function name
+        - accept:
+            - sort
+            - np.sort
+            - numpy.sort
+          hint: a NumPy function name
+        - numeric: 5
+          hint: a number
+    explanation: |
+      `faces.repeat(2, axis=1)` repeats each vertex after itself, turning (a,b,c) into
+      (a,a,b,b,c,c) [^2], and `np.roll` by -1 shifts the elements left with wrap-around, giving
+      (a,b,b,c,c,a) [^3]. Reshaping into pairs lists the three edges of each triangle, and sorting
+      each pair along `axis=1` makes an edge independent of its direction [^4]. Viewing each row as a
+      single structured element lets `np.unique` remove repeated edges [^5]: the two triangles share
+      edge (1,2), so 6 edges reduce to 5 [^1].
+    references:
+      - source: numpy-100
+        url: https://github.com/rougier/numpy-100/blob/8ca28aaefca69a32ad3ccbbd01c7c9a785c2d5c1/100_Numpy_exercises_with_solutions.md
+        locator: Exercise 73
+      - title: numpy.repeat (NumPy documentation)
+        url: https://numpy.org/doc/stable/reference/generated/numpy.repeat.html
+        locator: Function description; axis parameter
+      - title: numpy.roll (NumPy documentation)
+        url: https://numpy.org/doc/stable/reference/generated/numpy.roll.html
+        locator: Function description
+      - title: numpy.sort (NumPy documentation)
+        url: https://numpy.org/doc/stable/reference/generated/numpy.sort.html
+        locator: axis parameter
+      - title: numpy.unique (NumPy documentation)
+        url: https://numpy.org/doc/stable/reference/generated/numpy.unique.html
+        locator: Function description (sorted unique elements)
+    source:
+      id: numpy-100
+      ref: q73
+      url: https://github.com/rougier/numpy-100/blob/8ca28aaefca69a32ad3ccbbd01c7c9a785c2d5c1/100_Numpy_exercises_with_solutions.md
+    status: draft
+  - id: numpy-088
+    type: short_answer
+    difficulty: medium
+    question: |
+      Given a sorted array `C` that corresponds to a bincount, how to produce an array `A` such that
+      `np.bincount(A) == C`? `A = np.`{{1}}`(np.arange(len(C)), C)` repeats each index as many
+      times as it was counted. For `C = np.bincount([1, 1, 2, 3, 4, 4, 6])`, `A` has {{2}} elements.
+    answer:
+      model: |
+        ```python
+        # Author: Jaime Fernández del Río
+
+        C = np.bincount([1,1,2,3,4,4,6])
+        A = np.repeat(np.arange(len(C)), C)
+        print(A)
+        ```
+      blanks:
+        - accept:
+            - repeat
+            - np.repeat
+            - numpy.repeat
+          hint: a NumPy function name
+        - numeric: 7
+          hint: a number
+    explanation: |
+      `np.bincount` counts the occurrences of each non-negative integer: bin $i$ holds the number of
+      times $i$ appears [^2]. `np.repeat(a, repeats)` repeats each element of `a` the number of times
+      given by the matching entry of `repeats` [^3], so repeating index $i$ `C[i]` times rebuilds the
+      sorted input `[1, 1, 2, 3, 4, 4, 6]`. Its length is `C.sum()`, 7, as in the numpy-100
+      solution [^1].
+    references:
+      - source: numpy-100
+        url: https://github.com/rougier/numpy-100/blob/8ca28aaefca69a32ad3ccbbd01c7c9a785c2d5c1/100_Numpy_exercises_with_solutions.md
+        locator: Exercise 74
+      - title: numpy.bincount (NumPy documentation)
+        url: https://numpy.org/doc/stable/reference/generated/numpy.bincount.html
+        locator: Function description
+      - title: numpy.repeat (NumPy documentation)
+        url: https://numpy.org/doc/stable/reference/generated/numpy.repeat.html
+        locator: repeats parameter
+    source:
+      id: numpy-100
+      ref: q74
+      url: https://github.com/rougier/numpy-100/blob/8ca28aaefca69a32ad3ccbbd01c7c9a785c2d5c1/100_Numpy_exercises_with_solutions.md
+    status: draft
+  - id: numpy-089
+    type: short_answer
+    difficulty: medium
+    question: |
+      How to negate a boolean, or to change the sign of a float, in place? For a boolean (or 0/1)
+      array use `np.`{{1}}`(Z, out=Z)`; for a float array use `np.`{{2}}`(Z, out=Z)`. Writing `-Z`
+      on a boolean array is not an alternative: it raises a {{3}} (use `~Z` instead).
+    answer:
+      model: |
+        ```python
+        # Author: Nathaniel J. Smith
+
+        Z = np.random.randint(0,2,100)
+        np.logical_not(Z, out=Z)
+
+        Z = np.random.uniform(-1.0,1.0,100)
+        np.negative(Z, out=Z)
+        ```
+      blanks:
+        - accept:
+            - logical_not
+            - np.logical_not
+            - numpy.logical_not
+          hint: a NumPy function name
+        - accept:
+            - negative
+            - np.negative
+            - numpy.negative
+          hint: a NumPy function name
+        - accept:
+            - TypeError
+          hint: an exception class name
+    explanation: |
+      `np.logical_not` computes NOT element-wise and, like every ufunc, can store its result in an
+      existing array passed as `out` [^2]; `np.negative` is the element-wise numerical negation with
+      the same `out` parameter [^3]. Since NumPy 1.13, `negative` applied to booleans raises a
+      TypeError [^4]; for boolean arrays the `~` operator, a shorthand for `np.invert`, gives the
+      logical NOT [^5]. numpy-100's solution uses the two ufuncs [^1].
+    references:
+      - source: numpy-100
+        url: https://github.com/rougier/numpy-100/blob/8ca28aaefca69a32ad3ccbbd01c7c9a785c2d5c1/100_Numpy_exercises_with_solutions.md
+        locator: Exercise 77
+      - title: numpy.logical_not (NumPy documentation)
+        url: https://numpy.org/doc/stable/reference/generated/numpy.logical_not.html
+        locator: Function description; out parameter
+      - title: numpy.negative (NumPy documentation)
+        url: https://numpy.org/doc/stable/reference/generated/numpy.negative.html
+        locator: Function description; out parameter
+      - title: NumPy 1.13.0 Release Notes
+        url: https://numpy.org/doc/stable/release/1.13.0-notes.html#deprecationwarning-to-error
+        locator: Compatibility notes, DeprecationWarning to error (negative(bool_))
+      - title: numpy.invert (NumPy documentation)
+        url: https://numpy.org/doc/stable/reference/generated/numpy.invert.html
+        locator: Examples (booleans; the ~ operator)
+    source:
+      id: numpy-100
+      ref: q77
+      url: https://github.com/rougier/numpy-100/blob/8ca28aaefca69a32ad3ccbbd01c7c9a785c2d5c1/100_Numpy_exercises_with_solutions.md
+    status: draft
+  - id: numpy-090
+    type: short_answer
+    difficulty: hard
+    question: |
+      Consider 2 sets of points `P0`, `P1` describing lines (2d) and a point `p`; how to compute
+      the distance from `p` to each line i (`P0[i]`, `P1[i]`)? A vectorized solution rotates each
+      direction `P1 - P0` by 90 degrees into a normal vector `v`, then computes
+      `norm = np.linalg.`{{1}}`(v, axis=1)`, `r = P0 - p` and
+      `d = np.abs(np.einsum("`{{2}}`", r, v)) / norm`, where the einsum is the row-wise dot
+      product. For the line through (0, 0) and (1, 0) and the point p = (3, 4), `d` is {{3}}.
+    answer:
+      model: |
+        ```python
+        P0 = np.random.uniform(-10,10,(10,2))
+        P1 = np.random.uniform(-10,10,(10,2))
+        p  = np.random.uniform(-10,10,( 1,2))
+
+        def distance_faster(P0,P1,p):
+            #Author: Hemanth Pasupuleti
+            #Reference: https://mathworld.wolfram.com/Point-LineDistance2-Dimensional.html
+
+            v = P1- P0
+            v[:,[0,1]] = v[:,[1,0]]
+            v[:,1]*=-1
+            norm = np.linalg.norm(v,axis=1)
+            r = P0 - p
+            d = np.abs(np.einsum("ij,ij->i",r,v)) / norm
+
+            return d
+
+        print(distance_faster(P0, P1, p))
+
+        ##--------------- OR ---------------##
+        def distance_slower(P0, P1, p):
+            T = P1 - P0
+            L = (T**2).sum(axis=1)
+            U = -((P0[:,0]-p[...,0])*T[:,0] + (P0[:,1]-p[...,1])*T[:,1]) / L
+            U = U.reshape(len(U),1)
+            D = P0 + U*T - p
+            return np.sqrt((D**2).sum(axis=1))
+
+        print(distance_slower(P0, P1, p))
+        ```
+      blanks:
+        - accept:
+            - norm
+          hint: a function in np.linalg
+        - accept:
+            - ij,ij->i
+          pattern: ([a-z])([a-z])\s*,\s*\1\2\s*->\s*\1
+          hint: einsum subscripts with the labels i and j
+        - numeric: 4
+          hint: a number
+    explanation: |
+      With an integer `axis`, `np.linalg.norm` computes one vector norm per row [^2]. In `einsum`
+      a label repeated across operands is multiplied and, when it is left out of the output after
+      `->`, summed; so `'ij,ij->i'` multiplies matching entries and sums over `j`, giving one dot
+      product per row [^3]. The distance is $|r \cdot v| / \lVert v \rVert$ with $v$ normal to the
+      line; for the x-axis and $p = (3, 4)$ it is the height 4 [^1].
+    references:
+      - source: numpy-100
+        url: https://github.com/rougier/numpy-100/blob/8ca28aaefca69a32ad3ccbbd01c7c9a785c2d5c1/100_Numpy_exercises_with_solutions.md
+        locator: Exercise 78
+      - title: numpy.linalg.norm (NumPy documentation)
+        url: https://numpy.org/doc/stable/reference/generated/numpy.linalg.norm.html
+        locator: axis parameter
+      - title: numpy.einsum (NumPy documentation)
+        url: https://numpy.org/doc/stable/reference/generated/numpy.einsum.html
+        locator: Notes (repeated labels are summed; explicit mode with '->')
+    source:
+      id: numpy-100
+      ref: q78
+      url: https://github.com/rougier/numpy-100/blob/8ca28aaefca69a32ad3ccbbd01c7c9a785c2d5c1/100_Numpy_exercises_with_solutions.md
+    status: draft
+  - id: numpy-091
+    type: short_answer
+    difficulty: hard
+    question: |
+      Consider 2 sets of points `P0`, `P1` describing lines (2d) and a set of points `P`; how to
+      compute the distance from each point j (`P[j]`) to each line i (`P0[i]`, `P1[i]`)? With
+      broadcasting, per-point quantities are indexed as `x_0[:, np.`{{1}}`]` (a column) and
+      per-line quantities as `dx[np.newaxis, :]` (a row), so their combination has one row per
+      point and one column per line. For 5 points and 3 lines the result has shape {{2}}.
+    answer:
+      model: |
+        ```python
+        # Author: Yang Wu (Broadcasting)
+        def distance_points_to_lines(p, p_1, p_2):
+            x_0, y_0 = p.T      # (n points,)
+            x_1, y_1 = p_1.T    # (n lines,)
+            x_2, y_2 = p_2.T    # (n lines,)
+            dx = x_2 - x_1
+            dy = y_2 - y_1
+            cross_term = x_2 * y_1 - y_2 * x_1
+            # (n points, 1) with (1, n lines) -> (n points, n lines)
+            numerator = np.abs(dy[np.newaxis, :] * x_0[:, np.newaxis]
+                               - dx[np.newaxis, :] * y_0[:, np.newaxis]
+                               + cross_term[np.newaxis, :])
+            denominator = np.sqrt(dx**2 + dy**2)    # (n lines,)
+            return numerator / denominator[np.newaxis, :]
+
+        P0 = np.random.uniform(-10, 10, (3, 2))
+        P1 = np.random.uniform(-10, 10, (3, 2))
+        P = np.random.uniform(-10, 10, (5, 2))
+        print(distance_points_to_lines(P, P0, P1).shape)   # (5, 3)
+        ```
+      blanks:
+        - accept:
+            - newaxis
+          hint: a NumPy constant name
+        - accept:
+            - (5, 3)
+          pattern: \(?\s*5\s*[,x×]\s*3\s*\)?
+          hint: a shape, e.g. (2, 4)
+    explanation: |
+      Each `np.newaxis` in an index adds a dimension of length one at its position [^2], so
+      `x_0[:, np.newaxis]` has shape (5, 1) and `dx[np.newaxis, :]` has shape (1, 3). Broadcasting
+      compares shapes from the right and stretches dimensions of size 1, giving a (5, 3) result [^3].
+      This is numpy-100's broadcasting solution; its other solution loops over the points in
+      Python [^1].
+    references:
+      - source: numpy-100
+        url: https://github.com/rougier/numpy-100/blob/8ca28aaefca69a32ad3ccbbd01c7c9a785c2d5c1/100_Numpy_exercises_with_solutions.md
+        locator: Exercise 79
+      - title: Indexing on ndarrays (NumPy user guide)
+        url: https://numpy.org/doc/stable/user/basics.indexing.html#dimensional-indexing-tools
+        locator: Dimensional indexing tools (newaxis)
+      - title: Broadcasting (NumPy user guide)
+        url: https://numpy.org/doc/stable/user/basics.broadcasting.html#general-broadcasting-rules
+        locator: General broadcasting rules
+    source:
+      id: numpy-100
+      ref: q79
+      url: https://github.com/rougier/numpy-100/blob/8ca28aaefca69a32ad3ccbbd01c7c9a785c2d5c1/100_Numpy_exercises_with_solutions.md
+    status: draft
+  - id: numpy-092
+    type: short_answer
+    difficulty: hard
+    question: |
+      Consider an arbitrary array, write a function that extracts a subpart with a fixed shape and
+      centered on a given element (pad with a `fill` value when necessary). numpy-100 computes, for
+      each axis, the start and stop of the window in `Z` and in the result `R`, clips them to the
+      array bounds with `np.maximum` and `np.minimum`, and copies with `R[r] = Z[z]`, where
+      `r = tuple(`{{1}}`(start, stop) for start, stop in zip(R_start, R_stop))` and `z` is built
+      likewise. For `Z = np.arange(100).reshape(10, 10)`, a (5, 5) window centred on position
+      (1, 1) with `fill = 0` copies {{2}} values from `Z`, and its centre `R[2, 2]` is {{3}}.
+    answer:
+      model: |
+        ```python
+        # Author: Nicolas Rougier
+
+        Z = np.random.randint(0,10,(10,10))
+        shape = (5,5)
+        fill  = 0
+        position = (1,1)
+
+        R = np.ones(shape, dtype=Z.dtype)*fill
+        P  = np.array(list(position)).astype(int)
+        Rs = np.array(list(R.shape)).astype(int)
+        Zs = np.array(list(Z.shape)).astype(int)
+
+        R_start = np.zeros((len(shape),)).astype(int)
+        R_stop  = np.array(list(shape)).astype(int)
+        Z_start = (P-Rs//2)
+        Z_stop  = (P+Rs//2)+Rs%2
+
+        R_start = (R_start - np.minimum(Z_start,0)).tolist()
+        Z_start = (np.maximum(Z_start,0)).tolist()
+        R_stop = np.maximum(R_start, (R_stop - np.maximum(Z_stop-Zs,0))).tolist()
+        Z_stop = (np.minimum(Z_stop,Zs)).tolist()
+
+        r = tuple([slice(start,stop) for start,stop in zip(R_start,R_stop)])
+        z = tuple([slice(start,stop) for start,stop in zip(Z_start,Z_stop)])
+        R[r] = Z[z]
+        print(Z)
+        print(R)
+        ```
+      blanks:
+        - accept:
+            - slice
+          hint: a Python built-in name
+        - numeric: 16
+          hint: a number
+        - numeric: 11
+          hint: a number
+    explanation: |
+      Indexing with a tuple is the same as writing the indices separated by commas, and the
+      built-in `slice(start, stop)` is the object form of `start:stop`, so code can build an index
+      for any number of axes [^2]. The window centred on (1, 1) covers rows and columns -1 to 3 of
+      `Z`; row and column -1 lie outside, so 4 x 4 = 16 values are copied and the other 9 cells keep
+      the fill value [^1]. The centre of the window is the requested element, `Z[1, 1] = 11`.
+    references:
+      - source: numpy-100
+        url: https://github.com/rougier/numpy-100/blob/8ca28aaefca69a32ad3ccbbd01c7c9a785c2d5c1/100_Numpy_exercises_with_solutions.md
+        locator: Exercise 80
+      - title: Indexing on ndarrays (NumPy user guide)
+        url: https://numpy.org/doc/stable/user/basics.indexing.html#dealing-with-variable-numbers-of-indices-within-programs
+        locator: Dealing with variable numbers of indices within programs (slice())
+    source:
+      id: numpy-100
+      ref: q80
+      url: https://github.com/rougier/numpy-100/blob/8ca28aaefca69a32ad3ccbbd01c7c9a785c2d5c1/100_Numpy_exercises_with_solutions.md
+    status: draft
+  - id: numpy-093
+    type: short_answer
+    difficulty: hard
+    question: |
+      Create a 2D array subclass such that `Z[i,j] == Z[j,i]`. The subclass
+      `Symetric(np.ndarray)` overrides the special method {{1}} so that an assignment
+      `S[i,j] = value` also sets `S[j,i]`. The starting matrix is made symmetric with
+      `Z + Z.`{{2}}` - np.diag(Z.diagonal())` and then viewed as the subclass. For
+      `Z = np.array([[1, 2], [3, 4]])`, both off-diagonal entries become {{3}}.
+    answer:
+      model: |
+        ```python
+        # Author: Eric O. Lebigot
+        # Note: only works for 2d array and value setting using indices
+
+        class Symetric(np.ndarray):
+            def __setitem__(self, index, value):
+                i,j = index
+                super(Symetric, self).__setitem__((i,j), value)
+                super(Symetric, self).__setitem__((j,i), value)
+
+        def symetric(Z):
+            return np.asarray(Z + Z.T - np.diag(Z.diagonal())).view(Symetric)
+
+        S = symetric(np.random.randint(0,10,(5,5)))
+        S[2,3] = 42
+        print(S)
+        ```
+      blanks:
+        - accept:
+            - __setitem__
+          hint: a special method name
+        - accept:
+            - T
+            - transpose()
+          hint: an ndarray attribute
+        - numeric: 5
+          hint: a number
+    explanation: |
+      `ndarray.T` is the transposed array [^2], so `Z + Z.T` is symmetric but counts the diagonal
+      twice; subtracting `np.diag(Z.diagonal())`, a diagonal matrix built from the extracted
+      diagonal [^3], puts it back. The off-diagonal entries become 2 + 3 = 5. Python calls
+      `__setitem__` to implement `self[key] = value` [^4], so overriding it keeps later assignments
+      symmetric, and `.view(Symetric)` turns the result into the subclass [^5]. numpy-100 notes that
+      the class only handles 2-D arrays and assignments with an (i, j) index [^1].
+    references:
+      - source: numpy-100
+        url: https://github.com/rougier/numpy-100/blob/8ca28aaefca69a32ad3ccbbd01c7c9a785c2d5c1/100_Numpy_exercises_with_solutions.md
+        locator: Exercise 85
+      - title: numpy.ndarray.T (NumPy documentation)
+        url: https://numpy.org/doc/stable/reference/generated/numpy.ndarray.T.html
+        locator: Attribute description
+      - title: numpy.diag (NumPy documentation)
+        url: https://numpy.org/doc/stable/reference/generated/numpy.diag.html
+        locator: Function description (extract a diagonal or construct a diagonal array)
+      - title: The Python Language Reference, Data model
+        url: https://docs.python.org/3/reference/datamodel.html#object.__setitem__
+        locator: 3.3.7 Emulating container types, object.__setitem__
+      - title: Subclassing ndarray (NumPy user guide)
+        url: https://numpy.org/doc/stable/user/basics.subclassing.html#view-casting
+        locator: View casting
+    source:
+      id: numpy-100
+      ref: q85
+      url: https://github.com/rougier/numpy-100/blob/8ca28aaefca69a32ad3ccbbd01c7c9a785c2d5c1/100_Numpy_exercises_with_solutions.md
+    status: draft
+  - id: numpy-094
+    type: short_answer
+    difficulty: hard
+    question: |
+      How to implement the Game of Life using NumPy arrays? numpy-100 counts the live neighbours of
+      every interior cell at once by adding {{1}} shifted slices,
+      `N = Z[0:-2,0:-2] + Z[0:-2,1:-1] + Z[0:-2,2:] + ...`, so for a 50x50 board `N` has shape
+      {{2}}. With the boolean arrays `birth` and `survive`, the cells alive in the next step are set
+      by `Z[1:-1,1:-1][birth` {{3}} `survive] = 1`.
+    answer:
+      model: |
+        ```python
+        # Author: Nicolas Rougier
+
+        def iterate(Z):
+            # Count neighbours
+            N = (Z[0:-2,0:-2] + Z[0:-2,1:-1] + Z[0:-2,2:] +
+                 Z[1:-1,0:-2]                + Z[1:-1,2:] +
+                 Z[2:  ,0:-2] + Z[2:  ,1:-1] + Z[2:  ,2:])
+
+            # Apply rules
+            birth = (N==3) & (Z[1:-1,1:-1]==0)
+            survive = ((N==2) | (N==3)) & (Z[1:-1,1:-1]==1)
+            Z[...] = 0
+            Z[1:-1,1:-1][birth | survive] = 1
+            return Z
+
+        Z = np.random.randint(0,2,(50,50))
+        for i in range(100): Z = iterate(Z)
+        print(Z)
+        ```
+      blanks:
+        - numeric: 8
+          hint: a number
+        - accept:
+            - (48, 48)
+          pattern: \(?\s*48\s*[,x×]\s*48\s*\)?
+          hint: a shape, e.g. (2, 4)
+        - accept:
+            - '|'
+          pattern: \||\+
+          hint: an operator symbol
+    explanation: |
+      Each slice such as `Z[0:-2, 0:-2]` is the board shifted by one cell in one of the 8 neighbour
+      directions and cut to the interior, so their sum is the neighbour count of every interior
+      cell [^1][^2]. Dropping one row and one column at each edge leaves 50 - 2 = 48 cells per
+      axis. On boolean arrays `|` is the element-wise OR (`np.bitwise_or`) [^3], and the combined
+      mask selects the cells to set through boolean array indexing [^2].
+    references:
+      - source: numpy-100
+        url: https://github.com/rougier/numpy-100/blob/8ca28aaefca69a32ad3ccbbd01c7c9a785c2d5c1/100_Numpy_exercises_with_solutions.md
+        locator: Exercise 88
+      - title: Indexing on ndarrays (NumPy user guide)
+        url: https://numpy.org/doc/stable/user/basics.indexing.html#boolean-array-indexing
+        locator: Slicing and striding; Boolean array indexing
+      - title: numpy.bitwise_or (NumPy documentation)
+        url: https://numpy.org/doc/stable/reference/generated/numpy.bitwise_or.html
+        locator: Function description (implements the operator |; integer and boolean types)
+    source:
+      id: numpy-100
+      ref: q88
+      url: https://github.com/rougier/numpy-100/blob/8ca28aaefca69a32ad3ccbbd01c7c9a785c2d5c1/100_Numpy_exercises_with_solutions.md
+    status: draft
+  - id: numpy-095
+    type: short_answer
+    difficulty: medium
+    question: |
+      How to create a record array from a regular array? For the string array
+      `Z = np.array([("Hello", 2.5, 3), ("World", 3.6, 2)])`,
+      `R = np.rec.`{{1}}`(Z.T, names='col1, col2, col3', formats='S8, f8, i8')` builds it from one
+      array per {{2}}, converting each to its format. Fields can then be read as attributes, so
+      `R.col3.sum()` is {{3}}.
+    answer:
+      model: |
+        ```python
+        Z = np.array([("Hello", 2.5, 3),
+                      ("World", 3.6, 2)])
+        R = np.rec.fromarrays(Z.T,
+                              names='col1, col2, col3',
+                              formats = 'S8, f8, i8')
+        print(R)
+        ```
+      blanks:
+        - accept:
+            - fromarrays
+          hint: a function name in np.rec
+        - accept:
+            - column
+            - field
+            - col
+            - columns
+            - fields
+          hint: one word
+        - numeric: 5
+          hint: a number
+    explanation: |
+      `np.rec.fromarrays` creates a record array from a flat list of arrays, each becoming one
+      column of the result, with the dtype built from `names` and `formats` [^2]; `Z.T` turns the two
+      rows into three columns. A record array allows field access by attribute as well as by
+      index [^3], so `R.col3` is the integer column [3, 2] with sum 5. numpy-100 reaches the same
+      function through `np.core.records` [^1], but `np.core` became private in NumPy 2.0 and the
+      public namespace should be used [^4].
+    references:
+      - source: numpy-100
+        url: https://github.com/rougier/numpy-100/blob/8ca28aaefca69a32ad3ccbbd01c7c9a785c2d5c1/100_Numpy_exercises_with_solutions.md
+        locator: Exercise 91
+      - title: numpy.rec.fromarrays (NumPy documentation)
+        url: https://numpy.org/doc/stable/reference/generated/numpy.rec.fromarrays.html
+        locator: Function description; Returns
+      - title: Structured arrays (NumPy user guide)
+        url: https://numpy.org/doc/stable/user/basics.rec.html#record-arrays
+        locator: Record arrays
+      - title: NumPy 2.0 migration guide
+        url: https://numpy.org/doc/stable/numpy_2_0_migration_guide.html#numpy-core-namespace
+        locator: Changes to namespaces, numpy.core namespace
+    source:
+      id: numpy-100
+      ref: q91
+      url: https://github.com/rougier/numpy-100/blob/8ca28aaefca69a32ad3ccbbd01c7c9a785c2d5c1/100_Numpy_exercises_with_solutions.md
+    status: draft
+  - id: numpy-096
+    type: short_answer
+    difficulty: hard
+    question: |
+      Consider two arrays `A` and `B` of shape (8,3) and (2,2). How to find rows of `A` that
+      contain at least one element of each row of `B`, regardless of the order of the elements in
+      `B`? `C = (A[..., np.newaxis, np.newaxis] == B)` compares every element of `A` with every
+      element of `B` and has shape {{1}}. Then `rows = np.where(C.`{{2}}`((3, 1)).`{{3}}`(1))[0]`:
+      the first reduction asks, for each row of `A` and each row of `B`, whether any pair matches;
+      the second requires this for every row of `B`.
+    answer:
+      model: |
+        ```python
+        # Author: Gabe Schwartz
+
+        A = np.random.randint(0,5,(8,3))
+        B = np.random.randint(0,5,(2,2))
+
+        C = (A[..., np.newaxis, np.newaxis] == B)
+        rows = np.where(C.any((3,1)).all(1))[0]
+        print(rows)
+        ```
+      blanks:
+        - accept:
+            - (8, 3, 2, 2)
+          pattern: \(?\s*8\s*,\s*3\s*,\s*2\s*,\s*2\s*\)?
+          hint: a shape, e.g. (4, 1, 2)
+        - accept:
+            - any
+          hint: an ndarray method name
+        - accept:
+            - all
+          hint: an ndarray method name
+    explanation: |
+      Each `np.newaxis` adds a dimension of length one, so `A[..., np.newaxis, np.newaxis]` has shape
+      (8, 3, 1, 1) [^2], and broadcasting it against `B` of shape (2, 2) gives (8, 3, 2, 2) [^3].
+      `any` with a tuple of axes ORs over several axes at once [^4]; over axes 3 and 1 it leaves
+      shape (8, 2): row i of `A` versus row k of `B`. `all(1)` then requires a match for both rows of
+      `B` [^5], and `np.where` returns the indices of the rows that pass [^1].
+    references:
+      - source: numpy-100
+        url: https://github.com/rougier/numpy-100/blob/8ca28aaefca69a32ad3ccbbd01c7c9a785c2d5c1/100_Numpy_exercises_with_solutions.md
+        locator: Exercise 93
+      - title: Indexing on ndarrays (NumPy user guide)
+        url: https://numpy.org/doc/stable/user/basics.indexing.html#dimensional-indexing-tools
+        locator: Dimensional indexing tools (Ellipsis, newaxis)
+      - title: Broadcasting (NumPy user guide)
+        url: https://numpy.org/doc/stable/user/basics.broadcasting.html#general-broadcasting-rules
+        locator: General broadcasting rules
+      - title: numpy.any (NumPy documentation)
+        url: https://numpy.org/doc/stable/reference/generated/numpy.any.html
+        locator: axis parameter (tuple of ints)
+      - title: numpy.all (NumPy documentation)
+        url: https://numpy.org/doc/stable/reference/generated/numpy.all.html
+        locator: Function description; axis parameter
+    source:
+      id: numpy-100
+      ref: q93
+      url: https://github.com/rougier/numpy-100/blob/8ca28aaefca69a32ad3ccbbd01c7c9a785c2d5c1/100_Numpy_exercises_with_solutions.md
+    status: draft
+  - id: numpy-097
+    type: short_answer
+    difficulty: hard
+    question: |
+      Considering a path described by two vectors `(x, y)`, how to sample it using equidistant
+      samples? Compute the segment lengths with `dx = np.`{{1}}`(x)` (and `dy` likewise) and
+      `dr = (dx**2 + dy**2)**.5`, the distance along the path with `r = np.zeros_like(x)` and
+      `r[1:] = np.`{{2}}`(dr)`, then take 200 equally spaced distances
+      `r_int = np.linspace(0, r.max(), 200)` and interpolate the coordinates with
+      `x_int = np.`{{3}}`(r_int, r, x)` (and the same for `y`).
+    answer:
+      model: |
+        ```python
+        # Author: Bas Swinckels
+
+        phi = np.arange(0, 10*np.pi, 0.1)
+        a = 1
+        x = a*phi*np.cos(phi)
+        y = a*phi*np.sin(phi)
+
+        dr = (np.diff(x)**2 + np.diff(y)**2)**.5 # segment lengths
+        r = np.zeros_like(x)
+        r[1:] = np.cumsum(dr)                # integrate path
+        r_int = np.linspace(0, r.max(), 200) # regular spaced path
+        x_int = np.interp(r_int, r, x)       # integrate path
+        y_int = np.interp(r_int, r, y)
+        ```
+      blanks:
+        - accept:
+            - diff
+            - np.diff
+            - numpy.diff
+          hint: a NumPy function name
+        - accept:
+            - cumsum
+            - np.cumsum
+            - numpy.cumsum
+          hint: a NumPy function name
+        - accept:
+            - interp
+            - np.interp
+            - numpy.interp
+          hint: a NumPy function name
+    explanation: |
+      `np.diff` returns the differences of consecutive elements, `a[i+1] - a[i]` [^2], so `dr` holds
+      the length of each straight segment. `np.cumsum` accumulates them into the distance travelled
+      from the start [^3], with `r[0] = 0` for the first point. `np.interp(x, xp, fp)` evaluates the
+      piecewise-linear function through the points `(xp, fp)` at new positions and needs increasing
+      `xp` [^4], which the distance is. Equally spaced `r_int` therefore give points equally spaced
+      along the path, as in the numpy-100 solution [^1].
+    references:
+      - source: numpy-100
+        url: https://github.com/rougier/numpy-100/blob/8ca28aaefca69a32ad3ccbbd01c7c9a785c2d5c1/100_Numpy_exercises_with_solutions.md
+        locator: Exercise 98
+      - title: numpy.diff (NumPy documentation)
+        url: https://numpy.org/doc/stable/reference/generated/numpy.diff.html
+        locator: Function description
+      - title: numpy.cumsum (NumPy documentation)
+        url: https://numpy.org/doc/stable/reference/generated/numpy.cumsum.html
+        locator: Function description
+      - title: numpy.interp (NumPy documentation)
+        url: https://numpy.org/doc/stable/reference/generated/numpy.interp.html
+        locator: Function description; xp parameter (must be increasing)
+    source:
+      id: numpy-100
+      ref: q98
+      url: https://github.com/rougier/numpy-100/blob/8ca28aaefca69a32ad3ccbbd01c7c9a785c2d5c1/100_Numpy_exercises_with_solutions.md
+    status: draft
+  - id: numpy-098
+    type: short_answer
+    difficulty: medium
+    question: |
+      Given an integer `n` and a 2D array `X`, select from `X` the rows which can be interpreted as
+      draws from a multinomial distribution with `n` degrees, i.e., the rows which only contain
+      integers and which sum to `n`.
+      `M = np.logical_and.`{{1}}`(np.`{{2}}`(X, 1) == 0, axis=-1)` marks the rows made only of whole
+      numbers, and `M &= (X.sum(axis=-1) == n)` adds the sum condition. For
+      `X = np.asarray([[1.0, 0.0, 3.0, 8.0], [2.0, 0.0, 1.0, 1.0], [1.5, 2.5, 1.0, 0.0]])` and
+      `n = 4`, `X[M]` contains {{3}} row(s).
+    answer:
+      model: |
+        ```python
+        # Author: Evgeni Burovski
+
+        X = np.asarray([[1.0, 0.0, 3.0, 8.0],
+                        [2.0, 0.0, 1.0, 1.0],
+                        [1.5, 2.5, 1.0, 0.0]])
+        n = 4
+        M = np.logical_and.reduce(np.mod(X, 1) == 0, axis=-1)
+        M &= (X.sum(axis=-1) == n)
+        print(X[M])
+        ```
+      blanks:
+        - accept:
+            - reduce
+          hint: a ufunc method name
+        - accept:
+            - mod
+            - remainder
+            - fmod
+          hint: a NumPy function name
+        - numeric: 1
+          hint: a number
+    explanation: |
+      `np.mod(X, 1)` is the element-wise remainder of division by 1 [^2], which is 0 exactly for whole
+      numbers. `ufunc.reduce` applies a ufunc repeatedly along an axis [^3], so
+      `np.logical_and.reduce(..., axis=-1)` ANDs the entries of each row [^4], like
+      `.all(axis=-1)`. The first two rows are whole numbers, but only `[2, 0, 1, 1]` sums to 4; the
+      third contains 1.5 and 2.5. So one row is selected, as numpy-100 prints [^1].
+    references:
+      - source: numpy-100
+        url: https://github.com/rougier/numpy-100/blob/8ca28aaefca69a32ad3ccbbd01c7c9a785c2d5c1/100_Numpy_exercises_with_solutions.md
+        locator: Exercise 99
+      - title: numpy.mod (NumPy documentation)
+        url: https://numpy.org/doc/stable/reference/generated/numpy.mod.html
+        locator: Function description
+      - title: numpy.ufunc.reduce (NumPy documentation)
+        url: https://numpy.org/doc/stable/reference/generated/numpy.ufunc.reduce.html
+        locator: Method description
+      - title: numpy.logical_and (NumPy documentation)
+        url: https://numpy.org/doc/stable/reference/generated/numpy.logical_and.html
+        locator: Function description
+    source:
+      id: numpy-100
+      ref: q99
+      url: https://github.com/rougier/numpy-100/blob/8ca28aaefca69a32ad3ccbbd01c7c9a785c2d5c1/100_Numpy_exercises_with_solutions.md
+    status: draft
