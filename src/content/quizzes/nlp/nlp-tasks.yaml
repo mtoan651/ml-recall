@@ -537,3 +537,172 @@ questions:
       ref: quiz-40/q3
       url: https://github.com/microsoft/ML-For-Beginners/blob/de2d4e12236445198213a0711855e348e7253cd4/quiz-app/src/assets/translations/en.json
     status: draft
+  - id: nlp-tasks-019
+    type: single
+    difficulty: medium
+    tags:
+      - natural-language-inference
+      - machine-translation
+      - evaluation
+    question: |
+      How could a natural language inference (NLI) model judge a machine translation against a
+      reference translation, without relying on n-gram overlap?
+    options:
+      - text: 'Check entailment both ways: output and reference that entail each other mean the same thing'
+        correct: true
+      - text: Check only that the reference entails the output, since one direction suffices
+        why: A vague output such as "Two people are touching" is entailed by "Two women are hugging each other" while losing information.
+      - text: Reward translations that the NLI model labels "neutral" with respect to the reference
+        why: '"Neutral" means neither sentence follows from the other, the opposite of a faithful translation [^1].'
+      - text: Score how strongly the translation contradicts the source sentence and prefer low values
+        why: The source is in another language, and the absence of contradiction does not show the same meaning.
+    explanation: |
+      NLI decides whether a hypothesis can be inferred from a premise, with the labels entailment,
+      contradiction and neutral [^1]. Two sentences say the same thing when each entails the other, so
+      a translation can be scored by the entailment probabilities in both directions, which credits
+      paraphrases that share few n-grams with the reference. BLEU, in contrast, measures n-gram
+      precision against the reference [^2].
+    references:
+      - source: d2l
+        locator: Sec. 16.4.1 Natural Language Inference
+        url: https://d2l.ai/chapter_natural-language-processing-applications/natural-language-inference-and-dataset.html#natural-language-inference
+      - source: d2l
+        locator: Sec. 10.7.8 Evaluation of Predicted Sequences
+        url: https://d2l.ai/chapter_recurrent-modern/seq2seq.html#evaluation-of-predicted-sequences
+      - source: d2l
+        locator: Sec. 16.4.4 Exercises, Exercise 1
+        url: https://d2l.ai/chapter_natural-language-processing-applications/natural-language-inference-and-dataset.html#exercises
+    source:
+      id: d2l
+      ref: chapter_natural-language-processing-applications/natural-language-inference-and-dataset#ex1
+      url: https://d2l.ai/chapter_natural-language-processing-applications/natural-language-inference-and-dataset.html#exercises
+    status: draft
+  - id: nlp-tasks-020
+    type: single
+    difficulty: easy
+    tags:
+      - vocabulary
+      - min-freq
+      - snli
+    question: |
+      An NLI data loader builds its vocabulary from all training premises and hypotheses with
+      `Vocab(tokens, min_freq=5, reserved_tokens=['<pad>'])`, then pads or truncates every sentence to
+      `num_steps = 50` tokens. Which change makes the vocabulary smaller?
+    options:
+      - text: Raise `min_freq`, so that more rare words are mapped to `<unk>`
+        correct: true
+      - text: Lower `num_steps`, so that sentences are truncated earlier
+        why: The vocabulary is built from the tokenized sentences before padding and truncation [^1].
+      - text: Lower the batch size, so that fewer sentences are loaded at once
+        why: The batch size only affects how examples are grouped, not which words they contain.
+      - text: Add `<unk>` to `reserved_tokens`, so that unknown words share one entry
+        why: '`<unk>` is always in the vocabulary already, so this adds nothing and removes nothing [^2].'
+    explanation: |
+      A token enters the vocabulary only if it occurs at least `min_freq` times in the training data
+      [^1][^2]; every rarer token is mapped to `<unk>`. Because word frequencies follow Zipf's law,
+      most distinct words are rare, so raising `min_freq` shrinks the vocabulary quickly, at the cost
+      of more `<unk>` tokens in the input [^2].
+    references:
+      - source: d2l
+        locator: Sec. 16.4.2.2 Defining a Class for Loading the Dataset
+        url: https://d2l.ai/chapter_natural-language-processing-applications/natural-language-inference-and-dataset.html#defining-a-class-for-loading-the-dataset
+      - source: d2l
+        locator: Sec. 9.2.3 Vocabulary; 9.2.5 Exploratory Language Statistics
+        url: https://d2l.ai/chapter_recurrent-neural-networks/text-sequence.html#vocabulary
+      - source: d2l
+        locator: Sec. 16.4.4 Exercises, Exercise 2
+        url: https://d2l.ai/chapter_natural-language-processing-applications/natural-language-inference-and-dataset.html#exercises
+    source:
+      id: d2l
+      ref: chapter_natural-language-processing-applications/natural-language-inference-and-dataset#ex2
+      url: https://d2l.ai/chapter_natural-language-processing-applications/natural-language-inference-and-dataset.html#exercises
+    status: draft
+  - id: nlp-tasks-021
+    type: single
+    difficulty: medium
+    tags:
+      - decomposable-attention
+      - natural-language-inference
+      - word-order
+    question: |
+      The decomposable attention model for NLI aligns tokens with $e_{ij} = f(\mathbf{a}_i)^\top f(\mathbf{b}_j)$,
+      compares each token with its soft-aligned counterpart, and then *sums* the comparison vectors
+      over each sentence. Premise: "the dog bit the man". Hypothesis: "the man bit the dog". What goes
+      wrong?
+    options:
+      - text: No step sees word order, so the pair looks like two identical sentences and is likely called entailment
+        correct: true
+      - text: The $m \times n$ attention scores use too much memory for sentences this short
+        why: For short sentences the score matrix is tiny, and $f$ is applied only $m + n$ times [^1].
+      - text: The GloVe vectors of "dog" and "man" are too similar for the model to align them
+        why: Identical words in the two sentences are the easiest ones to align.
+      - text: The model compares the premise with the hypothesis, but it never compares the hypothesis with the premise
+        why: It computes soft alignments in both directions, $\boldsymbol{\beta}_i$ and $\boldsymbol{\alpha}_j$ [^1].
+    explanation: |
+      None of the steps uses token positions: alignment scores depend only on word vectors, the
+      comparison combines each token with its soft-aligned counterpart, and aggregation sums over
+      tokens [^1]. Shuffling the words of either sentence therefore leaves the prediction unchanged,
+      so the model treats both sentences as bags of the same words and cannot tell who bit whom. Models
+      with order information, such as recurrent encoders or fine-tuned BERT with positional embeddings,
+      can [^2].
+    references:
+      - source: d2l
+        locator: Sec. 16.5.1 The Model (Attending, Comparing, Aggregating)
+        url: https://d2l.ai/chapter_natural-language-processing-applications/natural-language-inference-attention.html#the-model
+      - source: d2l
+        locator: Sec. 15.8.4 Input Representation
+        url: https://d2l.ai/chapter_natural-language-processing-pretraining/bert.html#input-representation
+      - source: d2l
+        locator: Sec. 16.5.4 Exercises, Exercise 2
+        url: https://d2l.ai/chapter_natural-language-processing-applications/natural-language-inference-attention.html#exercises
+    source:
+      id: d2l
+      ref: chapter_natural-language-processing-applications/natural-language-inference-attention#ex2
+      url: https://d2l.ai/chapter_natural-language-processing-applications/natural-language-inference-attention.html#exercises
+    status: draft
+  - id: nlp-tasks-022
+    type: short_answer
+    difficulty: easy
+    tags:
+      - bert
+      - truncation
+      - text-pair
+    question: |
+      A BERT fine-tuning dataset truncates each (premise, hypothesis) pair like this:
+
+      ```python
+      def _truncate_pair_of_tokens(self, p_tokens, h_tokens):
+          # Reserve slots for '<CLS>', '<SEP>', and '<SEP>'
+          while len(p_tokens) + len(h_tokens) > self.max_len - 3:
+              if len(p_tokens) > len(h_tokens):
+                  p_tokens.pop()
+              else:
+                  h_tokens.pop()
+      ```
+
+      With `max_len = 32`, a premise of 40 tokens and a hypothesis of 10 tokens, how many premise
+      tokens remain?
+    answer:
+      numeric: 19
+      tolerance: 0
+      hint: a whole number
+      model: The budget is $32 - 3 = 29$; the longer premise loses tokens until $19 + 10 = 29$
+    explanation: |
+      Three slots are reserved for the special tokens, leaving 29, and the loop always removes the
+      last token of the longer sequence; the premise stays longer throughout, so it shrinks from 40 to
+      19 while the hypothesis keeps all 10 tokens [^1]. Truncating in proportion to length would keep
+      about $29 \times 40/50 \approx 23$ premise tokens and only 6 hypothesis tokens: it preserves the
+      ratio but cuts into the short hypothesis, which in NLI carries the claim to be checked. The
+      longest-first rule protects the shorter sequence.
+    references:
+      - source: d2l
+        locator: Sec. 16.7.2 The Dataset for Fine-Tuning BERT
+        url: https://d2l.ai/chapter_natural-language-processing-applications/natural-language-inference-bert.html#the-dataset-for-fine-tuning-bert
+      - source: d2l
+        locator: Sec. 16.7.5 Exercises, Exercise 2
+        url: https://d2l.ai/chapter_natural-language-processing-applications/natural-language-inference-bert.html#exercises
+    source:
+      id: d2l
+      ref: chapter_natural-language-processing-applications/natural-language-inference-bert#ex2
+      url: https://d2l.ai/chapter_natural-language-processing-applications/natural-language-inference-bert.html#exercises
+    status: draft

@@ -284,3 +284,247 @@ questions:
       ref: quiz-23/q1
       url: https://github.com/microsoft/ML-For-Beginners/blob/de2d4e12236445198213a0711855e348e7253cd4/quiz-app/src/assets/translations/en.json
     status: draft
+  - id: classification-011
+    type: short_answer
+    difficulty: medium
+    tags:
+      - naive-bayes
+      - xor
+      - conditional-independence
+    question: |
+      A naive Bayes classifier with binary features is trained (with plain counting) on the XOR data:
+      inputs $(0,0), (0,1), (1,0), (1,1)$ with labels $0, 1, 1, 0$. What posterior
+      $P(y = 1 \mid \mathbf{x} = (1, 1))$ does it output?
+    answer:
+      numeric: 0.5
+      tolerance: 0.001
+      hint: a probability, e.g. 0.25
+      model: $P(y) = \frac{1}{2}$ and every $P(x_i = 1 \mid y) = \frac{1}{2}$, so both classes score $\frac{1}{8}$ and the posterior is $0.5$
+    explanation: |
+      Naive Bayes estimates $P(y)$ and each $P(x_i \mid y)$ by counting [^2]. Each class has two
+      examples, and in each class each feature is 1 exactly once, so $P(y) = \frac{1}{2}$ and
+      $P(x_i = 1 \mid y) = \frac{1}{2}$ for all $i$ and $y$. Every input then gets the same score
+      $\frac{1}{2} \cdot \frac{1}{2} \cdot \frac{1}{2}$ for both classes, so the posterior is $0.5$
+      everywhere and the classifier is at chance level; Laplace smoothing gives
+      $\frac{1+1}{2+2} = \frac{1}{2}$ too. The violated assumption is that the features are
+      conditionally independent given the label [^1]: given $y$, $x_2$ is determined by $x_1$.
+    references:
+      - source: d2l
+        locator: Sec. 22.9.3 The Naive Bayes Classifier (conditional independence given the label)
+        url: https://d2l.ai/chapter_appendix-mathematics-for-deep-learning/naive-bayes.html#the-naive-bayes-classifier
+      - source: d2l
+        locator: Sec. 22.9.4 Training (estimates by counting, pseudo-counts)
+        url: https://d2l.ai/chapter_appendix-mathematics-for-deep-learning/naive-bayes.html#training
+      - source: d2l
+        locator: Sec. 22.9.6 Exercises, Exercise 1
+        url: https://d2l.ai/chapter_appendix-mathematics-for-deep-learning/naive-bayes.html#exercises
+    source:
+      id: d2l
+      ref: chapter_appendix-mathematics-for-deep-learning/naive-bayes#ex1
+      url: https://d2l.ai/chapter_appendix-mathematics-for-deep-learning/naive-bayes.html#exercises
+    status: draft
+  - id: classification-012
+    type: single
+    difficulty: medium
+    tags:
+      - naive-bayes
+      - laplace-smoothing
+      - zero-probability
+    question: |
+      A naive Bayes digit classifier on binarized 784-pixel images is trained without Laplace
+      smoothing. In training, pixel 17 was never on in any image of class 3. A test image has pixel
+      17 on. What score $P(y = 3)\prod_i P(x_i \mid y = 3)$ does class 3 get?
+    options:
+      - text: Zero (log-score $-\infty$), whatever the other 783 pixels say
+        correct: true
+      - text: A slightly lower score, since one unusual pixel is outvoted by the other 783
+        why: The score is a product, so a single factor of 0 makes it 0; nothing can outvote it [^1].
+      - text: Just the prior $P(y = 3)$, because unseen pixel values are skipped
+        why: Nothing is skipped; the estimate $P(x_{17} = 1 \mid y = 3) = 0/n_3 = 0$ enters the product [^1].
+      - text: The same score as with smoothing, since smoothing only changes the priors
+        why: Laplace smoothing changes the pixel estimates to $(n_{iy} + 1)/(n_y + 2)$, exactly to avoid these zeros [^1].
+    explanation: |
+      Without pseudo-counts the estimate is $P(x_{17} = 1 \mid y = 3) = n_{17,3}/n_3 = 0$, and one zero
+      factor makes the whole product 0, a log-score of $-\infty$ [^1][^2]. Class 3 is then ruled out
+      by a single pixel. If a value never occurred with any class, every class scores 0 and the
+      prediction is meaningless. Laplace smoothing, using $n_{iy} + 1$ and $n_y + 2$, keeps every
+      estimate strictly between 0 and 1 [^1].
+    references:
+      - source: d2l
+        locator: Sec. 22.9.4 Training (pseudo-counts $n_{iy} + 1$ and $n_y + 2$; log-space prediction)
+        url: https://d2l.ai/chapter_appendix-mathematics-for-deep-learning/naive-bayes.html#training
+      - source: d2l
+        locator: Sec. 22.9.3 The Naive Bayes Classifier, Eq. (22.9.1)
+        url: https://d2l.ai/chapter_appendix-mathematics-for-deep-learning/naive-bayes.html#the-naive-bayes-classifier
+      - source: d2l
+        locator: Sec. 22.9.6 Exercises, Exercise 2
+        url: https://d2l.ai/chapter_appendix-mathematics-for-deep-learning/naive-bayes.html#exercises
+    source:
+      id: d2l
+      ref: chapter_appendix-mathematics-for-deep-learning/naive-bayes#ex2
+      url: https://d2l.ai/chapter_appendix-mathematics-for-deep-learning/naive-bayes.html#exercises
+    status: draft
+  - id: classification-013
+    type: short_answer
+    difficulty: medium
+    tags:
+      - validation-loss
+      - minibatches
+      - averaging
+    question: |
+      A validation set has $N = 1000$ examples, read in minibatches of 300, so the last minibatch holds
+      only 100. The quick estimate $L^\text{q}$ averages the four minibatch mean losses with equal
+      weight and equals 0.5; the last minibatch's mean loss is $l^\text{b} = 0.9$. What is the exact
+      per-example validation loss $L$?
+    answer:
+      numeric: 0.42
+      tolerance: 0.001
+      hint: a number, 2 decimals
+      model: $L = \dfrac{300\,(4 \times 0.5 - 0.9) + 100 \times 0.9}{1000} = \dfrac{330 + 90}{1000} = 0.42$
+    explanation: |
+      The quick estimate gives each of the $m = 4$ minibatch means the same weight [^1], so the three
+      full minibatches have means adding up to $4 \times 0.5 - 0.9 = 1.1$, a total loss of
+      $300 \times 1.1 = 330$. Adding the last minibatch's total $100 \times 0.9 = 90$ and dividing by
+      1000 gives 0.42. In general $L = (mB\,L^\text{q} - (B - r)\,l^\text{b})/N$ for batch size $B$
+      and last-batch size $r$: the quick estimate overweights the small last batch, here enough to
+      move it from 0.42 to 0.5. d2l accepts this inaccuracy to keep its code simple [^1].
+    references:
+      - source: d2l
+        locator: Sec. 4.3.1 The Classifier Class
+        url: https://d2l.ai/chapter_linear-classification/classification.html#the-classifier-class
+        quote: These average numbers are not exactly correct if the final batch contains fewer examples, but we ignore this minor difference to keep the code simple.
+      - source: d2l
+        locator: Sec. 4.3.4 Exercises, Exercise 1
+        url: https://d2l.ai/chapter_linear-classification/classification.html#exercises
+    source:
+      id: d2l
+      ref: chapter_linear-classification/classification#ex1
+      url: https://d2l.ai/chapter_linear-classification/classification.html#exercises
+    status: draft
+  - id: classification-014
+    type: single
+    difficulty: hard
+    tags:
+      - validation-loss
+      - unbiased-estimator
+      - minibatches
+    question: |
+      The quick validation loss $L^\text{q}$ averages the per-minibatch mean losses with equal weight,
+      although the last minibatch is smaller than the others. Suppose the validation examples are put
+      into minibatches in a uniformly random order. Which statement is correct?
+    options:
+      - text: $L^\text{q}$ equals $L$ exactly as soon as the order of the examples is random
+        why: For any particular order, the last minibatch's examples count more than the others, so the two values differ in general [^1].
+      - text: $L^\text{q}$ is preferable, because it is unbiased and has a lower variance than $L$
+        why: 'For a fixed validation set, $L$ has no randomness at all: it is the very quantity that $L^\text{q}$ estimates.'
+      - text: $L^\text{q}$ is unbiased, but for any one order it differs from the exact $L$
+        correct: true
+      - text: $L^\text{q}$ is biased upward, because the small last minibatch has a noisier mean loss
+        why: A random subset of any size has a mean loss whose expectation is $L$; a small minibatch is noisier, not biased.
+    explanation: |
+      With a random order, each minibatch is a uniformly random subset of the validation set, so its
+      mean loss has expectation $L$ whatever its size, and so does the average of these means. But
+      unbiasedness only concerns the average over orders: in any single pass the examples of the last
+      minibatch get more weight than the others [^1], so $L^\text{q}$ carries extra noise, and with a
+      fixed, unshuffled validation loader, as in d2l, the same error repeats every epoch [^2]. The
+      exact $L$ weights every example by $1/N$ and costs nothing extra to compute, so there is little
+      reason to prefer the estimate.
+    references:
+      - source: d2l
+        locator: Sec. 4.3.1 The Classifier Class
+        url: https://d2l.ai/chapter_linear-classification/classification.html#the-classifier-class
+        quote: These average numbers are not exactly correct if the final batch contains fewer examples, but we ignore this minor difference to keep the code simple.
+      - source: d2l
+        locator: Sec. 3.3.3 Concise Implementation of the Data Loader (shuffle=train)
+        url: https://d2l.ai/chapter_linear-regression/synthetic-regression-data.html#concise-implementation-of-the-data-loader
+      - source: d2l
+        locator: Sec. 4.3.4 Exercises, Exercise 2
+        url: https://d2l.ai/chapter_linear-classification/classification.html#exercises
+    source:
+      id: d2l
+      ref: chapter_linear-classification/classification#ex2
+      url: https://d2l.ai/chapter_linear-classification/classification.html#exercises
+    status: draft
+  - id: classification-015
+    type: single
+    difficulty: medium
+    tags:
+      - decision-theory
+      - expected-loss
+      - cost-sensitive
+    question: |
+      A three-class model gives $p(y \mid x) = (0.5, 0.3, 0.2)$ for classes 1, 2 and 3. Predicting
+      class 1 when the truth is class 3 costs 10; every other mistake costs 1, and a correct prediction
+      costs 0. Which prediction minimizes the expected cost?
+    options:
+      - text: Class 3, with an expected cost of 0.8
+        why: Predicting class 3 costs $0.5 + 0.3 = 0.8$, a little more than class 2's 0.7.
+      - text: Classes 1 and 2 tie, so either one is optimal
+        why: Class 1 costs 2.3 and class 2 costs 0.7; the expensive mistake rules class 1 out.
+      - text: Class 1, because it is the most probable class
+        why: Its expected cost is $0.3 \times 1 + 0.2 \times 10 = 2.3$, the highest of the three.
+      - text: Class 2, with an expected cost of 0.7
+        correct: true
+    explanation: |
+      The expected cost of predicting $y'$ is $\sum_y l(y, y')\,p(y \mid x)$, and the best decision
+      minimizes it [^1]. Predicting class 1 costs $0.3 \times 1 + 0.2 \times 10 = 2.3$, class 2 costs
+      $0.5 + 0.2 = 0.7$, and class 3 costs $0.5 + 0.3 = 0.8$. So the best choice is class 2, not the
+      most probable class: picking the class with the highest probability, as an accuracy-driven
+      classifier does [^2], is optimal only when all mistakes cost the same.
+    references:
+      - title: 'Wikipedia: Bayes estimator'
+        locator: Definition (minimizing the posterior expected loss)
+        url: https://en.wikipedia.org/wiki/Bayes_estimator
+      - source: d2l
+        locator: Sec. 4.3.2 Accuracy
+        url: https://d2l.ai/chapter_linear-classification/classification.html#accuracy
+      - source: d2l
+        locator: Sec. 4.3.4 Exercises, Exercise 3
+        url: https://d2l.ai/chapter_linear-classification/classification.html#exercises
+    source:
+      id: d2l
+      ref: chapter_linear-classification/classification#ex3
+      url: https://d2l.ai/chapter_linear-classification/classification.html#exercises
+    status: draft
+  - id: classification-016
+    type: single
+    difficulty: medium
+    tags:
+      - decision-theory
+      - expected-loss
+      - bayes-optimal
+    question: |
+      In a multiclass problem, $l(y, y')$ is the penalty for predicting $y'$ when the true class is
+      $y$, and the model provides $p(y \mid x)$. Which rule gives the prediction with the smallest
+      expected penalty?
+    options:
+      - text: $\hat y = \operatorname*{arg\,min}_{y'} \sum_y l(y, y')\,p(y \mid x)$
+        correct: true
+      - text: $\hat y = \operatorname*{arg\,max}_{y} p(y \mid x)$
+        why: This is optimal only for the 0–1 loss, where every mistake costs the same.
+      - text: $\hat y = \operatorname*{arg\,min}_{y'} \sum_y l(y, y')$
+        why: It ignores $p(y \mid x)$, so the prediction would not depend on the input at all.
+      - text: $\hat y = \operatorname*{arg\,max}_{y'} \sum_y l(y, y')\,p(y \mid x)$
+        why: That picks the prediction with the largest expected penalty.
+    explanation: |
+      Given $x$, the true class is random with distribution $p(y \mid x)$, so predicting $y'$ has
+      expected penalty $\sum_y l(y, y')\,p(y \mid x)$, and the optimal (Bayes) decision minimizes it
+      over $y'$ [^1]. For the 0–1 loss, with $l(y, y') = 1$ whenever $y \neq y'$, the expected penalty
+      is $1 - p(y' \mid x)$, so the rule reduces to choosing the most probable class, which is how d2l
+      turns probabilities into hard predictions for accuracy [^2]. Unequal costs, such as missing a
+      disease versus raising a false alarm, move the decision away from the most probable class.
+    references:
+      - title: 'Wikipedia: Bayes estimator'
+        locator: Definition (minimizing the posterior expected loss)
+        url: https://en.wikipedia.org/wiki/Bayes_estimator
+      - source: d2l
+        locator: Sec. 4.3.2 Accuracy
+        url: https://d2l.ai/chapter_linear-classification/classification.html#accuracy
+      - source: d2l
+        locator: Sec. 4.3.4 Exercises, Exercise 3
+        url: https://d2l.ai/chapter_linear-classification/classification.html#exercises
+    source:
+      id: d2l
+      ref: chapter_linear-classification/classification#ex3-b
+      url: https://d2l.ai/chapter_linear-classification/classification.html#exercises
+    status: draft

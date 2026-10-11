@@ -46,3 +46,140 @@ questions:
       ref: college_mathematics/50
       url: https://huggingface.co/datasets/edinburgh-dawg/mmlu-redux-2.0/viewer/college_mathematics/test?row=50
     status: draft
+  - id: search-003
+    type: short_answer
+    difficulty: medium
+    tags:
+      - beam-search
+      - exhaustive-search
+      - decoding
+    question: |
+      Beam search keeps the $k$ most probable prefixes at each step. Ignore `<eos>` and the length
+      penalty, so every output has exactly $T' = 3$ tokens from a vocabulary of $|\mathcal{Y}| = 5$.
+      What is the smallest beam size $k$ that *guarantees* beam search returns the most probable
+      sequence, i.e. makes it an exhaustive search?
+    answer:
+      numeric: 25
+      tolerance: 0
+      hint: a whole number
+      model: $k = |\mathcal{Y}|^{T'-1} = 5^2 = 25$
+    explanation: |
+      The best sequence may start with a prefix that ranks low after step 2, so a guarantee requires
+      keeping all $5^2 = 25$ length-2 prefixes. Step 3 then scores all $25 \times 5 = 125$ complete
+      sequences, and the best one is among the 25 kept. With $k = 24$ one prefix is pruned, and it
+      may be the prefix of the best sequence. In general $k = |\mathcal{Y}|^{T'-1}$ turns beam search
+      into exhaustive search with cost $\mathcal{O}(|\mathcal{Y}|^{T'})$, the opposite end of the
+      spectrum from greedy search, $k = 1$ [^1][^2]. With an unbounded beam nothing is pruned at all
+      [^3].
+    references:
+      - source: d2l
+        locator: Sec. 10.8.2 Exhaustive Search
+        url: https://d2l.ai/chapter_recurrent-modern/beam-search.html#exhaustive-search
+      - source: d2l
+        locator: Sec. 10.8.3 Beam Search
+        url: https://d2l.ai/chapter_recurrent-modern/beam-search.html#id1
+      - title: 'Wikipedia: Beam search'
+        url: https://en.wikipedia.org/wiki/Beam_search#Details
+        locator: Details
+      - source: d2l
+        locator: Sec. 10.8.5 Exercises, Exercise 1
+        url: https://d2l.ai/chapter_recurrent-modern/beam-search.html#exercises
+    source:
+      id: d2l
+      ref: chapter_recurrent-modern/beam-search#ex1
+      url: https://d2l.ai/chapter_recurrent-modern/beam-search.html#exercises
+    status: draft
+  - id: search-004
+    type: single
+    difficulty: hard
+    tags:
+      - beam-search
+      - beam-size
+      - decoding
+    question: |
+      You raise the beam size of a translation decoder from $k$ to $2k$ (output vocabulary
+      $\mathcal{Y}$, maximum output length $T'$). What happens?
+    options:
+      - text: Decoding work roughly doubles; the output is usually as likely or likelier, but that is not guaranteed
+        correct: true
+      - text: Decoding work roughly doubles, and the output is guaranteed to be at least as likely as before
+        why: A wider beam can prune the path that a narrower beam kept, so its final output can be less likely (see the example in the explanation).
+      - text: Decoding work grows by a factor of $|\mathcal{Y}|$, because each beam is expanded over the vocabulary
+        why: Each kept prefix was already expanded over the vocabulary with beam size $k$; the cost $\mathcal{O}(k|\mathcal{Y}|T')$ is linear in $k$ [^1].
+      - text: Decoding work stays the same, because only the final ranking of the candidates changes
+        why: Twice as many prefixes are expanded and scored at every step [^1].
+    explanation: |
+      Beam search costs $\mathcal{O}(k|\mathcal{Y}|T')$, so doubling $k$ roughly doubles the work
+      [^1]. Beam search is not optimal [^2], and a wider beam is not even monotonically better.
+      Example with tokens A, B, C: $P(A) = 0.5$, $P(B) = 0.45$; after A the best next token has
+      probability 0.4, and AA is then always followed by A; after B, A and B each have probability
+      0.5, and every continuation of BA or BB has probability at most 0.34. Beam size 1 follows A, AA,
+      AAA with probability 0.2. Beam size 2 keeps BA and BB (0.225 each) instead of AA (0.2) and ends
+      with only 0.0765.
+    references:
+      - source: d2l
+        locator: Sec. 10.8.3 Beam Search
+        url: https://d2l.ai/chapter_recurrent-modern/beam-search.html#id1
+      - title: 'Wikipedia: Beam search'
+        url: https://en.wikipedia.org/wiki/Beam_search#Details
+        locator: Details
+      - source: d2l
+        locator: Sec. 10.8.5 Exercises, Exercise 2
+        url: https://d2l.ai/chapter_recurrent-modern/beam-search.html#exercises
+    source:
+      id: d2l
+      ref: chapter_recurrent-modern/beam-search#ex2
+      url: https://d2l.ai/chapter_recurrent-modern/beam-search.html#exercises
+    status: draft
+  - id: search-005
+    type: single
+    difficulty: easy
+    tags:
+      - greedy-search
+      - decoding
+      - language-model
+    question: |
+      This loop generates text from a trained character-level RNN language model after reading a
+      user-supplied prefix:
+
+      ```python
+      for i in range(len(prefix) + num_preds - 1):
+          X = torch.tensor([[outputs[-1]]])
+          rnn_outputs, state = self.rnn(self.one_hot(X), state)
+          if i < len(prefix) - 1:      # warm-up: feed the prefix
+              outputs.append(vocab[prefix[i + 1]])
+          else:                        # generate the next character
+              Y = self.output_layer(rnn_outputs)
+              outputs.append(int(Y.argmax(dim=2).reshape(1)))
+      ```
+
+      Which decoding strategy does it use?
+    options:
+      - text: Greedy search, which is beam search with a beam size of 1
+        correct: true
+      - text: Beam search with a beam as large as the whole vocabulary
+        why: Only one sequence is ever kept, the one extended by the argmax token.
+      - text: Exhaustive search over every continuation of length `num_preds`
+        why: That would require scoring $|\mathcal{Y}|^{\text{num\_preds}}$ sequences.
+      - text: Random sampling from the predicted distribution at each step
+        why: '`argmax` is deterministic; sampling would draw from the softmax of `Y`.'
+    explanation: |
+      After the warm-up on the prefix, every step appends the single most probable character, which
+      is greedy search [^1][^2]. Greedy search is cheap but does not maximize the probability of the
+      whole sequence; beam search with $k > 1$ trades extra computation for more probable outputs
+      [^2], and sampling, possibly sharpened, gives more varied text [^1].
+    references:
+      - source: d2l
+        locator: Sec. 9.5.5 Decoding
+        url: https://d2l.ai/chapter_recurrent-neural-networks/rnn-scratch.html#decoding
+      - source: d2l
+        locator: Sec. 10.8.1 Greedy Search; 10.8.3 Beam Search
+        url: https://d2l.ai/chapter_recurrent-modern/beam-search.html#greedy-search
+      - source: d2l
+        locator: Sec. 10.8.5 Exercises, Exercise 3
+        url: https://d2l.ai/chapter_recurrent-modern/beam-search.html#exercises
+    source:
+      id: d2l
+      ref: chapter_recurrent-modern/beam-search#ex3
+      url: https://d2l.ai/chapter_recurrent-modern/beam-search.html#exercises
+    status: draft

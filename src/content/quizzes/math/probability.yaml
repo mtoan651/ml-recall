@@ -922,3 +922,600 @@ questions:
       ref: college_mathematics/92
       url: https://huggingface.co/datasets/edinburgh-dawg/mmlu-redux-2.0/viewer/college_mathematics/test?row=92
     status: draft
+  - id: probability-039
+    type: short_answer
+    difficulty: medium
+    tags:
+      - laplace-distribution
+      - variance
+      - standard-deviation
+    question: |
+      The Laplace distribution has density $p(x) = \frac{1}{2}e^{-|x|}$. What is its standard
+      deviation? (Hint: $\int_0^\infty x^2 e^{-x}\,dx = 2$.)
+    answer:
+      numeric: 1.414
+      tolerance: 0.002
+      hint: a number, 3 decimals
+      model: mean 0 by symmetry; $E[X^2] = 2 \cdot \frac{1}{2}\int_0^\infty x^2e^{-x}dx = 2$, so $\sigma = \sqrt{2} \approx 1.414$
+    explanation: |
+      The density is symmetric about 0, so the mean is 0 [^1]. The variance is
+      $E[X^2] - 0^2 = \int x^2 \frac{1}{2}e^{-|x|}dx = 2 \cdot \frac{1}{2}\int_0^\infty x^2 e^{-x}dx = 2$
+      [^1], so the standard deviation is $\sqrt{2} \approx 1.414$. Compared with a Gaussian of the
+      same variance, the Laplace density is sharper at the centre and has heavier tails; as a noise
+      model it leads to the absolute (L1) loss, whose maximum-likelihood location estimate is the
+      median [^2].
+    references:
+      - source: d2l
+        locator: Sec. 22.6.1.7 Means and Variances in the Continuum
+        url: https://d2l.ai/chapter_appendix-mathematics-for-deep-learning/random-variables.html#means-and-variances-in-the-continuum
+      - title: 'Wikipedia: Laplace distribution'
+        locator: Infobox (variance $2b^2$) and Statistical inference (the MLE of the location is the sample median; link to least absolute deviations)
+        url: https://en.wikipedia.org/wiki/Laplace_distribution
+      - source: d2l
+        locator: Sec. 22.6.3 Exercises, Exercise 2
+        url: https://d2l.ai/chapter_appendix-mathematics-for-deep-learning/random-variables.html#exercises
+    source:
+      id: d2l
+      ref: chapter_appendix-mathematics-for-deep-learning/random-variables#ex2
+      url: https://d2l.ai/chapter_appendix-mathematics-for-deep-learning/random-variables.html#exercises
+    status: draft
+  - id: probability-040
+    type: single
+    difficulty: medium
+    tags:
+      - chebyshev-inequality
+      - standard-deviation
+      - tail-bounds
+    question: |
+      Someone says: "My random variable has mean 1 and standard deviation 2, and 25% of my samples
+      were larger than 9." Should you believe them?
+    options:
+      - text: 'No: 9 is 4 standard deviations above the mean, and Chebyshev allows at most $1/16 = 6.25\%$ that far out'
+        correct: true
+      - text: 'Yes: Chebyshev bounds 4-standard-deviation events by $1/4 = 25\%$, so the claim sits exactly at the limit'
+        why: The bound is $1/\alpha^2$, not $1/\alpha$; for $\alpha = 4$ it is $1/16$ [^1].
+      - text: "Yes: Chebyshev's inequality only holds for Gaussians, so any tail is possible for this variable"
+        why: Chebyshev's inequality holds for every distribution with a finite variance [^1].
+      - text: 'No: a Gaussian puts only 0.003% beyond 4 standard deviations, the most any distribution can'
+        why: The Gaussian is not the worst case; other distributions can put up to $1/16$ of their mass that far out [^1].
+    explanation: |
+      Chebyshev's inequality says
+      $P(X \notin [\mu - \alpha\sigma, \mu + \alpha\sigma]) \le 1/\alpha^2$ for any random variable
+      [^1]. Here $9 = 1 + 4 \cdot 2$, so $\alpha = 4$ and at most $1/16 = 6.25\%$ of the mass can lie
+      above 9, or below $-7$. A claimed 25% contradicts the stated mean and standard deviation, so at
+      least one of the numbers is wrong. The standard deviation therefore gives a guaranteed typical
+      range for any distribution [^1].
+    references:
+      - source: d2l
+        locator: Sec. 22.6.1.6 Standard Deviations, Eq. (22.6.20) (Chebyshev's inequality)
+        url: https://d2l.ai/chapter_appendix-mathematics-for-deep-learning/random-variables.html#standard-deviations
+      - source: d2l
+        locator: Sec. 22.6.3 Exercises, Exercise 3
+        url: https://d2l.ai/chapter_appendix-mathematics-for-deep-learning/random-variables.html#exercises
+    source:
+      id: d2l
+      ref: chapter_appendix-mathematics-for-deep-learning/random-variables#ex3
+      url: https://d2l.ai/chapter_appendix-mathematics-for-deep-learning/random-variables.html#exercises
+    status: draft
+  - id: probability-041
+    type: single
+    difficulty: medium
+    tags:
+      - covariance
+      - independence
+      - joint-density
+    question: |
+      $X$ and $Y$ have joint density $p(x, y) = 4xy$ for $x, y \in [0, 1]$ and 0 elsewhere. What is
+      $\textrm{Cov}(X, Y)$?
+    options:
+      - text: 0, because the density factors as $(2x)(2y)$, so $X$ and $Y$ are independent
+        correct: true
+      - text: $4/9$, the value of $E[XY] = \iint xy \cdot 4xy\,dx\,dy$
+        why: $E[XY] = 4/9$ is right, but the covariance subtracts $E[X]E[Y] = (2/3)^2 = 4/9$ [^1].
+      - text: Positive, because the density is largest at $(1, 1)$, where both variables are large
+        why: The density peaks at $(1, 1)$ because each marginal favours large values, not because the variables move together [^2].
+      - text: Nonzero, because independence would need a constant density on the square
+        why: Independence means the joint density is a product of the marginals, $2x \cdot 2y$ here, not that it is constant [^2].
+    explanation: |
+      Covariance is $E[XY] - E[X]E[Y]$ [^1]. Here $E[X] = \iint x \cdot 4xy = 2/3$, likewise
+      $E[Y] = 2/3$, and $E[XY] = 4 \cdot \frac{1}{3} \cdot \frac{1}{3} = 4/9$, so the covariance is
+      $4/9 - 4/9 = 0$. The shortcut: $4xy = (2x)(2y)$ is the product of the two marginal densities, so
+      $X$ and $Y$ are independent, and independent variables have zero covariance [^2]. The converse
+      fails: zero covariance does not imply independence [^1].
+    references:
+      - source: d2l
+        locator: Sec. 22.6.1.10 Covariance (definition; covariance only measures linear relationships)
+        url: https://d2l.ai/chapter_appendix-mathematics-for-deep-learning/random-variables.html#covariance
+      - source: d2l
+        locator: Sec. 22.6.1.8 Joint Density Functions and Sec. 22.6.1.10 Covariance (independent implies zero covariance)
+        url: https://d2l.ai/chapter_appendix-mathematics-for-deep-learning/random-variables.html#joint-density-functions
+      - source: d2l
+        locator: Sec. 22.6.3 Exercises, Exercise 4
+        url: https://d2l.ai/chapter_appendix-mathematics-for-deep-learning/random-variables.html#exercises
+    source:
+      id: d2l
+      ref: chapter_appendix-mathematics-for-deep-learning/random-variables#ex4
+      url: https://d2l.ai/chapter_appendix-mathematics-for-deep-learning/random-variables.html#exercises
+    status: draft
+  - id: probability-042
+    type: short_answer
+    difficulty: easy
+    tags:
+      - binomial-distribution
+      - variance
+      - independence
+    question: |
+      $X$ and $Y$ are independent with $X, Y \sim \textrm{Binomial}(16, 1/2)$. What is the standard
+      deviation of $X - Y$?
+    answer:
+      numeric: 2.828
+      tolerance: 0.002
+      hint: a number, 3 decimals
+      model: $\textrm{Var}(X - Y) = \textrm{Var}(X) + \textrm{Var}(Y) = 4 + 4 = 8$, so $\sigma = \sqrt{8} \approx 2.828$
+    explanation: |
+      A $\textrm{Binomial}(n, p)$ variable has variance $np(1 - p) = 16 \cdot \frac{1}{4} = 4$ [^1].
+      For independent variables
+      $\textrm{Var}(X - Y) = \textrm{Var}(X) + (-1)^2\textrm{Var}(Y) = 8$: variances add even when
+      the variables are subtracted, because $\textrm{Var}(aY) = a^2\textrm{Var}(Y)$ [^2]. The standard
+      deviation is $\sqrt{8} = 2\sqrt{2} \approx 2.828$, not $4 - 4 = 0$.
+    references:
+      - source: d2l
+        locator: Sec. 22.8.4 Binomial (mean $np$, variance $np(1-p)$)
+        url: https://d2l.ai/chapter_appendix-mathematics-for-deep-learning/distributions.html#binomial
+      - source: d2l
+        locator: Sec. 22.6.1.5 Variances (properties of the variance)
+        url: https://d2l.ai/chapter_appendix-mathematics-for-deep-learning/random-variables.html#variances
+      - source: d2l
+        locator: Sec. 22.8.9 Exercises, Exercise 1
+        url: https://d2l.ai/chapter_appendix-mathematics-for-deep-learning/distributions.html#exercises
+    source:
+      id: d2l
+      ref: chapter_appendix-mathematics-for-deep-learning/distributions#ex1
+      url: https://d2l.ai/chapter_appendix-mathematics-for-deep-learning/distributions.html#exercises
+    status: draft
+  - id: probability-043
+    type: single
+    difficulty: medium
+    tags:
+      - poisson-distribution
+      - central-limit-theorem
+    question: |
+      For $X \sim \textrm{Poisson}(\lambda)$, $(X - \lambda)/\sqrt{\lambda}$ is approximately standard
+      normal when $\lambda$ is large. Why does this make sense?
+    options:
+      - text: For integer $\lambda$, $X$ is a sum of $\lambda$ independent $\textrm{Poisson}(1)$ variables, so the central limit theorem applies
+        correct: true
+      - text: The Poisson mass function equals the Gaussian density exactly once $\lambda$ is large enough
+        why: A discrete distribution never equals a continuous density; the standardized distribution only approaches the Gaussian in the limit [^1].
+      - text: Subtracting the mean and dividing by the standard deviation always turns a variable into a standard normal
+        why: Standardizing gives mean 0 and variance 1, but the shape of the distribution stays the same.
+      - text: The Poisson is the limit of binomials, and every binomial is Gaussian when $p$ is small
+        why: In the Poisson limit $np$ stays fixed, which gives a skewed Poisson rather than a Gaussian [^1].
+    explanation: |
+      Independent Poisson variables add: their sum is Poisson with the summed rate [^2]. So for
+      integer $\lambda$, $X$ has the distribution of $\sum_{i=1}^{\lambda} X_i$ with i.i.d.
+      $X_i \sim \textrm{Poisson}(1)$. The mean and the variance of $X$ are both $\lambda$ [^1], so
+      $(X - \lambda)/\sqrt{\lambda}$ is exactly the standardized sum to which the central limit
+      theorem applies [^1]. As $\lambda$ grows, the sum has more and more terms and the standardized
+      distribution approaches $\mathcal{N}(0, 1)$.
+    references:
+      - source: d2l
+        locator: Sec. 22.8.5 Poisson and Sec. 22.8.6 Gaussian (the central limit theorem)
+        url: https://d2l.ai/chapter_appendix-mathematics-for-deep-learning/distributions.html#gaussian
+      - title: 'Wikipedia: Poisson distribution'
+        locator: Properties, Sums of Poisson-distributed random variables
+        url: https://en.wikipedia.org/wiki/Poisson_distribution
+      - source: d2l
+        locator: Sec. 22.8.9 Exercises, Exercise 2
+        url: https://d2l.ai/chapter_appendix-mathematics-for-deep-learning/distributions.html#exercises
+    source:
+      id: d2l
+      ref: chapter_appendix-mathematics-for-deep-learning/distributions#ex2
+      url: https://d2l.ai/chapter_appendix-mathematics-for-deep-learning/distributions.html#exercises
+    status: draft
+  - id: probability-044
+    type: single
+    difficulty: easy
+    tags:
+      - uncertainty
+      - epistemic
+      - aleatoric
+    question: |
+      In which situation can collecting more data of the same kind shrink your uncertainty toward
+      zero?
+    options:
+      - text: Predicting whether the next toss of a fair coin lands heads
+        why: 'However many tosses you watch, the next toss stays a 50/50 event: this aleatoric uncertainty does not shrink [^1].'
+      - text: Predicting the exact roll of a fair die from the rolls so far
+        why: Each roll is independent, so past rolls tell you nothing about the next one beyond the known 1/6 probabilities [^1].
+      - text: Predicting the next card dealt from a well-shuffled deck
+        why: The order of a well-shuffled deck is random by design; data about other decks do not reduce that randomness [^1].
+      - text: Estimating the probability that a bent coin lands heads
+        correct: true
+    explanation: |
+      d2l separates epistemic uncertainty, about a model's parameters, which more data can reduce, from
+      aleatoric uncertainty, which is intrinsic to the problem [^1]. The heads probability of a coin is
+      a parameter: the fraction of heads in $n$ tosses converges to it, with an error that shrinks like
+      $1/\sqrt{n}$ [^2]. Predicting a single outcome, such as the next toss, stays uncertain even once
+      the probability is known exactly.
+    references:
+      - source: d2l
+        locator: Sec. 2.6.7 Discussion
+        url: https://d2l.ai/chapter_preliminaries/probability.html#discussion
+      - source: d2l
+        locator: 'Sec. 2.6.1 A Simple Example: Tossing Coins'
+        url: https://d2l.ai/chapter_preliminaries/probability.html#a-simple-example-tossing-coins
+      - source: d2l
+        locator: Sec. 2.6.8 Exercises, Exercise 1
+        url: https://d2l.ai/chapter_preliminaries/probability.html#exercises
+    source:
+      id: d2l
+      ref: chapter_preliminaries/probability#ex1
+      url: https://d2l.ai/chapter_preliminaries/probability.html#exercises
+    status: draft
+  - id: probability-045
+    type: short_answer
+    difficulty: medium
+    tags:
+      - uncertainty
+      - aleatoric
+      - bayes-error
+    question: |
+      A bent coin lands heads with an unknown probability, which is in truth 0.7. After each toss you
+      predict the next one by the majority outcome so far. As you watch more and more tosses, what
+      does your error rate approach?
+    answer:
+      numeric: 0.3
+      tolerance: 0.005
+      hint: a rate between 0 and 1
+      model: '$0.3 = \min(p, 1 - p)$: you end up always predicting heads and miss every tail.'
+    explanation: |
+      At first, a few tosses can point you to the wrong side, so data help: they reduce the epistemic
+      uncertainty about the heads probability [^1]. Once the data show that heads is more likely, the
+      rule predicts heads every time and is wrong exactly when tails comes up, 30% of the time. That
+      remaining error is aleatoric, intrinsic to each toss, and no amount of data removes it [^1]. The
+      plateau arrives once the estimate is reliably above 0.5; since its error shrinks like
+      $1/\sqrt{n}$ [^2], a gap of 0.2 is resolved after a few dozen tosses.
+    references:
+      - source: d2l
+        locator: Sec. 2.6.7 Discussion
+        url: https://d2l.ai/chapter_preliminaries/probability.html#discussion
+      - source: d2l
+        locator: 'Sec. 2.6.1 A Simple Example: Tossing Coins'
+        url: https://d2l.ai/chapter_preliminaries/probability.html#a-simple-example-tossing-coins
+      - source: d2l
+        locator: Sec. 2.6.8 Exercises, Exercise 2
+        url: https://d2l.ai/chapter_preliminaries/probability.html#exercises
+    source:
+      id: d2l
+      ref: chapter_preliminaries/probability#ex2
+      url: https://d2l.ai/chapter_preliminaries/probability.html#exercises
+    status: draft
+  - id: probability-046
+    type: short_answer
+    difficulty: medium
+    tags:
+      - variance
+      - estimation
+      - law-of-large-numbers
+    question: |
+      You estimate a coin's heads probability by the fraction of heads in $n$ independent tosses. For a
+      fair coin, how many tosses make the standard deviation of this estimate equal to 0.01?
+    answer:
+      numeric: 2500
+      tolerance: 0
+      hint: a number of tosses
+      model: $\mathrm{Var}[\hat p] = 0.25/n$, and $\sqrt{0.25/n} = 0.01$ gives $n = 2500$.
+    explanation: |
+      Each toss is a Bernoulli variable with variance $p(1 - p)$ [^1], and the average of $n$
+      independent copies has that variance divided by $n$, so $\mathrm{Var}[\hat p] = p(1 - p)/n$. The
+      standard deviation therefore shrinks like $1/\sqrt{n}$, the rate d2l quotes for this estimator
+      [^2]: halving the error takes four times as many tosses. Here $0.5/\sqrt{n} = 0.01$ gives
+      $n = 2500$.
+    references:
+      - source: d2l
+        locator: Sec. 22.8.1 Bernoulli
+        url: https://d2l.ai/chapter_appendix-mathematics-for-deep-learning/distributions.html#bernoulli
+      - source: d2l
+        locator: Sec. 2.6.7 Discussion
+        url: https://d2l.ai/chapter_preliminaries/probability.html#discussion
+      - source: d2l
+        locator: Sec. 2.6.8 Exercises, Exercise 3
+        url: https://d2l.ai/chapter_preliminaries/probability.html#exercises
+    source:
+      id: d2l
+      ref: chapter_preliminaries/probability#ex3
+      url: https://d2l.ai/chapter_preliminaries/probability.html#exercises
+    status: draft
+  - id: probability-047
+    type: short_answer
+    difficulty: hard
+    tags:
+      - chebyshev-inequality
+      - concentration
+      - central-limit-theorem
+    question: |
+      With $n = 2500$ tosses of a fair coin, the fraction of heads $\hat p$ has variance $10^{-4}$. What
+      upper bound does Chebyshev's inequality give for $P(|\hat p - 0.5| \ge 0.05)$?
+    answer:
+      numeric: 0.04
+      tolerance: 0.0005
+      hint: a probability
+      model: $P(|\hat p - 0.5| \ge \epsilon) \le \mathrm{Var}[\hat p] / \epsilon^2 = 10^{-4} / 0.0025 = 0.04$
+    explanation: |
+      Chebyshev's inequality bounds the probability of a deviation of at least $\epsilon$ from the mean
+      by $\sigma^2 / \epsilon^2$, for any distribution with finite variance [^1]. Here that is
+      $10^{-4} / 0.05^2 = 0.04$, and since the bound equals $p(1 - p)/(n\epsilon^2)$, it falls like
+      $1/n$. The bound is loose: 0.05 is five standard deviations, and the central limit theorem, which
+      treats $\hat p$ as roughly Gaussian [^2], puts the probability near $6 \times 10^{-7}$. Chebyshev
+      pays for needing no assumption about the shape of the distribution.
+    references:
+      - title: "Wikipedia: Chebyshev's inequality"
+        locator: Probabilistic statement
+        url: https://en.wikipedia.org/wiki/Chebyshev%27s_inequality#Probabilistic_statement
+      - source: d2l
+        locator: 'Sec. 2.6.1 A Simple Example: Tossing Coins'
+        url: https://d2l.ai/chapter_preliminaries/probability.html#a-simple-example-tossing-coins
+      - source: d2l
+        locator: Sec. 2.6.8 Exercises, Exercise 3
+        url: https://d2l.ai/chapter_preliminaries/probability.html#exercises
+    source:
+      id: d2l
+      ref: chapter_preliminaries/probability#ex3-b
+      url: https://d2l.ai/chapter_preliminaries/probability.html#exercises
+    status: draft
+  - id: probability-048
+    type: short_answer
+    difficulty: medium
+    tags:
+      - events
+      - intersection
+      - frechet-bounds
+    question: |
+      Events $\mathcal{A}$ and $\mathcal{B}$ have $P(\mathcal{A}) = 0.7$ and $P(\mathcal{B}) = 0.5$,
+      and nothing else is known about them. What is the smallest possible value of
+      $P(\mathcal{A} \cap \mathcal{B})$?
+    answer:
+      numeric: 0.2
+      tolerance: 0.001
+      hint: a probability
+      model: $P(\mathcal{A} \cap \mathcal{B}) \ge P(\mathcal{A}) + P(\mathcal{B}) - 1 = 0.2$
+    explanation: |
+      From the axioms, $P(\mathcal{A} \cup \mathcal{B}) = P(\mathcal{A}) + P(\mathcal{B}) - P(\mathcal{A} \cap \mathcal{B})$,
+      and no event has probability above 1 [^1]. So the overlap is at least $0.7 + 0.5 - 1 = 0.2$,
+      reached when the two events together cover the whole sample space. The largest possible overlap
+      is $\min(0.7, 0.5) = 0.5$, when $\mathcal{B} \subseteq \mathcal{A}$. Together these are the
+      Fréchet bounds $\max(0, a + b - 1) \le P(\mathcal{A} \cap \mathcal{B}) \le \min(a, b)$ [^2].
+    references:
+      - source: d2l
+        locator: Sec. 2.6.2 A More Formal Treatment
+        url: https://d2l.ai/chapter_preliminaries/probability.html#a-more-formal-treatment
+      - title: 'Wikipedia: Fréchet inequalities'
+        locator: Introduction (logical conjunction and disjunction)
+        url: https://en.wikipedia.org/wiki/Fr%C3%A9chet_inequalities
+      - source: d2l
+        locator: Sec. 2.6.8 Exercises, Exercise 5
+        url: https://d2l.ai/chapter_preliminaries/probability.html#exercises
+    source:
+      id: d2l
+      ref: chapter_preliminaries/probability#ex5
+      url: https://d2l.ai/chapter_preliminaries/probability.html#exercises
+    status: draft
+  - id: probability-049
+    type: short_answer
+    difficulty: medium
+    tags:
+      - events
+      - union
+      - frechet-bounds
+    question: |
+      Two events have probabilities 0.6 and 0.55. How large can the probability be that at least one
+      of them happens?
+    answer:
+      numeric: 1
+      tolerance: 0.001
+      hint: a probability
+      model: $\min(1, 0.6 + 0.55) = 1$
+    explanation: |
+      The union bound gives $P(\mathcal{A} \cup \mathcal{B}) \le P(\mathcal{A}) + P(\mathcal{B}) = 1.15$,
+      but no probability exceeds 1 [^1], so the maximum is $\min(1, 1.15) = 1$. It is reached when the
+      events overlap in exactly $0.15$ and together cover the whole sample space. The smallest possible
+      value is $\max(0.6, 0.55) = 0.6$, when one event contains the other; these are the Fréchet bounds
+      for a disjunction [^2].
+    references:
+      - source: d2l
+        locator: Sec. 2.6.2 A More Formal Treatment
+        url: https://d2l.ai/chapter_preliminaries/probability.html#a-more-formal-treatment
+      - title: 'Wikipedia: Fréchet inequalities'
+        locator: Introduction (logical conjunction and disjunction)
+        url: https://en.wikipedia.org/wiki/Fr%C3%A9chet_inequalities
+      - source: d2l
+        locator: Sec. 2.6.8 Exercises, Exercise 5
+        url: https://d2l.ai/chapter_preliminaries/probability.html#exercises
+    source:
+      id: d2l
+      ref: chapter_preliminaries/probability#ex5-b
+      url: https://d2l.ai/chapter_preliminaries/probability.html#exercises
+    status: draft
+  - id: probability-050
+    type: short_answer
+    difficulty: hard
+    tags:
+      - bayes-theorem
+      - medical-test
+      - base-rate
+    question: |
+      A disease has prevalence $P(H{=}1) = 0.0015$. A test has false positive rate
+      $P(D{=}1 \mid H{=}0) = 0.1$ and false negative rate $P(D{=}0 \mid H{=}1) = 0.01$. The test comes
+      back positive. What is $P(H{=}1 \mid D{=}1)$? Round to 4 decimals.
+    answer:
+      numeric: 0.0147
+      tolerance: 0.0002
+      hint: a probability, 4 decimals
+      model: $\dfrac{0.99 \times 0.0015}{0.99 \times 0.0015 + 0.1 \times 0.9985} = \dfrac{0.001485}{0.101335} \approx 0.0147$
+    explanation: |
+      Bayes' theorem gives $P(H{=}1 \mid D{=}1) = P(D{=}1 \mid H{=}1)\,P(H{=}1) / P(D{=}1)$, where the
+      evidence comes from marginalizing over $H$:
+      $P(D{=}1) = 0.99 \times 0.0015 + 0.1 \times 0.9985 \approx 0.1013$ [^1]. Almost all positives
+      are false alarms from the large healthy group, so the posterior is only about 1.5%, ten times the
+      prior but still small. d2l's own HIV example, with a 1% false positive rate, reaches only 13% for
+      the same reason [^1].
+    references:
+      - source: d2l
+        locator: Sec. 2.6.5 An Example (HIV test)
+        url: https://d2l.ai/chapter_preliminaries/probability.html#an-example
+      - source: d2l
+        locator: Sec. 2.6.8 Exercises, Exercise 7
+        url: https://d2l.ai/chapter_preliminaries/probability.html#exercises
+    source:
+      id: d2l
+      ref: chapter_preliminaries/probability#ex7
+      url: https://d2l.ai/chapter_preliminaries/probability.html#exercises
+    status: draft
+  - id: probability-051
+    type: short_answer
+    difficulty: hard
+    tags:
+      - bayes-theorem
+      - medical-test
+      - conditional-independence
+    question: |
+      Prevalence is $P(H{=}1) = 0.0015$. Two tests each have false negative rate 0.01 and false
+      positive rate 0.1. For a sick patient the two results are independent; for a healthy patient they
+      are coupled, with $P(D_1{=}1, D_2{=}1 \mid H{=}0) = 0.02$. Both tests come back positive. What is
+      $P(H{=}1 \mid D_1{=}1, D_2{=}1)$? Round to 4 decimals.
+    answer:
+      numeric: 0.0686
+      tolerance: 0.0003
+      hint: a probability, 4 decimals
+      model: $\dfrac{0.99^2 \times 0.0015}{0.99^2 \times 0.0015 + 0.02 \times 0.9985} = \dfrac{0.00147}{0.02144} \approx 0.0686$
+    explanation: |
+      For the sick, conditional independence gives $P(D_1{=}1, D_2{=}1 \mid H{=}1) = 0.99^2 = 0.9801$;
+      for the healthy, the joint is given as 0.02, twice the $0.1^2 = 0.01$ that independent tests
+      would give [^1]. (The rest of the healthy table follows: 0.08 for each single positive and 0.82
+      for two negatives.) Bayes' theorem then gives $0.00147 / (0.00147 + 0.01997) \approx 0.0686$
+      [^1]. Had the tests also been independent for healthy patients, the posterior would be about
+      0.128: correlated errors make a second test much less informative, the extreme case being the
+      same test run twice [^1].
+    references:
+      - source: d2l
+        locator: Sec. 2.6.5 An Example (HIV test)
+        url: https://d2l.ai/chapter_preliminaries/probability.html#an-example
+      - source: d2l
+        locator: Sec. 2.6.8 Exercises, Exercise 7
+        url: https://d2l.ai/chapter_preliminaries/probability.html#exercises
+    source:
+      id: d2l
+      ref: chapter_preliminaries/probability#ex7-b
+      url: https://d2l.ai/chapter_preliminaries/probability.html#exercises
+    status: draft
+  - id: probability-052
+    type: short_answer
+    difficulty: medium
+    tags:
+      - covariance
+      - variance
+      - portfolio
+    question: |
+      A portfolio puts weights $\boldsymbol{\alpha} = (0.6, 0.4)$ on two stocks whose returns have
+      covariance matrix
+      $\boldsymbol{\Sigma} = \begin{bmatrix} 0.04 & 0.01 \\ 0.01 & 0.09 \end{bmatrix}$. What is the
+      variance of the portfolio's return?
+    answer:
+      numeric: 0.0336
+      tolerance: 0.0001
+      hint: a number, 4 decimals
+      model: $\boldsymbol{\alpha}^\top\boldsymbol{\Sigma}\boldsymbol{\alpha} = 0.36 \times 0.04 + 2 \times 0.24 \times 0.01 + 0.16 \times 0.09 = 0.0336$
+    explanation: |
+      The portfolio's return is the linear function $\boldsymbol{\alpha}^\top \mathbf{s}$ of the stock
+      returns, so its mean is $\boldsymbol{\alpha}^\top \boldsymbol{\mu}$ and its variance is
+      $\boldsymbol{\alpha}^\top \boldsymbol{\Sigma} \boldsymbol{\alpha}$ [^1]. Expanding gives
+      $0.0144 + 0.0048 + 0.0144 = 0.0336$, a standard deviation of about 0.183. That is below the
+      weighted average of the two standard deviations ($0.6 \times 0.2 + 0.4 \times 0.3 = 0.24$)
+      because the returns are far from perfectly correlated, the diversification effect behind
+      Markowitz's mean–variance portfolio model [^2].
+    references:
+      - source: d2l
+        locator: Sec. 2.6.6 Expectations (covariance matrix)
+        url: https://d2l.ai/chapter_preliminaries/probability.html#expectations
+      - title: 'Wikipedia: Modern portfolio theory'
+        locator: Mathematical model
+        url: https://en.wikipedia.org/wiki/Modern_portfolio_theory#Mathematical_model
+      - source: d2l
+        locator: Sec. 2.6.8 Exercises, Exercise 8
+        url: https://d2l.ai/chapter_preliminaries/probability.html#exercises
+    source:
+      id: d2l
+      ref: chapter_preliminaries/probability#ex8
+      url: https://d2l.ai/chapter_preliminaries/probability.html#exercises
+    status: draft
+  - id: probability-053
+    type: single
+    difficulty: easy
+    tags:
+      - inverse-transform-sampling
+      - exponential-distribution
+      - sampling
+    question: |
+      You want samples from the exponential distribution $p(x; \lambda) = \lambda e^{-\lambda x}$,
+      $x \ge 0$, using inverse transform sampling with $u \sim \mathcal{U}(0, 1)$. Which transformation
+      gives a correctly distributed sample?
+    options:
+      - text: $x = -\log(1 - u)/\lambda$
+        correct: true
+      - text: $x = -\lambda \log(1 - u)$
+        why: Solving $u = 1 - e^{-\lambda x}$ for $x$ divides by $\lambda$; this version gives mean $\lambda$ instead of $1/\lambda$ [^1].
+      - text: $x = 1 - e^{-\lambda u}$
+        why: This is the CDF evaluated at $u$, not its inverse; the result even stays below 1 [^1].
+      - text: $x = \log(u)/\lambda$
+        why: $\log u < 0$ for $u \in (0, 1)$, so this gives negative values; the minus sign is missing [^1].
+    explanation: |
+      The CDF is $F(x) = 1 - e^{-\lambda x}$, and solving $u = F(x)$ gives $F^{-1}(u) = -\log(1 -
+      u)/\lambda$ [^1]. Inverse transform sampling works because $F_x(x)$ is uniform on $[0, 1]$ for a
+      continuous random variable, so $F_x^{-1}(u)$ has CDF $F_x$ [^1][^2]. Since $1 - u$ is also
+      uniform, $-\log(u)/\lambda$ works equally well.
+    references:
+      - source: gutmann-pen-paper
+        locator: Ch. 9 Sampling and Monte Carlo Integration, Ex. 9.3 Inverse transform sampling and Ex. 9.4 Sampling from the exponential distribution
+        url: https://arxiv.org/abs/2206.13446
+      - title: 'Wikipedia: Inverse transform sampling'
+        url: https://en.wikipedia.org/wiki/Inverse_transform_sampling
+        locator: Examples (exponential distribution)
+    source:
+      id: gutmann-pen-paper
+      ref: sampling-and-monte-carlo-integration#sampling-from-the-exponential-distribution
+      url: https://github.com/michaelgutmann/ml-pen-and-paper-exercises/blob/571295dfe49b37d16884b2c5397e62e154ce5f88/topics/sampling-and-monte-carlo-integration.tex
+    status: draft
+  - id: probability-054
+    type: short_answer
+    difficulty: medium
+    tags:
+      - inverse-transform-sampling
+      - laplace-distribution
+      - cdf
+    question: |
+      A Laplace random variable with mean 0 and variance 1 has density $p(x) = \frac{1}{\sqrt 2}
+      e^{-\sqrt 2 |x|}$. You generate a sample by inverse transform sampling from $u = 0.9$. Which
+      value $x = F^{-1}(0.9)$ do you get?
+    answer:
+      numeric: 1.138
+      tolerance: 0.002
+      hint: a number, 3 decimals
+      model: For $u > 1/2$, $F(x) = 1 - \tfrac{1}{2}e^{-\sqrt2 x}$, so $x = -\tfrac{1}{\sqrt 2}\log(2 - 2u) = -\tfrac{1}{\sqrt2}\log 0.2 \approx 1.138$
+    explanation: |
+      Integrating the density gives $F(x) = \frac{1}{2}e^{\sqrt2 x}$ for $x \le 0$ and $F(x) = 1 -
+      \frac{1}{2}e^{-\sqrt2 x}$ for $x > 0$ [^1]. Since $u = 0.9 > 1/2$, the sample lies on the
+      positive side: $x = -\frac{1}{\sqrt2}\log(2 - 2u) = -\frac{1}{\sqrt 2}\log(0.2) \approx 1.138$
+      [^1][^2]. Both branches combine into $F^{-1}(u) = -\mathrm{sign}(u - \tfrac12)\frac{1}{\sqrt2}\log(1 - 2|u - \tfrac12|)$.
+    references:
+      - source: gutmann-pen-paper
+        locator: Ch. 9 Sampling and Monte Carlo Integration, Ex. 9.5 Sampling from a Laplace distribution
+        url: https://arxiv.org/abs/2206.13446
+      - title: 'Wikipedia: Laplace distribution'
+        url: https://en.wikipedia.org/wiki/Laplace_distribution
+        locator: Random variate generation
+    source:
+      id: gutmann-pen-paper
+      ref: sampling-and-monte-carlo-integration#sampling-from-a-laplace-distribution
+      url: https://github.com/michaelgutmann/ml-pen-and-paper-exercises/blob/571295dfe49b37d16884b2c5397e62e154ce5f88/topics/sampling-and-monte-carlo-integration.tex
+    status: draft

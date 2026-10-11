@@ -313,3 +313,198 @@ questions:
       ref: quiz-44/q1
       url: https://github.com/microsoft/ML-For-Beginners/blob/de2d4e12236445198213a0711855e348e7253cd4/quiz-app/src/assets/translations/en.json
     status: draft
+  - id: time-series-012
+    type: short_answer
+    difficulty: medium
+    tags:
+      - autoregressive-model
+      - markov-model
+      - sine
+    question: |
+      A sequence follows $x_t = \sin(0.01\,t)$ exactly, with no noise. You want a *linear*
+      autoregressive model $\hat{x}_t = \sum_{i=1}^{\tau} w_i\, x_{t-i}$ that predicts every $x_t$
+      without error. What is the smallest window length $\tau$ that makes this possible?
+    answer:
+      numeric: 2
+      tolerance: 0
+      hint: a whole number
+      model: $\tau = 2$, because $x_t = 2\cos(0.01)\,x_{t-1} - x_{t-2}$
+    explanation: |
+      The identity $\sin(a + h) + \sin(a - h) = 2\sin a \cos h$ with $a = 0.01(t-1)$ and $h = 0.01$
+      gives $x_t = 2\cos(0.01)\,x_{t-1} - x_{t-2}$, an exact linear recurrence with coefficients
+      $\approx 1.9999$ and $-1$. One past value is not enough: the same value of $\sin$ occurs on the
+      rising and on the falling part of the wave, and the next value differs between the two. This
+      is the discrete form of the second-order equation $x'' = -\omega^2 x$ from the exercise hint,
+      which needs two initial values. The d2l experiment uses $\tau = 4$ only because its sine data
+      carry added noise [^1][^2].
+    references:
+      - source: d2l
+        locator: Sec. 9.1.3 Training
+        url: https://d2l.ai/chapter_recurrent-neural-networks/sequence.html#training
+      - source: d2l
+        locator: Sec. 9.1.6 Exercises, Exercise 1
+        url: https://d2l.ai/chapter_recurrent-neural-networks/sequence.html#exercises
+    source:
+      id: d2l
+      ref: chapter_recurrent-neural-networks/sequence#ex1
+      url: https://d2l.ai/chapter_recurrent-neural-networks/sequence.html#exercises
+    status: draft
+  - id: time-series-013
+    type: single
+    difficulty: easy
+    tags:
+      - stationarity
+      - autoregressive-model
+      - extrapolation
+    question: |
+      An investor ranks securities by their past returns and buys the ones that did best, expecting
+      the trend to continue. Seen as a sequence-modeling problem, what is the main flaw?
+    options:
+      - text: It assumes stationary dynamics, but the process behind returns can change, so the past need not predict the future
+        correct: true
+      - text: It ignores the noise in daily prices, which averaging the returns over a much longer history would remove completely
+        why: Even noise-free past data would not carry over if the dynamics that generate returns change.
+      - text: It looks too far back; returns obey a first-order Markov condition, so only yesterday matters
+        why: Nothing guarantees a Markov condition for returns, and a shorter window does not fix a change in the dynamics.
+      - text: It predicts only one step ahead, and one-step-ahead predictions are always unreliable
+        why: One-step-ahead predictions are the easy case; the d2l experiment shows them working well while errors grow for $k$-step predictions [^2].
+    explanation: |
+      An autoregressive forecast assumes that, although the values $x_t$ change, the dynamics that
+      generate each observation from the previous ones do not; statisticians call such dynamics
+      stationary [^1]. Markets change regime as information and the behavior of other investors
+      change, so a rule fitted to past returns is an extrapolation beyond the data it was fitted on,
+      and d2l stresses how much harder extrapolation is than interpolation [^2].
+    references:
+      - source: d2l
+        locator: Sec. 9.1.1 Autoregressive Models
+        url: https://d2l.ai/chapter_recurrent-neural-networks/sequence.html#autoregressive-models
+      - source: d2l
+        locator: Sec. 9.1.4 Prediction and 9.1.5 Summary
+        url: https://d2l.ai/chapter_recurrent-neural-networks/sequence.html#summary
+      - source: d2l
+        locator: Sec. 9.1.6 Exercises, Exercise 2
+        url: https://d2l.ai/chapter_recurrent-neural-networks/sequence.html#exercises
+    source:
+      id: d2l
+      ref: chapter_recurrent-neural-networks/sequence#ex2
+      url: https://d2l.ai/chapter_recurrent-neural-networks/sequence.html#exercises
+    status: draft
+  - id: time-series-014
+    type: multiple
+    difficulty: medium
+    tags:
+      - time-series
+      - data-splitting
+      - extrapolation
+      - tree-based-models
+    question: Which statements about machine learning on time series are true? Select all that apply.
+    options:
+      - text: We need to be careful how we split time series data into training and test sets
+        correct: true
+      - text: Cross-validation folds for time series can be drawn at random, as in other machine learning tasks
+        why: Random folds would train on the future to predict the past; time-ordered splits are needed instead [^2].
+      - text: A forecast can only use past values of the series itself, not other variables
+        why: Forecasting models can use other features, such as date and time parts or related variables, together with lagged values of the target [^3].
+      - text: A random forest trained only on a timestamp (seconds since 1970) predicts a constant for all test times after the training period, because trees cannot extrapolate
+        correct: true
+    explanation: |
+      If time series data is split at random, the model trains on data from after the test period,
+      which is not allowed when forecasting; the split, and cross-validation, must respect time [^1][^2].
+      Useful features include parts of the date and time and lagged values of the target or of
+      other variables [^3]. A tree predicts with the leaf of the closest training region, so for
+      timestamps beyond the training range a random forest returns the same value, a flat
+      line [^4].
+    references:
+      - source: ubc-cpsc330
+        locator: 'Lecture 19: Time series — Train/test split for temporal data'
+        url: https://github.com/UBC-CS/cpsc330-2025W1/blob/a89d6131a0e2ae5f7ab36f207a3809a5b7137aef/lectures/notes/19_time-series.ipynb
+      - source: ubc-cpsc330
+        locator: 'Lecture 19: Time series — Lag-based features, Cross-validation'
+        url: https://github.com/UBC-CS/cpsc330-2025W1/blob/a89d6131a0e2ae5f7ab36f207a3809a5b7137aef/lectures/notes/19_time-series.ipynb
+      - source: ubc-cpsc330
+        locator: 'Lecture 19: Time series — Extracting date and time information; Lag-based features'
+        url: https://github.com/UBC-CS/cpsc330-2025W1/blob/a89d6131a0e2ae5f7ab36f207a3809a5b7137aef/lectures/notes/19_time-series.ipynb
+      - source: ubc-cpsc330
+        locator: 'Lecture 19: Time series — POSIX time feature'
+        url: https://github.com/UBC-CS/cpsc330-2025W1/blob/a89d6131a0e2ae5f7ab36f207a3809a5b7137aef/lectures/notes/19_time-series.ipynb
+    source:
+      id: ubc-cpsc330
+      ref: lectures/notes/20_survival-analysis.ipynb#ex20.1
+      url: https://github.com/UBC-CS/cpsc330-2025W1/blob/a89d6131a0e2ae5f7ab36f207a3809a5b7137aef/lectures/notes/20_survival-analysis.ipynb
+    status: draft
+  - id: time-series-015
+    type: short_answer
+    difficulty: hard
+    tags:
+      - kalman-filter
+      - state-space-models
+      - filtering
+    question: |
+      A one-dimensional linear-Gaussian state-space model has $h_s = A h_{s-1} + B \xi_s$ and $v_s =
+      C h_s + D \eta_s$ with independent standard normal $\xi_s, \eta_s$. The filtering
+      distribution at time $s - 1$ is $p(h_{s-1} \mid v_{1:s-1}) = \mathcal{N}(0, 1)$. With $A = 1$,
+      $B^2 = 1$, $C = 1$, $D^2 = 2$ you observe $v_s = 3$. What is the mean $\mu_s$ of $p(h_s \mid
+      v_{1:s})$?
+    answer:
+      numeric: 1.5
+      tolerance: 0.01
+      hint: a number, 1 decimal
+      model: $P_s = A^2\sigma_{s-1}^2 + B^2 = 2$, $K_s = P_s C / (C^2 P_s + D^2) = 0.5$, $\mu_s = A\mu_{s-1} + K_s (v_s - C A \mu_{s-1}) = 1.5$
+    explanation: |
+      The prediction step propagates the previous posterior through the transition: mean $A\mu_{s-1}
+      = 0$, variance $P_s = A^2 \sigma_{s-1}^2 + B^2 = 2$ [^1]. The update multiplies by the
+      Gaussian likelihood of $v_s$, which gives the Kalman gain $K_s = P_s C / (C^2 P_s + D^2) = 2/4
+      = 0.5$ and $\mu_s = A\mu_{s-1} + K_s (v_s - C A \mu_{s-1}) = 0 + 0.5 \cdot 3 = 1.5$, with
+      variance $(1 - K_s C) P_s = 1$ [^1][^2]. The gain weighs the prediction error by how
+      uncertain the prediction is relative to the observation noise.
+    references:
+      - source: gutmann-pen-paper
+        locator: Ch. 7 Inference for Hidden Markov Models, Ex. 7.6 (d)–(f) Kalman filtering
+        url: https://arxiv.org/abs/2206.13446
+      - title: 'Wikipedia: Kalman filter'
+        url: https://en.wikipedia.org/wiki/Kalman_filter
+        locator: Details (Predict, Update)
+    source:
+      id: gutmann-pen-paper
+      ref: inference-for-hidden-markov-models#kalman-f
+      url: https://github.com/michaelgutmann/ml-pen-and-paper-exercises/blob/571295dfe49b37d16884b2c5397e62e154ce5f88/topics/inference-for-hidden-markov-models.tex
+    status: draft
+  - id: time-series-016
+    type: single
+    difficulty: medium
+    tags:
+      - kalman-filter
+      - kalman-gain
+      - observation-noise
+    question: |
+      In a one-dimensional Kalman filter the update is $\mu_s = A\mu_{s-1} + K_s(v_s - C A
+      \mu_{s-1})$, $\sigma_s^2 = (1 - K_s C) P_s$, with gain $K_s = P_s C / (C^2 P_s + D^2)$, where
+      $D^2$ is the observation-noise variance and $P_s$ the predicted variance. What happens as $D^2
+      \to 0$?
+    options:
+      - text: $\mu_s \to A\mu_{s-1}$ and $\sigma_s^2 \to P_s$
+        why: That is the limit of very *noisy* observations ($D^2 \to \infty$, $K_s \to 0$), where the update ignores $v_s$ [^1].
+      - text: $K_s \to 0$, so the filter keeps its prediction
+        why: With $D^2 = 0$ the gain becomes $P_s C / (C^2 P_s) = 1/C$, its largest possible value [^1].
+      - text: $\mu_s \to v_s / C$ and $\sigma_s^2 \to 0$
+        correct: true
+      - text: $\mu_s \to v_s / C$ but $\sigma_s^2$ stays at $P_s$
+        why: $\sigma_s^2 = (1 - K_s C) P_s$ and $K_s C \to 1$, so the posterior variance goes to zero [^1].
+    explanation: |
+      $v_s - CA\mu_{s-1}$ is the error of predicting the observation from the past, and the gain
+      decides how much of it moves the estimate [^1]. As $D^2 \to 0$, $K_s \to 1/C$, so $\mu_s \to
+      A\mu_{s-1} + (v_s - CA\mu_{s-1})/C = v_s / C$: the state is obtained by inverting the noiseless
+      observation equation, and $\sigma_s^2 = (1 - K_s C)P_s \to 0$ [^1][^2]. With noisy observations
+      the filter instead trusts its prediction more.
+    references:
+      - source: gutmann-pen-paper
+        locator: Ch. 7 Inference for Hidden Markov Models, Ex. 7.6 (g) Kalman filtering
+        url: https://arxiv.org/abs/2206.13446
+      - title: 'Wikipedia: Kalman filter'
+        url: https://en.wikipedia.org/wiki/Kalman_filter
+        locator: Details (Update) and Kalman gain derivation
+    source:
+      id: gutmann-pen-paper
+      ref: inference-for-hidden-markov-models#kalman-g
+      url: https://github.com/michaelgutmann/ml-pen-and-paper-exercises/blob/571295dfe49b37d16884b2c5397e62e154ce5f88/topics/inference-for-hidden-markov-models.tex
+    status: draft

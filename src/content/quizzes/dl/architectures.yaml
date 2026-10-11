@@ -212,3 +212,467 @@ questions:
       ref: machine_learning/83
       url: https://huggingface.co/datasets/edinburgh-dawg/mmlu-redux-2.0/viewer/machine_learning/test?row=83
     status: draft
+  - id: architectures-007
+    type: single
+    difficulty: medium
+    tags:
+      - alexnet
+      - parameter-count
+      - flops
+    question: |
+      d2l's AlexNet takes a $1 \times 224 \times 224$ input and has five convolutional layers followed by
+      fully connected layers of sizes $6400 \to 4096 \to 4096 \to 10$. It has about 46.8 million
+      parameters and needs about 0.94 billion multiply–adds per image. How are these shared between the
+      convolutional and the fully connected layers?
+    options:
+      - text: The FC layers hold about 92% of the parameters; the conv layers do about 95% of the multiply–adds
+        correct: true
+      - text: The conv layers hold about 92% of the parameters; the FC layers do about 95% of the multiply–adds
+        why: The conv layers have only about 3.7 million parameters, but each kernel weight is reused at every output position, so they do most of the arithmetic.
+      - text: The FC layers dominate both, with about 92% of the parameters and 95% of the multiply–adds
+        why: Each FC weight is used exactly once per image, so the 43 million FC weights cost only about 43 million multiply–adds out of 0.94 billion.
+      - text: The conv layers dominate both, with about 92% of the parameters and 95% of the multiply–adds
+        why: The two hidden FC layers alone need $6400 \times 4096 + 4096 \times 4096 \approx 43$ million weights, most of the 46.8 million [^1].
+    explanation: |
+      The last two hidden layers need matrices of size $6400 \times 4096$ and $4096 \times 4096$,
+      about 164 MB of memory [^1]; all FC layers together hold about 43.0 million of the 46.8 million
+      parameters. A fully connected weight is used once per image, whereas a kernel weight is reused at
+      every position of the feature map, so the conv layers, with only about 3.7 million parameters, do
+      about 895 million of the 938 million multiply–adds. Memory is dominated by the FC layers and
+      compute by the convolutions, which is why later designs such as NiN dropped the large FC
+      layers [^2]. The counts come from d2l's PyTorch AlexNet with 10 output classes.
+    references:
+      - source: d2l
+        locator: Sec. 8.1.4 Discussion
+        url: https://d2l.ai/chapter_convolutional-modern/alexnet.html#discussion
+      - source: d2l
+        locator: Sec. 8.3 Network in Network (introduction)
+        url: https://d2l.ai/chapter_convolutional-modern/nin.html
+      - source: d2l
+        locator: Sec. 8.1.5 Exercises, Exercise 1
+        url: https://d2l.ai/chapter_convolutional-modern/alexnet.html#exercises
+    source:
+      id: d2l
+      ref: chapter_convolutional-modern/alexnet#ex1
+      url: https://d2l.ai/chapter_convolutional-modern/alexnet.html#exercises
+    status: draft
+  - id: architectures-008
+    type: short_answer
+    difficulty: medium
+    tags:
+      - vgg
+      - parameter-count
+      - fully-connected
+    question: |
+      d2l's VGG-11 turns a $1 \times 224 \times 224$ image into a $512 \times 7 \times 7$ feature map,
+      flattens it, and feeds it to a fully connected layer with 4096 outputs. How many parameters
+      (weights and biases) does this first fully connected layer have?
+    answer:
+      numeric: 102764544
+      tolerance: 0
+      hint: a whole number
+      model: $512 \cdot 7 \cdot 7 \cdot 4096 + 4096 = 102\,764\,544$
+    explanation: |
+      The flattened feature map has $512 \cdot 7 \cdot 7 = 25\,088$ values, so the layer needs
+      $25\,088 \times 4096$ weights plus 4096 biases, about 102.8 million parameters [^1]. In
+      single precision that is about 411 MB, the "monstrous matrix" of almost 400 MB that d2l mentions [^2].
+      The whole d2l VGG-11 has about 128.8 million parameters, so this one layer holds about 80% of them,
+      while the convolutions do about 98% of the 7.5 billion multiply–adds. Replacing the large FC layers
+      by global average pooling, as NiN does, removes most of this cost [^2].
+    references:
+      - source: d2l
+        locator: Sec. 8.2.2 VGG Network
+        url: https://d2l.ai/chapter_convolutional-modern/vgg.html#vgg-network
+      - source: d2l
+        locator: Sec. 8.3 Network in Network (introduction)
+        url: https://d2l.ai/chapter_convolutional-modern/nin.html
+      - source: d2l
+        locator: Sec. 8.2.5 Exercises, Exercise 1
+        url: https://d2l.ai/chapter_convolutional-modern/vgg.html#exercises
+    source:
+      id: d2l
+      ref: chapter_convolutional-modern/vgg#ex1
+      url: https://d2l.ai/chapter_convolutional-modern/vgg.html#exercises
+    status: draft
+  - id: architectures-009
+    type: single
+    difficulty: easy
+    tags:
+      - vgg
+      - vgg-blocks
+    question: |
+      VGG-11 is built with `arch = ((1, 64), (1, 128), (2, 256), (2, 512), (2, 512))`, where each pair
+      gives the number of $3 \times 3$ convolutions and the output channels of one VGG block, followed by
+      three fully connected layers. Printing the output shape of each top-level module shows the five
+      blocks and the three FC layers (plus flatten, ReLU and dropout), only eight entries with weights,
+      although VGG-11 has 11 weight layers. Where are the other three?
+    options:
+      - text: They are the max-pooling layers between the blocks, which count as layers
+        why: Pooling layers have no weights; the "11" counts 8 convolutional and 3 fully connected layers [^1].
+      - text: They are ReLU activations, which VGG counts among its weight layers
+        why: Activations have no parameters, so they are not counted in "VGG-11".
+      - text: Inside the last three blocks, each of which stacks two $3 \times 3$ convolutions
+        correct: true
+      - text: Inside the first three blocks, each of which stacks two $3 \times 3$ convolutions
+        why: The first two blocks have one convolution each; only blocks 3 to 5 have two [^1].
+    explanation: |
+      The tuple gives $1 + 1 + 2 + 2 + 2 = 8$ convolutional layers, and with the 3 fully connected
+      layers that makes 11 [^1]. Each VGG block is a `Sequential` of convolutions and ReLUs that ends in
+      max-pooling [^2], so a per-module summary reports only the block's final output shape. The second
+      convolution in blocks 3, 4 and 5 is hidden inside its block, which is why the summary seems to
+      show only eight of the eleven weight layers.
+    references:
+      - source: d2l
+        locator: Sec. 8.2.2 VGG Network
+        url: https://d2l.ai/chapter_convolutional-modern/vgg.html#vgg-network
+      - source: d2l
+        locator: Sec. 8.2.1 VGG Blocks
+        url: https://d2l.ai/chapter_convolutional-modern/vgg.html#vgg-blocks
+      - source: d2l
+        locator: Sec. 8.2.5 Exercises, Exercise 2
+        url: https://d2l.ai/chapter_convolutional-modern/vgg.html#exercises
+    source:
+      id: d2l
+      ref: chapter_convolutional-modern/vgg#ex2
+      url: https://d2l.ai/chapter_convolutional-modern/vgg.html#exercises
+    status: draft
+  - id: architectures-010
+    type: short_answer
+    difficulty: easy
+    tags:
+      - nin
+      - global-average-pooling
+      - parameter-count
+    question: |
+      NiN's last block outputs a $10 \times 5 \times 5$ tensor, one channel per class, and global average
+      pooling turns it into 10 logits. If you instead flatten the tensor and use a fully connected layer
+      to produce the 10 logits, how many parameters (weights and biases) does that layer add?
+    answer:
+      numeric: 2510
+      tolerance: 0
+      hint: a whole number
+      model: $250 \times 10 + 10 = 2510$
+    explanation: |
+      The flattened tensor has $10 \cdot 5 \cdot 5 = 250$ values, so the layer needs
+      $250 \times 10$ weights and 10 biases. That is tiny next to NiN's roughly 2 million parameters: the
+      big saving of NiN comes from never having AlexNet-style 4096-wide fully connected layers, since its
+      last NiN block already reduces the representation to one channel per class [^1]. Global average
+      pooling has no parameters at all and averages over positions, which adds translation invariance [^2];
+      the FC head would tie each logit to particular positions of the $5 \times 5$ map.
+    references:
+      - source: d2l
+        locator: Sec. 8.3.2 NiN Model
+        url: https://d2l.ai/chapter_convolutional-modern/nin.html#nin-model
+      - source: d2l
+        locator: Sec. 8.3.4 Summary
+        url: https://d2l.ai/chapter_convolutional-modern/nin.html#summary
+      - source: d2l
+        locator: Sec. 8.3.5 Exercises, Exercise 3
+        url: https://d2l.ai/chapter_convolutional-modern/nin.html#exercises
+    source:
+      id: d2l
+      ref: chapter_convolutional-modern/nin#ex3
+      url: https://d2l.ai/chapter_convolutional-modern/nin.html#exercises
+    status: draft
+  - id: architectures-011
+    type: short_answer
+    difficulty: medium
+    tags:
+      - nin
+      - parameter-count
+      - 1x1-convolution
+    question: |
+      The third NiN block takes 256 input channels and applies a $3 \times 3$ convolution with 384
+      output channels, then two $1 \times 1$ convolutions with 384 output channels each, all with
+      biases. How many parameters does the block have?
+    answer:
+      numeric: 1180800
+      tolerance: 0
+      hint: a whole number
+      model: $(384 \cdot 256 \cdot 9 + 384) + 2 \cdot (384 \cdot 384 + 384) = 885\,120 + 295\,680 = 1\,180\,800$
+    explanation: |
+      A kernel has shape $c_o \times c_i \times k_h \times k_w$, plus one bias per output channel [^2],
+      so the $3 \times 3$ convolution has $384 \cdot 256 \cdot 9 + 384 = 885\,120$ parameters. A
+      $1 \times 1$ convolution needs only $c_o \times c_i$ weights [^3], here $384 \cdot 384 + 384$ each,
+      so the two of them add per-pixel nonlinearity for about a third of the cost of the $3 \times 3$
+      layer [^1]. The whole d2l NiN (one input channel, 10 classes) has 1,992,166 parameters, about
+      2.0 million against 46.8 million for AlexNet, and this block holds about 59% of them.
+    references:
+      - source: d2l
+        locator: Sec. 8.3.1 NiN Blocks
+        url: https://d2l.ai/chapter_convolutional-modern/nin.html#nin-blocks
+      - source: d2l
+        locator: Sec. 7.4.2 Multiple Output Channels
+        url: https://d2l.ai/chapter_convolutional-neural-networks/channels.html#multiple-output-channels
+      - source: d2l
+        locator: Sec. 7.4.3 1×1 Convolutional Layer
+        url: https://d2l.ai/chapter_convolutional-neural-networks/channels.html
+      - source: d2l
+        locator: Sec. 8.3.5 Exercises, Exercise 4
+        url: https://d2l.ai/chapter_convolutional-modern/nin.html#exercises
+    source:
+      id: d2l
+      ref: chapter_convolutional-modern/nin#ex4
+      url: https://d2l.ai/chapter_convolutional-modern/nin.html#exercises
+    status: draft
+  - id: architectures-012
+    type: multiple
+    difficulty: medium
+    tags:
+      - nin
+      - googlenet
+      - inception
+      - parameter-count
+      - global-average-pooling
+    question: |
+      d2l's versions of AlexNet and VGG-11 have about 47 and 129 million parameters, while its NiN and
+      GoogLeNet have about 2 and 6 million. Which design choices explain the gap? Select all that apply.
+    options:
+      - text: They run on smaller images, and convolution kernels need fewer weights for smaller inputs
+        why: A kernel has $c_o \times c_i \times k_h \times k_w$ weights whatever the input size [^3].
+      - text: NiN replaces AlexNet's $11 \times 11$, $5 \times 5$ and $3 \times 3$ convolutions by $1 \times 1$ convolutions throughout
+        why: NiN keeps AlexNet's kernel sizes for the first convolution of each block and adds $1 \times 1$ convolutions after it [^1].
+      - text: Their max-pooling layers have fewer weights than the pooling layers of AlexNet and VGG
+        why: Pooling layers have no parameters in any of these networks.
+      - text: Inception blocks cut the channel count with $1 \times 1$ convolutions before the $3 \times 3$ and $5 \times 5$ ones
+        correct: true
+      - text: NiN and GoogLeNet end with global average pooling instead of 4096-wide fully connected layers
+        correct: true
+    explanation: |
+      AlexNet and VGG spend most of their parameters in fully connected layers (about 43 of 47 million
+      and 120 of 129 million). NiN and GoogLeNet end in global average pooling, NiN with no FC layer at
+      all and GoogLeNet with a single $1024 \to 10$ layer [^1][^2]. In the Inception block the two middle
+      branches first apply a $1 \times 1$ convolution to cut the channels, for example from 192 to 96
+      and to 16, so the expensive $3 \times 3$ and $5 \times 5$ kernels see few input channels [^2]. The
+      number of kernel weights does not depend on the image size [^3]. The counts come from d2l's code
+      with one input channel and 10 classes.
+    references:
+      - source: d2l
+        locator: Sec. 8.3.2 NiN Model and Sec. 8.3.4 Summary
+        url: https://d2l.ai/chapter_convolutional-modern/nin.html#nin-model
+      - source: d2l
+        locator: Sec. 8.4.1 Inception Blocks and Sec. 8.4.2 GoogLeNet Model
+        url: https://d2l.ai/chapter_convolutional-modern/googlenet.html#inception-blocks
+      - source: d2l
+        locator: Sec. 7.4.2 Multiple Output Channels
+        url: https://d2l.ai/chapter_convolutional-neural-networks/channels.html#multiple-output-channels
+      - source: d2l
+        locator: Sec. 8.4.5 Exercises, Exercise 4
+        url: https://d2l.ai/chapter_convolutional-modern/googlenet.html#exercises
+    source:
+      id: d2l
+      ref: chapter_convolutional-modern/googlenet#ex4
+      url: https://d2l.ai/chapter_convolutional-modern/googlenet.html#exercises
+    status: draft
+  - id: architectures-013
+    type: single
+    difficulty: medium
+    tags:
+      - resnet
+      - inception
+      - residual-connection
+    question: How does a residual block differ from an Inception block in the way it combines its branches?
+    options:
+      - text: A residual block concatenates its input and output along the channels; Inception adds its four branches together
+        why: Concatenating input and output is DenseNet's pattern; ResNet adds them, and Inception concatenates its branches [^1][^2].
+      - text: Both concatenate their branches along the channel axis, so they differ only in which kernel sizes they use
+        why: A residual block adds its two branches elementwise, which is why their shapes must match [^2].
+      - text: A residual block adds a learned branch to an identity path; Inception concatenates four learned branches
+        correct: true
+      - text: Both add their branches elementwise, so they differ only in how many parallel branches they contain
+        why: Inception concatenates the outputs of its four branches along the channel dimension [^1].
+    explanation: |
+      An Inception block runs four parallel branches ($1 \times 1$, $3 \times 3$, $5 \times 5$ and
+      pooling) and concatenates their outputs along the channels [^1]. A residual block has two
+      branches, one of them the identity, and adds them: $f(\mathbf{x}) = \mathbf{x} + g(\mathbf{x})$
+      before the final ReLU. d2l calls it a special case of the multi-branch Inception block, and the
+      addition is why a $1 \times 1$ convolution is needed when the number of channels changes [^2].
+      Pushing the weights of $g$ to zero turns a residual block into the identity, so each added block
+      keeps the function classes nested, which an Inception block does not guarantee [^3].
+    references:
+      - source: d2l
+        locator: Sec. 8.4.1 Inception Blocks
+        url: https://d2l.ai/chapter_convolutional-modern/googlenet.html#inception-blocks
+      - source: d2l
+        locator: Sec. 8.6.2 Residual Blocks
+        url: https://d2l.ai/chapter_convolutional-modern/resnet.html#residual-blocks
+      - source: d2l
+        locator: Sec. 8.6.1 Function Classes
+        url: https://d2l.ai/chapter_convolutional-modern/resnet.html#function-classes
+      - source: d2l
+        locator: Sec. 8.6.7 Exercises, Exercise 1
+        url: https://d2l.ai/chapter_convolutional-modern/resnet.html#exercises
+    source:
+      id: d2l
+      ref: chapter_convolutional-modern/resnet#ex1
+      url: https://d2l.ai/chapter_convolutional-modern/resnet.html#exercises
+    status: draft
+  - id: architectures-014
+    type: single
+    difficulty: medium
+    tags:
+      - resnet
+      - function-classes
+      - overfitting
+    question: |
+      With residual connections, each larger ResNet contains the smaller ones as special cases: the
+      function classes are nested. Why can we still not keep adding layers and expect ever better test
+      accuracy?
+    options:
+      - text: Nesting only guarantees an equal or better training fit; a bigger class can overfit and costs more
+        correct: true
+      - text: Every added layer raises the training error, because the identity path accumulates noise from all earlier layers
+        why: A block that learns the identity leaves the function unchanged, so the best training error cannot get worse [^1].
+      - text: Beyond about 152 layers the residual branches can no longer learn the zero mapping, so the classes stop being nested
+        why: Any residual block can still represent the identity by setting its branch to zero, at any depth [^1].
+      - text: Nested classes all contain exactly the same functions, so extra layers add no expressive power
+        why: A larger nested class contains the smaller one plus new functions, so it is strictly more expressive [^1].
+    explanation: |
+      Nested classes guarantee that the best function in the larger class is at least as good on the
+      training objective, so the achievable training fit never gets worse [^1]. Test accuracy also
+      depends on how well the training data pin down the right function. A larger class can overfit and
+      needs more data or regularization to generalize [^2], every layer costs memory and compute, and the
+      optimizer is not guaranteed to find the best function in the class.
+    references:
+      - source: d2l
+        locator: Sec. 8.6.1 Function Classes
+        url: https://d2l.ai/chapter_convolutional-modern/resnet.html#function-classes
+      - source: d2l
+        locator: Sec. 3.6.2 Underfitting or Overfitting?
+        url: https://d2l.ai/chapter_linear-regression/generalization.html#underfitting-or-overfitting
+      - source: d2l
+        locator: Sec. 8.6.7 Exercises, Exercise 5
+        url: https://d2l.ai/chapter_convolutional-modern/resnet.html#exercises
+    source:
+      id: d2l
+      ref: chapter_convolutional-modern/resnet#ex5
+      url: https://d2l.ai/chapter_convolutional-modern/resnet.html#exercises
+    status: draft
+  - id: architectures-015
+    type: single
+    difficulty: medium
+    tags:
+      - densenet
+      - resnet
+      - parameter-count
+      - growth-rate
+    question: |
+      d2l builds a DenseNet with four dense blocks of four convolution blocks each (growth rate 32), to
+      match the four stages of its ResNet-18. The DenseNet has about 0.76 million parameters and the
+      ResNet-18 about 11.2 million. What is the main reason?
+    options:
+      - text: DenseNet replaces batch normalization, which holds many parameters, with average pooling in every block
+        why: DenseNet uses batch normalization in every convolution block, and it costs only two parameters per channel [^1].
+      - text: DenseNet uses $1 \times 1$ kernels in its dense blocks, while ResNet-18 uses $3 \times 3$ kernels throughout
+        why: The convolutions inside d2l's dense blocks are $3 \times 3$; $1 \times 1$ convolutions appear only in the transition layers [^1][^2].
+      - text: Concatenation shares weights between layers, so each kernel has to be stored only once for the whole network
+        why: Concatenation shares features, not weights; every convolution block still has its own kernel.
+      - text: Each layer adds only 32 channels and gets earlier features by concatenation, so its convolutions stay narrow
+        correct: true
+    explanation: |
+      In a dense block every convolution block outputs only the growth rate of 32 channels and its
+      input is concatenated to its output, so four blocks add $4 \times 32 = 128$ channels [^1]; transition
+      layers then halve the channels with a $1 \times 1$ convolution [^2]. ResNet-18's convolutions map
+      64 up to 512 channels to the same number again, and a single $512 \to 512$ $3 \times 3$ convolution
+      already has about 2.4 million weights. Because every layer can read all earlier feature maps, it
+      does not have to carry them forward itself, and the DenseNet paper credits this feature reuse for
+      its parameter efficiency [^3].
+    references:
+      - source: d2l
+        locator: Sec. 8.7.2 Dense Blocks and Sec. 8.7.4 DenseNet Model
+        url: https://d2l.ai/chapter_convolutional-modern/densenet.html#dense-blocks
+      - source: d2l
+        locator: Sec. 8.7.3 Transition Layers
+        url: https://d2l.ai/chapter_convolutional-modern/densenet.html#transition-layers
+      - title: Densely Connected Convolutional Networks (Huang et al., 2017)
+        locator: Abstract and Sec. 3 DenseNets (Growth rate)
+        url: https://arxiv.org/abs/1608.06993
+      - source: d2l
+        locator: Sec. 8.7.7 Exercises, Exercise 2
+        url: https://d2l.ai/chapter_convolutional-modern/densenet.html#exercises
+    source:
+      id: d2l
+      ref: chapter_convolutional-modern/densenet#ex2
+      url: https://d2l.ai/chapter_convolutional-modern/densenet.html#exercises
+    status: draft
+  - id: architectures-016
+    type: short_answer
+    difficulty: easy
+    tags:
+      - densenet
+      - growth-rate
+      - channels
+    question: |
+      A dense block receives 64 channels and has four convolution blocks, each producing 32 channels
+      (growth rate 32); each convolution block's output is concatenated to its input along the
+      channels. How many input channels does the fourth convolution block see?
+    answer:
+      numeric: 160
+      tolerance: 0
+      hint: a whole number
+      model: $64 + 3 \times 32 = 160$; the whole block outputs $64 + 4 \times 32 = 192$ channels.
+    explanation: |
+      Each convolution block appends its 32 new channels to everything before it, so the $\ell$-th block
+      sees the block input plus the outputs of the $\ell - 1$ blocks before it, $c_0 + (\ell - 1)k$
+      channels [^1][^2]. For $\ell = 4$ that is $64 + 3 \cdot 32 = 160$, and the block ends with 192
+      channels; d2l's small example works the same way, with 3 input channels and two blocks of 10
+      giving $3 + 10 + 10 = 23$ [^1]. The width grows linearly through a dense block, which is why
+      transition layers compress it between blocks.
+    references:
+      - source: d2l
+        locator: Sec. 8.7.2 Dense Blocks
+        url: https://d2l.ai/chapter_convolutional-modern/densenet.html#dense-blocks
+      - title: Densely Connected Convolutional Networks (Huang et al., 2017)
+        locator: Sec. 3 DenseNets, Growth rate
+        url: https://arxiv.org/abs/1608.06993
+      - source: d2l
+        locator: Sec. 8.7.7 Exercises, Exercise 2
+        url: https://d2l.ai/chapter_convolutional-modern/densenet.html#exercises
+    source:
+      id: d2l
+      ref: chapter_convolutional-modern/densenet#ex2-b
+      url: https://d2l.ai/chapter_convolutional-modern/densenet.html#exercises
+    status: draft
+  - id: architectures-017
+    type: single
+    difficulty: medium
+    tags:
+      - squeeze-and-excitation
+      - attention
+      - channel-attention
+    question: |
+      A squeeze-and-excitation (SE) block global-average-pools each channel of a feature map, passes
+      the pooled vector through two fully connected layers, and rescales channel $c$ by a weight
+      $s_c = \sigma(\cdot)_c$ given by a sigmoid. Read as an attention mechanism, how do these weights
+      differ from softmax attention pooling?
+    options:
+      - text: They are sigmoid gates, one per channel, that need not sum to 1, so several channels can stand out
+        correct: true
+      - text: They form a softmax over spatial positions, like attention over the patches of an image
+        why: There is one weight per channel; global pooling has already removed the spatial positions [^1].
+      - text: They are fixed after training and do not depend on the input image
+        why: They are computed from the pooled descriptor of each input, so they change from image to image [^1].
+      - text: They pick exactly one channel, a hard form of attention that sets every other channel to exactly zero
+        why: Sigmoid gates are soft and not mutually exclusive [^1].
+    explanation: |
+      An SE block squeezes each channel to one number by global average pooling, then computes
+      $\mathbf{s} = \sigma(\mathbf{W}_2\,\mathrm{ReLU}(\mathbf{W}_1\mathbf{z}))$ and rescales channel
+      $c$ by $s_c$ [^1]. The authors chose a sigmoid, not a softmax, because several channels may need
+      to be emphasized at once rather than one-hot [^1]. In d2l's terms the weights are nonnegative
+      but not a convex combination, a case the attention framework allows next to the more common
+      softmax normalization [^2].
+    references:
+      - title: Hu, Shen, Albanie, Sun & Wu (2017), Squeeze-and-Excitation Networks
+        url: https://arxiv.org/abs/1709.01507
+        locator: Sec. 3.1 Squeeze; Sec. 3.2 Excitation (Eqs. 2–4)
+      - source: d2l
+        locator: Sec. 11.1 Queries, Keys, and Values (special cases of attention weights)
+        url: https://d2l.ai/chapter_attention-mechanisms-and-transformers/queries-keys-values.html
+      - source: d2l
+        locator: Sec. 11.1.3 Exercises, Exercise 4
+        url: https://d2l.ai/chapter_attention-mechanisms-and-transformers/queries-keys-values.html#exercises
+    source:
+      id: d2l
+      ref: chapter_attention-mechanisms-and-transformers/queries-keys-values#ex4
+      url: https://d2l.ai/chapter_attention-mechanisms-and-transformers/queries-keys-values.html#exercises
+    status: draft

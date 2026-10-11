@@ -132,3 +132,169 @@ questions:
       ref: quiz-208/q2
       url: https://github.com/microsoft/AI-For-Beginners/blob/392d0df1b2647cbee104942390551f1ed9e072c8/etc/quiz-app/src/assets/translations/en/lesson-8.json
     status: draft
+  - id: transfer-learning-005
+    type: single
+    difficulty: easy
+    tags:
+      - fine-tuning
+      - learning-rate
+      - pretrained-models
+    question: |
+      d2l fine-tunes an ImageNet-pretrained ResNet-18 on a small hot-dog dataset, with a learning rate
+      of $5 \times 10^{-5}$ for the pretrained layers and 10 times that for the new output layer. What
+      do you expect if you keep increasing the learning rate of the pretrained layers?
+    options:
+      - text: Accuracy keeps rising, since the pretrained layers can then adapt to hot dogs more quickly
+        why: The pretrained parameters are already good; large steps move them far from that starting point instead of refining it [^1].
+      - text: Accuracy stays the same, since pretrained layers have converged and receive no gradient anymore
+        why: On the new dataset the pretrained layers do receive nonzero gradients, and larger learning rates change them more.
+      - text: Accuracy stays the same, since only the new output layer's learning rate matters for the result
+        why: All layers are updated, each with its own learning rate, so the rate of the pretrained layers matters too.
+      - text: Accuracy eventually drops, since large updates destroy the useful pretrained features
+        correct: true
+    explanation: |
+      The pretrained parameters already extract general features such as edges, textures and shapes,
+      so d2l fine-tunes them with a small learning rate, while the randomly initialized output layer gets
+      a learning rate 10 times larger [^1]. A large learning rate for the pretrained layers takes big
+      steps away from that initialization and overwrites the transferred knowledge, so the model drifts
+      toward what training from scratch gives on a small dataset, or training becomes unstable [^1][^2].
+    references:
+      - source: d2l
+        locator: Sec. 14.2.2.2 Defining and Initializing the Model
+        url: https://d2l.ai/chapter_computer-vision/fine-tuning.html#defining-and-initializing-the-model
+      - source: d2l
+        locator: Sec. 14.2.3 Summary
+        url: https://d2l.ai/chapter_computer-vision/fine-tuning.html#summary
+      - source: d2l
+        locator: Sec. 14.2.4 Exercises, Exercise 1
+        url: https://d2l.ai/chapter_computer-vision/fine-tuning.html#exercises
+    source:
+      id: d2l
+      ref: chapter_computer-vision/fine-tuning#ex1
+      url: https://d2l.ai/chapter_computer-vision/fine-tuning.html#exercises
+    status: draft
+  - id: transfer-learning-006
+    type: single
+    difficulty: medium
+    tags:
+      - fine-tuning
+      - freezing
+      - requires-grad
+      - code-reading
+    question: |
+      Following d2l, you build `finetune_net` from a pretrained ResNet-18, replace its output layer, and
+      then try to freeze the pretrained layers:
+
+      ```python
+      finetune_net = torchvision.models.resnet18(weights="IMAGENET1K_V1")
+      finetune_net.fc = nn.Linear(finetune_net.fc.in_features, 2)
+      for param in finetune_net.parameters():
+          param.requires_grad = False
+      ```
+
+      You meant to train only the new output layer. What happens when training starts?
+    options:
+      - text: All layers still train, because `requires_grad` only matters for layers created after it is set
+        why: Setting `requires_grad = False` on a tensor stops autograd from computing gradients for it, whenever the layer was created [^2].
+      - text: The first `loss.backward()` raises an error, because the new `fc` layer is frozen too
+        correct: true
+      - text: Only the new `fc` layer is trained, exactly as intended
+        why: The loop runs after `fc` was replaced, so it also sets `requires_grad = False` on `fc.weight` and `fc.bias`.
+      - text: Training runs without errors, but no weight changes, so accuracy stays where it started
+        why: In PyTorch the loss then has no gradient history at all, so `backward()` raises a RuntimeError instead of silently doing nothing.
+    explanation: |
+      The loop visits every parameter, including those of the `fc` layer created one line earlier. With
+      no parameter requiring a gradient, the output and the loss have no `grad_fn`, and `backward()`
+      fails with "element 0 of tensors does not require grad and does not have a grad_fn" [^2]. The fix
+      is to freeze before replacing `fc`, or to call `finetune_net.fc.requires_grad_(True)` afterwards [^2].
+      Then only the new output layer learns on top of the frozen pretrained features [^1].
+    references:
+      - source: d2l
+        locator: Sec. 14.2.2.2 Defining and Initializing the Model
+        url: https://d2l.ai/chapter_computer-vision/fine-tuning.html#defining-and-initializing-the-model
+      - title: Autograd mechanics (PyTorch documentation)
+        locator: Locally disabling gradient computation, Setting requires_grad
+        url: https://docs.pytorch.org/docs/stable/notes/autograd.html#setting-requires-grad
+      - source: d2l
+        locator: Sec. 14.2.4 Exercises, Exercise 3
+        url: https://d2l.ai/chapter_computer-vision/fine-tuning.html#exercises
+    source:
+      id: d2l
+      ref: chapter_computer-vision/fine-tuning#ex3
+      url: https://d2l.ai/chapter_computer-vision/fine-tuning.html#exercises
+    status: draft
+  - id: transfer-learning-007
+    type: short_answer
+    difficulty: easy
+    tags:
+      - fine-tuning
+      - feature-extraction
+      - parameter-count
+    question: |
+      You freeze every pretrained layer of a ResNet-18 and train only its new output layer,
+      `nn.Linear(512, 2)`, which maps the 512 pooled features to the classes "hot dog" and "not hot
+      dog". How many trainable parameters remain?
+    answer:
+      numeric: 1026
+      tolerance: 0
+      hint: a whole number
+      model: $512 \times 2 + 2 = 1026$, out of about 11.2 million in the whole network.
+    explanation: |
+      ResNet-18's feature layers end in global average pooling with 512 channels, and the output layer
+      `fc` maps them to the target classes [^1]. A $512 \to 2$ linear layer has $512 \times 2$ weights and
+      2 biases, 1026 parameters. Training only this layer on frozen features is the cheapest form of
+      transfer learning; d2l's default instead fine-tunes all layers, the pretrained ones with a small
+      learning rate [^1], and the exercise asks how much accuracy the cheaper option gives up [^2].
+    references:
+      - source: d2l
+        locator: Sec. 14.2.2.2 Defining and Initializing the Model
+        url: https://d2l.ai/chapter_computer-vision/fine-tuning.html#defining-and-initializing-the-model
+      - source: d2l
+        locator: Sec. 14.2.4 Exercises, Exercise 3
+        url: https://d2l.ai/chapter_computer-vision/fine-tuning.html#exercises
+    source:
+      id: d2l
+      ref: chapter_computer-vision/fine-tuning#ex3-b
+      url: https://d2l.ai/chapter_computer-vision/fine-tuning.html#exercises
+    status: draft
+  - id: transfer-learning-008
+    type: single
+    difficulty: medium
+    tags:
+      - fine-tuning
+      - output-layer
+      - initialization
+    question: |
+      A fine-tuned ResNet-18 gets a new output layer with two units, "hot dog" and "not hot dog", that
+      is initialized randomly. ImageNet already has a "hotdog" class: row 934 of the pretrained output
+      layer's weight, which has shape $1000 \times 512$. How can that row help?
+    options:
+      - text: It cannot help, since an output layer is tied to its own labels and its weights never carry over
+        why: d2l drops the source output layer because its labels usually differ, but here a source class matches a target class over the same 512 features [^1].
+      - text: Use row 934 and its bias to initialize the new layer's "hot dog" unit
+        correct: true
+      - text: Use row 934 to initialize the first convolution, so the network looks for hot-dog shapes early
+        why: The row is a 512-dimensional weight vector over the final pooled features; it does not fit, or mean anything, as a first-layer kernel.
+      - text: Copy row 934 into both units of the new layer, so that each starts out as a hot-dog detector
+        why: Identical rows give both classes the same logit, so the model starts at 50/50 for every image and the hot-dog knowledge does not break the tie.
+    explanation: |
+      Fine-tuning normally copies everything except the output layer, because that layer belongs to the
+      source labels, and initializes a new output layer randomly [^1]. Here one source class is exactly
+      a target class, and the target model computes the same 512 pooled features as the source model [^2].
+      Row 934 and its bias are therefore a ready-made hot-dog score for these features. Using them to
+      initialize the "hot dog" unit gives fine-tuning a much better starting point than random weights.
+    references:
+      - source: d2l
+        locator: Sec. 14.2.1 Steps
+        url: https://d2l.ai/chapter_computer-vision/fine-tuning.html#steps
+      - source: d2l
+        locator: Sec. 14.2.2.2 Defining and Initializing the Model
+        url: https://d2l.ai/chapter_computer-vision/fine-tuning.html#defining-and-initializing-the-model
+      - source: d2l
+        locator: Sec. 14.2.4 Exercises, Exercise 4
+        url: https://d2l.ai/chapter_computer-vision/fine-tuning.html#exercises
+    source:
+      id: d2l
+      ref: chapter_computer-vision/fine-tuning#ex4
+      url: https://d2l.ai/chapter_computer-vision/fine-tuning.html#exercises
+    status: draft

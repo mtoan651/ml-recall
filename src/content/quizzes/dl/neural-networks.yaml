@@ -1185,3 +1185,510 @@ questions:
       ref: quiz-204/q2
       url: https://github.com/microsoft/AI-For-Beginners/blob/392d0df1b2647cbee104942390551f1ed9e072c8/etc/quiz-app/src/assets/translations/en/lesson-4.json
     status: draft
+  - id: neural-networks-043
+    type: short_answer
+    difficulty: medium
+    tags:
+      - gelu
+      - relu
+      - activation-functions
+    question: |
+      BERT's feed-forward layers use the GELU activation, $\mathrm{GELU}(x) = x\,\Phi(x)$, where
+      $\Phi$ is the standard normal CDF, instead of ReLU. What is $\mathrm{GELU}(-1)$? Round to 3
+      decimals.
+    answer:
+      numeric: -0.159
+      tolerance: 0.002
+      hint: a number, 3 decimals (it may be negative)
+      model: $-1 \cdot \Phi(-1) \approx -1 \times 0.1587 \approx -0.159$
+    explanation: |
+      $\Phi(-1) \approx 0.1587$, so $\mathrm{GELU}(-1) \approx -0.159$, whereas
+      $\mathrm{ReLU}(-1) = 0$ [^1]. ReLU gates its input by its sign, $x \cdot \mathbb{1}[x > 0]$,
+      while GELU weights it by $\Phi(x)$, the probability that a standard normal variable is below
+      $x$ [^1]. The result is a smooth, slightly non-monotonic curve with a small negative dip and a
+      nonzero gradient for negative inputs, and it matches ReLU for large $|x|$; d2l describes it as a
+      smoother version of ReLU [^2].
+    references:
+      - title: Hendrycks & Gimpel (2016), Gaussian Error Linear Units (GELUs)
+        url: https://arxiv.org/abs/1606.08415
+        locator: Sec. 2 GELU Formulation
+      - source: d2l
+        locator: Sec. 11.8.3 Vision Transformer Encoder
+        url: https://d2l.ai/chapter_attention-mechanisms-and-transformers/vision-transformer.html#vision-transformer-encoder
+      - source: d2l
+        locator: Sec. 15.8.8 Exercises, Exercise 2
+        url: https://d2l.ai/chapter_natural-language-processing-pretraining/bert.html#exercises
+    source:
+      id: d2l
+      ref: chapter_natural-language-processing-pretraining/bert#ex2
+      url: https://d2l.ai/chapter_natural-language-processing-pretraining/bert.html#exercises
+    status: draft
+  - id: neural-networks-044
+    type: short_answer
+    difficulty: medium
+    tags:
+      - linear-networks
+      - rank
+      - bottleneck
+    question: |
+      A deep linear network (no activation functions) maps 100 inputs to a hidden layer of 10 units and
+      then to 100 outputs. What is the largest possible rank of the overall $100 \times 100$ linear map
+      it computes?
+    answer:
+      numeric: 10
+      tolerance: 0
+      hint: an integer
+      model: The map is $\mathbf{W}_2\mathbf{W}_1$ with $\mathbf{W}_1 \in \mathbb{R}^{10 \times 100}$, so its rank is at most 10.
+    explanation: |
+      Without nonlinearities the layers collapse into one linear map, the product of the weight
+      matrices [^1], so adding layers never adds expressive power. It can remove some: the rank of a
+      product is at most the smallest rank of its factors [^2], so a 10-unit layer limits the composite
+      map to rank 10. A single $100 \times 100$ layer can represent any linear map, including full-rank
+      ones such as the identity, which this network cannot.
+    references:
+      - source: d2l
+        locator: Sec. 5.1.1.3 From Linear to Nonlinear
+        url: https://d2l.ai/chapter_multilayer-perceptrons/mlp.html#from-linear-to-nonlinear
+      - title: 'Wikipedia: Rank (linear algebra)'
+        locator: Properties
+        url: https://en.wikipedia.org/wiki/Rank_(linear_algebra)#Properties
+        quote: rank(AB) ≤ min(rank(A), rank(B))
+      - source: d2l
+        locator: Sec. 5.1.4 Exercises, Exercise 1
+        url: https://d2l.ai/chapter_multilayer-perceptrons/mlp.html#exercises
+    source:
+      id: d2l
+      ref: chapter_multilayer-perceptrons/mlp#ex1
+      url: https://d2l.ai/chapter_multilayer-perceptrons/mlp.html#exercises
+    status: draft
+  - id: neural-networks-045
+    type: short_answer
+    difficulty: easy
+    tags:
+      - prelu
+      - activation-functions
+      - backpropagation
+    question: |
+      The parametrized ReLU is $\mathrm{pReLU}(x) = \max(0, x) + \alpha\min(0, x)$. With $\alpha = 0.25$,
+      a unit has pre-activation $x = -3$ and receives the upstream gradient
+      $\partial L / \partial\,\mathrm{pReLU}(x) = 2$. What is $\partial L / \partial x$?
+    answer:
+      numeric: 0.5
+      tolerance: 0.001
+      hint: a number
+      model: $\mathrm{pReLU}'(x) = \alpha$ for $x < 0$, so $2 \times 0.25 = 0.5$
+    explanation: |
+      For $x > 0$, pReLU is $x$, with derivative 1; for $x < 0$ it is $\alpha x$, with derivative
+      $\alpha$ [^1]. So the unit passes back $\alpha$ times the upstream gradient, $2 \times 0.25 = 0.5$,
+      where a plain ReLU would pass back 0 and the unit's incoming weights would get no update from this
+      example. The derivative with respect to the learnable slope is
+      $\partial\,\mathrm{pReLU}/\partial\alpha = \min(0, x) = -3$, which is how pReLU learns $\alpha$
+      [^2].
+    references:
+      - source: d2l
+        locator: Sec. 5.1.2.1 ReLU Function
+        url: https://d2l.ai/chapter_multilayer-perceptrons/mlp.html#relu-function
+      - title: He et al. (2015), Delving Deep into Rectifiers, arXiv:1502.01852
+        locator: Sec. 2.1 Parametric Rectifiers, Eq. (3)
+        url: https://arxiv.org/abs/1502.01852
+      - source: d2l
+        locator: Sec. 5.1.4 Exercises, Exercise 2
+        url: https://d2l.ai/chapter_multilayer-perceptrons/mlp.html#exercises
+    source:
+      id: d2l
+      ref: chapter_multilayer-perceptrons/mlp#ex2
+      url: https://d2l.ai/chapter_multilayer-perceptrons/mlp.html#exercises
+    status: draft
+  - id: neural-networks-046
+    type: short_answer
+    difficulty: medium
+    tags:
+      - swish
+      - activation-functions
+      - derivatives
+    question: |
+      What is the derivative of the Swish activation $f(x) = x\,\mathrm{sigmoid}(\beta x)$ at $x = 1$,
+      with $\beta = 1$? Round to 3 decimals.
+    answer:
+      numeric: 0.928
+      tolerance: 0.002
+      hint: a number, 3 decimals
+      model: "$f'(x) = \\sigma(\\beta x) + \\beta x\\,\\sigma(\\beta x)(1 - \\sigma(\\beta x))$; at $x = 1$: $0.731 + 0.197 \\approx 0.928$"
+    explanation: |
+      The product rule gives $f'(x) = \sigma(\beta x) + x\,\frac{d}{dx}\sigma(\beta x)$. With the
+      sigmoid's derivative $\sigma(1 - \sigma)$ [^1] and the chain rule,
+      $\frac{d}{dx}\sigma(\beta x) = \beta\,\sigma(\beta x)(1 - \sigma(\beta x))$, so
+      $f'(x) = \sigma(\beta x) + \beta x\,\sigma(\beta x)(1 - \sigma(\beta x))$. At $x = 1$ and
+      $\beta = 1$: $0.731 + 0.731 \times 0.269 \approx 0.928$. Unlike ReLU's, this derivative is
+      smooth, and it turns slightly negative for some negative inputs, since Swish is not monotonic
+      [^2].
+    references:
+      - source: d2l
+        locator: Sec. 5.1.2.2 Sigmoid Function
+        url: https://d2l.ai/chapter_multilayer-perceptrons/mlp.html#sigmoid-function
+      - title: Ramachandran, Zoph and Le (2017), Searching for Activation Functions, arXiv:1710.05941
+        locator: Sec. 4 Swish (first derivative)
+        url: https://arxiv.org/abs/1710.05941
+      - source: d2l
+        locator: Sec. 5.1.4 Exercises, Exercise 3
+        url: https://d2l.ai/chapter_multilayer-perceptrons/mlp.html#exercises
+    source:
+      id: d2l
+      ref: chapter_multilayer-perceptrons/mlp#ex3
+      url: https://d2l.ai/chapter_multilayer-perceptrons/mlp.html#exercises
+    status: draft
+  - id: neural-networks-047
+    type: short_answer
+    difficulty: medium
+    tags:
+      - relu
+      - piecewise-linear
+      - expressivity
+    question: |
+      A one-hidden-layer ReLU network maps a scalar input $x$ to a scalar output through 4 hidden
+      units, $f(x) = \sum_{j=1}^{4} v_j\,\mathrm{ReLU}(w_j x + b_j) + c$. At most how many linear pieces
+      can $f$ have on the real line?
+    answer:
+      numeric: 5
+      tolerance: 0
+      hint: an integer
+      model: Each unit has at most one kink, at $x = -b_j / w_j$, so at most 4 kinks split the line into at most 5 pieces.
+    explanation: |
+      Each term $v_j\,\mathrm{ReLU}(w_j x + b_j)$ is piecewise linear with a single kink, where
+      $w_j x + b_j = 0$, because ReLU is linear on each side of zero [^1]. A sum of continuous piecewise
+      linear functions is again continuous and piecewise linear, with kinks only where some term has
+      one, so $f$ has at most 4 kinks and 5 linear pieces. Deeper ReLU networks also compute continuous
+      piecewise linear functions, but composing layers lets the number of pieces grow much faster with
+      depth than with width [^2].
+    references:
+      - source: d2l
+        locator: Sec. 5.1.2.1 ReLU Function
+        url: https://d2l.ai/chapter_multilayer-perceptrons/mlp.html#relu-function
+      - title: Montúfar et al. (2014), On the Number of Linear Regions of Deep Neural Networks, arXiv:1402.1869
+        locator: Abstract
+        url: https://arxiv.org/abs/1402.1869
+      - source: d2l
+        locator: Sec. 5.1.4 Exercises, Exercise 4
+        url: https://d2l.ai/chapter_multilayer-perceptrons/mlp.html#exercises
+    source:
+      id: d2l
+      ref: chapter_multilayer-perceptrons/mlp#ex4
+      url: https://d2l.ai/chapter_multilayer-perceptrons/mlp.html#exercises
+    status: draft
+  - id: neural-networks-048
+    type: short_answer
+    difficulty: easy
+    tags:
+      - tanh
+      - sigmoid
+      - activation-functions
+    question: For some input $x$, $\mathrm{sigmoid}(2x) = 0.9$. What is $\tanh(x)$?
+    answer:
+      numeric: 0.8
+      tolerance: 0.001
+      hint: a number
+      model: $\tanh(x) = 2\,\mathrm{sigmoid}(2x) - 1 = 0.8$
+    explanation: |
+      From $\tanh(x) = \frac{1 - e^{-2x}}{1 + e^{-2x}}$ [^1], adding 1 gives
+      $\tanh(x) + 1 = \frac{2}{1 + e^{-2x}} = 2\,\mathrm{sigmoid}(2x)$ [^2]. So tanh is the sigmoid
+      squeezed horizontally by a factor 2, stretched vertically by 2 and shifted down by 1, which is why
+      the two curves look alike, and why tanh's maximum slope is 1 while the sigmoid's is 0.25 [^1].
+      Here $\tanh(x) = 2 \times 0.9 - 1 = 0.8$.
+    references:
+      - source: d2l
+        locator: Sec. 5.1.2.3 Tanh Function
+        url: https://d2l.ai/chapter_multilayer-perceptrons/mlp.html#tanh-function
+      - title: 'Wikipedia: Logistic function'
+        locator: Hyperbolic tangent
+        url: https://en.wikipedia.org/wiki/Logistic_function#Hyperbolic_tangent
+        quote: tanh(x) = 2f(2x) − 1
+      - source: d2l
+        locator: Sec. 5.1.4 Exercises, Exercise 5
+        url: https://d2l.ai/chapter_multilayer-perceptrons/mlp.html#exercises
+    source:
+      id: d2l
+      ref: chapter_multilayer-perceptrons/mlp#ex5
+      url: https://d2l.ai/chapter_multilayer-perceptrons/mlp.html#exercises
+    status: draft
+  - id: neural-networks-049
+    type: single
+    difficulty: hard
+    tags:
+      - tanh
+      - sigmoid
+      - function-class
+      - reparametrization
+    question: |
+      A one-hidden-layer network computes $o = \mathbf{v}^\top\tanh(\mathbf{W}\mathbf{x} + \mathbf{b}) + c$,
+      with $\tanh$ applied elementwise. Which sigmoid network computes exactly the same function for
+      every $\mathbf{x}$? ($\mathbf{1}$ is the all-ones vector.)
+    options:
+      - text: 'None: sigmoid units only output values in $(0, 1)$, so the network can never produce negative outputs'
+        why: The output layer's weights and bias are unrestricted, so they can rescale and shift the $(0, 1)$ activations to any range [^2].
+      - text: $o = (2\mathbf{v})^\top\sigma(2\mathbf{W}\mathbf{x} + 2\mathbf{b}) + c - \mathbf{1}^\top\mathbf{v}$
+        correct: true
+      - text: $o = \mathbf{v}^\top\sigma(2\mathbf{W}\mathbf{x} + 2\mathbf{b}) + c$
+        why: It doubles the sigmoid's input but forgets that $\tanh = 2\sigma(2\,\cdot) - 1$ also scales the output by 2 and shifts it by $-1$ [^1].
+      - text: $o = (2\mathbf{v})^\top\sigma(\mathbf{W}\mathbf{x} + \mathbf{b}) + c - \mathbf{1}^\top\mathbf{v}$
+        why: 'The sigmoid has to see $2\mathbf{z}$: $\tanh(z) = 2\sigma(2z) - 1$, not $2\sigma(z) - 1$ [^1].'
+    explanation: |
+      Apply $\tanh(z) = 2\sigma(2z) - 1$ to every hidden unit [^1]:
+      $\mathbf{v}^\top\tanh(\mathbf{z}) = (2\mathbf{v})^\top\sigma(2\mathbf{z}) - \mathbf{1}^\top\mathbf{v}$.
+      The factor 2 inside is absorbed by doubling the first layer's weights and biases, the factor 2
+      outside by doubling the output weights, and the constant $-\mathbf{1}^\top\mathbf{v}$ by the
+      output bias. Every tanh network is therefore a sigmoid network with other parameters, and the
+      same identity works in reverse, so both nonlinearities give the same function class; the affine
+      layers, biases included, are what make this possible [^2].
+    references:
+      - title: 'Wikipedia: Logistic function'
+        locator: Hyperbolic tangent
+        url: https://en.wikipedia.org/wiki/Logistic_function#Hyperbolic_tangent
+        quote: tanh(x) = 2f(2x) − 1
+      - source: d2l
+        locator: Sec. 5.1.1.3 From Linear to Nonlinear
+        url: https://d2l.ai/chapter_multilayer-perceptrons/mlp.html#from-linear-to-nonlinear
+      - source: d2l
+        locator: Sec. 5.1.4 Exercises, Exercise 5
+        url: https://d2l.ai/chapter_multilayer-perceptrons/mlp.html#exercises
+    source:
+      id: d2l
+      ref: chapter_multilayer-perceptrons/mlp#ex5-b
+      url: https://d2l.ai/chapter_multilayer-perceptrons/mlp.html#exercises
+    status: draft
+  - id: neural-networks-050
+    type: short_answer
+    difficulty: medium
+    tags:
+      - sigmoid
+      - vanishing-gradients
+      - saturation
+    question: |
+      A sigmoid unit has pre-activation $x = 10$. What is the sigmoid's derivative $\sigma'(10)$? Give
+      3 significant digits.
+    answer:
+      numeric: 4.54e-05
+      tolerance: 5e-07
+      hint: a number, e.g. 1.23e-4
+      model: $\sigma(10)(1 - \sigma(10)) \approx 0.99995 \times 4.54 \times 10^{-5} \approx 4.54 \times 10^{-5}$
+    explanation: |
+      $\sigma'(x) = \sigma(x)(1 - \sigma(x))$, which peaks at 0.25 at $x = 0$ and approaches 0 as $|x|$
+      grows [^1]. At $x = 10$ it is about $4.54 \times 10^{-5}$, roughly 5,500 times smaller than at 0,
+      so any gradient passing back through this saturated unit is all but erased. Large
+      pre-activations arise easily, for example from large weights, and in a deep stack of sigmoid
+      layers such factors multiply: this vanishing-gradient problem is why ReLU replaced the sigmoid in
+      hidden layers [^2].
+    references:
+      - source: d2l
+        locator: Sec. 5.1.2.2 Sigmoid Function
+        url: https://d2l.ai/chapter_multilayer-perceptrons/mlp.html#sigmoid-function
+      - source: d2l
+        locator: Sec. 5.4.1.1 Vanishing Gradients
+        url: https://d2l.ai/chapter_multilayer-perceptrons/numerical-stability-and-init.html#vanishing-gradients
+      - source: d2l
+        locator: Sec. 5.1.4 Exercises, Exercise 7
+        url: https://d2l.ai/chapter_multilayer-perceptrons/mlp.html#exercises
+    source:
+      id: d2l
+      ref: chapter_multilayer-perceptrons/mlp#ex7
+      url: https://d2l.ai/chapter_multilayer-perceptrons/mlp.html#exercises
+    status: draft
+  - id: neural-networks-051
+    type: single
+    difficulty: hard
+    tags:
+      - hidden-units
+      - bottleneck
+      - dead-relu
+    question: |
+      An MLP for 10-class Fashion-MNIST has a hidden layer with a single ReLU unit, $784 \to 1 \to 10$.
+      Why is this a bad design?
+    options:
+      - text: The network can predict at most two of the ten classes, one on each side of the ReLU's kink
+        why: The ten logits $a_k h + c_k$ are lines in $h$, and their upper envelope can include all ten, each winning on an interval; the classes are just forced into a fixed order.
+      - text: A single hidden unit makes the network far too large to train in a reasonable amount of time
+        why: It has 785 + 20 = 805 parameters, far fewer than softmax regression's 7,850; the problem is too little capacity, not too much.
+      - text: Softmax needs at least as many hidden units as there are classes to produce normalized probabilities
+        why: The softmax normalizes any vector of 10 logits; the number of hidden units does not matter for that.
+      - text: All logits depend on one number, and if that ReLU unit dies, no gradient reaches the first layer
+        correct: true
+    explanation: |
+      The output layer computes the logits $o_k = a_k h + c_k$ from the single activation $h \ge 0$, so
+      each image is summarized by one number and the classes have to line up along it, each winning on
+      one interval of $h$; ten clothing classes rarely fit on one scale like that [^1]. ReLU makes it
+      worse: its derivative is 0 for negative inputs [^2], so if the unit's pre-activation becomes
+      negative for every input, $h$ is always 0, no gradient reaches the first layer or the output
+      weights, and the network predicts the same probabilities for every image. With many hidden units,
+      one dead unit leaves the others working.
+    references:
+      - source: d2l
+        locator: Sec. 5.2.1.1 Initializing Model Parameters
+        url: https://d2l.ai/chapter_multilayer-perceptrons/mlp-implementation.html#initializing-model-parameters
+      - source: d2l
+        locator: Sec. 5.1.2.1 ReLU Function
+        url: https://d2l.ai/chapter_multilayer-perceptrons/mlp.html#relu-function
+      - source: d2l
+        locator: Sec. 5.2.4 Exercises, Exercise 3
+        url: https://d2l.ai/chapter_multilayer-perceptrons/mlp-implementation.html#exercises
+    source:
+      id: d2l
+      ref: chapter_multilayer-perceptrons/mlp-implementation#ex3
+      url: https://d2l.ai/chapter_multilayer-perceptrons/mlp-implementation.html#exercises
+    status: draft
+  - id: neural-networks-052
+    type: short_answer
+    difficulty: easy
+    tags:
+      - gradients
+      - tensor-shapes
+      - backpropagation
+    question: |
+      A scalar loss $f$ is computed from a minibatch matrix $\mathbf{X}$ of shape $64 \times 784$. What
+      is the shape of the gradient $\partial f / \partial \mathbf{X}$?
+    answer:
+      accept:
+        - (64, 784)
+      pattern: (torch\.size)?\(?\[?\s*64\s*[,x×]\s*784\s*\]?\)?
+      hint: Two dimensions, e.g. (8, 16)
+      model: $64 \times 784$, the same shape as $\mathbf{X}$
+    explanation: |
+      The gradient of a scalar holds one partial derivative $\partial f / \partial x_{ij}$ for every
+      entry of the input, so it has exactly the input's shape [^1]. In backpropagation every gradient
+      with respect to a variable or parameter matches that variable's shape, e.g.
+      $\partial J / \partial \mathbf{W}^{(2)} \in \mathbb{R}^{q \times h}$ for
+      $\mathbf{W}^{(2)} \in \mathbb{R}^{q \times h}$ [^2]. Only the derivative of a vector-valued output
+      would be a larger object, a Jacobian.
+    references:
+      - source: d2l
+        locator: Sec. 2.5.1 A Simple Function
+        url: https://d2l.ai/chapter_preliminaries/autograd.html#a-simple-function
+      - source: d2l
+        locator: Sec. 5.3.3 Backpropagation
+        url: https://d2l.ai/chapter_multilayer-perceptrons/backprop.html#backpropagation
+      - source: d2l
+        locator: Sec. 5.3.6 Exercises, Exercise 1
+        url: https://d2l.ai/chapter_multilayer-perceptrons/backprop.html#exercises
+    source:
+      id: d2l
+      ref: chapter_multilayer-perceptrons/backprop#ex1
+      url: https://d2l.ai/chapter_multilayer-perceptrons/backprop.html#exercises
+    status: draft
+  - id: neural-networks-053
+    type: single
+    difficulty: medium
+    tags:
+      - backpropagation
+      - bias
+      - computational-graph
+    question: |
+      A one-hidden-layer network computes $\mathbf{z} = \mathbf{W}^{(1)}\mathbf{x} + \mathbf{b}^{(1)}$,
+      $\mathbf{h} = \phi(\mathbf{z})$ and $\mathbf{o} = \mathbf{W}^{(2)}\mathbf{h}$, with objective
+      $J = l(\mathbf{o}, y) + \frac{\lambda}{2}\left(\lVert\mathbf{W}^{(1)}\rVert_F^2 + \lVert\mathbf{W}^{(2)}\rVert_F^2\right)$;
+      the bias is not regularized. What is $\partial J / \partial \mathbf{b}^{(1)}$?
+    options:
+      - text: $\left({\mathbf{W}^{(2)}}^\top \frac{\partial J}{\partial \mathbf{o}}\right) \odot \phi'(\mathbf{z})$
+        correct: true
+      - text: $\left({\mathbf{W}^{(2)}}^\top \frac{\partial J}{\partial \mathbf{o}}\right) \odot \phi'(\mathbf{z}) + \lambda\mathbf{b}^{(1)}$
+        why: The penalty contains only the weight matrices, so it adds nothing to the bias gradient [^1].
+      - text: $\left(\left({\mathbf{W}^{(2)}}^\top \frac{\partial J}{\partial \mathbf{o}}\right) \odot \phi'(\mathbf{z})\right)\mathbf{x}^\top$
+        why: That is the data part of $\partial J / \partial \mathbf{W}^{(1)}$; the bias enters $\mathbf{z}$ with coefficient 1, not $\mathbf{x}$ [^1].
+      - text: ${\mathbf{W}^{(2)}}^\top \frac{\partial J}{\partial \mathbf{o}}$
+        why: This is $\partial J / \partial \mathbf{h}$; the gradient still has to pass through the activation, i.e. be multiplied elementwise by $\phi'(\mathbf{z})$ [^1].
+    explanation: |
+      Since $\mathbf{z} = \mathbf{W}^{(1)}\mathbf{x} + \mathbf{b}^{(1)}$, the bias enters $\mathbf{z}$
+      with coefficient 1, so its gradient equals $\partial J / \partial \mathbf{z}$, which
+      backpropagation computes anyway on its way to $\mathbf{W}^{(1)}$ [^1]. That quantity is
+      $\frac{\partial J}{\partial \mathbf{h}} \odot \phi'(\mathbf{z})$ with
+      $\frac{\partial J}{\partial \mathbf{h}} = {\mathbf{W}^{(2)}}^\top \frac{\partial J}{\partial \mathbf{o}}$
+      [^1]. In the computational graph the bias is just one more input of the addition that produces
+      $\mathbf{z}$ [^2]; for a minibatch, the per-example gradients are summed or averaged.
+    references:
+      - source: d2l
+        locator: Sec. 5.3.3 Backpropagation
+        url: https://d2l.ai/chapter_multilayer-perceptrons/backprop.html#backpropagation
+      - source: d2l
+        locator: Sec. 5.3.2 Computational Graph of Forward Propagation
+        url: https://d2l.ai/chapter_multilayer-perceptrons/backprop.html#computational-graph-of-forward-propagation
+      - source: d2l
+        locator: Sec. 5.3.6 Exercises, Exercise 2
+        url: https://d2l.ai/chapter_multilayer-perceptrons/backprop.html#exercises
+    source:
+      id: d2l
+      ref: chapter_multilayer-perceptrons/backprop#ex2
+      url: https://d2l.ai/chapter_multilayer-perceptrons/backprop.html#exercises
+    status: draft
+  - id: neural-networks-054
+    type: single
+    difficulty: hard
+    tags:
+      - symmetry
+      - relu
+      - positive-homogeneity
+      - identifiability
+    question: |
+      Permuting the hidden units is one symmetry of an MLP. Which other change of the parameters leaves
+      the function computed by a ReLU network exactly the same for every input?
+    options:
+      - text: Add the same constant to all incoming weights of one hidden unit
+        why: That adds $c\sum_j x_j$ to the pre-activation, which depends on the input, so the function changes.
+      - text: Scale one hidden unit's incoming weights and bias by $c > 0$ and its outgoing weights by $1/c$
+        correct: true
+      - text: Flip the signs of one hidden unit's incoming weights, of its bias and of all its outgoing weights
+        why: That works for the odd function tanh, since $\tanh(-z) = -\tanh(z)$, but $\mathrm{ReLU}(-z) \neq -\mathrm{ReLU}(z)$.
+      - text: Multiply one hidden unit's incoming weights and its outgoing weights both by $c > 0$
+        why: The unit's contribution to the output then scales by $c^2$; the outgoing weights must be divided by $c$ to compensate [^1].
+    explanation: |
+      ReLU is positively homogeneous: $\mathrm{ReLU}(cz) = c\,\mathrm{ReLU}(z)$ for every $c > 0$ [^1].
+      Scaling a unit's incoming weights and bias by $c$ therefore scales its output by $c$, and
+      dividing its outgoing weights by $c$ cancels this exactly, so a whole continuum of parameter
+      settings computes the same function [^1]. Like the permutation symmetry [^2], this means a
+      network's parameters are not identifiable from its function; Dinh et al. use it to show that the
+      flatness of a minimum can be changed without changing the function [^1].
+    references:
+      - title: Dinh et al. (2017), Sharp Minima Can Generalize For Deep Nets, arXiv:1703.04933
+        locator: Sec. 3 Properties of Deep Rectified Networks, Definitions 4–5
+        url: https://arxiv.org/abs/1703.04933
+      - source: d2l
+        locator: Sec. 5.4.1.3 Breaking the Symmetry
+        url: https://d2l.ai/chapter_multilayer-perceptrons/numerical-stability-and-init.html#breaking-the-symmetry
+      - source: d2l
+        locator: Sec. 5.4.4 Exercises, Exercise 1
+        url: https://d2l.ai/chapter_multilayer-perceptrons/numerical-stability-and-init.html#exercises
+    source:
+      id: d2l
+      ref: chapter_multilayer-perceptrons/numerical-stability-and-init#ex1
+      url: https://d2l.ai/chapter_multilayer-perceptrons/numerical-stability-and-init.html#exercises
+    status: draft
+  - id: neural-networks-055
+    type: single
+    difficulty: easy
+    tags:
+      - hidden-layers
+      - model-complexity
+    question: What is the purpose of adding hidden layers to a neural network?
+    options:
+      - text: To make the network run faster on GPUs
+        why: More layers mean more computation; neural networks need GPUs because they are slow, not the other way round [^2].
+      - text: To reduce the amount of training data needed
+        why: Bigger networks have more parameters, and neural networks often need a lot of data in the first place [^2].
+      - text: To learn more complex patterns and features
+        correct: true
+      - text: To guarantee that training finds the best weights
+        why: Calling `fit` on a neural network never guarantees the optimum, with or without more layers [^2].
+    explanation: |
+      A neural network applies a sequence of transformations to its input; each hidden layer
+      computes new features (hidden units) from the previous layer's outputs, and with a nonlinear
+      function applied to each hidden unit the network can represent much more than a linear
+      model [^1]. The number and size of the layers control the fundamental trade-off: more or
+      bigger layers give a more complex model that can learn very complex functions [^2].
+    references:
+      - source: ubc-cpsc330
+        locator: 'Lecture 18: Multi-class classification and introduction to computer vision — Introduction to neural networks'
+        url: https://github.com/UBC-CS/cpsc330-2025W1/blob/a89d6131a0e2ae5f7ab36f207a3809a5b7137aef/lectures/notes/18_intro_to_computer-vision.ipynb
+      - source: ubc-cpsc330
+        locator: 'Lecture 18: Multi-class classification and introduction to computer vision — Why neural networks?; Why not neural networks?'
+        url: https://github.com/UBC-CS/cpsc330-2025W1/blob/a89d6131a0e2ae5f7ab36f207a3809a5b7137aef/lectures/notes/18_intro_to_computer-vision.ipynb
+    source:
+      id: ubc-cpsc330
+      ref: lectures/tutorials/solutions/final_prep.pdf#q18
+      url: https://github.com/UBC-CS/cpsc330-2025W1/blob/a89d6131a0e2ae5f7ab36f207a3809a5b7137aef/lectures/tutorials/solutions/final_prep.pdf
+    status: draft

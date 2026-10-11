@@ -1,0 +1,150 @@
+# Curation for hf-audio-course (see docs/content-pipeline.md#curation).
+# Refs: <chapter>/quiz#q<n>. Unlisted items are kept with the default topic `transformers`.
+# Reviewed 2026-10-11 — 12 of 14 kept. Two items only ask which 🤗 API call to use; the Whisper
+# feature-extractor item is rewritten around the general idea (use the checkpoint's own
+# preprocessing). Upstream "Correct!"/"Try again!" feedback is replaced by real explanations.
+items:
+  "chapter1/quiz#q1":
+    topic: data-prep
+    difficulty: easy
+  "chapter1/quiz#q2": {drop: tool-specific}
+  "chapter1/quiz#q3":
+    topic: data-prep
+    difficulty: easy
+    fix:
+      why:
+        0: That device is an analog-to-digital converter (ADC). A spectrogram is a representation of the signal, not hardware.
+      explanation: |
+        A spectrogram shows how the frequency content of a signal changes over time: time on the
+        horizontal axis, frequency on the vertical axis, and colour for the amplitude (or energy) of
+        each frequency. It is computed with the short-time Fourier transform, i.e. a Fourier
+        transform over short, overlapping windows of the waveform [^1].
+  "chapter1/quiz#q4":
+    fix:
+      question: |
+        A pretrained Whisper model expects log-mel spectrograms as input. You have raw 16 kHz
+        waveforms. What is the most reliable way to compute the model's input features?
+      options:
+        - text: Use the feature extractor released with that checkpoint, which repeats the pretraining settings
+          correct: true
+        - text: Compute a mel spectrogram with a signal-processing library's default settings
+          why: Default settings (number of mel bins, window and hop length, log scaling, normalisation, padding to 30 s) rarely match what the model saw in training, so the inputs would be out of distribution.
+        - text: Feed the raw waveform, since the encoder computes the spectrogram internally
+          why: Whisper's encoder takes log-mel features as input. The conversion from waveform to features is done by the preprocessor, not by the network.
+        - text: Let the dataset library compute the features when it decodes the audio
+          why: A dataset library decodes and resamples audio, but it does not know a model's feature settings. Feature extraction belongs to the model's preprocessor.
+      explanation: |
+        A pretrained model only works well on inputs prepared exactly as during pretraining [^1].
+        Whisper uses 80-channel log-magnitude mel spectrograms computed on 25 ms windows with a 10 ms
+        stride, scaled to a fixed range and padded or trimmed to 30-second chunks [^2]. The
+        checkpoint's own feature extractor reproduces those settings.
+      references:
+        - title: "Radford et al. (2022), Robust Speech Recognition via Large-Scale Weak Supervision"
+          locator: Sec. 2.2 Model
+          url: https://arxiv.org/abs/2212.04356
+  "chapter1/quiz#q5": {drop: tool-specific}
+  "chapter1/quiz#q6":
+    topic: data-prep
+    fix:
+      options:
+        1: Resample the audio to 16 kHz with a proper resampling routine before training
+      why:
+        0: The model has only seen 16 kHz input. At 32 kHz the same sound spans twice as many samples and its frequencies land in different places, so the inputs are out of distribution.
+        2: Dropping every other sample without first low-pass filtering folds frequencies above the new 8 kHz Nyquist limit back into the signal (aliasing). Proper resampling filters first.
+      explanation: |
+        Audio must have the sampling rate the model was trained on. Resampling from 32 kHz to
+        16 kHz low-pass filters the signal below the new Nyquist frequency (8 kHz) and then keeps
+        every second sample, so no aliasing is introduced; well-tested libraries do this for you
+        [^1].
+  "chapter1/quiz#q7":
+    fix:
+      why:
+        2: It is possible. A vocoder network, or the classic Griffin–Lim algorithm, which estimates the missing phase, can reconstruct a waveform.
+  "chapter3/quiz#q1":
+    fix:
+      why:
+        1: Audio embeddings come from the model's own encoder layers. A vocoder works after the model, on its spectrogram output.
+        2: Removing background noise is speech enhancement, a preprocessing step. A vocoder is a postprocessing network that synthesises the waveform.
+      explanation: |
+        Text-to-speech transformers usually predict a (mel) spectrogram rather than raw audio. A
+        spectrogram has no phase information, so a separate neural network, the vocoder (for
+        example HiFi-GAN), is trained to turn it into a waveform [^1].
+  "chapter3/quiz#q2":
+    fix:
+      question: Wav2Vec2, fine-tuned for speech recognition, is an example of which architecture?
+      why:
+        0: Sequence-to-sequence models such as Whisper have a decoder that generates the transcript token by token. Wav2Vec2 has no decoder.
+        1: Wav2Vec2 does begin with a convolutional feature encoder, but its core is a transformer encoder trained for speech recognition with a CTC head.
+      explanation: |
+        Wav2Vec2 turns the waveform into frame features with a small CNN, contextualises them with
+        a transformer encoder, and predicts one character per frame with a linear layer. It is
+        fine-tuned for speech recognition with the connectionist temporal classification (CTC)
+        loss, so it is a CTC (encoder-only) architecture [^1].
+  "chapter3/quiz#q3":
+    fix:
+      options:
+        0: It marks the breaks between the individual words of the sentence
+        1: It separates groups of characters, so that repeats can be merged safely
+        2: It stands for sounds that match no vocabulary token, like an unknown token
+      why:
+        0: Word breaks are marked by a separate word-delimiter token (Wav2Vec2 uses `|`), not by the blank.
+        2: The blank is not an "unknown" token. It is a structural token that lets the model output "no new character" for a frame.
+      explanation: |
+        A CTC model predicts one token per audio frame, so a character that lasts several frames is
+        predicted several times. Decoding first merges consecutive duplicates and then removes the
+        blanks. A blank between two identical characters (as in `l _ l` for the double l of
+        "hello") keeps them as two letters [^1].
+  "chapter3/quiz#q4":
+    fix:
+      why:
+        0: True. CTC models such as Wav2Vec2 and HuBERT are encoder-only, with a linear classification head on top.
+        1: True. Both use the same encoder architecture; they differ in the self-supervised pretraining objective.
+      explanation: |
+        This statement is false. CTC models are fast and simple, but each frame is predicted
+        independently, so outputs can sound right yet be misspelled, and they often need an
+        external language model. Sequence-to-sequence models such as Whisper, whose decoder acts as
+        a language model, usually reach lower error rates [^1].
+  "chapter3/quiz#q5":
+    fix:
+      question: Which kind of speech-recognition architecture does Whisper use?
+      why:
+        1: Whisper has two convolution layers at its input, but the model itself is an encoder–decoder transformer.
+        2: CTC models are encoder-only and predict one token per frame. Whisper's decoder generates the transcript token by token.
+      explanation: |
+        Whisper is an encoder–decoder (sequence-to-sequence) transformer. The encoder reads the
+        log-mel spectrogram, and the decoder generates the text tokens autoregressively, attending
+        to the encoder output through cross-attention [^1] [^2].
+      references:
+        - title: "Radford et al. (2022), Robust Speech Recognition via Large-Scale Weak Supervision"
+          locator: Sec. 2.2 Model
+          url: https://arxiv.org/abs/2212.04356
+  "chapter3/quiz#q6":
+    topic: cnn
+    fix:
+      question: Which approach to audio classification is the simplest to set up?
+      options:
+        - text: Train an encoder–decoder transformer to generate the class name from the waveform
+          why: Generating text needs a decoder and a sequence loss. A classifier only needs an encoder with a classification head.
+        - text: Compute spectrograms and train an ordinary image classifier, such as a CNN, on them
+          correct: true
+        - text: Transcribe the audio with a speech recognizer, then classify the transcript text
+          why: This adds a whole speech recognizer and fails for non-speech audio such as music or environmental sounds.
+      explanation: |
+        A spectrogram is a 2-D array (frequency × time), so any image classifier, for example a
+        CNN such as ResNet, can be trained on it with an ordinary cross-entropy loss [^1].
+        Transformer encoders with a classification head also work well, but take more setup.
+  "chapter3/quiz#q7":
+    topic: cv-basics
+    fix:
+      why:
+        0: Image augmentations assume the label does not change under shifts and rescaling, which is not true along a spectrogram's frequency axis.
+      explanation: |
+        A spectrogram is not a natural image: its vertical axis is frequency, so shifting it up or
+        down changes the pitch, and cropping or resizing distorts frequencies and durations. Such
+        transforms can hurt [^1]. Audio-specific augmentations are used instead, for example
+        adding noise, time stretching, or masking blocks of time steps and frequency channels as in
+        SpecAugment [^2].
+      references:
+        - title: "Park et al. (2019), SpecAugment: A Simple Data Augmentation Method for Automatic Speech Recognition"
+          locator: Sec. 2 Augmentation Policy
+          url: https://arxiv.org/abs/1904.08779

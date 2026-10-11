@@ -170,3 +170,112 @@ questions:
       ref: quiz-206/q3
       url: https://github.com/microsoft/AI-For-Beginners/blob/392d0df1b2647cbee104942390551f1ed9e072c8/etc/quiz-app/src/assets/translations/en/lesson-6.json
     status: draft
+  - id: cv-basics-007
+    type: single
+    question: True or false? When treating spectrograms as images for classification, you will always benefit from image data augmentation techniques, such as shifting an image, cropping it, or resizing.
+    options:
+      - text: 'True'
+        why: Image augmentations assume the label does not change under shifts and rescaling, which is not true along a spectrogram's frequency axis.
+      - text: 'False'
+        correct: true
+    explanation: |
+      A spectrogram is not a natural image: its vertical axis is frequency, so shifting it up or
+      down changes the pitch, and cropping or resizing distorts frequencies and durations. Such
+      transforms can hurt [^1]. Audio-specific augmentations are used instead, for example
+      adding noise, time stretching, or masking blocks of time steps and frequency channels as in
+      SpecAugment [^2].
+    references:
+      - source: hf-audio-course
+        locator: Unit 3. Transformer architectures for audio
+        url: https://huggingface.co/learn/audio-course/chapter3/introduction
+      - title: 'Park et al. (2019), SpecAugment: A Simple Data Augmentation Method for Automatic Speech Recognition'
+        locator: Sec. 2 Augmentation Policy
+        url: https://arxiv.org/abs/1904.08779
+    source:
+      id: hf-audio-course
+      ref: chapter3/quiz#q7
+      url: https://huggingface.co/learn/audio-course/chapter3/quiz
+    status: draft
+  - id: cv-basics-008
+    type: single
+    difficulty: easy
+    tags:
+      - image-augmentation
+      - overfitting
+    question: |
+      You train the same ResNet-18 on CIFAR-10 twice, once with random horizontal flips and once with no
+      augmentation, and compare training and test accuracy. Which result supports the claim that image
+      augmentation mitigates overfitting?
+    options:
+      - text: With augmentation, training accuracy rises faster, so the model fits the training images more closely
+        why: Fitting the training images more closely is not less overfitting; augmentation usually makes the training task harder, not easier.
+      - text: Without augmentation, training and test accuracy are both lower than with augmentation
+        why: Low accuracy on both sets points to underfitting, which is not what augmentation is meant to fix [^2].
+      - text: Without augmentation, training accuracy is higher but test accuracy lower, so the train–test gap is wider
+        correct: true
+      - text: Both runs reach the same test accuracy, but the run with augmentation finishes its epochs sooner
+        why: Overfitting is about the gap between training and test performance, not about training speed.
+    explanation: |
+      Augmentation applies random changes to the training images, which enlarges the training set and
+      makes the model rely less on details such as the exact position or color of an object, so it
+      generalizes better [^1]. Overfitting shows up as a gap between training and test (generalization)
+      performance [^2]. So the evidence to look for is a smaller gap with augmentation: training accuracy
+      no higher, or even lower, and test accuracy higher. Augmentation is applied only to the training
+      images; at test time d2l uses no random transforms, to get deterministic predictions [^1].
+    references:
+      - source: d2l
+        locator: Sec. 14.1 Image Augmentation (introduction) and Sec. 14.1.2 Training with Image Augmentation
+        url: https://d2l.ai/chapter_computer-vision/image-augmentation.html#training-with-image-augmentation
+      - source: d2l
+        locator: Sec. 3.6.1 Training Error and Generalization Error
+        url: https://d2l.ai/chapter_linear-regression/generalization.html#training-error-and-generalization-error
+      - source: d2l
+        locator: Sec. 14.1.4 Exercises, Exercise 1
+        url: https://d2l.ai/chapter_computer-vision/image-augmentation.html#exercises
+    source:
+      id: d2l
+      ref: chapter_computer-vision/image-augmentation#ex1
+      url: https://d2l.ai/chapter_computer-vision/image-augmentation.html#exercises
+    status: draft
+  - id: cv-basics-009
+    type: single
+    difficulty: easy
+    tags:
+      - neural-style-transfer
+      - total-variation
+      - loss-weights
+    question: |
+      Neural style transfer optimizes the pixels of a synthesized image to minimize
+      `content_weight * content_loss + style_weight * style_loss + tv_weight * tv_loss`.
+      Your result keeps too little of the content image's layout and is covered in high-frequency
+      speckle. Which change targets both problems?
+    options:
+      - text: Raise `content_weight` and raise `tv_weight`
+        correct: true
+      - text: Lower `content_weight` and raise `tv_weight`
+        why: Raising `tv_weight` smooths the speckle, but lowering `content_weight` keeps even less of the content.
+      - text: Raise `content_weight` and lower `tv_weight`
+        why: This helps the content, but a weaker total variation term lets more high-frequency noise through [^1].
+      - text: Raise `style_weight` and lower `tv_weight`
+        why: A stronger style term pulls the image further from the content, and a weaker total variation term allows more noise.
+    explanation: |
+      The content loss keeps the synthesized image's content features close to those of the content
+      image, and the style loss matches the Gram matrices of the style image. The total variation loss
+      $\sum_{i,j} |x_{i,j} - x_{i+1,j}| + |x_{i,j} - x_{i,j+1}|$ makes neighbouring pixels similar and so
+      reduces high-frequency noise [^1]. The final loss is a weighted sum, and the weights trade off
+      content retention, style transfer and noise reduction [^2].
+    references:
+      - source: d2l
+        locator: Sec. 14.12.5.3 Total Variation Loss
+        url: https://d2l.ai/chapter_computer-vision/neural-style.html#total-variation-loss
+      - source: d2l
+        locator: Sec. 14.12.5.4 Loss Function
+        url: https://d2l.ai/chapter_computer-vision/neural-style.html#loss-function
+      - source: d2l
+        locator: Sec. 14.12.9 Exercises, Exercise 2
+        url: https://d2l.ai/chapter_computer-vision/neural-style.html#exercises
+    source:
+      id: d2l
+      ref: chapter_computer-vision/neural-style#ex2
+      url: https://d2l.ai/chapter_computer-vision/neural-style.html#exercises
+    status: draft

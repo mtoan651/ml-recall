@@ -284,3 +284,440 @@ questions:
       ref: quiz-115/q1
       url: https://github.com/microsoft/AI-For-Beginners/blob/392d0df1b2647cbee104942390551f1ed9e072c8/etc/quiz-app/src/assets/translations/en/lesson-15.json
     status: draft
+  - id: language-models-010
+    type: short_answer
+    difficulty: easy
+    tags:
+      - n-gram
+      - sparsity
+      - vocabulary
+    question: |
+      A word-level 4-gram language model uses a vocabulary of 100,000 words. In the worst case its
+      table of 4-word counts $n(x, x', x'', x''')$ has $10^k$ entries. What is $k$?
+    answer:
+      numeric: 20
+      tolerance: 0
+      hint: a whole number (the exponent)
+      model: $|\mathcal{V}|^4 = (10^5)^4 = 10^{20}$
+    explanation: |
+      Each of the four positions can hold any of the $10^5$ words, so there are
+      $|\mathcal{V}|^4 = 10^{20}$ possible 4-grams; the smoothed estimates also need the trigram
+      ($10^{15}$), bigram ($10^{10}$) and unigram ($10^5$) counts [^1]. d2l notes that an $n$-gram
+      model must store $|\mathcal{V}|^n$ numbers, which is why longer contexts quickly become
+      infeasible [^2]. In practice only the observed counts are stored, and almost all possible
+      4-grams are never observed [^1].
+    references:
+      - source: d2l
+        locator: Sec. 9.3.1.1 Markov Models and n-grams; 9.3.1.3 Laplace Smoothing
+        url: https://d2l.ai/chapter_recurrent-neural-networks/language-model.html#laplace-smoothing
+      - source: d2l
+        locator: Sec. 9.4 Recurrent Neural Networks (introduction)
+        url: https://d2l.ai/chapter_recurrent-neural-networks/rnn.html
+      - source: d2l
+        locator: Sec. 9.3.5 Exercises, Exercise 1
+        url: https://d2l.ai/chapter_recurrent-neural-networks/language-model.html#exercises
+    source:
+      id: d2l
+      ref: chapter_recurrent-neural-networks/language-model#ex1
+      url: https://d2l.ai/chapter_recurrent-neural-networks/language-model.html#exercises
+    status: draft
+  - id: language-models-011
+    type: short_answer
+    difficulty: medium
+    tags:
+      - n-gram
+      - sparsity
+      - laplace-smoothing
+    question: |
+      A training corpus is one continuous text of 100,000 word tokens, drawn from a vocabulary of
+      10,000 word types. At most how many *distinct* 4-grams can have a nonzero count?
+    answer:
+      numeric: 99997
+      tolerance: 0
+      hint: a whole number
+      model: The text contains $100{,}000 - 3 = 99{,}997$ overlapping 4-gram positions
+    explanation: |
+      A text of $T$ tokens has exactly $T - 3$ positions where a 4-gram starts, so at most 99,997
+      distinct 4-grams can be observed, against $10{,}000^4 = 10^{16}$ possible ones. More than
+      $99.999999999\%$ of the 4-gram table is zero, so relative frequencies assign probability 0 to
+      almost every plausible word sequence. That is why counting models need smoothing, and why d2l
+      turns to neural language models that share statistical strength between similar contexts
+      [^1][^2].
+    references:
+      - source: d2l
+        locator: Sec. 9.3.1.2 Word Frequency and 9.3.1.3 Laplace Smoothing
+        url: https://d2l.ai/chapter_recurrent-neural-networks/language-model.html#laplace-smoothing
+      - source: d2l
+        locator: Sec. 9.2.5 Exploratory Language Statistics
+        url: https://d2l.ai/chapter_recurrent-neural-networks/text-sequence.html#exploratory-language-statistics
+      - source: d2l
+        locator: Sec. 9.3.5 Exercises, Exercise 1
+        url: https://d2l.ai/chapter_recurrent-neural-networks/language-model.html#exercises
+    source:
+      id: d2l
+      ref: chapter_recurrent-neural-networks/language-model#ex1-b
+      url: https://d2l.ai/chapter_recurrent-neural-networks/language-model.html#exercises
+    status: draft
+  - id: language-models-012
+    type: single
+    difficulty: easy
+    tags:
+      - minibatch
+      - padding
+      - masking
+    question: |
+      You want every training example of a language model to be one complete sentence, instead of a
+      fixed-length window cut from the running text. What problem does this create for minibatch
+      training, and what is the usual fix?
+    options:
+      - text: Sentences differ in length and do not stack into one tensor; pad or truncate them to one length and mask the padding
+        correct: true
+      - text: Sentences overlap, so the same tokens appear in many examples; keep only every second sentence
+        why: Complete sentences taken one after another do not overlap; the problem is their varying length.
+      - text: The last token of a sentence has no target; append the first word of the next sentence to it
+        why: An end-of-sequence token supplies that target; the real obstacle to batching is the varying length.
+      - text: Sentences are too long for the hidden state to hold, so each word must be fed to the model separately and independently
+        why: Treating words independently throws away the sequence; nothing here is about hidden-state capacity.
+    explanation: |
+      With fixed windows of `num_steps` tokens every minibatch has the same shape [^1]. Sentences vary
+      in length, so d2l's translation pipeline appends `<pad>` tokens to short sequences and
+      truncates long ones to a common `num_steps` [^2], and the loss masks the padding positions so
+      they do not count as predictions [^3]. Bucketing sentences of similar length into the same
+      minibatch reduces the computation wasted on padding [^4].
+    references:
+      - source: d2l
+        locator: Sec. 9.3.3 Partitioning Sequences
+        url: https://d2l.ai/chapter_recurrent-neural-networks/language-model.html#partitioning-sequences
+      - source: d2l
+        locator: Sec. 10.5.3 Loading Sequences of Fixed Length
+        url: https://d2l.ai/chapter_recurrent-modern/machine-translation-and-dataset.html#loading-sequences-of-fixed-length
+      - source: d2l
+        locator: Sec. 10.7.5 Loss Function with Masking
+        url: https://d2l.ai/chapter_recurrent-modern/seq2seq.html#loss-function-with-masking
+      - source: d2l
+        locator: Sec. 10.5.5 Summary
+        url: https://d2l.ai/chapter_recurrent-modern/machine-translation-and-dataset.html#summary
+      - source: d2l
+        locator: Sec. 9.3.5 Exercises, Exercise 5
+        url: https://d2l.ai/chapter_recurrent-neural-networks/language-model.html#exercises
+    source:
+      id: d2l
+      ref: chapter_recurrent-neural-networks/language-model#ex5
+      url: https://d2l.ai/chapter_recurrent-neural-networks/language-model.html#exercises
+    status: draft
+  - id: language-models-013
+    type: true_false
+    difficulty: medium
+    tags:
+      - rnn
+      - language-model
+      - truncated-bptt
+    shuffle: false
+    question: |
+      A character-level RNN language model is trained on random windows of `num_steps = 32`
+      characters cut from a book, and every minibatch starts from a zero hidden state. True or false:
+      in training it learns to predict each character from all the text before it, back to the first
+      character of the book.
+    options:
+      - text: 'True'
+        why: Each window starts from a fresh zero state, so at most the 31 earlier characters in the same window can influence a training prediction [^1][^2].
+      - text: 'False'
+        correct: true
+    explanation: |
+      The training data are length-`num_steps` subsequences [^1], and the RNN's forward pass starts
+      from a zero state whenever no state is passed in [^2], so neither information nor gradients
+      flow beyond 32 characters. At prediction time the state is carried through the whole prefix (the
+      warm-up period) [^3], but the model was never trained to exploit context longer than
+      `num_steps`, the hyperparameter that sets the length of history used in training.
+    references:
+      - source: d2l
+        locator: Sec. 9.3.3 Partitioning Sequences
+        url: https://d2l.ai/chapter_recurrent-neural-networks/language-model.html#partitioning-sequences
+      - source: d2l
+        locator: Sec. 9.5.1 RNN Model
+        url: https://d2l.ai/chapter_recurrent-neural-networks/rnn-scratch.html#rnn-model
+      - source: d2l
+        locator: Sec. 9.5.5 Decoding
+        url: https://d2l.ai/chapter_recurrent-neural-networks/rnn-scratch.html#decoding
+      - source: d2l
+        locator: Sec. 9.5.7 Exercises, Exercise 1
+        url: https://d2l.ai/chapter_recurrent-neural-networks/rnn-scratch.html#exercises
+    source:
+      id: d2l
+      ref: chapter_recurrent-neural-networks/rnn-scratch#ex1
+      url: https://d2l.ai/chapter_recurrent-neural-networks/rnn-scratch.html#exercises
+    status: draft
+  - id: language-models-014
+    type: single
+    difficulty: easy
+    tags:
+      - rnn
+      - language-model
+      - hyperparameters
+    question: |
+      A character-level RNN language model is trained on minibatches of random text windows, each
+      starting from a zero hidden state. Which hyperparameter sets how many earlier characters a
+      training prediction can draw on?
+    options:
+      - text: '`num_steps`, the length of each training window'
+        correct: true
+      - text: '`num_hiddens`, the size of the hidden state'
+        why: It sets how much the state can hold, not how many tokens are fed into it before a prediction.
+      - text: '`batch_size`, the number of windows per minibatch'
+        why: More windows are processed in parallel, but each is still only `num_steps` tokens long.
+      - text: '`grad_clip_val`, the clipping threshold for gradients'
+        why: It bounds the gradient norm; it does not change which tokens a prediction sees.
+    explanation: |
+      Each training example is a subsequence of `num_steps` tokens and its target is the same
+      window shifted by one, so a prediction can use at most `num_steps` tokens of history [^1].
+      The same length also truncates backpropagation through time, the "regular truncation" of
+      d2l's comparison of strategies [^2].
+    references:
+      - source: d2l
+        locator: Sec. 9.3.3 Partitioning Sequences
+        url: https://d2l.ai/chapter_recurrent-neural-networks/language-model.html#partitioning-sequences
+      - source: d2l
+        locator: Sec. 9.7.1.4 Comparing Strategies
+        url: https://d2l.ai/chapter_recurrent-neural-networks/bptt.html#comparing-strategies
+      - source: d2l
+        locator: Sec. 9.5.7 Exercises, Exercise 2
+        url: https://d2l.ai/chapter_recurrent-neural-networks/rnn-scratch.html#exercises
+    source:
+      id: d2l
+      ref: chapter_recurrent-neural-networks/rnn-scratch#ex2
+      url: https://d2l.ai/chapter_recurrent-neural-networks/rnn-scratch.html#exercises
+    status: draft
+  - id: language-models-015
+    type: short_answer
+    difficulty: medium
+    tags:
+      - sampling
+      - temperature
+      - decoding
+    question: |
+      A character model predicts the next-character probabilities $P = (0.5, 0.3, 0.2)$ for three
+      candidates. Instead of taking the most likely one, you sample from
+      $q \propto P^\alpha$ with $\alpha = 2$. With what probability is the most likely character
+      sampled? Round to 3 decimals.
+    answer:
+      numeric: 0.658
+      tolerance: 0.002
+      hint: a probability, 3 decimals
+      model: $q = (0.25, 0.09, 0.04)/0.38 \approx (0.658, 0.237, 0.105)$
+    explanation: |
+      Squaring gives $(0.25, 0.09, 0.04)$, which sums to $0.38$, so the top character gets
+      $0.25/0.38 \approx 0.658$ instead of 0.5. Since $P^\alpha \propto \exp(\alpha \log P)$, this is a
+      softmax of the log-probabilities at temperature $1/\alpha$: $\alpha > 1$ sharpens the
+      distribution toward likely characters, $\alpha = 1$ is plain sampling, and $\alpha \to \infty$
+      becomes the argmax used by d2l's `predict` method [^1]. Plain sampling gives varied but less
+      coherent text; pure argmax decoding is deterministic and can get stuck repeating itself.
+    references:
+      - source: d2l
+        locator: Sec. 9.5.5 Decoding
+        url: https://d2l.ai/chapter_recurrent-neural-networks/rnn-scratch.html#decoding
+      - source: d2l
+        locator: Sec. 9.5.7 Exercises, Exercise 8
+        url: https://d2l.ai/chapter_recurrent-neural-networks/rnn-scratch.html#exercises
+    source:
+      id: d2l
+      ref: chapter_recurrent-neural-networks/rnn-scratch#ex8
+      url: https://d2l.ai/chapter_recurrent-neural-networks/rnn-scratch.html#exercises
+    status: draft
+  - id: language-models-016
+    type: single
+    difficulty: easy
+    tags:
+      - transformer-decoder
+      - causal-mask
+      - gpt
+    question: |
+      You want a Transformer for plain language modeling: predict each next token of a text from the
+      tokens before it. Which part of the architecture do you use?
+    options:
+      - text: The decoder alone, without cross-attention, with a causal mask on its self-attention
+        correct: true
+      - text: The encoder alone without masks, so every token can use the whole text
+        why: Each position could then attend to the very token it must predict, which makes training trivial.
+      - text: The full encoder–decoder, with the same text fed to both sides
+        why: There is no separate source, and an encoder that sees the whole text would leak future tokens to the decoder.
+      - text: The encoder alone, trained to predict tokens that were masked at random positions in the text
+        why: That is masked language modeling as in BERT, which does not generate text left to right.
+    explanation: |
+      A decoder-only Transformer drops the encoder and the encoder–decoder attention sublayer; its
+      masked self-attention lets each position attend only to earlier positions, and the target is the
+      input shifted by one token, as in GPT [^1][^2]. The mask preserves the autoregressive property,
+      so the prediction depends only on tokens already seen [^2].
+    references:
+      - source: d2l
+        locator: Sec. 11.9.3 Decoder-Only; 11.9.3.1 GPT and GPT-2
+        url: https://d2l.ai/chapter_attention-mechanisms-and-transformers/large-pretraining-transformers.html#decoder-only
+      - source: d2l
+        locator: Sec. 11.7.5 Decoder
+        url: https://d2l.ai/chapter_attention-mechanisms-and-transformers/transformer.html#decoder
+      - source: d2l
+        locator: Sec. 11.7.8 Exercises, Exercise 3
+        url: https://d2l.ai/chapter_attention-mechanisms-and-transformers/transformer.html#exercises
+    source:
+      id: d2l
+      ref: chapter_attention-mechanisms-and-transformers/transformer#ex3
+      url: https://d2l.ai/chapter_attention-mechanisms-and-transformers/transformer.html#exercises
+    status: draft
+  - id: language-models-017
+    type: single
+    difficulty: medium
+    tags:
+      - bert
+      - masked-language-model
+      - pretraining
+    shuffle: false
+    question: |
+      All else being equal, does a masked language model (BERT, which predicts the 15% of tokens
+      selected for masking) need more or fewer pretraining steps to converge than a left-to-right
+      language model?
+    options:
+      - text: 'More: each sequence gives targets at only ~15% of positions, a left-to-right model at all of them'
+        correct: true
+      - text: 'Fewer: seeing context on both sides makes each prediction easier to learn'
+        why: Easier predictions do not make up for having far fewer of them; BERT's authors measured slightly slower convergence [^2].
+      - text: 'Fewer: random masking acts as data augmentation, so every training step counts several times over'
+        why: Masking reduces the number of targets per sequence instead of multiplying them.
+      - text: The same, because both read the same number of tokens in each step
+        why: The loss, and hence the learning signal, covers only the masked positions [^1].
+    explanation: |
+      BERT selects 15% of the tokens for prediction, and only those positions enter the loss [^1],
+      while a left-to-right model is trained on a prediction at every position. Devlin et al. confirm
+      that MLM pretraining converges slightly slower than left-to-right pretraining, but its fine-tuned
+      accuracy overtakes the left-to-right model almost immediately [^2].
+    references:
+      - source: d2l
+        locator: Sec. 15.8.5.1 Masked Language Modeling
+        url: https://d2l.ai/chapter_natural-language-processing-pretraining/bert.html#masked-language-modeling
+      - title: 'Devlin, Chang, Lee & Toutanova (2018), BERT: Pre-training of Deep Bidirectional Transformers for Language Understanding'
+        url: https://arxiv.org/abs/1810.04805
+        locator: Appendix C.1 Effect of Number of Training Steps
+      - source: d2l
+        locator: Sec. 15.8.8 Exercises, Exercise 1
+        url: https://d2l.ai/chapter_natural-language-processing-pretraining/bert.html#exercises
+    source:
+      id: d2l
+      ref: chapter_natural-language-processing-pretraining/bert#ex1
+      url: https://d2l.ai/chapter_natural-language-processing-pretraining/bert.html#exercises
+    status: draft
+  - id: language-models-018
+    type: single
+    difficulty: medium
+    tags:
+      - decoding
+      - sampling
+      - temperature
+      - top-p
+    question: |
+      A language model is used for two tasks: auto-generating legal contracts and writing poetry.
+      Which choice of decoding strategy fits the two tasks best?
+    options:
+      - text: A high temperature for the contracts so the wording varies, greedy decoding for the poems so they stay coherent
+        why: This is backwards. Contracts need precise, predictable wording, while poetry benefits from diversity [^1].
+      - text: Greedy decoding for both, since it always produces the most accurate text
+        why: Greedy decoding is accurate and coherent but repetitive and not very diverse, which suits contracts but not creative writing [^1].
+      - text: Greedy decoding or a low temperature for the contracts, top-p sampling or a higher temperature for the poems
+        correct: true
+      - text: A high temperature for both, since it makes the model's output more accurate
+        why: A higher temperature flattens the next-token distribution and adds randomness; it makes text more diverse, not more accurate [^1].
+    explanation: |
+      Greedy decoding always takes the most probable next token, which gives accurate, coherent but
+      repetitive text [^1]. Temperature reshapes the softmax: $\tau < 1$ sharpens the distribution and
+      behaves more like greedy decoding, $\tau > 1$ flattens it and increases diversity; top-$k$ and
+      top-$p$ sampling restrict sampling to the most likely tokens while keeping some variety [^1].
+      Legal contracts call for the deterministic end of this range and poetry for the creative end.
+    references:
+      - source: ubc-dsci575
+        locator: 'Lecture 2: Applications of Markov Models and Text Preprocessing — 2.1 Sampling techniques'
+        url: https://github.com/UBC-MDS/DSCI_575_adv-mach-learn/blob/af9d47c5fdaa26aa9a50e0f50cd991cf325f1972/lectures/notes/02_LMs-text-preprocessing.ipynb
+    source:
+      id: ubc-dsci575
+      ref: lectures/notes/02_LMs-text-preprocessing.ipynb#ex2.1
+      url: https://github.com/UBC-MDS/DSCI_575_adv-mach-learn/blob/af9d47c5fdaa26aa9a50e0f50cd991cf325f1972/lectures/notes/02_LMs-text-preprocessing.ipynb
+    status: draft
+  - id: language-models-019
+    type: multiple
+    difficulty: medium
+    tags:
+      - n-gram
+      - markov-models
+      - perplexity
+      - stationary-distribution
+    question: |
+      In a Markov model of language, a state can be a longer context, such as the last few words or
+      characters. Which statements about such n-gram models are true? Select all that apply.
+    options:
+      - text: Building the transition matrix amounts to counting how often each state follows each other state and normalizing the counts
+        correct: true
+      - text: In a character-level model whose state is the last 3 characters, each step predicts the next 3 characters at once
+        why: Each step still predicts one character; the longer state only gives more context. The next state is the last 2 old characters plus the new one [^2].
+      - text: Word n-gram models built on two corpora from completely different domains have the same stationary distribution
+        why: The stationary distribution reflects how often each state occurs in the corpus, and word frequencies differ between domains [^3].
+      - text: A character-level model over 100 distinct characters whose state is the last 4 characters has a $100 \times 100$ transition matrix
+        why: With 4-character states there are $100^4$ possible states, so the transition matrix is indexed by those states, not by single characters [^2].
+      - text: A longer context typically lowers perplexity on the training text, but too long a context can raise it on held-out text
+        correct: true
+    explanation: |
+      Learning a Markov model is counting: a transition probability is the number of times $s_i$ is
+      followed by $s_j$, divided by the number of times $s_i$ is followed by anything [^1].
+      Incorporating more history means redefining the state as the last $n$ words or characters;
+      the math stays the same, the state space explodes, and the estimates become sparse [^2]. More
+      context usually means lower perplexity, but with too much the model overfits the training text
+      and its perplexity on new text can rise [^4]. The stationary distribution corresponds to how
+      often each state occurs in the corpus, so it differs between corpora [^3].
+    references:
+      - source: ubc-dsci575
+        locator: 'Lecture 2: Applications of Markov Models and Text Preprocessing — 1.1 Learning Markov models'
+        url: https://github.com/UBC-MDS/DSCI_575_adv-mach-learn/blob/af9d47c5fdaa26aa9a50e0f50cd991cf325f1972/lectures/notes/02_LMs-text-preprocessing.ipynb
+      - source: ubc-dsci575
+        locator: 'Lecture 2: Applications of Markov Models and Text Preprocessing — 1.3 Incorporating more context; 1.5 Are n-grams a good model of language?'
+        url: https://github.com/UBC-MDS/DSCI_575_adv-mach-learn/blob/af9d47c5fdaa26aa9a50e0f50cd991cf325f1972/lectures/notes/02_LMs-text-preprocessing.ipynb
+      - source: ubc-dsci575
+        locator: 'Lecture 2: Applications of Markov Models and Text Preprocessing — Stationary distribution in the context of text'
+        url: https://github.com/UBC-MDS/DSCI_575_adv-mach-learn/blob/af9d47c5fdaa26aa9a50e0f50cd991cf325f1972/lectures/notes/02_LMs-text-preprocessing.ipynb
+      - source: ubc-dsci575
+        locator: "Lecture 2: Applications of Markov Models and Text Preprocessing — 2.2 Evaluating language models; Exercise (iClicker), V's Solutions"
+        url: https://github.com/UBC-MDS/DSCI_575_adv-mach-learn/blob/af9d47c5fdaa26aa9a50e0f50cd991cf325f1972/lectures/notes/02_LMs-text-preprocessing.ipynb
+    source:
+      id: ubc-dsci575
+      ref: lectures/notes/02_LMs-text-preprocessing.ipynb#ex2.2
+      url: https://github.com/UBC-MDS/DSCI_575_adv-mach-learn/blob/af9d47c5fdaa26aa9a50e0f50cd991cf325f1972/lectures/notes/02_LMs-text-preprocessing.ipynb
+    status: draft
+  - id: language-models-020
+    type: true_false
+    difficulty: easy
+    tags:
+      - stationary-distribution
+      - n-gram
+      - word-frequency
+    shuffle: false
+    question: |
+      True or false: in a word-level Markov model of a corpus, rare words get low probabilities in
+      the stationary distribution, so the stationary distribution can help you spot rare words.
+    options:
+      - text: 'True'
+        correct: true
+      - text: 'False'
+        why: In n-gram models of text the stationary distribution can be read as the long-run frequency of each word, which is exactly what is low for rare words [^1].
+    explanation: |
+      For n-gram models of language, the stationary distribution can be thought of as the long-term
+      distribution of word (or character) frequencies, and it can be computed from how often each
+      state occurs in the corpus [^1]. Rare words therefore get small stationary probabilities, and
+      sorting the stationary distribution surfaces them [^2]. For the same reason, two corpora from
+      different domains, such as song lyrics and biomedical text, have different stationary
+      distributions [^2].
+    references:
+      - source: ubc-dsci575
+        locator: 'Lecture 2: Applications of Markov Models and Text Preprocessing — Stationary distribution in the context of text'
+        url: https://github.com/UBC-MDS/DSCI_575_adv-mach-learn/blob/af9d47c5fdaa26aa9a50e0f50cd991cf325f1972/lectures/notes/02_LMs-text-preprocessing.ipynb
+      - source: ubc-dsci575
+        locator: "Lecture 2: Applications of Markov Models and Text Preprocessing — Exercise (stationary distribution), V's Solutions"
+        url: https://github.com/UBC-MDS/DSCI_575_adv-mach-learn/blob/af9d47c5fdaa26aa9a50e0f50cd991cf325f1972/lectures/notes/02_LMs-text-preprocessing.ipynb
+    source:
+      id: ubc-dsci575
+      ref: lectures/notes/02_LMs-text-preprocessing.ipynb#ex2.3
+      url: https://github.com/UBC-MDS/DSCI_575_adv-mach-learn/blob/af9d47c5fdaa26aa9a50e0f50cd991cf325f1972/lectures/notes/02_LMs-text-preprocessing.ipynb
+    status: draft

@@ -574,3 +574,700 @@ questions:
       ref: quiz-34/q1
       url: https://github.com/microsoft/ML-For-Beginners/blob/de2d4e12236445198213a0711855e348e7253cd4/quiz-app/src/assets/translations/en.json
     status: draft
+  - id: text-representation-021
+    type: short_answer
+    difficulty: easy
+    tags:
+      - one-hot
+      - embedding
+      - linear-layer
+    question: |
+      A vocabulary has 4 tokens, and the input layer of a model has the weight matrix
+
+      $$\mathbf{W} = \begin{bmatrix} 1 & 2 & 3 \\ 4 & 5 & 6 \\ 7 & 8 & 9 \\ 10 & 11 & 12 \end{bmatrix}$$
+
+      (one row per token). The token with index 2, counting from 0, is one-hot encoded as
+      $\mathbf{e} = (0, 0, 1, 0)$. What is $\mathbf{e}^\top\mathbf{W}$?
+    answer:
+      accept:
+        - (7, 8, 9)
+      pattern: '[(\[]?\s*7(\s*,\s*|\s+)8(\s*,\s*|\s+)9\s*[)\]]?'
+      hint: three numbers, e.g. (1, 2, 3)
+      model: $(7, 8, 9)$, row 2 of $\mathbf{W}$
+    explanation: |
+      Multiplying a one-hot vector by a matrix picks out a single row: here row 2, $(7, 8, 9)$. A
+      one-hot input followed by a linear layer is therefore the same as giving every token its own
+      learnable vector and looking it up by index [^1]. Embedding layers implement exactly this lookup
+      directly, fetching row $i$ of the weight matrix for token $i$ instead of doing the wasteful
+      multiplication [^2].
+    references:
+      - source: d2l
+        locator: Sec. 9.5.2.1 One-Hot Encoding
+        url: https://d2l.ai/chapter_recurrent-neural-networks/rnn-scratch.html#one-hot-encoding
+      - source: d2l
+        locator: Sec. 10.7.2 Encoder (embedding layer)
+        url: https://d2l.ai/chapter_recurrent-modern/seq2seq.html#encoder
+      - source: d2l
+        locator: Sec. 9.5.7 Exercises, Exercise 3
+        url: https://d2l.ai/chapter_recurrent-neural-networks/rnn-scratch.html#exercises
+    source:
+      id: d2l
+      ref: chapter_recurrent-neural-networks/rnn-scratch#ex3
+      url: https://d2l.ai/chapter_recurrent-neural-networks/rnn-scratch.html#exercises
+    status: draft
+  - id: text-representation-022
+    type: single
+    difficulty: medium
+    tags:
+      - polysemy
+      - contextual-embeddings
+      - bidirectional
+    question: |
+      The word "bank" means different things in "i went to the bank to deposit cash" and "i went to
+      the bank to sit down". You need a vector for "bank" that reflects its meaning in the given
+      sentence. Which design provides it?
+    options:
+      - text: Run a bidirectional encoder over the whole sentence and take its output at "bank"
+        correct: true
+      - text: Look up "bank" in a table of pretrained word2vec or GloVe vectors
+        why: These are context-independent; "bank" gets the same vector in every sentence [^1].
+      - text: Run a left-to-right language model over the sentence and take its hidden state at "bank"
+        why: The words before "bank" are identical in both sentences, so a left-to-right model returns the same vector; the clue comes after it [^2].
+      - text: Average the GloVe vectors of all the words in the sentence
+        why: This gives one vector for the whole sentence, the same for every word in it, not a vector for "bank".
+    explanation: |
+      word2vec and GloVe give each word a single vector, which cannot represent polysemy [^1].
+      Context-sensitive representations are functions $f(x, c(x))$ of the token and its context [^1].
+      In this example the disambiguating words come after "bank", so a left-to-right model like GPT
+      returns the same representation in both sentences, while a bidirectional model such as ELMo's
+      biLSTM or BERT's Transformer encoder can use the right-hand context [^2][^3].
+    references:
+      - source: d2l
+        locator: Sec. 15.8.1 From Context-Independent to Context-Sensitive
+        url: https://d2l.ai/chapter_natural-language-processing-pretraining/bert.html#from-context-independent-to-context-sensitive
+      - source: d2l
+        locator: Sec. 15.8.2 From Task-Specific to Task-Agnostic
+        url: https://d2l.ai/chapter_natural-language-processing-pretraining/bert.html#from-task-specific-to-task-agnostic
+      - source: d2l
+        locator: Sec. 10.4.3 Summary
+        url: https://d2l.ai/chapter_recurrent-modern/bi-rnn.html#summary
+      - source: d2l
+        locator: Sec. 10.4.4 Exercises, Exercise 3
+        url: https://d2l.ai/chapter_recurrent-modern/bi-rnn.html#exercises
+    source:
+      id: d2l
+      ref: chapter_recurrent-modern/bi-rnn#ex3
+      url: https://d2l.ai/chapter_recurrent-modern/bi-rnn.html#exercises
+    status: draft
+  - id: text-representation-023
+    type: single
+    difficulty: easy
+    tags:
+      - word2vec
+      - skip-gram
+      - softmax
+      - complexity
+    question: |
+      Skip-gram with a full softmax uses the gradient
+      $\partial \log P(w_o \mid w_c)/\partial \mathbf{v}_c = \mathbf{u}_o - \sum_{j \in \mathcal{V}} P(w_j \mid w_c)\,\mathbf{u}_j$.
+      With vocabulary $\mathcal{V}$ and $d$-dimensional vectors, what does one such gradient cost, and
+      why is that a problem?
+    options:
+      - text: "$O(|\\mathcal{V}|\\,d)$: every word's vector enters the sum, which is slow for huge vocabularies"
+        correct: true
+      - text: '$O(d)$: only the vectors of the center word and the context word are involved'
+        why: The normalizing sum runs over every word in the vocabulary [^1].
+      - text: '$O(|\mathcal{V}|^2 d)$: every pair of words in the vocabulary has to be compared with each other'
+        why: Only the center word is compared with each vocabulary word, $|\mathcal{V}|$ dot products.
+      - text: '$O(d\log|\mathcal{V}|)$: the softmax is evaluated along a path in a binary tree'
+        why: That is hierarchical softmax, an approximation introduced to avoid the full sum [^2].
+    explanation: |
+      The gradient needs $P(w_j \mid w_c)$ for every word $j$, i.e. $|\mathcal{V}|$ dot products of
+      length $d$ and a weighted sum of $|\mathcal{V}|$ vectors [^1]. Dictionaries often hold hundreds of
+      thousands or millions of words, which makes every update expensive [^2]. Negative sampling cuts
+      the cost to $O(Kd)$ for $K$ noise words, and hierarchical softmax to $O(d\log_2|\mathcal{V}|)$
+      [^2].
+    references:
+      - source: d2l
+        locator: Sec. 15.1.3.1 Training (skip-gram gradient)
+        url: https://d2l.ai/chapter_natural-language-processing-pretraining/word2vec.html#training
+      - source: d2l
+        locator: Sec. 15.2 Approximate Training
+        url: https://d2l.ai/chapter_natural-language-processing-pretraining/approx-training.html
+      - source: d2l
+        locator: Sec. 15.1.6 Exercises, Exercise 1
+        url: https://d2l.ai/chapter_natural-language-processing-pretraining/word2vec.html#exercises
+    source:
+      id: d2l
+      ref: chapter_natural-language-processing-pretraining/word2vec#ex1
+      url: https://d2l.ai/chapter_natural-language-processing-pretraining/word2vec.html#exercises
+    status: draft
+  - id: text-representation-024
+    type: single
+    difficulty: medium
+    tags:
+      - word2vec
+      - phrases
+      - collocations
+    question: |
+      To learn vectors for phrases such as "new york", word2vec first merges frequent bigrams into
+      single tokens, scoring each bigram by
+
+      $$\mathrm{score}(w_i, w_j) = \frac{\mathrm{count}(w_i w_j) - \delta}{\mathrm{count}(w_i) \times \mathrm{count}(w_j)}, \quad \delta = 5.$$
+
+      | bigram | count of the bigram | count of $w_i$ | count of $w_j$ |
+      |---|---:|---:|---:|
+      | new york | 500 | 1,000 | 600 |
+      | of the | 10,000 | 50,000 | 100,000 |
+      | kaya toast | 3 | 3 | 3 |
+
+      Which bigram gets the highest score?
+    options:
+      - text: '"new york"'
+        correct: true
+      - text: '"of the"'
+        why: 'Its words are frequent everywhere, so the product of unigram counts makes its score tiny: about $2 \times 10^{-6}$.'
+      - text: '"kaya toast"'
+        why: The discount δ = 5 exceeds its count, so its score is negative; without δ it would score 1/3 and win.
+      - text: All three tie, since each bigram always occurs whenever its words occur together
+        why: The scores differ by orders of magnitude, $8.3 \times 10^{-4}$, $2 \times 10^{-6}$ and a negative value.
+    explanation: |
+      "new york" scores $(500 - 5)/(1000 \times 600) \approx 8.3 \times 10^{-4}$, "of the"
+      $(10000 - 5)/(5 \times 10^9) \approx 2 \times 10^{-6}$, and "kaya toast" $(3 - 5)/9 < 0$.
+      Dividing by the unigram counts favors words that occur together much more often than chance,
+      and the discount δ keeps very rare pairs from becoming phrases [^1]. Bigrams above a threshold
+      become tokens such as "new_york"; 2–4 passes with a decreasing threshold build longer phrases,
+      and skip-gram is then trained as usual [^1][^2].
+    references:
+      - title: Mikolov, Sutskever, Chen, Corrado & Dean (2013), Distributed Representations of Words and Phrases and their Compositionality
+        url: https://arxiv.org/abs/1310.4546
+        locator: Sec. 4 Learning Phrases, Eq. (6)
+      - source: d2l
+        locator: Sec. 15.1.3 The Skip-Gram Model
+        url: https://d2l.ai/chapter_natural-language-processing-pretraining/word2vec.html#the-skip-gram-model
+      - source: d2l
+        locator: Sec. 15.1.6 Exercises, Exercise 2
+        url: https://d2l.ai/chapter_natural-language-processing-pretraining/word2vec.html#exercises
+    source:
+      id: d2l
+      ref: chapter_natural-language-processing-pretraining/word2vec#ex2
+      url: https://d2l.ai/chapter_natural-language-processing-pretraining/word2vec.html#exercises
+    status: draft
+  - id: text-representation-025
+    type: single
+    difficulty: medium
+    tags:
+      - word2vec
+      - skip-gram
+      - cosine-similarity
+    question: |
+      After skip-gram training, why do two words with similar meanings, such as "cat" and "kitten",
+      tend to have center-word vectors with a high cosine similarity?
+    options:
+      - text: They occur with similar context words, so training pushes both toward high dot products with the same $\mathbf{u}_o$
+        correct: true
+      - text: Skip-gram directly maximizes the dot product $\mathbf{v}_\textrm{cat}^\top\mathbf{v}_\textrm{kitten}$ of center vectors
+        why: Center vectors are only ever scored against context vectors $\mathbf{u}$, never against each other [^1].
+      - text: Skip-gram vectors have unit length, so their dot product already is the cosine similarity
+        why: The vectors are not normalized; cosine similarity divides the dot product by both lengths [^2].
+      - text: The two words share letters, and skip-gram builds its vectors from the spelling
+        why: Skip-gram treats each word as an atomic token; subword information is what fastText adds [^3].
+    explanation: |
+      Skip-gram models $P(w_o \mid w_c) \propto \exp(\mathbf{u}_o^\top\mathbf{v}_c)$, and its gradient
+      moves $\mathbf{v}_c$ toward the context vectors of words actually seen around $w_c$ [^1]. Words
+      that appear in similar contexts are pulled toward the same $\mathbf{u}_o$ directions, so their
+      center vectors end up pointing the same way. Cosine similarity
+      $\mathbf{x}^\top\mathbf{y}/(\lVert\mathbf{x}\rVert\lVert\mathbf{y}\rVert)$ compares only these
+      directions, ignoring the vectors' lengths, which the raw dot product would mix in [^2].
+    references:
+      - source: d2l
+        locator: Sec. 15.1.3 The Skip-Gram Model
+        url: https://d2l.ai/chapter_natural-language-processing-pretraining/word2vec.html#the-skip-gram-model
+      - source: d2l
+        locator: Sec. 15.1.1 One-Hot Vectors Are a Bad Choice (cosine similarity)
+        url: https://d2l.ai/chapter_natural-language-processing-pretraining/word2vec.html#one-hot-vectors-are-a-bad-choice
+      - source: d2l
+        locator: Sec. 15.6.1 The fastText Model
+        url: https://d2l.ai/chapter_natural-language-processing-pretraining/subword-embedding.html#the-fasttext-model
+      - source: d2l
+        locator: Sec. 15.1.6 Exercises, Exercise 3
+        url: https://d2l.ai/chapter_natural-language-processing-pretraining/word2vec.html#exercises
+    source:
+      id: d2l
+      ref: chapter_natural-language-processing-pretraining/word2vec#ex3
+      url: https://d2l.ai/chapter_natural-language-processing-pretraining/word2vec.html#exercises
+    status: draft
+  - id: text-representation-026
+    type: short_answer
+    difficulty: easy
+    tags:
+      - negative-sampling
+      - noise-distribution
+      - word2vec
+    question: |
+      word2vec draws its negative-sampling noise words with probability proportional to their corpus
+      frequency raised to the power 0.75. A tiny vocabulary has two words, with counts 16 and 1. What
+      is the probability of drawing the frequent word? Round to 3 decimals.
+    answer:
+      numeric: 0.889
+      tolerance: 0.002
+      hint: a probability, 3 decimals
+      model: $16^{0.75} = 8$ against $1^{0.75} = 1$, so $8/9 \approx 0.889$
+    explanation: |
+      The weights are $16^{0.75} = 8$ and 1, so the frequent word is drawn with probability
+      $8/9 \approx 0.889$ [^1]. The plain unigram distribution would give $16/17 \approx 0.941$ and a
+      uniform one 0.5: the 3/4 power flattens the distribution, so rare words are drawn more often
+      than their frequency alone suggests. Mikolov et al. found it worked much better than both the
+      unigram and the uniform distribution [^2].
+    references:
+      - source: d2l
+        locator: Sec. 15.3.4 Negative Sampling
+        url: https://d2l.ai/chapter_natural-language-processing-pretraining/word-embedding-dataset.html#negative-sampling
+      - title: Mikolov, Sutskever, Chen, Corrado & Dean (2013), Distributed Representations of Words and Phrases and their Compositionality
+        url: https://arxiv.org/abs/1310.4546
+        locator: Sec. 2.2 Negative Sampling
+      - source: d2l
+        locator: Sec. 15.2.4 Exercises, Exercise 1
+        url: https://d2l.ai/chapter_natural-language-processing-pretraining/approx-training.html#exercises
+    source:
+      id: d2l
+      ref: chapter_natural-language-processing-pretraining/approx-training#ex1
+      url: https://d2l.ai/chapter_natural-language-processing-pretraining/approx-training.html#exercises
+    status: draft
+  - id: text-representation-027
+    type: short_answer
+    difficulty: medium
+    tags:
+      - hierarchical-softmax
+      - word2vec
+      - sigmoid
+    question: |
+      Hierarchical softmax over a 4-word vocabulary uses a balanced binary tree: a root, a left inner
+      node with leaves $w_1, w_2$ and a right inner node with leaves $w_3, w_4$. Stepping to the left
+      child of node $n$ multiplies by $\sigma(\mathbf{u}_n^\top\mathbf{v}_c)$, stepping to the right
+      child by $\sigma(-\mathbf{u}_n^\top\mathbf{v}_c)$. For a center word with
+      $\mathbf{u}_\textrm{root}^\top\mathbf{v}_c = 1.0$ and $\mathbf{u}_\textrm{right}^\top\mathbf{v}_c = 0.5$,
+      what is $P(w_3 \mid w_c)$? Round to 3 decimals.
+    answer:
+      numeric: 0.167
+      tolerance: 0.002
+      hint: a probability, 3 decimals
+      model: 'Right at the root, then left: $\sigma(-1.0)\,\sigma(0.5) \approx 0.269 \times 0.622 \approx 0.167$'
+    explanation: |
+      $w_3$ is reached by going right at the root and then left, so
+      $P(w_3 \mid w_c) = \sigma(-1)\,\sigma(0.5) \approx 0.167$ [^1]. Because
+      $\sigma(x) + \sigma(-x) = 1$, the two leaves under each inner node share exactly that node's
+      probability: $P(w_3) + P(w_4) = \sigma(-1)$ and $P(w_1) + P(w_2) = \sigma(1)$, which add to 1.
+      Repeating this argument at every node proves that the probabilities of all words sum to one, the
+      identity the exercise asks to verify [^1]. Each word costs only $\log_2|\mathcal{V}| = 2$
+      sigmoids here.
+    references:
+      - source: d2l
+        locator: Sec. 15.2.2 Hierarchical Softmax
+        url: https://d2l.ai/chapter_natural-language-processing-pretraining/approx-training.html#hierarchical-softmax
+      - source: d2l
+        locator: Sec. 15.2.4 Exercises, Exercise 2
+        url: https://d2l.ai/chapter_natural-language-processing-pretraining/approx-training.html#exercises
+    source:
+      id: d2l
+      ref: chapter_natural-language-processing-pretraining/approx-training#ex2
+      url: https://d2l.ai/chapter_natural-language-processing-pretraining/approx-training.html#exercises
+    status: draft
+  - id: text-representation-028
+    type: single
+    difficulty: medium
+    tags:
+      - cbow
+      - negative-sampling
+      - word2vec
+    question: |
+      CBOW predicts the center word $w_c$ from the average $\bar{\mathbf{v}}_o$ of its context-word
+      vectors. How is it trained with negative sampling?
+    options:
+      - text: Maximize $\log\sigma(\mathbf{u}_c^\top\bar{\mathbf{v}}_o) + \sum_{k=1}^{K}\log\sigma(-\mathbf{u}_{h_k}^\top\bar{\mathbf{v}}_o)$ for noise words $h_k$
+        correct: true
+      - text: Maximize $\log\sigma(\mathbf{u}_c^\top\bar{\mathbf{v}}_o)$ alone, because noise words are only needed in skip-gram
+        why: With positive pairs only, the objective is maximized by blowing all vectors up to infinity [^1].
+      - text: Sample $K$ noise *context* words and score each one separately against the center word, as skip-gram does
+        why: In CBOW the input is the averaged context and the predicted word is the center word, so noise words replace the center word [^2].
+      - text: Normalize $\exp(\mathbf{u}_c^\top\bar{\mathbf{v}}_o)$ by the sum of $\exp(\mathbf{u}_i^\top\bar{\mathbf{v}}_o)$ over every word $i$ in the whole vocabulary
+        why: That is the full softmax that negative sampling is meant to avoid [^1].
+    explanation: |
+      Negative sampling replaces the softmax by binary events: the observed pair should score high,
+      $K$ pairs with noise words drawn from $P(w)$ should score low, and the cost is linear in $K$
+      [^1]. In CBOW the role of the center vector $\mathbf{v}_c$ is taken by the averaged context
+      $\bar{\mathbf{v}}_o$ and the predicted word is $w_c$, so noise words replace $w_c$ [^2].
+      Hierarchical softmax for CBOW likewise uses $\bar{\mathbf{v}}_o$ in the sigmoids along the path to
+      $w_c$ [^1].
+    references:
+      - source: d2l
+        locator: Sec. 15.2.1 Negative Sampling; 15.2.2 Hierarchical Softmax
+        url: https://d2l.ai/chapter_natural-language-processing-pretraining/approx-training.html#negative-sampling
+      - source: d2l
+        locator: Sec. 15.1.4 The Continuous Bag of Words (CBOW) Model
+        url: https://d2l.ai/chapter_natural-language-processing-pretraining/word2vec.html#the-continuous-bag-of-words-cbow-model
+      - source: d2l
+        locator: Sec. 15.2.4 Exercises, Exercise 3
+        url: https://d2l.ai/chapter_natural-language-processing-pretraining/approx-training.html#exercises
+    source:
+      id: d2l
+      ref: chapter_natural-language-processing-pretraining/approx-training#ex3
+      url: https://d2l.ai/chapter_natural-language-processing-pretraining/approx-training.html#exercises
+    status: draft
+  - id: text-representation-029
+    type: short_answer
+    difficulty: easy
+    tags:
+      - subsampling
+      - word2vec
+      - frequent-words
+    question: |
+      When training word embeddings, each occurrence of a word $w_i$ is discarded with probability
+      $\max\left(1 - \sqrt{t / f(w_i)},\ 0\right)$, where $f(w_i)$ is the word's share of all tokens
+      and $t = 10^{-4}$. The word "the" makes up 4% of the corpus. What fraction of its occurrences is
+      discarded? Round to 2 decimals.
+    answer:
+      numeric: 0.95
+      tolerance: 0.005
+      hint: a probability, 2 decimals
+      model: $1 - \sqrt{10^{-4}/0.04} = 1 - 0.05 = 0.95$
+    explanation: |
+      $\sqrt{10^{-4}/0.04} = 0.05$, so 95% of the occurrences of "the" are dropped and only 1 in 20 is
+      kept, matching d2l's remark that its sampling rate is below 1/20 [^1]. Words with $f(w_i) \le t$
+      are never dropped. Without subsampling, sentences stay much longer, so there are many more
+      (center, context) pairs per epoch and training runs slower, mostly on pairs with frequent words
+      that carry little signal [^1][^2].
+    references:
+      - source: d2l
+        locator: Sec. 15.3.2 Subsampling
+        url: https://d2l.ai/chapter_natural-language-processing-pretraining/word-embedding-dataset.html#subsampling
+      - title: Mikolov, Sutskever, Chen, Corrado & Dean (2013), Distributed Representations of Words and Phrases and their Compositionality
+        url: https://arxiv.org/abs/1310.4546
+        locator: Sec. 2.3 Subsampling of Frequent Words
+      - source: d2l
+        locator: Sec. 15.3.8 Exercises, Exercise 1
+        url: https://d2l.ai/chapter_natural-language-processing-pretraining/word-embedding-dataset.html#exercises
+    source:
+      id: d2l
+      ref: chapter_natural-language-processing-pretraining/word-embedding-dataset#ex1
+      url: https://d2l.ai/chapter_natural-language-processing-pretraining/word-embedding-dataset.html#exercises
+    status: draft
+  - id: text-representation-030
+    type: single
+    difficulty: medium
+    tags:
+      - word2vec
+      - negative-sampling
+      - data-loading
+    question: |
+      On a huge corpus, word2vec can draw the context words and noise words of a center word afresh
+      each time that center word appears in a minibatch, instead of fixing them once before training.
+      What is the benefit?
+    options:
+      - text: No precomputed table of all examples is needed, and each epoch brings fresh contexts and negatives
+        correct: true
+      - text: Each gradient becomes exact, because all of the context words are eventually used within one step
+        why: The gradient stays a stochastic estimate from a few sampled words.
+      - text: Training becomes deterministic, so runs are reproducible without fixing a random seed
+        why: Resampling adds randomness rather than removing it.
+      - text: The vocabulary shrinks, because words that are rarely sampled drop out of it
+        why: Sampling decides which examples are used, not which words exist.
+    explanation: |
+      The d2l pipeline extracts every center word with its context words and $K$ noise words once,
+      keeps them in memory and batches them [^1]; on a huge corpus that table is enormous. Sampling
+      contexts and negatives when a minibatch is formed needs no such table, and since the window size
+      and noise words are random, a center word meets different contexts and negatives in different
+      epochs, more varied training signal for the same data [^1][^2].
+    references:
+      - source: d2l
+        locator: Sec. 15.3.3 Extracting Center Words and Context Words; 15.3.4 Negative Sampling
+        url: https://d2l.ai/chapter_natural-language-processing-pretraining/word-embedding-dataset.html#extracting-center-words-and-context-words
+      - source: d2l
+        locator: Sec. 15.4.2 Training
+        url: https://d2l.ai/chapter_natural-language-processing-pretraining/word2vec-pretraining.html#training
+      - source: d2l
+        locator: Sec. 15.4.5 Exercises, Exercise 2
+        url: https://d2l.ai/chapter_natural-language-processing-pretraining/word2vec-pretraining.html#exercises
+    source:
+      id: d2l
+      ref: chapter_natural-language-processing-pretraining/word2vec-pretraining#ex2
+      url: https://d2l.ai/chapter_natural-language-processing-pretraining/word2vec-pretraining.html#exercises
+    status: draft
+  - id: text-representation-031
+    type: short_answer
+    difficulty: easy
+    tags:
+      - glove
+      - co-occurrence
+      - distance-weighting
+    question: |
+      GloVe weights co-occurrences by distance: two words that are $d$ words apart add $1/d$ to their
+      count $x_{ij}$ instead of 1. In a corpus, "ice" and "cold" co-occur twice within the context
+      window: once as neighbors and once 3 words apart. What is $x_{\textrm{ice},\textrm{cold}}$?
+      Round to 2 decimals.
+    answer:
+      numeric: 1.33
+      tolerance: 0.005
+      hint: a number, 2 decimals
+      model: $1/1 + 1/3 \approx 1.33$
+    explanation: |
+      The neighbors add $1/1$ and the pair 3 words apart adds $1/3$, so $x_{ij} = 4/3 \approx 1.33$.
+      Pennington et al. use this decreasing weighting because very distant word pairs carry less
+      information about how the words relate [^1]. The conditional probabilities
+      $p_{ij} = x_{ij}/x_i$ are then computed from these weighted counts; d2l's derivation counts every
+      co-occurrence in the window as 1 [^2].
+    references:
+      - title: 'Pennington, Socher & Manning (2014), GloVe: Global Vectors for Word Representation'
+        url: https://aclanthology.org/D14-1162/
+        locator: Sec. 4.2 Corpora and training details
+      - source: d2l
+        locator: Sec. 15.5.1 Skip-Gram with Global Corpus Statistics
+        url: https://d2l.ai/chapter_natural-language-processing-pretraining/glove.html#skip-gram-with-global-corpus-statistics
+      - source: d2l
+        locator: Sec. 15.5.5 Exercises, Exercise 1
+        url: https://d2l.ai/chapter_natural-language-processing-pretraining/glove.html#exercises
+    source:
+      id: d2l
+      ref: chapter_natural-language-processing-pretraining/glove#ex1
+      url: https://d2l.ai/chapter_natural-language-processing-pretraining/glove.html#exercises
+    status: draft
+  - id: text-representation-032
+    type: single
+    difficulty: medium
+    tags:
+      - glove
+      - symmetry
+      - bias
+    question: |
+      GloVe minimizes
+      $\sum_{i,j} h(x_{ij})\left(\mathbf{u}_j^\top\mathbf{v}_i + b_i + c_j - \log x_{ij}\right)^2$
+      with symmetric co-occurrence counts $x_{ij} = x_{ji}$. Are a word's center bias $b_i$ and context
+      bias $c_i$ mathematically equivalent?
+    options:
+      - text: 'Yes: swapping $(\mathbf{v}, b)$ and $(\mathbf{u}, c)$ leaves the loss unchanged'
+        correct: true
+      - text: 'No: $b_i$ absorbs $\log x_i$, the number of contexts of $w_i$, which only center words have'
+        why: Because $x_{ij} = x_{ji}$, the total count $x_i$ is the same whether $w_i$ is read as center or as context word.
+      - text: 'No: the weight $h(x_{ij})$ treats the rows and the columns of the count matrix differently'
+        why: $h$ depends only on $x_{ij}$, which equals $x_{ji}$.
+      - text: Yes, and they always have exactly the same value after training
+        why: Different random initializations give different values, which is why GloVe adds the two vectors.
+    explanation: |
+      Since $x_{ij} = x_{ji}$, renaming every center parameter as a context parameter and vice versa
+      maps the loss onto itself, so the two kinds of vectors, and by the same argument the two biases,
+      play identical roles [^1]. Training from different random initializations still gives them
+      different values, which is why GloVe sums a word's center and context vectors to form its output
+      vector [^1].
+    references:
+      - source: d2l
+        locator: Sec. 15.5.2 The GloVe Model
+        url: https://d2l.ai/chapter_natural-language-processing-pretraining/glove.html#the-glove-model
+      - source: d2l
+        locator: Sec. 15.5.5 Exercises, Exercise 2
+        url: https://d2l.ai/chapter_natural-language-processing-pretraining/glove.html#exercises
+    source:
+      id: d2l
+      ref: chapter_natural-language-processing-pretraining/glove#ex2
+      url: https://d2l.ai/chapter_natural-language-processing-pretraining/glove.html#exercises
+    status: draft
+  - id: text-representation-033
+    type: single
+    difficulty: medium
+    tags:
+      - fasttext
+      - cbow
+      - subword
+    question: |
+      fastText turns skip-gram into a subword model by replacing the *input-side* vector, the center
+      word's $\mathbf{v}_w$, with the sum of its character n-gram vectors. Applied to CBOW, which
+      predicts the center word from the average of its context-word vectors, which vectors become
+      n-gram sums?
+    options:
+      - text: Each context word's input vector, summed from its n-grams and then averaged as usual
+        correct: true
+      - text: Only the predicted center word's output vector; context words keep whole-word vectors
+        why: The center word is CBOW's output side; the input side, where fastText puts subwords, is the context.
+      - text: The n-gram vectors of every word in the vocabulary, averaged into a single shared vector
+        why: That would give the same input for every context and carry no information about it.
+      - text: The context words' n-gram vectors, concatenated instead of averaged
+        why: Words have different numbers of n-grams, so concatenation does not give a fixed-size input.
+    explanation: |
+      In fastText's skip-gram the input word's vector is $\mathbf{v}_w = \sum_{g \in \mathcal{G}_w}\mathbf{z}_g$
+      [^1]. CBOW's inputs are the context words, whose vectors $\mathbf{v}_{o_1}, \ldots, \mathbf{v}_{o_{2m}}$
+      are averaged into $\bar{\mathbf{v}}_o$ [^2]; building each $\mathbf{v}_{o_i}$ from its n-grams
+      keeps the rest of CBOW unchanged and lets rare or unseen context words still contribute useful
+      vectors [^1].
+    references:
+      - source: d2l
+        locator: Sec. 15.6.1 The fastText Model
+        url: https://d2l.ai/chapter_natural-language-processing-pretraining/subword-embedding.html#the-fasttext-model
+      - source: d2l
+        locator: Sec. 15.1.4 The Continuous Bag of Words (CBOW) Model
+        url: https://d2l.ai/chapter_natural-language-processing-pretraining/word2vec.html#the-continuous-bag-of-words-cbow-model
+      - source: d2l
+        locator: Sec. 15.6.4 Exercises, Exercise 2
+        url: https://d2l.ai/chapter_natural-language-processing-pretraining/subword-embedding.html#exercises
+    source:
+      id: d2l
+      ref: chapter_natural-language-processing-pretraining/subword-embedding#ex2
+      url: https://d2l.ai/chapter_natural-language-processing-pretraining/subword-embedding.html#exercises
+    status: draft
+  - id: text-representation-034
+    type: single
+    difficulty: medium
+    tags:
+      - bag-of-words
+      - stop-words
+      - sentiment-analysis
+    question: |
+      A sentiment classifier for customer reviews uses bag-of-words counts. The feature matrix is
+      wide and sparse, and very common words such as "the", "and" and "is" get the largest counts,
+      overshadowing sentiment words such as "awesome" and "terrible". Which change to the
+      vectorizer addresses this problem most directly?
+    options:
+      - text: Keep only the 10 most frequent words in the vocabulary
+        why: The 10 most frequent words are mostly the very function words causing the problem, and nearly all sentiment words would be dropped [^1].
+      - text: Record only whether each word occurs, not how often
+        why: Binary features stop the counts from inflating, but the common words stay in the vocabulary, present in almost every review, and carry no sentiment [^1].
+      - text: Drop the words that occur in fewer than 10 reviews
+        why: This removes rare words, which shrinks the vocabulary but leaves the frequent words that cause the problem, and may also drop rare sentiment words [^1].
+      - text: Remove English stop words from the vocabulary
+        correct: true
+    explanation: |
+      Stop words are frequent words such as "and", "the" and "is" that are presumed to carry little
+      information about the content of a text; removing them is a standard preprocessing step [^2][^3].
+      Here they are exactly what drowns out the sentiment words, so removing them targets the
+      problem. Ignoring words that occur in more than a given share of documents (`max_df`) is a
+      data-driven alternative [^1]. One caveat: stock stop-word lists can contain words that matter
+      for a task. scikit-learn's English list, for instance, includes "not" and "no", which carry
+      sentiment, so check the list before using it [^3].
+    references:
+      - source: ubc-cpsc330
+        locator: 'Lecture 6: sklearn ColumnTransformer and Text Features — Important hyperparameters of CountVectorizer'
+        url: https://github.com/UBC-CS/cpsc330-2025W1/blob/a89d6131a0e2ae5f7ab36f207a3809a5b7137aef/lectures/notes/06_column-transformer-text-feats.ipynb
+      - source: ubc-cpsc330
+        locator: 'Lecture 17: Introduction to natural language processing — Topic modeling pipeline (preprocessing the corpus)'
+        url: https://github.com/UBC-CS/cpsc330-2025W1/blob/a89d6131a0e2ae5f7ab36f207a3809a5b7137aef/lectures/notes/17_natural-language-processing.ipynb
+      - title: 'scikit-learn User Guide: Feature extraction'
+        locator: Sec. 8.2.3.4 Using stop words
+        url: https://scikit-learn.org/stable/modules/feature_extraction.html#using-stop-words
+    source:
+      id: ubc-cpsc330
+      ref: lectures/tutorials/solutions/midterm_prep.pdf#q13
+      url: https://github.com/UBC-CS/cpsc330-2025W1/blob/a89d6131a0e2ae5f7ab36f207a3809a5b7137aef/lectures/tutorials/solutions/midterm_prep.pdf
+    status: draft
+  - id: text-representation-035
+    type: single
+    difficulty: medium
+    tags:
+      - word2vec
+      - static-embeddings
+      - polysemy
+    question: |
+      The word "model" has several meanings: a fashion model, a statistical model, a scale model of
+      a train. After training Word2Vec on a large corpus, how many embedding vectors can you look up
+      for the word "model"?
+    options:
+      - text: One for every sentence it appears in
+        why: Context-dependent vectors come from contextual models such as LLMs; Word2Vec gives every occurrence the same vector [^2].
+      - text: One for each of its meanings
+        why: Word2Vec does not know about word senses; its vocabulary has one entry per word, whatever the meaning [^1].
+      - text: One for each letter of the word
+        why: Word2Vec embeds whole words; even fastText, which adds subword n-grams, sums them into a single vector per word [^2].
+      - text: One, shared by all of its meanings
+        correct: true
+    explanation: |
+      Word2Vec learns static embeddings: one vector per word in the vocabulary, trained from all the
+      contexts in which the word occurs [^1][^2]. Every sense of "model" contributes to that single
+      vector, which ends up as a blend of them. (Internally, skip-gram keeps a center-word vector and
+      a context-word vector for each word, but the center vectors are the ones used as the word
+      representations [^1].) Separate vectors per occurrence are what contextual models such as
+      large language models provide [^2].
+    references:
+      - source: d2l
+        locator: Sec. 15.1.3.1 The Skip-Gram Model, Training
+        url: https://d2l.ai/chapter_natural-language-processing-pretraining/word2vec.html#training
+        quote: the center word vectors of the skip-gram model are typically used as the word representations
+      - source: ubc-cpsc330
+        locator: 'Lecture 17: Introduction to natural language processing — Using pre-trained word embeddings; Key takeaways'
+        url: https://github.com/UBC-CS/cpsc330-2025W1/blob/a89d6131a0e2ae5f7ab36f207a3809a5b7137aef/lectures/notes/17_natural-language-processing.ipynb
+    source:
+      id: ubc-cpsc330
+      ref: lectures/tutorials/solutions/final_prep.pdf#q15
+      url: https://github.com/UBC-CS/cpsc330-2025W1/blob/a89d6131a0e2ae5f7ab36f207a3809a5b7137aef/lectures/tutorials/solutions/final_prep.pdf
+    status: draft
+  - id: text-representation-036
+    type: single
+    difficulty: easy
+    tags:
+      - word-embeddings
+      - bag-of-words
+    question: |
+      Which of these is NOT a motivation for using word embeddings instead of a bag-of-words
+      representation?
+    options:
+      - text: To get dense vectors instead of sparse ones
+        why: This is a real motivation. Bag-of-words vectors are sparse and high-dimensional, while embeddings are short and dense [^1].
+      - text: To get the frequency of each word in a document
+        correct: true
+      - text: To capture the contexts in which words are used
+        why: This is a real motivation. Embeddings are learned from the contexts words appear in (the distributional hypothesis) [^2].
+      - text: To place words with similar meanings close together
+        why: This is a real motivation. Bag-of-words cannot tell that "happy" and "joyful" are related; embeddings put them close [^1].
+    explanation: |
+      Counting how often each word occurs is exactly what bag-of-words already does well, so it is
+      no reason to switch [^1]. Its limitations are the motivation for embeddings: sparse,
+      high-dimensional vectors that capture only frequency, ignore word order and context, and do
+      not put similar words close together [^1]. Word embeddings are dense vectors learned from
+      word contexts, following the distributional hypothesis that words in similar contexts have
+      similar meanings [^2].
+    references:
+      - source: ubc-cpsc330
+        locator: 'Lecture 17: Introduction to natural language processing — Text representations and word embeddings (Motivation)'
+        url: https://github.com/UBC-CS/cpsc330-2025W1/blob/a89d6131a0e2ae5f7ab36f207a3809a5b7137aef/lectures/notes/17_natural-language-processing.ipynb
+      - source: ubc-cpsc330
+        locator: 'Lecture 17: Introduction to natural language processing — Distributional hypothesis; Word embeddings: The idea'
+        url: https://github.com/UBC-CS/cpsc330-2025W1/blob/a89d6131a0e2ae5f7ab36f207a3809a5b7137aef/lectures/notes/17_natural-language-processing.ipynb
+    source:
+      id: ubc-cpsc330
+      ref: lectures/tutorials/solutions/final_prep.pdf#q16
+      url: https://github.com/UBC-CS/cpsc330-2025W1/blob/a89d6131a0e2ae5f7ab36f207a3809a5b7137aef/lectures/tutorials/solutions/final_prep.pdf
+    status: draft
+  - id: text-representation-037
+    type: multiple
+    difficulty: medium
+    tags:
+      - word2vec
+      - topic-modeling
+      - lda
+    question: Which statements about word embeddings and LDA topic models are true? Select all that apply.
+    options:
+      - text: Word2vec embeddings can replace bag-of-words features as the input of a text classifier
+        correct: true
+      - text: Latent Dirichlet Allocation (LDA) topic modeling is an unsupervised method
+        correct: true
+      - text: In an LDA topic model, the same word can have a high probability in two different topics
+        correct: true
+      - text: In an LDA topic model, each document is a mixture of several topics
+        correct: true
+      - text: An LDA model with K = 10 trained on news articles outputs 10 topic labels such as "sports" or "politics"
+        why: LDA outputs topics as weighted lists of words; naming a topic "sports" is a human interpretation of its top words [^2].
+    explanation: |
+      Pretrained word embeddings give dense vectors that capture word meaning; averaging or
+      otherwise combining the vectors of a document gives features a classifier can use instead of
+      sparse word counts [^1]. Topic modeling is unsupervised: given documents and $K$, LDA returns
+      topic-word associations (a topic is a mixture of words, so a word can weigh heavily in several
+      topics) and document-topic associations (a document is a mixture of topics) [^2]. The topics
+      come without names; interpreting them takes a human [^2].
+    references:
+      - source: ubc-cpsc330
+        locator: 'Lecture 17: Introduction to natural language processing — Using pre-trained word embeddings; Beyond words: sentence embeddings'
+        url: https://github.com/UBC-CS/cpsc330-2025W1/blob/a89d6131a0e2ae5f7ab36f207a3809a5b7137aef/lectures/notes/17_natural-language-processing.ipynb
+      - source: ubc-cpsc330
+        locator: 'Lecture 17: Introduction to natural language processing — Topic modeling (motivation, example, toy example)'
+        url: https://github.com/UBC-CS/cpsc330-2025W1/blob/a89d6131a0e2ae5f7ab36f207a3809a5b7137aef/lectures/notes/17_natural-language-processing.ipynb
+    source:
+      id: ubc-cpsc330
+      ref: lectures/notes/18_intro_to_computer-vision.ipynb#ex18.1
+      url: https://github.com/UBC-CS/cpsc330-2025W1/blob/a89d6131a0e2ae5f7ab36f207a3809a5b7137aef/lectures/notes/18_intro_to_computer-vision.ipynb
+    status: draft

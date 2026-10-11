@@ -899,3 +899,219 @@ questions:
       ref: quiz-48/q2
       url: https://github.com/microsoft/ML-For-Beginners/blob/de2d4e12236445198213a0711855e348e7253cd4/quiz-app/src/assets/translations/en.json
     status: draft
+  - id: q-learning-023
+    type: short_answer
+    difficulty: easy
+    tags:
+      - value-iteration
+      - complexity
+      - dynamic-programming
+    question: |
+      Value iteration updates every state with
+      $V_{k+1}(s) = \max_a \bigl\{ r(s, a) + \gamma\sum_{s'} P(s' \mid s, a)\,V_k(s') \bigr\}$. On an
+      $8 \times 8$ FrozenLake grid (64 states, 4 actions), with the sum taken over all 64 next states,
+      how many products $P(s' \mid s, a)\,V_k(s')$ does one sweep over all states compute?
+    answer:
+      numeric: 16384
+      tolerance: 0
+      hint: a whole number
+      model: $|\mathcal{S}| \cdot |\mathcal{A}| \cdot |\mathcal{S}| = 64 \times 4 \times 64 = 16{,}384$
+    explanation: |
+      For each of the 64 states and each of the 4 actions the update sums over 64 next states, so one
+      sweep costs $O(|\mathcal{S}|^2|\mathcal{A}|)$, here $16{,}384$ products [^1]. The total cost is
+      this times the number of sweeps until convergence. d2l's implementation loops only over the
+      next states listed for each (state, action) pair [^2]; with deterministic moves that is one per
+      pair, so a sparse sweep needs only $64 \times 4 = 256$ products.
+    references:
+      - source: d2l
+        locator: Sec. 17.2.6 Value Iteration
+        url: https://d2l.ai/chapter_reinforcement-learning/value-iter.html#id2
+      - source: d2l
+        locator: Sec. 17.2.8 Implementation of Value Iteration
+        url: https://d2l.ai/chapter_reinforcement-learning/value-iter.html#implementation-of-value-iteration
+      - source: d2l
+        locator: Sec. 17.2.10 Exercises, Exercise 2
+        url: https://d2l.ai/chapter_reinforcement-learning/value-iter.html#exercises
+    source:
+      id: d2l
+      ref: chapter_reinforcement-learning/value-iter#ex2
+      url: https://d2l.ai/chapter_reinforcement-learning/value-iter.html#exercises
+    status: draft
+  - id: q-learning-024
+    type: single
+    difficulty: medium
+    tags:
+      - value-iteration
+      - discount-factor
+      - frozenlake
+    question: |
+      In FrozenLake with deterministic moves, the agent gets reward 1 only on the move that enters the
+      goal and 0 otherwise, and holes and the goal end the episode. What does value iteration return
+      with discount factor $\gamma = 0$?
+    options:
+      - text: Value 1 only for states one move from the goal; elsewhere the policy is an arbitrary tie-break
+        correct: true
+      - text: The same optimal policy as with $\gamma = 0.95$, only with smaller values everywhere
+        why: With $\gamma = 0$ future rewards are ignored, so states farther from the goal get no signal at all.
+      - text: Value 1 for every state from which the goal can be reached
+        why: That is the result for $\gamma = 1$, where a reward several steps away counts in full.
+      - text: Nothing useful, because value iteration does not converge without discounting
+        why: With $\gamma = 0$ the update ignores $V_k$, so it converges after one sweep.
+    explanation: |
+      With $\gamma = 0$ the update reduces to $V_{k+1}(s) = \max_a r(s, a)$ [^1], so only states with a
+      move into the goal get value 1 and all actions elsewhere tie at 0; d2l's code then picks the
+      first action by `argmax` [^2]. A small γ makes the agent short-sighted, while a large γ such as
+      0.99 lets distant rewards count [^3]. With $\gamma = 0.5$, a state $j$ moves from the goal has
+      value $0.5^{j-1}$, and with $\gamma = 1$ every state that can reach the goal has value 1, with no
+      preference for short paths.
+    references:
+      - source: d2l
+        locator: Sec. 17.2.6 Value Iteration
+        url: https://d2l.ai/chapter_reinforcement-learning/value-iter.html#id2
+      - source: d2l
+        locator: Sec. 17.2.8 Implementation of Value Iteration
+        url: https://d2l.ai/chapter_reinforcement-learning/value-iter.html#implementation-of-value-iteration
+      - source: d2l
+        locator: Sec. 17.1.2 Return and Discount Factor
+        url: https://d2l.ai/chapter_reinforcement-learning/mdp.html#return-and-discount-factor
+      - source: d2l
+        locator: Sec. 17.2.10 Exercises, Exercise 3
+        url: https://d2l.ai/chapter_reinforcement-learning/value-iter.html#exercises
+    source:
+      id: d2l
+      ref: chapter_reinforcement-learning/value-iter#ex3
+      url: https://d2l.ai/chapter_reinforcement-learning/value-iter.html#exercises
+    status: draft
+  - id: q-learning-025
+    type: short_answer
+    difficulty: medium
+    tags:
+      - value-iteration
+      - contraction
+      - discount-factor
+      - convergence
+    question: |
+      For $\gamma < 1$, each sweep of value iteration shrinks the largest error
+      $\max_s |V_k(s) - V^*(s)|$ by at least a factor γ. If the initial error is 1 and $\gamma = 0.9$,
+      how many sweeps guarantee an error of at most 0.01?
+    answer:
+      numeric: 44
+      tolerance: 0
+      hint: a whole number
+      model: $0.9^k \le 0.01 \Rightarrow k \ge \ln 0.01/\ln 0.9 \approx 43.7$, so 44 sweeps
+    explanation: |
+      The guarantee needs $\gamma^k \le 0.01$, i.e. $k \ge \ln 0.01/\ln 0.9 \approx 43.7$, so 44 sweeps
+      ($0.9^{44} \approx 0.0097$, while $0.9^{43} \approx 0.0108$). With $\gamma = 0.5$, 7 sweeps
+      suffice. The number of sweeps grows roughly like $\ln(1/\varepsilon)/(1 - \gamma)$ as γ
+      approaches 1, and at $\gamma = 1$ the update is no longer a contraction, so convergence is no
+      longer guaranteed [^1]. d2l states that value iteration converges to $V^*$ from any
+      initialization for the discounted problem [^2].
+    references:
+      - title: 'Wikipedia: Markov decision process'
+        url: https://en.wikipedia.org/wiki/Markov_decision_process#Value_iteration
+        locator: Algorithms, Value iteration (convergence for γ < 1 by the Banach fixed-point theorem)
+      - source: d2l
+        locator: Sec. 17.2.6 Value Iteration
+        url: https://d2l.ai/chapter_reinforcement-learning/value-iter.html#id2
+      - source: d2l
+        locator: Sec. 17.2.10 Exercises, Exercise 4
+        url: https://d2l.ai/chapter_reinforcement-learning/value-iter.html#exercises
+    source:
+      id: d2l
+      ref: chapter_reinforcement-learning/value-iter#ex4
+      url: https://d2l.ai/chapter_reinforcement-learning/value-iter.html#exercises
+    status: draft
+  - id: q-learning-026
+    type: single
+    difficulty: medium
+    tags:
+      - q-learning
+      - discount-factor
+      - frozenlake
+    question: |
+      Tabular Q-learning runs on the $4 \times 4$ FrozenLake map below (S start, F frozen, H hole,
+      G goal; deterministic moves; reward 1 only on the move into G; holes and G end the episode), with
+      target $y = r + \gamma\max_{a'} Q(s', a')$ and $\gamma = 0$.
+
+      ```
+      S F F F
+      F H F H
+      F F F H
+      H F F G
+      ```
+
+      Which states can ever end up with $\max_a Q(s, a) > 0$?
+    options:
+      - text: Only the state directly left of G, whose move into G earns the reward
+        correct: true
+      - text: Every state on a shortest path from S to G
+        why: With $\gamma = 0$ the target is just $r$, so no value propagates back from the goal [^1].
+      - text: Every state from which G can be reached, all with value close to 1
+        why: That needs $\gamma = 1$, where a reward many steps ahead counts in full.
+      - text: No state at all, because the reward only comes when the episode ends
+        why: The move that ends the episode at G is itself rewarded, and its Q-value is updated toward 1 [^1].
+    explanation: |
+      With $\gamma = 0$ the update target is the immediate reward [^1]. G's neighbors are the hole above
+      it and the frozen cell to its left, and holes end the episode, so only the left neighbor has a
+      move with reward 1; its Q-value approaches 1 while all others stay 0. The greedy policy everywhere
+      else is a tie-break, so it cannot lead the agent from S to G; with $\gamma = 0.95$, as in d2l,
+      the value propagates back along the path [^2].
+    references:
+      - source: d2l
+        locator: Sec. 17.3.1 The Q-Learning Algorithm
+        url: https://d2l.ai/chapter_reinforcement-learning/qlearning.html#the-q-learning-algorithm
+      - source: d2l
+        locator: Sec. 17.3.5 Implementation of Q-Learning
+        url: https://d2l.ai/chapter_reinforcement-learning/qlearning.html#implementation-of-q-learning
+      - source: d2l
+        locator: Sec. 17.3.7 Exercises, Exercise 2
+        url: https://d2l.ai/chapter_reinforcement-learning/qlearning.html#exercises
+    source:
+      id: d2l
+      ref: chapter_reinforcement-learning/qlearning#ex2
+      url: https://d2l.ai/chapter_reinforcement-learning/qlearning.html#exercises
+    status: draft
+  - id: q-learning-027
+    type: multiple
+    difficulty: medium
+    tags:
+      - q-learning
+      - epsilon-greedy
+      - exploration
+      - off-policy
+    question: |
+      Tabular Q-learning explores with an ε-greedy policy; all Q-values start at 0, and `argmax` breaks
+      ties by taking the first action. Select all statements that are true.
+    options:
+      - text: With ε = 0, the agent keeps taking the tie-break action and, on a sparse-reward map, may never reach the goal or learn anything
+        correct: true
+      - text: With ε = 1, the agent acts at random, yet the learned Q can still approach $Q^*$, since the target uses $\max_{a'} Q(s', a')$
+        correct: true
+      - text: With ε = 1, the greedy policy read off the learned Q-table is just as random as the behavior
+        why: How the agent acts and what it learns are separate; the Q-table can still encode the optimal policy [^1].
+      - text: A larger ε always earns a higher return during training, because the agent explores more
+        why: Exploring means often not taking the best known action, which costs return during training.
+      - text: ε matters only in the first episode; afterwards the agent acts greedily whatever its value
+        why: In the standard algorithm, and in d2l's code, ε applies to every action of every episode [^2].
+    explanation: |
+      If the exploration policy never reaches parts of the state–action space, the Q estimates are poor
+      everywhere [^1]. With ε = 0 and all-zero Q-values the agent keeps choosing the first action, and
+      as long as it collects no reward nothing changes. A uniformly random policy visits all states,
+      only slowly [^1], and since Q-learning's target uses the maximum over next actions rather than the
+      action actually taken, the values it learns can still converge to $Q^*$ even from a random
+      policy [^1][^2].
+    references:
+      - source: d2l
+        locator: Sec. 17.3.3 Exploration in Q-Learning; 17.3.4 The "Self-correcting" Property of Q-Learning
+        url: https://d2l.ai/chapter_reinforcement-learning/qlearning.html#exploration-in-q-learning
+      - source: d2l
+        locator: Sec. 17.3.5 Implementation of Q-Learning
+        url: https://d2l.ai/chapter_reinforcement-learning/qlearning.html#implementation-of-q-learning
+      - source: d2l
+        locator: Sec. 17.3.7 Exercises, Exercise 3
+        url: https://d2l.ai/chapter_reinforcement-learning/qlearning.html#exercises
+    source:
+      id: d2l
+      ref: chapter_reinforcement-learning/qlearning#ex3
+      url: https://d2l.ai/chapter_reinforcement-learning/qlearning.html#exercises
+    status: draft

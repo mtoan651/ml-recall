@@ -1,7 +1,7 @@
 import pytest
 from pydantic import ValidationError
 
-from mlrecall.check import POSITIONAL_OPTION_RE
+from mlrecall.check import POSITIONAL_OPTION_RE, _math_line_starts_block
 from mlrecall.schema import Question, citation_markers
 
 
@@ -129,3 +129,10 @@ def test_gap_fill_blanks_match_the_keys_in_reading_order():
     with pytest.raises(ValidationError, match="either `blanks`"):
         make(type="short_answer", options=None, question="{{1}} {{2}}",
              answer={**blanks, "accept": ["x"]})  # fmt: skip
+
+
+def test_math_continuation_that_looks_like_a_list_item_is_flagged():
+    assert _math_line_starts_block("$$a = b\n+ c$$")
+    assert _math_line_starts_block("so $x = (a\n- b)$ holds")
+    assert not _math_line_starts_block("$a$ and\n- a real list item")
+    assert not _math_line_starts_block("$x = (14,\n6) = y$")  # "6)" cannot interrupt a paragraph

@@ -734,3 +734,117 @@ questions:
       id: original
       ref: dim-reduction-019
     status: draft
+  - id: dim-reduction-020
+    type: single
+    difficulty: hard
+    tags:
+      - factor-analysis
+      - latent-variable-models
+      - identifiability
+    question: |
+      A friend proposes to improve factor analysis by allowing correlated latents:
+      $\mathbf{h} \sim \mathcal{N}(\mathbf{0}, C)$ and $\mathbf{v} \mid \mathbf{h} \sim \mathcal{N}(F
+      \mathbf{h} + \mathbf{c}, \Psi)$, with $\Psi$ diagonal and $C$ an arbitrary covariance matrix
+      (standard factor analysis has $C = I$). Is the model more expressive?
+    options:
+      - text: Yes; correlated latents can model correlations between visibles that standard factor analysis cannot
+        why: Standard factor analysis already models correlations through $F F^\top$; the extra $C$ can be absorbed into the loadings [^1].
+      - text: Yes; $C$ adds $H(H+1)/2$ parameters that can be estimated from data
+        why: Those parameters are redundant, since $(F, C)$ and $(F C^{1/2}, I)$ give identical distributions of $\mathbf{v}$, so they cannot be identified [^1].
+      - text: No; $(F, C)$ and $(F C^{1/2}, I)$ give exactly the same $p(\mathbf{v})$
+        correct: true
+      - text: No, but only because $\Psi$ is diagonal; with a full $\Psi$ the correlated latents would help
+        why: The argument $F C F^\top = (F C^{1/2})(F C^{1/2})^\top$ does not involve $\Psi$ at all [^1].
+    explanation: |
+      The visibles are a linear map of Gaussians plus independent noise, so $p(\mathbf{v}) =
+      \mathcal{N}(\mathbf{c}, F C F^\top + \Psi)$ [^1]. With the symmetric square root $C^{1/2} = E
+      \Lambda^{1/2} E^\top$, $F C F^\top = \tilde F \tilde F^\top$ for $\tilde F = F C^{1/2}$, which is
+      the covariance of standard factor analysis with loadings $\tilde F$ [^1][^2]. Equivalently,
+      sampling $\mathbf{h} = C^{1/2}\mathbf{h}'$ with $\mathbf{h}' \sim \mathcal{N}(\mathbf{0}, I)$
+      shows the correlation can be moved into $F$; the richer model gains nothing.
+    references:
+      - source: gutmann-pen-paper
+        locator: Ch. 8 Model-Based Learning, Ex. 8.9 (a)–(c) Factor analysis
+        url: https://arxiv.org/abs/2206.13446
+      - title: 'Wikipedia: Factor analysis'
+        url: https://en.wikipedia.org/wiki/Factor_analysis
+        locator: Statistical model
+    source:
+      id: gutmann-pen-paper
+      ref: model-based-learning#fa-c
+      url: https://github.com/michaelgutmann/ml-pen-and-paper-exercises/blob/571295dfe49b37d16884b2c5397e62e154ce5f88/topics/model-based-learning.tex
+    status: draft
+  - id: dim-reduction-021
+    type: single
+    difficulty: medium
+    tags:
+      - whitening
+      - ica
+      - eigendecomposition
+    question: |
+      A random vector $\mathbf{x}$ has covariance $C = E \Lambda E^\top$ (eigendecomposition, $E$
+      orthogonal). $V = \Lambda^{-1/2} E^\top$ is a whitening matrix: $\mathbf{z} = V\mathbf{x}$ has
+      identity covariance. Which of the following is **also** a whitening matrix for $\mathbf{x}$?
+    options:
+      - text: $V R$ for any orthogonal matrix $R$
+        why: $\mathrm{Var}[V R \mathbf{x}] = V R C R^\top V^\top$, which is generally not $I$ because $R$ acts before $C$ is undone [^1].
+      - text: $\Lambda^{-1} E^\top$
+        why: $\mathrm{Var}[\Lambda^{-1}E^\top\mathbf{x}] = \Lambda^{-1} E^\top C E \Lambda^{-1} = \Lambda^{-1}$, which is not the identity unless all eigenvalues are 1 [^1].
+      - text: $2V$
+        why: Scaling gives $\mathrm{Var}[2V\mathbf{x}] = 4I$, not the identity [^1].
+      - text: $R\,V$ for any orthogonal matrix $R$
+        correct: true
+    explanation: |
+      $\mathrm{Var}[R V \mathbf{x}] = R\,\mathrm{Var}[V\mathbf{x}]\,R^\top = R I R^\top = I$ for every
+      orthogonal $R$, so whitening matrices are only unique up to a rotation [^1][^2]. For example,
+      $E \Lambda^{-1/2} E^\top$ (ZCA whitening) is another valid choice. This rotational freedom is
+      exactly what is left to estimate in ICA after whitening [^1].
+    references:
+      - source: gutmann-pen-paper
+        locator: Ch. 8 Model-Based Learning, Ex. 8.10 (a) Independent component analysis
+        url: https://arxiv.org/abs/2206.13446
+      - title: 'Wikipedia: Whitening transformation'
+        url: https://en.wikipedia.org/wiki/Whitening_transformation
+        locator: Definition and whitening matrices (PCA, ZCA)
+    source:
+      id: gutmann-pen-paper
+      ref: model-based-learning#independent-component-analysis-a
+      url: https://github.com/michaelgutmann/ml-pen-and-paper-exercises/blob/571295dfe49b37d16884b2c5397e62e154ce5f88/topics/model-based-learning.tex
+    status: draft
+  - id: dim-reduction-022
+    type: short_answer
+    difficulty: medium
+    tags:
+      - ica
+      - whitening
+      - orthogonal-matrix
+      - degrees-of-freedom
+    question: |
+      In the ICA model $\mathbf{v} = A\mathbf{h}$ with $D = 4$ independent unit-variance sources and
+      an invertible $4 \times 4$ mixing matrix $A$, the data are first whitened: $\mathbf{z} =
+      V\mathbf{v} = \tilde A \mathbf{h}$. Since $\tilde A$ must be orthogonal, how many free parameters
+      (degrees of freedom) are left to estimate in $\tilde A$?
+    answer:
+      numeric: 6
+      tolerance: 0
+      hint: a whole number
+      model: An orthogonal $D \times D$ matrix has $D(D-1)/2 = 4 \cdot 3 / 2 = 6$ degrees of freedom (versus $D^2 = 16$ for $A$)
+    explanation: |
+      Whitening gives $I = \mathrm{Var}(\mathbf{z}) = \tilde A\,\mathrm{Var}(\mathbf{h})\,\tilde
+      A^\top = \tilde A \tilde A^\top$ because the sources have identity covariance, so $\tilde A$ is
+      orthogonal [^1]. An orthogonal $D \times D$ matrix has $D(D-1)/2$ degrees of freedom, here 6
+      instead of the 16 entries of $A$ [^1][^2]. Whitening thus "solves half of the ICA problem",
+      which is why algorithms such as FastICA whiten first; the $\log|\det|$ term of the likelihood
+      then vanishes as well.
+    references:
+      - source: gutmann-pen-paper
+        locator: Ch. 8 Model-Based Learning, Ex. 8.10 (b) Independent component analysis
+        url: https://arxiv.org/abs/2206.13446
+      - title: 'Wikipedia: Orthogonal matrix'
+        url: https://en.wikipedia.org/wiki/Orthogonal_matrix
+        locator: Group properties (dimension n(n − 1)/2)
+    source:
+      id: gutmann-pen-paper
+      ref: model-based-learning#independent-component-analysis-b
+      url: https://github.com/michaelgutmann/ml-pen-and-paper-exercises/blob/571295dfe49b37d16884b2c5397e62e154ce5f88/topics/model-based-learning.tex
+    status: draft

@@ -237,3 +237,1414 @@ questions:
       ref: quiz-207/q3
       url: https://github.com/microsoft/AI-For-Beginners/blob/392d0df1b2647cbee104942390551f1ed9e072c8/etc/quiz-app/src/assets/translations/en/lesson-7.json
     status: draft
+  - id: pytorch-008
+    type: short_answer
+    difficulty: medium
+    tags:
+      - nn-module
+      - module-registration
+      - code-reading
+    question: |
+      What does the last line print?
+
+      ```python
+      import torch
+      from torch import nn
+
+      class ListSequential(nn.Module):
+          def __init__(self, *args):
+              super().__init__()
+              self.layers = list(args)       # a plain Python list
+
+          def forward(self, X):
+              for layer in self.layers:
+                  X = layer(X)
+              return X
+
+      net = ListSequential(nn.Linear(20, 256), nn.ReLU(), nn.Linear(256, 10))
+      print(len(list(net.parameters())))
+      ```
+    answer:
+      numeric: 0
+      tolerance: 0
+      hint: a whole number
+      model: 0, because modules kept in a plain list are not registered as submodules, so `net` knows of no parameters (with `nn.Sequential` or `nn.ModuleList` it would be 4).
+    explanation: |
+      d2l's `MySequential` registers every layer with `add_module`, "in this way the system knows the
+      added modules" and can initialize their parameters [^1]. Assigning a module directly as an
+      attribute registers it too, but a Python list is just an ordinary attribute, so its layers are
+      invisible to `parameters()`, `state_dict()`, `.to()` and `children()`. `nn.ModuleList` is the
+      registered version of a list [^2]. The forward pass still works, because it calls the layers
+      directly.
+    references:
+      - source: d2l
+        locator: Sec. 6.1.2 The Sequential Module
+        url: https://d2l.ai/chapter_builders-guide/model-construction.html#the-sequential-module
+      - title: torch.nn.ModuleList (PyTorch documentation)
+        locator: Class description
+        url: https://docs.pytorch.org/docs/stable/generated/torch.nn.ModuleList.html
+      - source: d2l
+        locator: Sec. 6.1.5 Exercises, Exercise 1
+        url: https://d2l.ai/chapter_builders-guide/model-construction.html#exercises
+    source:
+      id: d2l
+      ref: chapter_builders-guide/model-construction#ex1
+      url: https://d2l.ai/chapter_builders-guide/model-construction.html#exercises
+    status: draft
+  - id: pytorch-009
+    type: multiple
+    difficulty: medium
+    tags:
+      - nn-module
+      - module-registration
+      - state-dict
+    question: |
+      A custom module keeps its layers in a plain Python list instead of registering them:
+
+      ```python
+      class ListSequential(nn.Module):
+          def __init__(self, *args):
+              super().__init__()
+              self.layers = list(args)
+
+          def forward(self, X):
+              for layer in self.layers:
+                  X = layer(X)
+              return X
+
+      net = ListSequential(nn.Linear(20, 256), nn.ReLU(), nn.Linear(256, 10))
+      ```
+
+      Which of these happen? Select all that apply.
+    options:
+      - text: '`torch.optim.SGD(net.parameters(), lr=0.1)` raises an error about an empty parameter list'
+        correct: true
+      - text: '`torch.save(net.state_dict(), "net.pt")` stores the weights of both linear layers'
+        why: The state dict only contains registered parameters and buffers, and here there are none, so an empty dictionary is saved [^2].
+      - text: '`net.to("cuda")` leaves both linear layers on the CPU'
+        correct: true
+      - text: Python raises an error as soon as `net` is constructed, because modules may not sit in a list
+        why: Storing modules in a list is legal Python; nothing checks it, which is what makes the bug easy to miss.
+      - text: '`net(torch.rand(2, 20))` runs and returns a tensor of shape `(2, 10)`'
+        correct: true
+    explanation: |
+      `nn.Module` tracks only submodules and parameters that are assigned directly or added with
+      `add_module`; d2l's `MySequential` registers its layers so that "the system knows the added
+      modules" [^1]. The list hides the layers from every method that walks the registered submodules:
+      `parameters()` is empty, so the optimizer refuses to start, `to()` moves nothing, and
+      `state_dict()` is empty. The forward pass still works because it calls the layers itself.
+      `nn.ModuleList` or `nn.Sequential` fixes all of this [^2].
+    references:
+      - source: d2l
+        locator: Sec. 6.1.2 The Sequential Module
+        url: https://d2l.ai/chapter_builders-guide/model-construction.html#the-sequential-module
+      - title: torch.nn.ModuleList (PyTorch documentation)
+        locator: Class description
+        url: https://docs.pytorch.org/docs/stable/generated/torch.nn.ModuleList.html
+      - source: d2l
+        locator: Sec. 6.1.5 Exercises, Exercise 1
+        url: https://d2l.ai/chapter_builders-guide/model-construction.html#exercises
+    source:
+      id: d2l
+      ref: chapter_builders-guide/model-construction#ex1-b
+      url: https://d2l.ai/chapter_builders-guide/model-construction.html#exercises
+    status: draft
+  - id: pytorch-010
+    type: short_answer
+    difficulty: medium
+    tags:
+      - nn-sequential
+      - parameter-sharing
+      - code-reading
+    question: |
+      You want three independent $8 \to 8$ linear layers in a row and write:
+
+      ```python
+      layer = nn.Linear(8, 8)
+      net = nn.Sequential(*[layer] * 3)
+      print(sum(p.numel() for p in net.parameters()))
+      ```
+
+      What does the last line print?
+    answer:
+      numeric: 72
+      tolerance: 0
+      hint: a whole number
+      model: '72: `[layer] * 3` repeats the same object, so all three positions share one $8 \times 8$ weight and one bias ($64 + 8$); a factory such as `[nn.Linear(8, 8) for _ in range(3)]` gives 216.'
+    explanation: |
+      Multiplying a list repeats references to its items; the items are not copied [^1]. The
+      `Sequential` therefore applies the same module three times, which ties the parameters exactly like
+      d2l's shared layer: changing one position changes all of them, and their gradients add up [^2].
+      `parameters()` returns each tensor only once, so it counts $64 + 8 = 72$. To get independent
+      layers, call a factory function that builds a new module each time, as the d2l exercise asks.
+    references:
+      - title: Built-in Types, Common Sequence Operations (Python documentation)
+        locator: Note 2 on s * n (items are referenced, not copied)
+        url: https://docs.python.org/3/library/stdtypes.html#common-sequence-operations
+      - source: d2l
+        locator: Sec. 6.2.2 Tied Parameters
+        url: https://d2l.ai/chapter_builders-guide/parameters.html#tied-parameters
+      - source: d2l
+        locator: Sec. 6.1.5 Exercises, Exercise 3
+        url: https://d2l.ai/chapter_builders-guide/model-construction.html#exercises
+    source:
+      id: d2l
+      ref: chapter_builders-guide/model-construction#ex3
+      url: https://d2l.ai/chapter_builders-guide/model-construction.html#exercises
+    status: draft
+  - id: pytorch-011
+    type: single
+    difficulty: easy
+    tags:
+      - parameter-sharing
+      - inductive-bias
+    question: Which is a good reason to share (tie) parameters between several parts of a network?
+    options:
+      - text: Each copy of a tied layer averages its gradient with the others, which removes the gradient noise
+        why: The gradients from the different uses are summed, not averaged, and summing does not remove minibatch noise [^1].
+      - text: It builds in the assumption that the same transformation applies in several places, and leaves fewer parameters to learn
+        correct: true
+      - text: It lets each copy of the layer specialize to its own position while storing the weights only once
+        why: Tied copies are the same tensor, so they cannot specialize; they always compute the same function.
+      - text: Shared parameters receive no gradient, so they act as fixed features that cannot overfit
+        why: Tied parameters do receive gradients; the contributions from all places where they are used are added up [^1].
+    explanation: |
+      Tied layers are represented by the same tensor, and during backpropagation the gradients from all
+      places where it is used are added together [^1]. Sharing cuts the number of parameters, so the model
+      needs less memory and less data, and it encodes a prior: the same operation is right everywhere it
+      is applied. CNNs share one kernel across all positions, which follows from translation invariance [^2],
+      and RNNs share their weights across time steps, so the number of parameters does not grow with the
+      sequence length [^3].
+    references:
+      - source: d2l
+        locator: Sec. 6.2.2 Tied Parameters
+        url: https://d2l.ai/chapter_builders-guide/parameters.html#tied-parameters
+      - source: d2l
+        locator: Sec. 7.1.2.1 Translation Invariance
+        url: https://d2l.ai/chapter_convolutional-neural-networks/why-conv.html#translation-invariance
+      - source: d2l
+        locator: Sec. 9.4.4 Summary
+        url: https://d2l.ai/chapter_recurrent-neural-networks/rnn.html#summary
+      - source: d2l
+        locator: Sec. 6.2.4 Exercises, Exercise 3
+        url: https://d2l.ai/chapter_builders-guide/parameters.html#exercises
+    source:
+      id: d2l
+      ref: chapter_builders-guide/parameters#ex3
+      url: https://d2l.ai/chapter_builders-guide/parameters.html#exercises
+    status: draft
+  - id: pytorch-012
+    type: short_answer
+    difficulty: medium
+    tags:
+      - parameter-sharing
+      - parameter-count
+      - code-reading
+    question: |
+      What does the last line print?
+
+      ```python
+      shared = nn.Linear(8, 8)
+      net = nn.Sequential(nn.Linear(4, 8), nn.ReLU(),
+                          shared, nn.ReLU(),
+                          shared, nn.ReLU(),
+                          nn.Linear(8, 1))
+      print(sum(p.numel() for p in net.parameters()))
+      ```
+    answer:
+      numeric: 121
+      tolerance: 0
+      hint: a whole number
+      model: $(4 \cdot 8 + 8) + (8 \cdot 8 + 8) + (8 + 1) = 40 + 72 + 9 = 121$; the shared layer is counted once.
+    explanation: |
+      The second and third hidden layers are the same `nn.Linear` object, so their parameters are the
+      same tensors, not copies [^1]. `parameters()` yields every tensor only once, so the shared layer's
+      72 parameters are counted once: $40 + 72 + 9 = 121$, against 193 without sharing [^2]. During
+      backpropagation the gradients of both uses of `shared` are added together [^1].
+    references:
+      - source: d2l
+        locator: Sec. 6.2.2 Tied Parameters
+        url: https://d2l.ai/chapter_builders-guide/parameters.html#tied-parameters
+      - title: torch.nn.Module.parameters (PyTorch documentation)
+        locator: Module.parameters and Module.named_parameters (remove_duplicate)
+        url: https://docs.pytorch.org/docs/stable/generated/torch.nn.Module.html#torch.nn.Module.named_parameters
+      - source: d2l
+        locator: Sec. 6.2.4 Exercises, Exercise 3
+        url: https://d2l.ai/chapter_builders-guide/parameters.html#exercises
+    source:
+      id: d2l
+      ref: chapter_builders-guide/parameters#ex3-b
+      url: https://d2l.ai/chapter_builders-guide/parameters.html#exercises
+    status: draft
+  - id: pytorch-013
+    type: single
+    difficulty: easy
+    tags:
+      - lazy-initialization
+      - nn-lazylinear
+    shuffle: false
+    question: |
+      ```python
+      net = nn.Sequential(nn.Linear(20, 256), nn.ReLU(), nn.LazyLinear(10))
+      ```
+
+      Before any data has passed through `net`, which parameters have been initialized?
+    options:
+      - text: All of them, because `LazyLinear` uses a default input size of 1 until real data arrives
+        why: There is no default size. The weight is an `UninitializedParameter`, and even reading its shape raises an error [^2].
+      - text: Only the first layer's; the `LazyLinear` weights stay uninitialized until the first forward pass
+        correct: true
+      - text: All of them, because once the first layer's input size is known PyTorch infers the rest at once
+        why: PyTorch infers the missing shapes only when data flows through the layer; it does not trace shapes when the model is built [^1].
+      - text: None of them, because a single lazy layer makes the whole network wait for the first forward pass
+        why: '`nn.Linear(20, 256)` knows both of its sizes, so it creates and initializes its weights in its constructor.'
+    explanation: |
+      d2l explains that the framework defers initialization, waiting until data first passes through the
+      model to infer the missing sizes [^1]. A layer whose sizes are all given, such as
+      `nn.Linear(20, 256)`, initializes its weights right away. The weight of `nn.LazyLinear(10)` stays an
+      `UninitializedParameter` until the first call, when it sees 256 input features and becomes a
+      $10 \times 256$ matrix [^2].
+    references:
+      - source: d2l
+        locator: Sec. 6.4 Lazy Initialization
+        url: https://d2l.ai/chapter_builders-guide/lazy-init.html
+      - title: torch.nn.LazyLinear (PyTorch documentation)
+        locator: Class description
+        url: https://docs.pytorch.org/docs/stable/generated/torch.nn.LazyLinear.html
+      - source: d2l
+        locator: Sec. 6.4.2 Exercises, Exercise 1
+        url: https://d2l.ai/chapter_builders-guide/lazy-init.html#exercises
+    source:
+      id: d2l
+      ref: chapter_builders-guide/lazy-init#ex1
+      url: https://d2l.ai/chapter_builders-guide/lazy-init.html#exercises
+    status: draft
+  - id: pytorch-014
+    type: single
+    difficulty: easy
+    tags:
+      - shape-mismatch
+      - nn-linear
+      - debugging
+    question: |
+      ```python
+      net = nn.Sequential(nn.Linear(20, 256), nn.ReLU(), nn.Linear(128, 10))
+      X = torch.rand(2, 20)
+      ```
+
+      The second linear layer expects 128 inputs, but the first one produces 256. What happens?
+    options:
+      - text: Building `net` already raises an error, because `nn.Sequential` checks neighbouring layers
+        why: '`nn.Sequential` only stores the layers; no shapes are checked until tensors flow through them.'
+      - text: '`net(X)` runs, because PyTorch resizes the second layer to 256 inputs as a lazy layer would'
+        why: Only lazy modules such as `nn.LazyLinear` infer their input size; a layer built with explicit sizes keeps them [^1].
+      - text: '`net(X)` runs, and PyTorch silently uses only the first 128 of the 256 hidden values'
+        why: The matrix product needs matching inner dimensions; PyTorch never truncates a tensor to make it fit.
+      - text: Building `net` works; calling `net(X)` raises a shape-mismatch error at the second layer
+        correct: true
+    explanation: |
+      PyTorch checks shapes only when tensors meet. The model is built without complaint, and the first
+      forward pass fails at the second layer with an error like "mat1 and mat2 shapes cannot be
+      multiplied (2x256 and 128x10)" [^2]. With lazy layers this kind of mistake cannot happen, because
+      the input sizes are inferred from the data; d2l counts this among the benefits of lazy
+      initialization [^1].
+    references:
+      - source: d2l
+        locator: Sec. 6.4.1 Summary
+        url: https://d2l.ai/chapter_builders-guide/lazy-init.html#summary
+      - title: torch.nn.Linear (PyTorch documentation)
+        locator: Shape
+        url: https://docs.pytorch.org/docs/stable/generated/torch.nn.Linear.html
+      - source: d2l
+        locator: Sec. 6.4.2 Exercises, Exercise 2
+        url: https://d2l.ai/chapter_builders-guide/lazy-init.html#exercises
+    source:
+      id: d2l
+      ref: chapter_builders-guide/lazy-init#ex2
+      url: https://d2l.ai/chapter_builders-guide/lazy-init.html#exercises
+    status: draft
+  - id: pytorch-015
+    type: single
+    difficulty: medium
+    tags:
+      - custom-layer
+      - einsum
+      - code-reading
+    question: |
+      A custom layer computes $y_k = \sum_{i,j} W_{ijk}\, x_i x_j$ for every example, with a parameter
+      `W` of shape `(d, d, m)`. For a batch `X` of shape `(n, d)`, which line returns the `(n, m)` output?
+    options:
+      - text: '`torch.einsum("ni,nj,ijk->nk", X, X, W)`'
+        correct: true
+      - text: '`torch.einsum("ni,nj,ijk->k", X, X, W)`'
+        why: Leaving `n` out of the output sums over the batch, giving one vector of shape `(m,)` for the whole batch [^2].
+      - text: '`torch.einsum("ni,ni,iik->nk", X, X, W)`'
+        why: Repeating the index `i` keeps only the diagonal terms $W_{iik} x_i^2$ and drops all products $x_i x_j$ with $i \ne j$.
+      - text: '`torch.einsum("ni,ijk->nk", X, W)`'
+        why: This uses $x_i$ only once and sums $W$ over $j$, so the result is linear in $\mathbf{x}$, not quadratic.
+    explanation: |
+      In `einsum`, indices that appear in the output are kept and all others are summed over [^2]. The
+      output needs the batch index `n` and the output index `k`, while `i` and `j` are summed, and both
+      factors $x_i$ and $x_j$ must come from the same example, hence `"ni,nj,ijk->nk"`. In a d2l-style
+      custom layer, `W` is created as an `nn.Parameter` in `__init__` and used in `forward` [^1].
+    references:
+      - source: d2l
+        locator: Sec. 6.5.2 Layers with Parameters
+        url: https://d2l.ai/chapter_builders-guide/custom-layer.html#layers-with-parameters
+      - title: torch.einsum (PyTorch documentation)
+        locator: Function description
+        url: https://docs.pytorch.org/docs/stable/generated/torch.einsum.html
+      - source: d2l
+        locator: Sec. 6.5.4 Exercises, Exercise 1
+        url: https://d2l.ai/chapter_builders-guide/custom-layer.html#exercises
+    source:
+      id: d2l
+      ref: chapter_builders-guide/custom-layer#ex1
+      url: https://d2l.ai/chapter_builders-guide/custom-layer.html#exercises
+    status: draft
+  - id: pytorch-016
+    type: multiple
+    difficulty: easy
+    tags:
+      - checkpointing
+      - state-dict
+      - saving-models
+    question: |
+      Even if a model will never be deployed anywhere else, why save its parameters (its `state_dict`)
+      to disk during and after training? Select all that apply.
+    options:
+      - text: To store the model's code as well, so the architecture can be rebuilt without its class definition
+        why: A state dict holds only the parameter tensors; the architecture has to be recreated in code before loading them [^2].
+      - text: To reuse the trained layers later, for example as the starting point for fine-tuning
+        correct: true
+      - text: To resume a long training run from the last checkpoint after a crash or power cut
+        correct: true
+      - text: To keep the best checkpoint seen so far, for example the one with the lowest validation loss
+        correct: true
+      - text: To make the forward pass faster, because loaded weights come back already compiled
+        why: Loading copies tensor values into the model; it has no effect on how fast the forward pass runs.
+    explanation: |
+      d2l recommends saving intermediate results periodically (checkpointing), so a long run does not
+      lose days of computation [^1]. The saved file contains parameters, not the model: to reload it you
+      build the architecture in code and then load the parameters into it [^2]. Saved parameters are what
+      fine-tuning starts from [^3], and keeping the checkpoint with the best validation score lets you
+      return to it, as in early stopping [^4].
+    references:
+      - source: d2l
+        locator: Sec. 6.6 File I/O (introduction)
+        url: https://d2l.ai/chapter_builders-guide/read-write.html
+      - source: d2l
+        locator: Sec. 6.6.2 Loading and Saving Model Parameters
+        url: https://d2l.ai/chapter_builders-guide/read-write.html#loading-and-saving-model-parameters
+      - source: d2l
+        locator: Sec. 14.2.1 Steps
+        url: https://d2l.ai/chapter_computer-vision/fine-tuning.html#steps
+      - source: d2l
+        locator: Sec. 5.5.3 Early Stopping
+        url: https://d2l.ai/chapter_multilayer-perceptrons/generalization-deep.html#early-stopping
+      - source: d2l
+        locator: Sec. 6.6.4 Exercises, Exercise 1
+        url: https://d2l.ai/chapter_builders-guide/read-write.html#exercises
+    source:
+      id: d2l
+      ref: chapter_builders-guide/read-write#ex1
+      url: https://d2l.ai/chapter_builders-guide/read-write.html#exercises
+    status: draft
+  - id: pytorch-017
+    type: single
+    difficulty: hard
+    tags:
+      - state-dict
+      - load-state-dict
+      - transfer-learning
+      - code-reading
+    question: |
+      A trained model was saved with `torch.save(old.state_dict(), "mlp.params")`. Its class is:
+
+      ```python
+      class MLP(nn.Module):
+          def __init__(self, num_outputs=10):
+              super().__init__()
+              self.hidden = nn.Linear(20, 256)
+              self.output = nn.Linear(256, num_outputs)
+
+          def forward(self, X):
+              return self.output(torch.relu(self.hidden(X)))
+      ```
+
+      You build `new = MLP(num_outputs=5)` and load `sd = torch.load("mlp.params")`. Which call copies
+      the trained hidden layer into `new` and leaves the new 5-class output layer at its random
+      initialization?
+    options:
+      - text: '`new.load_state_dict(sd)`'
+        why: The file holds a $10 \times 256$ `output.weight` while `new` has a $5 \times 256$ one, so loading fails with a size-mismatch error.
+      - text: '`new.load_state_dict(sd, strict=False)`'
+        why: '`strict=False` only tolerates missing or unexpected keys; the size mismatch of `output.weight` and `output.bias` still raises an error.'
+      - text: '`new.load_state_dict({k: v for k, v in sd.items() if "hidden" in k}, strict=False)`'
+        correct: true
+      - text: '`new.hidden.load_state_dict({k: v for k, v in sd.items() if k.startswith("hidden.")})`'
+        why: Inside the submodule the keys are `weight` and `bias`, but the filtered dictionary still uses `hidden.weight` and `hidden.bias`, so the keys do not match and loading fails.
+    explanation: |
+      A state dict maps parameter names such as `hidden.weight` and `output.bias` to tensors, and loading
+      it into a freshly built architecture restores the parameters [^1]. With `strict=False` PyTorch
+      accepts a dictionary that lacks some keys, which is the documented way to warm-start a model from
+      part of another one [^2], so the filtered call loads `hidden.*` and reports `output.*` as missing.
+      Shape mismatches are a different check: they raise an error even with `strict=False`. Loading into
+      the submodule also works if the `hidden.` prefix is stripped from the keys first.
+    references:
+      - source: d2l
+        locator: Sec. 6.6.2 Loading and Saving Model Parameters
+        url: https://d2l.ai/chapter_builders-guide/read-write.html#loading-and-saving-model-parameters
+      - title: Saving and Loading Models (PyTorch tutorial)
+        locator: Warmstarting Model Using Parameters from a Different Model
+        url: https://docs.pytorch.org/tutorials/beginner/saving_loading_models.html#warmstarting-model-using-parameters-from-a-different-model
+      - source: d2l
+        locator: Sec. 6.6.4 Exercises, Exercise 2
+        url: https://d2l.ai/chapter_builders-guide/read-write.html#exercises
+    source:
+      id: d2l
+      ref: chapter_builders-guide/read-write#ex2
+      url: https://d2l.ai/chapter_builders-guide/read-write.html#exercises
+    status: draft
+  - id: pytorch-018
+    type: short_answer
+    difficulty: easy
+    tags:
+      - tensors
+      - elementwise-operations
+      - comparison
+    question: |
+      What does the last line print?
+
+      ```python
+      import torch
+      X = torch.arange(12, dtype=torch.float32).reshape(3, 4)
+      Y = torch.tensor([[2.0, 1, 4, 3], [1, 2, 3, 4], [4, 3, 2, 1]])
+      print((X < Y).sum().item())
+      ```
+    answer:
+      numeric: 2
+      tolerance: 0
+      hint: an integer
+      model: '`X < Y` is a (3, 4) boolean tensor that is `True` only at positions (0, 0) and (0, 2), so the count is 2.'
+    explanation: |
+      Comparison operators such as `==`, `<` and `>` work elementwise, like the arithmetic operators,
+      and return a tensor of the same shape that is true where the comparison holds [^1]. `X` holds
+      0 to 11 row by row, so only the first row, $(0, 1, 2, 3)$ against $(2, 1, 4, 3)$, has smaller
+      entries: $0 < 2$ and $2 < 4$. Summing the boolean tensor counts its `True` entries, giving 2
+      [^1]. With `X > Y` the count would be 8, and with `X == Y` it would be 2.
+    references:
+      - source: d2l
+        locator: Sec. 2.1.3 Operations
+        url: https://d2l.ai/chapter_preliminaries/ndarray.html#operations
+      - source: d2l
+        locator: Sec. 2.1.8 Exercises, Exercise 1
+        url: https://d2l.ai/chapter_preliminaries/ndarray.html#exercises
+    source:
+      id: d2l
+      ref: chapter_preliminaries/ndarray#ex1
+      url: https://d2l.ai/chapter_preliminaries/ndarray.html#exercises
+    status: draft
+  - id: pytorch-019
+    type: short_answer
+    difficulty: medium
+    tags:
+      - broadcasting
+      - tensor-shapes
+    question: |
+      What is the shape of `c`?
+
+      ```python
+      a = torch.arange(8).reshape(2, 1, 4)
+      b = torch.arange(3).reshape(3, 1)
+      c = a + b
+      ```
+    answer:
+      accept:
+        - (2, 3, 4)
+      pattern: (torch\.size)?\(?\[?\s*2\s*[,x×]\s*3\s*[,x×]\s*4\s*\]?\)?
+      hint: Three dimensions in order, e.g. (5, 6, 7)
+      model: '$(2, 3, 4)$: `b` is treated as shape (1, 3, 1), and every axis of length 1 is stretched to match.'
+    explanation: |
+      Broadcasting lines the shapes up from the last axis and prepends axes of length 1 to the tensor
+      with fewer axes, so `b`'s shape (3, 1) is read as (1, 3, 1) [^2]. Then every axis of length 1
+      is expanded by copying to match the other operand [^1]: axis 0 takes 2 from `a`, axis 1 takes 3
+      from `b`, and axis 2 takes 4 from `a`. The result has shape (2, 3, 4), with
+      `c[i, j, k] = a[i, 0, k] + b[j, 0]`. Two sizes that differ and are both larger than 1, such as
+      3 and 4 on the same axis, would raise an error instead [^2].
+    references:
+      - source: d2l
+        locator: Sec. 2.1.4 Broadcasting
+        url: https://d2l.ai/chapter_preliminaries/ndarray.html#broadcasting
+      - title: 'PyTorch documentation: Broadcasting semantics'
+        locator: General semantics
+        url: https://docs.pytorch.org/docs/stable/notes/broadcasting.html#general-semantics
+      - source: d2l
+        locator: Sec. 2.1.8 Exercises, Exercise 2
+        url: https://d2l.ai/chapter_preliminaries/ndarray.html#exercises
+    source:
+      id: d2l
+      ref: chapter_preliminaries/ndarray#ex2
+      url: https://d2l.ai/chapter_preliminaries/ndarray.html#exercises
+    status: draft
+  - id: pytorch-020
+    type: short_answer
+    difficulty: easy
+    tags:
+      - tensors
+      - len
+      - tensor-shapes
+    question: |
+      What does `len(X)` return?
+
+      ```python
+      X = torch.arange(24).reshape(2, 3, 4)
+      ```
+    answer:
+      numeric: 2
+      tolerance: 0
+      hint: an integer
+      model: 2, the length of axis 0 (`X.shape[0]`)
+    explanation: |
+      For a vector, `len` returns its number of elements, the length of its only axis [^1]. For a
+      tensor with more axes, `len` counts the entries along the first axis, just as for a list of
+      lists: `X` holds 2 matrices of shape (3, 4), so `len(X)` is 2, the same as `X.shape[0]` [^2].
+      It is neither the number of elements (`X.numel()` is 24) nor the number of axes (`X.ndim` is
+      3).
+    references:
+      - source: d2l
+        locator: Sec. 2.3.2 Vectors (length via len)
+        url: https://d2l.ai/chapter_preliminaries/linear-algebra.html#vectors
+      - source: d2l
+        locator: Sec. 2.3.4 Tensors
+        url: https://d2l.ai/chapter_preliminaries/linear-algebra.html#tensors
+      - source: d2l
+        locator: Sec. 2.3.13 Exercises, Exercise 4
+        url: https://d2l.ai/chapter_preliminaries/linear-algebra.html#exercises
+    source:
+      id: d2l
+      ref: chapter_preliminaries/linear-algebra#ex4
+      url: https://d2l.ai/chapter_preliminaries/linear-algebra.html#exercises
+    status: draft
+  - id: pytorch-021
+    type: multiple
+    difficulty: medium
+    tags:
+      - tensors
+      - len
+      - tensor-shapes
+    question: For a PyTorch tensor `X`, which statements about `len(X)` are true? Select all that apply.
+    options:
+      - text: It always refers to the last axis, such as the feature dimension
+        why: It refers to the first axis, whose entries are the sub-tensors `X[0]`, `X[1]`, ...
+      - text: It equals `X.shape[0]` whenever `X` has at least one axis
+        correct: true
+      - text: For a 0-d tensor such as `torch.tensor(3.0)` it raises a `TypeError`
+        correct: true
+      - text: It equals `X.numel()`, the total number of elements
+        why: 'Only for 1-d tensors: for shape (2, 3, 4), `len` is 2 while `numel()` is 24.'
+      - text: It equals `X.ndim`, the number of axes
+        why: The number of axes is `X.ndim` (or `len(X.shape)`); `len(X)` is the length of axis 0.
+    explanation: |
+      `len(X)` counts the entries along axis 0, so it equals `X.shape[0]`, just as the length of a
+      vector is its number of elements [^1]. A 0-d tensor (a scalar) has no axis at all, and PyTorch
+      raises `TypeError: len() of a 0-d tensor` (checked with PyTorch 2.11). The total number of
+      elements is `X.numel()`, and the number of axes is `X.ndim` or `len(X.shape)`, where the shape is
+      the tuple of lengths along all axes [^1].
+    references:
+      - source: d2l
+        locator: Sec. 2.3.2 Vectors (len and shape)
+        url: https://d2l.ai/chapter_preliminaries/linear-algebra.html#vectors
+      - source: d2l
+        locator: Sec. 2.3.13 Exercises, Exercise 5
+        url: https://d2l.ai/chapter_preliminaries/linear-algebra.html#exercises
+    source:
+      id: d2l
+      ref: chapter_preliminaries/linear-algebra#ex5
+      url: https://d2l.ai/chapter_preliminaries/linear-algebra.html#exercises
+    status: draft
+  - id: pytorch-022
+    type: single
+    difficulty: medium
+    tags:
+      - broadcasting
+      - reduction
+      - keepdims
+    question: |
+      What happens when the last line runs?
+
+      ```python
+      A = torch.arange(6, dtype=torch.float32).reshape(2, 3)
+      A / A.sum(axis=1)
+      ```
+    options:
+      - text: Each column of `A` is divided by its own sum, so every column of the result sums to 1
+        why: Column sums come from `axis=0` and have shape (3,); here the vector holds the 2 row sums [^1].
+      - text: The whole matrix is divided by the sum of all its entries, which is 15
+        why: A reduction over `axis=1` keeps one sum per row; only `A.sum()` without an axis returns the total [^1].
+      - text: 'A `RuntimeError`: the (2,) row sums are lined up with the last axis, which has size 3'
+        correct: true
+      - text: Each row of `A` is divided by its own sum, so that every row of the result sums to exactly 1
+        why: That needs the sums as a (2, 1) column, e.g. `A.sum(axis=1, keepdims=True)` [^3]; a (2,) vector lines up with the columns instead [^2].
+    explanation: |
+      `A.sum(axis=1)` removes axis 1 and returns the row sums $(3, 12)$ with shape (2,) [^1].
+      Broadcasting compares shapes from the last axis, so this (2,) vector is matched against the 3
+      columns of `A`; the sizes 2 and 3 differ and neither is 1, so PyTorch raises a size-mismatch
+      `RuntimeError` [^2]. Keeping the reduced axis with `A.sum(axis=1, keepdims=True)` gives shape
+      (2, 1), which broadcasts across the columns and divides each row by its own sum, so every row
+      then sums to 1 [^3].
+    references:
+      - source: d2l
+        locator: Sec. 2.3.6 Reduction
+        url: https://d2l.ai/chapter_preliminaries/linear-algebra.html#reduction
+      - title: 'PyTorch documentation: Broadcasting semantics'
+        locator: General semantics
+        url: https://docs.pytorch.org/docs/stable/notes/broadcasting.html#general-semantics
+      - source: d2l
+        locator: Sec. 2.3.7 Non-Reduction Sum
+        url: https://d2l.ai/chapter_preliminaries/linear-algebra.html#non-reduction-sum
+      - source: d2l
+        locator: Sec. 2.3.13 Exercises, Exercise 6
+        url: https://d2l.ai/chapter_preliminaries/linear-algebra.html#exercises
+    source:
+      id: d2l
+      ref: chapter_preliminaries/linear-algebra#ex6
+      url: https://d2l.ai/chapter_preliminaries/linear-algebra.html#exercises
+    status: draft
+  - id: pytorch-023
+    type: short_answer
+    difficulty: hard
+    tags:
+      - broadcasting
+      - reduction
+      - keepdims
+      - silent-bugs
+    question: |
+      `S` is square, so this code runs without an error. What is `R[1, 0]`? Round to 3 decimals.
+
+      ```python
+      S = torch.tensor([[1., 2, 3], [4, 5, 6], [7, 8, 9]])
+      R = S / S.sum(axis=1)
+      ```
+    answer:
+      numeric: 0.667
+      tolerance: 0.002
+      hint: a number, 3 decimals
+      model: '$4/6 \approx 0.667$: the sums $(6, 15, 24)$ are broadcast along each row, so column $j$ is divided by the sum of row $j$.'
+    explanation: |
+      The row sums $(6, 15, 24)$ have shape (3,), and broadcasting lines this shape up with the last
+      axis, so entry $(i, j)$ is divided by the sum of row $j$, not row $i$ [^1]. Hence
+      `R[1, 0]` $= 4/6 \approx 0.667$, while a correct row normalization gives $4/15 \approx 0.267$.
+      The rows of `R` do not sum to 1 (row 1 sums to 1.25). With a square matrix the mistake raises no
+      error, so keep the reduced axis: `S / S.sum(axis=1, keepdims=True)` divides each row by its own
+      sum [^2].
+    references:
+      - title: 'PyTorch documentation: Broadcasting semantics'
+        locator: General semantics
+        url: https://docs.pytorch.org/docs/stable/notes/broadcasting.html#general-semantics
+      - source: d2l
+        locator: Sec. 2.3.7 Non-Reduction Sum
+        url: https://d2l.ai/chapter_preliminaries/linear-algebra.html#non-reduction-sum
+      - source: d2l
+        locator: Sec. 2.3.13 Exercises, Exercise 6
+        url: https://d2l.ai/chapter_preliminaries/linear-algebra.html#exercises
+    source:
+      id: d2l
+      ref: chapter_preliminaries/linear-algebra#ex6-b
+      url: https://d2l.ai/chapter_preliminaries/linear-algebra.html#exercises
+    status: draft
+  - id: pytorch-024
+    type: single
+    difficulty: easy
+    tags:
+      - reduction
+      - tensor-shapes
+    question: |
+      `X` has shape (2, 3, 4). What are the shapes of `X.sum(axis=0)`, `X.sum(axis=1)` and
+      `X.sum(axis=2)`, in that order?
+    options:
+      - text: (2,), (3,) and (4,)
+        why: A sum over one axis removes only that axis; the other two remain [^1].
+      - text: (1, 3, 4), (2, 1, 4) and (2, 3, 1)
+        why: That is what `keepdims=True` returns; by default the reduced axis disappears [^1][^2].
+      - text: (2, 3), (2, 4) and (3, 4)
+        why: 'The order is reversed: summing over axis 0 removes the 2, leaving (3, 4).'
+      - text: (3, 4), (2, 4) and (2, 3)
+        correct: true
+    explanation: |
+      Summing along an axis reduces it, so that axis is missing from the shape of the output [^1].
+      Removing axis 0, 1 or 2 from (2, 3, 4) leaves (3, 4), (2, 4) and (2, 3). Passing
+      `keepdims=True` keeps the reduced axis with length 1 instead, which is what you want when the
+      result is broadcast back against `X` [^2].
+    references:
+      - source: d2l
+        locator: Sec. 2.3.6 Reduction
+        url: https://d2l.ai/chapter_preliminaries/linear-algebra.html#reduction
+      - source: d2l
+        locator: Sec. 2.3.7 Non-Reduction Sum
+        url: https://d2l.ai/chapter_preliminaries/linear-algebra.html#non-reduction-sum
+      - source: d2l
+        locator: Sec. 2.3.13 Exercises, Exercise 8
+        url: https://d2l.ai/chapter_preliminaries/linear-algebra.html#exercises
+    source:
+      id: d2l
+      ref: chapter_preliminaries/linear-algebra#ex8
+      url: https://d2l.ai/chapter_preliminaries/linear-algebra.html#exercises
+    status: draft
+  - id: pytorch-025
+    type: short_answer
+    difficulty: medium
+    tags:
+      - norms
+      - frobenius-norm
+      - linalg
+    question: What does `torch.linalg.norm(torch.ones(2, 3, 4))` return? Round to 3 decimals.
+    answer:
+      numeric: 4.899
+      tolerance: 0.001
+      hint: a number, 3 decimals
+      model: '$\sqrt{24} \approx 4.899$: the tensor is flattened and its $\ell_2$ norm is taken.'
+    explanation: |
+      When neither `dim` nor `ord` is given, `torch.linalg.norm` flattens its input into a vector and
+      returns that vector's 2-norm [^1]. So for a tensor with any number of axes it computes the square
+      root of the sum of all squared entries, the same idea as the Frobenius norm of a matrix, which
+      behaves like an $\ell_2$ norm of a matrix-shaped vector [^2]. Here there are 24 ones, giving
+      $\sqrt{24} \approx 4.899$.
+    references:
+      - title: 'PyTorch documentation: torch.linalg.norm'
+        locator: Function description
+        url: https://docs.pytorch.org/docs/stable/generated/torch.linalg.norm.html
+        quote: If dim= None and ord= None, input will be flattened to 1D and the 2-norm of the resulting vector will be computed.
+      - source: d2l
+        locator: Sec. 2.3.11 Norms (Frobenius norm)
+        url: https://d2l.ai/chapter_preliminaries/linear-algebra.html#norms
+      - source: d2l
+        locator: Sec. 2.3.13 Exercises, Exercise 9
+        url: https://d2l.ai/chapter_preliminaries/linear-algebra.html#exercises
+    source:
+      id: d2l
+      ref: chapter_preliminaries/linear-algebra#ex9
+      url: https://d2l.ai/chapter_preliminaries/linear-algebra.html#exercises
+    status: draft
+  - id: pytorch-026
+    type: single
+    difficulty: medium
+    tags:
+      - stack
+      - indexing
+      - tensor-shapes
+    question: |
+      `A`, `B` and `C` are tensors of shape (100, 200), and `X = torch.stack([A, B, C], dim=2)`. What is
+      `X.shape`, and which expression returns `B`?
+    options:
+      - text: (100, 200, 3), and `X[:, :, 1]`
+        correct: true
+      - text: (3, 100, 200), and `X[1]`
+        why: That is `torch.stack` with the default `dim=0`; here the new axis is inserted at position 2 [^1].
+      - text: (100, 200, 3), and `X[:, :, 2]`
+        why: Indices start at 0, so the second entry along the new axis is index 1; index 2 gives `C` [^2].
+      - text: (300, 200), and `X[100:200]`
+        why: That is `torch.cat` along axis 0, which joins along an existing axis; `stack` creates a new one [^1].
+    explanation: |
+      `torch.stack` joins tensors of equal shape along a new axis inserted at position `dim` [^1], so
+      stacking three (100, 200) matrices with `dim=2` gives shape (100, 200, 3). The third axis then
+      indexes the three matrices, and its second coordinate, index 1, recovers `B` as `X[:, :, 1]`
+      [^2]. With the default `dim=0` the result would be (3, 100, 200) and `B` would be `X[1]`. The
+      d2l exercise leaves the stacking axis open, so this question fixes it [^3].
+    references:
+      - title: 'PyTorch documentation: torch.stack'
+        locator: Function description
+        url: https://docs.pytorch.org/docs/stable/generated/torch.stack.html
+        quote: Concatenates a sequence of tensors along a new dimension. All tensors need to be of the same size.
+      - source: d2l
+        locator: Sec. 2.1.2 Indexing and Slicing
+        url: https://d2l.ai/chapter_preliminaries/ndarray.html#indexing-and-slicing
+      - source: d2l
+        locator: Sec. 2.3.13 Exercises, Exercise 12
+        url: https://d2l.ai/chapter_preliminaries/linear-algebra.html#exercises
+    source:
+      id: d2l
+      ref: chapter_preliminaries/linear-algebra#ex12
+      url: https://d2l.ai/chapter_preliminaries/linear-algebra.html#exercises
+    status: draft
+  - id: pytorch-027
+    type: single
+    difficulty: hard
+    tags:
+      - autograd
+      - norms
+      - differentiability
+      - nan
+    question: |
+      Mathematically, $f(\mathbf{x}) = \lVert\mathbf{x}\rVert_2$ has the gradient
+      $\mathbf{x}/\lVert\mathbf{x}\rVert_2$ for $\mathbf{x} \neq \mathbf{0}$. What does `x.grad` contain
+      after this code runs at $\mathbf{x} = \mathbf{0}$?
+
+      ```python
+      x = torch.zeros(3, requires_grad=True)
+      f = torch.sqrt((x ** 2).sum())
+      f.backward()
+      ```
+    options:
+      - text: '`[1., 1., 1.]`, the limit of $\mathbf{x}/\lVert\mathbf{x}\rVert_2$ as $\mathbf{x}$ approaches $\mathbf{0}$'
+        why: '$\mathbf{x}/\lVert\mathbf{x}\rVert_2$ has no limit at $\mathbf{0}$: it is a unit vector pointing in whatever direction you come from.'
+      - text: A `RuntimeError`, because the norm is not differentiable at 0
+        why: Autograd does not check differentiability; it evaluates each local derivative, which here produces $0 \cdot \infty$.
+      - text: '`[nan, nan, nan]`: the chain rule multiplies 0 by the infinite slope of $\sqrt{u}$ at 0'
+        correct: true
+      - text: '`[0., 0., 0.]`, because 0 is the minimum of the norm'
+        why: Zero is a valid subgradient there, and `torch.linalg.norm` returns it, but this hand-written version follows the chain rule literally [^1].
+    explanation: |
+      Autograd applies the chain rule one operation at a time [^1]: the derivative of $\sqrt{u}$ is
+      $\frac{1}{2\sqrt{u}}$, infinite at $u = 0$, and the derivative of $u = \sum_i x_i^2$ is
+      $2\mathbf{x} = \mathbf{0}$, so every entry becomes $0 \cdot \infty$, which is `nan`. This mirrors
+      the math: away from $\mathbf{0}$ the gradient is $\mathbf{x}/\lVert\mathbf{x}\rVert_2$ [^3], but at
+      $\mathbf{0}$ the norm has a cone-shaped kink, like $|t|$ at 0, and no gradient [^2]. Library
+      functions choose a subgradient at such points: `torch.linalg.norm` returns zeros there (checked
+      with PyTorch 2.11), one reason to prefer built-in norms over hand-written ones.
+    references:
+      - source: d2l
+        locator: Sec. 2.5.1 A Simple Function
+        url: https://d2l.ai/chapter_preliminaries/autograd.html#a-simple-function
+      - source: d2l
+        locator: Sec. 2.4.1 Derivatives and Differentiation (differentiability)
+        url: https://d2l.ai/chapter_preliminaries/calculus.html#derivatives-and-differentiation
+      - source: d2l
+        locator: Sec. 2.4.3 Partial Derivatives and Gradients
+        url: https://d2l.ai/chapter_preliminaries/calculus.html#partial-derivatives-and-gradients
+      - source: d2l
+        locator: Sec. 2.4.6 Exercises, Exercise 8
+        url: https://d2l.ai/chapter_preliminaries/calculus.html#exercises
+    source:
+      id: d2l
+      ref: chapter_preliminaries/calculus#ex8
+      url: https://d2l.ai/chapter_preliminaries/calculus.html#exercises
+    status: draft
+  - id: pytorch-028
+    type: single
+    difficulty: medium
+    tags:
+      - autograd
+      - second-derivatives
+      - hessian
+    question: |
+      Why is the full matrix of second derivatives (the Hessian) of a loss with $n$ parameters much
+      more expensive to get from an autograd framework than its gradient?
+    options:
+      - text: Autograd only knows first-order rules, so second derivatives always fall back to finite differences
+        why: Autograd can differentiate its own backward pass when that pass is recorded (`create_graph=True` in PyTorch) [^2]; no finite differences are needed.
+      - text: The forward pass has to be rerun from scratch once for every pair of parameters $(i, j)$
+        why: The extra cost comes from differentiating the gradient computation, not from rerunning the forward pass per parameter pair.
+      - text: Backpropagation needs a scalar output, so second derivatives cannot be computed at all
+        why: Each entry of the gradient is a scalar, so it can be backpropagated; it just has to be done many times.
+      - text: The backward pass is recorded and differentiated again, once per gradient entry, for $n^2$ numbers
+        correct: true
+    explanation: |
+      Autograd records the forward computation as a graph and gets the whole gradient from one
+      backward pass through it [^1]. For second derivatives, the backward pass itself has to be
+      recorded as a new graph (in PyTorch, `backward(create_graph=True)`) and then differentiated
+      again [^2]. Each such extra pass yields one row of the Hessian, so the full $n \times n$ matrix
+      needs about $n$ of them, and its $n^2$ entries are far too many to store for a network with
+      millions of parameters.
+    references:
+      - source: d2l
+        locator: Sec. 2.5 Automatic Differentiation (introduction)
+        url: https://d2l.ai/chapter_preliminaries/autograd.html
+      - title: 'PyTorch documentation: torch.Tensor.backward'
+        locator: Parameters retain_graph and create_graph
+        url: https://docs.pytorch.org/docs/stable/generated/torch.Tensor.backward.html
+      - source: d2l
+        locator: Sec. 2.5.6 Exercises, Exercise 1
+        url: https://d2l.ai/chapter_preliminaries/autograd.html#exercises
+    source:
+      id: d2l
+      ref: chapter_preliminaries/autograd#ex1
+      url: https://d2l.ai/chapter_preliminaries/autograd.html#exercises
+    status: draft
+  - id: pytorch-029
+    type: single
+    difficulty: medium
+    tags:
+      - autograd
+      - backward
+      - retain-graph
+    question: |
+      What happens when the last line runs?
+
+      ```python
+      x = torch.arange(4.0, requires_grad=True)
+      y = 2 * torch.dot(x, x)
+      y.backward()
+      y.backward()
+      ```
+    options:
+      - text: A `RuntimeError`, since the first call freed the values the graph saved
+        correct: true
+      - text: '`x.grad` becomes `[0., 8., 16., 24.]`, because the second call adds to the first'
+        why: This happens only with `y.backward(retain_graph=True)` in the first call; by default the graph is freed after one backward pass [^1].
+      - text: '`x.grad` stays `[0., 4., 8., 12.]`, because the second call overwrites it'
+        why: 'PyTorch never overwrites `.grad`: when a second backward pass does run, it adds to the stored gradient [^2].'
+      - text: Nothing, because PyTorch skips a repeated backward call on the same output
+        why: PyTorch does not cache backward calls; it tries to run the pass again and fails because the saved values are gone [^1].
+    explanation: |
+      By default, `backward` frees the graph and the intermediate values saved for it once the
+      gradients are computed [^1]. `torch.dot` saved `x` for its backward rule, so the second call
+      raises "Trying to backward through the graph a second time". With `retain_graph=True` in the
+      first call the second one would run, and because PyTorch adds new gradients to the stored ones
+      instead of resetting them, `x.grad` would double from $4\mathbf{x}$ to $8\mathbf{x}$ [^2]. An
+      output whose backward rule saves nothing, such as `x.sum()`, can even be backpropagated twice
+      without it.
+    references:
+      - title: 'PyTorch documentation: torch.Tensor.backward'
+        locator: Parameter retain_graph
+        url: https://docs.pytorch.org/docs/stable/generated/torch.Tensor.backward.html
+        quote: If False, the graph used to compute the grads will be freed.
+      - source: d2l
+        locator: Sec. 2.5.1 A Simple Function
+        url: https://d2l.ai/chapter_preliminaries/autograd.html#a-simple-function
+      - source: d2l
+        locator: Sec. 2.5.6 Exercises, Exercise 2
+        url: https://d2l.ai/chapter_preliminaries/autograd.html#exercises
+    source:
+      id: d2l
+      ref: chapter_preliminaries/autograd#ex2
+      url: https://d2l.ai/chapter_preliminaries/autograd.html#exercises
+    status: draft
+  - id: pytorch-030
+    type: single
+    difficulty: hard
+    tags:
+      - autograd
+      - control-flow
+      - non-scalar-backward
+    question: |
+      `f` doubles its input until the norm reaches 1000 and multiplies by 100 if the sum is not
+      positive. Now `a` is a vector:
+
+      ```python
+      def f(a):
+          b = a * 2
+          while b.norm() < 1000:
+              b = b * 2
+          if b.sum() > 0:
+              c = b
+          else:
+              c = 100 * b
+          return c
+
+      a = torch.randn(3, requires_grad=True)
+      d = f(a)
+      ```
+
+      Which statement is correct?
+    options:
+      - text: After `d.sum().backward()`, each entry of `a.grad` has a different value, one per entry of `a`
+        why: The loop and the sign test look at the whole vector, so all entries share one scale $k$ and $\mathbf{d} = k\mathbf{a}$.
+      - text: '`d.backward()` fails; after `d.sum().backward()`, all entries of `a.grad` equal `d[0] / a[0]`'
+        correct: true
+      - text: '`d.backward()` works and fills `a.grad` with the 3 × 3 Jacobian matrix of `d` with respect to `a`'
+        why: '`a.grad` always has the shape of `a`, and PyTorch refuses `backward` on a non-scalar output without a `gradient` argument [^1].'
+      - text: No gradient exists, because the number of loop iterations and the branch both depend on `a`
+        why: Autograd records whichever branch and number of iterations actually ran, so the control flow is no obstacle [^2].
+    explanation: |
+      `f` only multiplies its input by a scale $k$ (a power of 2, times 100 in the second branch), and
+      the norm and the sum look at the whole vector, so for a given input $\mathbf{d} = k\mathbf{a}$
+      with one shared $k$ [^2]. `d` is a vector, and PyTorch refuses `backward` on a non-scalar unless
+      it gets a `gradient` vector or the output is reduced first, e.g. with `.sum()` [^1]. The gradient
+      of $\sum_i d_i = k \sum_i a_i$ is $k$ in every coordinate, so `a.grad` equals `d / a` entrywise,
+      as in the scalar case [^2].
+    references:
+      - source: d2l
+        locator: Sec. 2.5.2 Backward for Non-Scalar Variables
+        url: https://d2l.ai/chapter_preliminaries/autograd.html#backward-for-non-scalar-variables
+      - source: d2l
+        locator: Sec. 2.5.4 Gradients and Python Control Flow
+        url: https://d2l.ai/chapter_preliminaries/autograd.html#gradients-and-python-control-flow
+      - source: d2l
+        locator: Sec. 2.5.6 Exercises, Exercise 3
+        url: https://d2l.ai/chapter_preliminaries/autograd.html#exercises
+    source:
+      id: d2l
+      ref: chapter_preliminaries/autograd#ex3
+      url: https://d2l.ai/chapter_preliminaries/autograd.html#exercises
+    status: draft
+  - id: pytorch-031
+    type: short_answer
+    difficulty: medium
+    tags:
+      - autograd
+      - chain-rule
+      - derivatives
+    question: |
+      What does the last line print? Round to 3 decimals.
+
+      ```python
+      x = torch.tensor(1.0, requires_grad=True)
+      f = torch.log(x ** 2) * torch.sin(x) + 1 / x
+      f.backward()
+      print(x.grad)
+      ```
+    answer:
+      numeric: 0.683
+      tolerance: 0.002
+      hint: a number, 3 decimals
+      model: "$f'(x) = \\frac{2}{x}\\sin x + \\log(x^2)\\cos x - \\frac{1}{x^2}$; at $x = 1$: $2\\sin 1 - 1 \\approx 0.683$"
+    explanation: |
+      `backward` applies the chain rule through the recorded operations, so `x.grad` holds $f'(1)$
+      [^1]. By hand, the product rule gives
+      $\frac{d}{dx}[\log(x^2)\sin x] = \frac{2}{x}\sin x + \log(x^2)\cos x$, using
+      $\frac{d}{dx}\log(x^2) = \frac{2x}{x^2} = \frac{2}{x}$ from the chain rule, and
+      $\frac{d}{dx}x^{-1} = -x^{-2}$ [^2]. At $x = 1$ the logarithm is 0, which leaves
+      $2\sin 1 - 1 \approx 0.683$.
+    references:
+      - source: d2l
+        locator: Sec. 2.5.1 A Simple Function
+        url: https://d2l.ai/chapter_preliminaries/autograd.html#a-simple-function
+      - source: d2l
+        locator: Sec. 2.4.1 Derivatives and Differentiation (rules)
+        url: https://d2l.ai/chapter_preliminaries/calculus.html#derivatives-and-differentiation
+      - source: d2l
+        locator: Sec. 2.5.6 Exercises, Exercise 6
+        url: https://d2l.ai/chapter_preliminaries/autograd.html#exercises
+    source:
+      id: d2l
+      ref: chapter_preliminaries/autograd#ex6
+      url: https://d2l.ai/chapter_preliminaries/autograd.html#exercises
+    status: draft
+  - id: pytorch-032
+    type: single
+    difficulty: medium
+    tags:
+      - autograd
+      - reverse-mode
+      - forward-mode
+    question: |
+      PyTorch's autograd computes gradients in reverse mode, from the loss back to the inputs. Why
+      does this suit training a network with millions of parameters better than forward mode?
+    options:
+      - text: Forward mode cannot pass derivatives through nonlinear functions such as ReLU or softmax
+        why: Both modes apply the same chain rule to the same elementary operations; they differ only in the order of the products [^1].
+      - text: Reverse mode gives exact derivatives, while forward mode only gives approximations
+        why: Both modes compute exact derivatives, up to rounding; neither uses finite differences [^1].
+      - text: One backward pass gives all parameter derivatives; forward mode needs one pass per parameter
+        correct: true
+      - text: Reverse mode needs to store fewer intermediate values of the forward computation than forward mode
+        why: "The opposite: reverse mode must keep the forward pass's intermediate values until the backward pass is done [^2]."
+    explanation: |
+      For a function $f: \mathbb{R}^n \to \mathbb{R}^m$, forward mode pushes derivatives from the
+      inputs to the outputs and gets one column of the Jacobian per pass, while reverse mode pulls them
+      from the outputs back and gets one row per pass [^1]. Training has $n$ in the millions and a
+      single scalar loss ($m = 1$), so one reverse pass yields the whole gradient [^1]. The price is
+      memory: reverse mode has to keep the intermediate values of the forward pass until
+      backpropagation is done [^2]. Forward mode wins in the opposite case, with few inputs and many
+      outputs.
+    references:
+      - title: 'Wikipedia: Automatic differentiation'
+        locator: Forward and reverse accumulation
+        url: https://en.wikipedia.org/wiki/Automatic_differentiation#Forward_and_reverse_accumulation
+      - source: d2l
+        locator: Sec. 5.3.4 Training Neural Networks
+        url: https://d2l.ai/chapter_multilayer-perceptrons/backprop.html#training-neural-networks
+      - source: d2l
+        locator: Sec. 2.5.6 Exercises, Exercise 8
+        url: https://d2l.ai/chapter_preliminaries/autograd.html#exercises
+    source:
+      id: d2l
+      ref: chapter_preliminaries/autograd#ex8
+      url: https://d2l.ai/chapter_preliminaries/autograd.html#exercises
+    status: draft
+  - id: pytorch-033
+    type: short_answer
+    difficulty: medium
+    tags:
+      - loss-reduction
+      - learning-rate
+      - mse-loss
+    question: |
+      Training with `nn.MSELoss()` (the default `reduction='mean'`) and `torch.optim.SGD` with
+      `lr=0.03` works well on minibatches of 64 examples. You switch to
+      `nn.MSELoss(reduction='sum')`. Which learning rate gives exactly the same parameter updates?
+    answer:
+      numeric: 0.000469
+      tolerance: 5e-06
+      hint: a number, e.g. 0.0012
+      model: '$0.03 / 64 \approx 0.000469$: the summed loss, and so its gradient, is 64 times the mean.'
+    explanation: |
+      With `reduction='mean'` the summed loss is divided by the number of elements, with `'sum'` it is
+      not [^1], so the summed loss and its gradient are $|\mathcal{B}| = 64$ times larger. An SGD step
+      is the learning rate times the gradient, so dividing the learning rate by 64 compensates exactly.
+      d2l's update rule averages over the minibatch, which is why its learning rate does not have to be
+      adjusted to the batch size [^2]; with a summed loss, the effective step would change whenever the
+      batch size does.
+    references:
+      - title: 'PyTorch documentation: torch.nn.MSELoss'
+        locator: Parameter reduction
+        url: https://docs.pytorch.org/docs/stable/generated/torch.nn.MSELoss.html
+      - source: d2l
+        locator: Sec. 3.4.3 Defining the Optimization Algorithm
+        url: https://d2l.ai/chapter_linear-regression/linear-regression-scratch.html#defining-the-optimization-algorithm
+      - source: d2l
+        locator: Sec. 3.5.6 Exercises, Exercise 1
+        url: https://d2l.ai/chapter_linear-regression/linear-regression-concise.html#exercises
+    source:
+      id: d2l
+      ref: chapter_linear-regression/linear-regression-concise#ex1
+      url: https://d2l.ai/chapter_linear-regression/linear-regression-concise.html#exercises
+    status: draft
+  - id: pytorch-034
+    type: short_answer
+    difficulty: easy
+    tags:
+      - autograd
+      - parameters
+      - nn-linear
+    question: |
+      What is the shape of `net.weight.grad` after this code runs?
+
+      ```python
+      net = nn.Linear(2, 1)
+      X, y = torch.randn(8, 2), torch.randn(8, 1)
+      loss = nn.MSELoss()(net(X), y)
+      loss.backward()
+      ```
+    answer:
+      accept:
+        - (1, 2)
+      pattern: (torch\.size)?\(?\[?\s*1\s*[,x×]\s*2\s*\]?\)?
+      hint: Two dimensions, e.g. (3, 4)
+      model: (1, 2), the shape of `net.weight`, which is (out_features, in_features)
+    explanation: |
+      After `backward()`, the gradient of each parameter is stored in its `.grad` attribute, a tensor
+      with the same shape as the parameter; before the first backward pass it is `None` [^1].
+      `nn.Linear` stores its weight with shape (out_features, in_features) [^2], here (1, 2), so
+      `net.weight.grad` has shape (1, 2) and `net.bias.grad` has shape (1,). The batch size 8 does not
+      appear: the loss averages over the examples, and their contributions are summed into one gradient
+      per parameter.
+    references:
+      - source: d2l
+        locator: Sec. 2.5.1 A Simple Function
+        url: https://d2l.ai/chapter_preliminaries/autograd.html#a-simple-function
+      - title: 'PyTorch documentation: torch.nn.Linear'
+        locator: Variables (weight)
+        url: https://docs.pytorch.org/docs/stable/generated/torch.nn.Linear.html
+        quote: the learnable weights of the module of shape (out_features, in_features)
+      - source: d2l
+        locator: Sec. 3.5.6 Exercises, Exercise 3
+        url: https://d2l.ai/chapter_linear-regression/linear-regression-concise.html#exercises
+    source:
+      id: d2l
+      ref: chapter_linear-regression/linear-regression-concise#ex3
+      url: https://d2l.ai/chapter_linear-regression/linear-regression-concise.html#exercises
+    status: draft
+  - id: pytorch-035
+    type: short_answer
+    difficulty: medium
+    tags:
+      - broadcasting
+      - loss-function
+      - silent-bugs
+    question: |
+      In a minibatch of 32 examples, `y_hat` has shape (32, 1) but the labels `y` have shape (32,).
+      What is the shape of `l` in this loss?
+
+      ```python
+      l = (y_hat - y) ** 2 / 2
+      ```
+    answer:
+      accept:
+        - (32, 32)
+      pattern: (torch\.size)?\(?\[?\s*32\s*[,x×]\s*32\s*\]?\)?
+      hint: Two dimensions, e.g. (8, 8)
+      model: '(32, 32): `y` is read as (1, 32) and broadcast against the (32, 1) column.'
+    explanation: |
+      Broadcasting lines shapes up from the last axis, so `y` with shape (32,) acts like (1, 32), and a
+      (32, 1) column minus a (1, 32) row is a (32, 32) matrix of all pairwise differences [^1][^2]. No
+      error is raised, and the mean of this matrix compares every prediction with every label, so
+      training silently fits the wrong objective. That is why the labels have to be brought into the
+      shape of the predictions, for example with `y.reshape(y_hat.shape)`, before subtracting [^3].
+    references:
+      - source: d2l
+        locator: Sec. 2.1.4 Broadcasting
+        url: https://d2l.ai/chapter_preliminaries/ndarray.html#broadcasting
+      - title: 'PyTorch documentation: Broadcasting semantics'
+        locator: General semantics
+        url: https://docs.pytorch.org/docs/stable/notes/broadcasting.html#general-semantics
+      - source: d2l
+        locator: Sec. 3.4.2 Defining the Loss Function
+        url: https://d2l.ai/chapter_linear-regression/linear-regression-scratch.html#defining-the-loss-function
+      - source: d2l
+        locator: Sec. 3.4.6 Exercises, Exercise 5
+        url: https://d2l.ai/chapter_linear-regression/linear-regression-scratch.html#exercises
+    source:
+      id: d2l
+      ref: chapter_linear-regression/linear-regression-scratch#ex5
+      url: https://d2l.ai/chapter_linear-regression/linear-regression-scratch.html#exercises
+    status: draft
+  - id: pytorch-036
+    type: short_answer
+    difficulty: easy
+    tags:
+      - data-loader
+      - minibatches
+      - batch-size
+    question: |
+      This generator serves one epoch of training data. With `num_train = 1000` and `batch_size = 64`,
+      how many examples are in the last minibatch?
+
+      ```python
+      indices = list(range(num_train))
+      random.shuffle(indices)
+      for i in range(0, num_train, batch_size):
+          batch = indices[i : i + batch_size]
+          yield X[batch], y[batch]
+      ```
+    answer:
+      numeric: 40
+      tolerance: 0
+      hint: an integer
+      model: '16 batches: 15 full ones (960 examples) and a last one with $1000 - 960 = 40$.'
+    explanation: |
+      The slice `indices[i : i + batch_size]` simply stops at the end of the list, so when the number of
+      examples is not divisible by the batch size, the last minibatch is smaller [^1]; here
+      $1000 = 15 \times 64 + 40$. Every example is still used once per epoch, but the last update
+      averages over only 40 examples, so its gradient is noisier. PyTorch's `DataLoader` behaves the
+      same way by default and drops the incomplete batch with `drop_last=True` [^2].
+    references:
+      - source: d2l
+        locator: Sec. 3.3.2 Reading the Dataset
+        url: https://d2l.ai/chapter_linear-regression/synthetic-regression-data.html#reading-the-dataset
+      - title: 'PyTorch documentation: torch.utils.data.DataLoader'
+        locator: Parameter drop_last
+        url: https://docs.pytorch.org/docs/stable/data.html#torch.utils.data.DataLoader
+        quote: If False and the size of dataset is not divisible by the batch size, then the last batch will be smaller.
+      - source: d2l
+        locator: Sec. 3.4.6 Exercises, Exercise 7
+        url: https://d2l.ai/chapter_linear-regression/linear-regression-scratch.html#exercises
+    source:
+      id: d2l
+      ref: chapter_linear-regression/linear-regression-scratch#ex7
+      url: https://d2l.ai/chapter_linear-regression/linear-regression-scratch.html#exercises
+    status: draft
+  - id: pytorch-037
+    type: short_answer
+    difficulty: easy
+    tags:
+      - data-loader
+      - drop-last
+      - minibatches
+    question: |
+      `loader = torch.utils.data.DataLoader(dataset, batch_size=64, shuffle=True, drop_last=True)`
+      serves a dataset of 1000 examples. How many minibatches does one epoch contain?
+    answer:
+      numeric: 15
+      tolerance: 0
+      hint: an integer
+      model: $\lfloor 1000/64 \rfloor = 15$; the incomplete 16th batch of 40 examples is dropped.
+    explanation: |
+      By default `DataLoader` keeps the incomplete last batch, so 1000 examples give 16 batches, the
+      last with 40 examples [^1]. `drop_last=True` drops that batch, which keeps every minibatch the
+      same size, at the cost of skipping 40 examples per epoch [^1]. With `shuffle=True` different
+      examples are skipped in each epoch, so none is ignored for good. `len(loader)` reports the number
+      of batches [^2].
+    references:
+      - title: 'PyTorch documentation: torch.utils.data.DataLoader'
+        locator: Parameter drop_last
+        url: https://docs.pytorch.org/docs/stable/data.html#torch.utils.data.DataLoader
+        quote: set to True to drop the last incomplete batch, if the dataset size is not divisible by the batch size.
+      - source: d2l
+        locator: Sec. 3.3.3 Concise Implementation of the Data Loader
+        url: https://d2l.ai/chapter_linear-regression/synthetic-regression-data.html#concise-implementation-of-the-data-loader
+      - source: d2l
+        locator: Sec. 3.3.5 Exercises, Exercise 1
+        url: https://d2l.ai/chapter_linear-regression/synthetic-regression-data.html#exercises
+    source:
+      id: d2l
+      ref: chapter_linear-regression/synthetic-regression-data#ex1
+      url: https://d2l.ai/chapter_linear-regression/synthetic-regression-data.html#exercises
+    status: draft
+  - id: pytorch-038
+    type: single
+    difficulty: medium
+    tags:
+      - random-seed
+      - reproducibility
+      - generator
+    question: |
+      A function `make_data()` draws a synthetic dataset with `torch.randn`. It should return exactly
+      the same data every time it is called, even if other random calls happen in between. What should
+      it do?
+    options:
+      - text: Serve the data through a `DataLoader` created with `shuffle=False`
+        why: '`shuffle` only controls the order in which existing examples are served; it does not affect how they are generated.'
+      - text: Draw the values with `torch.rand` instead of `torch.randn`
+        why: That changes the distribution from normal to uniform; the values are still random.
+      - text: Seed a fresh generator inside the function and pass it to every random call
+        correct: true
+      - text: Call `torch.manual_seed(0)` once at the start of the script, before the first call
+        why: Seeding once fixes the run as a whole, but each call to `make_data()` continues from wherever the global generator stands, so successive calls differ [^1].
+    explanation: |
+      A pseudorandom generator produces a fixed sequence of numbers from its seed, so the same seed
+      gives the same draws [^1]. Seeding once at the start makes the whole run reproducible, but the
+      second call to `make_data()` continues where the first one stopped. Seeding a generator inside the
+      function, e.g. `g = torch.Generator().manual_seed(42)` and `torch.randn(n, d, generator=g)`,
+      restarts the sequence on every call and leaves the global generator used elsewhere untouched
+      [^2].
+    references:
+      - title: 'PyTorch documentation: Reproducibility'
+        locator: Controlling sources of randomness (PyTorch random number generator)
+        url: https://docs.pytorch.org/docs/stable/notes/randomness.html
+      - title: 'PyTorch documentation: torch.Generator'
+        locator: Class description and manual_seed
+        url: https://docs.pytorch.org/docs/stable/generated/torch.Generator.html
+      - source: d2l
+        locator: Sec. 3.3.5 Exercises, Exercise 4
+        url: https://d2l.ai/chapter_linear-regression/synthetic-regression-data.html#exercises
+    source:
+      id: d2l
+      ref: chapter_linear-regression/synthetic-regression-data#ex4
+      url: https://d2l.ai/chapter_linear-regression/synthetic-regression-data.html#exercises
+    status: draft
+  - id: pytorch-039
+    type: single
+    difficulty: easy
+    tags:
+      - data-loader
+      - batch-size
+      - throughput
+    question: |
+      You read Fashion-MNIST's 60,000 training images with a PyTorch `DataLoader`. What happens to the
+      time one pass over the data takes if you reduce `batch_size` from 256 to 1?
+    options:
+      - text: It drops, because single images fit into the CPU cache better than whole minibatches
+        why: Cache effects cannot outweigh paying the loop and collation overhead once per image; batching exists to amortize it.
+      - text: The loader raises an error, since collating a batch needs at least two examples
+        why: A batch of one example is valid; its tensors simply have a leading dimension of size 1.
+      - text: 'It grows a lot: the per-batch overhead is paid 60,000 times, not about 235'
+        correct: true
+      - text: It stays about the same, since the same number of bytes is read from disk in total
+        why: Each minibatch has a fixed cost (indices, collating, a loop iteration) on top of the bytes, and that cost is now paid for every image [^1].
+    explanation: |
+      A data loader does fixed work for every minibatch: it draws the indices, fetches the examples and
+      collates them into tensors, plus one Python loop iteration [^1]. With 256 images per batch this
+      cost is paid $\lceil 60000/256 \rceil = 235$ times per epoch; with batch size 1 it is paid 60,000
+      times, so reading gets much slower although the data are the same. Computation behaves alike:
+      processing one example at a time wastes the speed of vectorized operations [^2]. Even at its
+      usual batch size, d2l finds the built-in loader not blazingly fast [^3].
+    references:
+      - title: 'PyTorch documentation: torch.utils.data'
+        locator: Automatic batching and DataLoader parameters
+        url: https://docs.pytorch.org/docs/stable/data.html#torch.utils.data.DataLoader
+      - source: d2l
+        locator: Sec. 3.1.1.4 Minibatch Stochastic Gradient Descent
+        url: https://d2l.ai/chapter_linear-regression/linear-regression.html#minibatch-stochastic-gradient-descent
+      - source: d2l
+        locator: Sec. 4.2.2 Reading a Minibatch
+        url: https://d2l.ai/chapter_linear-classification/image-classification-dataset.html#reading-a-minibatch
+      - source: d2l
+        locator: Sec. 4.2.5 Exercises, Exercise 1
+        url: https://d2l.ai/chapter_linear-classification/image-classification-dataset.html#exercises
+    source:
+      id: d2l
+      ref: chapter_linear-classification/image-classification-dataset#ex1
+      url: https://d2l.ai/chapter_linear-classification/image-classification-dataset.html#exercises
+    status: draft

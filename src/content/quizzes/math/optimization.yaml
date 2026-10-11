@@ -693,3 +693,1950 @@ questions:
       ref: college_mathematics/93
       url: https://huggingface.co/datasets/edinburgh-dawg/mmlu-redux-2.0/viewer/college_mathematics/test?row=93
     status: draft
+  - id: optimization-031
+    type: short_answer
+    difficulty: easy
+    tags:
+      - loss-landscape
+      - symmetry
+      - local-minima
+      - mlp
+    question: |
+      An MLP has one hidden layer with 5 units and a single output. Starting from one trained set of
+      weights, how many weight settings (counting the original) can you get just by reordering the
+      hidden units, all computing exactly the same function? Assume no two hidden units are
+      identical.
+    answer:
+      numeric: 120
+      tolerance: 0
+      hint: a whole number
+      model: $5! = 120$ orderings of the hidden units
+    explanation: |
+      Swapping hidden units $i$ and $j$, that is their incoming weights and bias together with their
+      outgoing weight, leaves the network's output unchanged, because the output layer just sums
+      over the hidden units. Any of the $d! = 5! = 120$ permutations gives an equivalent solution, so
+      every local minimum comes with at least $d!$ copies that behave identically. This symmetry is
+      one reason deep-learning objectives have many local minima [^1]. With odd activations such as
+      $\tanh$, flipping the signs of a unit's weights multiplies the count by another $2^d$.
+    references:
+      - source: d2l
+        locator: Sec. 12.1.2.1 Local Minima (deep-learning objectives have many local optima)
+        url: https://d2l.ai/chapter_optimization/optimization-intro.html#local-minima
+      - source: d2l
+        locator: Sec. 12.1.4 Exercises, Exercise 1
+        url: https://d2l.ai/chapter_optimization/optimization-intro.html#exercises
+    source:
+      id: d2l
+      ref: chapter_optimization/optimization-intro#ex1
+      url: https://d2l.ai/chapter_optimization/optimization-intro.html#exercises
+    status: draft
+  - id: optimization-032
+    type: single
+    difficulty: medium
+    tags:
+      - saddle-points
+      - gradient-descent
+      - hessian
+    question: |
+      $f(x, y) = x^2 - y^2$ has a saddle point at the origin. Gradient descent with a small learning
+      rate $\eta$ starts at $(1, 10^{-6})$. Why does it not end at the saddle?
+    options:
+      - text: Along $y$ the update is $y \leftarrow (1 + 2\eta)y$, so the tiny offset grows geometrically
+        correct: true
+      - text: The gradient at the origin is nonzero along $y$, which pushes the iterate away from it
+        why: All partial derivatives vanish at a saddle point; that is what makes it a critical point [^1].
+      - text: It does end there, because every start with $x \neq 0$ is drawn to the critical point
+        why: Only the $x$ coordinate shrinks, as $(1 - 2\eta)x$. Any nonzero $y$ is amplified [^1].
+      - text: Escaping needs curvature information, so only Newton-type methods can ever leave a saddle point
+        why: Plain gradient descent leaves it too, as soon as the iterate is off the stable line $y = 0$.
+    explanation: |
+      The gradient is $(2x, -2y)$, so gradient descent updates $x \leftarrow (1 - 2\eta)x$ and
+      $y \leftarrow (1 + 2\eta)y$. The Hessian has one positive and one negative eigenvalue, which
+      makes the origin a saddle point [^1]: attracting along $x$, repelling along $y$. Like a ball
+      balanced on a real saddle, the equilibrium is unstable, and any perturbation along $y$ grows
+      exponentially. Optimizers can use this: the noise in minibatch gradients knocks parameters off
+      such points [^2], and gradient descent started exactly at $y = 0$ is the only way to stay stuck.
+    references:
+      - source: d2l
+        locator: Sec. 12.1.2.2 Saddle Points (the example $x^2 - y^2$ and the Hessian eigenvalue test)
+        url: https://d2l.ai/chapter_optimization/optimization-intro.html#saddle-points
+      - source: d2l
+        locator: Sec. 12.1.2.1 Local Minima (minibatch noise dislodges parameters)
+        url: https://d2l.ai/chapter_optimization/optimization-intro.html#local-minima
+      - source: d2l
+        locator: Sec. 12.1.4 Exercises, Exercise 4
+        url: https://d2l.ai/chapter_optimization/optimization-intro.html#exercises
+    source:
+      id: d2l
+      ref: chapter_optimization/optimization-intro#ex4
+      url: https://d2l.ai/chapter_optimization/optimization-intro.html#exercises
+    status: draft
+  - id: optimization-033
+    type: multiple
+    difficulty: medium
+    tags:
+      - convexity
+      - convex-sets
+      - norms
+    question: Which of these subsets of $\mathbb{R}^2$ are convex? Select all that apply.
+    options:
+      - text: '$\{\mathbf{x} : |x_1| + |x_2| \le 1\}$'
+        correct: true
+      - text: '$\{\mathbf{x} : \max(|x_1|, |x_2|) \le 1\}$'
+        correct: true
+      - text: '$\{\mathbf{x} : (\sqrt{|x_1|} + \sqrt{|x_2|})^2 \le 1\}$'
+        why: $(1, 0)$ and $(0, 1)$ are in the set, but their midpoint $(\frac{1}{2}, \frac{1}{2})$ gives $(2\sqrt{0.5})^2 = 2 > 1$. For $p < 1$, $\lVert \cdot \rVert_p$ is not a norm, as it is not subadditive [^2], and its "ball" is not convex.
+      - text: '$\{\mathbf{x} : x_1 + 2x_2 = 3\}$'
+        correct: true
+      - text: '$\{\mathbf{x} : \lVert \mathbf{x} \rVert_2 \le 1\} \cup \{\mathbf{x} : \lVert \mathbf{x} - (3, 0) \rVert_2 \le 1\}$'
+        why: The segment between the two centres leaves both discs; a union of convex sets need not be convex [^1].
+    explanation: |
+      A set is convex if it contains the whole segment between any two of its points [^1]. Balls of
+      a $p$-norm with $p \ge 1$ are convex: by the triangle inequality,
+      $\lVert \lambda \mathbf{a} + (1 - \lambda)\mathbf{b} \rVert \le \lambda \lVert \mathbf{a} \rVert + (1 - \lambda)\lVert \mathbf{b} \rVert \le r$
+      [^2]. That covers the $\ell_1$ diamond and the $\ell_\infty$ square. An affine set
+      $\{\mathbf{x} : W\mathbf{x} = \mathbf{b}\}$ is convex because
+      $W(\lambda \mathbf{a} + (1 - \lambda)\mathbf{c}) = \lambda \mathbf{b} + (1 - \lambda)\mathbf{b} = \mathbf{b}$.
+      Intersections of convex sets are convex, unions in general are not [^1].
+    references:
+      - source: d2l
+        locator: Sec. 12.2.1.1 Convex Sets (definition; intersections versus unions)
+        url: https://d2l.ai/chapter_optimization/convexity.html#convex-sets
+      - title: 'Wikipedia: Lp space'
+        locator: The p-norm in finite dimensions; When 0 < p < 1
+        url: https://en.wikipedia.org/wiki/Lp_space
+      - source: d2l
+        locator: Sec. 12.2.5 Exercises, Exercises 2 and 5
+        url: https://d2l.ai/chapter_optimization/convexity.html#exercises
+    source:
+      id: d2l
+      ref: chapter_optimization/convexity#ex2
+      url: https://d2l.ai/chapter_optimization/convexity.html#exercises
+    status: draft
+  - id: optimization-034
+    type: true_false
+    difficulty: easy
+    tags:
+      - convexity
+      - convex-functions
+    shuffle: false
+    question: |
+      True or false: if $f$ and $g$ are convex functions on $\mathbb{R}$, then
+      $h(x) = \min(f(x), g(x))$ is convex too.
+    options:
+      - text: 'True'
+        why: 'Counterexample: $f = (x - 1)^2$, $g = (x + 1)^2$. Then $h(-1) = h(1) = 0$ but $h(0) = 1$, above the chord between them [^1].'
+      - text: 'False'
+        correct: true
+    explanation: |
+      Convexity requires $\lambda h(x) + (1 - \lambda)h(x') \ge h(\lambda x + (1 - \lambda)x')$ [^1].
+      The minimum of two parabolas centred at $\pm 1$ has two valleys with a bump at 0, which breaks
+      this at $x = -1$, $x' = 1$, $\lambda = \frac{1}{2}$. The maximum, on the other hand, is
+      always convex: each of $f$ and $g$ lies below its own chord, so their maximum lies below the
+      maximum of the chords. Geometrically, the region above $\max(f, g)$ is the intersection of the
+      regions above $f$ and above $g$, and intersections of convex sets are convex [^2].
+      $\textrm{ReLU}(x) = \max(0, x)$ is convex for this reason.
+    references:
+      - source: d2l
+        locator: Sec. 12.2.1.2 Convex Functions (definition)
+        url: https://d2l.ai/chapter_optimization/convexity.html#convex-functions
+      - source: d2l
+        locator: Sec. 12.2.1.1 Convex Sets (intersections of convex sets are convex)
+        url: https://d2l.ai/chapter_optimization/convexity.html#convex-sets
+      - source: d2l
+        locator: Sec. 12.2.5 Exercises, Exercise 3
+        url: https://d2l.ai/chapter_optimization/convexity.html#exercises
+    source:
+      id: d2l
+      ref: chapter_optimization/convexity#ex3
+      url: https://d2l.ai/chapter_optimization/convexity.html#exercises
+    status: draft
+  - id: optimization-035
+    type: true_false
+    difficulty: medium
+    tags:
+      - convexity
+      - projections
+      - constrained-optimization
+    shuffle: false
+    question: |
+      True or false: projecting onto the unit circle $\{\mathbf{x} : \lVert \mathbf{x} \rVert_2 = 1\}$
+      (the curve, not the disc), $P(\mathbf{x}) = \mathbf{x} / \lVert \mathbf{x} \rVert_2$, never
+      increases distances: $\lVert P(\mathbf{x}) - P(\mathbf{y}) \rVert \le \lVert \mathbf{x} - \mathbf{y} \rVert$
+      for all nonzero $\mathbf{x}, \mathbf{y}$.
+    options:
+      - text: 'True'
+        why: 'Take $\mathbf{x} = (0.1, 0)$ and $\mathbf{y} = (-0.1, 0)$: they are $0.2$ apart, but their projections $(1, 0)$ and $(-1, 0)$ are $2$ apart.'
+      - text: 'False'
+        correct: true
+    explanation: |
+      A projection maps a point to the closest point of a set [^1]. For a convex set, such as the
+      disc used by gradient clipping, projections are non-expansive:
+      $\lVert \textrm{Proj}(\mathbf{x}) - \textrm{Proj}(\mathbf{y}) \rVert \le \lVert \mathbf{x} - \mathbf{y} \rVert$
+      [^2]. The circle is not convex, and two nearby points on opposite sides of the centre are sent
+      to opposite ends of the circle, ten times farther apart. Non-expansiveness is what makes
+      projected gradient steps onto convex constraint sets well behaved.
+    references:
+      - source: d2l
+        locator: Sec. 12.2.3.3 Projections (definition; gradient clipping as projection onto a ball)
+        url: https://d2l.ai/chapter_optimization/convexity.html#projections
+      - source: d2l
+        locator: Sec. 12.2.5 Exercises, Exercise 8 (projections onto convex sets never increase distances)
+        url: https://d2l.ai/chapter_optimization/convexity.html#exercises
+    source:
+      id: d2l
+      ref: chapter_optimization/convexity#ex8
+      url: https://d2l.ai/chapter_optimization/convexity.html#exercises
+    status: draft
+  - id: optimization-036
+    type: short_answer
+    difficulty: easy
+    tags:
+      - gradient-descent
+      - learning-rate
+      - divergence
+    question: |
+      Gradient descent on $f(x) = x^2$ uses $x \leftarrow x - \eta f'(x)$. It converges to 0 from any
+      start exactly when $0 < \eta < c$. What is $c$?
+    answer:
+      numeric: 1
+      tolerance: 0
+      hint: a number
+      model: $x \leftarrow (1 - 2\eta)x$ converges iff $|1 - 2\eta| < 1$, i.e. $0 < \eta < 1$
+    explanation: |
+      With $f'(x) = 2x$ the update is $x \leftarrow (1 - 2\eta)x$, so after $t$ steps
+      $x_t = (1 - 2\eta)^t x_0$ [^1]. This shrinks to 0 exactly when $|1 - 2\eta| < 1$. With
+      $\eta = 0.2$ the factor is $0.6$ and $x_0 = 10$ becomes about $0.06$ after 10 steps; with
+      $\eta = 1.1$ the factor is $-1.2$, so $x$ overshoots and diverges [^2]. At $\eta = 1$ it
+      bounces between $\pm x_0$ forever. In general, for curvature $\lambda$ the condition is
+      $0 < \eta\lambda < 2$ [^1].
+    references:
+      - source: d2l
+        locator: Sec. 12.6.3.2 Scalar Functions ($x_{t+1} = (1 - \eta\lambda)x_t$)
+        url: https://d2l.ai/chapter_optimization/momentum.html#scalar-functions
+      - source: d2l
+        locator: Sec. 12.3.1.1 Learning Rate ($\eta = 0.2$, $0.05$ and $1.1$ on $f(x) = x^2$)
+        url: https://d2l.ai/chapter_optimization/gd.html#learning-rate
+      - source: d2l
+        locator: Sec. 12.3.5 Exercises, Exercise 1
+        url: https://d2l.ai/chapter_optimization/gd.html#exercises
+    source:
+      id: d2l
+      ref: chapter_optimization/gd#ex1
+      url: https://d2l.ai/chapter_optimization/gd.html#exercises
+    status: draft
+  - id: optimization-037
+    type: short_answer
+    difficulty: medium
+    tags:
+      - line-search
+      - convexity
+      - log-sum-exp
+    question: |
+      A line search minimizes the convex function $f(x) = \log\left(e^{x} + e^{-2x - 3}\right)$.
+      Where is its minimizer $x^*$?
+    answer:
+      numeric: -0.769
+      tolerance: 0.002
+      hint: a number, 3 decimals
+      model: $f'(x) = 0 \iff e^{x} = 2e^{-2x-3} \iff 3x = \ln 2 - 3$, so $x^* = (\ln 2 - 3)/3 \approx -0.769$
+    explanation: |
+      The derivative is $f'(x) = \frac{e^{x} - 2e^{-2x-3}}{e^{x} + e^{-2x-3}}$, which is zero when
+      $e^{x} = 2e^{-2x-3}$, i.e. $x = \ln 2 - 2x - 3$ and $x^* = (\ln 2 - 3)/3 \approx -0.769$.
+      $f$ is a log-sum-exp of affine functions, hence convex [^3], so this critical point is the
+      global minimum [^1]. A bisection line search on the sign of $f'$, started on an interval such as
+      $[-2, 2]$, converges to the same point [^2].
+    references:
+      - source: d2l
+        locator: Sec. 12.2.2.1 Local Minima Are Global Minima
+        url: https://d2l.ai/chapter_optimization/convexity.html#local-minima-are-global-minima
+      - source: d2l
+        locator: Sec. 12.3.3.4 Gradient Descent with Line Search, and Sec. 12.3.5 Exercises, Exercise 2
+        url: https://d2l.ai/chapter_optimization/gd.html#exercises
+      - title: 'Wikipedia: LogSumExp'
+        locator: Properties (LSE is convex)
+        url: https://en.wikipedia.org/wiki/LogSumExp
+    source:
+      id: d2l
+      ref: chapter_optimization/gd#ex2
+      url: https://d2l.ai/chapter_optimization/gd.html#exercises
+    status: draft
+  - id: optimization-038
+    type: short_answer
+    difficulty: easy
+    tags:
+      - line-search
+      - bisection
+      - convergence-rate
+    question: |
+      To minimize a convex, differentiable $f$ on $[a, b]$ with $b - a = 1$, a bisection line search
+      looks at the sign of $f'$ at the midpoint and keeps the half that contains the minimum. How
+      many steps until the interval is shorter than $10^{-6}$?
+    answer:
+      numeric: 20
+      tolerance: 0
+      hint: a whole number
+      model: $2^{-19} \approx 1.9 \times 10^{-6}$ and $2^{-20} \approx 9.5 \times 10^{-7}$, so 20 steps
+    explanation: |
+      Each step halves the interval, so after $k$ steps its length is $2^{-k}$: the error shrinks by a
+      constant factor $\frac{1}{2}$ per step (linear convergence), and $k = 20$ is the first with
+      $2^{-k} < 10^{-6}$. Picking the correct half needs the sign of the derivative at the midpoint,
+      or two function values close to it, which amounts to a finite-difference derivative; a single
+      value $f\left(\frac{a+b}{2}\right)$ cannot tell on which side the minimum lies. Line search
+      converges quickly but needs many evaluations of the full objective, which is too costly in deep
+      learning [^1].
+    references:
+      - source: d2l
+        locator: Sec. 12.3.3.4 Gradient Descent with Line Search
+        url: https://d2l.ai/chapter_optimization/gd.html#gradient-descent-with-line-search
+      - source: d2l
+        locator: Sec. 12.3.5 Exercises, Exercise 2
+        url: https://d2l.ai/chapter_optimization/gd.html#exercises
+    source:
+      id: d2l
+      ref: chapter_optimization/gd#ex2-b
+      url: https://d2l.ai/chapter_optimization/gd.html#exercises
+    status: draft
+  - id: optimization-039
+    type: single
+    difficulty: medium
+    tags:
+      - gradient-descent
+      - ill-conditioning
+      - learning-rate
+    question: |
+      Gradient descent with a fixed learning rate is very slow on
+      $f(\mathbf{x}) = x_1^2 + 100x_2^2$. What is the cause?
+    options:
+      - text: Keeping $x_2$ stable needs $\eta < 0.01$, and then $x_1$ shrinks by at most 2% per step
+        correct: true
+      - text: The gradient along $x_1$ is zero away from the axis, so $x_1$ never moves
+        why: The partial derivative $\partial f/\partial x_1 = 2x_1$ is nonzero whenever $x_1 \ne 0$.
+      - text: The minimum is not unique, so the iterates drift along a flat valley of equally good points
+        why: $f$ has the unique minimum $(0, 0)$; the trouble is the very different curvatures, not a flat valley of minima [^1].
+      - text: The function is not convex, so the iterates bounce between local minima
+        why: $f$ is a convex quadratic with positive curvature in both directions and a single minimum [^1].
+    explanation: |
+      Each coordinate evolves separately: $x_1 \leftarrow (1 - 2\eta)x_1$ and
+      $x_2 \leftarrow (1 - 200\eta)x_2$. The steep direction forces $|1 - 200\eta| < 1$, so
+      $\eta < 0.01$, and then the flat direction contracts by a factor of at least $0.98$ per step,
+      needing hundreds of steps [^1]. The curvature ratio, the condition number, is 100. A small
+      $\eta$ is safe for $x_2$ but slow for $x_1$, while a larger one diverges along $x_2$ [^1].
+      Rescaling the coordinates (preconditioning) or momentum removes the bottleneck [^2].
+    references:
+      - source: d2l
+        locator: Sec. 12.6.1.2 An Ill-conditioned Problem
+        url: https://d2l.ai/chapter_optimization/momentum.html#an-ill-conditioned-problem
+      - source: d2l
+        locator: Sec. 12.3.3.3 Preconditioning (heights in millimetres and kilometres)
+        url: https://d2l.ai/chapter_optimization/gd.html#preconditioning
+      - source: d2l
+        locator: Sec. 12.3.5 Exercises, Exercise 3
+        url: https://d2l.ai/chapter_optimization/gd.html#exercises
+    source:
+      id: d2l
+      ref: chapter_optimization/gd#ex3
+      url: https://d2l.ai/chapter_optimization/gd.html#exercises
+    status: draft
+  - id: optimization-040
+    type: single
+    difficulty: medium
+    tags:
+      - newtons-method
+      - preconditioning
+      - nonconvex
+    question: |
+      A lightweight Newton method preconditions with the Hessian diagonal,
+      $\mathbf{x} \leftarrow \mathbf{x} - \eta\, \textrm{diag}(\mathbf{H})^{-1} \nabla f(\mathbf{x})$.
+      On nonconvex functions, why divide by $|H_{ii}|$ rather than by $H_{ii}$?
+    options:
+      - text: Where $H_{ii} < 0$ the step would go uphill along that coordinate; $|H_{ii}|$ keeps it a descent step
+        correct: true
+      - text: Negative entries make $\textrm{diag}(\mathbf{H})$ singular, so it cannot be inverted
+        why: A diagonal matrix is singular only when an entry is zero; negative entries invert fine.
+      - text: The absolute value is cheaper to obtain by backpropagation than the signed entry
+        why: Both need the same second derivative; the absolute value is applied afterwards.
+      - text: It makes the method converge in one step on every quadratic, convex or not
+        why: One-step convergence holds for an axis-aligned convex quadratic with $\eta = 1$; taking absolute values does not create it [^1].
+    explanation: |
+      Newton's method divides by the curvature. Where the second derivative is negative, the step
+      $-f'(x)/f''(x)$ points in the direction that increases $f$, which is why plain Newton on
+      $x\cos(cx)$ goes badly wrong [^1]. Using $|H_{ii}|$ keeps every coordinate step pointing
+      downhill while still taking short steps where the curvature is large and long ones where the
+      function is flat [^1]. On a convex axis-aligned quadratic, diagonal preconditioning with
+      $\eta = 1$ jumps to the minimum in one step [^2].
+    references:
+      - source: d2l
+        locator: Sec. 12.3.3.1 Newton's Method (the nonconvex example and the absolute-value fix)
+        url: https://d2l.ai/chapter_optimization/gd.html#newtons-method
+      - source: d2l
+        locator: Sec. 12.3.3.3 Preconditioning, Eq. (12.3.14)
+        url: https://d2l.ai/chapter_optimization/gd.html#preconditioning
+      - source: d2l
+        locator: Sec. 12.3.5 Exercises, Exercise 4
+        url: https://d2l.ai/chapter_optimization/gd.html#exercises
+    source:
+      id: d2l
+      ref: chapter_optimization/gd#ex4
+      url: https://d2l.ai/chapter_optimization/gd.html#exercises
+    status: draft
+  - id: optimization-041
+    type: short_answer
+    difficulty: hard
+    tags:
+      - preconditioning
+      - condition-number
+      - rotation
+    question: |
+      For $f(\mathbf{x}) = 0.1x_1^2 + 2x_2^2$ the Hessian is $\textrm{diag}(0.2, 4)$, and diagonal
+      preconditioning brings the condition number from 20 down to 1. Rotating the problem by
+      $45^\circ$ (and doubling it, which does not change any condition number) gives
+      $f(\mathbf{x}) = 0.1(x_1 + x_2)^2 + 2(x_1 - x_2)^2$. What is the condition
+      number of $D^{-1/2}\mathbf{H}D^{-1/2}$, with $D = \textrm{diag}(\mathbf{H})$, for the rotated
+      function?
+    answer:
+      numeric: 20
+      tolerance: 0.01
+      hint: a number
+      model: $\mathbf{H} = \begin{bmatrix} 4.2 & -3.8 \\ -3.8 & 4.2 \end{bmatrix}$ has eigenvalues 8 and 0.4; $D = 4.2\,I$ only rescales them, so the ratio stays $8/0.4 = 20$
+    explanation: |
+      The rotated Hessian is $\begin{bmatrix} 4.2 & -3.8 \\ -3.8 & 4.2 \end{bmatrix}$ with eigenvalues
+      $8$ and $0.4$. Its diagonal entries are equal, so diagonal preconditioning only divides all
+      eigenvalues by $4.2$ and the condition number stays $20$. Diagonal preconditioning picks a
+      separate learning rate per coordinate [^1], which removes ill-conditioning only when the
+      problem is axis aligned [^2]. Plain gradient descent behaves identically on both versions,
+      because an orthogonal change of variables does not affect it [^3].
+    references:
+      - source: d2l
+        locator: Sec. 12.3.3.3 Preconditioning (a different learning rate per coordinate)
+        url: https://d2l.ai/chapter_optimization/gd.html#preconditioning
+      - source: d2l
+        locator: Sec. 12.7.2 Preconditioning, Eq. (12.7.3) (diagonal rescaling fixes axis-aligned problems)
+        url: https://d2l.ai/chapter_optimization/adagrad.html#preconditioning
+      - source: d2l
+        locator: Sec. 12.6.3.1 Quadratic Convex Functions (gradient descent decomposes along eigenvectors)
+        url: https://d2l.ai/chapter_optimization/momentum.html#quadratic-convex-functions
+      - source: d2l
+        locator: Sec. 12.3.5 Exercises, Exercise 5
+        url: https://d2l.ai/chapter_optimization/gd.html#exercises
+    source:
+      id: d2l
+      ref: chapter_optimization/gd#ex5
+      url: https://d2l.ai/chapter_optimization/gd.html#exercises
+    status: draft
+  - id: optimization-042
+    type: single
+    difficulty: hard
+    tags:
+      - sgd
+      - learning-rate-schedule
+      - convergence
+    question: |
+      For a convex objective, stochastic gradients bounded by $L$ and a start at distance $r$ from the
+      optimum, SGD with step sizes $\eta_t$ satisfies
+      $$E[R(\bar{\mathbf{x}})] - R^* \le \frac{r^2 + L^2 \sum_{t=1}^T \eta_t^2}{2\sum_{t=1}^T \eta_t}.$$
+      Which schedule makes this bound go to 0 as $T \to \infty$?
+    options:
+      - text: $\eta_t = \eta_0 / \sqrt{t}$
+        correct: true
+      - text: $\eta_t = \eta_0$, a constant
+        why: 'Both sums grow like $T$, so the bound tends to $L^2\eta_0/2$: the noise keeps the iterates away from the optimum [^1].'
+      - text: $\eta_t = \eta_0 e^{-\lambda t}$
+        why: '$\sum_t \eta_t$ stays finite, so the bound never drops below $r^2/(2\sum_t \eta_t)$: the steps die out before the optimum is reached [^1].'
+      - text: $\eta_t = \eta_0 / t^2$
+        why: Here too $\sum_t \eta_t$ converges, so the iterates cannot travel arbitrarily far and the bound stays positive.
+    explanation: |
+      The bound needs $\sum_t \eta_t \to \infty$, so the iterates can travel any distance, and
+      $\sum_t \eta_t^2 / \sum_t \eta_t \to 0$, so the injected noise averages out [^1]. With
+      $\eta_t = \eta_0/\sqrt{t}$, $\sum \eta_t \approx 2\eta_0\sqrt{T}$ and
+      $\sum \eta_t^2 \approx \eta_0^2 \ln T$, so the bound shrinks like $\ln T/\sqrt{T}$. This is the
+      polynomial decay with $\alpha = 0.5$ that the analysis favours, while exponential decay stops
+      too early [^2]. If $T$ is known, a constant $\eta = r/(L\sqrt{T})$ also gives $rL/\sqrt{T}$ [^1].
+    references:
+      - source: d2l
+        locator: Sec. 12.4.3 Convergence Analysis for Convex Objectives, Eq. (12.4.17)
+        url: https://d2l.ai/chapter_optimization/sgd.html#convergence-analysis-for-convex-objectives
+      - source: d2l
+        locator: Sec. 12.4.2 Dynamic Learning Rate (piecewise constant, exponential and polynomial decay)
+        url: https://d2l.ai/chapter_optimization/sgd.html#dynamic-learning-rate
+      - source: d2l
+        locator: Sec. 12.4.6 Exercises, Exercise 1
+        url: https://d2l.ai/chapter_optimization/sgd.html#exercises
+    source:
+      id: d2l
+      ref: chapter_optimization/sgd#ex1
+      url: https://d2l.ai/chapter_optimization/sgd.html#exercises
+    status: draft
+  - id: optimization-043
+    type: short_answer
+    difficulty: medium
+    tags:
+      - sgd
+      - gradient-noise
+      - expected-risk
+    question: |
+      For $f(\mathbf{x}) = x_1^2 + 2x_2^2$, take the per-example loss
+      $f(\mathbf{x}, \mathbf{w}) = (x_1 - w_1)^2 + 2(x_2 - w_2)^2$ with $\mathbf{w} \sim \mathcal{N}(\mathbf{0}, I)$.
+      Its gradient $\nabla_{\mathbf{x}} f(\mathbf{x}, \mathbf{w})$ is $\nabla f(\mathbf{x})$ plus
+      zero-mean Gaussian noise, and $E_{\mathbf{w}}[f(\mathbf{x}, \mathbf{w})] = x_1^2 + 2x_2^2 + c$.
+      What is $c$?
+    answer:
+      numeric: 3
+      tolerance: 0
+      hint: a number
+      model: $E[(x_1 - w_1)^2] = x_1^2 + 1$ and $2E[(x_2 - w_2)^2] = 2x_2^2 + 2$, so $c = 3$
+    explanation: |
+      Expanding, $E[(x_i - w_i)^2] = x_i^2 - 2x_iE[w_i] + E[w_i^2] = x_i^2 + 1$, so the expected
+      loss is $x_1^2 + 2x_2^2 + 3$, the original objective plus a constant with the same minimizer.
+      The gradient is $(2x_1, 4x_2) - (2w_1, 4w_2)$: the true gradient plus zero-mean Gaussian noise
+      with variances 4 and 16. SGD on these sampled losses is therefore gradient descent on $f$ with
+      Gaussian gradient noise, which justifies simulating SGD by adding noise to the gradient [^1].
+      A stochastic gradient is an unbiased estimate of the full gradient [^2].
+    references:
+      - source: d2l
+        locator: Sec. 12.4.4 Stochastic Gradients and Finite Samples (adding noise to a non-stochastic gradient is justified)
+        url: https://d2l.ai/chapter_optimization/sgd.html#stochastic-gradients-and-finite-samples
+      - source: d2l
+        locator: Sec. 12.4.1 Stochastic Gradient Updates, Eq. (12.4.4)
+        url: https://d2l.ai/chapter_optimization/sgd.html#stochastic-gradient-updates
+      - source: d2l
+        locator: Sec. 12.4.6 Exercises, Exercise 2
+        url: https://d2l.ai/chapter_optimization/sgd.html#exercises
+    source:
+      id: d2l
+      ref: chapter_optimization/sgd#ex2
+      url: https://d2l.ai/chapter_optimization/sgd.html#exercises
+    status: draft
+  - id: optimization-044
+    type: short_answer
+    difficulty: easy
+    tags:
+      - sgd
+      - sampling-with-replacement
+      - data-efficiency
+    question: |
+      An "epoch" of SGD draws $n = 1000$ training examples uniformly at random with replacement. On
+      average, how many distinct examples does it use?
+    answer:
+      numeric: 632
+      tolerance: 1
+      hint: a whole number
+      model: $1000\left(1 - (1 - 1/1000)^{1000}\right) \approx 1000(1 - e^{-1}) \approx 632$
+    explanation: |
+      Each example is missed by all $n$ draws with probability $(1 - 1/n)^n \approx e^{-1} \approx 0.37$,
+      so it is used at least once with probability about $0.63$ [^1]. About 368 examples are never
+      seen in that epoch while others are used twice or more, which raises the variance of the
+      updates and wastes data. That is why practice samples without replacement: shuffle, then pass
+      over every example exactly once per epoch [^1][^2].
+    references:
+      - source: d2l
+        locator: Sec. 12.4.4 Stochastic Gradients and Finite Samples, Eq. (12.4.18)
+        url: https://d2l.ai/chapter_optimization/sgd.html#stochastic-gradients-and-finite-samples
+      - source: d2l
+        locator: Sec. 12.5.6 Summary (a random permutation, each observation once per epoch)
+        url: https://d2l.ai/chapter_optimization/minibatch-sgd.html#summary
+      - source: d2l
+        locator: Sec. 12.4.6 Exercises, Exercise 3
+        url: https://d2l.ai/chapter_optimization/sgd.html#exercises
+    source:
+      id: d2l
+      ref: chapter_optimization/sgd#ex3
+      url: https://d2l.ai/chapter_optimization/sgd.html#exercises
+    status: draft
+  - id: optimization-045
+    type: single
+    difficulty: medium
+    tags:
+      - sgd
+      - preconditioning
+      - adaptive-learning-rate
+    question: |
+      During SGD, one coordinate of the gradient is consistently much larger than all the others.
+      What is the most sensible change to the solver?
+    options:
+      - text: Give each coordinate its own step size, scaled down where gradients are large
+        correct: true
+      - text: Raise the global learning rate so that all the small coordinates also move faster
+        why: The large coordinate already limits the learning rate; raising it makes that coordinate overshoot or diverge [^1].
+      - text: Drop that coordinate from the update so that it stops dominating
+        why: Then its parameter is never trained; the scale needs to be matched, not ignored.
+      - text: Use smaller minibatches so that the large coordinate averages out
+        why: Batch size changes the noise of the gradient, not the systematic difference in scale between coordinates [^2].
+    explanation: |
+      A single global learning rate must be small enough for the steepest coordinate, which makes
+      the others crawl. Preconditioning fixes this by effectively choosing a different learning rate
+      for each coordinate [^1]. Adagrad does it automatically by dividing each coordinate's step by
+      the root of its accumulated squared gradients, so coordinates with routinely large gradients
+      are scaled down [^3]; RMSProp and Adam use the same idea with leaky averages. Standardizing the
+      corresponding input feature attacks the same mismatch at the data level.
+    references:
+      - source: d2l
+        locator: Sec. 12.3.3.3 Preconditioning (a different learning rate for each variable)
+        url: https://d2l.ai/chapter_optimization/gd.html#preconditioning
+      - source: d2l
+        locator: Sec. 12.5.2 Minibatches (averaging reduces the gradient's standard deviation)
+        url: https://d2l.ai/chapter_optimization/minibatch-sgd.html#minibatches
+      - source: d2l
+        locator: Sec. 12.7.1 Sparse Features and Learning Rates
+        url: https://d2l.ai/chapter_optimization/adagrad.html#sparse-features-and-learning-rates
+      - source: d2l
+        locator: Sec. 12.4.6 Exercises, Exercise 4
+        url: https://d2l.ai/chapter_optimization/sgd.html#exercises
+    source:
+      id: d2l
+      ref: chapter_optimization/sgd#ex4
+      url: https://d2l.ai/chapter_optimization/sgd.html#exercises
+    status: draft
+  - id: optimization-046
+    type: single
+    difficulty: medium
+    tags:
+      - local-minima
+      - nonconvex
+    question: How many local minima does $f(x) = x^2(1 + \sin x)$ have on $\mathbb{R}$?
+    options:
+      - text: 'Infinitely many, all with $f = 0$: at $x = 0$ and wherever $\sin x = -1$'
+        correct: true
+      - text: Exactly one, at $x = 0$, because $x^2$ dominates for large $|x|$
+        why: The factor $1 + \sin x$ returns to 0 at every $x = \frac{3\pi}{2} + 2\pi k$, however large $x^2$ is.
+      - text: Infinitely many, with values growing like $x^2$, so only $x = 0$ is global
+        why: At each of those minima $1 + \sin x = 0$, so $f = 0$ there too; they are all global minima.
+      - text: Only $x = 0$, because $f$ is convex as a product of nonnegative factors
+        why: A product of nonnegative functions need not be convex; $f$ dips back to 0 periodically [^1].
+    explanation: |
+      Both factors are nonnegative, so $f \ge 0$, and $f = 0$ exactly at $x = 0$ and at
+      $x = \frac{3\pi}{2} + 2\pi k$ for every integer $k$. Each zero is a local, and in fact global,
+      minimum; between two zeros $f$ rises to a single maximum. Nonconvex functions can have
+      arbitrarily many local minima [^1]. If the minima had different values, an optimizer would
+      have to visit them all to be sure of the global one; that is why no optimality guarantees exist
+      for general nonconvex problems [^2].
+    references:
+      - source: d2l
+        locator: Sec. 12.1.2.1 Local Minima
+        url: https://d2l.ai/chapter_optimization/optimization-intro.html#local-minima
+      - source: d2l
+        locator: Sec. 12.4.5 Summary (the number of local minima to check may be exponential)
+        url: https://d2l.ai/chapter_optimization/sgd.html#summary
+      - source: d2l
+        locator: Sec. 12.4.6 Exercises, Exercise 5
+        url: https://d2l.ai/chapter_optimization/sgd.html#exercises
+    source:
+      id: d2l
+      ref: chapter_optimization/sgd#ex5
+      url: https://d2l.ai/chapter_optimization/sgd.html#exercises
+    status: draft
+  - id: optimization-047
+    type: short_answer
+    difficulty: easy
+    tags:
+      - minibatch-sgd
+      - batch-size
+      - gradient-variance
+    question: |
+      Per-example gradients are i.i.d. If you increase the minibatch size from 16 to 256, by what
+      factor does the standard deviation of the minibatch gradient shrink?
+    answer:
+      numeric: 4
+      tolerance: 0
+      hint: a number
+      model: $\sqrt{256 / 16} = \sqrt{16} = 4$
+    explanation: |
+      Averaging $b$ independent gradients keeps the expectation and divides the standard deviation by
+      $\sqrt{b}$ [^1]. Going from 16 to 256 multiplies $b$ by 16 and so divides the standard
+      deviation by 4, while the compute per step grows 16-fold. Past some point the extra noise
+      reduction is small compared with the linear increase in cost, so batches are chosen to be
+      efficient on the hardware and to fit in GPU memory [^1].
+    references:
+      - source: d2l
+        locator: Sec. 12.5.2 Minibatches (standard deviation reduced by $b^{-1/2}$)
+        url: https://d2l.ai/chapter_optimization/minibatch-sgd.html#minibatches
+      - source: d2l
+        locator: Sec. 12.5.7 Exercises, Exercise 1
+        url: https://d2l.ai/chapter_optimization/minibatch-sgd.html#exercises
+    source:
+      id: d2l
+      ref: chapter_optimization/minibatch-sgd#ex1
+      url: https://d2l.ai/chapter_optimization/minibatch-sgd.html#exercises
+    status: draft
+  - id: optimization-048
+    type: single
+    difficulty: medium
+    tags:
+      - minibatch-sgd
+      - gradient-descent
+      - data-efficiency
+    question: |
+      Your training set is silently duplicated: every example now appears twice. The learning rate
+      and batch size stay the same. What changes?
+    options:
+      - text: 'GD: the same steps at twice the cost; SGD: the same updates, but twice as many per epoch'
+        correct: true
+      - text: GD takes steps twice as large, because every loss term is now counted twice
+        why: The objective is the average loss, and averaging over duplicated examples gives the same value and gradient [^1].
+      - text: SGD now sees each example twice per update, which halves its gradient noise
+        why: Each SGD draw is still one example from the same set of distinct values, so its noise is unchanged.
+      - text: Nothing changes for any of the three methods, because the data distribution is still the same
+        why: Per-update behaviour is the same, but the cost of a GD step and the number of updates per epoch both double.
+    explanation: |
+      The objective is the mean of the per-example losses, so duplicating every example leaves it
+      and its gradient unchanged [^1]. Gradient descent therefore takes exactly the same steps, but
+      each one costs twice as much, which shows why GD is data-inefficient when examples are
+      redundant [^2]. SGD and minibatch SGD sample uniformly from what is still the same empirical
+      distribution, so each update behaves as before. One pass over the doubled data simply contains
+      twice as many updates, about two of the old epochs.
+    references:
+      - source: d2l
+        locator: Sec. 12.4.1 Stochastic Gradient Updates (the objective as an average; $\mathcal{O}(n)$ cost per GD step)
+        url: https://d2l.ai/chapter_optimization/sgd.html#stochastic-gradient-updates
+      - source: d2l
+        locator: Sec. 12.5 Minibatch Stochastic Gradient Descent (GD is not data efficient when data are similar)
+        url: https://d2l.ai/chapter_optimization/minibatch-sgd.html
+      - source: d2l
+        locator: Sec. 12.5.7 Exercises, Exercise 4
+        url: https://d2l.ai/chapter_optimization/minibatch-sgd.html#exercises
+    source:
+      id: d2l
+      ref: chapter_optimization/minibatch-sgd#ex4
+      url: https://d2l.ai/chapter_optimization/minibatch-sgd.html#exercises
+    status: draft
+  - id: optimization-049
+    type: short_answer
+    difficulty: easy
+    tags:
+      - momentum
+      - learning-rate
+      - effective-step-size
+    question: |
+      Plain SGD works well with $\eta = 0.1$. You switch to momentum,
+      $\mathbf{v}_t = \beta\mathbf{v}_{t-1} + \mathbf{g}_t$, $\mathbf{x}_t = \mathbf{x}_{t-1} - \eta\mathbf{v}_t$,
+      with $\beta = 0.9$. Where the gradient is roughly constant, which $\eta$ gives the same step size
+      as before?
+    answer:
+      numeric: 0.01
+      tolerance: 0.0001
+      hint: a number
+      model: $\mathbf{v} \to \mathbf{g}/(1 - \beta) = 10\mathbf{g}$, so $\eta = 0.1 \times (1 - 0.9) = 0.01$
+    explanation: |
+      For a constant gradient the velocity tends to $\sum_\tau \beta^\tau \mathbf{g} = \mathbf{g}/(1 - \beta)$,
+      so momentum takes steps of size $\eta/(1 - \beta)$ [^1]. With $\beta = 0.9$ that is a factor
+      of 10, the effective number of averaged gradients, so the learning rate has to drop to
+      $0.01$ to match. That is why raising the momentum to 0.9 goes together with a smaller learning
+      rate [^2].
+    references:
+      - source: d2l
+        locator: Sec. 12.6.1.4 Effective Sample Weight
+        url: https://d2l.ai/chapter_optimization/momentum.html#effective-sample-weight
+      - source: d2l
+        locator: Sec. 12.6.2.1 Implementation from Scratch (momentum 0.9, effective sample size 10, smaller learning rate)
+        url: https://d2l.ai/chapter_optimization/momentum.html#implementation-from-scratch
+      - source: d2l
+        locator: Sec. 12.6.5 Exercises, Exercise 1
+        url: https://d2l.ai/chapter_optimization/momentum.html#exercises
+    source:
+      id: d2l
+      ref: chapter_optimization/momentum#ex1
+      url: https://d2l.ai/chapter_optimization/momentum.html#exercises
+    status: draft
+  - id: optimization-050
+    type: short_answer
+    difficulty: medium
+    tags:
+      - gradient-descent
+      - eigenvalues
+      - ill-conditioning
+      - momentum
+    question: |
+      Gradient descent minimizes $f(\mathbf{x}) = \frac{1}{2}\sum_{i=1}^{10} \lambda_i x_i^2$ with
+      $\lambda_i = 2^{-i}$, starting from $x_i = 1$ for all $i$, with $\eta = 2$. What is $x_{10}$
+      after 100 steps?
+    answer:
+      numeric: 0.822
+      tolerance: 0.002
+      hint: a number, 3 decimals
+      model: $x_{10} = (1 - 2 \cdot 2^{-10})^{100} = (1 - 1/512)^{100} \approx 0.822$
+    explanation: |
+      On a quadratic, gradient descent works separately along each eigen-direction:
+      $x_i \leftarrow (1 - \eta\lambda_i)x_i$ [^1]. With $\eta = 2$ the steepest coordinate
+      ($\lambda_1 = \frac{1}{2}$) reaches 0 in one step, while $x_{10}$ shrinks by only $1/512$ per
+      step and is still about $0.82$ after 100 steps. The learning rate cannot fix this: stability
+      needs $\eta\lambda_1 < 2$, i.e. $\eta < 4$, and even at that limit $x_{10}$ would still be about
+      $0.68$. Momentum stays stable up to $\eta\lambda < 2 + 2\beta$ and speeds up the slow
+      directions [^2].
+    references:
+      - source: d2l
+        locator: Sec. 12.6.3.1 Quadratic Convex Functions (no mixing between eigenspaces)
+        url: https://d2l.ai/chapter_optimization/momentum.html#quadratic-convex-functions
+      - source: d2l
+        locator: Sec. 12.6.3.2 Scalar Functions (convergence needs $0 < \eta\lambda < 2$, or $< 2 + 2\beta$ with momentum)
+        url: https://d2l.ai/chapter_optimization/momentum.html#scalar-functions
+      - source: d2l
+        locator: Sec. 12.6.5 Exercises, Exercise 2
+        url: https://d2l.ai/chapter_optimization/momentum.html#exercises
+    source:
+      id: d2l
+      ref: chapter_optimization/momentum#ex2
+      url: https://d2l.ai/chapter_optimization/momentum.html#exercises
+    status: draft
+  - id: optimization-051
+    type: short_answer
+    difficulty: medium
+    tags:
+      - quadratic-functions
+      - minimizer
+      - positive-definite
+    question: |
+      Let $h(\mathbf{x}) = \frac{1}{2}\mathbf{x}^\top \mathbf{Q}\mathbf{x} + \mathbf{x}^\top\mathbf{c} + b$
+      with $\mathbf{Q} = \begin{bmatrix} 2 & 1 \\ 1 & 2 \end{bmatrix}$, $\mathbf{c} = (-3, 0)^\top$ and
+      $b = 0$. What is the minimum value of $h$?
+    answer:
+      numeric: -3
+      tolerance: 0.001
+      hint: a number
+      model: $\mathbf{x}^* = -\mathbf{Q}^{-1}\mathbf{c} = (2, -1)^\top$ and $h^* = b - \frac{1}{2}\mathbf{c}^\top\mathbf{Q}^{-1}\mathbf{c} = -3$
+    explanation: |
+      Setting the gradient $\mathbf{Q}\mathbf{x} + \mathbf{c}$ to zero gives
+      $\mathbf{x}^* = -\mathbf{Q}^{-1}\mathbf{c}$. Here
+      $\mathbf{Q}^{-1} = \frac{1}{3}\begin{bmatrix} 2 & -1 \\ -1 & 2 \end{bmatrix}$, so
+      $\mathbf{x}^* = (2, -1)^\top$ and the minimum is
+      $b - \frac{1}{2}\mathbf{c}^\top\mathbf{Q}^{-1}\mathbf{c} = -\frac{1}{2} \cdot 9 \cdot \frac{2}{3} = -3$
+      [^1]. It is a minimum because $\mathbf{Q}$ is positive definite (eigenvalues 1 and 3). Writing
+      $h$ as $\frac{1}{2}(\mathbf{x} - \mathbf{x}^*)^\top\mathbf{Q}(\mathbf{x} - \mathbf{x}^*) + h^*$
+      shows that the gradient is $\mathbf{Q}$ times the distance to the minimizer [^1].
+    references:
+      - source: d2l
+        locator: Sec. 12.6.3.1 Quadratic Convex Functions, Eqs. (12.6.6)–(12.6.7)
+        url: https://d2l.ai/chapter_optimization/momentum.html#quadratic-convex-functions
+      - source: d2l
+        locator: Sec. 12.6.5 Exercises, Exercise 3
+        url: https://d2l.ai/chapter_optimization/momentum.html#exercises
+    source:
+      id: d2l
+      ref: chapter_optimization/momentum#ex3
+      url: https://d2l.ai/chapter_optimization/momentum.html#exercises
+    status: draft
+  - id: optimization-052
+    type: single
+    difficulty: medium
+    tags:
+      - momentum
+      - sgd
+      - gradient-noise
+    question: Why is momentum especially useful when the gradients are stochastic (minibatch SGD)?
+    options:
+      - text: The velocity averages about $1/(1-\beta)$ recent gradients, so much of the noise cancels, like a larger batch at no extra cost
+        correct: true
+      - text: It makes each stochastic gradient an unbiased estimate of the full gradient, which plain SGD gradients are not
+        why: A plain stochastic gradient is already an unbiased estimate of the full gradient [^2].
+      - text: It removes the need to decay the learning rate, since the noise in the velocity averages out exactly
+        why: The leaky average only damps the noise; the learning rate still has to decrease for convergence [^3].
+      - text: It lets you skip shuffling the data, since the velocity remembers the order of past examples
+        why: Momentum stores a running sum of gradients, not the data order; examples should still be drawn at random.
+    explanation: |
+      Momentum replaces the gradient by a leaky average
+      $\mathbf{v}_t = \sum_\tau \beta^\tau \mathbf{g}_{t-\tau}$ of past gradients, with an effective
+      window of $1/(1 - \beta)$ [^1]. Noisy components that point in different directions from step
+      to step partly cancel, while consistent components add up, which gives most of the benefit of a
+      bigger batch without computing it [^1]. The averaged gradients come from slightly older
+      parameters, so this is not identical to a larger batch, and momentum also speeds up
+      ill-conditioned problems [^1]. With minibatches the update is unchanged; only $\mathbf{g}_t$ is
+      a minibatch gradient.
+    references:
+      - source: d2l
+        locator: Sec. 12.6.1.1 Leaky Averages and Sec. 12.6.1.3 The Momentum Method
+        url: https://d2l.ai/chapter_optimization/momentum.html#leaky-averages
+      - source: d2l
+        locator: Sec. 12.4.1 Stochastic Gradient Updates (unbiased stochastic gradient)
+        url: https://d2l.ai/chapter_optimization/sgd.html#stochastic-gradient-updates
+      - source: d2l
+        locator: Sec. 12.4.3 Convergence Analysis for Convex Objectives (the learning rate needs to vanish)
+        url: https://d2l.ai/chapter_optimization/sgd.html#convergence-analysis-for-convex-objectives
+      - source: d2l
+        locator: Sec. 12.6.5 Exercises, Exercise 4
+        url: https://d2l.ai/chapter_optimization/momentum.html#exercises
+    source:
+      id: d2l
+      ref: chapter_optimization/momentum#ex4
+      url: https://d2l.ai/chapter_optimization/momentum.html#exercises
+    status: draft
+  - id: optimization-053
+    type: short_answer
+    difficulty: hard
+    tags:
+      - condition-number
+      - sensitivity
+      - orthogonal-matrices
+    question: |
+      You minimize $f(\mathbf{x}) = \frac{1}{2}\mathbf{x}^\top\mathbf{Q}\mathbf{x} + \mathbf{c}^\top\mathbf{x}$,
+      where $\mathbf{Q}$ is symmetric with eigenvalues 4 and 0.01. The vector $\mathbf{c}$ is
+      perturbed by $\boldsymbol{\delta}$ with $\lVert\boldsymbol{\delta}\rVert_2 = 0.01$. What is the
+      largest possible change $\lVert\Delta\mathbf{x}^*\rVert_2$ of the minimizer
+      $\mathbf{x}^* = -\mathbf{Q}^{-1}\mathbf{c}$?
+    answer:
+      numeric: 1
+      tolerance: 0.001
+      hint: a number
+      model: $\Delta\mathbf{x}^* = -\mathbf{Q}^{-1}\boldsymbol{\delta}$; along the eigenvector with eigenvalue 0.01 this has length $0.01/0.01 = 1$
+    explanation: |
+      Write $\mathbf{Q} = \mathbf{U}^\top\boldsymbol{\Lambda}\mathbf{U}$ with orthogonal $\mathbf{U}$.
+      Because $\mathbf{U}^\top\mathbf{U} = \mathbf{I}$, $\lVert\mathbf{U}\mathbf{v}\rVert = \lVert\mathbf{v}\rVert$
+      for every $\mathbf{v}$, so the rotated perturbation $\mathbf{U}\boldsymbol{\delta}$ still has
+      length 0.01 and we can work coordinate by coordinate. The minimizer moves by
+      $\bar{\delta}_i/\lambda_i$ in eigen-coordinate $i$ [^1]: at most $0.01/0.01 = 1$, if
+      $\boldsymbol{\delta}$ lies along the flat direction, and only $0.01/4 = 0.0025$ along the steep
+      one. The ratio of these sensitivities is the condition number $\kappa = 4/0.01 = 400$; a large
+      $\kappa$ makes the problem hard to solve accurately [^1].
+    references:
+      - source: d2l
+        locator: Sec. 12.7.2 Preconditioning (perturbing $\mathbf{c}$; condition number, Eq. (12.7.2))
+        url: https://d2l.ai/chapter_optimization/adagrad.html#preconditioning
+      - source: d2l
+        locator: Sec. 12.7.7 Exercises, Exercise 1
+        url: https://d2l.ai/chapter_optimization/adagrad.html#exercises
+    source:
+      id: d2l
+      ref: chapter_optimization/adagrad#ex1
+      url: https://d2l.ai/chapter_optimization/adagrad.html#exercises
+    status: draft
+  - id: optimization-054
+    type: single
+    difficulty: medium
+    tags:
+      - adagrad
+      - preconditioning
+      - rotation
+    question: |
+      Adagrad is run on $f(\mathbf{x}) = 0.1x_1^2 + 2x_2^2$ and on its copy rotated by $45^\circ$,
+      $f(\mathbf{x}) = 0.05(x_1 + x_2)^2 + (x_1 - x_2)^2$. Plain gradient descent behaves the same on
+      both up to the rotation, but Adagrad converges much more slowly on the second. Why?
+    options:
+      - text: Its per-coordinate scaling is a diagonal preconditioner, which helps only when the steep and flat directions follow the axes
+        correct: true
+      - text: The rotated function has larger gradients, so the accumulated sum shrinks its steps too fast
+        why: Adagrad divides by the root of the summed squared gradients, so scaling all gradients by a constant leaves its steps unchanged (up to $\epsilon$).
+      - text: Rotating the function makes it nonconvex, and Adagrad's guarantees need convexity
+        why: A rotation of a convex quadratic is still a convex quadratic with the same eigenvalues [^2].
+      - text: Adagrad is designed for sparse features, and after rotation every feature is sparse
+        why: After rotation both coordinates get gradients of similar size at every step; nothing becomes sparse.
+    explanation: |
+      Adagrad divides each coordinate's step by $\sqrt{\mathbf{s}_t}$, the root of its own
+      accumulated squared gradients, as a cheap proxy for the diagonal of the Hessian [^1]. Diagonal
+      rescaling removes ill-conditioning entirely when the problem is axis aligned [^1]. After the
+      rotation the Hessian $\begin{bmatrix} 2.1 & -1.9 \\ -1.9 & 2.1 \end{bmatrix}$ has equal
+      diagonal entries, so both coordinates get about the same scaling, and the factor-20 difference
+      in curvature along the rotated axes remains. (The d2l exercise writes the rotated function as
+      $0.1(x_1 + x_2)^2 + 2(x_1 - x_2)^2$, twice this copy; Adagrad ignores such a constant factor.) Plain gradient descent does not depend on the
+      coordinate system, because orthogonal changes of variables decouple a quadratic into the same
+      eigen-directions [^2].
+    references:
+      - source: d2l
+        locator: Sec. 12.7.2 Preconditioning (diagonal rescaling; the gradient as a proxy for the Hessian diagonal)
+        url: https://d2l.ai/chapter_optimization/adagrad.html#preconditioning
+      - source: d2l
+        locator: Sec. 12.6.3.1 Quadratic Convex Functions
+        url: https://d2l.ai/chapter_optimization/momentum.html#quadratic-convex-functions
+      - source: d2l
+        locator: Sec. 12.7.7 Exercises, Exercise 2
+        url: https://d2l.ai/chapter_optimization/adagrad.html#exercises
+    source:
+      id: d2l
+      ref: chapter_optimization/adagrad#ex2
+      url: https://d2l.ai/chapter_optimization/adagrad.html#exercises
+    status: draft
+  - id: optimization-055
+    type: short_answer
+    difficulty: medium
+    tags:
+      - preconditioning
+      - gershgorin
+      - condition-number
+    question: |
+      $\mathbf{M} = \begin{bmatrix} 4 & 2 \\ 2 & 100 \end{bmatrix}$ has condition number about 25.
+      After diagonal preconditioning,
+      $\tilde{\mathbf{M}} = \textrm{diag}^{-\frac{1}{2}}(\mathbf{M})\,\mathbf{M}\,\textrm{diag}^{-\frac{1}{2}}(\mathbf{M})$,
+      the Gershgorin circle theorem confines every eigenvalue of $\tilde{\mathbf{M}}$ to an interval.
+      Which upper bound on the condition number of $\tilde{\mathbf{M}}$ follows?
+    answer:
+      numeric: 1.222
+      tolerance: 0.002
+      hint: a number, 3 decimals
+      model: $\tilde{\mathbf{M}} = \begin{bmatrix} 1 & 0.1 \\ 0.1 & 1 \end{bmatrix}$, eigenvalues in $[0.9, 1.1]$, so $\kappa \le 1.1/0.9 \approx 1.222$
+    explanation: |
+      Diagonal preconditioning makes every diagonal entry 1 and divides each off-diagonal entry by
+      $\sqrt{M_{ii}M_{jj}}$: here $2/\sqrt{4 \cdot 100} = 0.1$ [^1]. Gershgorin's theorem puts every
+      eigenvalue within (sum of the absolute off-diagonal entries of its row) of a diagonal entry
+      [^2], so all eigenvalues lie in $[1 - 0.1, 1 + 0.1]$ and $\kappa \le 1.1/0.9 \approx 1.222$,
+      down from about 25. In general all Gershgorin discs of $\tilde{\mathbf{M}}$ are centred at 1,
+      so preconditioning helps most when the off-diagonal entries are small relative to the
+      diagonal ones.
+    references:
+      - source: d2l
+        locator: Sec. 12.7.2 Preconditioning, Eq. (12.7.3)
+        url: https://d2l.ai/chapter_optimization/adagrad.html#preconditioning
+      - source: d2l
+        locator: Sec. 22.2.5 Gershgorin Circle Theorem
+        url: https://d2l.ai/chapter_appendix-mathematics-for-deep-learning/eigendecomposition.html#gershgorin-circle-theorem
+      - source: d2l
+        locator: Sec. 12.7.7 Exercises, Exercise 4
+        url: https://d2l.ai/chapter_optimization/adagrad.html#exercises
+    source:
+      id: d2l
+      ref: chapter_optimization/adagrad#ex4
+      url: https://d2l.ai/chapter_optimization/adagrad.html#exercises
+    status: draft
+  - id: optimization-056
+    type: single
+    difficulty: medium
+    tags:
+      - adagrad
+      - rmsprop
+      - learning-rate-decay
+    question: |
+      Adagrad accumulates $\mathbf{s}_t = \mathbf{s}_{t-1} + \mathbf{g}_t^2$ and steps by
+      $\eta\,\mathbf{g}_t/\sqrt{\mathbf{s}_t + \epsilon}$, so its effective learning rate decays
+      roughly like $1/\sqrt{t}$. Which change gives a less aggressive decay?
+    options:
+      - text: Use a leaky average, $\mathbf{s}_t = \gamma\mathbf{s}_{t-1} + (1 - \gamma)\mathbf{g}_t^2$
+        correct: true
+      - text: Accumulate $|\mathbf{g}_t|$ instead of $\mathbf{g}_t^2$ in $\mathbf{s}_t$, so that the sum grows more slowly
+        why: The sum still grows linearly with $t$, so the step still shrinks like $1/\sqrt{t}$.
+      - text: Increase $\epsilon$ from $10^{-6}$ to $10^{-4}$
+        why: Once $\mathbf{s}_t$ has grown, $\epsilon$ is negligible and the decay is unchanged.
+      - text: Divide by $\mathbf{s}_t + \epsilon$ instead of by its square root
+        why: That makes the effective learning rate fall like $1/t$, even faster.
+    explanation: |
+      Because $\mathbf{s}_t$ sums squared gradients without normalization, it grows about linearly
+      and the effective learning rate falls like $\mathcal{O}(t^{-1/2})$, often too fast for deep
+      learning [^1]. RMSProp replaces the sum by a leaky average, so $\mathbf{s}_t$ tracks the
+      recent scale of $\mathbf{g}_t^2$ instead of growing without bound [^2]. The per-coordinate
+      scaling is kept, and the overall rate is then set by $\eta$, which you can schedule
+      separately [^2].
+    references:
+      - source: d2l
+        locator: Sec. 12.7.3 The Algorithm (linear growth of $\mathbf{s}_t$, $\mathcal{O}(t^{-1/2})$ learning rate)
+        url: https://d2l.ai/chapter_optimization/adagrad.html#the-algorithm
+      - source: d2l
+        locator: Sec. 12.8 RMSProp (introduction) and Sec. 12.8.1 The Algorithm, Eq. (12.8.1)
+        url: https://d2l.ai/chapter_optimization/rmsprop.html#the-algorithm
+      - source: d2l
+        locator: Sec. 12.7.7 Exercises, Exercise 6
+        url: https://d2l.ai/chapter_optimization/adagrad.html#exercises
+    source:
+      id: d2l
+      ref: chapter_optimization/adagrad#ex6
+      url: https://d2l.ai/chapter_optimization/adagrad.html#exercises
+    status: draft
+  - id: optimization-057
+    type: short_answer
+    difficulty: medium
+    tags:
+      - rmsprop
+      - hyperparameters
+      - divergence
+    question: |
+      An RMSProp implementation uses $s \leftarrow \gamma s + (1 - \gamma)g^2$ and
+      $x \leftarrow x - \eta\, g/\sqrt{s + \epsilon}$, with $s$ initialized to 0, $\epsilon = 10^{-6}$
+      and $\eta = 0.4$. If you set $\gamma = 1$, what is the effective learning rate that multiplies
+      $g$ at every step?
+    answer:
+      numeric: 400
+      tolerance: 0.5
+      hint: a number
+      model: $s$ stays 0, so the step is $\eta/\sqrt{\epsilon}\cdot g = 0.4/10^{-3}\cdot g = 400\,g$
+    explanation: |
+      With $\gamma = 1$ the new squared gradient gets weight $1 - \gamma = 0$, so $s$ never leaves its
+      initial value 0 [^1]. Every step is then $\eta/\sqrt{\epsilon}\, g = 400\,g$, a huge fixed
+      learning rate, and on a problem such as $0.1x_1^2 + 2x_2^2$ the iterates diverge at once. In
+      general $\gamma$ sets how long the history of squared gradients is: the average spans about
+      $1/(1 - \gamma)$ steps, which is infinite here [^1][^2].
+    references:
+      - source: d2l
+        locator: Sec. 12.8.1 The Algorithm, Eqs. (12.8.1)–(12.8.2)
+        url: https://d2l.ai/chapter_optimization/rmsprop.html#the-algorithm
+      - source: d2l
+        locator: Sec. 12.8.4 Summary ($\gamma$ determines the length of the history)
+        url: https://d2l.ai/chapter_optimization/rmsprop.html#summary
+      - source: d2l
+        locator: Sec. 12.8.5 Exercises, Exercise 1
+        url: https://d2l.ai/chapter_optimization/rmsprop.html#exercises
+    source:
+      id: d2l
+      ref: chapter_optimization/rmsprop#ex1
+      url: https://d2l.ai/chapter_optimization/rmsprop.html#exercises
+    status: draft
+  - id: optimization-058
+    type: short_answer
+    difficulty: hard
+    tags:
+      - adadelta
+      - learning-rate
+      - adaptive-methods
+    question: |
+      Adadelta updates $\mathbf{s}_t = \rho\mathbf{s}_{t-1} + (1 - \rho)\mathbf{g}_t^2$,
+      $\mathbf{g}'_t = \frac{\sqrt{\Delta\mathbf{x}_{t-1} + \epsilon}}{\sqrt{\mathbf{s}_t + \epsilon}} \odot \mathbf{g}_t$,
+      $\mathbf{x}_t = \mathbf{x}_{t-1} - \mathbf{g}'_t$ and
+      $\Delta\mathbf{x}_t = \rho\Delta\mathbf{x}_{t-1} + (1 - \rho)\mathbf{g}'^2_t$, with
+      $\mathbf{s}_0 = \Delta\mathbf{x}_0 = 0$, $\rho = 0.9$ and $\epsilon = 10^{-5}$. For a scalar
+      parameter with first gradient $g_1 = 5$, how large is the first step $|g'_1|$?
+    answer:
+      numeric: 0.01
+      tolerance: 0.0002
+      hint: a number, 4 decimals
+      model: $|g'_1| = \frac{\sqrt{10^{-5}}}{\sqrt{0.1 \cdot 25 + 10^{-5}}} \cdot 5 \approx \frac{0.003162}{1.5811} \cdot 5 \approx 0.0100$
+    explanation: |
+      With $\Delta x_0 = 0$ the numerator is $\sqrt{\epsilon}$, and for any gradient much larger than
+      $\sqrt{\epsilon}$ the first step is about $\sqrt{\epsilon}/\sqrt{1 - \rho} \approx 0.01$,
+      whatever $|g_1|$ is [^1]. Adadelta has no learning-rate argument, but $\epsilon$ plays its
+      role: it sets the size of the first steps, and later steps grow only as $\Delta\mathbf{x}$
+      accumulates [^1][^2]. So it is not really learning-rate free; a problem whose parameters must
+      travel far, or one with badly scaled $\epsilon$, can make it very slow at first.
+    references:
+      - source: d2l
+        locator: Sec. 12.9.1 The Algorithm, Eqs. (12.9.1)–(12.9.4)
+        url: https://d2l.ai/chapter_optimization/adadelta.html#the-algorithm
+      - source: d2l
+        locator: Sec. 12.9.3 Summary (no learning-rate parameter; uses the rate of change of the parameters)
+        url: https://d2l.ai/chapter_optimization/adadelta.html#summary
+      - source: d2l
+        locator: Sec. 12.9.4 Exercises, Exercise 3
+        url: https://d2l.ai/chapter_optimization/adadelta.html#exercises
+    source:
+      id: d2l
+      ref: chapter_optimization/adadelta#ex3
+      url: https://d2l.ai/chapter_optimization/adadelta.html#exercises
+    status: draft
+  - id: optimization-059
+    type: short_answer
+    difficulty: medium
+    tags:
+      - adam
+      - bias-correction
+    question: |
+      Adam uses $\beta_1 = 0.9$ and $\beta_2 = 0.999$ with $\mathbf{v}_0 = \mathbf{s}_0 = 0$. Ignore
+      $\epsilon$. On the first step, by what factor would the update be larger if you skipped bias
+      correction, i.e. used $\mathbf{v}_1/\sqrt{\mathbf{s}_1}$ instead of
+      $\hat{\mathbf{v}}_1/\sqrt{\hat{\mathbf{s}}_1}$?
+    answer:
+      numeric: 3.162
+      tolerance: 0.005
+      hint: a number, 3 decimals
+      model: $\frac{(1 - \beta_1)g}{\sqrt{1 - \beta_2}\,|g|} = \frac{0.1}{\sqrt{0.001}} \approx 3.162$, while the corrected ratio is 1
+    explanation: |
+      After one step $v_1 = (1 - \beta_1)g_1$ and $s_1 = (1 - \beta_2)g_1^2$, both biased toward the
+      zero initialization [^1]. Dividing by $1 - \beta^t$ gives $\hat{v}_1 = g_1$ and
+      $\hat{s}_1 = g_1^2$, a first step of exactly $\eta$ per coordinate [^1]. Without correction
+      the step is $0.1/\sqrt{0.001} \approx 3.16$ times larger: the second moment, averaged with
+      $\beta_2$ close to 1, is far more underestimated than the first. The Adam paper warns that
+      skipping the correction leads to much larger initial steps [^2]. The correction fades as
+      $\beta^t \to 0$.
+    references:
+      - source: d2l
+        locator: Sec. 12.10.1 The Algorithm, Eq. (12.10.2)
+        url: https://d2l.ai/chapter_optimization/adam.html#the-algorithm
+      - title: 'Kingma & Ba, Adam: A Method for Stochastic Optimization (ICLR 2015)'
+        locator: Sec. 3 Initialization Bias Correction
+        url: https://arxiv.org/abs/1412.6980
+      - source: d2l
+        locator: Sec. 12.10.5 Exercises, Exercise 2
+        url: https://d2l.ai/chapter_optimization/adam.html#exercises
+    source:
+      id: d2l
+      ref: chapter_optimization/adam#ex2
+      url: https://d2l.ai/chapter_optimization/adam.html#exercises
+    status: draft
+  - id: optimization-060
+    type: single
+    difficulty: medium
+    tags:
+      - adam
+      - learning-rate-decay
+      - convergence
+    question: |
+      Adam rescales each coordinate of the update to roughly $\eta\,\hat{v}/\sqrt{\hat{s}}$. Why
+      should its learning rate $\eta$ still be reduced as training converges?
+    options:
+      - text: Near a minimum, noisy gradients keep $\hat{v}/\sqrt{\hat{s}}$ from vanishing, so the iterates jitter at a scale set by $\eta$
+        correct: true
+      - text: Bias correction makes $\hat{v}$ grow with $t$, so the steps would otherwise grow without bound
+        why: The correction factor $1/(1 - \beta_1^t)$ falls toward 1 over time; it does not make $\hat{v}$ grow [^1].
+      - text: $\hat{s}$ tends to zero near a minimum, so the division blows up unless $\eta$ shrinks
+        why: With stochastic gradients $\hat{s}$ stays near the gradient variance, and if $\hat{v}$ and $\hat{s}$ both shrink their ratio stays bounded.
+      - text: Its momentum term diverges as soon as the gradient changes sign near the minimum
+        why: Momentum is a bounded leaky average; sign changes make it smaller, not divergent.
+    explanation: |
+      Adam normalizes each coordinate by the root of its second moment, so its steps have magnitude
+      about $\eta$ whatever the scale of the gradient [^2]. At the optimum stochastic gradients are
+      still noisy, so the momentum average does not vanish and the parameters keep moving at a scale
+      set by $\eta$. As for SGD, convergence needs a learning rate that vanishes [^3], and Adam's own
+      convergence result assumes $\alpha_t = \alpha/\sqrt{t}$ [^2]. In practice a learning-rate
+      schedule does the job; otherwise we bounce around the minimum [^4].
+    references:
+      - source: d2l
+        locator: Sec. 12.10.1 The Algorithm, Eqs. (12.10.1)–(12.10.3)
+        url: https://d2l.ai/chapter_optimization/adam.html#the-algorithm
+      - title: 'Kingma & Ba, Adam: A Method for Stochastic Optimization (ICLR 2015)'
+        locator: Sec. 2.1 Adam's update rule (step size bounded by about $\alpha$) and Theorem 4.1 ($\alpha_t = \alpha/\sqrt{t}$)
+        url: https://arxiv.org/abs/1412.6980
+      - source: d2l
+        locator: Sec. 12.4.3 Convergence Analysis for Convex Objectives (the learning rate needs to vanish)
+        url: https://d2l.ai/chapter_optimization/sgd.html#convergence-analysis-for-convex-objectives
+      - source: d2l
+        locator: Sec. 12.11 Learning Rate Scheduling (a large rate bounces around the minimum)
+        url: https://d2l.ai/chapter_optimization/lr-scheduler.html
+      - source: d2l
+        locator: Sec. 12.10.5 Exercises, Exercise 3
+        url: https://d2l.ai/chapter_optimization/adam.html#exercises
+    source:
+      id: d2l
+      ref: chapter_optimization/adam#ex3
+      url: https://d2l.ai/chapter_optimization/adam.html#exercises
+    status: draft
+  - id: optimization-061
+    type: short_answer
+    difficulty: easy
+    tags:
+      - learning-rate-schedule
+      - cosine-schedule
+    question: |
+      A cosine schedule sets
+      $\eta_t = \eta_T + \frac{\eta_0 - \eta_T}{2}\left(1 + \cos(\pi t/T)\right)$ for $0 \le t \le T$.
+      With $\eta_0 = 0.3$, $\eta_T = 0.01$ and $T = 20$, what is the learning rate at $t = 5$?
+    answer:
+      numeric: 0.2575
+      tolerance: 0.001
+      hint: a number, 4 decimals
+      model: $0.01 + 0.145\,(1 + \cos(\pi/4)) = 0.01 + 0.145 \times 1.7071 \approx 0.2575$
+    explanation: |
+      At $t = 5$, $\pi t/T = \pi/4$ and $\cos(\pi/4) \approx 0.7071$, giving
+      $0.01 + 0.145 \times 1.7071 \approx 0.2575$ [^1]. The cosine schedule falls slowly at first,
+      fastest in the middle (at $t = 10$ it is exactly halfway, $0.155$), and slowly again at the
+      end, where a small rate refines the solution; after $T$ it is pinned at $\eta_T$ [^1]. It was
+      proposed with warm restarts in SGDR [^2].
+    references:
+      - source: d2l
+        locator: Sec. 12.11.3.3 Cosine Scheduler, Eq. (12.11.1)
+        url: https://d2l.ai/chapter_optimization/lr-scheduler.html#cosine-scheduler
+      - title: 'Loshchilov & Hutter, SGDR: Stochastic Gradient Descent with Warm Restarts (ICLR 2017)'
+        url: https://arxiv.org/abs/1608.03983
+        locator: Cosine annealing schedule
+      - source: d2l
+        locator: Sec. 12.11.5 Exercises, Exercise 3
+        url: https://d2l.ai/chapter_optimization/lr-scheduler.html#exercises
+    source:
+      id: d2l
+      ref: chapter_optimization/lr-scheduler#ex3
+      url: https://d2l.ai/chapter_optimization/lr-scheduler.html#exercises
+    status: draft
+  - id: optimization-062
+    type: single
+    difficulty: medium
+    tags:
+      - learning-rate-schedule
+      - warmup
+    question: |
+      What problem does a learning-rate warmup (a short phase in which $\eta$ rises from a small value
+      to its maximum) address?
+    options:
+      - text: Early updates from random weights are large and poorly aimed, so a full-size $\eta$ at the start can diverge
+        correct: true
+      - text: Without warmup the final learning rate stays too large for the model to converge
+        why: The end of training is handled by the decay part of the schedule; warmup only shapes the first steps [^1].
+      - text: Warmup lets the optimizer skip the gradient computation during the first epochs
+        why: Every warmup step computes gradients as usual; only the step size is smaller.
+      - text: Warmup reduces overfitting by showing the model the easiest examples first
+        why: That describes curriculum learning; warmup changes the learning rate, not the order of the data.
+    explanation: |
+      At the start the parameters are random, so the first update directions may be meaningless and
+      large steps can make optimization diverge, while a uniformly small rate makes progress slow
+      [^1]. Warmup ramps the rate up, usually linearly, and then hands over to the normal schedule;
+      it can be combined with any scheduler [^1]. Goyal et al. ramp up over the first 5 epochs for
+      large-batch ImageNet training and report that results are robust to the exact length [^2],
+      so there is no single right length.
+    references:
+      - source: d2l
+        locator: Sec. 12.11 Learning Rate Scheduling (initialization) and Sec. 12.11.3.4 Warmup
+        url: https://d2l.ai/chapter_optimization/lr-scheduler.html#warmup
+      - title: 'Goyal et al., Accurate, Large Minibatch SGD: Training ImageNet in 1 Hour (2017)'
+        locator: Sec. 2.2 Warmup (gradual warmup)
+        url: https://arxiv.org/abs/1706.02677
+      - source: d2l
+        locator: Sec. 12.11.5 Exercises, Exercise 4
+        url: https://d2l.ai/chapter_optimization/lr-scheduler.html#exercises
+    source:
+      id: d2l
+      ref: chapter_optimization/lr-scheduler#ex4
+      url: https://d2l.ai/chapter_optimization/lr-scheduler.html#exercises
+    status: draft
+  - id: optimization-063
+    type: true_false
+    difficulty: easy
+    tags:
+      - critical-points
+      - derivatives
+      - saddle-points
+    shuffle: false
+    question: "True or false: if $f'(x) = 0$, then $f$ has a local maximum or a local minimum at $x$."
+    options:
+      - text: 'True'
+        why: $f(x) = x^3$ has $f'(0) = 0$, but it is negative to the left of 0 and positive to the right, so 0 is neither [^1].
+      - text: 'False'
+        correct: true
+    explanation: |
+      A zero derivative makes $x$ a critical point, a candidate for an extremum, but not necessarily
+      one [^2]. For $f(x) = x^3$ both the first and second derivatives vanish at 0 and the function
+      keeps increasing through it; optimization can still stall there [^1]. In several dimensions the
+      same thing happens at saddle points, where the gradient is zero but the Hessian has both
+      positive and negative eigenvalues [^1].
+    references:
+      - source: d2l
+        locator: Sec. 12.1.2.2 Saddle Points (the example $x^3$)
+        url: https://d2l.ai/chapter_optimization/optimization-intro.html#saddle-points
+      - source: d2l
+        locator: Sec. 22.4.3 A Note on Mathematical Optimization (critical points)
+        url: https://d2l.ai/chapter_appendix-mathematics-for-deep-learning/multivariable-calculus.html#a-note-on-mathematical-optimization
+      - source: d2l
+        locator: Sec. 22.3.4 Exercises, Exercise 3
+        url: https://d2l.ai/chapter_appendix-mathematics-for-deep-learning/single-variable-calculus.html#exercises
+    source:
+      id: d2l
+      ref: chapter_appendix-mathematics-for-deep-learning/single-variable-calculus#ex3
+      url: https://d2l.ai/chapter_appendix-mathematics-for-deep-learning/single-variable-calculus.html#exercises
+    status: draft
+  - id: optimization-064
+    type: short_answer
+    difficulty: easy
+    tags:
+      - derivatives
+      - minimization
+      - entropy
+    question: Where is the minimum of $f(x) = x\log x$ on $x \ge 0$ (with $f(0) = 0$, the limiting value)?
+    answer:
+      numeric: 0.368
+      tolerance: 0.002
+      hint: a number, 3 decimals
+      model: $f'(x) = \log x + 1 = 0$ gives $x = e^{-1} \approx 0.368$, with $f(e^{-1}) = -e^{-1}$
+    explanation: |
+      The derivative is $\log x + 1$, which is zero at $x = e^{-1} \approx 0.368$ [^1]. The second
+      derivative $1/x$ is positive, so this is a minimum, with value $-e^{-1} \approx -0.368$, below
+      the boundary value $f(0) = 0$ [^2]. The same function appears in entropy: the term
+      $-p\log p$ is largest at $p = 1/e$.
+    references:
+      - source: d2l
+        locator: Sec. 22.3.2.2 Derivative Rules (product rule) and Sec. 22.3.2.1 Common Derivatives
+        url: https://d2l.ai/chapter_appendix-mathematics-for-deep-learning/single-variable-calculus.html#derivative-rules
+      - source: d2l
+        locator: Sec. 22.3.2.4 Higher Order Derivatives (positive second derivative means a minimum)
+        url: https://d2l.ai/chapter_appendix-mathematics-for-deep-learning/single-variable-calculus.html#higher-order-derivatives
+      - source: d2l
+        locator: Sec. 22.3.4 Exercises, Exercise 4
+        url: https://d2l.ai/chapter_appendix-mathematics-for-deep-learning/single-variable-calculus.html#exercises
+    source:
+      id: d2l
+      ref: chapter_appendix-mathematics-for-deep-learning/single-variable-calculus#ex4
+      url: https://d2l.ai/chapter_appendix-mathematics-for-deep-learning/single-variable-calculus.html#exercises
+    status: draft
+  - id: optimization-065
+    type: single
+    difficulty: easy
+    tags:
+      - gradients
+      - norms
+      - matrix-calculus
+    question: |
+      For a nonzero vector $\mathbf{v} \in \mathbb{R}^n$, what is the gradient
+      $\frac{\partial}{\partial\mathbf{v}}\lVert\mathbf{v}\rVert_2$?
+    options:
+      - text: $\mathbf{v}/\lVert\mathbf{v}\rVert_2$, the unit vector along $\mathbf{v}$
+        correct: true
+      - text: $2\mathbf{v}$, twice the vector itself
+        why: That is the gradient of the squared norm $\lVert\mathbf{v}\rVert_2^2 = \sum_i v_i^2$.
+      - text: $\mathbf{v}/\lVert\mathbf{v}\rVert_2^2$, the vector divided by its squared norm
+        why: The chain rule gives $\frac{1}{2}(\sum_i v_i^2)^{-1/2} \cdot 2v_i = v_i/\lVert\mathbf{v}\rVert_2$, with the norm to the first power [^1].
+      - text: $\mathbf{1}$, a vector of ones, as each $v_i$ enters the norm once
+        why: Each $v_i$ enters squared, inside a square root, so the derivative depends on $\mathbf{v}$.
+    explanation: |
+      Write $\lVert\mathbf{v}\rVert_2 = (\sum_i v_i^2)^{1/2}$. By the chain rule
+      $\partial\lVert\mathbf{v}\rVert/\partial v_i = v_i / \lVert\mathbf{v}\rVert$, and stacking the
+      partial derivatives in the shape of $\mathbf{v}$ gives $\mathbf{v}/\lVert\mathbf{v}\rVert$ [^1].
+      The norm grows fastest along $\mathbf{v}$ itself, at unit rate. At $\mathbf{v} = \mathbf{0}$ the
+      norm has a kink, like $|x|$, and no gradient. This gradient appears in norm penalties and in
+      gradient clipping.
+    references:
+      - source: d2l
+        locator: Sec. 22.4.7 A Little Matrix Calculus (denominator layout) and Sec. 22.4.4 Multivariate Chain Rule
+        url: https://d2l.ai/chapter_appendix-mathematics-for-deep-learning/multivariable-calculus.html#a-little-matrix-calculus
+      - source: d2l
+        locator: Sec. 22.4.9 Exercises, Exercise 2
+        url: https://d2l.ai/chapter_appendix-mathematics-for-deep-learning/multivariable-calculus.html#exercises
+    source:
+      id: d2l
+      ref: chapter_appendix-mathematics-for-deep-learning/multivariable-calculus#ex2
+      url: https://d2l.ai/chapter_appendix-mathematics-for-deep-learning/multivariable-calculus.html#exercises
+    status: draft
+  - id: optimization-066
+    type: short_answer
+    difficulty: easy
+    tags:
+      - gradients
+      - log-sum-exp
+      - softmax
+    question: Let $L(x, y) = \log(e^x + e^y)$. What is $\partial L / \partial x$ at $(x, y) = (\ln 3, 0)$?
+    answer:
+      numeric: 0.75
+      tolerance: 0.001
+      hint: a number, 2 decimals
+      model: $\frac{e^x}{e^x + e^y} = \frac{3}{3 + 1} = 0.75$
+    explanation: |
+      By the chain rule $\partial L/\partial x = e^x/(e^x + e^y)$ and
+      $\partial L/\partial y = e^y/(e^x + e^y)$ [^1]. At $(\ln 3, 0)$ these are $3/4$ and $1/4$. The
+      gradient of log-sum-exp is the softmax of its inputs, so its components are positive and
+      always sum to 1 [^2]; that is why the cross-entropy gradient with respect to the logits is
+      $\textrm{softmax}(\mathbf{o}) - \mathbf{y}$.
+    references:
+      - source: d2l
+        locator: Sec. 22.4.1 Higher-Dimensional Differentiation (gradients) and Sec. 22.4.4 Multivariate Chain Rule
+        url: https://d2l.ai/chapter_appendix-mathematics-for-deep-learning/multivariable-calculus.html#multivariate-chain-rule
+      - title: 'Wikipedia: LogSumExp'
+        locator: Properties (the gradient of LSE is the softmax)
+        url: https://en.wikipedia.org/wiki/LogSumExp
+      - source: d2l
+        locator: Sec. 22.4.9 Exercises, Exercise 3
+        url: https://d2l.ai/chapter_appendix-mathematics-for-deep-learning/multivariable-calculus.html#exercises
+    source:
+      id: d2l
+      ref: chapter_appendix-mathematics-for-deep-learning/multivariable-calculus#ex3
+      url: https://d2l.ai/chapter_appendix-mathematics-for-deep-learning/multivariable-calculus.html#exercises
+    status: draft
+  - id: optimization-067
+    type: single
+    difficulty: medium
+    tags:
+      - critical-points
+      - hessian
+      - saddle-points
+    question: $f(x, y) = x^2y + xy^2$ has only one critical point, $(0, 0)$. What kind of point is it?
+    options:
+      - text: Neither a maximum nor a minimum, since $f(x, x) = 2x^3$ changes sign at 0
+        correct: true
+      - text: A minimum, since the Hessian there is zero and hence positive semidefinite
+        why: A zero Hessian makes the second-order test inconclusive; positive semidefiniteness alone does not prove a minimum [^2].
+      - text: A maximum, since $f$ is identically zero along the line $y = -x$
+        why: Being zero along one line says nothing about a maximum; along $y = x$ the function takes both signs.
+      - text: A minimum, since $f(0, 0) = 0$ and $f$ is a sum of nonnegative terms
+        why: $x^2y$ and $xy^2$ can be negative, for example $f(-1, -1) = -2$.
+    explanation: |
+      The gradient $(2xy + y^2,\ x^2 + 2xy) = (y(2x + y),\ x(x + 2y))$ vanishes only at the origin
+      [^1]. There the Hessian $\begin{bmatrix} 2y & 2x + 2y \\ 2x + 2y & 2x \end{bmatrix}$ is the zero
+      matrix, so second derivatives cannot classify the point [^2]. Along the line $y = x$,
+      $f(x, x) = 2x^3$ is positive on one side and negative on the other, so the origin is neither a
+      maximum nor a minimum: a degenerate saddle. A critical point is only a candidate for an
+      extremum [^1].
+    references:
+      - source: d2l
+        locator: Sec. 22.4.3 A Note on Mathematical Optimization (critical points)
+        url: https://d2l.ai/chapter_appendix-mathematics-for-deep-learning/multivariable-calculus.html#a-note-on-mathematical-optimization
+      - source: d2l
+        locator: Sec. 12.1.2.2 Saddle Points (Hessian eigenvalue test)
+        url: https://d2l.ai/chapter_optimization/optimization-intro.html#saddle-points
+      - source: d2l
+        locator: Sec. 22.4.9 Exercises, Exercise 4
+        url: https://d2l.ai/chapter_appendix-mathematics-for-deep-learning/multivariable-calculus.html#exercises
+    source:
+      id: d2l
+      ref: chapter_appendix-mathematics-for-deep-learning/multivariable-calculus#ex4
+      url: https://d2l.ai/chapter_appendix-mathematics-for-deep-learning/multivariable-calculus.html#exercises
+    status: draft
+  - id: optimization-068
+    type: single
+    difficulty: medium
+    tags:
+      - gradients
+      - regularization
+      - critical-points
+    question: |
+      You minimize $f(\mathbf{x}) = g(\mathbf{x}) + h(\mathbf{x})$, for example a data loss $g$ plus a
+      regularizer $h$. At a critical point of $f$, how are $\nabla g$ and $\nabla h$ related?
+    options:
+      - text: They have equal length and point in opposite directions
+        correct: true
+      - text: Both are zero, so each term is minimized on its own
+        why: Only their sum must vanish; usually neither term is at its own minimum.
+      - text: They are orthogonal to each other, so neither term can improve
+        why: Orthogonal nonzero gradients have a nonzero sum, so $\mathbf{x}$ would not be a critical point.
+      - text: They point the same way, so both terms decrease together
+        why: Then the sum would be nonzero and a step along $-\nabla f$ would still lower $f$ [^1].
+    explanation: |
+      A critical point has $\nabla f = \nabla g + \nabla h = 0$ [^1], i.e. $\nabla g = -\nabla h$:
+      any small step that lowers $g$ raises $h$ at the same first-order rate, a tug of war in which
+      neither term can improve without hurting the other. With weight decay
+      $h(\mathbf{w}) = \frac{\lambda}{2}\lVert\mathbf{w}\rVert^2$ this reads
+      $\nabla g(\mathbf{w}) = -\lambda\mathbf{w}$. The same picture explains Lagrangians: at the
+      constrained optimum the gradient of the objective is offset by the gradient of the
+      constraint [^2].
+    references:
+      - source: d2l
+        locator: Sec. 22.4.3 A Note on Mathematical Optimization (a minimum has zero gradient)
+        url: https://d2l.ai/chapter_appendix-mathematics-for-deep-learning/multivariable-calculus.html#a-note-on-mathematical-optimization
+      - source: d2l
+        locator: Sec. 12.2.3.1 Lagrangian and Sec. 12.2.3.2 Penalties (weight decay as a penalty)
+        url: https://d2l.ai/chapter_optimization/convexity.html#lagrangian
+      - source: d2l
+        locator: Sec. 22.4.9 Exercises, Exercise 5
+        url: https://d2l.ai/chapter_appendix-mathematics-for-deep-learning/multivariable-calculus.html#exercises
+    source:
+      id: d2l
+      ref: chapter_appendix-mathematics-for-deep-learning/multivariable-calculus#ex5
+      url: https://d2l.ai/chapter_appendix-mathematics-for-deep-learning/multivariable-calculus.html#exercises
+    status: draft
+  - id: optimization-069
+    type: single
+    difficulty: hard
+    tags:
+      - multiple-integrals
+      - fubini
+      - order-of-integration
+    question: |
+      For $f(x, y) = \frac{xy(x^2 - y^2)}{(x^2 + y^2)^3}$ on $[0, 2] \times [0, 1]$, the iterated
+      integrals are $\int_0^2\int_0^1 f\,dy\,dx = 0.2$ and $\int_0^1\int_0^2 f\,dx\,dy = -0.05$. Why
+      can the order of integration change the result?
+    options:
+      - text: $\iint |f|$ is infinite near the origin, so Fubini's theorem does not apply
+        correct: true
+      - text: One computation must be wrong, since the order never matters for a rational function
+        why: Both values are correct; $f$ is not even defined at the origin, and near it $|f|$ is not integrable [^1].
+      - text: The region is not a square, and Fubini's theorem needs equal side lengths
+        why: Fubini's theorem works on any rectangle; the shape of the region is not the problem [^2].
+      - text: $f$ changes sign on the region, and Fubini's theorem requires $f \ge 0$
+        why: Signed integrands are fine as long as $\iint |f| < \infty$; the nonnegative case is Tonelli's theorem [^2].
+    explanation: |
+      Fubini's theorem lets us swap the order of integration when $\iint |f| < \infty$ [^2]. Here $f$
+      behaves like $1/r^2$ near the origin, and in two dimensions $\int |f|\, r\,dr$ diverges like
+      $\int dr/r$, so the theorem does not apply and the two orders give $0.2$ and $-0.05$ [^1]. For
+      the well-behaved functions of everyday machine learning swapping sums, integrals and
+      expectations is safe [^1], but the hypothesis matters whenever we exchange an expectation with
+      a sum, an integral or a gradient.
+    references:
+      - source: d2l
+        locator: Sec. 22.5.5 Multiple Integrals (Fubini's theorem and this counterexample)
+        url: https://d2l.ai/chapter_appendix-mathematics-for-deep-learning/integral-calculus.html#multiple-integrals
+      - title: "Wikipedia: Fubini's theorem"
+        locator: For integrable functions; Tonelli's theorem for non-negative measurable functions; Counterexamples, Failure of Fubini's theorem for non-integrable functions
+        url: https://en.wikipedia.org/wiki/Fubini%27s_theorem
+      - source: d2l
+        locator: Sec. 22.5.8 Exercises, Exercise 4
+        url: https://d2l.ai/chapter_appendix-mathematics-for-deep-learning/integral-calculus.html#exercises
+    source:
+      id: d2l
+      ref: chapter_appendix-mathematics-for-deep-learning/integral-calculus#ex4
+      url: https://d2l.ai/chapter_appendix-mathematics-for-deep-learning/integral-calculus.html#exercises
+    status: draft
+  - id: optimization-070
+    type: short_answer
+    difficulty: medium
+    tags:
+      - derivatives
+      - chain-rule
+      - logarithmic-differentiation
+    question: Compute the derivative of $f(x) = x^x$ (for $x > 0$) at $x = 2$. Round to 3 decimals.
+    answer:
+      numeric: 6.773
+      tolerance: 0.002
+      hint: a number, 3 decimals
+      model: $f'(x) = x^x(\ln x + 1)$, so $f'(2) = 4(\ln 2 + 1) \approx 6.773$
+    explanation: |
+      Neither the power rule (it needs a constant exponent) nor the rule for $e^x$ (it needs a constant
+      base) applies directly [^1]. Write $x^x = e^{x \ln x}$ and use the chain and product rules:
+      $f'(x) = e^{x \ln x}(\ln x + 1) = x^x(\ln x + 1)$ [^1]. Taking logarithms first,
+      $\ln f(x) = x \ln x$, leads to the same result; this is logarithmic differentiation [^2]. At
+      $x = 2$: $4(\ln 2 + 1) \approx 4 \times 1.693 = 6.773$.
+    references:
+      - source: d2l
+        locator: Sec. 2.4.1 Derivatives and Differentiation
+        url: https://d2l.ai/chapter_preliminaries/calculus.html#derivatives-and-differentiation
+      - title: 'Wikipedia: Logarithmic differentiation'
+        locator: Overview
+        url: https://en.wikipedia.org/wiki/Logarithmic_differentiation
+      - source: d2l
+        locator: Sec. 2.4.6 Exercises, Exercise 4
+        url: https://d2l.ai/chapter_preliminaries/calculus.html#exercises
+    source:
+      id: d2l
+      ref: chapter_preliminaries/calculus#ex4
+      url: https://d2l.ai/chapter_preliminaries/calculus.html#exercises
+    status: draft
+  - id: optimization-071
+    type: single
+    difficulty: medium
+    tags:
+      - derivatives
+      - stationary-points
+      - second-derivative-test
+    question: |
+      A smooth function has $f'(0) = 0$ and $f''(0) = 0$. What can you conclude about the point
+      $x = 0$?
+    options:
+      - text: It is not a stationary point, because the second derivative vanishes
+        why: A stationary point only requires $f'(0) = 0$; the second derivative plays no part in the definition [^1].
+      - text: 'Nothing yet: 0 may be a minimum, a maximum or neither'
+        correct: true
+      - text: It is a horizontal point of inflection, as for $f(x) = x^3$ at 0
+        why: $f(x) = x^4$ also has $f'(0) = f''(0) = 0$, and 0 is its global minimum [^2].
+      - text: It is a local minimum, because the function is flat to second order
+        why: $f(x) = -x^4$ satisfies both conditions and has a maximum at 0 [^2].
+    explanation: |
+      $f'(0) = 0$ makes 0 a stationary point, where the tangent is horizontal [^1]. The second-derivative
+      test decides only when $f''(0) \neq 0$: positive means a local minimum, negative a local maximum,
+      and $f''(0) = 0$ leaves the test inconclusive [^2]. Indeed $x^4$ (a minimum), $-x^4$ (a maximum)
+      and $x^3$ (neither) all have $f'(0) = f''(0) = 0$; higher derivatives or the sign of $f'$ on
+      either side of 0 must decide. In optimization, such flat points are why a vanishing gradient alone
+      does not certify a minimum.
+    references:
+      - source: d2l
+        locator: Sec. 2.4.1 Derivatives and Differentiation
+        url: https://d2l.ai/chapter_preliminaries/calculus.html#derivatives-and-differentiation
+      - title: 'Wikipedia: Derivative test'
+        locator: Second-derivative test (single variable)
+        url: https://en.wikipedia.org/wiki/Derivative_test#Second-derivative_test_(single_variable)
+        quote: If f''(x) = 0, the test is inconclusive.
+      - source: d2l
+        locator: Sec. 2.4.6 Exercises, Exercise 5
+        url: https://d2l.ai/chapter_preliminaries/calculus.html#exercises
+    source:
+      id: d2l
+      ref: chapter_preliminaries/calculus#ex5
+      url: https://d2l.ai/chapter_preliminaries/calculus.html#exercises
+    status: draft
+  - id: optimization-072
+    type: short_answer
+    difficulty: easy
+    tags:
+      - derivatives
+      - tangent-line
+    question: |
+      The tangent line to $f(x) = x^3 - \frac{1}{x}$ at $x = 1$ is $y = mx + c$. Fill in: $m =$ {{1}}
+      and $c =$ {{2}}.
+    answer:
+      blanks:
+        - numeric: 4
+          tolerance: 0
+          hint: slope
+        - numeric: -4
+          tolerance: 0
+          hint: intercept
+      model: $f(1) = 0$ and $f'(x) = 3x^2 + x^{-2}$, so $m = f'(1) = 4$ and $y = 4(x - 1)$, i.e. $c = -4$.
+    explanation: |
+      The tangent at $x_0$ is the line $y = f(x_0) + f'(x_0)(x - x_0)$, because the derivative gives
+      the slope of $f$ at that point [^1]. With the power rule, $\frac{d}{dx}x^3 = 3x^2$ and
+      $\frac{d}{dx}(-x^{-1}) = x^{-2}$, so $f'(1) = 3 + 1 = 4$ [^1]. Since $f(1) = 1 - 1 = 0$, the
+      tangent is $y = 4(x - 1) = 4x - 4$.
+    references:
+      - source: d2l
+        locator: Sec. 2.4.1 Derivatives and Differentiation
+        url: https://d2l.ai/chapter_preliminaries/calculus.html#derivatives-and-differentiation
+      - source: d2l
+        locator: Sec. 2.4.6 Exercises, Exercise 6
+        url: https://d2l.ai/chapter_preliminaries/calculus.html#exercises
+    source:
+      id: d2l
+      ref: chapter_preliminaries/calculus#ex6
+      url: https://d2l.ai/chapter_preliminaries/calculus.html#exercises
+    status: draft
+  - id: optimization-073
+    type: short_answer
+    difficulty: easy
+    tags:
+      - gradient
+      - partial-derivatives
+    question: |
+      For $f(\mathbf{x}) = 3x_1^2 + 5e^{x_2}$, the gradient at $\mathbf{x} = (2, \ln 3)$ is
+      ( {{1}} , {{2}} ).
+    answer:
+      blanks:
+        - numeric: 12
+          tolerance: 0
+          hint: a number
+        - numeric: 15
+          tolerance: 0.001
+          hint: a number
+      model: $\nabla f = (6x_1, 5e^{x_2}) = (12, 15)$
+    explanation: |
+      The gradient collects the partial derivatives, and each partial derivative treats the other
+      variables as constants [^1]. So $\partial f / \partial x_1 = 6x_1$, because the second term does
+      not depend on $x_1$, and $\partial f / \partial x_2 = 5e^{x_2}$. At $(2, \ln 3)$ the gradient is
+      $(12, 5 \cdot 3) = (12, 15)$.
+    references:
+      - source: d2l
+        locator: Sec. 2.4.3 Partial Derivatives and Gradients
+        url: https://d2l.ai/chapter_preliminaries/calculus.html#partial-derivatives-and-gradients
+      - source: d2l
+        locator: Sec. 2.4.6 Exercises, Exercise 7
+        url: https://d2l.ai/chapter_preliminaries/calculus.html#exercises
+    source:
+      id: d2l
+      ref: chapter_preliminaries/calculus#ex7
+      url: https://d2l.ai/chapter_preliminaries/calculus.html#exercises
+    status: draft
+  - id: optimization-074
+    type: short_answer
+    difficulty: medium
+    tags:
+      - chain-rule
+      - multivariate-calculus
+    question: |
+      Let $u = f(x, y, z) = x^2 + yz$ with $x = a + b$, $y = ab$ and $z = a - b$. Use the
+      multivariate chain rule to compute $\partial u / \partial a$ at $(a, b) = (1, 2)$.
+    answer:
+      numeric: 6
+      tolerance: 0.001
+      hint: an integer
+      model: $2x \cdot 1 + z \cdot b + y \cdot 1 = 2 \cdot 3 + (-1) \cdot 2 + 2 = 6$
+    explanation: |
+      When $u$ depends on $a$ through several intermediate variables, the chain rule adds one term per
+      path:
+      $\frac{\partial u}{\partial a} = \frac{\partial u}{\partial x}\frac{\partial x}{\partial a} + \frac{\partial u}{\partial y}\frac{\partial y}{\partial a} + \frac{\partial u}{\partial z}\frac{\partial z}{\partial a}$
+      [^1]. The factors are $2x$ and $1$, $z$ and $b$, and $y$ and $1$; at $(1, 2)$ we have $x = 3$,
+      $y = 2$ and $z = -1$, so the sum is $6 - 2 + 2 = 6$. Substituting first,
+      $u = (a + b)^2 + a^2 b - ab^2$, and differentiating gives $2(a + b) + 2ab - b^2 = 6$ as well
+      [^2].
+    references:
+      - source: d2l
+        locator: Sec. 2.4.4 Chain Rule
+        url: https://d2l.ai/chapter_preliminaries/calculus.html#chain-rule
+      - title: 'Wikipedia: Chain rule'
+        locator: Multivariable case
+        url: https://en.wikipedia.org/wiki/Chain_rule#Multivariable_case
+      - source: d2l
+        locator: Sec. 2.4.6 Exercises, Exercise 9
+        url: https://d2l.ai/chapter_preliminaries/calculus.html#exercises
+    source:
+      id: d2l
+      ref: chapter_preliminaries/calculus#ex9
+      url: https://d2l.ai/chapter_preliminaries/calculus.html#exercises
+    status: draft
+  - id: optimization-075
+    type: short_answer
+    difficulty: medium
+    tags:
+      - derivatives
+      - inverse-function
+    question: |
+      $f(x) = x^3 + x$ is increasing and invertible, and $f(1) = 2$. What is the derivative of its
+      inverse at 2, $(f^{-1})'(2)$?
+    answer:
+      numeric: 0.25
+      tolerance: 0.001
+      hint: a number
+      model: $(f^{-1})'(2) = 1 / f'(f^{-1}(2)) = 1 / f'(1) = 1/4$
+    explanation: |
+      Differentiate $f(f^{-1}(y)) = y$ with the chain rule: $f'(f^{-1}(y)) \cdot (f^{-1})'(y) = 1$
+      [^1], hence $(f^{-1})'(y) = 1 / f'(f^{-1}(y))$ [^2]. Since $f(1) = 2$, $f^{-1}(2) = 1$, and
+      $f'(x) = 3x^2 + 1$ gives $f'(1) = 4$, so the answer is $1/4$. You never need a formula for
+      $f^{-1}$ itself, which here would mean solving a cubic.
+    references:
+      - source: d2l
+        locator: Sec. 2.4.4 Chain Rule
+        url: https://d2l.ai/chapter_preliminaries/calculus.html#chain-rule
+      - title: 'Wikipedia: Inverse function rule'
+        locator: Introduction and Derivation
+        url: https://en.wikipedia.org/wiki/Inverse_function_rule
+      - source: d2l
+        locator: Sec. 2.4.6 Exercises, Exercise 10
+        url: https://d2l.ai/chapter_preliminaries/calculus.html#exercises
+    source:
+      id: d2l
+      ref: chapter_preliminaries/calculus#ex10
+      url: https://d2l.ai/chapter_preliminaries/calculus.html#exercises
+    status: draft
+  - id: optimization-076
+    type: single
+    difficulty: medium
+    tags:
+      - matrix-calculus
+      - gradient
+      - quadratic-form
+    question: |
+      For a general square matrix $A$ (not necessarily symmetric), what is the gradient of
+      $J(\mathbf{w}) = \mathbf{w}^\top A \mathbf{w}$ with respect to the column vector $\mathbf{w}$?
+    options:
+      - text: $2A\mathbf{w}$
+        why: This holds only for symmetric $A$, where $A + A^\top = 2A$ [^1][^2].
+      - text: $A^\top \mathbf{w}$
+        why: This is only one of the two terms; $\mathbf{w}$ appears on both sides of $A$, so both $A\mathbf{w}$ and $A^\top\mathbf{w}$ contribute [^1].
+      - text: $(A + A^\top)\mathbf{w}$
+        correct: true
+      - text: $A\mathbf{w}$
+        why: Differentiating only the right-hand $\mathbf{w}$ misses the contribution of the left-hand $\mathbf{w}^\top$ [^1].
+    explanation: |
+      Perturbing $\mathbf{w}$ by $\epsilon\mathbf{h}$ gives $J(\mathbf{w} + \epsilon\mathbf{h}) =
+      J(\mathbf{w}) + \epsilon(\mathbf{w}^\top A\mathbf{h} + \mathbf{h}^\top A\mathbf{w}) +
+      O(\epsilon^2)$ [^1]. Since $\mathbf{h}^\top A\mathbf{w} = \mathbf{w}^\top A^\top\mathbf{h}$, the
+      linear term is $\epsilon\,\mathbf{w}^\top(A + A^\top)\mathbf{h}$, so $\nabla J = (A +
+      A^\top)\mathbf{w}$ [^1][^2]. Special cases: $\nabla\,\mathbf{w}^\top\mathbf{w} = 2\mathbf{w}$, and
+      $2A\mathbf{w}$ for symmetric $A$ such as a Hessian or covariance matrix.
+    references:
+      - source: gutmann-pen-paper
+        locator: Ch. 2 Optimisation, Ex. 2.1 (b) Gradient of vector-valued functions
+        url: https://arxiv.org/abs/2206.13446
+      - source: d2l
+        locator: Sec. 22.4.7 A Little Matrix Calculus
+        url: https://d2l.ai/chapter_appendix-mathematics-for-deep-learning/multivariable-calculus.html#a-little-matrix-calculus
+    source:
+      id: gutmann-pen-paper
+      ref: optimisation#grad-vector-b
+      url: https://github.com/michaelgutmann/ml-pen-and-paper-exercises/blob/571295dfe49b37d16884b2c5397e62e154ce5f88/topics/optimisation.tex
+    status: draft
+  - id: optimization-077
+    type: single
+    difficulty: medium
+    tags:
+      - newtons-method
+      - hessian
+      - second-order-optimization
+    question: |
+      Near the current point $\mathbf{w}_0$, a function $J$ is approximated by
+      $f(\mathbf{w}) = J(\mathbf{w}_0) + \mathbf{g}^\top(\mathbf{w} - \mathbf{w}_0) + \tfrac12(\mathbf{w} - \mathbf{w}_0)^\top H(\mathbf{w} - \mathbf{w}_0)$, where $\mathbf{g}$ is the gradient and $H$ a
+      symmetric positive definite Hessian. Which point minimises $f$, i.e. what is the Newton update?
+    options:
+      - text: $\mathbf{w}^* = \mathbf{w}_0 - H\mathbf{g}$
+        why: Setting $\nabla f = \mathbf{g} + H(\mathbf{w} - \mathbf{w}_0) = 0$ requires solving with $H$, i.e. multiplying by $H^{-1}$, not by $H$ [^1].
+      - text: $\mathbf{w}^* = \mathbf{w}_0 + H^{-1}\mathbf{g}$
+        why: With a positive definite $H$ this moves uphill; the minimiser lies against the gradient direction [^1].
+      - text: $\mathbf{w}^* = \mathbf{w}_0 - \mathbf{g}$
+        why: This is a plain gradient step with step size 1; it ignores the curvature information in $H$ [^1][^2].
+      - text: $\mathbf{w}^* = \mathbf{w}_0 - H^{-1}\mathbf{g}$
+        correct: true
+    explanation: |
+      The gradient of the quadratic model is $\nabla f(\mathbf{w}) = \mathbf{g} + H(\mathbf{w} -
+      \mathbf{w}_0)$, which vanishes at $\mathbf{w}^* = \mathbf{w}_0 - H^{-1}\mathbf{g}$ [^1]. Because
+      $H$ is positive definite, $f$ grows quadratically away from this point, so it is the minimiser
+      [^1]. One Newton step jumps to the minimum of the local quadratic model; in practice one solves
+      $H\mathbf{p} = \mathbf{g}$ instead of inverting $H$, and often adds a step size from a line
+      search [^1][^2].
+    references:
+      - source: gutmann-pen-paper
+        locator: Ch. 2 Optimisation, Ex. 2.2 (a)–(c) Newton's method
+        url: https://arxiv.org/abs/2206.13446
+      - source: d2l
+        locator: Sec. 12.3.3.1 Newton's Method
+        url: https://d2l.ai/chapter_optimization/gd.html#newtons-method
+    source:
+      id: gutmann-pen-paper
+      ref: optimisation#newtons-method-c
+      url: https://github.com/michaelgutmann/ml-pen-and-paper-exercises/blob/571295dfe49b37d16884b2c5397e62e154ce5f88/topics/optimisation.tex
+    status: draft
+  - id: optimization-078
+    type: single
+    difficulty: hard
+    tags:
+      - matrix-calculus
+      - gradient
+      - linear-layer
+      - outer-product
+    question: |
+      Let $W \in \mathbb{R}^{n \times m}$ have rows $\mathbf{w}_1^\top, \ldots, \mathbf{w}_n^\top$, let
+      $\mathbf{v} \in \mathbb{R}^m$, and let $f: \mathbb{R} \to \mathbb{R}$ be differentiable. What is
+      the gradient of $J(W) = \sum_{k=1}^n f(\mathbf{w}_k^\top \mathbf{v})$ with respect to $W$ (an
+      $n \times m$ matrix)? Here $f'$ acts element-wise on the vector $W\mathbf{v}$.
+    options:
+      - text: $f'(W\mathbf{v})\,\mathbf{v}^\top$
+        correct: true
+      - text: $\mathbf{v}\, f'(W\mathbf{v})^\top$
+        why: This is the transpose, an $m \times n$ matrix; the gradient must have the shape of $W$ [^1].
+      - text: $W^\top f'(W\mathbf{v})$
+        why: This $m$-vector is the gradient with respect to the input $\mathbf{v}$, not with respect to the weights [^1].
+      - text: $f'(W\mathbf{v}) \odot (W\mathbf{v})$
+        why: This is an $n$-vector; the derivative with respect to $W_{ij}$ needs the input component $v_j$, which an outer product supplies [^1].
+    explanation: |
+      $\partial J/\partial W_{ij} = f'(\mathbf{w}_i^\top\mathbf{v})\,\partial(\mathbf{w}_i^\top
+      \mathbf{v})/\partial W_{ij} = f'(\mathbf{w}_i^\top \mathbf{v})\, v_j$, which is entry $(i, j)$ of the
+      outer product $f'(W\mathbf{v})\,\mathbf{v}^\top$ [^1]. This is the familiar weight gradient of a
+      linear layer: the error signal at the outputs times the transposed input [^1][^2].
+    references:
+      - source: gutmann-pen-paper
+        locator: Ch. 2 Optimisation, Ex. 2.3 (c) Gradient of matrix-valued functions
+        url: https://arxiv.org/abs/2206.13446
+      - source: d2l
+        locator: Sec. 22.4.7 A Little Matrix Calculus
+        url: https://d2l.ai/chapter_appendix-mathematics-for-deep-learning/multivariable-calculus.html#a-little-matrix-calculus
+    source:
+      id: gutmann-pen-paper
+      ref: optimisation#grad-matrix-c
+      url: https://github.com/michaelgutmann/ml-pen-and-paper-exercises/blob/571295dfe49b37d16884b2c5397e62e154ce5f88/topics/optimisation.tex
+    status: draft
+  - id: optimization-079
+    type: single
+    difficulty: hard
+    tags:
+      - matrix-calculus
+      - log-determinant
+      - ica
+      - normalising-flows
+    question: |
+      Log-likelihoods of ICA and of normalising flows contain the term $\log\lvert\det W\rvert$ for
+      an invertible square matrix $W$. What is its gradient $\nabla_W \log\lvert\det W\rvert$?
+    options:
+      - text: $W^{-1}$
+        why: The transpose matters for non-symmetric $W$; $\partial\log\lvert\det W\rvert/\partial W_{ij}$ is entry $(j, i)$ of $W^{-1}$ [^1][^2].
+      - text: $(W^{-1})^\top$
+        correct: true
+      - text: $\frac{1}{\det W}\, I$
+        why: The derivative of $\log\lvert\det W\rvert$ is not a multiple of the identity; it depends on all entries of $W$ through the cofactors [^2].
+      - text: $W^\top$
+        why: That would be the gradient of $\frac12\lVert W\rVert_F^2$, not of the log-determinant [^1].
+    explanation: |
+      With the eigendecomposition $W = U\Lambda V^\top$, $\log\lvert\det W\rvert = \sum_i
+      \log\lvert\lambda_i\rvert$ and $\nabla_W\lambda_i = \mathbf{v}_i\mathbf{u}_i^\top$, so $\nabla_W =
+      \sum_i \mathbf{v}_i\mathbf{u}_i^\top/\lambda_i = (W^{-1})^\top$ [^1]. The same result follows from
+      Jacobi's formula $d\det W = \det W\,\mathrm{tr}(W^{-1}dW)$ [^2]. In ICA this term pushes the
+      unmixing matrix away from singular solutions.
+    references:
+      - source: gutmann-pen-paper
+        locator: Ch. 2 Optimisation, Ex. 2.4 (a)–(d) Gradient of the log-determinant
+        url: https://arxiv.org/abs/2206.13446
+      - title: "Wikipedia: Jacobi's formula"
+        url: https://en.wikipedia.org/wiki/Jacobi%27s_formula
+        locator: Statement and Corollary
+    source:
+      id: gutmann-pen-paper
+      ref: optimisation#grad-log-det-d
+      url: https://github.com/michaelgutmann/ml-pen-and-paper-exercises/blob/571295dfe49b37d16884b2c5397e62e154ce5f88/topics/optimisation.tex
+    status: draft
+  - id: optimization-080
+    type: single
+    difficulty: easy
+    tags:
+      - gradient-descent
+      - sgd
+      - minibatch
+    question: |
+      Which of the following optimisation algorithms produces the same sequence of parameter updates
+      no matter in which order the training examples are stored?
+    options:
+      - text: Mini-batch gradient descent
+        why: The order determines which examples end up in each mini-batch, and hence the sequence of updates [^2].
+      - text: Stochastic gradient descent
+        why: SGD updates after every single example, so a different order gives a different trajectory [^1].
+      - text: Stochastic gradient descent with momentum
+        why: Momentum averages past gradients, but those gradients still come from examples visited in a particular order [^1].
+      - text: Batch (full) gradient descent
+        correct: true
+    explanation: |
+      Batch gradient descent computes the gradient of the loss over the whole training set before
+      each update; this is a sum over examples, and sums do not depend on order [^3]. Stochastic and
+      mini-batch methods update the parameters after each example or small batch, so the order in
+      which data are visited (usually shuffled every epoch) changes the path through parameter space
+      [^1][^2].
+    references:
+      - source: d2l
+        locator: Sec. 12.4 Stochastic Gradient Descent
+        url: https://d2l.ai/chapter_optimization/sgd.html
+      - source: d2l
+        locator: Sec. 12.5.2 Minibatches
+        url: https://d2l.ai/chapter_optimization/minibatch-sgd.html#minibatches
+      - source: d2l
+        locator: Sec. 12.3.2 Multivariate Gradient Descent
+        url: https://d2l.ai/chapter_optimization/gd.html#multivariate-gradient-descent
+    source:
+      id: dsgiitr-ml-interviewqs
+      ref: questions/ml.yml#q1
+      url: https://github.com/dsgiitr/ML-InterviewQs/blob/8c6d228b051af7ceb429e6322befda068964e6b5/questions/ml.yml
+    status: draft

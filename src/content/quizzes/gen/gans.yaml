@@ -313,3 +313,125 @@ questions:
       ref: quiz-210/q1
       url: https://github.com/microsoft/AI-For-Beginners/blob/392d0df1b2647cbee104942390551f1ed9e072c8/etc/quiz-app/src/assets/translations/en/lesson-10.json
     status: draft
+  - id: gans-012
+    type: short_answer
+    difficulty: medium
+    tags:
+      - gan
+      - discriminator
+      - equilibrium
+    question: |
+      In a GAN, suppose the generator wins: its samples follow exactly the data distribution,
+      $p_g = p_{\text{data}}$. What value does the optimal discriminator $D(\mathbf{x})$, its probability
+      that $\mathbf{x}$ is real, output for every input?
+    answer:
+      numeric: 0.5
+      tolerance: 0.001
+      hint: a probability
+      model: $D^*(\mathbf{x}) = \frac{p_{\text{data}}(\mathbf{x})}{p_{\text{data}}(\mathbf{x}) + p_g(\mathbf{x})} = \frac{1}{2}$
+    explanation: |
+      The discriminator is a binary classifier trained with cross-entropy to tell real from generated
+      data, a two-sample test turned into a training signal [^1]. For a fixed generator the optimal
+      discriminator is $D^*(\mathbf{x}) = p_{\text{data}}(\mathbf{x}) / (p_{\text{data}}(\mathbf{x}) + p_g(\mathbf{x}))$,
+      so when the two densities are equal it outputs $1/2$ everywhere: the generator wins and the
+      discriminator can only guess [^2]. Goodfellow et al. show that this is the global optimum of the
+      minimax game [^2]. On a finite training set a flexible discriminator can still memorize the real
+      samples, so in practice the equilibrium is only approximate.
+    references:
+      - source: d2l
+        locator: Sec. 20.1 Generative Adversarial Networks (introduction)
+        url: https://d2l.ai/chapter_generative-adversarial-networks/gan.html
+      - title: Generative Adversarial Nets (Goodfellow et al., 2014)
+        locator: Sec. 4.1 Global Optimality of p_g = p_data (Proposition 1, Theorem 1)
+        url: https://arxiv.org/abs/1406.2661
+      - source: d2l
+        locator: Sec. 20.1.6 Exercises
+        url: https://d2l.ai/chapter_generative-adversarial-networks/gan.html#exercises
+    source:
+      id: d2l
+      ref: chapter_generative-adversarial-networks/gan#ex1
+      url: https://d2l.ai/chapter_generative-adversarial-networks/gan.html#exercises
+    status: draft
+  - id: gans-013
+    type: short_answer
+    difficulty: medium
+    tags:
+      - gan
+      - discriminator-loss
+      - cross-entropy
+    question: |
+      d2l trains the discriminator on a real and a fake batch with the binary cross-entropy averaged over
+      the two, $\frac{1}{2}\left[-\log D(\mathbf{x}) - \log\left(1 - D(G(\mathbf{z}))\right)\right]$ per
+      pair of examples. At the equilibrium where the discriminator outputs 0.5 for every input, what is
+      this loss (natural logarithm)?
+    answer:
+      numeric: 0.693
+      tolerance: 0.002
+      hint: a number, 3 decimals
+      model: $\frac{1}{2}\left[-\ln 0.5 - \ln 0.5\right] = \ln 2 \approx 0.693$
+    explanation: |
+      d2l's `update_D` adds the cross-entropy of the real batch with label 1 and of the fake batch with
+      label 0, and divides by 2 [^1]. With $D = 0.5$ both terms equal $-\ln 0.5 = \ln 2$, so the average is
+      $\ln 2 \approx 0.693$ per example. This matches the optimum of the original minimax value,
+      $-\log 4 = 2 \log \tfrac{1}{2}$, reached when $p_g = p_{\text{data}}$ [^2]. A discriminator loss
+      hovering around 0.69 therefore means it can no longer tell real from fake, while a loss near 0
+      means it wins easily.
+    references:
+      - source: d2l
+        locator: Sec. 20.1.4 Training (update_D)
+        url: https://d2l.ai/chapter_generative-adversarial-networks/gan.html#training
+      - title: Generative Adversarial Nets (Goodfellow et al., 2014)
+        locator: Sec. 4.1 Global Optimality of p_g = p_data (Theorem 1)
+        url: https://arxiv.org/abs/1406.2661
+      - source: d2l
+        locator: Sec. 20.1.6 Exercises
+        url: https://d2l.ai/chapter_generative-adversarial-networks/gan.html#exercises
+    source:
+      id: d2l
+      ref: chapter_generative-adversarial-networks/gan#ex1-b
+      url: https://d2l.ai/chapter_generative-adversarial-networks/gan.html#exercises
+    status: draft
+  - id: gans-014
+    type: single
+    difficulty: medium
+    tags:
+      - dcgan
+      - leaky-relu
+      - dying-relu
+    question: |
+      DCGAN's discriminator uses leaky ReLU, with slope $\alpha = 0.2$ for negative inputs. What is the
+      main risk of using a standard ReLU there instead?
+    options:
+      - text: The discriminator can no longer output probabilities, because ReLU outputs have no upper bound
+        why: The probability comes from a sigmoid on the final logit, not from the hidden activations [^1].
+      - text: The discriminator becomes a linear function of its input, so it cannot separate real from fake
+        why: ReLU is nonlinear; a network of convolutions and ReLUs is piecewise linear, not linear.
+      - text: Units whose inputs stay negative output 0 with zero gradient, stop learning, and pass the generator less signal
+        correct: true
+      - text: Negative pixel values of the generated images are clipped to 0 before the discriminator sees them
+        why: The activations act on the discriminator's internal feature maps, after convolutions, not on the input image.
+    explanation: |
+      Leaky ReLU gives a small nonzero output, and gradient, for negative inputs. d2l explains that it
+      fixes the "dying ReLU" problem: a unit whose input is always negative outputs 0 and, since the
+      ReLU gradient there is 0, can never recover [^1]. In a GAN the generator is trained only through
+      gradients that flow back through the discriminator [^2], so dead discriminator units also cut off
+      part of the generator's learning signal. The DCGAN authors recommend leaky ReLU in all layers of the
+      discriminator [^3].
+    references:
+      - source: d2l
+        locator: Sec. 20.2.3 Discriminator
+        url: https://d2l.ai/chapter_generative-adversarial-networks/dcgan.html#discriminator
+      - source: d2l
+        locator: Sec. 20.1.4 Training (update_G)
+        url: https://d2l.ai/chapter_generative-adversarial-networks/gan.html#training
+      - title: Unsupervised Representation Learning with Deep Convolutional Generative Adversarial Networks (Radford et al., 2016)
+        locator: Sec. 3 Approach and Model Architecture (architecture guidelines)
+        url: https://arxiv.org/abs/1511.06434
+      - source: d2l
+        locator: Sec. 20.2.6 Exercises, Exercise 1
+        url: https://d2l.ai/chapter_generative-adversarial-networks/dcgan.html#exercises
+    source:
+      id: d2l
+      ref: chapter_generative-adversarial-networks/dcgan#ex1
+      url: https://d2l.ai/chapter_generative-adversarial-networks/dcgan.html#exercises
+    status: draft
