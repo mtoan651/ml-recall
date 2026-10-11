@@ -42,10 +42,26 @@ cmap = ListedColormap(["#c9daf0", "#f6dcc0"])
 fig, axes = plt.subplots(1, 3, figsize=(10.5, 3.6), sharey=True)
 for ax, (name, pred) in zip(axes, preds.items(), strict=True):
     ax.contourf(gx, gy, pred, levels=[-0.5, 0.5, 1.5], cmap=cmap)
-    ax.scatter(*X[y == 0].T, marker="o", s=22, color=BLUE, edgecolor="white", linewidth=0.5,
-               label="class 0", zorder=3)
-    ax.scatter(*X[y == 1].T, marker="^", s=26, color=ORANGE, edgecolor="white", linewidth=0.5,
-               label="class 1", zorder=3)
+    ax.scatter(
+        *X[y == 0].T,
+        marker="o",
+        s=22,
+        color=BLUE,
+        edgecolor="white",
+        linewidth=0.5,
+        label="class 0",
+        zorder=3,
+    )
+    ax.scatter(
+        *X[y == 1].T,
+        marker="^",
+        s=26,
+        color=ORANGE,
+        edgecolor="white",
+        linewidth=0.5,
+        label="class 1",
+        zorder=3,
+    )
     ax.set_title(name, fontsize=14, fontweight="bold")
     ax.set_xlabel("feature 1")
     ax.set_xticks([0, 5, 10])
