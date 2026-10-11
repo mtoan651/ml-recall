@@ -94,3 +94,120 @@ questions:
       ref: llm/tuning#q1
       url: https://developers.google.com/machine-learning/crash-course/llm/tuning
     status: draft
+  - id: fine-tuning-004
+    type: single
+    difficulty: medium
+    tags:
+      - t5
+      - multitask
+      - text-to-text
+    question: |
+      Can a single fine-tuning minibatch for T5 mix examples from different tasks, for example
+      summarization and translation?
+    options:
+      - text: 'Yes: every task is text-to-text, with a task description in the input, sharing one model and loss'
+        correct: true
+      - text: 'No: each task needs its own output layer, so a minibatch must come from one task'
+        why: T5 needs no additional layers for a task; its decoder generates the answer as text [^1].
+      - text: "No: the decoder's causal mask requires all targets in one minibatch to have exactly the same number of tokens"
+        why: Targets of different lengths are padded and masked as usual.
+      - text: Yes, but only if the tasks have the same number of output classes
+        why: The outputs are token sequences, not class labels, so there is no class count to match.
+    explanation: |
+      T5 casts every task as generating target text from input text, with a task description such as
+      "Summarize:" placed before the task input [^1]. Fine-tuning differs from BERT's in that the input
+      carries the task description, the decoder can generate outputs of any length, and no additional
+      layers are needed [^1]. Examples from different tasks therefore share the model, the output
+      vocabulary and the cross-entropy loss, and can sit in one minibatch.
+    references:
+      - source: d2l
+        locator: Sec. 11.9.2.1 Pretraining T5; 11.9.2.2 Fine-Tuning T5
+        url: https://d2l.ai/chapter_attention-mechanisms-and-transformers/large-pretraining-transformers.html#fine-tuning-t5
+      - source: d2l
+        locator: Sec. 11.9.7 Exercises, Exercise 1
+        url: https://d2l.ai/chapter_attention-mechanisms-and-transformers/large-pretraining-transformers.html#exercises
+    source:
+      id: d2l
+      ref: chapter_attention-mechanisms-and-transformers/large-pretraining-transformers#ex1
+      url: https://d2l.ai/chapter_attention-mechanisms-and-transformers/large-pretraining-transformers.html#exercises
+    status: draft
+  - id: fine-tuning-005
+    type: single
+    difficulty: easy
+    tags:
+      - bert
+      - fine-tuning
+      - classification-head
+    question: |
+      You fine-tune a pretrained BERT-style encoder for text classification by adding new layers.
+      Where do they go?
+    options:
+      - text: On top of the last layer, fed with the output at the `<cls>` token
+        correct: true
+      - text: Below the first layer, between the token embeddings and the pretrained blocks
+        why: New random layers there would change the inputs that all the pretrained layers were trained on.
+      - text: Inside every encoder block, replacing its pretrained feed-forward network
+        why: This would throw away pretrained parameters instead of building on them.
+      - text: Directly on the token embeddings, so that the pretrained encoder is skipped
+        why: The embeddings alone are context-independent; the value of BERT lies in its encoder.
+    explanation: |
+      BERT's `<cls>` output depends on all input tokens, so it serves as a representation of the whole
+      text; fine-tuning feeds it into an additional fully connected layer that is trained from scratch,
+      while all pretrained parameters are updated [^1][^2]. Placing the new layers on top keeps the
+      pretrained computation intact and uses its most task-ready, contextual output.
+    references:
+      - source: d2l
+        locator: Sec. 11.9.1.2 Fine-Tuning BERT
+        url: https://d2l.ai/chapter_attention-mechanisms-and-transformers/large-pretraining-transformers.html#fine-tuning-bert
+      - source: d2l
+        locator: Sec. 16.6.1 Single Text Classification
+        url: https://d2l.ai/chapter_natural-language-processing-applications/finetuning-bert.html#single-text-classification
+      - source: d2l
+        locator: Sec. 11.9.7 Exercises, Exercise 3
+        url: https://d2l.ai/chapter_attention-mechanisms-and-transformers/large-pretraining-transformers.html#exercises
+    source:
+      id: d2l
+      ref: chapter_attention-mechanisms-and-transformers/large-pretraining-transformers#ex3
+      url: https://d2l.ai/chapter_attention-mechanisms-and-transformers/large-pretraining-transformers.html#exercises
+    status: draft
+  - id: fine-tuning-006
+    type: single
+    difficulty: medium
+    tags:
+      - bert
+      - negative-sampling
+      - retrieval
+      - ranking
+    question: |
+      You build a news search engine with BERT. For each training query the single most relevant
+      article is labeled, and the pool of articles is huge. How can negative sampling be used in
+      training?
+    options:
+      - text: "Classify (query, article) pairs from BERT's `<cls>` output: labeled article positive, random articles negative"
+        correct: true
+      - text: Feed BERT the query alone and train a softmax over all articles, one output class per article
+        why: A softmax over millions of articles is exactly the expensive normalization that negative sampling avoids [^2].
+      - text: Sample noise words inside each article and train BERT's masked language model on them
+        why: This mixes up word-level pretraining with the query–article relevance the engine must learn.
+      - text: Train on the labeled (query, article) pairs only, because a binary relevance classifier does not need any negatives
+        why: With positive examples only, the classifier can learn to call every pair relevant.
+    explanation: |
+      Relevance of a query to an article is a text-pair task: BERT reads both as one input and an
+      output layer on the `<cls>` representation scores the pair [^1]. Negative sampling turns the
+      impossible normalization over the whole pool into binary decisions, the true pair against $K$
+      randomly drawn articles [^2]. At query time, candidate articles are ranked by this score.
+    references:
+      - source: d2l
+        locator: Sec. 16.6.2 Text Pair Classification or Regression
+        url: https://d2l.ai/chapter_natural-language-processing-applications/finetuning-bert.html#text-pair-classification-or-regression
+      - source: d2l
+        locator: Sec. 15.2.1 Negative Sampling
+        url: https://d2l.ai/chapter_natural-language-processing-pretraining/approx-training.html#negative-sampling
+      - source: d2l
+        locator: Sec. 16.6.6 Exercises, Exercise 1
+        url: https://d2l.ai/chapter_natural-language-processing-applications/finetuning-bert.html#exercises
+    source:
+      id: d2l
+      ref: chapter_natural-language-processing-applications/finetuning-bert#ex1
+      url: https://d2l.ai/chapter_natural-language-processing-applications/finetuning-bert.html#exercises
+    status: draft

@@ -571,3 +571,494 @@ questions:
       ref: chapter3/quiz#q5
       url: https://huggingface.co/learn/audio-course/chapter3/quiz
     status: draft
+  - id: transformers-022
+    type: short_answer
+    difficulty: hard
+    tags:
+      - attention
+      - softmax
+      - gradient
+    question: |
+      Scalar attention with keys equal to values: $\mathcal{D} = \{(k_i, v_i)\} = \{(0, 0), (1, 1), (2, 2)\}$,
+      score $a(q, k_i) = q\,k_i$ and softmax weights, so
+      $\mathrm{Attention}(q) = \sum_i \mathrm{softmax}_i(q k_i)\, k_i$. What is the derivative
+      $\frac{d}{dq}\mathrm{Attention}(q)$ at $q = 0$? Round to 3 decimals.
+    answer:
+      numeric: 0.667
+      tolerance: 0.002
+      hint: a number, 3 decimals
+      model: 'The variance of the keys under the attention weights: $\tfrac{0 + 1 + 4}{3} - 1^2 = \tfrac23$'
+    explanation: |
+      With $p_i = \mathrm{softmax}_i(q k_i)$ one gets $\partial p_i/\partial q = p_i(k_i - \sum_j p_j k_j)$,
+      so the derivative is $\sum_i p_i k_i^2 - (\sum_i p_i k_i)^2$, the variance of the keys under
+      the attention distribution. This is the scalar case of the exercise's identity
+      $\nabla_{\mathbf{q}}\mathrm{Attention} = \mathrm{Cov}_{p(\mathbf{k}_i;\mathbf{q})}[\mathbf{k}_i]$
+      for softmax attention [^1]. At $q = 0$ the weights are uniform, the mean
+      key is 1 and the mean squared key $5/3$, giving $2/3$. The gradient vanishes when the weights
+      concentrate on one key, one reason why dot-product scores are scaled to keep the softmax out of
+      saturation [^2].
+    references:
+      - source: d2l
+        locator: Sec. 11.1 Queries, Keys, and Values (softmax attention weights)
+        url: https://d2l.ai/chapter_attention-mechanisms-and-transformers/queries-keys-values.html
+      - source: d2l
+        locator: Sec. 11.3.1 Dot Product Attention
+        url: https://d2l.ai/chapter_attention-mechanisms-and-transformers/attention-scoring-functions.html#dot-product-attention
+      - source: d2l
+        locator: Sec. 11.1.3 Exercises, Exercise 2
+        url: https://d2l.ai/chapter_attention-mechanisms-and-transformers/queries-keys-values.html#exercises
+    source:
+      id: d2l
+      ref: chapter_attention-mechanisms-and-transformers/queries-keys-values#ex2
+      url: https://d2l.ai/chapter_attention-mechanisms-and-transformers/queries-keys-values.html#exercises
+    status: draft
+  - id: transformers-023
+    type: single
+    difficulty: medium
+    tags:
+      - dot-product-attention
+      - gaussian-kernel
+      - nadaraya-watson
+    question: |
+      All queries and keys lie on the unit sphere, $\lVert\mathbf{x}\rVert = \lVert\mathbf{x}_i\rVert = 1$.
+      What do the normalized Gaussian-kernel weights
+      $\exp(-\tfrac12\lVert\mathbf{x} - \mathbf{x}_i\rVert^2) / \sum_j \exp(-\tfrac12\lVert\mathbf{x} - \mathbf{x}_j\rVert^2)$
+      simplify to?
+    options:
+      - text: $\mathrm{softmax}_i(\mathbf{x}^\top\mathbf{x}_i)$, i.e. dot-product attention
+        correct: true
+      - text: $\mathrm{softmax}_i(-\mathbf{x}^\top\mathbf{x}_i)$, which favors the least similar keys
+        why: The exponent is $-\tfrac12(2 - 2\mathbf{x}^\top\mathbf{x}_i) = \mathbf{x}^\top\mathbf{x}_i - 1$, so the dot product enters with a plus sign.
+      - text: Uniform weights $1/n$, because all points on the sphere are equally far apart
+        why: Distances on the sphere depend on the angle between the points.
+      - text: $\mathrm{softmax}_i(\lVert\mathbf{x} - \mathbf{x}_i\rVert)$, a softmax of the distances
+        why: That would favor the farthest keys; the kernel decreases with distance.
+    explanation: |
+      On the unit sphere $\lVert\mathbf{x} - \mathbf{x}_i\rVert^2 = 2 - 2\mathbf{x}^\top\mathbf{x}_i$,
+      so each kernel value is $e^{-1}\exp(\mathbf{x}^\top\mathbf{x}_i)$ and the common factor $e^{-1}$
+      cancels in the normalization [^1][^2]. What remains is a softmax over dot products, the
+      attention scoring function behind Transformers; d2l makes the same argument for keys of
+      constant norm, as produced by layer normalization [^2]. A kernel width σ turns this into
+      $\mathrm{softmax}_i(\mathbf{x}^\top\mathbf{x}_i/\sigma^2)$, a softmax with temperature σ².
+    references:
+      - source: d2l
+        locator: Sec. 11.2.2 Attention Pooling via Nadaraya–Watson Regression
+        url: https://d2l.ai/chapter_attention-mechanisms-and-transformers/attention-pooling.html#attention-pooling-via-nadaraya-watson-regression
+      - source: d2l
+        locator: Sec. 11.3.1 Dot Product Attention
+        url: https://d2l.ai/chapter_attention-mechanisms-and-transformers/attention-scoring-functions.html#dot-product-attention
+      - source: d2l
+        locator: Sec. 11.2.5 Exercises, Exercise 3
+        url: https://d2l.ai/chapter_attention-mechanisms-and-transformers/attention-pooling.html#exercises
+    source:
+      id: d2l
+      ref: chapter_attention-mechanisms-and-transformers/attention-pooling#ex3
+      url: https://d2l.ai/chapter_attention-mechanisms-and-transformers/attention-pooling.html#exercises
+    status: draft
+  - id: transformers-024
+    type: single
+    difficulty: medium
+    tags:
+      - attention-scoring
+      - softmax
+      - distance-attention
+    shuffle: false
+    question: |
+      You implement distance-based attention with the score
+      $a(\mathbf{q}, \mathbf{k}_i) = -\tfrac12\lVert\mathbf{q} - \mathbf{k}_i\rVert^2 = \mathbf{q}^\top\mathbf{k}_i - \tfrac12\lVert\mathbf{k}_i\rVert^2 - \tfrac12\lVert\mathbf{q}\rVert^2$,
+      followed by a softmax over the keys. Which term can you drop without changing any attention
+      weight?
+    options:
+      - text: $-\tfrac12\lVert\mathbf{q}\rVert^2$, because it is the same for every key of a given query
+        correct: true
+      - text: $-\tfrac12\lVert\mathbf{k}_i\rVert^2$, because the softmax normalizes away the key norms
+        why: This term differs from key to key, so dropping it changes the weights unless all keys have the same norm [^1].
+      - text: $\mathbf{q}^\top\mathbf{k}_i$, because the distance information is already in the norms
+        why: It is the only term that couples the query with the key.
+      - text: None of them, because a softmax changes when a constant is added to its inputs
+        why: A softmax is unchanged when the same constant is added to all of its inputs.
+    explanation: |
+      $\mathrm{softmax}(\mathbf{a} + c) = \mathrm{softmax}(\mathbf{a})$ for a constant $c$, so the
+      term that depends only on the query disappears [^1]. An efficient implementation therefore needs
+      the batch product $\mathbf{Q}\mathbf{K}^\top$ plus the squared key norms
+      $\lVert\mathbf{k}_i\rVert^2$, computed once and broadcast over the queries. When all keys have
+      the same norm, for example after layer normalization, that term can go too, leaving
+      dot-product attention [^1].
+    references:
+      - source: d2l
+        locator: Sec. 11.3.1 Dot Product Attention
+        url: https://d2l.ai/chapter_attention-mechanisms-and-transformers/attention-scoring-functions.html#dot-product-attention
+      - source: d2l
+        locator: Sec. 11.3.6 Exercises, Exercise 1
+        url: https://d2l.ai/chapter_attention-mechanisms-and-transformers/attention-scoring-functions.html#exercises
+    source:
+      id: d2l
+      ref: chapter_attention-mechanisms-and-transformers/attention-scoring-functions#ex1
+      url: https://d2l.ai/chapter_attention-mechanisms-and-transformers/attention-scoring-functions.html#exercises
+    status: draft
+  - id: transformers-025
+    type: short_answer
+    difficulty: easy
+    tags:
+      - attention-scoring
+      - bilinear-attention
+      - parameter-count
+    question: |
+      Queries are 20-dimensional and keys 2-dimensional. Instead of additive attention you score them
+      with the bilinear form $a(\mathbf{q}, \mathbf{k}) = \mathbf{q}^\top\mathbf{M}\mathbf{k}$. How
+      many learnable entries does $\mathbf{M}$ have?
+    answer:
+      numeric: 40
+      tolerance: 0
+      hint: a whole number
+      model: $\mathbf{M} \in \mathbb{R}^{20 \times 2}$, so 40 entries
+    explanation: |
+      For $\mathbf{q}^\top\mathbf{M}\mathbf{k}$ to be a scalar, $\mathbf{M}$ must be
+      $20 \times 2$, i.e. 40 parameters; d2l mentions this matrix as the simple way to handle queries
+      and keys of different lengths [^1]. It is equivalent to projecting each key to 20 dimensions with
+      $\mathbf{M}\mathbf{k}$ and then taking a dot product. Additive attention
+      $\mathbf{w}_v^\top\tanh(\mathbf{W}_q\mathbf{q} + \mathbf{W}_k\mathbf{k})$ with hidden size $h$
+      would need $20h + 2h + h$ parameters, 184 for $h = 8$ [^2].
+    references:
+      - source: d2l
+        locator: Sec. 11.3.3 Scaled Dot Product Attention
+        url: https://d2l.ai/chapter_attention-mechanisms-and-transformers/attention-scoring-functions.html#scaled-dot-product-attention
+      - source: d2l
+        locator: Sec. 11.3.4 Additive Attention
+        url: https://d2l.ai/chapter_attention-mechanisms-and-transformers/attention-scoring-functions.html#additive-attention
+      - source: d2l
+        locator: Sec. 11.3.6 Exercises, Exercise 2
+        url: https://d2l.ai/chapter_attention-mechanisms-and-transformers/attention-scoring-functions.html#exercises
+    source:
+      id: d2l
+      ref: chapter_attention-mechanisms-and-transformers/attention-scoring-functions#ex2
+      url: https://d2l.ai/chapter_attention-mechanisms-and-transformers/attention-scoring-functions.html#exercises
+    status: draft
+  - id: transformers-026
+    type: single
+    difficulty: medium
+    tags:
+      - attention
+      - computational-complexity
+      - memory
+    question: |
+      Scaled dot-product attention computes $\mathrm{softmax}(\mathbf{Q}\mathbf{K}^\top/\sqrt{d})\,\mathbf{V}$
+      for $n$ queries and $m$ key–value pairs, with queries and keys of length $d$ and values of length
+      $v$. How do its compute and its intermediate memory scale?
+    options:
+      - text: Compute $O(nm(d + v))$, and it stores an $n \times m$ matrix of weights
+        correct: true
+      - text: Compute $O((n + m)(d + v))$, and its memory stays linear in $n + m$
+        why: Every query is compared with every key, which takes $nm$ dot products.
+      - text: Compute $O(nmdv)$, and it stores an $n \times m \times d$ tensor of products
+        why: The two matrix products run one after the other, so their costs add, and $\mathbf{Q}\mathbf{K}^\top$ is only $n \times m$.
+      - text: Compute $O(nm)$ whatever $d$ and $v$ are, with memory of $O(d + v)$
+        why: Each of the $nm$ scores is a length-$d$ dot product, and each output sums $m$ vectors of length $v$.
+    explanation: |
+      $\mathbf{Q}\mathbf{K}^\top$ multiplies an $n \times d$ by a $d \times m$ matrix, $nmd$
+      multiply-adds; the softmax costs $O(nm)$; multiplying the $n \times m$ weights by the
+      $m \times v$ values costs $nmv$ [^1]. For self-attention, $n = m$, this is the familiar
+      $O(n^2 d)$ [^2]. The $n \times m$ weight matrix must be written and read back, so for long
+      sequences its memory traffic, not just its arithmetic, limits speed; optimized attention kernels
+      are a key area of work [^1].
+    references:
+      - source: d2l
+        locator: Sec. 11.3.3 Scaled Dot Product Attention; 11.3.5 Summary
+        url: https://d2l.ai/chapter_attention-mechanisms-and-transformers/attention-scoring-functions.html#scaled-dot-product-attention
+      - source: d2l
+        locator: Sec. 11.6.2 Comparing CNNs, RNNs, and Self-Attention
+        url: https://d2l.ai/chapter_attention-mechanisms-and-transformers/self-attention-and-positional-encoding.html#comparing-cnns-rnns-and-self-attention
+      - source: d2l
+        locator: Sec. 11.3.6 Exercises, Exercise 3
+        url: https://d2l.ai/chapter_attention-mechanisms-and-transformers/attention-scoring-functions.html#exercises
+    source:
+      id: d2l
+      ref: chapter_attention-mechanisms-and-transformers/attention-scoring-functions#ex3
+      url: https://d2l.ai/chapter_attention-mechanisms-and-transformers/attention-scoring-functions.html#exercises
+    status: draft
+  - id: transformers-027
+    type: single
+    difficulty: medium
+    tags:
+      - multi-head-attention
+      - pruning
+      - ablation
+    question: |
+      You want to prune the least important heads of a trained multi-head attention model to speed
+      up prediction. Which experiment measures one head's importance most directly?
+    options:
+      - text: Mask that head's output at test time and measure how much the validation score drops
+        correct: true
+      - text: Rank heads by how uniform their attention weights are, calling the most uniform the most important
+        why: Uniform weights just average the values; how spread a head's weights are says nothing direct about the model's accuracy.
+      - text: Rank heads by position, since later heads in the concatenation contribute less to $\mathbf{W}_o$
+        why: The heads are interchangeable; their order in the concatenation is arbitrary [^2].
+      - text: Measure the norm of each head's query projection $\mathbf{W}_i^{(q)}$ at initialization
+        why: At initialization the weights are random and carry no information about the trained model.
+    explanation: |
+      Michel et al. multiply each head's output by a mask variable $\xi_h \in \{0, 1\}$; setting
+      $\xi_h = 0$ removes head $h$ at test time, and the change in BLEU or accuracy measures its
+      importance [^1]. They found many heads can be removed with little loss [^1]. The heads run in
+      parallel and are concatenated before the output projection $\mathbf{W}_o$, so a masked head
+      simply contributes a zero block [^2].
+    references:
+      - title: Michel, Levy & Neubig (2019), Are Sixteen Heads Really Better than One?
+        url: https://arxiv.org/abs/1905.10650
+        locator: Sec. 2.3 Masking Attention Heads; Sec. 3.2 Ablating One Head
+      - source: d2l
+        locator: Sec. 11.5.1 Model
+        url: https://d2l.ai/chapter_attention-mechanisms-and-transformers/multihead-attention.html#model
+      - source: d2l
+        locator: Sec. 11.5.4 Exercises, Exercise 2
+        url: https://d2l.ai/chapter_attention-mechanisms-and-transformers/multihead-attention.html#exercises
+    source:
+      id: d2l
+      ref: chapter_attention-mechanisms-and-transformers/multihead-attention#ex2
+      url: https://d2l.ai/chapter_attention-mechanisms-and-transformers/multihead-attention.html#exercises
+    status: draft
+  - id: transformers-028
+    type: single
+    difficulty: medium
+    tags:
+      - positional-encoding
+      - learned-embeddings
+      - extrapolation
+    question: |
+      Instead of the fixed sinusoidal positional encoding, you add a learnable table
+      $\mathbf{P} \in \mathbb{R}^{512 \times d}$ of position embeddings to the token embeddings, as
+      BERT does. What is the main limitation compared with the sinusoidal version?
+    options:
+      - text: It has no row for positions past 512, while the sinusoidal formula works for any position
+        correct: true
+      - text: It cannot be trained, because positions are integers and their embeddings receive no gradient
+        why: The rows of the table are trained by gradient descent, just like word embeddings.
+      - text: It makes self-attention depend on word order, which hurts translation
+        why: Making the model order-aware is the purpose of every positional encoding [^1].
+      - text: It adds one parameter per pair of positions, $O(n^2)$ in total
+        why: The table has $512 \times d$ entries, linear in the maximum length.
+    explanation: |
+      Positional encodings can be fixed or learned [^1], and BERT uses learnable ones [^2]. A learned
+      table only covers the positions it has rows for, and rows for rarely seen long positions are
+      poorly trained. Vaswani et al. found learned and sinusoidal encodings to perform nearly the
+      same, but chose the sinusoidal version because it may extrapolate to sequences longer than those
+      seen in training [^3].
+    references:
+      - source: d2l
+        locator: Sec. 11.6.3 Positional Encoding
+        url: https://d2l.ai/chapter_attention-mechanisms-and-transformers/self-attention-and-positional-encoding.html#positional-encoding
+      - source: d2l
+        locator: Sec. 15.8.4 Input Representation
+        url: https://d2l.ai/chapter_natural-language-processing-pretraining/bert.html#input-representation
+      - title: Vaswani et al. (2017), Attention Is All You Need
+        url: https://arxiv.org/abs/1706.03762
+        locator: Sec. 3.5 Positional Encoding
+      - source: d2l
+        locator: Sec. 11.6.5 Exercises, Exercise 2
+        url: https://d2l.ai/chapter_attention-mechanisms-and-transformers/self-attention-and-positional-encoding.html#exercises
+    source:
+      id: d2l
+      ref: chapter_attention-mechanisms-and-transformers/self-attention-and-positional-encoding#ex2
+      url: https://d2l.ai/chapter_attention-mechanisms-and-transformers/self-attention-and-positional-encoding.html#exercises
+    status: draft
+  - id: transformers-029
+    type: short_answer
+    difficulty: medium
+    tags:
+      - relative-position
+      - positional-encoding
+      - self-attention
+    question: |
+      Relative position representations (Shaw et al., 2018) learn one embedding per query–key
+      offset $j - i$, with the offset clipped to $[-k, k]$. With clipping distance $k = 4$, how many
+      distinct offset embeddings does a layer learn for its keys, whatever the sequence length?
+    answer:
+      numeric: 9
+      tolerance: 0
+      hint: a whole number
+      model: Offsets $-4, \ldots, 4$, i.e. $2k + 1 = 9$
+    explanation: |
+      Shaw et al. use $\mathbf{a}^K_{ij} = \mathbf{w}^K_{\mathrm{clip}(j-i,\,k)}$ with
+      $\mathrm{clip}(x, k) = \max(-k, \min(k, x))$, so there are $2k + 1 = 9$ embeddings, added to
+      the keys inside the attention score [^1]. Every query–key pair with the same offset shares an
+      embedding, and clipping lets the model handle sequence lengths not seen in training [^1]. The
+      sinusoidal encoding also supports relative positions, since position $i + \delta$ is a fixed
+      linear map of position $i$ [^2].
+    references:
+      - title: Shaw, Uszkoreit & Vaswani (2018), Self-Attention with Relative Position Representations
+        url: https://arxiv.org/abs/1803.02155
+        locator: Sec. 3.2 Relative Position Representations
+      - source: d2l
+        locator: Sec. 11.6.3.2 Relative Positional Information
+        url: https://d2l.ai/chapter_attention-mechanisms-and-transformers/self-attention-and-positional-encoding.html#relative-positional-information
+      - source: d2l
+        locator: Sec. 11.6.5 Exercises, Exercise 3
+        url: https://d2l.ai/chapter_attention-mechanisms-and-transformers/self-attention-and-positional-encoding.html#exercises
+    source:
+      id: d2l
+      ref: chapter_attention-mechanisms-and-transformers/self-attention-and-positional-encoding#ex3
+      url: https://d2l.ai/chapter_attention-mechanisms-and-transformers/self-attention-and-positional-encoding.html#exercises
+    status: draft
+  - id: transformers-030
+    type: single
+    difficulty: medium
+    tags:
+      - additive-attention
+      - dot-product-attention
+      - transformer
+    question: |
+      Would it be a good idea to replace scaled dot-product attention in a Transformer with additive
+      attention, $\mathbf{w}_v^\top\tanh(\mathbf{W}_q\mathbf{q} + \mathbf{W}_k\mathbf{k})$?
+    options:
+      - text: 'No: queries and keys already share a dimension, and dot products run as fast matrix multiplications'
+        correct: true
+      - text: 'Yes: additive attention is the only scoring function that stays accurate for large key dimensions $d$'
+        why: Scaling the dot product by $1/\sqrt{d}$ already fixes its problem with large $d$ [^1].
+      - text: 'Yes: the Transformer needs additive attention to combine its attention heads'
+        why: The heads are combined by concatenation and the output projection $\mathbf{W}_o$.
+      - text: 'No: additive attention cannot be masked, so the decoder would see future tokens'
+        why: Any score can be masked before the softmax.
+    explanation: |
+      Vaswani et al. note that the two have similar theoretical complexity, but dot-product attention
+      is much faster and more space-efficient in practice because it uses highly optimized matrix
+      multiplication; additive attention only beats the *unscaled* dot product for large $d_k$, which
+      the $1/\sqrt{d_k}$ scaling fixes [^1]. Additive attention's main advantage is handling queries
+      and keys of different lengths [^2], but a Transformer projects all of them to the same width.
+    references:
+      - title: Vaswani et al. (2017), Attention Is All You Need
+        url: https://arxiv.org/abs/1706.03762
+        locator: Sec. 3.2.1 Scaled Dot-Product Attention
+      - source: d2l
+        locator: Sec. 11.3.4 Additive Attention
+        url: https://d2l.ai/chapter_attention-mechanisms-and-transformers/attention-scoring-functions.html#additive-attention
+      - source: d2l
+        locator: Sec. 11.7.8 Exercises, Exercise 2
+        url: https://d2l.ai/chapter_attention-mechanisms-and-transformers/transformer.html#exercises
+    source:
+      id: d2l
+      ref: chapter_attention-mechanisms-and-transformers/transformer#ex2
+      url: https://d2l.ai/chapter_attention-mechanisms-and-transformers/transformer.html#exercises
+    status: draft
+  - id: transformers-031
+    type: single
+    difficulty: easy
+    tags:
+      - self-attention
+      - long-sequences
+      - complexity
+    question: Why do Transformers struggle with very long input sequences?
+    options:
+      - text: 'Each position attends to every other: $O(n^2 d)$ compute and an $n \times n$ weight matrix per head'
+        correct: true
+      - text: Information has to pass through $O(n)$ sequential steps, so it fades over long distances
+        why: That describes RNNs; in self-attention any two positions are connected in one step [^1].
+      - text: The sinusoidal positional encoding repeats after 512 positions, so positions become ambiguous
+        why: Its wavelengths range from $2\pi$ to $10000 \cdot 2\pi$, with no period of 512.
+      - text: The number of weight parameters grows with the length of the input sequence
+        why: The same weights are applied at every position, whatever the sequence length.
+    explanation: |
+      Self-attention multiplies an $n \times d$ query matrix by a $d \times n$ key matrix and the
+      resulting $n \times n$ weights by an $n \times d$ value matrix, so its cost is $O(n^2 d)$; the
+      quadratic dependence on sequence length makes it prohibitively slow for very long sequences, even
+      though its path length between positions is $O(1)$ [^1]. The same issue makes vision Transformers
+      costly at high image resolution [^2].
+    references:
+      - source: d2l
+        locator: Sec. 11.6.2 Comparing CNNs, RNNs, and Self-Attention
+        url: https://d2l.ai/chapter_attention-mechanisms-and-transformers/self-attention-and-positional-encoding.html#comparing-cnns-rnns-and-self-attention
+      - source: d2l
+        locator: Sec. 11.8.6 Summary and Discussion
+        url: https://d2l.ai/chapter_attention-mechanisms-and-transformers/vision-transformer.html#summary-and-discussion
+      - source: d2l
+        locator: Sec. 11.7.8 Exercises, Exercise 4
+        url: https://d2l.ai/chapter_attention-mechanisms-and-transformers/transformer.html#exercises
+    source:
+      id: d2l
+      ref: chapter_attention-mechanisms-and-transformers/transformer#ex4
+      url: https://d2l.ai/chapter_attention-mechanisms-and-transformers/transformer.html#exercises
+    status: draft
+  - id: transformers-032
+    type: short_answer
+    difficulty: medium
+    tags:
+      - vision-transformer
+      - patches
+      - complexity
+    question: |
+      A vision Transformer splits square images into $16 \times 16$ patches. You raise `img_size`
+      from 96 to 192 pixels and keep everything else fixed. Ignoring the `<cls>` token, by what factor
+      does the cost of computing the self-attention score matrices $\mathbf{Q}\mathbf{K}^\top$ in each
+      layer grow?
+    answer:
+      numeric: 16
+      tolerance: 0
+      hint: a whole number
+      model: Patches $(96/16)^2 = 36 \to (192/16)^2 = 144$, and the cost grows with their square, $4^2 = 16$
+    explanation: |
+      An $h \times w$ image gives $m = hw/p^2$ patches [^1]: 36 at 96 pixels and 144 at 192, four
+      times as many. The score matrix is $m \times m$, so its cost grows $4^2 = 16$-fold [^2], while
+      the patch embedding and the MLPs grow only linearly in $m$, 4-fold. Training time therefore grows
+      between 4× and 16×; with the `<cls>` token the attention factor is $(145/37)^2 \approx 15.4$.
+      This quadratic cost is why plain ViTs suit high-resolution images poorly [^3].
+    references:
+      - source: d2l
+        locator: Sec. 11.8.1 Model
+        url: https://d2l.ai/chapter_attention-mechanisms-and-transformers/vision-transformer.html#model
+      - source: d2l
+        locator: Sec. 11.6.2 Comparing CNNs, RNNs, and Self-Attention
+        url: https://d2l.ai/chapter_attention-mechanisms-and-transformers/self-attention-and-positional-encoding.html#comparing-cnns-rnns-and-self-attention
+      - source: d2l
+        locator: Sec. 11.8.6 Summary and Discussion
+        url: https://d2l.ai/chapter_attention-mechanisms-and-transformers/vision-transformer.html#summary-and-discussion
+      - source: d2l
+        locator: Sec. 11.8.7 Exercises, Exercise 1
+        url: https://d2l.ai/chapter_attention-mechanisms-and-transformers/vision-transformer.html#exercises
+    source:
+      id: d2l
+      ref: chapter_attention-mechanisms-and-transformers/vision-transformer#ex1
+      url: https://d2l.ai/chapter_attention-mechanisms-and-transformers/vision-transformer.html#exercises
+    status: draft
+  - id: transformers-033
+    type: single
+    difficulty: medium
+    tags:
+      - vision-transformer
+      - pooling
+      - pytorch
+    question: |
+      A vision Transformer ends its forward pass like this:
+
+      ```python
+      for blk in self.blks:
+          X = blk(X)    # X: (batch_size, 1 + num_patches, num_hiddens), <cls> first
+      return self.head(X[:, 0])
+      ```
+
+      `self.head` is a `LayerNorm` followed by `Linear(num_hiddens, num_classes)`. Which return
+      statement classifies from the average of the patch representations instead of the `<cls>`
+      token?
+    options:
+      - text: '`return self.head(X[:, 1:].mean(dim=1))`'
+        correct: true
+      - text: '`return self.head(X[:, 1:].mean(dim=2))`'
+        why: This averages over the hidden features, giving one number per patch instead of a `num_hiddens` vector.
+      - text: '`return self.head(X.mean(dim=0))`'
+        why: This averages over the batch, mixing different images together.
+      - text: '`return self.head(X[:, 0].mean(dim=1))`'
+        why: This averages the features of the `<cls>` vector, giving one number per image.
+    explanation: |
+      Dimension 1 indexes the tokens: `X[:, 1:]` drops the `<cls>` token at position 0, and
+      `.mean(dim=1)` averages the patch vectors into a (batch_size, num_hiddens) tensor, the shape the
+      head expects [^1]. The `<cls>` token works as a summary because it attends to all patches
+      through self-attention; average pooling instead summarizes the patches directly [^1].
+    references:
+      - source: d2l
+        locator: Sec. 11.8.1 Model; 11.8.4 Putting It All Together
+        url: https://d2l.ai/chapter_attention-mechanisms-and-transformers/vision-transformer.html#putting-it-all-together
+      - source: d2l
+        locator: Sec. 11.8.7 Exercises, Exercise 2
+        url: https://d2l.ai/chapter_attention-mechanisms-and-transformers/vision-transformer.html#exercises
+    source:
+      id: d2l
+      ref: chapter_attention-mechanisms-and-transformers/vision-transformer#ex2
+      url: https://d2l.ai/chapter_attention-mechanisms-and-transformers/vision-transformer.html#exercises
+    status: draft
