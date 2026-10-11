@@ -7,6 +7,11 @@ versioning: [SemVer](https://semver.org) as defined in [docs/conventions.md](doc
 
 ### Changed
 
+- Source decisions: no further MMLU subsets (its questions come from copyrighted tests and
+  books); AI clauses are judged by what they cover (a training ban doesn't affect us, an
+  ingestion ban does); OpenIntro stays usable from its GitHub repo; Deep-ML is reference-only
+  (educational-use licence). `docs/sources.md` lists the surveyed candidates and why the rest
+  are not usable.
 - Dropped upstream questions were re-reviewed under a keep-and-fix rule: an item is dropped only
   for a content reason (off-scope, trivial, tool-specific, duplicate, dated trivia), while
   ambiguous, inaccurate and lesson-specific ones are fixed. 287 more upstream questions kept
@@ -30,6 +35,20 @@ versioning: [SemVer](https://semver.org) as defined in [docs/conventions.md](doc
 
 ### Added
 
+- 575 questions from newly surveyed open sources (1066 → 1641), all drafts with cited
+  explanations; numbers re-computed by script, logic keys by truth tables, graph claims by a
+  d-separation checker:
+  - d2l: every remaining convertible end-of-section exercise (+335; 371 in all) — CNNs and
+    computer vision, sequence models and attention, preliminaries and MLPs, the maths appendix,
+    optimization and Gaussian processes.
+  - Gutmann, *Pen and Paper Exercises in Machine Learning* (91, CC BY 4.0) with 30 redrawn graphs.
+  - UBC CPSC 330 and DSCI 575 (92, CC BY 4.0), three pictures redrawn.
+  - *forall x: Calgary* (38, CC BY 4.0) for knowledge representation.
+  - Hugging Face Audio Course quizzes (12, importer `hf-audio-course`), ML-InterviewQs (6),
+    dlbook_exercises (1).
+  - Thin topics now: probabilistic models 10 → 94, knowledge representation 7 → 45, PyTorch
+    7 → 39, RNNs 12 → 36, CNNs 11 → 36, object detection 7 → 20, nonparametric 5 → 21,
+    architectures 6 → 17, tokenization 7 → 13, search 2 → 5, fine-tuning 3 → 6.
 - 67 questions for the thinnest topics, from d2l exercises (36) and original questions citing
   d2l, scikit-learn, Distill and Wikipedia (31): information theory 1 → 17, logistic
   regression 6 → 20, learning theory 3 → 22, dimensionality reduction 1 → 19.

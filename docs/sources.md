@@ -17,7 +17,7 @@ original questions. See [content-pipeline.md](content-pipeline.md#copyright-rule
 | 2 | [Microsoft AI for Beginners](https://github.com/microsoft/AI-For-Beginners) | pre/post-lecture quizzes: NN, CV, NLP, GANs, RL, ethics | MIT | **v0.1 imported** (141) |
 | 3 | [Microsoft ML for Beginners](https://github.com/microsoft/ML-For-Beginners) | pre/post-lecture quizzes: classical ML, time series, NLP basics | MIT | **v0.1 imported** (112) |
 | 4 | [MMLU-Redux 2.0](https://huggingface.co/datasets/edinburgh-dawg/mmlu-redux-2.0) — machine_learning, high_school_statistics, college_mathematics | exam-style MCQ with expert error labels (MMLU itself is MIT) | CC-BY-4.0 | **imported** (95 + 97 + 59) |
-| 6 | [Dive into Deep Learning](https://d2l.ai) | end-of-section exercises; main citation target for DL | CC-BY-SA-4.0 | **v0.3 used** (36 questions from exercises of 3.6, 4.1, 4.4, 4.6, 5.5, 22.2, 22.11) |
+| 6 | [Dive into Deep Learning](https://d2l.ai) | end-of-section exercises; main citation target for DL | CC-BY-SA-4.0 | **v0.3 used** (371 questions from the end-of-section exercises of every chapter; refs `<dir>/<file>#ex<N>`) |
 | 7 | [Đắm mình vào Học Sâu](https://d2l.aivivn.com/) | Vietnamese d2l translation | CC-BY-SA-4.0 | later — VI terminology |
 | 8 | [Google ML Crash Course](https://developers.google.com/machine-learning/crash-course) | page quizzes with per-option feedback: regression, classification metrics, data, overfitting, production ML, fairness | CC-BY-4.0 | **v0.3 imported** (58) |
 | 8b | [Google ML courses](https://developers.google.com/machine-learning) — Decision Forests, Clustering, GANs, Problem Framing | same quiz format | CC-BY-4.0 | **v0.3 imported** (38) |
@@ -29,12 +29,12 @@ original questions. See [content-pipeline.md](content-pipeline.md#copyright-rule
 | 14 | [Hugging Face AI Agents Course](https://huggingface.co/learn/agents-course) | unit quizzes on agents, tools, ReAct, agentic RAG, observability | Apache-2.0 | **v0.3 imported** (26) |
 | 15 | [Microsoft Data Science for Beginners](https://github.com/microsoft/Data-Science-For-Beginners) | pre/post-lecture quizzes; only data types, probability, statistics items kept | MIT | **v0.3 imported** (70) |
 | 26 | [Hugging Face Audio Course](https://huggingface.co/learn/audio-course) | chapter quizzes: sampling, spectrograms, CTC, seq2seq, vocoders | Apache-2.0 | **v0.3 imported** (12) |
-| 27 | [UBC CPSC 330 Applied ML](https://github.com/UBC-CS/cpsc330-2025W1) (Kolhatkar et al.) | midterm/final prep MCQs (keys in red) and lecture iClicker exercises | CC-BY-4.0 | **v0.3 used** |
-| 28 | [UBC MDS DSCI 575 Advanced ML](https://github.com/UBC-MDS/DSCI_575_adv-mach-learn) | iClicker exercises: Markov models, HMMs, RNNs, transformers, LLMs | CC-BY-4.0 | **v0.3 used** |
-| 29 | [forall x: Calgary](https://forallx.openlogicproject.org/) (Magnus, Button et al.) | logic textbook: truth tables, validity, satisfiability, first-order models, keyed in the LaTeX source | CC-BY-4.0 | **v0.3 used** |
-| 31 | [Pen and Paper Exercises in ML](https://github.com/michaelgutmann/ml-pen-and-paper-exercises) (Gutmann) | worked exercises: graphical models, HMMs, learning, variational inference, sampling | CC-BY-4.0 | **v0.3 used** (5 exercises based on copyrighted books skipped) |
-| 32 | [ML-InterviewQs](https://github.com/dsgiitr/ML-InterviewQs) (DSG IIT Roorkee) | 6 keyed MCQs | MIT | **v0.3 used** |
-| 33 | [dlbook_exercises](https://github.com/goodfeli/dlbook_exercises) (Goodfellow) | 1 contributed exercise | BSD-3-Clause | **v0.3 used** |
+| 27 | [UBC CPSC 330 Applied ML](https://github.com/UBC-CS/cpsc330-2025W1) (Kolhatkar et al.) | midterm/final prep MCQs (keys in red) and lecture iClicker exercises | CC-BY-4.0 | **v0.3 used** (66) |
+| 28 | [UBC MDS DSCI 575 Advanced ML](https://github.com/UBC-MDS/DSCI_575_adv-mach-learn) | iClicker exercises: Markov models, HMMs, RNNs, transformers, LLMs | CC-BY-4.0 | **v0.3 used** (26) |
+| 29 | [forall x: Calgary](https://forallx.openlogicproject.org/) (Magnus, Button et al.) | logic textbook: truth tables, validity, satisfiability, first-order models, keyed in the LaTeX source | CC-BY-4.0 | **v0.3 used** (38) |
+| 31 | [Pen and Paper Exercises in ML](https://github.com/michaelgutmann/ml-pen-and-paper-exercises) (Gutmann) | worked exercises: graphical models, HMMs, learning, variational inference, sampling | CC-BY-4.0 | **v0.3 used** (91; 5 exercises based on copyrighted books skipped) |
+| 32 | [ML-InterviewQs](https://github.com/dsgiitr/ML-InterviewQs) (DSG IIT Roorkee) | 6 keyed MCQs | MIT | **v0.3 used** (6) |
+| 33 | [dlbook_exercises](https://github.com/goodfeli/dlbook_exercises) (Goodfellow) | 1 contributed exercise | BSD-3-Clause | **v0.3 used** (1) |
 | 16 | [OpenIntro Statistics](https://www.openintro.org/book/os/) | end-of-section exercises, odd-numbered solutions, LaTeX source on GitHub | CC-BY-SA-3.0 | later — probability/statistics; take files from the [GitHub repo](https://github.com/OpenIntroStat/openintro-statistics) only (the website's terms restrict automated scraping) |
 
 ## Reference only
