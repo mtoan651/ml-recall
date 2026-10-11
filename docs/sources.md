@@ -59,10 +59,18 @@ slides, `private`).
 ## MMLU policy
 
 MMLU-Redux (CC BY 4.0) and MMLU (MIT) license the datasets, but MMLU's questions were collected
-from practice tests, course material and books whose copyright those licences cannot cover (some
-econometrics items even cite "question 21" of an outside book). The three subsets in use stay;
-**no further subsets are imported** (decided 2026-10-11). Gaps are filled from cleanly licensed
-sources instead, e.g. forall x for logic rather than `formal_logic`.
+from practice tests, course material and books. For this non-commercial study project that is an
+acceptable risk, but subsets are **imported selectively** (keep-lists in
+`tools/curation/mmlu-redux.yaml`), not wholesale: most of `econometrics` is finance-specific and
+some rows refer to an outside book. `formal_logic` is not needed (forall x covers logic).
+
+## Licence policy
+
+The project is non-commercial (study and research). Besides permissive and CC BY / CC BY-SA
+sources, **NonCommercial licences without ND** (CC BY-NC, CC BY-NC-SA) may be adapted; such
+questions keep their licence (see `LICENSE-CONTENT.md`). Still not usable as question sources:
+ND licences (no adaptations), all-rights-reserved or unlicensed material (the repo and site are
+public), and sites whose terms forbid feeding content to AI/LLM tools.
 
 ## Candidates (checked 2026-10-11, not yet used)
 
