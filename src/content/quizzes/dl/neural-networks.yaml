@@ -530,18 +530,42 @@ questions:
     tags:
       - softmax
       - numerical-stability
-    question: The softmax $\hat y_j = \exp(o_j) / \sum_k \exp(o_k)$ can overflow for large logits. Why is it safe to subtract $\max_k o_k$ from every logit before exponentiating?
+    question: |
+      The softmax $\hat y_j = \exp(o_j) / \sum_k \exp(o_k)$ can overflow for large logits, so
+      implementations first subtract $\bar o = \max_k o_k$ from every logit. Complete the reason this
+      is safe. Softmax is {{1}} to subtracting the same constant from every logit, because the factor
+      $\exp(-\bar o)$ appears in the numerator and in every term of the denominator and cancels. After
+      the shift, every exponent $o_j - \bar o$ is at most {{2}}, so no $\exp$ can overflow.
     answer:
-      model: 'Softmax is invariant to adding a constant $c$ to all logits: the factor $\exp(-c)$ appears in the numerator and in every term of the denominator and cancels. With $c = \max_k o_k$ every exponent is $\le 0$, so $\exp$ cannot overflow.'
-    explanation: $\frac{\exp(o_j - \bar o)}{\sum_k \exp(o_k - \bar o)} = \frac{\exp(o_j)\exp(-\bar o)}{\sum_k \exp(o_k)\exp(-\bar o)} = \hat y_j$, so the probabilities are unchanged, and choosing $\bar o = \max_k o_k$ guarantees $o_j - \bar o \le 0$ for all $j$ [^1].
+      blanks:
+        - accept:
+            - invariant
+            - shift-invariant
+            - translation-invariant
+            - unchanged
+            - unaffected
+            - insensitive
+          hint: one word
+        - numeric: 0
+          accept:
+            - zero
+          hint: a number
+      model: Invariant; the largest shifted logit is $0$, so every $\exp(o_j - \bar o) \in (0, 1]$.
+    explanation: |
+      Multiplying the numerator and the denominator by the same positive factor $\exp(-\bar o)$
+      leaves the ratio unchanged, so the shifted logits give exactly the same probabilities [^1].
+      With $\bar o = \max_k o_k$ the largest shifted logit is 0 and all others are negative, so each
+      $\exp(o_j - \bar o)$ lies in $(0, 1]$ and the denominator lies between 1 and the number of
+      classes [^1]. Underflow can still round tiny probabilities to 0, which is one reason frameworks
+      combine softmax with the cross-entropy loss (the LogSumExp trick) [^1].
     references:
       - source: d2l
-        locator: Sec. 4.5.2 Softmax Revisited
         url: https://d2l.ai/chapter_linear-classification/softmax-regression-concise.html
+        locator: Sec. 4.5.2 Softmax Revisited, Eq. (4.5.1)
     source:
       id: original
       ref: neural-networks-020
-    status: reviewed
+    status: draft
   - id: neural-networks-021
     type: single
     difficulty: easy

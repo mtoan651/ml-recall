@@ -38,18 +38,38 @@ questions:
   - id: policy-gradient-002
     type: short_answer
     difficulty: medium
-    question: What is the Policy Gradient Theorem?
+    question: |
+      Complete the statement of what the Policy Gradient Theorem gives us. It rewrites the gradient
+      of the objective in a form that does not involve the derivative of the {{1}} distribution:
+      $\nabla J(\theta) \propto \sum_s \mu(s) \sum_a q_\pi(s,a)\, \nabla_\theta \pi(a \mid s, \theta)$.
+      As a result the gradient can be estimated from sampled {{2}}, using only
+      $\nabla_\theta \log \pi_\theta(a_t \mid s_t)$ and the observed returns, with no model of the
+      environment.
     answer:
-      model: '*The Policy Gradient Theorem* is a formula that will help us to reformulate the objective function into a differentiable function that does not involve the differentiation of the state distribution.'
+      blanks:
+        - accept:
+            - state
+            - states
+            - state visitation
+            - on-policy state
+            - on-policy
+          hint: one word
+        - accept:
+            - trajectories
+            - trajectory
+            - episodes
+            - episode
+            - rollouts
+            - rollout
+          hint: one word (plural)
     explanation: |
-      The problem it solves is that $J(\theta)$ depends on which states the agent visits, and how
-      a policy change shifts that state distribution depends on environment dynamics that are
-      usually unknown [^1]. The theorem gives
-      $\nabla J(\theta) \propto \sum_s \mu(s) \sum_a q_\pi(s,a)\, \nabla \pi(a \mid s, \theta)$,
-      which contains no derivative of the state distribution [^1]. In the trajectory form, the
-      transition-probability terms drop out of $\nabla_\theta \log P(\tau;\theta)$, leaving only
-      $\sum_t \nabla_\theta \log \pi_\theta(a_t \mid s_t)$, so the gradient can be estimated from
-      sampled episodes [^2].
+      Changing $\theta$ changes the actions and therefore which states the agent visits, but how that
+      shifts the state distribution depends on the environment's dynamics, which are usually unknown
+      [^1]. The theorem sidesteps this: the gradient becomes a sum over states weighted by $\mu(s)$
+      in which only the policy is differentiated [^1]. In the trajectory form used by REINFORCE, the
+      initial-state and transition probabilities do not depend on $\theta$, so their derivatives
+      vanish and only $\sum_t \nabla_\theta \log \pi_\theta(a_t \mid s_t)$ remains, which is averaged
+      over sampled trajectories [^2].
     references:
       - title: 'Sutton & Barto (2018), Reinforcement Learning: An Introduction, 2nd ed.'
         url: http://incompleteideas.net/book/RLbook2020.pdf
@@ -217,20 +237,39 @@ questions:
     status: draft
   - id: policy-gradient-008
     type: short_answer
-    difficulty: medium
-    question: How would you describe, with your own words, the Actor-Critic Method (A2C)?
+    difficulty: easy
+    question: |
+      Complete the description of the Actor-Critic method (A2C). It learns two function
+      approximations. The actor is a {{1}} $\pi_\theta(a \mid s)$ that controls how the agent acts.
+      The critic is a {{2}} function that measures how good the action taken was and guides the
+      actor's update. Judging actions with the critic instead of full Monte Carlo returns, as
+      REINFORCE does, reduces the {{3}} of the gradient estimate.
     answer:
-      model: |
-        The idea behind Actor-Critic is that we learn two function approximations:
-        1. A `policy` that controls how our agent acts (π)
-        2. A `value` function to assist the policy update by measuring how good the action taken is (q)
+      blanks:
+        - accept:
+            - policy
+            - policy function
+          hint: one word
+        - accept:
+            - value
+            - action-value
+            - action value
+            - state-value
+            - state value
+            - Q-value
+            - Q
+            - advantage
+          hint: one word
+        - accept:
+            - variance
+          hint: a statistical property
     explanation: |
-      The motivation is variance: REINFORCE scores actions with full Monte Carlo returns, which
-      are very noisy, so actor-critic lets a learned critic assess each action instead [^1].
-      Sutton & Barto's one-step version replaces the return with
-      $R_{t+1} + \gamma \hat v(S_{t+1}, w)$, which has lower variance at the cost of some
-      bias [^2]. Both parts keep learning together: the actor updates the policy from the
-      critic's feedback, and the critic updates its value estimate [^1].
+      REINFORCE weights each action by a full Monte Carlo return, a very noisy signal, so
+      actor-critic methods let a learned critic assess each action instead [^1]. In Sutton & Barto's
+      one-step version the critic's estimate $R_{t+1} + \gamma \hat v(S_{t+1}, \mathbf{w})$ replaces
+      the return; it has lower variance but introduces some bias [^2]. Both parts keep learning: the
+      actor updates its policy parameters from the critic's feedback, and the critic updates its
+      value parameters [^1].
     references:
       - source: hf-deep-rl-course
         url: https://huggingface.co/learn/deep-rl-course/unit6/advantage-actor-critic#reducing-variance-with-actor-critic-methods
@@ -276,18 +315,39 @@ questions:
   - id: policy-gradient-010
     type: short_answer
     difficulty: medium
-    question: What is `Advantage` in the A2C method?
+    question: |
+      Complete the description of the advantage in A2C. The advantage $A(s,a) = Q(s,a) - V(s)$
+      measures how much better taking action $a$ in state $s$ is than the {{1}} value of that state.
+      If $A(s,a) > 0$, the update {{2}} the probability of taking $a$ in $s$. Learning both $Q$ and
+      $V$ would need two value functions, so A2C estimates the advantage with the {{3}} error
+      $r + \gamma V(s') - V(s)$.
     answer:
-      model: |
-        Instead of using directly the Action-Value function of the Critic as it is, we could use an `Advantage` function. The idea behind an `Advantage` function is that we calculate the relative advantage of an action compared to the others possible at a state, averaging them.
-
-        In other words: how taking that action at a state is better compared to the average value of the state
+      blanks:
+        - accept:
+            - average
+            - mean
+            - expected
+          hint: one word
+        - accept:
+            - increases
+            - raises
+            - boosts
+            - pushes up
+            - increase
+            - raise
+          hint: one verb
+        - accept:
+            - TD
+            - temporal difference
+            - temporal-difference
+          hint: an abbreviation or two words
     explanation: |
-      Formally, $A(s,a) = Q(s,a) - V(s)$: how much better action $a$ is than acting on average
-      from $s$ under the current policy [^2]. In the update, a positive advantage pushes up that
-      action's probability and a negative one pushes it down [^1]. Learning both $Q$ and $V$
-      would need two value functions, so A2C estimates the advantage with the TD error
-      $r + \gamma V(s') - V(s)$ [^1].
+      Subtracting $V(s)$ turns the action value into a relative score: the extra return the action
+      earns compared with what the policy gets from that state on average [^1][^2]. A positive
+      advantage moves the policy toward that action and a negative one moves it away [^1]. Because
+      estimating both $Q$ and $V$ would need two networks, A2C uses the TD error
+      $r + \gamma V(s') - V(s)$, which needs only a state-value critic, as its estimate of the
+      advantage [^1].
     references:
       - source: hf-deep-rl-course
         url: https://huggingface.co/learn/deep-rl-course/unit6/advantage-actor-critic#adding-advantage-in-actor-critic-a2c

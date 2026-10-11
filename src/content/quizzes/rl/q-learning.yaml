@@ -81,22 +81,33 @@ questions:
     status: draft
   - id: q-learning-004
     type: short_answer
-    difficulty: medium
-    question: What is the Bellman Equation?
+    difficulty: easy
+    question: |
+      Complete the description of the Bellman equation. It is a {{1}} equation: instead of adding
+      up the whole return from each state, we write the value of a state as the immediate {{2}} plus
+      the {{3}} value of the state that follows.
     answer:
-      model: |
-        **The Bellman equation is a recursive equation** that works like this: instead of starting for each state from the beginning and calculating the return, we can consider the value of any state as:
-
-        Rt+1 + gamma * V(St+1)
-
-        The immediate reward + the discounted value of the state that follows
+      blanks:
+        - accept:
+            - recursive
+            - recurrence
+            - recursion
+          hint: one word
+        - accept:
+            - reward
+            - rewards
+          hint: one word
+        - accept:
+            - discounted
+          hint: one word
+      model: $V(S_t) = R_{t+1} + \gamma V(S_{t+1})$
     explanation: |
-      The full equation is an expectation over the policy and the environment's dynamics:
-      $v_\pi(s) = \sum_a \pi(a \mid s) \sum_{s', r} p(s', r \mid s, a)\,[r + \gamma v_\pi(s')]$.
-      The model answer gives the intuition behind it: reward along the way plus the discounted
-      value of where you land [^1]. Its practical value is that you no longer need to add up an
-      entire future return for every state, and TD learning and Q-learning use this one-step form
-      directly as their update target [^2].
+      Defining the value of a state through the value of its successor means you no longer have to
+      sum a long future return for every state [^2]. In full the equation is an expectation over the
+      policy and the dynamics,
+      $v_\pi(s) = \sum_a \pi(a \mid s) \sum_{s', r} p(s', r \mid s, a)\,[r + \gamma v_\pi(s')]$:
+      the reward expected along the way plus the discounted value of the next state [^1]. TD learning
+      uses exactly this one-step form, $R_{t+1} + \gamma V(S_{t+1})$, as its update target [^3].
     references:
       - title: 'Sutton & Barto (2018), Reinforcement Learning: An Introduction, 2nd ed.'
         url: http://incompleteideas.net/book/RLbook2020.pdf
@@ -104,6 +115,9 @@ questions:
       - source: hf-deep-rl-course
         url: https://huggingface.co/learn/deep-rl-course/unit2/bellman-equation
         locator: 'Unit 2, "The Bellman Equation: simplify our value estimation"'
+      - source: hf-deep-rl-course
+        url: https://huggingface.co/learn/deep-rl-course/unit2/mc-vs-td#td-learning
+        locator: 'Unit 2, "Monte Carlo vs Temporal Difference Learning", section "Temporal Difference Learning: learning at each step"'
     source:
       id: hf-deep-rl-course
       ref: unit2/mid-way-quiz#q2
@@ -200,16 +214,32 @@ questions:
   - id: q-learning-008
     type: short_answer
     difficulty: medium
-    question: Why if we have an optimal Q-function Q* we have an optimal policy?
+    question: |
+      Why does an optimal Q-function $Q^*$ give us an optimal policy? Complete the reasoning.
+      $Q^*$ gives the value of every action in every state, so in each state we know the best action:
+      the one with the {{1}} $Q^*$ value. Acting {{2}} with respect to $Q^*$,
+      $\pi^*(s) = \arg\max_a Q^*(s,a)$, is therefore an optimal policy.
     answer:
-      model: Because if we have an optimal Q-function, we have an optimal policy since we know for each state what is the best action to take.
+      blanks:
+        - accept:
+            - highest
+            - largest
+            - maximum
+            - max
+            - greatest
+            - biggest
+            - best
+          hint: one word
+        - accept:
+            - greedily
+            - greedy
+          hint: one word
     explanation: |
-      The optimal policy just picks $a^*(s) = \arg\max_a Q^*(s,a)$ in every state [^1]. This
-      works because $Q^*$ already contains the long-term consequences of each action, like a
-      cache of every one-step lookahead, so choosing optimally needs no model of the
-      environment's dynamics; knowing only $V^*$ would not be enough [^2]. That is also why
-      value-based methods can use a simple greedy rule on top of the learned values instead of
-      a trained policy [^3].
+      The optimal policy picks $a^*(s) = \arg\max_a Q^*(s,a)$ in every state [^1]. This works
+      because $Q^*$ already includes the long-term consequences of each action, like a cache of
+      every one-step lookahead, so choosing optimally needs no model of the environment's dynamics;
+      knowing only $V^*$ would not be enough [^2]. That is also why value-based methods can put a
+      simple greedy rule on top of the learned values instead of training a policy [^3].
     references:
       - title: 'OpenAI Spinning Up, Part 1: Key Concepts in RL'
         url: https://spinningup.openai.com/en/latest/spinningup/rl_intro.html#the-optimal-q-function-and-the-optimal-action
@@ -228,20 +258,40 @@ questions:
   - id: q-learning-009
     type: short_answer
     difficulty: easy
-    question: Can you explain what is Epsilon-Greedy Strategy?
+    question: |
+      Complete the description of the epsilon-greedy strategy, which handles the
+      exploration/exploitation trade-off. With probability $\epsilon$ the agent {{1}}: it tries a
+      random action. With probability $1 - \epsilon$ it {{2}}: it takes the action with the highest
+      Q-value. $\epsilon$ starts high (e.g. 1.0) and is {{3}} during training as the Q-table
+      improves.
     answer:
-      model: |
-        Epsilon Greedy Strategy is a policy that handles the exploration/exploitation trade-off.
-
-        The idea is that we define epsilon ɛ = 1.0:
-
-        - With *probability 1 — ɛ* : we do exploitation (aka our agent selects the action with the highest state-action pair value).
-        - With *probability ɛ* : we do exploration (trying random action).
+      blanks:
+        - accept:
+            - explores
+            - explore
+            - exploration
+            - exploring
+          hint: one word
+        - accept:
+            - exploits
+            - exploit
+            - exploitation
+            - exploiting
+          hint: one word
+        - accept:
+            - decreased
+            - reduced
+            - decayed
+            - lowered
+            - annealed
+            - decreases
+            - decays
+          hint: one word
     explanation: |
-      In practice $\epsilon$ starts high, so early training is mostly random exploration. It is
-      then lowered step by step as the Q-table's estimates improve and more exploitation pays
-      off [^1]. The theoretical appeal is that every action keeps being tried, so in the limit
-      all action-value estimates converge to their true values [^2].
+      Starting with a high $\epsilon$ makes early training mostly random exploration. As the
+      Q-table's estimates get better, $\epsilon$ is lowered step by step so the agent exploits more
+      [^1]. The theoretical appeal is that every action keeps being tried, so in the limit all
+      action-value estimates converge to their true values [^2].
     references:
       - source: hf-deep-rl-course
         url: https://huggingface.co/learn/deep-rl-course/unit2/q-learning#step2
@@ -257,22 +307,43 @@ questions:
   - id: q-learning-010
     type: short_answer
     difficulty: easy
-    question: We mentioned Q Learning is a tabular method. What are tabular methods?
+    question: |
+      Complete the description of tabular methods. They apply when the state and action spaces are
+      {{1}} enough for the value function to be stored exactly as arrays or tables. Q-learning is a
+      tabular method because it keeps a {{2}} with one cell per state–action pair. For FrozenLake
+      4×4, with 16 states and 4 actions, that table has {{3}} cells.
     answer:
-      model: '*Tabular methods* is a type of problem in which the state and actions spaces are small enough to approximate value functions to be **represented as arrays and tables**. For instance, **Q-Learning is a tabular method** since we use a table to represent the state, and action value pairs.'
+      blanks:
+        - accept:
+            - small
+            - little
+            - few
+          hint: one word
+        - accept:
+            - Q-table
+            - table
+            - lookup table
+            - Q table
+          hint: what Q-learning stores its values in
+        - numeric: 64
+          hint: a number
     explanation: |
-      The catch is scale. Q-learning had worked fine with 16 states (FrozenLake) or 500
-      (Taxi-v3), but an Atari frame of $210 \times 160 \times 3$ values in 0–255 gives
-      $256^{100800}$ possible observations, far too many for a table [^1]. For spaces that large, the value
-      function has to be approximated with a parameterized function that generalizes from states
-      seen to states never seen, which is the step from Q-learning to Deep Q-learning [^1][^2].
+      Sutton & Barto call the case where the state (or state–action) space is small enough to give
+      every element its own table entry the tabular case, and its methods tabular methods [^2]. The
+      course's FrozenLake 4×4 has 16 states and 4 actions (left, down, right, up), so its Q-table has
+      $16 \times 4 = 64$ entries [^3]. The catch is scale: an Atari frame of $210 \times 160 \times 3$
+      values in 0–255 gives $256^{100800}$ possible observations, far too many for a table, so Deep
+      Q-learning approximates the Q-values with a neural network instead [^1].
     references:
       - source: hf-deep-rl-course
         url: https://huggingface.co/learn/deep-rl-course/unit3/from-q-to-dqn
         locator: Unit 3, "From Q-Learning to Deep Q-Learning"
       - title: 'Sutton & Barto (2018), Reinforcement Learning: An Introduction, 2nd ed.'
         url: http://incompleteideas.net/book/RLbook2020.pdf
-        locator: Part I introduction, p. 23; Part II introduction, p. 195
+        locator: Sec. 3.7 Optimality and Approximation, p. 67; Part I introduction, p. 23
+      - source: hf-deep-rl-course
+        url: https://huggingface.co/learn/deep-rl-course/unit2/hands-on#part-1-frozen-lake--non-slippery-version
+        locator: Unit 2, Hands-on, Part 1 Frozen Lake (observation and action spaces, Q-table)
     source:
       id: hf-deep-rl-course
       ref: unit3/quiz#q1
@@ -308,16 +379,31 @@ questions:
   - id: q-learning-012
     type: short_answer
     difficulty: medium
-    question: Why do we stack four frames together when we use frames as input in Deep Q-Learning?
+    question: |
+      Why do we stack four frames together when we use frames as input in Deep Q-Learning? Complete
+      the reasoning. A single frame shows where objects are but not how they move: in Pong you cannot
+      tell from one frame which way the ball is going. On its own, a frame is therefore not a {{1}}
+      state. Stacking the four most recent frames supplies the missing {{2}} information.
     answer:
-      model: |
-        We stack frames together because it helps us **handle the problem of temporal limitation**: one frame is not enough to capture temporal information.
-        For instance, in pong, our agent **will be unable to know the ball direction if it gets only one frame**.
+      blanks:
+        - accept:
+            - Markov
+            - Markovian
+          hint: one word
+        - accept:
+            - temporal
+            - motion
+            - movement
+            - time
+            - velocity
+          hint: one word
     explanation: |
-      In RL terms, a single frame is not a Markov state, because it shows where things are but
-      not how they are moving [^2]. DQN (Mnih et al.) therefore stacked the four most recent
-      preprocessed $84 \times 84$ frames into an $84 \times 84 \times 4$ input [^1]. This did not
-      remove partial observability in every game, but it made many of them more Markovian [^1].
+      One frame shows positions but not velocities, which is why a single Pong frame cannot tell you
+      where the ball is heading; the course calls this the problem of temporal limitation [^2]. In RL
+      terms, the frame is not a Markov state, because the full state of many Atari games cannot be
+      observed from one image [^1]. DQN (Mnih et al.) therefore stacked the four most recent
+      preprocessed $84 \times 84$ frames into an $84 \times 84 \times 4$ input; this did not remove
+      partial observability in every game, but it made many of them more Markovian [^1].
     references:
       - title: 'Sutton & Barto (2018), Reinforcement Learning: An Introduction, 2nd ed.'
         url: http://incompleteideas.net/book/RLbook2020.pdf
@@ -353,22 +439,40 @@ questions:
   - id: q-learning-014
     type: short_answer
     difficulty: medium
-    question: Why do we create a replay memory in Deep Q-Learning?
+    question: |
+      Why do we create a replay memory in Deep Q-Learning? Complete the two reasons. First, the
+      buffer stores experience tuples so that each one can be {{1}} in several updates instead of
+      being thrown away after one, which uses experience more efficiently. Second, sampling random
+      mini-batches from it reduces the {{2}} between consecutive experiences and stops the network
+      from overwriting what it learned from older experiences, a problem called catastrophic {{3}}.
     answer:
-      model: |
-        **1. Make more efficient use of the experiences during the training**
-
-        Usually, in online reinforcement learning, the agent interacts in the environment, gets experiences (state, action, reward, and next state), learns from them (updates the neural network), and discards them. This is not efficient.
-        But, with experience replay, **we create a replay buffer that saves experience samples that we can reuse during the training**.
-
-        **2. Avoid forgetting previous experiences and reduce the correlation between experiences**
-
-          The problem we get if we give sequential samples of experiences to our neural network is that it **tends to forget the previous experiences as it overwrites new experiences**. For instance, if we are in the first level and then the second, which is different, our agent can forget how to behave and play in the first level.
+      blanks:
+        - accept:
+            - reused
+            - reuse
+            - replayed
+            - used again
+            - sampled again
+            - used
+          hint: one word
+        - accept:
+            - correlation
+            - correlations
+            - dependence
+            - dependency
+          hint: one word
+        - accept:
+            - forgetting
+            - interference
+          hint: one word
     explanation: |
-      Random sampling also helps stability. Mini-batches drawn uniformly from the buffer are not
-      correlated with one another, which lowers the variance of the updates and removes one
-      source of instability [^1][^2]. Sampling disconnected transitions is allowed because Q-learning is off-policy, so its updates do not have to follow a
-      connected trajectory [^1].
+      Without a buffer, online RL learns from each transition once and discards it; storing
+      transitions lets the agent learn from the same experience many times [^2]. Feeding consecutive
+      transitions makes the network forget earlier situations, e.g. how to play level 1 after moving
+      on to a different level 2 [^2]. Uniformly sampled mini-batches are much less correlated than
+      consecutive steps, which lowers the variance of the updates and removes one source of
+      instability; sampling disconnected transitions is allowed because Q-learning is off-policy
+      [^1].
     references:
       - title: 'Sutton & Barto (2018), Reinforcement Learning: An Introduction, 2nd ed.'
         url: http://incompleteideas.net/book/RLbook2020.pdf
@@ -384,20 +488,39 @@ questions:
   - id: q-learning-015
     type: short_answer
     difficulty: medium
-    question: How do we use Double Deep Q-Learning?
+    question: |
+      How do we use Double Deep Q-Learning? Complete the description. When computing the Q-target,
+      Double DQN uses the {{1}} network to select the best action for the next state, and the {{2}}
+      network to calculate the Q-value of taking that action in the next state. Decoupling action
+      selection from evaluation reduces the {{3}} of Q-values caused by taking a max over noisy
+      estimates.
     answer:
-      model: |
-        When we compute the Q target, we use two networks to decouple the action selection from the target Q value generation. We:
-
-          - Use our *DQN network* to **select the best action to take for the next state** (the action with the highest Q value).
-
-          - Use our *Target network* to calculate **the target Q value of taking that action at the next state**.
+      blanks:
+        - accept:
+            - DQN
+            - online
+            - main
+            - current
+            - policy
+            - Q
+            - Q-network
+            - deep Q
+          hint: the network being trained
+        - accept:
+            - target
+          hint: one word
+        - accept:
+            - overestimation
+            - over-estimation
+            - overestimate
+            - maximization bias
+          hint: one word
     explanation: |
-      The reason is maximization bias: the max over noisy Q-estimates is, on average, larger than
-      the true best value, so standard (Deep) Q-learning tends to overestimate [^1][^2]. If one
-      estimate chooses the argmax and a second, independent estimate scores it, the value of the
-      chosen action is unbiased. That is the double-learning idea, which Double DQN implements
-      with the online and target networks [^1][^2].
+      The max over noisy Q-estimates is on average larger than the true best value, so standard
+      (Deep) Q-learning tends to overestimate; Sutton & Barto call this maximization bias [^1][^2].
+      If one estimate chooses the argmax and a second, independent estimate scores it, the value of
+      the chosen action is no longer biased upward [^1]. Double DQN applies this double-learning idea
+      with the two networks it already has, the online DQN network and the target network [^2].
     references:
       - title: 'Sutton & Barto (2018), Reinforcement Learning: An Introduction, 2nd ed.'
         url: http://incompleteideas.net/book/RLbook2020.pdf
@@ -412,22 +535,51 @@ questions:
     status: draft
   - id: q-learning-016
     type: short_answer
-    question: Define each numbered part of the Bellman equation shown below.
+    difficulty: easy
+    question: |
+      The figure below shows the Bellman equation with four numbered parts. Complete their
+      definitions. Part 1, $V_\pi(s)$, is the {{1}} of state $s$. Part 2, $\mathbb{E}_\pi[R_{t+1}$,
+      is the expected immediate {{2}}, where the subscript $\pi$ means the agent uses its {{3}} to
+      choose actions at every time step. Part 3, $\gamma V_\pi(S_{t+1})$, adds the {{4}} value of the
+      next state. Part 4, $S_t = s$, says the agent starts in state $s$.
     figure:
       src: ./q-learning/q-learning-016.svg
       alt: 'The Bellman equation V_π(s) = E_π[R_{t+1} + γ V_π(S_{t+1}) | S_t = s] with four underlined, numbered parts: 1 is V_π(s), 2 is E_π[R_{t+1}, 3 is γ V_π(S_{t+1}) and 4 is S_t = s.'
     answer:
-      model: |
-        1. $V_\pi(s)$: the value of state $s$ under policy $\pi$.
-        2. $\mathbb{E}_\pi[R_{t+1}$: the expected immediate reward, with the agent following $\pi$ to choose its actions at every step.
-        3. $\gamma V_\pi(S_{t+1})$: plus the discounted value of the next state.
-        4. $S_t = s$: given that the agent starts in state $s$.
-
-        In words: the value of a state is the immediate reward plus the discounted value of the state that follows.
+      blanks:
+        - accept:
+            - value
+            - state value
+            - state-value
+            - expected return
+          hint: one word
+        - accept:
+            - reward
+            - rewards
+          hint: one word
+        - accept:
+            - policy
+            - π
+            - pi
+          hint: one word
+        - accept:
+            - discounted
+          hint: one word
+      model: The value of a state is the expected immediate reward plus the discounted value of the next state, when the agent starts in $s$ and follows $\pi$.
+    explanation: |
+      The return from $s$ splits into the next reward plus the discounted return from the next
+      state, and the expectation of that later return is $v_\pi(S_{t+1})$, which gives the equation
+      in the figure [^1]. Subscripting the expectation with $\pi$ means it is taken while the agent
+      follows $\pi$, and conditioning on $S_t = s$ fixes the starting state [^1]. The course labels
+      the four parts the same way: value of state $s$, expected immediate reward, discounted value of
+      the next state, and "if the agent starts at state $s$" [^2].
     references:
+      - title: 'Sutton & Barto (2018), Reinforcement Learning: An Introduction, 2nd ed.'
+        url: http://incompleteideas.net/book/RLbook2020.pdf
+        locator: Sec. 4.1 Policy Evaluation (Prediction), Eq. (4.3), p. 74
       - source: hf-deep-rl-course
-        locator: Unit 2. Introduction to Q-Learning
-        url: https://huggingface.co/learn/deep-rl-course/unit2/introduction
+        url: https://huggingface.co/learn/deep-rl-course/unit2/bellman-equation
+        locator: 'Unit 2, "The Bellman Equation: simplify our value estimation" (labelled equation figure)'
     source:
       id: hf-deep-rl-course
       ref: unit2/mid-way-quiz#q3
@@ -435,23 +587,50 @@ questions:
     status: draft
   - id: q-learning-017
     type: short_answer
-    question: Define each numbered part of the Temporal Difference (TD) learning update shown below.
+    difficulty: medium
+    question: |
+      The figure below shows the Temporal Difference (TD) learning update with five numbered parts.
+      Complete their definitions. Part 1 is the {{1}} estimate of the value of state $S_t$, and
+      part 2 (both occurrences) is the former estimate. Part 3, $\alpha$, is the {{2}}. Part 4,
+      $R_{t+1}$, is the {{3}} received after leaving $S_t$, and part 5, $\gamma V(S_{t+1})$, is the
+      discounted value estimate of the next state. Parts 4 and 5 together form the TD {{4}}.
     figure:
       src: ./q-learning/q-learning-017.svg
       alt: 'The TD update V(S_t) ← V(S_t) + α[R_{t+1} + γ V(S_{t+1}) − V(S_t)] with numbered parts: 1 is the V(S_t) on the left, 2 is V(S_t) on the right (both occurrences), 3 is α, 4 is R_{t+1} and 5 is γ V(S_{t+1}).'
     answer:
-      model: |
-        1. $V(S_t)$ on the left: the new estimate of the value of state $S_t$.
-        2. $V(S_t)$ on the right (both times): the former estimate of that value.
-        3. $\alpha$: the learning rate.
-        4. $R_{t+1}$: the reward received after leaving $S_t$.
-        5. $\gamma V(S_{t+1})$: the discounted value estimate of the next state.
-
-        $R_{t+1} + \gamma V(S_{t+1})$ is the TD target: TD learning updates after every step, using its own estimate of the next state instead of waiting for the end of the episode.
+      blanks:
+        - accept:
+            - new
+            - updated
+            - revised
+          hint: one word
+        - accept:
+            - learning rate
+            - step size
+            - step-size parameter
+            - lr
+          hint: two words
+        - accept:
+            - reward
+            - immediate reward
+          hint: one word
+        - accept:
+            - target
+          hint: one word
+      model: The TD target is $R_{t+1} + \gamma V(S_{t+1})$; the whole bracket is the TD error.
+    explanation: |
+      TD(0) updates after a single step: it moves the old estimate a fraction $\alpha$ of the way
+      toward the target $R_{t+1} + \gamma V(S_{t+1})$ [^1][^2]. Because that target uses the current
+      estimate of the next state's value instead of the full return, TD bootstraps and does not have
+      to wait for the end of the episode [^1][^2]. The bracket, target minus old estimate, is called
+      the TD error [^2].
     references:
       - source: hf-deep-rl-course
-        locator: Unit 2. Introduction to Q-Learning
-        url: https://huggingface.co/learn/deep-rl-course/unit2/introduction
+        url: https://huggingface.co/learn/deep-rl-course/unit2/mc-vs-td#td-learning
+        locator: 'Unit 2, "Monte Carlo vs Temporal Difference Learning", section "Temporal Difference Learning: learning at each step" (labelled TD update figure)'
+      - title: 'Sutton & Barto (2018), Reinforcement Learning: An Introduction, 2nd ed.'
+        url: http://incompleteideas.net/book/RLbook2020.pdf
+        locator: Sec. 6.1 TD Prediction, Eqs. (6.2) and (6.5), pp. 120–121
     source:
       id: hf-deep-rl-course
       ref: unit2/mid-way-quiz#q5
@@ -459,22 +638,53 @@ questions:
     status: draft
   - id: q-learning-018
     type: short_answer
-    question: Define each numbered part of the Monte Carlo learning update shown below.
+    difficulty: easy
+    question: |
+      The figure below shows the Monte Carlo learning update with four numbered parts. Complete
+      their definitions. Part 1 is the new estimate of the value of state $S_t$, and part 2 (both
+      occurrences) is the {{1}} estimate. Part 3, $\alpha$, is the {{2}}. Part 4, $G_t$, is the
+      {{3}} actually observed from time step $t$, which is only known at the end of the {{4}}.
     figure:
       src: ./q-learning/q-learning-018.svg
       alt: 'The Monte Carlo update V(S_t) ← V(S_t) + α[G_t − V(S_t)] with numbered parts: 1 is the V(S_t) on the left, 2 is V(S_t) on the right (both occurrences), 3 is α and 4 is G_t.'
     answer:
-      model: |
-        1. $V(S_t)$ on the left: the new estimate of the value of state $S_t$.
-        2. $V(S_t)$ on the right (both times): the former estimate, i.e. the expected return starting from that state.
-        3. $\alpha$: the learning rate.
-        4. $G_t$: the return actually observed from time step $t$ to the end of the episode.
-
-        Monte Carlo waits until the episode ends, computes $G_t$ and uses it as the target.
+      blanks:
+        - accept:
+            - former
+            - old
+            - previous
+            - current
+            - prior
+          hint: one word
+        - accept:
+            - learning rate
+            - step size
+            - step-size parameter
+            - lr
+          hint: two words
+        - accept:
+            - return
+            - discounted return
+            - cumulative reward
+            - cumulative discounted reward
+          hint: one word
+        - accept:
+            - episode
+          hint: one word
+    explanation: |
+      Monte Carlo waits until the episode ends, computes the actual return $G_t$ and moves the old
+      estimate, which stands for the expected return from that state, a fraction $\alpha$ of the way
+      toward it [^1][^2]. Its target is a real sample of the return, whereas TD's target
+      $R_{t+1} + \gamma V(S_{t+1})$ is built from another estimate, so TD can update after every step
+      [^2]. Sutton & Barto call this rule constant-$\alpha$ MC, with $\alpha$ a constant step-size
+      parameter [^2].
     references:
       - source: hf-deep-rl-course
-        locator: Unit 2. Introduction to Q-Learning
-        url: https://huggingface.co/learn/deep-rl-course/unit2/introduction
+        url: https://huggingface.co/learn/deep-rl-course/unit2/mc-vs-td#monte-carlo
+        locator: 'Unit 2, "Monte Carlo vs Temporal Difference Learning", section "Monte Carlo: learning at the end of the episode" (labelled MC update figure)'
+      - title: 'Sutton & Barto (2018), Reinforcement Learning: An Introduction, 2nd ed.'
+        url: http://incompleteideas.net/book/RLbook2020.pdf
+        locator: Sec. 6.1 TD Prediction, Eqs. (6.1) and (6.2), pp. 119–120
     source:
       id: hf-deep-rl-course
       ref: unit2/mid-way-quiz#q6
@@ -482,23 +692,55 @@ questions:
     status: draft
   - id: q-learning-019
     type: short_answer
-    question: How do we update the Q-value of a state–action pair? Name each numbered part of the Q-learning update shown below.
+    difficulty: medium
+    question: |
+      How do we update the Q-value of a state–action pair? The figure below shows the Q-learning
+      update with five numbered parts. Complete their definitions. Part 1 is the new Q-value
+      estimate, and part 2 (both occurrences) is the former Q-value estimate. Part 3, $\alpha$, is
+      the {{1}}. Part 4, $R_{t+1}$, is the immediate {{2}}. Part 5, $\gamma \max_a Q(S_{t+1}, a)$, is
+      the discounted estimate of the {{3}} Q-value of the next state. Parts 4 and 5 form the TD
+      target, and the whole bracket, target minus former estimate, is the TD {{4}}.
     figure:
       src: ./q-learning/q-learning-019.svg
       alt: 'The Q-learning update Q(S_t, A_t) ← Q(S_t, A_t) + α[R_{t+1} + γ max_a Q(S_{t+1}, a) − Q(S_t, A_t)] with numbered parts: 1 is the Q(S_t, A_t) on the left, 2 is Q(S_t, A_t) on the right (both occurrences), 3 is α, 4 is R_{t+1} and 5 is γ max_a Q(S_{t+1}, a).'
     answer:
-      model: |
-        1. $Q(S_t, A_t)$ on the left: the new Q-value estimate.
-        2. $Q(S_t, A_t)$ on the right (both times): the former Q-value estimate.
-        3. $\alpha$: the learning rate.
-        4. $R_{t+1}$: the immediate reward.
-        5. $\gamma \max_a Q(S_{t+1}, a)$: the discounted estimate of the best Q-value in the next state.
-
-        $R_{t+1} + \gamma \max_a Q(S_{t+1}, a)$ is the TD target, and the whole bracket (target minus former estimate) is the TD error.
+      blanks:
+        - accept:
+            - learning rate
+            - step size
+            - step-size parameter
+            - lr
+          hint: two words
+        - accept:
+            - reward
+            - rewards
+          hint: one word
+        - accept:
+            - optimal
+            - best
+            - maximum
+            - max
+            - highest
+            - largest
+            - greatest
+          hint: one word
+        - accept:
+            - error
+          hint: one word
+    explanation: |
+      To update $Q(S_t, A_t)$ the agent needs $S_t$, $A_t$, $R_{t+1}$ and $S_{t+1}$: the reward and
+      the next state form the TD target, and the old estimate moves a fraction $\alpha$ toward it
+      [^1]. The next state's value is taken greedily with $\max_a$ even though the agent acts
+      $\epsilon$-greedily, which is what makes Q-learning off-policy [^1]. With this target the
+      learned $Q$ approximates the optimal action-value function $q_*$ directly, whatever policy
+      generates the experience [^2].
     references:
       - source: hf-deep-rl-course
-        locator: Unit 2. Introduction to Q-Learning
-        url: https://huggingface.co/learn/deep-rl-course/unit2/introduction
+        url: https://huggingface.co/learn/deep-rl-course/unit2/q-learning#step4
+        locator: 'Unit 2, "Introducing Q-Learning", section "Step 4: Update Q(St, At)" (labelled update figure)'
+      - title: 'Sutton & Barto (2018), Reinforcement Learning: An Introduction, 2nd ed.'
+        url: http://incompleteideas.net/book/RLbook2020.pdf
+        locator: 'Sec. 6.5 Q-learning: Off-policy TD Control, Eq. (6.8), p. 131'
     source:
       id: hf-deep-rl-course
       ref: unit2/quiz2#q5
@@ -506,15 +748,48 @@ questions:
     status: draft
   - id: q-learning-020
     type: short_answer
-    question: What's the difference between on-policy and off-policy
+    difficulty: medium
+    question: |
+      What's the difference between on-policy and off-policy methods? Complete the description. An
+      {{1}}-policy method uses one policy for acting and a different one for updating: Q-learning
+      acts $\epsilon$-greedily, but its update uses the {{2}} action value $\max_a Q(S_{t+1}, a)$.
+      An {{3}}-policy method uses the same policy for both: {{4}} picks $A_{t+1}$
+      $\epsilon$-greedily and updates with $\gamma Q(S_{t+1}, A_{t+1})$ for that same action.
     answer:
-      model: |
-        - **Off-policy**: one policy chooses the actions and a different one is used for the update. Q-learning acts $\epsilon$-greedily, but its update uses the greedy $\max_a Q(S_{t+1}, a)$.
-        - **On-policy**: the same policy acts and updates. SARSA picks $A_{t+1}$ $\epsilon$-greedily and updates with $\gamma Q(S_{t+1}, A_{t+1})$ for that same action.
+      blanks:
+        - accept:
+            - off
+            - off-policy
+          hint: one word
+        - accept:
+            - greedy
+            - best
+            - maximum
+            - max
+            - highest
+          hint: one word
+        - accept:
+            - on
+            - on-policy
+          hint: one word
+        - accept:
+            - Sarsa
+            - SARSA
+          hint: name of an algorithm
+    explanation: |
+      The course defines off-policy learning as using different policies for acting (inference) and
+      for updating (training), and on-policy learning as using the same policy for both [^1]. In
+      Sutton & Barto's terms, an on-policy method evaluates or improves the policy that generates
+      the data, while an off-policy method evaluates or improves a different one [^2]. Q-learning's
+      greedy max lets it learn about the greedy policy while behaving $\epsilon$-greedily, whereas
+      Sarsa's target uses the action its $\epsilon$-greedy policy actually takes next [^1][^2].
     references:
       - source: hf-deep-rl-course
-        locator: Unit 2. Introduction to Q-Learning
-        url: https://huggingface.co/learn/deep-rl-course/unit2/introduction
+        url: https://huggingface.co/learn/deep-rl-course/unit2/q-learning#off-vs-on
+        locator: Unit 2, "Introducing Q-Learning", section "Off-policy vs On-policy"
+      - title: 'Sutton & Barto (2018), Reinforcement Learning: An Introduction, 2nd ed.'
+        url: http://incompleteideas.net/book/RLbook2020.pdf
+        locator: Sec. 5.4 Monte Carlo Control without Exploring Starts, p. 100; Secs. 6.4–6.5 Sarsa and Q-learning, pp. 129–131
     source:
       id: hf-deep-rl-course
       ref: unit2/quiz2#q6
