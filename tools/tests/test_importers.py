@@ -160,3 +160,24 @@ def test_curation_fix_can_replace_or_remove_option_feedback():
     item.data["options"][1]["why"] = "Review the page and try again."
     common._apply_fix(item, {"why": {1: None}})
     assert item.data["options"][1]["why"] is None
+
+
+def test_curation_fix_turns_an_open_question_into_a_gap_fill_or_a_choice():
+    item = common.Item(
+        ref="x/1",
+        topic="ml-basics",
+        data={"type": "short_answer", "question": "What is x?", "answer": {"model": "long"}},
+    )
+    common._apply_fix(item, {"question": "x is {{1}}", "answer": {"blanks": [{"accept": ["y"]}]}})
+    assert item.data["answer"] == {"model": "long", "blanks": [{"accept": ["y"]}]}
+
+    common._apply_fix(
+        item,
+        {
+            "type": "single",
+            "answer": None,
+            "options": [{"text": "y", "correct": True}, {"text": "z"}],
+        },
+    )
+    assert "answer" not in item.data
+    assert [o["text"] for o in item.data["options"]] == ["y", "z"]
