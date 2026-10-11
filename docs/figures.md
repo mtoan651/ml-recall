@@ -43,12 +43,14 @@ src/content/quizzes/dl/
     └── training-052.excalidraw.svg
 ```
 
-A generator script imports the shared style helper `tools/mlrecall/figstyle.py`: a common
-matplotlib style (colour-blind-safe palette, light grid, no top/right spines) and `save()`, which
-writes deterministic SVG (fixed `svg.hashsalt`, no date) so re-running produces no git diff. It also
-has helpers for ROC curves (`plot_roc`, `roc_with_auc` hits an exact AUC), schematic loss-curve axes,
+A generator script imports the shared style helper `tools/mlrecall/figstyle.py`: a common matplotlib
+style (colour-blind-safe palette, light grid, no top/right spines) and `save()`, which writes
+deterministic SVG (fixed `svg.hashsalt`, no date) so re-running produces no git diff. It also has
+helpers for ROC curves (`plot_roc`, `roc_with_auc` hits an exact AUC), schematic loss-curve axes,
 noise-free histograms, boxes/arrows, depth-two decision trees and equations with numbered,
-underlined parts (`equation_parts`). Other `.py` files next to the generators (e.g. shared shapes)
+underlined parts (`equation_parts`), and graphical-model diagrams (`graph_figure`: circles for
+variables, shaded when observed, small squares for factors, arrows or lines for edges, laid out at
+the coordinates of the source figure). Other `.py` files next to the generators (e.g. shared shapes)
 are helpers.
 
 ```bash
