@@ -38,8 +38,9 @@ pnpm lint && pnpm test && pnpm check && pnpm build   # must pass before committi
 - Never use a `reference`-only source as `source.id`; write an original question and cite it.
 - When generating questions, follow `prompts/generate-questions.md` and
   `docs/content-pipeline.md#writing-good-questions`. Verify facts against the cited source.
-- Do not fetch pages whose terms forbid ingestion by LLMs/AI (e.g. all OpenStax books since
-  July 2026; see `docs/sources.md`), and do not cite them.
+- Do not fetch pages whose terms forbid ingestion by LLMs/AI (e.g. all OpenStax books, checked
+  2026-10-11; see `docs/sources.md`), and do not cite them. Bans on *training* models only don't
+  apply — we don't train.
 - Keep imported questions that show pictures: redraw them from code (`docs/figures.md`), don't drop them.
 - Keep and fix rather than drop or retire: drop an upstream item only for a content reason
   (`docs/content-pipeline.md#curation`), and record every bank edit of an imported question

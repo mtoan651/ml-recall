@@ -25,7 +25,7 @@ versioning: [SemVer](https://semver.org) as defined in [docs/conventions.md](doc
   and tests. Schema: `AnswerKey`, `ShortAnswer.blanks`, optional `model`; `mlr check` and the
   build reject open short answers and misplaced or misnumbered blanks.
 - `openstax-intro-stats` is now `reference` and not used: OpenStax moved to CC BY-NC-SA 4.0 and
-  forbids ingestion into LLMs/generative AI (July 2026). CLAUDE.md and docs/sources.md say not to
+  forbids ingestion into LLMs/generative AI (checked 2026-10-11). CLAUDE.md and docs/sources.md say not to
   fetch or cite such sources.
 
 ### Added
