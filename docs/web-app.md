@@ -145,9 +145,9 @@ breaking change (bump the key, migrate).
 N random questions in N minutes, no feedback until the test is submitted. Pages are static;
 the random draw happens in the browser from the questions embedded at build time.
 
-- **Pool.** Non-retired questions of the topic or tag, except `short_answer` questions
-  without `numeric` / `accept` / `pattern` (self-graded, so practice-only; the start screen
-  says how many were left out). A test page and the "Take a test" box exist only when the pool is not empty.
+- **Pool.** The same question bank as practice: every non-retired question of the topic or
+  tag, of every type (single, multiple, true/false, short answer — auto-graded or open — with
+  text, formulas and figures). Practice and test only differ in how questions are served.
   **Reviewed questions only** on the start screen (shared with practice) restricts the pool to
   `reviewed`.
 - **Size and time.** N = min(20, pool); time limit = N minutes. A smaller pool says so on the
@@ -170,6 +170,11 @@ the random draw happens in the browser from the questions embedded at build time
     status bar) and focuses it. The question in view — the last one whose top is above a
     line a third of the way down the window, or the one just jumped to — is "current": it is
     highlighted, saved as the position, and scrolled back to after a reload.
+- **Open short answers** (model answer only) are typed like any other answer during the test.
+  On the results screen each answered one shows the model answer and **I got it** / **I missed
+  it**; until then it is "Grade yourself" and does not count as correct. Each verdict rescores
+  the test, updates the attempt in the history (and the best score), and records the result for
+  practice progress; verdicts can be changed. Blank open answers count as not answered.
 - **Timer.** Derived from the start timestamp (`remainingMs(startedAt, durationMs, now)`), so
   it stays right when the tab sleeps or the page reloads; at 00:00 the test submits itself.
 - **Resume.** The test in progress (question ids, option orders, answers, flags, position,

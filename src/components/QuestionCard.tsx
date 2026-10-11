@@ -29,6 +29,8 @@ interface QuestionCardProps {
   onSelect: (option: number) => void;
   onText: (text: string) => void;
   onSubmitText: () => void;
+  /** In a timed test, open questions are compared with the model answer after submitting. */
+  mode?: "practice" | "exam";
   /** The card is focused when it becomes the current question. */
   ref?: Ref<HTMLElement>;
 }
@@ -43,6 +45,7 @@ export function QuestionCard({
   onSelect,
   onText,
   onSubmitText,
+  mode = "practice",
   ref,
 }: QuestionCardProps) {
   const headingId = `q-${q.id}-heading`;
@@ -93,6 +96,7 @@ export function QuestionCard({
             inputError={inputError}
             onText={onText}
             onSubmit={onSubmitText}
+            mode={mode}
           />
         )}
       </div>
@@ -224,12 +228,14 @@ function ShortAnswerInput({
   inputError,
   onText,
   onSubmit,
+  mode,
 }: {
   question: QuizQuestion;
   answer: Answer;
   inputError: string | null;
   onText: (text: string) => void;
   onSubmit: () => void;
+  mode: "practice" | "exam";
 }) {
   const key = q.answer;
   if (!key) return null;
@@ -260,7 +266,9 @@ function ShortAnswerInput({
       }}
     >
       <label htmlFor={inputId} className="mb-1.5 block text-sm font-medium text-muted">
-        {auto ? "Your answer" : "Your answer (optional — compare it with the model answer)"}
+        {auto || mode === "exam"
+          ? "Your answer"
+          : "Your answer (optional — compare it with the model answer)"}
       </label>
       {auto ? (
         <input
@@ -286,7 +294,11 @@ function ShortAnswerInput({
           value={answer.text}
           readOnly={locked}
           aria-describedby={describedBy}
-          placeholder="Write down your answer before revealing the model answer"
+          placeholder={
+            mode === "exam"
+              ? "Write your answer — after submitting you compare it with the model answer"
+              : "Write down your answer before revealing the model answer"
+          }
           onChange={(event) => onText(event.target.value)}
           className={`${field} resize-y`}
         />

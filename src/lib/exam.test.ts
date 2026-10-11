@@ -17,7 +17,6 @@ import {
   gradeExamAnswer,
   isAnswered,
   isBetterAttempt,
-  isExamEligible,
   isExpired,
   parseExam,
   parseHistory,
@@ -48,34 +47,16 @@ const pool = (n: number): SessionInput[] =>
 
 const run = (state: ExamState, ...actions: ExamAction[]) => actions.reduce(examReducer, state);
 
-describe("eligibility", () => {
-  it("takes every choice question and only auto-graded short answers", () => {
-    expect(isExamEligible({ type: "single" })).toBe(true);
-    expect(isExamEligible({ type: "multiple" })).toBe(true);
-    expect(isExamEligible({ type: "true_false" })).toBe(true);
-    expect(isExamEligible({ type: "short_answer", answer: { accept: ["relu"] } })).toBe(true);
-    expect(isExamEligible({ type: "short_answer", answer: { accept: [], numeric: 0 } })).toBe(true);
-    expect(isExamEligible({ type: "short_answer", answer: { accept: [], numeric: null } })).toBe(
-      false,
-    );
-    expect(isExamEligible({ type: "short_answer", answer: { accept: [] } })).toBe(false);
-    expect(isExamEligible({ type: "short_answer" })).toBe(false);
-  });
-
-  it("filters the pool, optionally to reviewed questions", () => {
-    const questions: Array<{
-      id: string;
-      type: QuestionType;
-      status: string;
-      answer?: { accept: string[] };
-    }> = [
+describe("pool", () => {
+  it("draws from every question, as practice does, optionally reviewed ones only", () => {
+    const questions: Array<{ id: string; type: QuestionType; status: string }> = [
       { id: "a", type: "single", status: "reviewed" },
-      { id: "b", type: "single", status: "draft" },
-      { id: "c", type: "short_answer", status: "reviewed", answer: { accept: [] } },
-      { id: "d", type: "short_answer", status: "draft", answer: { accept: ["x"] } },
+      { id: "b", type: "true_false", status: "draft" },
+      { id: "c", type: "short_answer", status: "reviewed" }, // open, self-graded
+      { id: "d", type: "short_answer", status: "draft" },
     ];
-    expect(examPool(questions, false).map((q) => q.id)).toEqual(["a", "b", "d"]);
-    expect(examPool(questions, true).map((q) => q.id)).toEqual(["a"]);
+    expect(examPool(questions, false).map((q) => q.id)).toEqual(["a", "b", "c", "d"]);
+    expect(examPool(questions, true).map((q) => q.id)).toEqual(["a", "c"]);
   });
 });
 
@@ -370,9 +351,38 @@ describe("scoring", () => {
       correct: 2,
       incorrect: 1,
       unanswered: 2,
+      pending: 0,
       percent: 40,
       outcomes: { a: "correct", b: "incorrect", c: "correct", d: "unanswered", gone: "unanswered" },
     });
+  });
+
+  it("leaves open answers to the learner, then counts their verdicts", () => {
+    const open: GradingInput = { type: "short_answer", answer: { accept: [] } };
+    expect(gradeExamAnswer(open, { selected: [], text: "the agent's brain" })).toBe("pending");
+    expect(gradeExamAnswer(open, { selected: [], text: " " })).toBe("unanswered");
+
+    const questions = new Map<string, GradingInput>([
+      ["a", single],
+      ["o1", open],
+      ["o2", open],
+      ["o3", open],
+    ]);
+    const state = {
+      items: ["a", "o1", "o2", "o3"].map((id) => ({ id, optionOrder: [] })),
+      answers: {
+        a: { selected: [1], text: "" },
+        o1: { selected: [], text: "answer one" },
+        o2: { selected: [], text: "answer two" },
+      },
+    };
+    const before = scoreExam(state, questions);
+    expect(before).toMatchObject({ correct: 1, pending: 2, unanswered: 1, percent: 25 });
+    expect(before.outcomes).toMatchObject({ o1: "pending", o2: "pending", o3: "unanswered" });
+
+    const after = scoreExam(state, questions, { o1: true, o2: false });
+    expect(after).toMatchObject({ correct: 2, incorrect: 1, pending: 0, percent: 50 });
+    expect(after.outcomes).toMatchObject({ o1: "correct", o2: "incorrect", o3: "unanswered" });
   });
 });
 

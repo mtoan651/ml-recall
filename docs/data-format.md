@@ -92,8 +92,9 @@ Grading of a typed answer — correct if **any** key matches:
    example, and every example must match the pattern (`mlr check`).
 
 `hint` is shown under the input in practice and test mode. Without it the app shows a default:
-"Enter a number, e.g. …" for `numeric`, "A word or short phrase" otherwise. Self-graded questions
-are practice-only — timed tests use auto-graded questions only.
+"Enter a number, e.g. …" for `numeric`, "A word or short phrase" otherwise. Practice and timed
+tests use the same questions: in a test, open (self-graded) answers are compared with the model
+answer on the results screen.
 
 ### Citations
 

@@ -28,9 +28,11 @@ import {
   loadSettings,
   saveExam,
   saveExamAttempt,
+  saveResult,
   saveResults,
   saveSettings,
   storedExamStart,
+  updateExamAttempt,
 } from "../lib/storage";
 import type { ExamScopeView, QuizQuestion } from "../lib/types";
 import { ExamResults, type FinishedExam } from "./ExamResults";
@@ -41,8 +43,6 @@ interface ExamProps {
   /** Questions of the topic or tag that can be in a test (see `isExamEligible`). */
   questions: QuizQuestion[];
   scope: ExamScopeView;
-  /** Open short answers of the topic or tag, left out because they cannot be auto-graded. */
-  excluded?: number;
   /** Show each question's topic (cross-topic sets such as tag pages). */
   showTopic?: boolean;
 }
@@ -63,7 +63,7 @@ const toInput = (q: QuizQuestion): SessionInput => ({
  * against the clock, no feedback → results with every answer explained. The test in progress
  * is saved in localStorage after every change, so a reload resumes it.
  */
-export default function Exam({ questions, scope, excluded = 0, showTopic = false }: ExamProps) {
+export default function Exam({ questions, scope, showTopic = false }: ExamProps) {
   const scopeKey = examScope(scope.kind, scope.id);
   const byId = useMemo(() => new Map(questions.map((q) => [q.id, q])), [questions]);
   const storedInfo = useMemo(
@@ -73,7 +73,7 @@ export default function Exam({ questions, scope, excluded = 0, showTopic = false
       ),
     [questions],
   );
-  const eligibleCount = useMemo(() => examPool(questions, false).length, [questions]);
+  const poolCount = questions.length;
   const reviewedCount = useMemo(() => examPool(questions, true).length, [questions]);
 
   // The server renders the start screen; the browser then restores settings, history and a
@@ -101,7 +101,7 @@ export default function Exam({ questions, scope, excluded = 0, showTopic = false
   /** Move focus to the new view (start screen or results) after a user action. */
   const moved = useRef(false);
 
-  const plan = planExam(reviewedOnly ? reviewedCount : eligibleCount);
+  const plan = planExam(reviewedOnly ? reviewedCount : poolCount);
 
   const dispatch = useCallback(
     (action: ExamAction) => setExam((state) => (state ? examReducer(state, action) : state)),
@@ -174,11 +174,18 @@ export default function Exam({ questions, scope, excluded = 0, showTopic = false
         usedMs,
         timedOut,
         newBest: previousBest !== undefined && isBetterAttempt(attempt, previousBest),
+        selfGrades: {},
+        attempt,
+        previousBest,
       });
+      const toGrade =
+        score.pending === 0
+          ? ""
+          : ` ${score.pending} open ${score.pending === 1 ? "answer is" : "answers are"} waiting for your own grade.`;
       setAnnouncement(
-        timedOut
+        (timedOut
           ? `Time is up. The test was submitted: ${score.correct} of ${score.total} correct.`
-          : `Test submitted: ${score.correct} of ${score.total} correct.`,
+          : `Test submitted: ${score.correct} of ${score.total} correct.`) + toGrade,
       );
     },
     [byId, scopeKey, takenElsewhere, yieldToOtherTab],
@@ -257,6 +264,25 @@ export default function Exam({ questions, scope, excluded = 0, showTopic = false
     if (top < 0) rootRef.current?.scrollIntoView({ block: "start" });
   }, [questions, reviewedOnly, layout, scopeKey]);
 
+  /** The learner compared an open answer with the model answer: rescore and update history. */
+  const selfGrade = (id: string, right: boolean) => {
+    if (!finished) return;
+    const selfGrades = { ...finished.selfGrades, [id]: right };
+    const score = scoreExam(finished.state, byId, selfGrades);
+    const attempt = { ...finished.attempt, correct: score.correct };
+    setHistory(updateExamAttempt(scopeKey, finished.finishedAt, score.correct));
+    saveResult(id, right, undefined, finished.finishedAt);
+    setFinished({
+      ...finished,
+      selfGrades,
+      score,
+      attempt,
+      newBest:
+        finished.previousBest !== undefined && isBetterAttempt(attempt, finished.previousBest),
+    });
+    setAnnouncement(`Score: ${score.correct} of ${score.total} correct.`);
+  };
+
   const changeReviewedOnly = (value: boolean) => {
     setReviewedOnlySetting(value);
     // Shared with practice mode: "Reviewed only" means the same thing on both pages.
@@ -287,6 +313,7 @@ export default function Exam({ questions, scope, excluded = 0, showTopic = false
             scope={scope}
             history={history}
             showTopic={showTopic}
+            onSelfGrade={selfGrade}
             onNewTest={() => {
               moved.current = true;
               setAnnouncement("");
@@ -318,8 +345,7 @@ export default function Exam({ questions, scope, excluded = 0, showTopic = false
               plan={plan}
               reviewedOnly={reviewedOnly}
               reviewedCount={reviewedCount}
-              draftCount={eligibleCount - reviewedCount}
-              excluded={excluded}
+              draftCount={poolCount - reviewedCount}
               layout={layout}
               history={history}
               onReviewedOnly={changeReviewedOnly}

@@ -1,15 +1,15 @@
 ---
 import Exam from "../../../components/Exam";
 import Base from "../../../layouts/Base.astro";
-import { examQuestions, getBank, toQuizQuestions } from "../../../lib/bank";
+import { getBank, toQuizQuestions } from "../../../lib/bank";
 import { planExam } from "../../../lib/exam";
 import { url } from "../../../lib/url";
 
-// One test page per topic with at least one auto-gradable question.
+// One test page per topic with questions: tests draw from the same questions as practice.
 export async function getStaticPaths() {
   const bank = await getBank();
   return [...bank.topics.values()]
-    .filter((t) => examQuestions(bank.questions.filter((q) => q.topic.id === t.id)).length > 0)
+    .filter((t) => bank.questions.some((q) => q.topic.id === t.id))
     .map((t) => ({ params: { topic: t.id } }));
 }
 
@@ -17,9 +17,7 @@ const bank = await getBank();
 const topic = bank.topics.get(Astro.params.topic);
 if (!topic) throw new Error(`Unknown topic ${Astro.params.topic}`);
 const topicQuestions = bank.questions.filter((q) => q.topic.id === topic.id);
-const eligible = examQuestions(topicQuestions);
-// Only the questions a test can draw from are embedded in the page.
-const questions = await toQuizQuestions(eligible, bank);
+const questions = await toQuizQuestions(topicQuestions, bank);
 const { count } = planExam(questions.length);
 ---
 
@@ -44,7 +42,6 @@ const { count } = planExam(questions.length);
       client:load
       questions={questions}
       scope={{ kind: "topic", id: topic.id, title: topic.title, practiceUrl: topic.url }}
-      excluded={topicQuestions.length - eligible.length}
     />
   </div>
 </Base>

@@ -5,6 +5,16 @@ versioning: [SemVer](https://semver.org) as defined in [docs/conventions.md](doc
 
 ## [Unreleased]
 
+### Changed
+
+- Practice and timed tests share one question bank: tests now draw from every question of the
+  topic or tag, open short answers included (e.g. NumPy: 1 → 64 questions to draw from,
+  Q-learning: 8 → 20). Open answers are typed during the test and self-graded on the results screen
+  (**I got it** / **I missed it**), which rescores the test and its history entry.
+- `openstax-intro-stats` is now `reference` and not used: OpenStax moved to CC BY-NC-SA 4.0 and
+  forbids ingestion into LLMs/generative AI (July 2026). CLAUDE.md and docs/sources.md say not to
+  fetch or cite such sources.
+
 ### Added
 
 - Picture questions are kept and redrawn: 20 questions that had been dropped as image-only or
@@ -44,12 +54,6 @@ versioning: [SemVer](https://semver.org) as defined in [docs/conventions.md](doc
   Barto, scikit-learn, CS229, Interactive Linear Algebra, Active Calculus.
 - Curation: `default_drop` keep-lists, per-item overrides of `exclude_prefixes`, `keep: true` for
   flagged items.
-
-### Changed
-
-- `openstax-intro-stats` is now `reference` and not used: OpenStax moved to CC BY-NC-SA 4.0 and
-  forbids ingestion into LLMs/generative AI (July 2026). CLAUDE.md and docs/sources.md say not to
-  fetch or cite such sources.
 
 ### Fixed
 
