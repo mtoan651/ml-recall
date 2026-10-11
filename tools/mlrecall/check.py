@@ -142,9 +142,14 @@ def _check_near_duplicates(r: Report) -> None:
         options = " ".join(o.text for o in q.options or [])
         return _normalize(f"{q.question} {options} {q.answer.model if q.answer else ''}")
 
-    items = [(q.id, fingerprint(q)) for _, q in r.questions]
-    for i, (id_a, a) in enumerate(items):
-        for id_b, b in items[i + 1 :]:
+    def figures(q: Question) -> tuple[str, ...]:
+        return tuple(f.src for f in [q.figure, *(o.image for o in q.options or [])] if f)
+
+    items = [(q.id, fingerprint(q), figures(q)) for _, q in r.questions]
+    for i, (id_a, a, fig_a) in enumerate(items):
+        for id_b, b, fig_b in items[i + 1 :]:
+            if fig_a and fig_b and fig_a != fig_b:
+                continue  # the same stem about two different figures is two questions
             if abs(len(a) - len(b)) > 0.2 * max(len(a), len(b), 1):
                 continue
             if SequenceMatcher(None, a, b).ratio() >= NEAR_DUPLICATE_RATIO:
