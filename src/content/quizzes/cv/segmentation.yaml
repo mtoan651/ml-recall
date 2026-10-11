@@ -9,9 +9,11 @@ questions:
     question: Segmentation networks consist of ____ and ____ parts
     options:
       - text: classifier, divider
+        why: There is no "divider" part; the network extracts features and then decodes them into a mask with one channel per class [^1].
       - text: encoder, decoder
         correct: true
       - text: generator, discriminator
+        why: These are the two networks of a GAN, which generates images, not of a segmentation model [^4].
     explanation: |
       Segmentation networks follow the same pattern as an autoencoder. An encoder extracts
       features from the image, and a decoder turns those features into a mask with the same size
@@ -37,14 +39,17 @@ questions:
       id: ms-ai-for-beginners
       ref: quiz-112/q3
       url: https://github.com/microsoft/AI-For-Beginners/blob/392d0df1b2647cbee104942390551f1ed9e072c8/etc/quiz-app/src/assets/translations/en/lesson-12.json
-    status: draft
+    status: reviewed
+    reviewed_by: claude
   - id: segmentation-002
     type: single
     difficulty: easy
     question: ____ extracts features from an input image
     options:
       - text: decoder
+        why: The decoder works in the opposite direction, turning features into the output mask [^1].
       - text: generator
+        why: A GAN generator turns a random vector into an image; it does not read an input image [^3].
       - text: encoder
         correct: true
     explanation: |
@@ -67,7 +72,8 @@ questions:
       id: ms-ai-for-beginners
       ref: quiz-212/q1
       url: https://github.com/microsoft/AI-For-Beginners/blob/392d0df1b2647cbee104942390551f1ed9e072c8/etc/quiz-app/src/assets/translations/en/lesson-12.json
-    status: draft
+    status: reviewed
+    reviewed_by: claude
   - id: segmentation-003
     type: single
     difficulty: easy
@@ -76,7 +82,9 @@ questions:
       - text: decoder
         correct: true
       - text: generator
+        why: A generator starts from a random latent vector, not from features of an input image [^3].
       - text: encoder
+        why: The encoder extracts features from the input image; turning them into a mask is the decoder's job [^1].
     explanation: |
       The decoder takes the encoder's features and produces the mask. The mask has the input's
       spatial size and one channel per class, so each pixel ends up with a class prediction [^1].
@@ -98,7 +106,8 @@ questions:
       id: ms-ai-for-beginners
       ref: quiz-212/q2
       url: https://github.com/microsoft/AI-For-Beginners/blob/392d0df1b2647cbee104942390551f1ed9e072c8/etc/quiz-app/src/assets/translations/en/lesson-12.json
-    status: draft
+    status: reviewed
+    reviewed_by: claude
   - id: segmentation-004
     type: single
     difficulty: easy
@@ -109,8 +118,11 @@ questions:
       - text: Instance segmentation
         correct: true
       - text: Semantic segmentation
+        why: It labels every pixel but gives all sheep one "sheep" class, without telling the three animals apart [^1].
       - text: Object detection with bounding boxes
+        why: It separates the sheep, but with rectangles rather than a label for every pixel [^1].
       - text: Image classification
+        why: It gives one label to the whole image, with neither pixel labels nor separate objects.
     explanation: |
       Segmentation classifies every pixel. Semantic segmentation only gives each pixel its class and
       does not separate objects of the same class, so all sheep get one label; instance segmentation
@@ -125,7 +137,8 @@ questions:
       id: ms-ai-for-beginners
       ref: quiz-112/q1
       url: https://github.com/microsoft/AI-For-Beginners/blob/392d0df1b2647cbee104942390551f1ed9e072c8/etc/quiz-app/src/assets/translations/en/lesson-12.json
-    status: draft
+    status: reviewed
+    reviewed_by: claude
   - id: segmentation-005
     type: single
     difficulty: medium
@@ -134,8 +147,11 @@ questions:
       - text: Cross-entropy averaged over all pixels (binary cross-entropy for a two-class mask)
         correct: true
       - text: Mean squared error between the predicted mask image and the target mask image, pixel by pixel
+        why: MSE compares two images, as in an autoencoder; a mask holds class numbers, so a classification loss is used [^1].
       - text: Intersection over Union between predicted and true bounding boxes
+        why: Bounding-box IoU belongs to object detection; a segmentation network predicts a class per pixel, not boxes [^2].
       - text: The 0-1 loss of the single most likely class for the whole image
+        why: One label for the whole image is image classification, not segmentation.
     explanation: |
       Segmentation is pixel classification: each pixel of the target mask holds a class number,
       one-hot encoded along the channel dimension, so a classification loss is used, cross-entropy
@@ -154,28 +170,35 @@ questions:
       id: ms-ai-for-beginners
       ref: quiz-112/q2
       url: https://github.com/microsoft/AI-For-Beginners/blob/392d0df1b2647cbee104942390551f1ed9e072c8/etc/quiz-app/src/assets/translations/en/lesson-12.json
-    status: draft
+    status: reviewed
+    reviewed_by: claude
   - id: segmentation-006
     type: single
     difficulty: medium
     question: |
-      SegNet is a plain encoder-decoder for segmentation: its encoder's pooling layers reduce the
-      spatial resolution, so its decoder cannot restore pixel positions accurately. What does U-Net
-      add to fix this?
+      A plain encoder–decoder for segmentation, such as a basic SegNet, uses convolutions and pooling
+      in the encoder and convolutions with upsampling in the decoder. The pooling reduces the spatial
+      resolution, so the decoder cannot restore pixel positions accurately. What does U-Net add to
+      fix this?
     options:
       - text: Skip connections that pass the encoder's feature maps at each level to the decoder at the same level
         correct: true
       - text: Batch normalization after each convolution, so that the deep encoder-decoder network can be trained at all
+        why: Batch normalization is already used in such encoder–decoders to train the deep network; it does not bring back spatial detail [^1].
       - text: A fully connected head that predicts a bounding box for each object
+        why: Bounding boxes belong to object detection; a segmentation mask needs a class for every pixel [^2].
       - text: More pooling layers in the decoder, so the mask is produced at a lower resolution
+        why: More pooling would lower the resolution further; the decoder must upsample to the input's size [^2].
     explanation: |
-      SegNet uses convolutions and pooling in the encoder and convolutions with upsampling in the
-      decoder; the pyramid encoder reduces the spatial accuracy of the features, so the decoder cannot
-      reconstruct pixel positions correctly [^1]. U-Net adds skip connections between encoder and
-      decoder layers at each level, so the decoder does not lose the information from the original
-      input at that level [^1]. Batch normalization is already part of SegNet, where it lets the
-      multi-layer network train [^1]. A segmentation mask has the input's size, so the decoder
-      upsamples rather than pooling further, and bounding boxes belong to object detection [^2].
+      A plain encoder–decoder uses convolutions and pooling in the encoder and convolutions with
+      upsampling in the decoder; the pyramid encoder reduces the spatial accuracy of the features, so
+      the decoder cannot reconstruct pixel positions correctly [^1]. U-Net adds skip connections
+      between encoder and decoder layers at each level, so the decoder does not lose the information
+      from the original input at that level [^1]. Batch normalization is already part of such a
+      network, where it lets the multi-layer network train [^1]. A segmentation mask has the input's
+      size, so the decoder upsamples rather than pooling further, and bounding boxes belong to object
+      detection [^2]. The original SegNet softens the problem in another way: its decoder upsamples
+      with the max-pooling indices saved by the encoder [^3].
     references:
       - source: ms-ai-for-beginners
         url: https://github.com/microsoft/AI-For-Beginners/blob/392d0df1b2647cbee104942390551f1ed9e072c8/lessons/4-ComputerVision/12-Segmentation/SemanticSegmentationPytorch.ipynb
@@ -183,11 +206,15 @@ questions:
       - source: ms-ai-for-beginners
         url: https://github.com/microsoft/AI-For-Beginners/blob/392d0df1b2647cbee104942390551f1ed9e072c8/lessons/4-ComputerVision/12-Segmentation/README.md
         locator: 'Lesson: Segmentation, introduction'
+      - title: 'Badrinarayanan, Kendall & Cipolla (2017), SegNet: A Deep Convolutional Encoder-Decoder Architecture for Image Segmentation'
+        url: https://arxiv.org/abs/1511.00561
+        locator: Abstract
     source:
       id: ms-ai-for-beginners
       ref: quiz-212/q3
       url: https://github.com/microsoft/AI-For-Beginners/blob/392d0df1b2647cbee104942390551f1ed9e072c8/etc/quiz-app/src/assets/translations/en/lesson-12.json
-    status: draft
+    status: reviewed
+    reviewed_by: claude
   - id: segmentation-007
     type: multiple
     difficulty: medium
@@ -197,7 +224,7 @@ questions:
       - label-maps
     question: |
       You reuse image-classification augmentations to train a semantic segmentation model, where every
-      pixel has a class label. Select all that apply.
+      pixel has a class label. Which statements are correct? Select all that apply.
     options:
       - text: Random cropping cannot be used, because a crop would cut objects at its border
         why: d2l uses random cropping for segmentation, cutting the same area from the image and from its label map [^1].
@@ -228,7 +255,8 @@ questions:
       id: d2l
       ref: chapter_computer-vision/semantic-segmentation-and-dataset#ex2
       url: https://d2l.ai/chapter_computer-vision/semantic-segmentation-and-dataset.html#exercises
-    status: draft
+    status: reviewed
+    reviewed_by: claude
   - id: segmentation-008
     type: short_answer
     difficulty: medium
@@ -267,7 +295,8 @@ questions:
       id: d2l
       ref: chapter_computer-vision/transposed-conv#ex1
       url: https://d2l.ai/chapter_computer-vision/transposed-conv.html#exercises
-    status: draft
+    status: reviewed
+    reviewed_by: claude
   - id: segmentation-009
     type: short_answer
     difficulty: medium
@@ -306,7 +335,8 @@ questions:
       id: d2l
       ref: chapter_computer-vision/transposed-conv#ex2
       url: https://d2l.ai/chapter_computer-vision/transposed-conv.html#exercises
-    status: draft
+    status: reviewed
+    reviewed_by: claude
   - id: segmentation-010
     type: single
     difficulty: medium
@@ -348,7 +378,8 @@ questions:
       id: ds-interviews
       ref: theory.md#q118
       url: https://github.com/alexeygrigorev/data-science-interviews/blob/919f44547ef5ffc2bd59674fd301940529f4c1a8/theory.md#neural-networks-for-computer-vision
-    status: draft
+    status: reviewed
+    reviewed_by: claude
   - id: segmentation-011
     type: short_answer
     difficulty: medium
@@ -390,7 +421,8 @@ questions:
     source:
       id: original
       ref: segmentation-011
-    status: draft
+    status: reviewed
+    reviewed_by: claude
   - id: segmentation-012
     type: short_answer
     difficulty: hard
@@ -423,7 +455,8 @@ questions:
     source:
       id: original
       ref: segmentation-012
-    status: draft
+    status: reviewed
+    reviewed_by: claude
   - id: segmentation-013
     type: short_answer
     difficulty: medium
@@ -472,7 +505,8 @@ questions:
     source:
       id: original
       ref: segmentation-013
-    status: draft
+    status: reviewed
+    reviewed_by: claude
   - id: segmentation-014
     type: multiple
     difficulty: medium
@@ -517,7 +551,8 @@ questions:
     source:
       id: original
       ref: segmentation-014
-    status: draft
+    status: reviewed
+    reviewed_by: claude
   - id: segmentation-015
     type: single
     difficulty: medium
@@ -554,7 +589,8 @@ questions:
     source:
       id: original
       ref: segmentation-015
-    status: draft
+    status: reviewed
+    reviewed_by: claude
   - id: segmentation-016
     type: single
     difficulty: medium
@@ -594,4 +630,5 @@ questions:
     source:
       id: original
       ref: segmentation-016
-    status: draft
+    status: reviewed
+    reviewed_by: claude

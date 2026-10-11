@@ -9,8 +9,11 @@ questions:
     question: Given two Boolean random variables, $A$ and $B$, where $P(A) = 1/2$, $P(B) = 1/3$, and $P(A \mid \neg B) = 1/4$, what is $P(A \mid B)$?
     options:
       - text: 1/6
+        why: This is the joint probability $P(A, \neg B) = \tfrac14 \cdot \tfrac23$, not the conditional $P(A \mid B)$.
       - text: 1/4
+        why: This is the given $P(A \mid \neg B)$; conditioning on $B$ instead of $\neg B$ changes the answer.
       - text: 3/4
+        why: This is $P(\neg A \mid \neg B) = 1 - \tfrac14$, a conditional on the wrong events.
       - text: '1'
         correct: true
     explanation: |
@@ -26,7 +29,8 @@ questions:
       id: mmlu-redux
       ref: machine_learning/10
       url: https://huggingface.co/datasets/edinburgh-dawg/mmlu-redux-2.0/viewer/machine_learning/test?row=10
-    status: draft
+    status: reviewed
+    reviewed_by: claude
   - id: probability-002
     type: single
     difficulty: medium
@@ -38,10 +42,13 @@ questions:
       **Statement 2.** Decision tree is learned by minimizing information gain.
     options:
       - text: True, True
+        why: 'Statement 1 is false: a density can exceed 1, e.g. the uniform density on $[0, 0.5]$ equals 2 [^2].'
       - text: False, False
         correct: true
       - text: True, False
+        why: 'Statement 1 is false: a density only has to be nonnegative and integrate to 1, so values above 1 are allowed [^1].'
       - text: False, True
+        why: 'Statement 2 is false: each split is chosen to *maximize* the information gain, not to minimize it [^3].'
     explanation: |
       Statement 1 is false. A density only has to be nonnegative and integrate to 1 [^1], so it can exceed 1. The uniform density on $[a,b]$ is $1/(b-a)$ [^2], which equals 2 on $[0, 0.5]$. Probabilities come from areas under $p(x)$, not from its height.
       Statement 2 is also false. Tree learners such as ID3 and CART pick, at each node, the split with the *largest* information gain, which is the same as minimizing the weighted child impurity [^3].
@@ -59,14 +66,17 @@ questions:
       id: mmlu-redux
       ref: machine_learning/11
       url: https://huggingface.co/datasets/edinburgh-dawg/mmlu-redux-2.0/viewer/machine_learning/test?row=11
-    status: draft
+    status: reviewed
+    reviewed_by: claude
   - id: probability-003
     type: single
     difficulty: medium
     question: Say the incidence of a disease $D$ is about 5 cases per 100 people (i.e., $P(D) = 0.05$). Let Boolean random variable $D$ mean a patient “has disease $D$” and let Boolean random variable $TP$ stand for “tests positive.” Tests for disease $D$ are known to be very accurate in the sense that the probability of testing positive when you have the disease is 0.99, and the probability of testing negative when you do not have the disease is 0.97. What is $P(TP)$, the prior probability of testing positive?
     options:
       - text: '0.0368'
+        why: 'Too small: the true positives alone contribute $0.99 \times 0.05 = 0.0495$, and false positives add $0.03 \times 0.95$ on top.'
       - text: '0.473'
+        why: 'Far too large: $P(TP)$ averages 0.99 (weight 0.05) and 0.03 (weight 0.95), so it must lie close to 0.03.'
       - text: '0.078'
         correct: true
       - text: '0.0495'
@@ -83,17 +93,21 @@ questions:
       id: mmlu-redux
       ref: machine_learning/13
       url: https://huggingface.co/datasets/edinburgh-dawg/mmlu-redux-2.0/viewer/machine_learning/test?row=13
-    status: draft
+    status: reviewed
+    reviewed_by: claude
   - id: probability-004
     type: single
     difficulty: medium
     question: Suppose we would like to calculate $P(H \mid E, F)$ and we have no conditional independence information. Which of the following sets of numbers are sufficient for the calculation?
     options:
       - text: $P(E, F)$, $P(H)$, $P(E \mid H)$, $P(F \mid H)$
+        why: Combining $P(E \mid H)$ and $P(F \mid H)$ into $P(E, F \mid H)$ needs conditional independence of $E$ and $F$ given $H$, which is not assumed [^1].
       - text: $P(E, F)$, $P(H)$, $P(E, F \mid H)$
         correct: true
       - text: $P(H)$, $P(E \mid H)$, $P(F \mid H)$
+        why: Combining $P(E \mid H)$ and $P(F \mid H)$ needs conditional independence, and the set also lacks the normalizer $P(E, F)$.
       - text: $P(E, F)$, $P(E \mid H)$, $P(F \mid H)$
+        why: This set lacks the prior $P(H)$, and combining $P(E \mid H)$ with $P(F \mid H)$ would need conditional independence.
     explanation: |
       Bayes' theorem gives $P(H \mid E,F) = \dfrac{P(E,F \mid H)\,P(H)}{P(E,F)}$ [^1]. That uses exactly $P(E,F)$, $P(H)$ and $P(E,F \mid H)$. The sets with $P(E \mid H)$ and $P(F \mid H)$ would need $P(E,F \mid H) = P(E \mid H)P(F \mid H)$. That factorization is conditional independence of $E$ and $F$ given $H$ [^1], and the question rules it out. The set without $P(E,F)$ also lacks the normalizer.
     references:
@@ -104,17 +118,21 @@ questions:
       id: mmlu-redux
       ref: machine_learning/15
       url: https://huggingface.co/datasets/edinburgh-dawg/mmlu-redux-2.0/viewer/machine_learning/test?row=15
-    status: draft
+    status: reviewed
+    reviewed_by: claude
   - id: probability-005
     type: single
     difficulty: medium
     question: Say the incidence of a disease $D$ is about 5 cases per 100 people (i.e., $P(D) = 0.05$). Let Boolean random variable $D$ mean a patient “has disease $D$” and let Boolean random variable $TP$ stand for “tests positive.” Tests for disease $D$ are known to be very accurate in the sense that the probability of testing positive when you have the disease is 0.99, and the probability of testing negative when you do not have the disease is 0.97. What is $P(D \mid TP)$, the posterior probability that you have disease $D$ when the test is positive?
     options:
       - text: '0.0495'
+        why: This is the joint $P(TP, D) = 0.99 \times 0.05$; it still has to be divided by $P(TP)$.
       - text: '0.078'
+        why: This is the evidence $P(TP)$, the denominator of Bayes' theorem, not the posterior.
       - text: '0.635'
         correct: true
       - text: '0.97'
+        why: This is the test's specificity $P(\neg TP \mid \neg D)$; the posterior also depends on the small prior $P(D) = 0.05$.
     explanation: |
       By Bayes' theorem [^1],
       $$P(D \mid TP) = \frac{P(TP \mid D)P(D)}{P(TP)} = \frac{0.99 \times 0.05}{0.99 \times 0.05 + 0.03 \times 0.95} = \frac{0.0495}{0.078} \approx 0.635.$$
@@ -127,17 +145,21 @@ questions:
       id: mmlu-redux
       ref: machine_learning/22
       url: https://huggingface.co/datasets/edinburgh-dawg/mmlu-redux-2.0/viewer/machine_learning/test?row=22
-    status: draft
+    status: reviewed
+    reviewed_by: claude
   - id: probability-006
     type: single
     difficulty: medium
     question: Which one of the following is equal to $P(A, B, C)$ given Boolean random variables $A$, $B$ and $C$, and no independence or conditional independence assumptions between any of them?
     options:
       - text: $P(A \mid B) \cdot P(B \mid C) \cdot P(C \mid A)$
+        why: A product of three conditionals with no marginal is not a chain-rule factorization, so it does not equal $P(A, B, C)$ in general.
       - text: $P(C \mid A, B) \cdot P(A) \cdot P(B)$
+        why: $P(A)P(B)$ equals $P(A, B)$ only if $A$ and $B$ are independent, which is not assumed [^1].
       - text: $P(A, B \mid C) \cdot P(C)$
         correct: true
       - text: $P(A \mid B, C) \cdot P(B \mid A, C) \cdot P(C \mid A, B)$
+        why: Every factor conditions on the other two variables; the chain rule needs factors that condition on fewer and fewer variables, ending with a marginal.
     explanation: |
       The definition of conditional probability, applied to the joint event $(A, B)$ and $C$, gives $P(A,B,C) = P(A,B \mid C)\,P(C)$ with no assumptions [^1]. $P(C \mid A,B)P(A)P(B)$ would need $A$ and $B$ to be independent, since in general $P(A,B) \ne P(A)P(B)$ [^1]. The products of three conditionals do not follow the chain rule. For example, $P(A \mid B)P(B \mid C)P(C \mid A)$ never includes a marginal.
     references:
@@ -148,15 +170,17 @@ questions:
       id: mmlu-redux
       ref: machine_learning/52
       url: https://huggingface.co/datasets/edinburgh-dawg/mmlu-redux-2.0/viewer/machine_learning/test?row=52
-    status: draft
+    status: reviewed
+    reviewed_by: claude
   - id: probability-007
     type: single
     difficulty: easy
     question: Can you get heads 10 times in a row when throwing a coin?
     options:
-      - text: yes
+      - text: Yes, it is possible
         correct: true
-      - text: no
+      - text: No, it is impossible
+        why: 'Ten heads in a row has probability $(1/2)^{10} = 1/1024$: small, but not zero.'
     explanation: |
       The lesson defines a probability as the number of favourable outcomes divided by the total, when all outcomes are equally likely [^1]. Ten tosses give $2^{10} = 1024$ equally likely sequences, and only one of them is all heads. Separate coin tosses are independent, so multiplying gives the same answer, $(1/2)^{10} = 1/1024$ [^2]. The probability is small but positive, so ten heads in a row is possible; it happens about once in a thousand tries.
     references:
@@ -170,7 +194,8 @@ questions:
       id: ms-ds-for-beginners
       ref: quiz-6/q2
       url: https://github.com/microsoft/Data-Science-For-Beginners/blob/4d2ac427ad6f022e73a75c4f46a28bbb7978ec3f/quiz-app/src/assets/translations/en/group-1.json
-    status: draft
+    status: reviewed
+    reviewed_by: claude
   - id: probability-008
     type: single
     difficulty: easy
@@ -179,7 +204,9 @@ questions:
       - text: 1/2
         correct: true
       - text: 1/3
+        why: Three of the six faces (2, 4, 6) are even, so the probability is $3/6$, not $1/3$.
       - text: impossible to tell
+        why: For a fair die all six faces are equally likely, so the probability follows from counting faces.
     explanation: |
       A fair die has six equally likely faces, and three of them (2, 4, 6) are even, so the probability is $3/6 = 1/2$ [^1]. "Impossible to tell" would only apply to an unknown, possibly biased die. $1/3$ counts the wrong number of faces.
     references:
@@ -190,17 +217,20 @@ questions:
       id: ms-ds-for-beginners
       ref: quiz-6/q3
       url: https://github.com/microsoft/Data-Science-For-Beginners/blob/4d2ac427ad6f022e73a75c4f46a28bbb7978ec3f/quiz-app/src/assets/translations/en/group-1.json
-    status: draft
+    status: reviewed
+    reviewed_by: claude
   - id: probability-009
     type: single
     difficulty: easy
     shuffle: false
-    question: We throw the dice 100 times and compute the average value. What would be the distribution of the result?
+    question: We roll a fair die 100 times and compute the average of the rolls. Approximately what distribution does this average follow?
     options:
       - text: uniform
+        why: A single roll is uniform on $\{1, \dots, 6\}$, but the average of 100 rolls piles up around 3.5 in a bell shape.
       - text: normal
         correct: true
       - text: none of the above
+        why: 'The average does follow a recognizable distribution: by the central limit theorem it is approximately normal [^2].'
     explanation: |
       By the central limit theorem, the mean of a large random sample is approximately normal, with mean $\mu$ and variance $\sigma^2/n$. This holds whatever distribution the individual values come from, including discrete ones [^1][^2]. One roll is uniform on $\{1,\dots,6\}$, but the average of 100 rolls piles up around 3.5 in a bell shape, with standard deviation $\sigma/\sqrt{100} \approx 0.17$. The uniform answer describes a single roll, not the average.
     references:
@@ -214,17 +244,21 @@ questions:
       id: ms-ds-for-beginners
       ref: quiz-7/q3
       url: https://github.com/microsoft/Data-Science-For-Beginners/blob/4d2ac427ad6f022e73a75c4f46a28bbb7978ec3f/quiz-app/src/assets/translations/en/group-1.json
-    status: draft
+    status: reviewed
+    reviewed_by: claude
   - id: probability-010
     type: single
     difficulty: medium
     question: Players in the National Football League weigh, on average, about 248 pounds with a standard deviation of about 47 pounds. If four players are to be selected at random, the expected value of the random variable $W$, the total combined weight of the four players, is 992 pounds. The standard deviation of $W$ is approximately
     options:
       - text: 47 pounds
+        why: 47 pounds is the SD of a single player; the total of four players varies more.
       - text: 67 pounds
+        why: $47\sqrt{2} \approx 67$ would be the SD of the total weight of two players, not four.
       - text: 94 pounds
         correct: true
       - text: 141 pounds
+        why: '$3 \times 47 = 141$ follows no rule: for four independent players the variances add, so the SD is $\sqrt{4} \times 47$.'
     explanation: |
       For independent random variables, variances add: $\operatorname{Var}(X+Y) = \operatorname{Var}(X) + \operatorname{Var}(Y)$ [^1]. So $\operatorname{Var}(W) = 4 \times 47^2$ and $\operatorname{SD}(W) = \sqrt{4}\times 47 = 94$ pounds. Standard deviations do not add: that would give $4 \times 47 = 188$. 47 is the SD of a single player.
     references:
@@ -235,7 +269,8 @@ questions:
       id: mmlu-redux
       ref: high_school_statistics/6
       url: https://huggingface.co/datasets/edinburgh-dawg/mmlu-redux-2.0/viewer/high_school_statistics/test?row=6
-    status: draft
+    status: reviewed
+    reviewed_by: claude
   - id: probability-011
     type: single
     difficulty: easy
@@ -244,8 +279,11 @@ questions:
       - text: $P(A \text{ and } B) = P(A) \cdot P(B)$
         correct: true
       - text: $A$ and $B$ may or may not be mutually exclusive.
+        why: With nonzero probabilities, independence gives $P(A \cap B) = P(A)P(B) > 0$, so the events can never be mutually exclusive.
       - text: $A$ and $B$ must be mutually exclusive.
+        why: Mutually exclusive events with positive probabilities have $P(A \cap B) = 0 \ne P(A)P(B)$, so they are dependent [^2].
       - text: $P(A \mid B) = P(B \mid A)$
+        why: Under independence $P(A \mid B) = P(A)$ and $P(B \mid A) = P(B)$, which are equal only if $P(A) = P(B)$.
     explanation: |
       $A$ and $B$ are independent exactly when $P(A \cap B) = P(A)P(B)$ [^1]. If both probabilities are positive, that product is positive, so the events share outcomes and cannot be mutually exclusive. The reverse also holds: mutually exclusive events with positive probabilities are always dependent, because $P(A \cap B) = 0 \ne P(A)P(B)$ [^2]. That rules out both "may or may not be mutually exclusive" and "must be mutually exclusive". $P(A \mid B) = P(B \mid A)$ does not follow either: under independence it would need $P(A) = P(B)$.
     references:
@@ -259,15 +297,19 @@ questions:
       id: mmlu-redux
       ref: high_school_statistics/9
       url: https://huggingface.co/datasets/edinburgh-dawg/mmlu-redux-2.0/viewer/high_school_statistics/test?row=9
-    status: draft
+    status: reviewed
+    reviewed_by: claude
   - id: probability-012
     type: single
     difficulty: medium
     question: An automobile service station performs oil changes and tire replacements, as well as other services. Sixty percent of its customers request an oil change, 30 percent request tire replacements, and 10 percent request both. A customer requests an oil change. What is the probability this customer does not request tire replacements?
     options:
       - text: '0.42'
+        why: $0.6 \times 0.7 = 0.42$ treats the two requests as independent and is a joint probability, not a conditional one.
       - text: '0.5'
+        why: 0.50 is the share of *all* customers who want an oil change but no tires; it still has to be divided by $P(\text{oil}) = 0.6$.
       - text: '0.7'
+        why: 0.7 is the share of all customers who skip tires; it ignores that this customer wants an oil change.
       - text: '0.833'
         correct: true
     explanation: |
@@ -280,15 +322,19 @@ questions:
       id: mmlu-redux
       ref: high_school_statistics/27
       url: https://huggingface.co/datasets/edinburgh-dawg/mmlu-redux-2.0/viewer/high_school_statistics/test?row=27
-    status: draft
+    status: reviewed
+    reviewed_by: claude
   - id: probability-013
     type: single
     difficulty: medium
     question: There are two games involving flipping a fair coin. In the first game you win a prize if you can throw between 45% and 55% heads. In the second game you win if you can throw more than 80% heads. For each game would you rather flip the coin 30 times or 300 times?
     options:
       - text: 30 times for each game
+        why: 'In the 45–55% game more flips help: the chance of landing in the band rises from about 0.42 with 30 flips to about 0.93 with 300.'
       - text: 300 times for each game
+        why: 'In the over-80% game more flips hurt: the chance falls from about $1.6 \times 10^{-4}$ with 30 flips to about $10^{-27}$ with 300.'
       - text: 30 times for the first game and 300 times for the second
+        why: 'This is backwards: a proportion close to 0.5 needs many flips, while an extreme proportion needs few.'
       - text: 300 times for the first game and 30 times for the second
         correct: true
     explanation: |
@@ -303,15 +349,19 @@ questions:
       id: mmlu-redux
       ref: high_school_statistics/36
       url: https://huggingface.co/datasets/edinburgh-dawg/mmlu-redux-2.0/viewer/high_school_statistics/test?row=36
-    status: draft
+    status: reviewed
+    reviewed_by: claude
   - id: probability-014
     type: single
     difficulty: medium
     question: Which of the following is a binomial random variable?
     options:
       - text: The number of tosses before a "5" appears when tossing a fair die.
+        why: There is no fixed number of trials; counting until the first success is the geometric setting [^2].
       - text: The number of points a hockey team receives in 10 games, where two points are awarded for wins, one point for ties, and no points for losses.
+        why: Each game has three outcomes (2, 1 or 0 points), and the variable adds up points instead of counting successes.
       - text: The number of hearts out of five cards randomly drawn from a deck of 52 cards, without replacement.
+        why: Without replacement the chance of a heart changes from draw to draw, so the trials are not independent; the count is hypergeometric [^3].
       - text: The number of motorists not wearing seat belts in a random sample of five drivers.
         correct: true
     explanation: |
@@ -333,15 +383,19 @@ questions:
       id: mmlu-redux
       ref: high_school_statistics/37
       url: https://huggingface.co/datasets/edinburgh-dawg/mmlu-redux-2.0/viewer/high_school_statistics/test?row=37
-    status: draft
+    status: reviewed
+    reviewed_by: claude
   - id: probability-015
     type: single
     difficulty: medium
     question: Semir rolls a six-sided die every morning to determine what he will have for breakfast. If he rolls a 1 or 2, he takes time to cook himself a big breakfast. If he rolls a 3 or larger he grabs a quick lighter breakfast. When he cooks himself a big breakfast, there is a 15% chance he will be late for school. If he has a lighter breakfast, there is a 6% chance he will be late for school. What is the probability Semir will be on time for school any given day?
     options:
       - text: '0.09'
+        why: 0.09 is the probability of being *late*; being on time is its complement.
       - text: '0.21'
+        why: $0.15 + 0.06$ adds the two conditional rates without weighting them by how often each breakfast happens.
       - text: '0.8'
+        why: Weighting the late rates gives $P(\text{late}) = \tfrac13(0.15) + \tfrac23(0.06) = 0.09$, so on time is 0.91, not 0.8.
       - text: '0.91'
         correct: true
     explanation: |
@@ -357,17 +411,21 @@ questions:
       id: mmlu-redux
       ref: high_school_statistics/49
       url: https://huggingface.co/datasets/edinburgh-dawg/mmlu-redux-2.0/viewer/high_school_statistics/test?row=49
-    status: draft
+    status: reviewed
+    reviewed_by: claude
   - id: probability-016
     type: single
     difficulty: medium
     question: In which of the following situations is a binomial model not an appropriate model to describe the outcome?
     options:
       - text: The number of heads in three tosses of a coin
+        why: 'Three independent tosses, each heads with the same $p = 0.5$: a textbook binomial count.'
       - text: The number of rainy days in a given week
         correct: true
       - text: The number of girls in a family of five children
+        why: Each birth is treated as an independent trial with the same probability of a girl, so the count is binomial.
       - text: The number of sixes in ten rolls of a fair die
+        why: 'Ten independent rolls, each a six with probability $1/6$: binomial with $n = 10$ and $p = 1/6$.'
     explanation: |-
       A binomial random variable requires, among other things, that the $n$ trials are independent and that the success probability $p$ is the same on every trial [^1]. Rainy days fail both: weather tends to persist, so rain today makes rain tomorrow more likely, and the chance of rain also changes with the season. Coin tosses, die rolls and the sex of each child are the standard examples of independent trials with a constant $p$, so those three counts are binomial.
     references:
@@ -378,15 +436,19 @@ questions:
       id: mmlu-redux
       ref: high_school_statistics/52
       url: https://huggingface.co/datasets/edinburgh-dawg/mmlu-redux-2.0/viewer/high_school_statistics/test?row=52
-    status: draft
+    status: reviewed
+    reviewed_by: claude
   - id: probability-017
     type: single
     difficulty: medium
     question: A publisher used standard boxes for shipping books. The mean weight of books packed per box is 25 pounds, with a standard deviation of two pounds. The mean weight of the boxes is one pound, with a standard deviation of 0.15 pounds. The mean weight of the packing material used per box is two pounds, with a standard deviation of 0.25 pounds. What is the standard deviation of the weights of the packed boxes?
     options:
       - text: 28.000 pounds
+        why: 28 pounds is the mean weight $25 + 1 + 2$, not the standard deviation.
       - text: 5.290 pounds
+        why: $\sqrt{28} \approx 5.29$ is the square root of the mean; the SD comes from adding the variances.
       - text: 4.085 pounds
+        why: 4.085 is the variance $2^2 + 0.15^2 + 0.25^2$; the SD is its square root.
       - text: 2.021 pounds
         correct: true
     explanation: |
@@ -401,15 +463,19 @@ questions:
       id: mmlu-redux
       ref: high_school_statistics/53
       url: https://huggingface.co/datasets/edinburgh-dawg/mmlu-redux-2.0/viewer/high_school_statistics/test?row=53
-    status: draft
+    status: reviewed
+    reviewed_by: claude
   - id: probability-018
     type: single
     difficulty: hard
     question: During the years 1886 through 2000 there were an average of 8.7 tropical cyclones per year, of which an average of 5.1 became hurricanes. Assuming that the probability of any cyclone becoming a hurricane is independent of what happens to any other cyclone, if there are five cyclones in one year, what is the probability that at least three become hurricanes?
     options:
       - text: '0.313'
+        why: $0.244 + 0.069 = 0.313$ is $P(X \ge 4)$; it leaves out $P(X = 3) \approx 0.345$.
       - text: '0.345'
+        why: This is only $P(X = 3)$; at least three also includes four and five hurricanes.
       - text: '0.586'
+        why: This is $p = 5.1/8.7$, the chance for a single cyclone.
       - text: '0.658'
         correct: true
     explanation: |
@@ -427,17 +493,21 @@ questions:
       id: mmlu-redux
       ref: high_school_statistics/56
       url: https://huggingface.co/datasets/edinburgh-dawg/mmlu-redux-2.0/viewer/high_school_statistics/test?row=56
-    status: draft
+    status: reviewed
+    reviewed_by: claude
   - id: probability-019
     type: single
     difficulty: medium
     question: A test for heartworm in dogs shows a positive result in 96% of dogs that actually have heartworm, and shows a negative result in 98% of dogs with no heartworm. If heartworm actually occurs in 10% of dogs, what is the probability that a randomly selected dog that tested positive for heartworm actually has heartworm?
     options:
       - text: 11%
+        why: About 11% is $P(+) = 0.114$, the overall rate of positive tests, not the posterior.
       - text: 18%
+        why: 'Far too low: of the total positive probability 0.114, the share 0.096 comes from dogs that have heartworm.'
       - text: 84%
         correct: true
       - text: 88%
+        why: 88% is close to $P(\text{no HW}, -) = 0.90 \times 0.98 = 0.882$, a different event.
     explanation: |
       Bayes' theorem with marginalization in the denominator [^1]:
       $$P(\text{HW} \mid +) = \frac{0.96 \times 0.10}{0.96 \times 0.10 + 0.02 \times 0.90} = \frac{0.096}{0.114} \approx 0.84.$$
@@ -450,19 +520,22 @@ questions:
       id: mmlu-redux
       ref: high_school_statistics/61
       url: https://huggingface.co/datasets/edinburgh-dawg/mmlu-redux-2.0/viewer/high_school_statistics/test?row=61
-    status: draft
+    status: reviewed
+    reviewed_by: claude
   - id: probability-020
     type: single
     difficulty: easy
-    question: Which of the following statements about any two events $A$ and $B$ is true?
+    question: In a finite sample space in which every outcome has positive probability, which of the following statements about two events $A$ and $B$ is true?
     options:
       - text: $P(A \cup B) = 1$ implies events $A$ and $B$ are independent.
+        why: $A$ and its complement $A'$ have $P(A \cup A') = 1$, but for $0 < P(A) < 1$, $P(A \cap A') = 0 \ne P(A)P(A')$.
       - text: $P(A \cup B) = 1$ implies events $A$ and $B$ are mutually exclusive.
+        why: 'Covering the sample space does not prevent overlap: if $A = B$ is the whole sample space, $P(A \cup B) = 1$ and $A \cap B \ne \emptyset$.'
       - text: $P(A \cap B) = 0$ implies events $A$ and $B$ are independent.
+        why: Mutually exclusive events with positive probabilities are dependent, because $P(A \cap B) = 0 \ne P(A)P(B)$ [^2].
       - text: $P(A \cap B) = 0$ implies events $A$ and $B$ are mutually exclusive.
         correct: true
-    explanation: |-
-      Mutually exclusive events cannot occur together: their intersection is empty, so $P(A \cap B) = 0$ [^1]. The key statement uses this link in the reverse direction, as introductory courses do. That is exact when every outcome has positive probability, as in a finite sample space with no impossible outcomes; in general an overlap can have probability 0. $P(A \cap B) = 0$ does not give independence: mutually exclusive events with positive probabilities are in fact dependent, since $0 \ne P(A)P(B)$ [^2]. $P(A \cup B) = 1$ only says that the two events together cover the sample space. They may still overlap, so they need not be mutually exclusive, and they need not be independent either: an event $A$ with $P(A) = \tfrac12$ and its complement $A'$ give $P(A \cup A') = 1$ but $P(A \cap A') = 0 \ne \tfrac14$.
+    explanation: "Mutually exclusive events cannot occur together: their intersection is empty, so $P(A \\cap B) = 0$ [^1]. In the setting of the question the converse holds too: an outcome shared by $A$ and $B$ would give the intersection a positive probability, so $P(A \\cap B) = 0$ forces $A \\cap B = \\emptyset$. (Without that assumption, e.g. for a continuous distribution, an overlap can have probability 0.) $P(A \\cap B) = 0$ does not give independence: mutually exclusive events with positive probabilities are in fact dependent, since $0 \\ne P(A)P(B)$ [^2]. $P(A \\cup B) = 1$ only says that the two events together cover the sample space. They may still overlap, so they need not be mutually exclusive, and they need not be independent either: an event $A$ with $P(A) = \\tfrac12$ and its complement $A'$ give $P(A \\cup A') = 1$ but $P(A \\cap A') = 0 \\ne \\tfrac14$."
     references:
       - title: 'Penn State STAT 500: Applied Statistics'
         url: https://online.stat.psu.edu/stat500/Lesson02#probability-properties
@@ -474,15 +547,19 @@ questions:
       id: mmlu-redux
       ref: high_school_statistics/67
       url: https://huggingface.co/datasets/edinburgh-dawg/mmlu-redux-2.0/viewer/high_school_statistics/test?row=67
-    status: draft
+    status: reviewed
+    reviewed_by: claude
   - id: probability-021
     type: single
     difficulty: medium
     question: All of the following statements are true for all discrete random variables except for which one?
     options:
       - text: The possible outcomes must all be numerical.
+        why: 'True for every random variable: it assigns a real number to each outcome, so its values are numerical [^2].'
       - text: The possible outcomes must be mutually exclusive.
+        why: 'True: the distinct values of a discrete random variable are mutually exclusive, and their probabilities sum to 1 [^3].'
       - text: The mean (expected value) always equals the sum of the products obtained by multiplying each value by its corresponding probability.
+        why: 'True: the expected value of a discrete random variable is $\sum_x x\,P(X = x)$ by definition [^4].'
       - text: Approximately 95% of the outcomes will be within two standard deviations of the mean.
         correct: true
     explanation: |
@@ -507,15 +584,19 @@ questions:
       id: mmlu-redux
       ref: high_school_statistics/74
       url: https://huggingface.co/datasets/edinburgh-dawg/mmlu-redux-2.0/viewer/high_school_statistics/test?row=74
-    status: draft
+    status: reviewed
+    reviewed_by: claude
   - id: probability-022
     type: single
     difficulty: medium
     question: The financial aid office at a state university conducts a study to determine the total student costs per semester. All students are charged \$4500 for tuition. The mean cost for books is \$350 with a standard deviation of \$65. The mean outlay for room and board is \$2800 with a standard deviation of \$380. The mean personal expenditure is \$675 with a standard deviation of \$125. Assuming independence among categories, what is the standard deviation of the total student costs?
     options:
       - text: \$24
+        why: $\sqrt{65 + 380 + 125} \approx 24$ takes the root of the summed SDs. The total cannot vary less than room and board alone, whose SD is \$380.
       - text: \$91
+        why: Smaller than the SD of room and board alone (\$380); for independent parts the variance of the total is at least that of each part.
       - text: \$190
+        why: \$190 is the average of the three SDs; the SD of the total comes from adding the variances [^1].
       - text: \$405
         correct: true
     explanation: |
@@ -530,15 +611,19 @@ questions:
       id: mmlu-redux
       ref: high_school_statistics/75
       url: https://huggingface.co/datasets/edinburgh-dawg/mmlu-redux-2.0/viewer/high_school_statistics/test?row=75
-    status: draft
+    status: reviewed
+    reviewed_by: claude
   - id: probability-023
     type: single
     difficulty: medium
     question: Suppose that 54% of the graduates from your high school go on to 4-year colleges, 20% go on to 2-year colleges, 19% find employment, and the remaining 7% search for a job. If a randomly selected student is not going on to a 2-year college, what is the probability she will be going on to a 4-year college?
     options:
       - text: '0.460'
+        why: 0.46 is $1 - 0.54$, the share not going to a 4-year college, and it ignores the condition.
       - text: '0.540'
+        why: 0.54 is the unconditional share; given 'not a 2-year college' you must divide by $P(B) = 0.80$.
       - text: '0.630'
+        why: Restricting to the 80% who do not go to a 2-year college gives $0.54/0.80 = 0.675$, not 0.63.
       - text: '0.675'
         correct: true
     explanation: |
@@ -551,7 +636,8 @@ questions:
       id: mmlu-redux
       ref: high_school_statistics/76
       url: https://huggingface.co/datasets/edinburgh-dawg/mmlu-redux-2.0/viewer/high_school_statistics/test?row=76
-    status: draft
+    status: reviewed
+    reviewed_by: claude
   - id: probability-024
     type: single
     difficulty: medium
@@ -560,8 +646,11 @@ questions:
       - text: '0.235'
         correct: true
       - text: '0.25'
+        why: $0.15 + 0.10$ adds an unconditional probability to a conditional one; the 10% applies only to the 85% not diagnosed with A.
       - text: '0.765'
+        why: 0.765 is the probability of *neither* diagnosis; at least one is its complement.
       - text: '0.85'
+        why: 0.85 is $P(A')$, the chance of not being diagnosed with Condition A.
     explanation: |
       Go through the complement. By the multiplication rule, a patient gets neither diagnosis with probability $P(A')P(B' \mid A') = 0.85 \times 0.90 = 0.765$ [^1], so $P(\text{at least one}) = 1 - 0.765 = 0.235$ [^2]. The union formula $P(A \cup B) = P(A) + P(B) - P(A \cap B)$ [^2] agrees: $P(A \cap B) = 0.15 \times 0.70 = 0.105$ and $P(B) = 0.105 + 0.085 = 0.19$. 0.765 is the probability of neither, and 0.25 just adds 0.15 and 0.10.
     references:
@@ -575,15 +664,19 @@ questions:
       id: mmlu-redux
       ref: high_school_statistics/86
       url: https://huggingface.co/datasets/edinburgh-dawg/mmlu-redux-2.0/viewer/high_school_statistics/test?row=86
-    status: draft
+    status: reviewed
+    reviewed_by: claude
   - id: probability-025
     type: single
     difficulty: easy
     question: Suppose you toss a fair die three times and it comes up an even number each time. Which of the following is a true statement?
     options:
       - text: By the law of large numbers, the next toss is more likely to be an odd number than another even number.
+        why: The law of large numbers is about long-run averages [^2]; it does not push the next toss towards odd (the gambler's fallacy).
       - text: Based on the properties of conditional probability the next toss is more likely to be an even number given that three in a row have been even.
+        why: For independent tosses $P(\text{even} \mid \text{three evens}) = P(\text{even}) = 0.5$; the streak changes nothing [^1].
       - text: Dice actually do have memories, and thus the number that comes up on the next toss will be influenced by the previous tosses.
+        why: 'A die has no memory: separate tosses are independent, so earlier results do not influence the next one [^1].'
       - text: The probability that the next toss will again be even is 0.5.
         correct: true
     explanation: |
@@ -599,15 +692,19 @@ questions:
       id: mmlu-redux
       ref: high_school_statistics/98
       url: https://huggingface.co/datasets/edinburgh-dawg/mmlu-redux-2.0/viewer/high_school_statistics/test?row=98
-    status: draft
+    status: reviewed
+    reviewed_by: claude
   - id: probability-026
     type: single
     difficulty: medium
     question: Sofia and Tess will each randomly choose one of the 10 integers from 1 to 10. What is the probability that neither integer chosen will be the square of the other?
     options:
       - text: '0.64'
+        why: That would exclude 36 of the 100 ordered pairs, but only 5 pairs have one number the square of the other.
       - text: '0.72'
+        why: That would exclude 28 pairs; counting carefully, only $(1,1)$, $(2,4)$, $(4,2)$, $(3,9)$ and $(9,3)$ are excluded.
       - text: '0.81'
+        why: $0.9^2 = 0.81$ multiplies two probabilities, but the event is not a product of independent events; only 5 of 100 pairs are excluded.
       - text: '0.95'
         correct: true
     explanation: |
@@ -626,17 +723,21 @@ questions:
       id: mmlu-redux
       ref: college_mathematics/2
       url: https://huggingface.co/datasets/edinburgh-dawg/mmlu-redux-2.0/viewer/college_mathematics/test?row=2
-    status: draft
+    status: reviewed
+    reviewed_by: claude
   - id: probability-027
     type: single
     difficulty: medium
     question: Suppose $X$ is a discrete random variable on the set of positive integers such that for each positive integer $n$, the probability that $X = n$ is $1/2^n$. If $Y$ is a random variable with the same probability distribution and $X$ and $Y$ are independent, what is the probability that the value of at least one of the variables $X$ and $Y$ is greater than 3?
     options:
       - text: 1/64
+        why: $(1/8)^2 = 1/64$ is the probability that *both* exceed 3, not at least one.
       - text: 15/64
         correct: true
       - text: 1/4
+        why: $\tfrac18 + \tfrac18 = \tfrac14$ counts the case where both exceed 3 twice; subtracting $\tfrac{1}{64}$ gives $\tfrac{15}{64}$.
       - text: 3/8
+        why: Each variable exceeds 3 with probability $\tfrac18$, and at least one of the two does with probability $1 - (\tfrac78)^2 = \tfrac{15}{64}$, not $\tfrac38$.
     explanation: |
       $P(X \le 3) = \tfrac12 + \tfrac14 + \tfrac18 = \tfrac78$. For independent variables the joint probability factors, so $P(X \le 3, Y \le 3) = (\tfrac78)^2 = \tfrac{49}{64}$ [^1]. "At least one exceeds 3" is the complement of "both are at most 3", so its probability is $1 - \tfrac{49}{64} = \tfrac{15}{64}$ [^2]. $\tfrac{1}{64} = (\tfrac18)^2$ is the probability that *both* exceed 3.
     references:
@@ -650,17 +751,21 @@ questions:
       id: mmlu-redux
       ref: college_mathematics/4
       url: https://huggingface.co/datasets/edinburgh-dawg/mmlu-redux-2.0/viewer/college_mathematics/test?row=4
-    status: draft
+    status: reviewed
+    reviewed_by: claude
   - id: probability-028
     type: single
     difficulty: medium
     question: There are 25 suitcases, 5 of which are damaged. Three suitcases are selected at random. What is the probability that exactly 2 are damaged?
     options:
       - text: 2/69
+        why: $\tfrac{5}{25} \cdot \tfrac{4}{24} \cdot \tfrac{20}{23} = \tfrac{2}{69}$ is one particular order (damaged, damaged, intact); there are 3 such orders.
       - text: 1/30
+        why: There are $\binom52\binom{20}{1} = 200$ favourable selections out of $\binom{25}{3} = 2300$, which gives $\tfrac{2}{23}$, not $\tfrac{1}{30}$.
       - text: 2/23
         correct: true
       - text: 12/125
+        why: This is the binomial answer $3(\tfrac15)^2(\tfrac45)$, which would apply only if the suitcases were drawn with replacement.
     explanation: |
       Drawing 3 suitcases without replacement from 5 damaged and 20 intact ones is the hypergeometric setting [^1]. Count unordered selections with combinations ("$n$ choose $r$") [^2]:
       $$P(X = 2) = \frac{\binom52\binom{20}{1}}{\binom{25}{3}} = \frac{10 \times 20}{2300} = \frac{2}{23}.$$
@@ -676,7 +781,8 @@ questions:
       id: mmlu-redux
       ref: college_mathematics/6
       url: https://huggingface.co/datasets/edinburgh-dawg/mmlu-redux-2.0/viewer/college_mathematics/test?row=6
-    status: draft
+    status: reviewed
+    reviewed_by: claude
   - id: probability-029
     type: single
     difficulty: medium
@@ -685,8 +791,11 @@ questions:
       - text: 2/81
         correct: true
       - text: 1/18
+        why: On this die $P(5) = \tfrac19$ and $P(6) = \tfrac29$, so the product is $\tfrac{2}{81}$, not $\tfrac{1}{18}$.
       - text: 2/27
+        why: $\tfrac19 \cdot \tfrac23$ uses the probability of rolling *any* even number instead of a 6.
       - text: 1/9
+        why: $\tfrac19$ is only $P(5)$; the second roll must also be a 6.
     explanation: |
       Let each odd face have probability $p$ and each even face $2p$. The six faces are mutually exclusive and together make up the whole sample space, so their probabilities sum to 1 [^1]: $3p + 3(2p) = 9p = 1$, so $p = \tfrac19$. That gives $P(5) = \tfrac19$ and $P(6) = \tfrac29$. The two throws are independent, so the probabilities multiply [^2]: $\tfrac19 \cdot \tfrac29 = \tfrac{2}{81}$. $\tfrac19$ is only the chance of rolling the 5.
     references:
@@ -700,17 +809,21 @@ questions:
       id: mmlu-redux
       ref: college_mathematics/24
       url: https://huggingface.co/datasets/edinburgh-dawg/mmlu-redux-2.0/viewer/college_mathematics/test?row=24
-    status: draft
+    status: reviewed
+    reviewed_by: claude
   - id: probability-030
     type: single
     difficulty: hard
     question: The probability that a point $(x, y)$ in $\mathbb{R}^2$ is chosen follows a uniform random distribution within the region described by the inequality $0 < |x| + |y| < 1$. What is the probability that $2(x + y) > 1$?
     options:
       - text: '0'
+        why: The line $x + y = \tfrac12$ crosses the diamond, parallel to its edge $x + y = 1$, so the event has positive area.
       - text: 1/4
         correct: true
       - text: $\sqrt{2}/4$
+        why: The strip $x + y > \tfrac12$ covers area $\tfrac12$ of the diamond's 2, a ratio of $\tfrac14$; no factor $\sqrt2$ survives in the ratio.
       - text: $1/\sqrt{2}$
+        why: 'Far too large: only the strip between $x + y = \tfrac12$ and the edge $x + y = 1$ qualifies, area $\tfrac12$ out of 2.'
     explanation: |
       With a joint density, the probability of a region is the integral of the density over it [^1]. A uniform density is constant, so the probability is area(region)/area(diamond). Change variables to $u = x + y$, $v = x - y$. Since $|x| + |y| = \max(|u|, |v|)$, the diamond becomes the square $|u| < 1$, $|v| < 1$, and the point is still uniform. The event $2(x+y) > 1$ is $u > \tfrac12$, a strip covering $\tfrac{1/2}{2} = \tfrac14$ of that square; directly in $(x,y)$, the strip has area $\tfrac12$ out of the diamond's 2. The answer 0 is wrong because the line $x + y = \tfrac12$ does cross the diamond, parallel to its edge $x + y = 1$.
     references:
@@ -721,17 +834,21 @@ questions:
       id: mmlu-redux
       ref: college_mathematics/39
       url: https://huggingface.co/datasets/edinburgh-dawg/mmlu-redux-2.0/viewer/college_mathematics/test?row=39
-    status: draft
+    status: reviewed
+    reviewed_by: claude
   - id: probability-031
     type: single
     difficulty: medium
     question: If a real number $x$ is chosen at random in the interval $[0, 3]$ and a real number $y$ is chosen at random in the interval $[0, 4]$, what is the probability that $x < y$?
     options:
       - text: 1/2
+        why: $\tfrac12$ would hold only if both numbers came from the same interval; here $y$ can also land in $(3, 4]$, where it is always larger than $x$.
       - text: 7/12
+        why: The region $y \le x$ is a triangle of area 4.5 in the $3 \times 4$ rectangle, so $P(x < y) = 1 - 4.5/12 = \tfrac58$.
       - text: 5/8
         correct: true
       - text: 2/3
+        why: $P(x < y) = P(y > 3) + P(y \le 3) \cdot \tfrac12 = \tfrac14 + \tfrac34 \cdot \tfrac12 = \tfrac58$, not $\tfrac23$.
     explanation: |
       A uniform variable on $[a,b]$ has constant density $1/(b-a)$ [^1], so $X$ has density $\tfrac13$ and $Y$ has density $\tfrac14$. For independent continuous variables, the joint density is the product of the marginals, here $\tfrac{1}{12}$ on the $3 \times 4$ rectangle, and the probability of a region is its integral [^2]. So probabilities are area ratios. The part of the rectangle with $y \le x$ is a triangle of area $\int_0^3 x\,dx = 4.5$, so
       $$P(x < y) = 1 - \frac{4.5}{12} = \frac58.$$
@@ -747,15 +864,19 @@ questions:
       id: mmlu-redux
       ref: college_mathematics/61
       url: https://huggingface.co/datasets/edinburgh-dawg/mmlu-redux-2.0/viewer/college_mathematics/test?row=61
-    status: draft
+    status: reviewed
+    reviewed_by: claude
   - id: probability-032
     type: single
     difficulty: medium
     question: In a game two players take turns tossing a fair coin; the winner is the first one to toss a head. The probability that the player who makes the first toss wins the game is
     options:
       - text: 1/4
+        why: $\tfrac14$ is the chance that the game ends on the second toss (tails, then heads), which is a win for the second player.
       - text: 1/3
+        why: $\tfrac13$ is the second player's chance, $1 - \tfrac23$.
       - text: 1/2
+        why: The first player wins at once with probability $\tfrac12$ and can still win later, so the chance exceeds $\tfrac12$.
       - text: 2/3
         correct: true
     explanation: |
@@ -773,17 +894,21 @@ questions:
       id: mmlu-redux
       ref: college_mathematics/74
       url: https://huggingface.co/datasets/edinburgh-dawg/mmlu-redux-2.0/viewer/college_mathematics/test?row=74
-    status: draft
+    status: reviewed
+    reviewed_by: claude
   - id: probability-033
     type: single
     difficulty: hard
     question: Consider a segment of length 10. Points A and B are chosen randomly such that A and B divide the segment into three smaller segments. What is the probability that the three smaller segments could form the sides of a triangle?
     options:
       - text: '0'
+        why: 'Many cuts work: cutting at 4 and 7 gives pieces 4, 3 and 3, which form a triangle.'
       - text: 10%
+        why: The favourable cuts form two triangles of area 12.5 each in the $10 \times 10$ square of cut points, i.e. 25%.
       - text: 25%
         correct: true
       - text: 50%
+        why: Every piece must be shorter than 5, which holds for only a quarter of the square of possible cut points, not half.
     explanation: |
       Let the cut points $a, b$ be independent and uniform on $[0,10]$. Their joint density is the product of the marginals, the constant $\tfrac{1}{100}$ on the square, and the probability of a region is the integral of that density over it [^1], i.e. its area divided by 100. Three pieces form a triangle exactly when each one is shorter than half the segment, 5; for $a < b$ that means $a < 5$, $b > 5$ and $b - a < 5$, a triangle of area 12.5. The case $b < a$ is symmetric, so the probability is $25/100 = 25\%$. The classic equilateral-triangle argument gives the same answer, with the favourable points filling the middle quarter [^2].
     references:
@@ -797,25 +922,29 @@ questions:
       id: mmlu-redux
       ref: college_mathematics/88
       url: https://huggingface.co/datasets/edinburgh-dawg/mmlu-redux-2.0/viewer/college_mathematics/test?row=88
-    status: draft
+    status: reviewed
+    reviewed_by: claude
   - id: probability-034
     type: single
     difficulty: hard
     question: A fair coin is to be tossed 100 times, with each toss resulting in a head or a tail. If $H$ is the total number of heads and $T$ is the total number of tails, which of the following events has the greatest probability?
     options:
       - text: $H = 50$
+        why: A single value, even the most likely one, has probability only about 0.080.
       - text: $T \ge 60$
-      - text: $51 \le H \le 55$
+        why: '$T \ge 60$ means $H \le 40$, two standard deviations out: probability about 0.028.'
+      - text: $H \ge 51$ and $T \ge 45$
+        why: 'This is $51 \le H \le 55$: five values off to one side of the mode, probability about 0.325.'
       - text: $H \ge 48$ and $T \ge 48$
         correct: true
     explanation: |
-      $H$ is binomial with $n = 100$ and $p = 0.5$, so $\mu = np = 50$ and $\sigma = \sqrt{np(1-p)} = 5$ [^1]. Summing the pmf $\binom{100}{k}/2^{100}$ [^2] gives:
-      - $P(48 \le H \le 52) \approx 0.383$
-      - $P(51 \le H \le 55) \approx 0.325$
-      - $P(H = 50) \approx 0.080$
-      - $P(T \ge 60) = P(H \le 40) \approx 0.028$
+      $H$ is binomial with $n = 100$ and $p = 0.5$, so $\mu = np = 50$ and $\sigma = \sqrt{np(1-p)} = 5$ [^1]. Since $T = 100 - H$, every option is an event about $H$ alone. Summing the pmf $\binom{100}{k}/2^{100}$ [^2] gives:
+      - "$H \ge 48$ and $T \ge 48$" is $48 \le H \le 52$: probability $\approx 0.383$
+      - "$H \ge 51$ and $T \ge 45$" is $51 \le H \le 55$: $\approx 0.325$
+      - $H = 50$: $\approx 0.080$
+      - $T \ge 60$ is $H \le 40$: $\approx 0.028$
 
-      "$H \ge 48$ and $T \ge 48$" is the same as $48 \le H \le 52$: five values centred on the most likely count. "$51 \le H \le 55$" also has five values but sits to one side, so it is less likely. $T \ge 60$ is two standard deviations out.
+      Both bands contain five values, but the first is centred on the most likely count while the second sits to one side, so the first is more likely. $T \ge 60$ is two standard deviations out.
     references:
       - title: 'Penn State STAT 414: Introduction to Probability Theory'
         url: https://online.stat.psu.edu/stat414/Lesson10#the-mean-and-variance
@@ -827,16 +956,19 @@ questions:
       id: mmlu-redux
       ref: college_mathematics/90
       url: https://huggingface.co/datasets/edinburgh-dawg/mmlu-redux-2.0/viewer/college_mathematics/test?row=90
-    status: draft
+    status: reviewed
+    reviewed_by: claude
   - id: probability-035
     type: single
     difficulty: easy
     question: Why are probability and statistics important for data science?
     options:
       - text: Because you cannot operate on data without knowing math
+        why: The lesson notes that you can work with data without deep mathematical knowledge, although basic concepts help [^2].
       - text: Because data science is a science, with probability and statistics as its formal foundation
         correct: true
       - text: Because they guarantee that a pattern found in a sample holds for everyone
+        why: 'Statistics quantifies uncertainty but guarantees nothing: a sample may not represent the whole population [^2].'
     explanation: |
       Data science uses scientific methods such as probability and statistics, and statistics gives
       it the mathematical foundations it applies to draw insights from data [^1]. The statistics
@@ -855,7 +987,8 @@ questions:
       id: ms-ds-for-beginners
       ref: quiz-6/q1
       url: https://github.com/microsoft/Data-Science-For-Beginners/blob/4d2ac427ad6f022e73a75c4f46a28bbb7978ec3f/quiz-app/src/assets/translations/en/group-1.json
-    status: draft
+    status: reviewed
+    reviewed_by: claude
   - id: probability-036
     type: single
     difficulty: easy
@@ -864,8 +997,11 @@ questions:
       - text: Assign numbers 0, 1 to successfully selling a policy to a customer and numbers 2, 3, 4, 5, 6, 7, 8, 9 to failing to sell a policy to a customer.
         correct: true
       - text: Assign numbers 0, 1 to successfully selling a policy to a customer and numbers 2, 3, 4 to failing to sell a policy to a customer.
+        why: With only the digits 0–4 in use, a sale gets probability $2/5 = 0.4$, not 0.2.
       - text: Assign number 0 to successfully selling a policy to a customer and number 1 to failing to sell a policy to a customer.
+        why: With one digit for each outcome, a sale gets probability $1/2$, not 0.2.
       - text: Assign numbers 0, 1, 2, 3, 4 to successfully selling a policy to a customer and numbers 5, 6, 7, 8, 9 to failing to sell a policy to a customer.
+        why: Five digits for each outcome gives a sale probability $0.5$, not 0.2.
     explanation: Each contact is a Bernoulli trial with success probability $p = 0.2$, and the number of contacts up to the first sale is a geometric random variable [^1]. With ten equally likely digits, the probability of an outcome is the number of digits assigned to it divided by 10 [^2], so giving two digits (0 and 1) to a sale and the other eight to no sale makes $P(\text{sale}) = 2/10 = 0.2$. Using only the digits 0–4 gives $2/5 = 0.4$, and the one-digit-each and five-digit schemes give $0.5$.
     references:
       - title: 'Penn State STAT 414: Introduction to Probability Theory'
@@ -878,7 +1014,8 @@ questions:
       id: mmlu-redux
       ref: high_school_statistics/69
       url: https://huggingface.co/datasets/edinburgh-dawg/mmlu-redux-2.0/viewer/high_school_statistics/test?row=69
-    status: draft
+    status: reviewed
+    reviewed_by: claude
   - id: probability-037
     type: single
     difficulty: medium
@@ -887,8 +1024,11 @@ questions:
       - text: $20!/2^{10}$
         correct: true
       - text: $10!/2^9$
+        why: $10!/2^9 = 7087.5$ is not even an integer; the first professor alone already has $\binom{20}{2} = 190$ choices.
       - text: $10^{20} - 2^{10}$
+        why: $10^{20}$ counts every way to give each course a professor, ignoring the rule of exactly 2 courses each; subtracting $2^{10}$ does not remove the invalid ones.
       - text: $10^{20} - 100$
+        why: Most of the $10^{20}$ course-to-professor maps give some professor more or fewer than 2 courses; subtracting 100 does not fix that.
     explanation: "Assign the professors one at a time: the first gets 2 of the 20 courses, the second 2 of the remaining 18, and so on, so by the multiplicative principle [^1] the count is $\\binom{20}{2}\\binom{18}{2}\\cdots\\binom{2}{2}$ [^2]. Writing each factor as $\\frac{(20-2i)(19-2i)}{2}$, the product is $\\frac{20!}{2^{10}}$. Equivalently, list the 20 courses in a row and give positions 1–2 to the first professor, 3–4 to the second, and so on; swapping the two courses inside each pair gives the same assignment, which divides $20!$ by $2^{10}$. The answers built on $10^{20}$ count all ways to give each course a professor, ignoring the 'exactly 2 each' rule."
     references:
       - title: 'Levin, Discrete Mathematics: An Open Introduction (3rd ed.)'
@@ -901,15 +1041,19 @@ questions:
       id: mmlu-redux
       ref: college_mathematics/19
       url: https://huggingface.co/datasets/edinburgh-dawg/mmlu-redux-2.0/viewer/college_mathematics/test?row=19
-    status: draft
+    status: reviewed
+    reviewed_by: claude
   - id: probability-038
     type: single
     difficulty: easy
     question: '$X$ is a finite set with the following property: the number of subsets of $X$ that contain exactly 3 elements is 14 more than the number of subsets of $X$ that contain exactly 2 elements. How many subsets of $X$ contain exactly 4 elements?'
     options:
       - text: '24'
+        why: 'No set has exactly 24 four-element subsets: $\binom{n}{4}$ runs 1, 5, 15, 35, 70, …'
       - text: '25'
+        why: 25 is not of the form $\binom{n}{4}$; with $|X| = 7$ the count is $\binom74 = 35$.
       - text: '28'
+        why: 28 is $\binom82$, a count of 2-element subsets; here $|X| = 7$ and $\binom74 = 35$.
       - text: '35'
         correct: true
     explanation: The number of $k$-element subsets of an $n$-element set is the binomial coefficient $\binom{n}{k}$ [^1]. We need $\binom{n}{3} - \binom{n}{2} = 14$; $n = 7$ gives $35 - 21 = 14$, and the difference only grows for larger $n$, so $|X| = 7$. Then $\binom{7}{4} = 35$, the same as $\binom{7}{3}$ by the symmetry $\binom{n}{k} = \binom{n}{n-k}$.
@@ -921,7 +1065,8 @@ questions:
       id: mmlu-redux
       ref: college_mathematics/92
       url: https://huggingface.co/datasets/edinburgh-dawg/mmlu-redux-2.0/viewer/college_mathematics/test?row=92
-    status: draft
+    status: reviewed
+    reviewed_by: claude
   - id: probability-039
     type: short_answer
     difficulty: medium
@@ -958,7 +1103,8 @@ questions:
       id: d2l
       ref: chapter_appendix-mathematics-for-deep-learning/random-variables#ex2
       url: https://d2l.ai/chapter_appendix-mathematics-for-deep-learning/random-variables.html#exercises
-    status: draft
+    status: reviewed
+    reviewed_by: claude
   - id: probability-040
     type: single
     difficulty: medium
@@ -996,7 +1142,8 @@ questions:
       id: d2l
       ref: chapter_appendix-mathematics-for-deep-learning/random-variables#ex3
       url: https://d2l.ai/chapter_appendix-mathematics-for-deep-learning/random-variables.html#exercises
-    status: draft
+    status: reviewed
+    reviewed_by: claude
   - id: probability-041
     type: single
     difficulty: medium
@@ -1036,7 +1183,8 @@ questions:
       id: d2l
       ref: chapter_appendix-mathematics-for-deep-learning/random-variables#ex4
       url: https://d2l.ai/chapter_appendix-mathematics-for-deep-learning/random-variables.html#exercises
-    status: draft
+    status: reviewed
+    reviewed_by: claude
   - id: probability-042
     type: short_answer
     difficulty: easy
@@ -1072,7 +1220,8 @@ questions:
       id: d2l
       ref: chapter_appendix-mathematics-for-deep-learning/distributions#ex1
       url: https://d2l.ai/chapter_appendix-mathematics-for-deep-learning/distributions.html#exercises
-    status: draft
+    status: reviewed
+    reviewed_by: claude
   - id: probability-043
     type: single
     difficulty: medium
@@ -1112,7 +1261,8 @@ questions:
       id: d2l
       ref: chapter_appendix-mathematics-for-deep-learning/distributions#ex2
       url: https://d2l.ai/chapter_appendix-mathematics-for-deep-learning/distributions.html#exercises
-    status: draft
+    status: reviewed
+    reviewed_by: claude
   - id: probability-044
     type: single
     difficulty: easy
@@ -1152,7 +1302,8 @@ questions:
       id: d2l
       ref: chapter_preliminaries/probability#ex1
       url: https://d2l.ai/chapter_preliminaries/probability.html#exercises
-    status: draft
+    status: reviewed
+    reviewed_by: claude
   - id: probability-045
     type: short_answer
     difficulty: medium
@@ -1190,7 +1341,8 @@ questions:
       id: d2l
       ref: chapter_preliminaries/probability#ex2
       url: https://d2l.ai/chapter_preliminaries/probability.html#exercises
-    status: draft
+    status: reviewed
+    reviewed_by: claude
   - id: probability-046
     type: short_answer
     difficulty: medium
@@ -1226,7 +1378,8 @@ questions:
       id: d2l
       ref: chapter_preliminaries/probability#ex3
       url: https://d2l.ai/chapter_preliminaries/probability.html#exercises
-    status: draft
+    status: reviewed
+    reviewed_by: claude
   - id: probability-047
     type: short_answer
     difficulty: hard
@@ -1263,7 +1416,8 @@ questions:
       id: d2l
       ref: chapter_preliminaries/probability#ex3-b
       url: https://d2l.ai/chapter_preliminaries/probability.html#exercises
-    status: draft
+    status: reviewed
+    reviewed_by: claude
   - id: probability-048
     type: short_answer
     difficulty: medium
@@ -1300,7 +1454,8 @@ questions:
       id: d2l
       ref: chapter_preliminaries/probability#ex5
       url: https://d2l.ai/chapter_preliminaries/probability.html#exercises
-    status: draft
+    status: reviewed
+    reviewed_by: claude
   - id: probability-049
     type: short_answer
     difficulty: medium
@@ -1336,7 +1491,8 @@ questions:
       id: d2l
       ref: chapter_preliminaries/probability#ex5-b
       url: https://d2l.ai/chapter_preliminaries/probability.html#exercises
-    status: draft
+    status: reviewed
+    reviewed_by: claude
   - id: probability-050
     type: short_answer
     difficulty: hard
@@ -1371,7 +1527,8 @@ questions:
       id: d2l
       ref: chapter_preliminaries/probability#ex7
       url: https://d2l.ai/chapter_preliminaries/probability.html#exercises
-    status: draft
+    status: reviewed
+    reviewed_by: claude
   - id: probability-051
     type: short_answer
     difficulty: hard
@@ -1408,7 +1565,8 @@ questions:
       id: d2l
       ref: chapter_preliminaries/probability#ex7-b
       url: https://d2l.ai/chapter_preliminaries/probability.html#exercises
-    status: draft
+    status: reviewed
+    reviewed_by: claude
   - id: probability-052
     type: short_answer
     difficulty: medium
@@ -1448,7 +1606,8 @@ questions:
       id: d2l
       ref: chapter_preliminaries/probability#ex8
       url: https://d2l.ai/chapter_preliminaries/probability.html#exercises
-    status: draft
+    status: reviewed
+    reviewed_by: claude
   - id: probability-053
     type: single
     difficulty: easy
@@ -1485,7 +1644,8 @@ questions:
       id: gutmann-pen-paper
       ref: sampling-and-monte-carlo-integration#sampling-from-the-exponential-distribution
       url: https://github.com/michaelgutmann/ml-pen-and-paper-exercises/blob/571295dfe49b37d16884b2c5397e62e154ce5f88/topics/sampling-and-monte-carlo-integration.tex
-    status: draft
+    status: reviewed
+    reviewed_by: claude
   - id: probability-054
     type: short_answer
     difficulty: medium
@@ -1518,7 +1678,8 @@ questions:
       id: gutmann-pen-paper
       ref: sampling-and-monte-carlo-integration#sampling-from-a-laplace-distribution
       url: https://github.com/michaelgutmann/ml-pen-and-paper-exercises/blob/571295dfe49b37d16884b2c5397e62e154ce5f88/topics/sampling-and-monte-carlo-integration.tex
-    status: draft
+    status: reviewed
+    reviewed_by: claude
   - id: probability-055
     type: single
     difficulty: easy
@@ -1532,10 +1693,11 @@ questions:
         why: $1/2$ is $P(D \mid Y)$, the defect rate of Company Y — the conditional the wrong way round.
       - text: 2 / 3
         correct: true
-    explanation: "Three of the 9 chips are defective and 2 of those come from Company Y, so $P(Y \\mid D) = 2/3$. Bayes' theorem gives the same result: $P(Y \\mid D) = \\frac{P(D \\mid Y)\\,P(Y)}{P(D)} = \\frac{(2/4)(4/9)}{3/9} = \\frac{2}{3}$ [^2][^1]."
+    explanation: "Three of the 9 chips are defective and 2 of those come from Company Y; conditioning on a defective chip restricts the sample space to those 3 chips, so $P(Y \\mid D) = 2/3$ [^1]. Bayes' theorem gives the same result: $P(Y \\mid D) = \\frac{P(D \\mid Y)\\,P(Y)}{P(D)} = \\frac{(2/4)(4/9)}{3/9} = \\frac{2}{3}$ [^1][^2]. The distractors are the other probabilities in the formula: $P(Y \\cap D) = 2/9$, the prior $P(Y) = 4/9$ and the defect rate $P(D \\mid Y) = 1/2$."
     references:
-      - source: mmlu-redux
-        locator: college_computer_science row 97
+      - source: d2l
+        locator: Sec. 2.6.4 Multiple Random Variables (conditional probability, Eq. 2.6.2; Bayes' theorem, Eq. 2.6.3)
+        url: https://d2l.ai/chapter_preliminaries/probability.html#multiple-random-variables
       - title: "Wikipedia: Bayes' theorem"
         url: https://en.wikipedia.org/wiki/Bayes%27_theorem
         locator: Statement of theorem
@@ -1543,7 +1705,8 @@ questions:
       id: mmlu-redux
       ref: college_computer_science/97
       url: https://huggingface.co/datasets/edinburgh-dawg/mmlu-redux-2.0/viewer/college_computer_science/test?row=97
-    status: draft
+    status: reviewed
+    reviewed_by: claude
   - id: probability-056
     type: short_answer
     difficulty: medium
@@ -1576,7 +1739,8 @@ questions:
       id: dl-interviews
       ref: ch3#prb48
       url: https://arxiv.org/abs/2201.00650v2
-    status: draft
+    status: reviewed
+    reviewed_by: claude
   - id: probability-057
     type: short_answer
     difficulty: medium
@@ -1608,7 +1772,8 @@ questions:
       id: dl-interviews
       ref: ch3#prb49
       url: https://arxiv.org/abs/2201.00650v2
-    status: draft
+    status: reviewed
+    reviewed_by: claude
   - id: probability-058
     type: short_answer
     difficulty: easy
@@ -1640,7 +1805,8 @@ questions:
       id: dl-interviews
       ref: ch3#prb47
       url: https://arxiv.org/abs/2201.00650v2
-    status: draft
+    status: reviewed
+    reviewed_by: claude
   - id: probability-059
     type: short_answer
     difficulty: easy
@@ -1671,7 +1837,8 @@ questions:
       id: dl-interviews
       ref: ch3#prb35
       url: https://arxiv.org/abs/2201.00650v2
-    status: draft
+    status: reviewed
+    reviewed_by: claude
   - id: probability-060
     type: short_answer
     difficulty: medium
@@ -1703,4 +1870,5 @@ questions:
       id: dl-interviews
       ref: ch8#prb242
       url: https://arxiv.org/abs/2201.00650v2
-    status: draft
+    status: reviewed
+    reviewed_by: claude

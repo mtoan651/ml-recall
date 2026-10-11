@@ -46,6 +46,9 @@ items:
         entity, so "Hugging Face" comes back as one organization and the subword pieces of "Sylvain" as
         one word [^1]. Positive/negative labels would come from a `sentiment-analysis` pipeline, and a
         completion of the sentence from `text-generation`.
+      why:
+        0: That output would come from a `sentiment-analysis` pipeline; NER labels spans inside the text, not the sentence as a whole.
+        1: Completing a sentence is what a `text-generation` pipeline does; NER only labels spans that are already in the text.
       references:
         - source: hf-llm-course
           url: https://huggingface.co/learn/llm-course/chapter1/3#named-entity-recognition
@@ -59,10 +62,13 @@ items:
         A fill-mask pipeline predicts the word hidden behind the model's mask token, so the input must
         contain that model's exact mask token, and different checkpoints use different ones [^1].
         BERT's is `[MASK]`, as in the `bert-base-cased` model card example
-        `unmasker("Hello I'm a [MASK] model.")` [^2]. `<mask>` is the token used in the course's
-        example with the pipeline's default checkpoint [^1]; BERT's tokenizer just splits it into
-        `<`, `mask` and `>`, so the pipeline finds no mask to fill, and a sentence without any mask
+        `unmasker("Hello I'm a [MASK] model.")` [^2]. `<mask>` is the mask token of the pipeline's
+        default checkpoint, used in the HF LLM Course's example [^1]; BERT's tokenizer just splits it
+        into `<`, `mask` and `>`, so the pipeline finds no mask to fill, and a sentence without any mask
         token has nothing to predict.
+      why:
+        0: "`<mask>` is the mask token of other checkpoints, such as the pipeline's default one; BERT's tokenizer reads it as ordinary characters, so the input contains no `[MASK]` to fill."
+        2: This pipeline fills in masked words, so the input needs a mask token somewhere.
       references:
         - source: hf-llm-course
           url: https://huggingface.co/learn/llm-course/chapter1/3#mask-filling
@@ -78,15 +84,17 @@ items:
       explanation: |
         The `zero-shot-classification` pipeline classifies a text with labels you choose at call time
         instead of the labels the model was trained with, so the call has to say which labels to choose
-        from: the course passes `candidate_labels=["education", "politics", "business"]` and gets a score
-        for each [^1]. That argument is the set of possible labels for each sequence [^2]; without it there
-        is nothing to score the text against, and the call fails. The same course example creates the
-        pipeline without `model=`, in which case the task's default checkpoint is loaded [^3], and it
-        classifies a single short sentence [^1].
+        from: the HF LLM Course passes `candidate_labels=["education", "politics", "business"]` and gets
+        a score for each [^1]. That argument is the set of possible labels for each sequence [^2];
+        without it there is nothing to score the text against, and the call fails. The same example
+        creates the pipeline without `model=`, in which case the task's default checkpoint is loaded
+        [^3], and it classifies a single short sentence [^1].
       options:
         2: This pipeline needs a `model=` argument, because the task has no default checkpoint.
       why:
+        1: A single sentence is fine; like every pipeline it also accepts a list of sentences, but it does not need one.
         2: Without `model=`, the pipeline falls back to a default checkpoint for the task and only prints a warning.
+        3: Short inputs are fine; length only matters at the other end, where a very long text is truncated.
       references:
         - source: hf-llm-course
           url: https://huggingface.co/learn/llm-course/chapter1/3#zero-shot-classification
@@ -142,6 +150,12 @@ items:
     topic: neural-networks
     difficulty: easy
     fix:
+      explanation: |
+        In the Hugging Face course's terms, the architecture is the skeleton of the model: the definition
+        of each layer and each operation inside it, i.e. a succession of mathematical functions [^1]. The
+        weights (a checkpoint) are the parameter values loaded into that architecture, so the same
+        architecture gives different models with different weights [^1]. "Model" is an umbrella term that
+        can mean either [^1].
       options:
         2: An architecture is a succession of mathematical functions to build a model and its weights are those functions' parameters.
       references:
@@ -151,6 +165,7 @@ items:
       references_replace: true
   "chapter1/7#q11":
     topic: ai-ethics
+    difficulty: easy
     fix:
       explanation: |
         All three are real sources of bias. Pretrained models are often trained on text scraped from
@@ -169,7 +184,6 @@ items:
           url: https://huggingface.co/learn/llm-course/chapter1/7
           locator: 'Chapter 1: Ungraded quiz, question 11 (answer notes)'
       references_replace: true
-  # chapter 2 — Using 🤗 Transformers (concepts → transformers/tokenization, API → huggingface)
   "chapter2/9#q2":
     topic: transformers
     difficulty: easy
@@ -177,9 +191,18 @@ items:
       explanation: |
         The base model (`AutoModel`) outputs hidden states with three dimensions: the batch size
         (how many sequences are processed at once), the sequence length, and the hidden size (the
-        vector dimension of each input token) [^1]. In the course example, two sentences of 16 tokens
-        give `last_hidden_state.shape == torch.Size([2, 16, 768])` [^1]. The batch dimension is
-        always there: a single sentence is sent as a batch of one sequence [^2].
+        vector dimension of each input token) [^1]. In the Hugging Face LLM Course example, two
+        sentences of 16 tokens give `last_hidden_state.shape == torch.Size([2, 16, 768])` [^1]. The
+        batch dimension is always there: a single sentence is sent as a batch of one sequence [^2].
+      options:
+        - text: '2: batch size and sequence length'
+          why: 'The hidden size is missing: every token comes out as a vector of `hidden_size` numbers (768 for BERT-base) [^1].'
+        - text: '2: sequence length and hidden size'
+          why: The batch dimension is always there; a single sentence is passed as a batch of size 1 [^2].
+        - text: '3: batch size, sequence length and hidden size'
+          correct: true
+        - text: '3: batch size, number of layers and hidden size'
+          why: The base model returns the hidden states of its last layer, one vector per token, so the middle dimension is the sequence length [^1].
       references:
         - source: hf-llm-course
           url: https://huggingface.co/learn/llm-course/chapter2/2#a-high-dimensional-vector
@@ -205,6 +228,8 @@ items:
       options:
         5: Lowercasing the text and removing accents
       why:
+        1: It splits text into single characters, the smallest possible units; subword methods learn units between characters and whole words.
+        2: That is word-based tokenization; every word stays whole, however rare it is.
         5: That's normalization, a cleanup step before the text is split; it produces no tokens.
       references:
         - source: hf-llm-course
@@ -261,6 +286,7 @@ items:
         reading. Softmax also preserves the ordering of the logits, so it does not change which class
         wins and does not make the prediction any more reliable [^2].
       why:
+        0: Softmax only rescales the logits and keeps their order, so the predicted class and its reliability stay the same [^2].
         1: Every softmax output lies between 0 and 1.
         2: Dividing each exponentiated logit by the sum of all of them makes the outputs add up to 1, like a probability distribution.
       references:
@@ -312,6 +338,15 @@ items:
         prediction on sentence pairs; checkpoints that weren't, such as DistilBERT, don't return
         them [^1]. The vocabulary IDs and the padding information are separate fields, `input_ids`
         and `attention_mask` [^1].
+      options:
+        0: The position index of each token within the input sequence
+        1: Which sentence of a sentence pair each token belongs to
+        2: Whether each token is a real token or padding to be ignored
+        3: The vocabulary ID of each token, used to look up its embedding
+      why:
+        0: Order information comes from BERT's position embeddings inside the model, not from `token_type_ids`.
+        2: That is the separate `attention_mask` field [^1].
+        3: That is the `input_ids` field [^1].
       references:
         - source: hf-llm-course
           url: https://huggingface.co/learn/llm-course/chapter3/2#preprocessing-a-dataset
@@ -319,6 +354,7 @@ items:
       references_replace: true
   "chapter3/2#q4":
     topic: huggingface
+    difficulty: easy
     fix:
       explanation: |
         The second positional argument of `load_dataset` is `name`, the dataset configuration [^2],
@@ -378,6 +414,7 @@ items:
       references_replace: true
   "chapter3/3#q2":
     topic: huggingface
+    difficulty: easy
     fix:
       explanation: |
         `eval_strategy` can be `"no"` (the default), `"steps"` (evaluate every `eval_steps` steps) or
@@ -423,14 +460,33 @@ items:
       references_replace: true
   "chapter3/3#q4":
     topic: huggingface
+    difficulty: easy
     fix:
+      explanation: |
+        During evaluation the `Trainer` calls `compute_metrics` with an `EvalPrediction`, a named tuple
+        holding the model's `predictions` (e.g. logits) and the `label_ids`, and the function returns a
+        dictionary mapping metric names to numbers, such as accuracy and F1 [^1]. Without it the
+        evaluation would only report the loss, which is not a very intuitive number [^1]. The training
+        loss itself is computed by the model, which returns it whenever the batch contains `labels` [^2].
       options:
         0: It calculates the loss that is backpropagated during training.
         1: It computes metrics like accuracy and F1 from the model's predictions.
         2: It determines which optimizer and learning rate to use.
         3: It preprocesses and tokenizes the training data.
+      why:
+        0: The loss is computed by the model itself whenever the batch contains `labels`; `compute_metrics` only reports evaluation metrics.
+        2: The optimizer and learning rate come from `TrainingArguments` (or an optimizer you pass in), not from `compute_metrics`.
+      references:
+        - source: hf-llm-course
+          locator: Chapter 3.3 Fine-tuning a model with the Trainer API, sec. Evaluation
+          url: https://huggingface.co/learn/llm-course/chapter3/3#evaluation
+        - source: hf-llm-course
+          locator: Chapter 3.4 A full training loop, sec. Prepare for training
+          url: https://huggingface.co/learn/llm-course/chapter3/4#prepare-for-training
+      references_replace: true
   "chapter3/3#q5":
     topic: huggingface
+    difficulty: medium
     fix:
       question: What happens when you don't provide an `eval_dataset` to the `Trainer` and keep the default `eval_strategy="no"`?
       explanation: |
@@ -461,10 +517,14 @@ items:
         set with `gradient_accumulation_steps`: a per-device batch size of 4 with 4 accumulation steps
         gives an effective batch size of 16 [^1].
       options:
-        0: It saves gradients to disk, enabled with `save_gradients=True`.
-        1: It accumulates gradients over multiple batches before updating, enabled with `gradient_accumulation_steps`.
-        2: It speeds up gradient computation, enabled automatically with `fp16`.
-        3: It prevents gradient overflow, enabled with `gradient_clipping=True`.
+        0: It saves the gradients of every batch to disk, enabled with `save_gradients=True`.
+        1: It adds up the gradients of several batches before one update, set with `gradient_accumulation_steps`.
+        2: It speeds up the gradient computation itself and is switched on automatically by `fp16`.
+        3: It prevents gradients from overflowing, enabled with `gradient_clipping=True`.
+      why:
+        0: Gradient accumulation keeps the gradients in memory and adds them up; nothing is written to disk.
+        2: fp16 can speed up training, but gradient accumulation is a separate technique with its own setting.
+        3: Limiting the size of gradients is gradient clipping, not gradient accumulation.
       references:
         - source: hf-llm-course
           url: https://huggingface.co/learn/llm-course/chapter3/3#advanced-training-features
@@ -475,12 +535,20 @@ items:
     difficulty: medium
     fix:
       explanation: |
-        AdamW separates weight decay from the gradient-based parameter updates, leading to better
-        regularization [^1].
+        When Adam is combined with an L2 penalty, the penalty's gradient $\lambda\theta$ is added to the
+        loss gradient and then divided by Adam's adaptive denominator, so weights with large past
+        gradients are regularized less than intended [^2]. AdamW decouples the two: it takes the usual
+        Adam step on the loss gradient and shrinks the weights separately, in proportion to $\lambda\theta$
+        [^2]. This restores true weight decay and improves Adam's generalization; AdamW is the optimizer
+        the 🤗 `Trainer` uses [^1]. Both keep the same two moment estimates per parameter, so their memory
+        use is the same.
       references:
         - source: hf-llm-course
           url: https://huggingface.co/learn/llm-course/chapter3/4#prepare-for-training
           locator: 'Chapter 3, A full training loop: Prepare for training'
+        - title: Loshchilov & Hutter (2019), Decoupled Weight Decay Regularization, arXiv:1711.05101
+          url: https://arxiv.org/abs/1711.05101
+          locator: Sec. 1 Introduction; Sec. 2 Decoupling the weight decay from the gradient-based update, Algorithm 2
       references_replace: true
   "chapter3/4#q2":
     topic: training
@@ -615,6 +683,7 @@ items:
       references_replace: true
   "chapter3/4#q7":
     topic: huggingface
+    difficulty: easy
     fix:
       explanation: |
         These are the main changes: pass the dataloaders, model and optimizer to
@@ -633,20 +702,30 @@ items:
     difficulty: easy
     fix:
       explanation: |
-        This is a classic sign of overfitting: the model performs well on training data but poorly on
-        unseen validation data [^1].
+        A training loss that keeps falling while the validation loss rises or stalls is the classic
+        sign of overfitting [^1]. The model still fits its training examples better and better, but what
+        it now learns are quirks and noise of those examples that do not carry over to unseen data, so
+        its generalization gets worse [^1][^2]. Typical remedies are regularization such as dropout or
+        weight decay, early stopping, data augmentation or a smaller model [^1].
       references:
         - source: hf-llm-course
           url: https://huggingface.co/learn/llm-course/chapter3/5#overfitting
           locator: 'Chapter 3, Understanding Learning Curves: Overfitting'
+        - source: d2l
+          url: https://d2l.ai/chapter_linear-regression/generalization.html#underfitting-or-overfitting
+          locator: Sec. 3.6.2 Underfitting or Overfitting?
       references_replace: true
   "chapter3/5#q2":
     topic: training
     difficulty: medium
     fix:
       explanation: |
-        Unlike loss, accuracy depends on discrete prediction decisions, so small improvements in
-        confidence may not change the final accuracy until a threshold is crossed [^1].
+        Accuracy counts discrete decisions: a prediction only changes when the predicted class flips,
+        i.e. when the probability of the right class crosses the decision threshold [^1]. Small gains in
+        confidence lower the loss, which is continuous, but leave accuracy unchanged until enough
+        examples cross the threshold, so the accuracy curve rises in jumps with plateaus between them
+        [^1]. Accuracy is not even differentiable, which is why training optimizes the loss and accuracy
+        is only monitored [^2].
       options:
         0: There is a bug in how the accuracy is being calculated.
         1: Accuracy changes only when a prediction flips to another class.
@@ -656,12 +735,20 @@ items:
         - source: hf-llm-course
           url: https://huggingface.co/learn/llm-course/chapter3/5#accuracy-curves
           locator: 'Chapter 3, Understanding Learning Curves: Accuracy Curves'
+        - source: d2l
+          locator: Sec. 4.3.2 Accuracy
+          url: https://d2l.ai/chapter_linear-classification/classification.html#accuracy
       references_replace: true
   "chapter3/5#q3":
     topic: training
     difficulty: easy
     fix:
-      explanation: Lower learning rates and larger batch sizes typically lead to more stable training [^1].
+      explanation: |
+        Frequent, large fluctuations mean the updates are too large or too noisy: steps overshoot, so the
+        loss jumps up and down instead of trending downward [^1]. A lower learning rate takes smaller,
+        more stable steps, and a larger batch averages the gradient over more examples, which reduces
+        its noise [^1]. Gradient clipping and consistent preprocessing can also help; stopping or
+        switching architectures is premature [^1].
       references:
         - source: hf-llm-course
           url: https://huggingface.co/learn/llm-course/chapter3/5#erratic-learning-curves
@@ -672,26 +759,36 @@ items:
     difficulty: easy
     fix:
       explanation: |
-        Early stopping helps prevent overfitting by stopping training when the model no longer
-        generalizes better, i.e. when validation performance stops improving [^1].
+        Early stopping monitors validation performance during training and stops once it no longer
+        improves or starts to get worse, usually keeping the best model seen so far [^1][^2]. From that
+        point on, more training only fits the training set more closely, which is the onset of
+        overfitting [^1]. It is one remedy among several, next to regularization, data augmentation and
+        smaller models, so it is used when that pattern appears rather than as a rule for every run [^1].
       references:
         - source: hf-llm-course
           url: https://huggingface.co/learn/llm-course/chapter3/5#overfitting
           locator: 'Chapter 3, Understanding Learning Curves: Overfitting (solutions)'
+        - source: d2l
+          locator: Sec. 5.5.3 Early Stopping
+          url: https://d2l.ai/chapter_multilayer-perceptrons/generalization-deep.html#early-stopping
       references_replace: true
   "chapter3/5#q5":
     topic: training
     difficulty: easy
     fix:
       explanation: |
-        Underfitting occurs when the model lacks capacity to learn the patterns, resulting in poor
-        performance on both training and validation data [^1].
+        Underfitting means the model has not even learned the training data well: training and
+        validation loss both stay high and level off early [^1]. Causes include too little capacity, too
+        few epochs or an unsuitable learning rate, so the remedies are a larger model, longer training,
+        other learning rates and checking the data [^1]. A large gap with good training performance is
+        the opposite problem, overfitting [^1].
+      why:
+        3: Underfitting shows in the level of the losses, both staying high; how fast each one falls does not indicate it.
       references:
         - source: hf-llm-course
           url: https://huggingface.co/learn/llm-course/chapter3/5#underfitting
           locator: 'Chapter 3, Understanding Learning Curves: Underfitting'
       references_replace: true
-  # chapter 6 — Tokenizers
   "chapter6/10#q2":
     topic: huggingface
     difficulty: medium
@@ -712,6 +809,7 @@ items:
       references_replace: true
   "chapter6/10#q3":
     topic: huggingface
+    difficulty: medium
     fix:
       explanation: |
         A fast tokenizer is backed by the Rust 🤗 Tokenizers library, so it can tokenize a large batch in
@@ -803,6 +901,7 @@ items:
       references_replace: true
   "chapter7/9#q7":
     topic: huggingface
+    difficulty: medium
     fix:
       question: What is the proper way to preprocess the data for a sequence-to-sequence problem with a 🤗 Transformers tokenizer?
       explanation: |
@@ -967,11 +1066,18 @@ items:
     topic: training
     difficulty: easy
     fix:
-      explanation: This divergence between training and validation loss is a classic sign of overfitting [^1].
+      explanation: |
+        Overfitting shows as a growing gap between the curves: the training loss keeps going down while
+        the validation loss stops improving or rises [^1][^2]. The model is then fitting details of the
+        training examples that do not generalize. When both losses decrease together, training is
+        healthy [^2].
       references:
         - source: hf-llm-course
           url: https://huggingface.co/learn/llm-course/chapter11/3
-          locator: 'Chapter 11, Supervised Fine-Tuning: Metrics to Monitor'
+          locator: 'Chapter 11, Supervised Fine-Tuning: Monitoring Training Progress (Warning Signs to Watch For)'
+        - source: hf-llm-course
+          url: https://huggingface.co/learn/llm-course/chapter3/5#overfitting
+          locator: 'Chapter 3, Understanding Learning Curves: Overfitting; Healthy Learning Curves'
       references_replace: true
   "chapter11/3#q3":
     topic: training
@@ -979,27 +1085,45 @@ items:
     fix:
       question: What is `gradient_accumulation_steps` used for?
       explanation: |
-        It accumulates gradients across multiple forward and backward passes before updating the
-        weights, which enables larger effective batch sizes [^1].
+        Gradient accumulation runs several forward and backward passes and adds up their gradients
+        before a single optimizer step, so the update behaves like one computed on a larger batch [^1].
+        Larger batches give more stable gradients but need more memory; accumulating over $k$ small
+        batches gives a $k$ times larger effective batch while only one small batch is in memory at a
+        time [^1][^2]. For example, a per-device batch size of 4 with 4 accumulation steps gives an
+        effective batch size of 16 [^2].
+      options:
+        0: To increase the effective batch size without using more memory
+        1: To save model checkpoints at regular intervals during training
+        2: To control how the learning rate changes over the course of training
       why:
         1: This is handled by the `save_steps` and `save_strategy` parameters.
-        2: Learning rate scheduling is controlled by `learning_rate` and `warmup_ratio`.
+        2: The learning-rate schedule is set by `learning_rate` and warm-up options such as `warmup_ratio`.
       references:
         - source: hf-llm-course
           url: https://huggingface.co/learn/llm-course/chapter11/3
           locator: 'Chapter 11, Supervised Fine-Tuning: Training Configuration (Batch Size Parameters)'
+        - source: hf-llm-course
+          url: https://huggingface.co/learn/llm-course/chapter3/3#advanced-training-features
+          locator: 'Chapter 3, Fine-tuning a model with the Trainer API: Advanced Training Features'
       references_replace: true
   "chapter11/3#q5":
     topic: training
     difficulty: easy
     fix:
       explanation: |
-        A small gap between training and validation loss indicates that the model is learning
-        generalizable patterns rather than memorizing specific examples [^1].
+        In healthy training both losses fall and then level off, and the key indicator is a small gap
+        between training and validation loss: the model is learning patterns that generalize rather
+        than memorizing the training examples [^1]. A small gap alone is not enough, since an underfit
+        model also has close curves, but at a high loss [^2].
+      options:
+        0: Both losses level off with a small gap between them
       references:
         - source: hf-llm-course
           url: https://huggingface.co/learn/llm-course/chapter11/3
           locator: 'Chapter 11, Supervised Fine-Tuning: The Path to Convergence'
+        - source: hf-llm-course
+          url: https://huggingface.co/learn/llm-course/chapter3/5#underfitting
+          locator: 'Chapter 3, Understanding Learning Curves: Underfitting'
       references_replace: true
   "chapter11/5#q1":
     topic: llm-basics
@@ -1011,6 +1135,11 @@ items:
         and reproduced [^1]. They are not a perfect proxy, though: a model that excels at academic
         benchmarks may still struggle in a specific domain, so benchmarks are only one part of a
         comprehensive evaluation strategy [^1].
+      options:
+        1: They allow standardized, reproducible comparison between models
+      why:
+        0: Benchmark scores don't always carry over to real-world use; a model that excels on them can still struggle in a specific domain [^1].
+        2: Automatic benchmarks should be one part of a comprehensive evaluation strategy, not the only method [^1].
       references:
         - source: hf-llm-course
           url: https://huggingface.co/learn/llm-course/chapter11/5#understanding-automatic-benchmarks
@@ -1025,6 +1154,9 @@ items:
         MMLU (Massive Multitask Language Understanding) tests knowledge across 57 subjects, from science
         to the humanities [^1]. BBH (Big Bench Hard) and GSM8K are reasoning benchmarks instead: BBH tests
         logical thinking and planning, and GSM8K targets mathematical problem-solving [^1].
+      why:
+        0: BBH focuses on complex reasoning tasks, not on knowledge across many subjects [^1].
+        1: GSM8K targets mathematical problem-solving, not broad subject knowledge [^1].
       references:
         - source: hf-llm-course
           url: https://huggingface.co/learn/llm-course/chapter11/5#general-knowledge-benchmarks
@@ -1044,7 +1176,8 @@ items:
       options:
         2: Letting users vote on which of two anonymous models answered better
       why:
-        2: Incorrect! That is an evaluation arena such as Chatbot Arena, where the judges are crowds of human users, not a model.
+        1: LLM-as-Judge is an evaluation method in which a model judges outputs; it is not a benchmark of legal reasoning [^1].
+        2: That is an evaluation arena such as Chatbot Arena, where the judges are crowds of human users, not a model [^1].
       references:
         - source: hf-llm-course
           url: https://huggingface.co/learn/llm-course/chapter11/5#alternative-evaluation-approaches
@@ -1064,6 +1197,9 @@ items:
       options:
         0: Only standard benchmarks, since they are reproducible and comparable
         2: Only custom datasets built from real queries in your own domain
+      why:
+        0: Benchmarks give a baseline for comparison but miss what matters in your own use case; a comprehensive strategy adds other methods [^1].
+        2: Custom datasets alone lose the comparison with other models; they complement standard benchmarks rather than replace them [^1].
       references:
         - source: hf-llm-course
           url: https://huggingface.co/learn/llm-course/chapter11/5#custom-evaluation
@@ -1083,6 +1219,9 @@ items:
         0: They are too expensive to run for most model developers
         1: A high benchmark score may not carry over to real-world use
         2: They can only evaluate models below a certain size
+      why:
+        0: Cost isn't the main limitation; the problem is that a benchmark score may not reflect performance in your use case [^1].
+        2: Automatic benchmarks can be run on models of any size.
       references:
         - source: hf-llm-course
           url: https://huggingface.co/learn/llm-course/chapter11/5#understanding-automatic-benchmarks
@@ -1101,6 +1240,9 @@ items:
         0: To reflect your use case, e.g. with real user queries from your domain
         1: To replace standard benchmarks entirely with in-house tests
         2: To make evaluation easier and cheaper than running benchmarks
+      why:
+        1: Custom datasets complement standard benchmarks rather than replace them [^1].
+        2: Building a custom dataset takes extra effort; its value is relevance to your use case, not lower cost [^1].
       references:
         - source: hf-llm-course
           url: https://huggingface.co/learn/llm-course/chapter11/5#custom-evaluation
@@ -1144,9 +1286,9 @@ items:
       explanation: |
         Sequence-to-sequence (encoder-decoder) models are best suited to generating a new text from
         a given input, such as a summary or a translation. The encoder reads the whole input with
-        bidirectional attention, and the decoder then generates the output text [^1]. The course's
-        guide to choosing an architecture lists encoder-decoder models such as BART and T5 for
-        summarization [^1]. Modern decoder-only LLMs can summarize as well [^1], but they are
+        bidirectional attention, and the decoder then generates the output text [^1]. The Hugging Face
+        LLM Course's guide to choosing an architecture lists encoder-decoder models such as BART and T5
+        for summarization [^1]. Modern decoder-only LLMs can summarize as well [^1], but they are
         general-purpose text generators, not the dedicated architecture for this task.
       options:
         0: An encoder-only model
@@ -1185,7 +1327,9 @@ items:
         likely segmentation according to the token probabilities learned in training [^1][^2]. Learning
         merge rules, and splitting words into characters before applying merges, is what BPE does [^1].
       why:
+        0: That describes BPE and WordPiece; Unigram goes the other way, starting big and removing tokens.
         3: No, frequency alone does not decide which tokens stay; Unigram removes the tokens whose removal increases the corpus loss the least.
+        5: That is how BPE encodes a word; Unigram has no merge rules and picks the most probable segmentation instead.
       references:
         - source: hf-llm-course
           url: https://huggingface.co/learn/llm-course/chapter6/4#algorithm-overview
@@ -1243,6 +1387,7 @@ items:
         original context [^1][^2]. Generating the answer token by token only happens when QA is framed as
         a sequence-to-sequence task.
       why:
+        0: 'Too simple: one long example is split into several features, so the best-scoring candidate over all of them must be chosen, and its tokens mapped back to the context text [^1].'
         1: Close, but the answer is not decoded from the tokens; the offset mapping is used to cut the matching span out of the original context text.
       references:
         - source: hf-llm-course
@@ -1303,19 +1448,29 @@ items:
           locator: Chapter 12.3 Understanding the DeepSeek R1 Paper, sec. GRPO Algorithm in Pseudocode (group_size outputs per prompt)
       references_replace: true
   chapter12/3#q5:
+    difficulty: easy
     fix:
       explanation: |
-        DeepSeek-R1-Zero is trained with reinforcement learning only, with no supervised fine-tuning.
-        DeepSeek-R1 builds on it with a multi-phase pipeline that combines supervised fine-tuning and RL,
-        which gives it better language consistency and readability [^1].
+        DeepSeek-R1-Zero applies large-scale RL (GRPO with rule-based accuracy and format rewards)
+        directly to the base model, with no supervised fine-tuning first [^2]. It reasons well but
+        suffers from poor readability and language mixing, so DeepSeek-R1 uses a multi-stage pipeline:
+        cold-start SFT, reasoning RL, rejection sampling with another SFT round, and a final RL stage
+        [^1][^2]. Both start from the same pretrained DeepSeek-V3-Base, so they differ in training
+        method, not in size or pre-training data [^2].
       options:
         0: R1-Zero is trained with pure RL; R1 adds supervised fine-tuning
         1: R1-Zero is a smaller version of R1 with fewer parameters
         2: R1-Zero was pre-trained on much less text than R1
+      why:
+        1: Both start from the same DeepSeek-V3-Base model, so they have the same architecture and size; only the post-training differs [^2].
+        2: Neither model is pre-trained separately; both start from the same pretrained DeepSeek-V3-Base [^2].
       references:
         - source: hf-llm-course
           url: https://huggingface.co/learn/llm-course/chapter12/3
           locator: Chapter 12.3 Understanding the DeepSeek R1 Paper, "The Training Process"
+        - title: 'DeepSeek-AI (2025), DeepSeek-R1: Incentivizing Reasoning Capability in LLMs via Reinforcement Learning, arXiv:2501.12948v1'
+          url: https://arxiv.org/abs/2501.12948v1
+          locator: Abstract; Sec. 2.2 DeepSeek-R1-Zero (base model, rewards); Sec. 2.3 DeepSeek-R1 (2.3.1-2.3.4)
       references_replace: true
   chapter4/6#q1:
     difficulty: easy
@@ -1329,7 +1484,7 @@ items:
       options:
         0: Only models built with the 🤗 Transformers library
         1: Only models whose interface matches the 🤗 Transformers API
-        2: Models from many libraries and fields, e.g. timm for vision or pyannote for speech
+        2: Models from many libraries, e.g. timm (vision) or pyannote (speech)
         3: Only models for natural language processing (NLP) tasks
       why:
         0: Models from the 🤗 Transformers library are supported on the Hub, but they are not the only ones.
@@ -1375,12 +1530,12 @@ items:
     fix:
       question: What is a model card on the Hugging Face Hub?
       explanation: |
-        The model card is the repository's README.md, a Markdown file, and the course calls it arguably
-        as important as the model and tokenizer files [^1]. It describes the model, its intended uses
-        and limitations, how to use it, its biases, its training data and procedure, and its evaluation
-        results [^1]. The idea comes from "Model Cards for Model Reporting", which proposes short
-        documents that report a model's evaluation and intended use so that it is not used where it is
-        not suited [^2].
+        The model card is the repository's README.md, a Markdown file, and the HF LLM Course calls it
+        arguably as important as the model and tokenizer files [^1]. It describes the model, its
+        intended uses and limitations, how to use it, its biases, its training data and procedure, and
+        its evaluation results [^1]. The idea comes from "Model Cards for Model Reporting", which
+        proposes short documents that report a model's evaluation and intended use so that it is not
+        used where it is not suited [^2].
       options:
         - text: A Markdown README documenting the model's intended uses, limitations, biases, data and evaluation
           correct: true
@@ -1560,7 +1715,7 @@ items:
         [^1]. Memory-mapped files can also be shared across processes, so methods like `Dataset.map()`
         can be parallelized without moving or copying the dataset [^1]. Memory mapping neither loads
         everything into RAM up front nor compresses the data; for corpora too large even for the disk,
-        the course turns to streaming [^1].
+        the HF LLM Course turns to streaming [^1].
       options:
         - text: Several processes can share one memory-mapped file, so `Dataset.map()` can run in parallel without copying the data
           correct: true
@@ -1667,8 +1822,9 @@ items:
         In symmetric semantic search the query and the corpus entries have about the same length and
         content, as when looking for similar questions, and you could swap query and entries [^1]. In
         asymmetric search you usually have a short query, such as a question or some keywords, and want
-        a longer paragraph that answers it, so swapping them makes no sense [^1]. The course's search of
-        GitHub issue comments with short questions is an example of the asymmetric case [^2].
+        a longer paragraph that answers it, so swapping them makes no sense [^1]. The HF LLM Course calls
+        its search of GitHub issue comments with short questions an example of asymmetric semantic
+        search [^2].
       options:
         - text: A short query and a longer paragraph that answers it
           correct: true
@@ -2005,10 +2161,10 @@ items:
     fix:
       explanation: |
         Encoder models use bidirectional attention, so each token's representation reflects the
-        whole sentence. That is what sentence classification needs, and the course suggests encoder
-        models such as BERT and RoBERTa for text classification [^1]. Decoder models are built for
-        generating text, and sequence-to-sequence models for turning an input text into a new output
-        text, not for extracting a label [^1].
+        whole sentence. That is what sentence classification needs, and the Hugging Face LLM Course
+        suggests encoder models such as BERT and RoBERTa for text classification [^1]. Decoder models
+        are built for generating text, and sequence-to-sequence models for turning an input text into a
+        new output text, not for extracting a label [^1].
       references:
         - source: hf-llm-course
           url: https://huggingface.co/learn/llm-course/chapter1/6#encoder-models
@@ -2035,6 +2191,7 @@ items:
           locator: Chapter 2.4 Tokenizers, sec. Decoding
       references_replace: true
   chapter2/9#q8:
+    difficulty: easy
     fix:
       explanation: |
         Calling the tokenizer directly (its `__call__` method) is the main API: in one step it splits the
@@ -2054,6 +2211,8 @@ items:
         output is a list of strings [^1]; for `"Hello!"` that is `['Hello', '!']`. Turning tokens
         into IDs is the second step, done by `convert_tokens_to_ids()` [^2] (calling the tokenizer
         directly does both steps and more). Returning one joined string would undo the split.
+      why:
+        1: Mapping tokens to IDs is a separate step, done by `convert_tokens_to_ids()` or by calling the tokenizer directly.
       references:
         - source: hf-llm-course
           url: https://huggingface.co/learn/llm-course/chapter2/4#tokenization
@@ -2063,6 +2222,7 @@ items:
           locator: Chapter 2.4 Tokenizers, sec. From tokens to input IDs
       references_replace: true
   chapter2/9#q10:
+    difficulty: easy
     fix:
       explanation: |
         Text must be preprocessed exactly as it was when the model was pretrained, so the tokenizer and the
@@ -2105,6 +2265,8 @@ items:
         whitespace and punctuation; GPT-2's does too but keeps the spaces as a `Ġ` symbol; T5's splits
         only on whitespace [^1]. Cleanup is the normalization step, and splitting words into subword tokens
         is the job of the tokenizer model itself [^1].
+      why:
+        0: Random masking is a training-time step on token IDs (done e.g. by a data collator); the tokenizer pipeline has no augmentation stage.
       references:
         - source: hf-llm-course
           url: https://huggingface.co/learn/llm-course/chapter6/4#pre-tokenization
@@ -2120,6 +2282,10 @@ items:
         the learned merges in order [^1][^2]. Starting from a big vocabulary and removing tokens is what
         Unigram does; scoring pairs so that pairs of rarer parts win, and encoding by the longest match
         from the start of the word, is WordPiece [^1].
+      why:
+        1: That is Unigram, which starts from a large vocabulary and prunes it; BPE grows a small one by merges.
+        3: That is WordPiece's score, freq(a, b) / (freq(a) × freq(b)); BPE simply merges the most frequent pair.
+        5: That is WordPiece's longest-match-first encoding; BPE replays its learned merges on the characters of the word.
       references:
         - source: hf-llm-course
           url: https://huggingface.co/learn/llm-course/chapter6/4#algorithm-overview
@@ -2139,6 +2305,10 @@ items:
         vocabulary, and it encodes a word by repeatedly taking the longest subword from the start that is
         in the vocabulary [^1][^2]. Merging the most frequent pair is BPE; starting from a big vocabulary
         and choosing the most likely segmentation is Unigram [^1].
+      why:
+        1: That is Unigram; WordPiece, like BPE, grows a small vocabulary by merges.
+        2: That is BPE; WordPiece divides the pair's frequency by the frequencies of its two parts.
+        4: That is Unigram, which picks the segmentation with the highest probability under its token model.
       references:
         - source: hf-llm-course
           url: https://huggingface.co/learn/llm-course/chapter6/4#algorithm-overview
@@ -2163,7 +2333,7 @@ items:
           locator: Chapter 7.2 Token classification, sec. Processing the data
       references_replace: true
   chapter7/9#q6:
-    difficulty: easy
+    difficulty: medium
     fix:
       explanation: |
         A sequence-to-sequence task turns an input text into a new output text, which is what
@@ -2227,6 +2397,9 @@ items:
            (checked by rules or judged by DeepSeek-V3), and they become data for another round of SFT.
         4. **Diverse RL:** a final RL stage on all kinds of prompts, with rule-based rewards for
            reasoning and model-based rewards for human preferences such as helpfulness and harmlessness.
+      why:
+        1: This is a generic model lifecycle. R1 starts from the already pretrained DeepSeek-V3-Base, and testing and deployment are not training stages; its four stages alternate SFT and RL [^1][^2].
+        2: These are generic project steps. In R1, new training data is produced inside the stages themselves, e.g. rejection sampling from the RL checkpoint creates the data for the next SFT round [^1][^2].
       references:
         - source: hf-llm-course
           url: https://huggingface.co/learn/llm-course/chapter12/3#the-training-process
@@ -2236,13 +2409,29 @@ items:
           locator: 'Sec. 2.3 DeepSeek-R1: Reinforcement Learning with Cold Start, 2.3.1-2.3.4'
       references_replace: true
   chapter12/3#q3:
+    difficulty: easy
     fix:
       explanation: |
-        The 'Aha Moment' is the model learning, without being programmed to, to stop and rethink its own
-        work. The HF course breaks it into four steps: an initial attempt, recognizing an error or
-        inconsistency, self-correcting, and explaining why the new approach is better [^1].
+        During RL training of DeepSeek-R1-Zero, an intermediate version of the model learned, without
+        being taught to, to allocate more thinking time to a problem by re-evaluating its initial
+        approach; the authors call this its "aha moment" [^2]. The HF course breaks it into four steps:
+        an initial attempt, recognizing an error or inconsistency, self-correcting, and explaining why
+        the new approach is better [^1]. It emerged from the RL incentives alone, rule-based rewards for
+        correct and well-formatted answers, not from a special reward or a training milestone [^2].
+      options:
+        - text: The model learns, unprompted, to stop, spot an error in its reasoning and rethink it
+          correct: true
+        - text: The point at which the model's benchmark scores first reach human level
+          why: It is not a performance milestone but a change in how the model reasons, re-evaluating its initial approach [^1][^2].
+        - text: The moment training ends and the final checkpoint is chosen
+          why: The behaviour appeared in an intermediate version of R1-Zero during RL training, not at the end [^2].
+        - text: A bonus reward given whenever a problem is solved on the first attempt
+          why: R1-Zero is trained only with rule-based accuracy and format rewards; the aha moment is emergent behaviour, not a reward [^2].
       references:
         - source: hf-llm-course
           url: https://huggingface.co/learn/llm-course/chapter12/3
           locator: Chapter 12.3 Understanding the DeepSeek R1 Paper, "The Breakthrough 'Aha' Moment"
+        - title: 'DeepSeek-AI (2025), DeepSeek-R1: Incentivizing Reasoning Capability in LLMs via Reinforcement Learning, arXiv:2501.12948v1'
+          url: https://arxiv.org/abs/2501.12948v1
+          locator: Sec. 2.2.2 Reward Modeling; Sec. 2.2.4 Performance, Self-evolution Process and Aha Moment of DeepSeek-R1-Zero
       references_replace: true

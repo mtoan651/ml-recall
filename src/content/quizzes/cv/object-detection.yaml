@@ -9,13 +9,15 @@ questions:
     question: With object detection, we don't just get the class of an object, but also its ____
     options:
       - text: shape
+        why: A bounding box gives the object's position but not its exact outline; pixel-level outlines are the job of segmentation [^3].
       - text: location
         correct: true
-      - text: type
+      - text: category
+        why: The category of an object is its class, which a classifier already gives; detection adds where the object is [^1].
     explanation: |
       An image classifier only says what is in the picture. Object detection also says where each
       object is [^1][^2]. That position is usually given as a bounding box, a rectangle described
-      by its corner or center coordinates [^2]. "Type" is just another word for the class.
+      by its corner or center coordinates [^2]. "Category" is just another word for the class.
       "Shape" is also wrong: a rectangular box gives the location but not the object's exact
       outline, and pixel-level outlines are the job of segmentation [^3].
     references:
@@ -32,14 +34,17 @@ questions:
       id: ms-ai-for-beginners
       ref: quiz-111/q2
       url: https://github.com/microsoft/AI-For-Beginners/blob/392d0df1b2647cbee104942390551f1ed9e072c8/etc/quiz-app/src/assets/translations/en/lesson-11.json
-    status: draft
+    status: reviewed
+    reviewed_by: claude
   - id: object-detection-002
     type: single
     difficulty: easy
-    question: An object detection model gives us
+    question: What does an object detection model output for each object it finds?
     options:
       - text: object class only
+        why: A class label alone is what image classification gives; it does not say where the object is [^2].
       - text: bounding box only
+        why: Boxes without labels would not tell you what each object is; detectors predict a class for every box [^3].
       - text: class and bounding box
         correct: true
     explanation: |
@@ -62,16 +67,19 @@ questions:
       id: ms-ai-for-beginners
       ref: quiz-211/q1
       url: https://github.com/microsoft/AI-For-Beginners/blob/392d0df1b2647cbee104942390551f1ed9e072c8/etc/quiz-app/src/assets/translations/en/lesson-11.json
-    status: draft
+    status: reviewed
+    reviewed_by: claude
   - id: object-detection-003
     type: single
     difficulty: easy
-    question: Which object detection models are faster?
+    question: Which family of object detection models is generally faster?
     options:
       - text: one-pass models
         correct: true
-      - text: region proposal networks
+      - text: region-proposal models such as R-CNN
+        why: They first generate regions of interest and then run the CNN classifier on them, which takes many passes over the image and is slow [^1].
       - text: Fast R-CNN
+        why: Fast R-CNN belongs to the region-proposal family; with selective search for proposals it runs at about 0.5 frames per second, against 45 for YOLO [^2].
     explanation: |
       One-pass detectors (YOLO, SSD, RetinaNet) predict classes and boxes in a single forward
       pass of the network. Region-proposal methods (R-CNN, Fast R-CNN, Faster R-CNN) first
@@ -90,14 +98,17 @@ questions:
       id: ms-ai-for-beginners
       ref: quiz-211/q2
       url: https://github.com/microsoft/AI-For-Beginners/blob/392d0df1b2647cbee104942390551f1ed9e072c8/etc/quiz-app/src/assets/translations/en/lesson-11.json
-    status: draft
+    status: reviewed
+    reviewed_by: claude
   - id: object-detection-004
     type: single
     difficulty: easy
     question: Which metric can be used to determine how well bounding boxes are aligned?
     options:
       - text: accuracy
+        why: Accuracy counts how many predictions are right; it says nothing about how far a predicted box is from the ground-truth box.
       - text: precision
+        why: Precision is the share of predicted boxes that count as correct, and deciding that a box is correct already requires an IoU threshold [^1].
       - text: IoU
         correct: true
     explanation: |
@@ -117,15 +128,19 @@ questions:
       id: ms-ai-for-beginners
       ref: quiz-211/q3
       url: https://github.com/microsoft/AI-For-Beginners/blob/392d0df1b2647cbee104942390551f1ed9e072c8/etc/quiz-app/src/assets/translations/en/lesson-11.json
-    status: draft
+    status: reviewed
+    reviewed_by: claude
   - id: object-detection-005
     type: single
     difficulty: medium
-    question: Which of the following is false?
+    question: Which of the following statements is **false**?
     options:
       - text: Semantic segmentation models predict the class of each pixel, while multiclass image classifiers predict the class of entire image.
+        why: This statement is true; semantic segmentation labels every pixel, while a classifier gives one label for the whole image [^3].
       - text: A bounding box with an IoU (intersection over union) equal to $96\%$ would likely be considered a true positive.
+        why: This statement is true; 96% is far above the usual IoU threshold (50% in PASCAL VOC), so the box counts as a correct detection [^1].
       - text: When a predicted bounding box does not correspond to any object in the scene, it is considered a false positive.
+        why: This statement is true; a detection that matches no ground-truth object is a false positive [^2].
       - text: A bounding box with an IoU (intersection over union) equal to $3\%$ would likely be considered a false negative.
         correct: true
     explanation: |
@@ -151,7 +166,8 @@ questions:
       id: mmlu-redux
       ref: machine_learning/32
       url: https://huggingface.co/datasets/edinburgh-dawg/mmlu-redux-2.0/viewer/machine_learning/test?row=32
-    status: draft
+    status: reviewed
+    reviewed_by: claude
   - id: object-detection-006
     type: single
     difficulty: medium
@@ -162,8 +178,11 @@ questions:
       - text: Tiles locate an object only roughly; precise bounding-box coordinates must be predicted by regression
         correct: true
       - text: The class label of each detected object is a continuous number, so it must also be predicted by regression
+        why: Class labels are categories, so the class is still predicted by classification; only the box coordinates are continuous [^1].
       - text: Image classifiers cannot process an image that is larger than a single tile of the grid
+        why: The weakness of the tile approach is imprecise localization of the box, not an input-size limit of the classifier [^1].
       - text: A regression output removes the need for images labelled with the objects they contain
+        why: Box regression needs more labelling, not less; it is trained on datasets with box annotations such as PASCAL VOC or COCO [^1].
     explanation: |
       The tile approach (split the image, classify each tile, keep tiles with high activation) finds
       the object's bounding box only very imprecisely [^1]. For a precise location the detector has to
@@ -182,7 +201,8 @@ questions:
       id: ms-ai-for-beginners
       ref: quiz-111/q1
       url: https://github.com/microsoft/AI-For-Beginners/blob/392d0df1b2647cbee104942390551f1ed9e072c8/etc/quiz-app/src/assets/translations/en/lesson-11.json
-    status: draft
+    status: reviewed
+    reviewed_by: claude
   - id: object-detection-007
     type: short_answer
     difficulty: easy
@@ -211,7 +231,8 @@ questions:
       id: ms-ai-for-beginners
       ref: quiz-111/q3
       url: https://github.com/microsoft/AI-For-Beginners/blob/392d0df1b2647cbee104942390551f1ed9e072c8/etc/quiz-app/src/assets/translations/en/lesson-11.json
-    status: draft
+    status: reviewed
+    reviewed_by: claude
   - id: object-detection-008
     type: short_answer
     difficulty: easy
@@ -244,7 +265,8 @@ questions:
       id: d2l
       ref: chapter_computer-vision/bounding-box#ex2
       url: https://d2l.ai/chapter_computer-vision/bounding-box.html#exercises
-    status: draft
+    status: reviewed
+    reviewed_by: claude
   - id: object-detection-009
     type: short_answer
     difficulty: easy
@@ -280,7 +302,8 @@ questions:
       id: d2l
       ref: chapter_computer-vision/anchor#ex1
       url: https://d2l.ai/chapter_computer-vision/anchor.html#exercises
-    status: draft
+    status: reviewed
+    reviewed_by: claude
   - id: object-detection-010
     type: short_answer
     difficulty: medium
@@ -315,7 +338,8 @@ questions:
       id: d2l
       ref: chapter_computer-vision/anchor#ex2
       url: https://d2l.ai/chapter_computer-vision/anchor.html#exercises
-    status: draft
+    status: reviewed
+    reviewed_by: claude
   - id: object-detection-011
     type: short_answer
     difficulty: medium
@@ -354,7 +378,8 @@ questions:
       id: d2l
       ref: chapter_computer-vision/anchor#ex4
       url: https://d2l.ai/chapter_computer-vision/anchor.html#exercises
-    status: draft
+    status: reviewed
+    reviewed_by: claude
   - id: object-detection-012
     type: true_false
     difficulty: medium
@@ -394,7 +419,8 @@ questions:
       id: d2l
       ref: chapter_computer-vision/anchor#ex5
       url: https://d2l.ai/chapter_computer-vision/anchor.html#exercises
-    status: draft
+    status: reviewed
+    reviewed_by: claude
   - id: object-detection-013
     type: single
     difficulty: medium
@@ -439,7 +465,8 @@ questions:
       id: d2l
       ref: chapter_computer-vision/multiscale-object-detection#ex1
       url: https://d2l.ai/chapter_computer-vision/multiscale-object-detection.html#exercises
-    status: draft
+    status: reviewed
+    reviewed_by: claude
   - id: object-detection-014
     type: short_answer
     difficulty: medium
@@ -482,7 +509,8 @@ questions:
       id: d2l
       ref: chapter_computer-vision/multiscale-object-detection#ex3
       url: https://d2l.ai/chapter_computer-vision/multiscale-object-detection.html#exercises
-    status: draft
+    status: reviewed
+    reviewed_by: claude
   - id: object-detection-015
     type: single
     difficulty: medium
@@ -523,7 +551,8 @@ questions:
       id: d2l
       ref: chapter_computer-vision/object-detection-dataset#ex2
       url: https://d2l.ai/chapter_computer-vision/object-detection-dataset.html#exercises
-    status: draft
+    status: reviewed
+    reviewed_by: claude
   - id: object-detection-016
     type: short_answer
     difficulty: medium
@@ -557,7 +586,8 @@ questions:
       id: d2l
       ref: chapter_computer-vision/ssd#ex1
       url: https://d2l.ai/chapter_computer-vision/ssd.html#exercises
-    status: draft
+    status: reviewed
+    reviewed_by: claude
   - id: object-detection-017
     type: short_answer
     difficulty: medium
@@ -592,7 +622,8 @@ questions:
       id: d2l
       ref: chapter_computer-vision/ssd#ex1-b
       url: https://d2l.ai/chapter_computer-vision/ssd.html#exercises
-    status: draft
+    status: reviewed
+    reviewed_by: claude
   - id: object-detection-018
     type: short_answer
     difficulty: easy
@@ -627,7 +658,8 @@ questions:
       id: d2l
       ref: chapter_computer-vision/ssd#ex2
       url: https://d2l.ai/chapter_computer-vision/ssd.html#exercises
-    status: draft
+    status: reviewed
+    reviewed_by: claude
   - id: object-detection-019
     type: true_false
     difficulty: easy
@@ -664,7 +696,8 @@ questions:
       id: d2l
       ref: chapter_computer-vision/rcnn#ex1
       url: https://d2l.ai/chapter_computer-vision/rcnn.html#exercises
-    status: draft
+    status: reviewed
+    reviewed_by: claude
   - id: object-detection-020
     type: single
     difficulty: medium
@@ -706,4 +739,5 @@ questions:
       id: d2l
       ref: chapter_computer-vision/rcnn#ex2
       url: https://d2l.ai/chapter_computer-vision/rcnn.html#exercises
-    status: draft
+    status: reviewed
+    reviewed_by: claude

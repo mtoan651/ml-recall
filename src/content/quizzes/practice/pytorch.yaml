@@ -35,7 +35,8 @@ questions:
       id: hf-llm-course
       ref: chapter3/4#q4
       url: https://huggingface.co/learn/llm-course/chapter3/4
-    status: draft
+    status: reviewed
+    reviewed_by: claude
   - id: pytorch-002
     type: single
     difficulty: easy
@@ -76,7 +77,8 @@ questions:
       id: hf-llm-course
       ref: chapter3/4#q5
       url: https://huggingface.co/learn/llm-course/chapter3/4
-    status: draft
+    status: reviewed
+    reviewed_by: claude
   - id: pytorch-003
     type: single
     difficulty: easy
@@ -110,17 +112,21 @@ questions:
       id: hf-llm-course
       ref: chapter3/4#q6
       url: https://huggingface.co/learn/llm-course/chapter3/4
-    status: draft
+    status: reviewed
+    reviewed_by: claude
   - id: pytorch-004
     type: single
     difficulty: medium
     question: Which PyTorch 1.8 command(s) produce a $10\times 5$ Gaussian matrix with each entry i.i.d. sampled from $\mathcal{N}(\mu=5,\sigma^2=16)$ and a $10\times 10$ uniform matrix with each entry i.i.d. sampled from $U[-1,1)$?
     options:
       - text: '`5 + torch.randn(10,5) * 16` ; `torch.rand(10,10,low=-1,high=1)`'
+        why: Scaling `randn` by 16 gives variance $16^2 = 256$, not 16, and `torch.rand` has no `low`/`high` arguments [^2][^3].
       - text: '`5 + torch.randn(10,5) * 16` ; `(torch.rand(10,10) - 0.5) / 0.5`'
+        why: The second command does give $U[-1, 1)$, but scaling `randn` by 16 gives variance $16^2 = 256$ instead of 16 [^2].
       - text: '`5 + torch.randn(10,5) * 4` ; `2 * torch.rand(10,10) - 1`'
         correct: true
       - text: '`torch.normal(torch.ones(10,5)*5,torch.ones(5,5)*16)` ; `2 * torch.rand(10,10) - 1`'
+        why: '`torch.normal` takes standard deviations, so 16 means variance 256, and its std tensor has 25 elements while the mean has 50 [^4].'
     explanation: |
       `torch.randn` draws from $\mathcal{N}(0, 1)$ [^1], and $\text{Var}(aX+b) = a^2\,\text{Var}(X)$
       [^2], so variance 16 needs a scale of $\sqrt{16} = 4$: `5 + torch.randn(10,5) * 4`.
@@ -146,7 +152,8 @@ questions:
       id: mmlu-redux
       ref: machine_learning/72
       url: https://huggingface.co/datasets/edinburgh-dawg/mmlu-redux-2.0/viewer/machine_learning/test?row=72
-    status: draft
+    status: reviewed
+    reviewed_by: claude
   - id: pytorch-005
     type: short_answer
     difficulty: easy
@@ -157,19 +164,23 @@ questions:
     answer:
       accept:
         - (32, 3, 64, 64)
-      pattern: '[(\[]?\s*32(?:\s*[,x×*]\s*|\s+)3(?:\s*[,x×*]\s*|\s+)64(?:\s*[,x×*]\s*|\s+)64\s*[)\]]?'
+      pattern: (?:torch\.size\(\s*)?[(\[]?\s*32(?:\s*[,x×*]\s*|\s+)3(?:\s*[,x×*]\s*|\s+)64(?:\s*[,x×*]\s*|\s+)64\s*[)\]]?\s*\)?
       hint: Four dimensions in order, e.g. (8, 1, 28, 28) or 8×1×28×28
       model: $(32, 3, 64, 64)$ — (batch size, channels, height, width)
-    explanation: Convolutional layers take channel-first input with shape (batch size, channels, height, width) [^1]. An RGB image has 3 channels, so the batch has shape $32 \times 3 \times 64 \times 64$.
+    explanation: Convolutional layers take channel-first input with shape (batch size, channels, height, width) [^1]; the `nn.Conv2d` documentation writes the input shape as $(N, C_{in}, H_{in}, W_{in})$ [^2]. An RGB image has 3 channels, so the batch has shape $32 \times 3 \times 64 \times 64$, which PyTorch prints as `torch.Size([32, 3, 64, 64])`.
     references:
       - source: d2l
         locator: Sec. 7.6 Convolutional Neural Networks (LeNet)
         url: https://d2l.ai/chapter_convolutional-neural-networks/lenet.html
         quote: shape given by (batch size, number of channel, height, width)
+      - title: torch.nn.Conv2d (PyTorch documentation)
+        url: https://docs.pytorch.org/docs/stable/generated/torch.nn.Conv2d.html
+        locator: 'Shape (Input: (N, C_in, H_in, W_in))'
     source:
       id: original
       ref: pytorch-005
-    status: draft
+    status: reviewed
+    reviewed_by: claude
   - id: pytorch-006
     type: single
     difficulty: medium
@@ -203,7 +214,8 @@ questions:
       id: hf-llm-course
       ref: chapter8/7#q5
       url: https://huggingface.co/learn/llm-course/chapter8/7
-    status: draft
+    status: reviewed
+    reviewed_by: claude
   - id: pytorch-007
     type: single
     difficulty: medium
@@ -214,8 +226,11 @@ questions:
       - text: A float tensor of shape (3, 28, 28) with values scaled to [0, 1]
         correct: true
       - text: A float tensor of shape (28, 28, 3) with values from 0 to 255
+        why: '`ToTensor` moves the channels first, giving shape (C, H, W), and rescales the values to [0, 1] [^2].'
       - text: An integer tensor of shape (3, 28, 28) with values from 0 to 255
+        why: '`ToTensor` returns a float tensor: for a `uint8` RGB image it divides by 255, so the values lie in [0, 1] [^2].'
       - text: A float tensor of shape (3, 28, 28) standardized to mean 0 and standard deviation 1
+        why: '`ToTensor` only rescales to [0, 1]; standardizing each channel is the job of the separate `Normalize` transform [^3].'
     explanation: |
       A network trains on tensors, and a colour image is a 3D tensor with a colour-depth dimension
       [^1]. `ToTensor` converts a PIL image or a `uint8` NumPy array of shape (H, W, C) with values in
@@ -236,7 +251,8 @@ questions:
       id: ms-ai-for-beginners
       ref: quiz-207/q3
       url: https://github.com/microsoft/AI-For-Beginners/blob/392d0df1b2647cbee104942390551f1ed9e072c8/etc/quiz-app/src/assets/translations/en/lesson-7.json
-    status: draft
+    status: reviewed
+    reviewed_by: claude
   - id: pytorch-008
     type: short_answer
     difficulty: medium
@@ -290,7 +306,8 @@ questions:
       id: d2l
       ref: chapter_builders-guide/model-construction#ex1
       url: https://d2l.ai/chapter_builders-guide/model-construction.html#exercises
-    status: draft
+    status: reviewed
+    reviewed_by: claude
   - id: pytorch-009
     type: multiple
     difficulty: medium
@@ -348,7 +365,8 @@ questions:
       id: d2l
       ref: chapter_builders-guide/model-construction#ex1-b
       url: https://d2l.ai/chapter_builders-guide/model-construction.html#exercises
-    status: draft
+    status: reviewed
+    reviewed_by: claude
   - id: pytorch-010
     type: short_answer
     difficulty: medium
@@ -391,7 +409,8 @@ questions:
       id: d2l
       ref: chapter_builders-guide/model-construction#ex3
       url: https://d2l.ai/chapter_builders-guide/model-construction.html#exercises
-    status: draft
+    status: reviewed
+    reviewed_by: claude
   - id: pytorch-011
     type: single
     difficulty: easy
@@ -432,7 +451,8 @@ questions:
       id: d2l
       ref: chapter_builders-guide/parameters#ex3
       url: https://d2l.ai/chapter_builders-guide/parameters.html#exercises
-    status: draft
+    status: reviewed
+    reviewed_by: claude
   - id: pytorch-012
     type: short_answer
     difficulty: medium
@@ -475,7 +495,8 @@ questions:
       id: d2l
       ref: chapter_builders-guide/parameters#ex3-b
       url: https://d2l.ai/chapter_builders-guide/parameters.html#exercises
-    status: draft
+    status: reviewed
+    reviewed_by: claude
   - id: pytorch-013
     type: single
     difficulty: easy
@@ -518,7 +539,8 @@ questions:
       id: d2l
       ref: chapter_builders-guide/lazy-init#ex1
       url: https://d2l.ai/chapter_builders-guide/lazy-init.html#exercises
-    status: draft
+    status: reviewed
+    reviewed_by: claude
   - id: pytorch-014
     type: single
     difficulty: easy
@@ -562,7 +584,8 @@ questions:
       id: d2l
       ref: chapter_builders-guide/lazy-init#ex2
       url: https://d2l.ai/chapter_builders-guide/lazy-init.html#exercises
-    status: draft
+    status: reviewed
+    reviewed_by: claude
   - id: pytorch-015
     type: single
     difficulty: medium
@@ -601,7 +624,8 @@ questions:
       id: d2l
       ref: chapter_builders-guide/custom-layer#ex1
       url: https://d2l.ai/chapter_builders-guide/custom-layer.html#exercises
-    status: draft
+    status: reviewed
+    reviewed_by: claude
   - id: pytorch-016
     type: multiple
     difficulty: easy
@@ -649,7 +673,8 @@ questions:
       id: d2l
       ref: chapter_builders-guide/read-write#ex1
       url: https://d2l.ai/chapter_builders-guide/read-write.html#exercises
-    status: draft
+    status: reviewed
+    reviewed_by: claude
   - id: pytorch-017
     type: single
     difficulty: hard
@@ -705,7 +730,8 @@ questions:
       id: d2l
       ref: chapter_builders-guide/read-write#ex2
       url: https://d2l.ai/chapter_builders-guide/read-write.html#exercises
-    status: draft
+    status: reviewed
+    reviewed_by: claude
   - id: pytorch-018
     type: short_answer
     difficulty: easy
@@ -744,7 +770,8 @@ questions:
       id: d2l
       ref: chapter_preliminaries/ndarray#ex1
       url: https://d2l.ai/chapter_preliminaries/ndarray.html#exercises
-    status: draft
+    status: reviewed
+    reviewed_by: claude
   - id: pytorch-019
     type: short_answer
     difficulty: medium
@@ -786,7 +813,8 @@ questions:
       id: d2l
       ref: chapter_preliminaries/ndarray#ex2
       url: https://d2l.ai/chapter_preliminaries/ndarray.html#exercises
-    status: draft
+    status: reviewed
+    reviewed_by: claude
   - id: pytorch-020
     type: short_answer
     difficulty: easy
@@ -825,7 +853,8 @@ questions:
       id: d2l
       ref: chapter_preliminaries/linear-algebra#ex4
       url: https://d2l.ai/chapter_preliminaries/linear-algebra.html#exercises
-    status: draft
+    status: reviewed
+    reviewed_by: claude
   - id: pytorch-021
     type: multiple
     difficulty: medium
@@ -862,7 +891,8 @@ questions:
       id: d2l
       ref: chapter_preliminaries/linear-algebra#ex5
       url: https://d2l.ai/chapter_preliminaries/linear-algebra.html#exercises
-    status: draft
+    status: reviewed
+    reviewed_by: claude
   - id: pytorch-022
     type: single
     difficulty: medium
@@ -910,7 +940,8 @@ questions:
       id: d2l
       ref: chapter_preliminaries/linear-algebra#ex6
       url: https://d2l.ai/chapter_preliminaries/linear-algebra.html#exercises
-    status: draft
+    status: reviewed
+    reviewed_by: claude
   - id: pytorch-023
     type: short_answer
     difficulty: hard
@@ -952,7 +983,8 @@ questions:
       id: d2l
       ref: chapter_preliminaries/linear-algebra#ex6-b
       url: https://d2l.ai/chapter_preliminaries/linear-algebra.html#exercises
-    status: draft
+    status: reviewed
+    reviewed_by: claude
   - id: pytorch-024
     type: single
     difficulty: easy
@@ -990,7 +1022,8 @@ questions:
       id: d2l
       ref: chapter_preliminaries/linear-algebra#ex8
       url: https://d2l.ai/chapter_preliminaries/linear-algebra.html#exercises
-    status: draft
+    status: reviewed
+    reviewed_by: claude
   - id: pytorch-025
     type: short_answer
     difficulty: medium
@@ -1025,7 +1058,8 @@ questions:
       id: d2l
       ref: chapter_preliminaries/linear-algebra#ex9
       url: https://d2l.ai/chapter_preliminaries/linear-algebra.html#exercises
-    status: draft
+    status: reviewed
+    reviewed_by: claude
   - id: pytorch-026
     type: single
     difficulty: medium
@@ -1066,7 +1100,8 @@ questions:
       id: d2l
       ref: chapter_preliminaries/linear-algebra#ex12
       url: https://d2l.ai/chapter_preliminaries/linear-algebra.html#exercises
-    status: draft
+    status: reviewed
+    reviewed_by: claude
   - id: pytorch-027
     type: single
     difficulty: hard
@@ -1119,7 +1154,8 @@ questions:
       id: d2l
       ref: chapter_preliminaries/calculus#ex8
       url: https://d2l.ai/chapter_preliminaries/calculus.html#exercises
-    status: draft
+    status: reviewed
+    reviewed_by: claude
   - id: pytorch-028
     type: single
     difficulty: medium
@@ -1160,7 +1196,8 @@ questions:
       id: d2l
       ref: chapter_preliminaries/autograd#ex1
       url: https://d2l.ai/chapter_preliminaries/autograd.html#exercises
-    status: draft
+    status: reviewed
+    reviewed_by: claude
   - id: pytorch-029
     type: single
     difficulty: medium
@@ -1209,7 +1246,8 @@ questions:
       id: d2l
       ref: chapter_preliminaries/autograd#ex2
       url: https://d2l.ai/chapter_preliminaries/autograd.html#exercises
-    status: draft
+    status: reviewed
+    reviewed_by: claude
   - id: pytorch-030
     type: single
     difficulty: hard
@@ -1267,7 +1305,8 @@ questions:
       id: d2l
       ref: chapter_preliminaries/autograd#ex3
       url: https://d2l.ai/chapter_preliminaries/autograd.html#exercises
-    status: draft
+    status: reviewed
+    reviewed_by: claude
   - id: pytorch-031
     type: short_answer
     difficulty: medium
@@ -1310,7 +1349,8 @@ questions:
       id: d2l
       ref: chapter_preliminaries/autograd#ex6
       url: https://d2l.ai/chapter_preliminaries/autograd.html#exercises
-    status: draft
+    status: reviewed
+    reviewed_by: claude
   - id: pytorch-032
     type: single
     difficulty: medium
@@ -1352,7 +1392,8 @@ questions:
       id: d2l
       ref: chapter_preliminaries/autograd#ex8
       url: https://d2l.ai/chapter_preliminaries/autograd.html#exercises
-    status: draft
+    status: reviewed
+    reviewed_by: claude
   - id: pytorch-033
     type: short_answer
     difficulty: medium
@@ -1390,7 +1431,8 @@ questions:
       id: d2l
       ref: chapter_linear-regression/linear-regression-concise#ex1
       url: https://d2l.ai/chapter_linear-regression/linear-regression-concise.html#exercises
-    status: draft
+    status: reviewed
+    reviewed_by: claude
   - id: pytorch-034
     type: short_answer
     difficulty: easy
@@ -1435,7 +1477,8 @@ questions:
       id: d2l
       ref: chapter_linear-regression/linear-regression-concise#ex3
       url: https://d2l.ai/chapter_linear-regression/linear-regression-concise.html#exercises
-    status: draft
+    status: reviewed
+    reviewed_by: claude
   - id: pytorch-035
     type: short_answer
     difficulty: medium
@@ -1479,7 +1522,8 @@ questions:
       id: d2l
       ref: chapter_linear-regression/linear-regression-scratch#ex5
       url: https://d2l.ai/chapter_linear-regression/linear-regression-scratch.html#exercises
-    status: draft
+    status: reviewed
+    reviewed_by: claude
   - id: pytorch-036
     type: short_answer
     difficulty: easy
@@ -1524,7 +1568,8 @@ questions:
       id: d2l
       ref: chapter_linear-regression/linear-regression-scratch#ex7
       url: https://d2l.ai/chapter_linear-regression/linear-regression-scratch.html#exercises
-    status: draft
+    status: reviewed
+    reviewed_by: claude
   - id: pytorch-037
     type: short_answer
     difficulty: easy
@@ -1561,7 +1606,8 @@ questions:
       id: d2l
       ref: chapter_linear-regression/synthetic-regression-data#ex1
       url: https://d2l.ai/chapter_linear-regression/synthetic-regression-data.html#exercises
-    status: draft
+    status: reviewed
+    reviewed_by: claude
   - id: pytorch-038
     type: single
     difficulty: medium
@@ -1603,7 +1649,8 @@ questions:
       id: d2l
       ref: chapter_linear-regression/synthetic-regression-data#ex4
       url: https://d2l.ai/chapter_linear-regression/synthetic-regression-data.html#exercises
-    status: draft
+    status: reviewed
+    reviewed_by: claude
   - id: pytorch-039
     type: single
     difficulty: easy
@@ -1647,7 +1694,8 @@ questions:
       id: d2l
       ref: chapter_linear-classification/image-classification-dataset#ex1
       url: https://d2l.ai/chapter_linear-classification/image-classification-dataset.html#exercises
-    status: draft
+    status: reviewed
+    reviewed_by: claude
   - id: pytorch-040
     type: single
     difficulty: medium
@@ -1691,7 +1739,8 @@ questions:
       id: udacity-dl-pytorch
       ref: intro-to-pytorch/Part 8 - Transfer Learning (Solution).ipynb#logsoftmax-nllloss
       url: https://github.com/udacity/deep-learning-v2-pytorch/blob/c9404fc86181fc3f0906b368697268257f348535/intro-to-pytorch/Part%208%20-%20Transfer%20Learning%20(Solution).ipynb
-    status: draft
+    status: reviewed
+    reviewed_by: claude
   - id: pytorch-041
     type: short_answer
     difficulty: medium
@@ -1714,7 +1763,7 @@ questions:
     answer:
       accept:
         - (500, 83)
-      pattern: \(?\s*500\s*[,x×]\s*83\s*\)?
+      pattern: (?:torch\.size\(\s*)?[(\[]?\s*500\s*[,x×]\s*83\s*[)\]]?\s*\)?
       hint: two numbers, e.g. (64, 10)
       model: '`view(-1, 256)` stacks all $10 \times 50 = 500$ time steps: $(500, 256) \to$ `fc` $\to (500, 83)$'
     explanation: |
@@ -1731,7 +1780,8 @@ questions:
       id: udacity-dl-pytorch
       ref: recurrent-neural-networks/char-rnn/Character_Level_RNN_Solution.ipynb#output-shape
       url: https://github.com/udacity/deep-learning-v2-pytorch/blob/c9404fc86181fc3f0906b368697268257f348535/recurrent-neural-networks/char-rnn/Character_Level_RNN_Solution.ipynb
-    status: draft
+    status: reviewed
+    reviewed_by: claude
   - id: pytorch-042
     type: true_false
     difficulty: medium
@@ -1769,7 +1819,8 @@ questions:
       id: neuromatch-dl
       ref: W1D1_BasicsAndPytorch/W1D1_Tutorial1#sec2.3-conversion
       url: https://github.com/NeuromatchAcademy/course-content-dl/blob/caba36c513fb8139ac3c9e7503f7a769dadde25e/tutorials/W1D1_BasicsAndPytorch/instructor/W1D1_Tutorial1.ipynb
-    status: draft
+    status: reviewed
+    reviewed_by: claude
   - id: pytorch-043
     type: short_answer
     difficulty: easy
@@ -1800,7 +1851,8 @@ questions:
       id: neuromatch-dl
       ref: W1D1_BasicsAndPytorch/W1D1_Tutorial1#ex2.1
       url: https://github.com/NeuromatchAcademy/course-content-dl/blob/caba36c513fb8139ac3c9e7503f7a769dadde25e/tutorials/W1D1_BasicsAndPytorch/instructor/W1D1_Tutorial1.ipynb
-    status: draft
+    status: reviewed
+    reviewed_by: claude
   - id: pytorch-044
     type: short_answer
     difficulty: easy
@@ -1830,7 +1882,8 @@ questions:
       id: neuromatch-dl
       ref: W1D1_BasicsAndPytorch/W1D1_Tutorial1#sec2.3-indexing
       url: https://github.com/NeuromatchAcademy/course-content-dl/blob/caba36c513fb8139ac3c9e7503f7a769dadde25e/tutorials/W1D1_BasicsAndPytorch/instructor/W1D1_Tutorial1.ipynb
-    status: draft
+    status: reviewed
+    reviewed_by: claude
   - id: pytorch-045
     type: single
     difficulty: medium
@@ -1866,7 +1919,8 @@ questions:
       id: neuromatch-dl
       ref: W1D1_BasicsAndPytorch/W1D1_Tutorial1#ex2.5
       url: https://github.com/NeuromatchAcademy/course-content-dl/blob/caba36c513fb8139ac3c9e7503f7a769dadde25e/tutorials/W1D1_BasicsAndPytorch/instructor/W1D1_Tutorial1.ipynb
-    status: draft
+    status: reviewed
+    reviewed_by: claude
   - id: pytorch-046
     type: single
     difficulty: medium
@@ -1903,7 +1957,8 @@ questions:
       id: neuromatch-dl
       ref: W1D1_BasicsAndPytorch/W1D1_Tutorial1#ex2.4
       url: https://github.com/NeuromatchAcademy/course-content-dl/blob/caba36c513fb8139ac3c9e7503f7a769dadde25e/tutorials/W1D1_BasicsAndPytorch/instructor/W1D1_Tutorial1.ipynb
-    status: draft
+    status: reviewed
+    reviewed_by: claude
   - id: pytorch-047
     type: true_false
     difficulty: easy
@@ -1935,7 +1990,8 @@ questions:
       id: neuromatch-dl
       ref: W1D3_MultiLayerPerceptrons/W1D3_Tutorial1#think2.3.1
       url: https://github.com/NeuromatchAcademy/course-content-dl/blob/caba36c513fb8139ac3c9e7503f7a769dadde25e/tutorials/W1D3_MultiLayerPerceptrons/instructor/W1D3_Tutorial1.ipynb
-    status: draft
+    status: reviewed
+    reviewed_by: claude
   - id: pytorch-048
     type: short_answer
     difficulty: medium
@@ -1974,7 +2030,8 @@ questions:
       id: ds-interviews
       ref: theory.md#q102
       url: https://github.com/alexeygrigorev/data-science-interviews/blob/919f44547ef5ffc2bd59674fd301940529f4c1a8/theory.md#optimization-in-neural-networks
-    status: draft
+    status: reviewed
+    reviewed_by: claude
   - id: pytorch-049
     type: short_answer
     difficulty: easy
@@ -1992,7 +2049,7 @@ questions:
     answer:
       accept:
         - (7, 1)
-      pattern: '[(\[]?\s*7(?:\s*[,x×*]\s*|\s+)1\s*[)\]]?'
+      pattern: (?:torch\.size\(\s*)?[(\[]?\s*7(?:\s*[,x×*]\s*|\s+)1\s*[)\]]?\s*\)?
       hint: Two dimensions, e.g. (3, 4)
       model: $(7, 1)$ — $(7 \times 7) \cdot (7 \times 1)$
     explanation: |
@@ -2011,7 +2068,8 @@ questions:
       id: learn-pytorch
       ref: extras/solutions/00_pytorch_fundamentals_exercise_solutions.ipynb#ex3
       url: https://github.com/mrdbourke/pytorch-deep-learning/blob/a16552001d963d078390d5bbdfc321e7e7c94bd1/extras/solutions/00_pytorch_fundamentals_exercise_solutions.ipynb
-    status: draft
+    status: reviewed
+    reviewed_by: claude
   - id: pytorch-050
     type: short_answer
     difficulty: easy
@@ -2047,7 +2105,8 @@ questions:
       id: learn-pytorch
       ref: extras/solutions/00_pytorch_fundamentals_exercise_solutions.ipynb#ex9
       url: https://github.com/mrdbourke/pytorch-deep-learning/blob/a16552001d963d078390d5bbdfc321e7e7c94bd1/extras/solutions/00_pytorch_fundamentals_exercise_solutions.ipynb
-    status: draft
+    status: reviewed
+    reviewed_by: claude
   - id: pytorch-051
     type: short_answer
     difficulty: medium
@@ -2064,7 +2123,7 @@ questions:
     answer:
       accept:
         - (1, 1, 10)
-      pattern: '[(\[]?\s*1(?:\s*[,x×*]\s*|\s+)1(?:\s*[,x×*]\s*|\s+)10\s*[)\]]?'
+      pattern: (?:torch\.size\(\s*)?[(\[]?\s*1(?:\s*[,x×*]\s*|\s+)1(?:\s*[,x×*]\s*|\s+)10\s*[)\]]?\s*\)?
       hint: Three dimensions, e.g. (2, 3, 4)
       model: $(1, 1, 10)$ — only dimension 0 is removed
     explanation: |
@@ -2083,7 +2142,8 @@ questions:
       id: learn-pytorch
       ref: extras/solutions/00_pytorch_fundamentals_exercise_solutions.ipynb#ex10
       url: https://github.com/mrdbourke/pytorch-deep-learning/blob/a16552001d963d078390d5bbdfc321e7e7c94bd1/extras/solutions/00_pytorch_fundamentals_exercise_solutions.ipynb
-    status: draft
+    status: reviewed
+    reviewed_by: claude
   - id: pytorch-052
     type: single
     difficulty: medium
@@ -2131,7 +2191,8 @@ questions:
       id: learn-pytorch
       ref: extras/solutions/00_pytorch_fundamentals_exercise_solutions.ipynb#ex6
       url: https://github.com/mrdbourke/pytorch-deep-learning/blob/a16552001d963d078390d5bbdfc321e7e7c94bd1/extras/solutions/00_pytorch_fundamentals_exercise_solutions.ipynb
-    status: draft
+    status: reviewed
+    reviewed_by: claude
   - id: pytorch-053
     type: short_answer
     difficulty: hard
@@ -2166,7 +2227,8 @@ questions:
       id: learn-pytorch
       ref: extras/solutions/01_pytorch_workflow_exercise_solutions.ipynb#ex3
       url: https://github.com/mrdbourke/pytorch-deep-learning/blob/a16552001d963d078390d5bbdfc321e7e7c94bd1/extras/solutions/01_pytorch_workflow_exercise_solutions.ipynb
-    status: draft
+    status: reviewed
+    reviewed_by: claude
   - id: pytorch-054
     type: short_answer
     difficulty: easy
@@ -2207,7 +2269,8 @@ questions:
       id: learn-pytorch
       ref: extras/solutions/02_pytorch_classification_exercise_solutions.ipynb#ex2
       url: https://github.com/mrdbourke/pytorch-deep-learning/blob/a16552001d963d078390d5bbdfc321e7e7c94bd1/extras/solutions/02_pytorch_classification_exercise_solutions.ipynb
-    status: draft
+    status: reviewed
+    reviewed_by: claude
   - id: pytorch-055
     type: single
     difficulty: medium
@@ -2253,7 +2316,8 @@ questions:
       id: learn-pytorch
       ref: extras/solutions/02_pytorch_classification_exercise_solutions.ipynb#ex6
       url: https://github.com/mrdbourke/pytorch-deep-learning/blob/a16552001d963d078390d5bbdfc321e7e7c94bd1/extras/solutions/02_pytorch_classification_exercise_solutions.ipynb
-    status: draft
+    status: reviewed
+    reviewed_by: claude
   - id: pytorch-056
     type: true_false
     difficulty: easy
@@ -2285,7 +2349,8 @@ questions:
       id: learn-pytorch
       ref: extras/solutions/02_pytorch_classification_exercise_solutions.ipynb#ex5
       url: https://github.com/mrdbourke/pytorch-deep-learning/blob/a16552001d963d078390d5bbdfc321e7e7c94bd1/extras/solutions/02_pytorch_classification_exercise_solutions.ipynb
-    status: draft
+    status: reviewed
+    reviewed_by: claude
   - id: pytorch-057
     type: short_answer
     difficulty: medium
@@ -2304,8 +2369,9 @@ questions:
     explanation: |
       Equal logits give the uniform distribution $1/3$ over the classes, so the cross-entropy of any
       label is $-\ln(1/3) = \ln 3 \approx 1.099$ [^1][^2]. Checking that the first loss is near
-      $\ln K$ for $K$ classes (0.693 for binary classification) is a quick sanity test of a training
-      loop; a much larger value suggests a bug such as applying softmax twice or wrong targets.
+      $\ln K$ for $K$ classes (0.693 for two classes) is a quick sanity test of a training loop [^3]. A
+      first loss far above $\ln K$ means the untrained model is already confident about some classes,
+      a sign that its last layer is not initialized well [^3].
     references:
       - title: torch.nn.CrossEntropyLoss (PyTorch documentation)
         url: https://pytorch.org/docs/stable/generated/torch.nn.CrossEntropyLoss.html
@@ -2313,11 +2379,15 @@ questions:
       - source: d2l
         locator: Sec. 4.1.2.2 Softmax and Cross-Entropy Loss
         url: https://d2l.ai/chapter_linear-classification/softmax-regression.html
+      - title: Karpathy (2019), A Recipe for Training Neural Networks
+        url: http://karpathy.github.io/2019/04/25/recipe/
+        locator: Sec. 2 "Set up the end-to-end training/evaluation skeleton + get dumb baselines", tip "verify loss @ init"
     source:
       id: learn-pytorch
       ref: extras/solutions/02_pytorch_classification_exercise_solutions.ipynb#ex7
       url: https://github.com/mrdbourke/pytorch-deep-learning/blob/a16552001d963d078390d5bbdfc321e7e7c94bd1/extras/solutions/02_pytorch_classification_exercise_solutions.ipynb
-    status: draft
+    status: reviewed
+    reviewed_by: claude
   - id: pytorch-058
     type: single
     difficulty: medium
@@ -2340,7 +2410,7 @@ questions:
         why: The loss needs one target per example, not class counts.
     explanation: |
       For class-index targets, `CrossEntropyLoss` expects input of shape $(N, C)$ with raw logits and a
-      target of shape $(N,)$ with integer class indices in $[0, C)$ [^1]. That is why the solution casts
+      target of shape $(N,)$ with integer class indices in $[0, C)$ [^1]. That is why the Learn PyTorch exercise solution casts
       the labels with `torch.from_numpy(y).type(torch.LongTensor)` [^2]. The loss applies log-softmax
       internally, so the model must not end with a softmax layer.
     references:
@@ -2354,7 +2424,8 @@ questions:
       id: learn-pytorch
       ref: extras/solutions/02_pytorch_classification_exercise_solutions.ipynb#ex7-b
       url: https://github.com/mrdbourke/pytorch-deep-learning/blob/a16552001d963d078390d5bbdfc321e7e7c94bd1/extras/solutions/02_pytorch_classification_exercise_solutions.ipynb
-    status: draft
+    status: reviewed
+    reviewed_by: claude
   - id: pytorch-059
     type: single
     difficulty: easy
@@ -2391,7 +2462,8 @@ questions:
       id: learn-pytorch
       ref: extras/solutions/03_pytorch_computer_vision_exercise_solutions.ipynb#ex6
       url: https://github.com/mrdbourke/pytorch-deep-learning/blob/a16552001d963d078390d5bbdfc321e7e7c94bd1/extras/solutions/03_pytorch_computer_vision_exercise_solutions.ipynb
-    status: draft
+    status: reviewed
+    reviewed_by: claude
   - id: pytorch-060
     type: short_answer
     difficulty: medium
@@ -2426,7 +2498,8 @@ questions:
       id: learn-pytorch
       ref: extras/solutions/03_pytorch_computer_vision_exercise_solutions.ipynb#ex8
       url: https://github.com/mrdbourke/pytorch-deep-learning/blob/a16552001d963d078390d5bbdfc321e7e7c94bd1/extras/solutions/03_pytorch_computer_vision_exercise_solutions.ipynb
-    status: draft
+    status: reviewed
+    reviewed_by: claude
   - id: pytorch-061
     type: short_answer
     difficulty: hard
@@ -2466,7 +2539,8 @@ questions:
       id: spinning-up
       ref: docs/spinningup/exercises.rst#q5
       url: https://github.com/openai/spinningup/blob/038665d62d569055401d91856abb287263096178/docs/spinningup/exercises.rst
-    status: draft
+    status: reviewed
+    reviewed_by: claude
   - id: pytorch-062
     type: single
     difficulty: easy
@@ -2506,7 +2580,8 @@ questions:
       id: mit-ocw-67960
       ref: mit6_7960_f24_hw3#q4c
       url: https://ocw.mit.edu/courses/6-7960-deep-learning-fall-2024/resources/mit6_7960_f24_hw3_pdf/
-    status: draft
+    status: reviewed
+    reviewed_by: claude
   - id: pytorch-063
     type: single
     difficulty: medium
@@ -2530,8 +2605,7 @@ questions:
     explanation: |
       A sequence of $T$ tokens yields $T - 1$ next-token classification problems: the logits at
       positions $0, \ldots, T - 2$ are scored against the tokens at $1, \ldots, T - 1$ [^1]. The start
-      token is never a target and the last logit has no target. Padding targets are dropped by
-      multiplying the per-token losses with the shifted mask `input_mask[:, 1:]` before averaging [^2].
+      token is never a target and the last logit has no target. Positions whose target is a padding token must not be supervised either, so the padding mask is shifted like the targets (e.g. `input_mask[:, 1:]`) and multiplied with the per-token losses before averaging [^1].
     references:
       - source: mit-ocw-67960
         locator: Homework 3, Problem 4(d)
@@ -2543,7 +2617,8 @@ questions:
       id: mit-ocw-67960
       ref: mit6_7960_f24_hw3#q4d
       url: https://ocw.mit.edu/courses/6-7960-deep-learning-fall-2024/resources/mit6_7960_f24_hw3_pdf/
-    status: draft
+    status: reviewed
+    reviewed_by: claude
   - id: pytorch-064
     type: short_answer
     difficulty: medium
@@ -2585,7 +2660,8 @@ questions:
       id: mit-ocw-67960
       ref: mit6_7960_f24_hw4#q8a
       url: https://ocw.mit.edu/courses/6-7960-deep-learning-fall-2024/resources/mit6_7960_f24_hw4_pdf/
-    status: draft
+    status: reviewed
+    reviewed_by: claude
   - id: pytorch-065
     type: single
     difficulty: easy
@@ -2622,7 +2698,8 @@ questions:
       id: dl-interviews
       ref: ch7#prb171
       url: https://arxiv.org/abs/2201.00650v2
-    status: draft
+    status: reviewed
+    reviewed_by: claude
   - id: pytorch-066
     type: multiple
     difficulty: medium
@@ -2659,8 +2736,7 @@ questions:
     explanation: |
       `backward` receives $\partial L / \partial y$ and must return $\partial L / \partial x =
       \partial L / \partial y \cdot \tanh'(x)$ [^2]. The derivative of tanh is
-      $1 - \tanh^2 x = 1/\cosh^2 x$ [^3], so both the first and the second expression are correct; the
-      book's solution uses the cosh form [^1]. Saving the output $y$ instead of $x$ would allow the
+      $1 - \tanh^2 x = 1/\cosh^2 x$ [^3], so both the first and the second expression are correct; the solution in *Deep Learning Interviews* uses the cosh form [^1]. Saving the output $y$ instead of $x$ would allow the
       cheaper `grad_output * (1 - y ** 2)`.
     references:
       - source: dl-interviews
@@ -2676,7 +2752,8 @@ questions:
       id: dl-interviews
       ref: ch8#prb218
       url: https://arxiv.org/abs/2201.00650v2
-    status: draft
+    status: reviewed
+    reviewed_by: claude
   - id: pytorch-067
     type: short_answer
     difficulty: easy
@@ -2716,4 +2793,5 @@ questions:
       id: dl-interviews
       ref: ch8#prb265
       url: https://arxiv.org/abs/2201.00650v2
-    status: draft
+    status: reviewed
+    reviewed_by: claude

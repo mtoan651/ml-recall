@@ -131,7 +131,9 @@ verbatim, never committed (neither the files nor their extracted text).
 - [ ] `difficulty` set; tags meaningful.
 - [ ] Math renders (balanced `$`, KaTeX-supported commands).
 - [ ] No verbatim copying from `reference`/`private` sources.
-- [ ] Then set `status: reviewed`; `mlr check` passes.
+- [ ] Then set `status: reviewed` and `reviewed_by: owner` (or `claude` when Claude did the
+  review at the owner's request); for imported questions run `uv run mlr sync-curation`;
+  `mlr check` passes.
 
 ## Copyright rules
 

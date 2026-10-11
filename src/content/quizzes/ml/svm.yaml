@@ -9,7 +9,9 @@ questions:
     question: 'Support vector machines (SVMs) can be used for:'
     options:
       - text: classification but not regression
+        why: SVMs also do regression. Support Vector Regression (SVR) fits a function and ignores training points whose prediction is already close to the target [^2].
       - text: regression but not classification
+        why: Classification is the original use of SVMs; scikit-learn's SVC, NuSVC and LinearSVC are support-vector classifiers [^2].
       - text: both classification and regression
         correct: true
     explanation: |
@@ -29,16 +31,19 @@ questions:
       id: ms-ml-for-beginners
       ref: quiz-24/q1
       url: https://github.com/microsoft/ML-For-Beginners/blob/de2d4e12236445198213a0711855e348e7253cd4/quiz-app/src/assets/translations/en.json
-    status: draft
+    status: reviewed
+    reviewed_by: claude
   - id: svm-002
     type: single
     difficulty: easy
     question: SVM stands for
     options:
       - text: Statistical Vector Machine
+        why: The S stands for *support*, after the support vectors, the training points that the decision function uses [^2].
       - text: Support Vector Machine
         correct: true
       - text: Statistical Vector Model
+        why: Both words are wrong; it is a Support Vector *Machine* [^1].
     explanation: |
       SVM stands for Support Vector Machine [^1]. The name comes from the support vectors: the
       decision function uses only this subset of the training points [^2].
@@ -53,16 +58,19 @@ questions:
       id: ms-ml-for-beginners
       ref: quiz-51/q1
       url: https://github.com/microsoft/ML-For-Beginners/blob/de2d4e12236445198213a0711855e348e7253cd4/quiz-app/src/assets/translations/en.json
-    status: draft
+    status: reviewed
+    reviewed_by: claude
   - id: svm-003
     type: single
     difficulty: easy
     question: What is the purpose of a kernel in SVMs?
     options:
       - text: To measure the accuracy of the model predictions
+        why: Accuracy is measured with a metric on held-out data. The kernel is part of the model, an inner product between two inputs in a feature space [^2].
       - text: To transform the dataset to a higher dimension space
         correct: true
       - text: To standardize the values of the dataset
+        why: Standardizing is a separate preprocessing step that SVMs need because they are not scale invariant; the kernel does not do it [^3].
     explanation: |
       A kernel lets an SVM work as if the data had been mapped into a higher-dimensional feature
       space, where classes that are tangled in the original space can become separable [^1][^2].
@@ -84,14 +92,17 @@ questions:
       id: ms-ml-for-beginners
       ref: quiz-52/q2
       url: https://github.com/microsoft/ML-For-Beginners/blob/de2d4e12236445198213a0711855e348e7253cd4/quiz-app/src/assets/translations/en.json
-    status: draft
+    status: reviewed
+    reviewed_by: claude
   - id: svm-004
     type: single
     difficulty: easy
-    question: Which of these models consider the non-linearity in the dataset?
+    question: Which of these models can capture non-linear structure in the data?
     options:
       - text: Simple Linear Regression
+        why: Its prediction is a linear function of the input, so it cannot follow non-linear structure [^1].
       - text: ARIMA
+        why: ARIMA is a linear statistical model; its forecast is a linear combination of past values and past errors [^1].
       - text: SVR using RBF kernel
         correct: true
     explanation: |
@@ -111,7 +122,8 @@ questions:
       id: ms-ml-for-beginners
       ref: quiz-52/q3
       url: https://github.com/microsoft/ML-For-Beginners/blob/de2d4e12236445198213a0711855e348e7253cd4/quiz-app/src/assets/translations/en.json
-    status: draft
+    status: reviewed
+    reviewed_by: claude
   - id: svm-005
     type: single
     difficulty: medium
@@ -125,8 +137,11 @@ questions:
       - text: True, True
         correct: true
       - text: False, False
+        why: Both statements are true. SVM training is a convex problem whose optimum is global [^1][^2], and a kernelized perceptron can separate data that are not linearly separable in the input space [^1].
       - text: True, False
+        why: Statement 2 is also true. The kernel trick applies to the perceptron, and a linear boundary in the RBF feature space is a non-linear boundary in the input space [^1][^2].
       - text: False, True
+        why: Statement 1 is also true. The SVM objective is a convex quadratic program, so the solution that QP software finds is the global optimum [^1][^2].
     explanation: |
       Statement 1 is true. Training an SVM is a convex optimisation problem, a quadratic objective
       with linear constraints, and the maximum-margin hyperplane is a unique solution that standard
@@ -146,9 +161,11 @@ questions:
       id: mmlu-redux
       ref: machine_learning/33
       url: https://huggingface.co/datasets/edinburgh-dawg/mmlu-redux-2.0/viewer/machine_learning/test?row=33
-    status: draft
+    status: reviewed
+    reviewed_by: claude
   - id: svm-006
     type: multiple
+    difficulty: medium
     question: What are support vectors?
     options:
       - text: The examples farthest from the decision boundary.
@@ -159,15 +176,26 @@ questions:
         why: The centroid is the mean of the data, not a training example, and the SVM decision function does not use it.
       - text: All the examples that have a non-zero weight $\alpha_k$ in an SVM.
         correct: true
-    explanation: Support vectors are exactly the training examples with non-zero dual weight $\alpha_k$. Since $f(x) = \sum_k \alpha_k y_k K(x_k, x) + b$, they are also the only examples needed to evaluate $f(x)$. MMLU-Redux experts noted that two of the options are correct, not just one [^1].
+    explanation: |
+      Support vectors are the training examples with a non-zero dual weight $\alpha_k$; all other
+      examples get $\alpha_k = 0$ at the optimum [^1]. The decision function is
+      $f(x) = \sum_k \alpha_k y_k K(x_k, x) + b$, so only the support vectors appear in the sum, and
+      they are the only examples needed to evaluate $f(x)$ [^1][^2]. They are the examples
+      *closest* to the boundary, on the margin or inside it, not the farthest ones, and the centroid
+      of the data plays no role.
     references:
-      - source: mmlu-redux
-        locator: machine_learning row 34 — multiple_correct_answers
+      - title: Stanford CS229 Lecture Notes (Ma & Ng)
+        url: https://cs229.stanford.edu/main_notes.pdf
+        locator: 'Sec. 6.6 Optimal margin classifiers: the dual form, pp. 70-72'
+      - title: 'scikit-learn User Guide: Support Vector Machines'
+        url: https://scikit-learn.org/stable/modules/svm.html#svc
+        locator: Sec. 1.4.7.1 SVC (decision function as a sum over the support vectors)
     source:
       id: mmlu-redux
       ref: machine_learning/34
       url: https://huggingface.co/datasets/edinburgh-dawg/mmlu-redux-2.0/viewer/machine_learning/test?row=34
-    status: draft
+    status: reviewed
+    reviewed_by: claude
   - id: svm-007
     type: single
     difficulty: medium
@@ -179,10 +207,13 @@ questions:
       **Statement 2.** We would expect the support vectors to remain the same in general as we move from a linear kernel to higher order polynomial kernels.
     options:
       - text: True, True
+        why: Neither holds. An SVM outputs a score and a label, not a probability distribution [^1], and changing the kernel generally changes which points are support vectors [^3].
       - text: False, False
         correct: true
       - text: True, False
+        why: Statement 1 is false. An SVM gives a signed score; probabilities need an extra calibration step such as Platt scaling [^1].
       - text: False, True
+        why: Statement 2 is false. The dual problem sees the data only through the kernel values, so a new kernel generally picks different support vectors [^2][^3].
     explanation: |
       Statement 1 is false. An SVM outputs a score and a class label, not a probability
       distribution [^1]. scikit-learn can add probability estimates only by fitting an extra
@@ -208,7 +239,8 @@ questions:
       id: mmlu-redux
       ref: machine_learning/35
       url: https://huggingface.co/datasets/edinburgh-dawg/mmlu-redux-2.0/viewer/machine_learning/test?row=35
-    status: draft
+    status: reviewed
+    reviewed_by: claude
   - id: svm-008
     type: single
     difficulty: medium
@@ -217,8 +249,11 @@ questions:
       - text: Linear hard-margin SVM.
         correct: true
       - text: Linear Logistic Regression.
+        why: Logistic regression can be fitted whether or not the classes are separable; it needs no hyperplane that classifies every point correctly [^3].
       - text: Linear Soft margin SVM.
+        why: Its slack variables let points violate the margin, which is exactly what makes it usable on non-separable data [^1][^2].
       - text: The centroid method.
+        why: It assigns each point to the class with the nearest mean, which works for any data [^4].
     explanation: |
       A hard-margin SVM requires every training point to satisfy $y_i(w^\top x_i + b) \ge 1$. If
       the data are not linearly separable, no hyperplane meets these constraints, so the problem
@@ -244,7 +279,8 @@ questions:
       id: mmlu-redux
       ref: machine_learning/36
       url: https://huggingface.co/datasets/edinburgh-dawg/mmlu-redux-2.0/viewer/machine_learning/test?row=36
-    status: draft
+    status: reviewed
+    reviewed_by: claude
   - id: svm-009
     type: single
     difficulty: hard
@@ -256,8 +292,11 @@ questions:
       **Statement 2.** Any decision boundary that we get from a generative model with class-conditional Gaussian distributions could in principle be reproduced with an SVM and a polynomial kernel of degree less than or equal to three.
     options:
       - text: True, True
+        why: Statement 1 is false. A large margin is a heuristic, and when the classes really are Gaussian with a shared covariance, LDA does better [^1].
       - text: False, False
+        why: Statement 2 is true. Gaussian class-conditional densities give at most quadratic boundaries, which a degree-2 polynomial kernel can represent [^2][^3].
       - text: True, False
+        why: Both verdicts are reversed. No linear classifier is guaranteed the lowest test error [^1], and a degree-2 kernel already covers every quadratic Gaussian boundary [^2][^3].
       - text: False, True
         correct: true
     explanation: |
@@ -284,7 +323,8 @@ questions:
       id: mmlu-redux
       ref: machine_learning/47
       url: https://huggingface.co/datasets/edinburgh-dawg/mmlu-redux-2.0/viewer/machine_learning/test?row=47
-    status: draft
+    status: reviewed
+    reviewed_by: claude
   - id: svm-010
     type: single
     difficulty: medium
@@ -293,8 +333,11 @@ questions:
       - text: For two dimensional data points, the separating hyperplane learnt by a linear SVM will be a straight line.
         correct: true
       - text: In theory, a Gaussian kernel SVM cannot model any complex separating hyperplane.
+        why: The Gaussian kernel corresponds to an infinite-dimensional feature space and can produce very flexible boundaries [^1][^2].
       - text: For every kernel function used in a SVM, one can obtain an equivalent closed form basis expansion.
+        why: The Gaussian kernel's feature space is infinite-dimensional, so it has no equivalent finite basis expansion [^2].
       - text: Overfitting in an SVM is not a function of number of support vectors.
+        why: The fraction of support vectors bounds the leave-one-out error, so many support vectors can signal overfitting [^1].
     explanation: |
       In two dimensions a hyperplane $\{x : w^\top x + b = 0\}$ is a straight line, so a linear
       SVM's decision boundary there is a line [^1]. The other statements are false:
@@ -316,7 +359,8 @@ questions:
       id: mmlu-redux
       ref: machine_learning/69
       url: https://huggingface.co/datasets/edinburgh-dawg/mmlu-redux-2.0/viewer/machine_learning/test?row=69
-    status: draft
+    status: reviewed
+    reviewed_by: claude
   - id: svm-011
     type: single
     difficulty: medium
@@ -325,15 +369,18 @@ questions:
       - text: By fitting a hyperplane with an ε-wide tube around it and penalizing only the points outside the tube
         correct: true
       - text: By learning the full probability distribution that generated the training data, then sampling from it
+        why: That describes a generative model. SVR fits a single regression function and models no distribution [^1].
       - text: By grouping the data points into clusters of similar values
+        why: Grouping points into clusters is unsupervised clustering; SVR is a supervised regressor trained on target values [^2].
     explanation: |
       ε-SVR fits a function, a hyperplane in the kernel's feature space, and penalizes only samples
       whose prediction is at least ε away from their true target, that is, points that fall outside
       the "ε-tube" around the function [^1]. Because the cost ignores samples predicted within ε of
       their target, the model depends on only a subset of the training data, the support vectors
-      [^2]. The lesson's wording, the best-fit hyperplane that contains the maximum number of data
-      points, is a loose description of the same idea [^3]. SVR does not model the probability
-      distribution of the data, and it is a supervised regressor, not a clustering method.
+      [^2]. ML for Beginners describes SVR as finding the best-fit hyperplane that contains the
+      maximum number of data points, a loose description of the same idea [^3]. SVR does not model
+      the probability distribution of the data, and it is a supervised regressor, not a clustering
+      method.
     references:
       - title: 'scikit-learn User Guide: Support Vector Machines'
         url: https://scikit-learn.org/stable/modules/svm.html#svr
@@ -348,7 +395,8 @@ questions:
       id: ms-ml-for-beginners
       ref: quiz-52/q1
       url: https://github.com/microsoft/ML-For-Beginners/blob/de2d4e12236445198213a0711855e348e7253cd4/quiz-app/src/assets/translations/en.json
-    status: draft
+    status: reviewed
+    reviewed_by: claude
   - id: svm-012
     type: single
     difficulty: easy
@@ -364,7 +412,7 @@ questions:
       - text: Make the decision boundary closer to a straight line
         why: A smoother, flatter boundary comes from a *smaller* `gamma`, where each support vector influences a wide region [^2].
       - text: Reduce the complexity of the model
-        why: In the course's summary, larger `gamma` means a more complex model [^1].
+        why: Larger `gamma` gives a more complex model, not a simpler one [^1].
       - text: Lower the risk of overfitting
         why: Raising `gamma` raises complexity and with it the risk of overfitting [^1].
     explanation: |
@@ -385,7 +433,8 @@ questions:
       id: ubc-cpsc330
       ref: lectures/tutorials/solutions/midterm_prep.pdf#q14
       url: https://github.com/UBC-CS/cpsc330-2025W1/blob/a89d6131a0e2ae5f7ab36f207a3809a5b7137aef/lectures/tutorials/solutions/midterm_prep.pdf
-    status: draft
+    status: reviewed
+    reviewed_by: claude
   - id: svm-013
     type: multiple
     difficulty: medium
@@ -426,7 +475,8 @@ questions:
       id: ubc-cpsc330
       ref: lectures/notes/04_kNNs-SVM-RBF.ipynb#ex4.2
       url: https://github.com/UBC-CS/cpsc330-2025W1/blob/a89d6131a0e2ae5f7ab36f207a3809a5b7137aef/lectures/notes/04_kNNs-SVM-RBF.ipynb
-    status: draft
+    status: reviewed
+    reviewed_by: claude
   - id: svm-014
     type: single
     difficulty: hard
@@ -466,7 +516,8 @@ questions:
       id: mit-ocw-6034-s05
       ref: q2_soln#q9.1
       url: https://ocw.mit.edu/courses/6-034-artificial-intelligence-spring-2005/resources/q2_soln/
-    status: draft
+    status: reviewed
+    reviewed_by: claude
   - id: svm-015
     type: short_answer
     difficulty: medium
@@ -500,7 +551,8 @@ questions:
       id: mit-ocw-6034-s05
       ref: quiz2_review_sol#q7
       url: https://ocw.mit.edu/courses/6-034-artificial-intelligence-spring-2005/resources/quiz2_review_sol/
-    status: draft
+    status: reviewed
+    reviewed_by: claude
   - id: svm-016
     type: short_answer
     difficulty: medium
@@ -533,7 +585,8 @@ questions:
       id: mit-ocw-6034-s05
       ref: quiz2_review_sol#q4.4
       url: https://ocw.mit.edu/courses/6-034-artificial-intelligence-spring-2005/resources/quiz2_review_sol/
-    status: draft
+    status: reviewed
+    reviewed_by: claude
   - id: svm-017
     type: short_answer
     difficulty: hard
@@ -567,10 +620,11 @@ questions:
       id: mit-ocw-6034
       ref: mit6_034f10_quiz4_2010#q1a1
       url: https://ocw.mit.edu/courses/6-034-artificial-intelligence-fall-2010/resources/mit6_034f10_quiz4_2010/
-    status: draft
+    status: reviewed
+    reviewed_by: claude
   - id: svm-018
     type: short_answer
-    difficulty: hard
+    difficulty: medium
     tags:
       - svm
       - lagrange-multipliers
@@ -601,7 +655,8 @@ questions:
       id: mit-ocw-6034
       ref: mit6_034f10_quiz4_2010#q1a2
       url: https://ocw.mit.edu/courses/6-034-artificial-intelligence-fall-2010/resources/mit6_034f10_quiz4_2010/
-    status: draft
+    status: reviewed
+    reviewed_by: claude
   - id: svm-019
     type: single
     difficulty: medium
@@ -638,10 +693,11 @@ questions:
       id: mit-ocw-6034-s05
       ref: quiz2_review_sol#q2d-sp-overfit
       url: https://ocw.mit.edu/courses/6-034-artificial-intelligence-spring-2005/resources/quiz2_review_sol/
-    status: draft
+    status: reviewed
+    reviewed_by: claude
   - id: svm-020
     type: single
-    difficulty: hard
+    difficulty: medium
     tags:
       - kernel-trick
       - feature-map
@@ -676,7 +732,8 @@ questions:
       id: mit-ocw-6034
       ref: mit6_034f10_quiz4_2008#q1b
       url: https://ocw.mit.edu/courses/6-034-artificial-intelligence-fall-2010/resources/mit6_034f10_quiz4_2008/
-    status: draft
+    status: reviewed
+    reviewed_by: claude
   - id: svm-021
     type: single
     difficulty: medium
@@ -712,7 +769,8 @@ questions:
       id: mit-ocw-6034-s05
       ref: quiz2_review_sol#q1d
       url: https://ocw.mit.edu/courses/6-034-artificial-intelligence-spring-2005/resources/quiz2_review_sol/
-    status: draft
+    status: reviewed
+    reviewed_by: claude
   - id: svm-022
     type: short_answer
     difficulty: medium
@@ -736,8 +794,9 @@ questions:
       closest negative, $(0.5, 1)$, lies $|0.5 - 1|/\sqrt{2} \approx 0.354$ from it, and its
       projection $(0.75, 0.75)$ falls inside the segment. Half of that gives $0.177$. Moving the
       negative to $(h, 1)$ keeps the boundary's orientation (normal along $(1, -1)$) and shrinks
-      the margin linearly to 0 at $h = 1$ [^1]. The exam's answer $(1-h)/\sqrt{2}$ is the full width
-      between the classes, i.e. $2/\lVert w \rVert$ [^2].
+      the margin linearly to 0 at $h = 1$ [^1]. The MIT 6.867 solution reports the margin as
+      $(1-h)/\sqrt{2}$, which is the full gap between the classes, $2/\lVert w \rVert$, rather than
+      the distance from the boundary to the closest point asked for here [^1][^2].
     references:
       - source: mit-ocw-6867
         locator: Mid-term exam (Fall 2004) solutions, Problem 5, parts 1–3
@@ -749,7 +808,8 @@ questions:
       id: mit-ocw-6867
       ref: midterm_f04soln#q5.3
       url: https://ocw.mit.edu/courses/6-867-machine-learning-fall-2006/resources/midterm_f04soln/
-    status: draft
+    status: reviewed
+    reviewed_by: claude
   - id: svm-023
     type: short_answer
     difficulty: medium
@@ -771,8 +831,9 @@ questions:
       function is a polynomial of degree at most $p$ [^2]. Along the line the labels go
       $+, -, +, -$: the sign changes three times, so the polynomial needs at least three real roots,
       which rules out $p = 1$ and $p = 2$. With $p = 3$ the cubic $-(x - 0.5)(x - 1.5)(x - 2.5)$ is
-      positive at 0 and 2 and negative at 1 and 3. This is the exam's setting where only the
-      second coordinate of the points is observed [^1].
+      positive at 0 and 2 and negative at 1 and 3. The MIT 6.867 exam gets these four labelled
+      points by keeping only the second coordinate of four points in the plane, and its answer is
+      also $p = 3$ [^1].
     references:
       - source: mit-ocw-6867
         locator: Mid-term exam (Fall 2004) solutions, Problem 5, part 4
@@ -784,7 +845,8 @@ questions:
       id: mit-ocw-6867
       ref: midterm_f04soln#q5.4
       url: https://ocw.mit.edu/courses/6-867-machine-learning-fall-2006/resources/midterm_f04soln/
-    status: draft
+    status: reviewed
+    reviewed_by: claude
   - id: svm-024
     type: short_answer
     difficulty: medium
@@ -819,7 +881,8 @@ questions:
       id: mit-ocw-6867
       ref: midterm_f03soln#q3.3
       url: https://ocw.mit.edu/courses/6-867-machine-learning-fall-2006/resources/midterm_f03soln/
-    status: draft
+    status: reviewed
+    reviewed_by: claude
   - id: svm-025
     type: true_false
     difficulty: medium
@@ -856,7 +919,8 @@ questions:
       id: mit-ocw-6867
       ref: midterm_f03soln#q3.5
       url: https://ocw.mit.edu/courses/6-867-machine-learning-fall-2006/resources/midterm_f03soln/
-    status: draft
+    status: reviewed
+    reviewed_by: claude
   - id: svm-026
     type: single
     difficulty: hard
@@ -884,8 +948,8 @@ questions:
       $C\xi_i$ in the primal: a capped multiplier means the constraint $y_i f(x_i) \ge 1 - \xi_i$
       can be bought off with slack [^2]. Leaving $\alpha_i$ unbounded is the hard-margin case, where
       the constraint must hold exactly. So the trusted positives keep $\alpha_i \ge 0$ only, and the
-      negatives get $\alpha_i \le C^-$, a new constant that limits how strongly their margin
-      constraints are enforced [^1].
+      negatives get $0 \le \alpha_i \le C$ (the source calls this constant $C^-$), which limits how
+      strongly their margin constraints are enforced [^1].
     references:
       - source: mit-ocw-6867
         locator: Mid-term exam (Fall 2006) solutions, Problem 3, part 1
@@ -897,7 +961,8 @@ questions:
       id: mit-ocw-6867
       ref: midterm_f06soln#q3.1
       url: https://ocw.mit.edu/courses/6-867-machine-learning-fall-2006/resources/midterm_f06soln/
-    status: draft
+    status: reviewed
+    reviewed_by: claude
   - id: svm-027
     type: single
     difficulty: hard
@@ -933,7 +998,8 @@ questions:
       id: mit-ocw-6867
       ref: midterm_f06soln#q3.2
       url: https://ocw.mit.edu/courses/6-867-machine-learning-fall-2006/resources/midterm_f06soln/
-    status: draft
+    status: reviewed
+    reviewed_by: claude
   - id: svm-028
     type: single
     difficulty: medium
@@ -972,7 +1038,8 @@ questions:
       id: mit-ocw-6867
       ref: midterm_f02soln#q3.1
       url: https://ocw.mit.edu/courses/6-867-machine-learning-fall-2006/resources/midterm_f02soln/
-    status: draft
+    status: reviewed
+    reviewed_by: claude
   - id: svm-029
     type: single
     difficulty: hard
@@ -995,11 +1062,11 @@ questions:
         correct: true
     explanation: |
       The kernel is an inner product of the feature vectors $\phi(x) = x / \lVert x \rVert$, which
-      lie on the unit circle [^1]. The discriminant $f(x) = w^\top \phi(x) + w_0$ therefore depends
-      only on the direction of $x$: scaling a point by $s > 0$ does not change it. A line in feature
-      space cuts the unit circle in at most two points, and the rays from the origin through those
-      points form the decision boundary in the input plane [^1]. That is why points that are not
-      linearly separable can be separable "with almost a linear kernel" [^2].
+      lie on the unit circle [^1][^2]. The discriminant $f(x) = w^\top \phi(x) + w_0$ therefore
+      depends only on the direction of $x$: scaling a point by $s > 0$ does not change it. A line in
+      feature space cuts the unit circle in at most two points, and the rays from the origin through
+      those points form the decision boundary in the input plane [^1]. That is why points that are
+      not linearly separable can be separated "with almost a linear kernel" [^1].
     references:
       - source: mit-ocw-6867
         locator: Mid-term exam (Fall 2006) solutions, Problem 4
@@ -1011,7 +1078,8 @@ questions:
       id: mit-ocw-6867
       ref: midterm_f06soln#q4.5
       url: https://ocw.mit.edu/courses/6-867-machine-learning-fall-2006/resources/midterm_f06soln/
-    status: draft
+    status: reviewed
+    reviewed_by: claude
   - id: svm-030
     type: true_false
     difficulty: medium
@@ -1048,7 +1116,8 @@ questions:
       id: mit-ocw-6867
       ref: midterm_f02soln#q3.6
       url: https://ocw.mit.edu/courses/6-867-machine-learning-fall-2006/resources/midterm_f02soln/
-    status: draft
+    status: reviewed
+    reviewed_by: claude
   - id: svm-031
     type: multiple
     difficulty: hard
@@ -1087,7 +1156,8 @@ questions:
       id: mit-ocw-6867
       ref: midterm_f02soln#q3.4
       url: https://ocw.mit.edu/courses/6-867-machine-learning-fall-2006/resources/midterm_f02soln/
-    status: draft
+    status: reviewed
+    reviewed_by: claude
   - id: svm-032
     type: multiple
     difficulty: medium
@@ -1126,4 +1196,5 @@ questions:
       id: mit-ocw-9520
       ref: problem_set1#q1.4
       url: https://ocw.mit.edu/courses/9-520-statistical-learning-theory-and-applications-spring-2003/resources/problem_set1/
-    status: draft
+    status: reviewed
+    reviewed_by: claude

@@ -32,20 +32,21 @@ questions:
       id: hf-llm-course
       ref: chapter3/3#q3
       url: https://huggingface.co/learn/llm-course/chapter3/3
-    status: draft
+    status: reviewed
+    reviewed_by: claude
   - id: training-002
     type: single
     difficulty: easy
     question: What is gradient accumulation and how do you enable it?
     options:
-      - text: It saves gradients to disk, enabled with `save_gradients=True`.
-        why: Gradient accumulation doesn't involve saving gradients to disk.
-      - text: It accumulates gradients over multiple batches before updating, enabled with `gradient_accumulation_steps`.
+      - text: It saves the gradients of every batch to disk, enabled with `save_gradients=True`.
+        why: Gradient accumulation keeps the gradients in memory and adds them up; nothing is written to disk.
+      - text: It adds up the gradients of several batches before one update, set with `gradient_accumulation_steps`.
         correct: true
-      - text: It speeds up gradient computation, enabled automatically with `fp16`.
-        why: While fp16 can speed up training, gradient accumulation is a separate technique.
-      - text: It prevents gradient overflow, enabled with `gradient_clipping=True`.
-        why: That describes gradient clipping, not gradient accumulation.
+      - text: It speeds up the gradient computation itself and is switched on automatically by `fp16`.
+        why: fp16 can speed up training, but gradient accumulation is a separate technique with its own setting.
+      - text: It prevents gradients from overflowing, enabled with `gradient_clipping=True`.
+        why: Limiting the size of gradients is gradient clipping, not gradient accumulation.
     explanation: |
       Gradient accumulation adds up the gradients of several batches and updates the weights only once
       after them, which simulates a larger batch when GPU memory is limited [^1]. In the Trainer it is
@@ -59,7 +60,8 @@ questions:
       id: hf-llm-course
       ref: chapter3/3#q6
       url: https://huggingface.co/learn/llm-course/chapter3/3
-    status: draft
+    status: reviewed
+    reviewed_by: claude
   - id: training-003
     type: single
     difficulty: medium
@@ -74,17 +76,26 @@ questions:
       - text: AdamW requires less memory than Adam.
         why: Both optimizers have similar memory requirements.
     explanation: |
-      AdamW separates weight decay from the gradient-based parameter updates, leading to better
-      regularization [^1].
+      When Adam is combined with an L2 penalty, the penalty's gradient $\lambda\theta$ is added to the
+      loss gradient and then divided by Adam's adaptive denominator, so weights with large past
+      gradients are regularized less than intended [^2]. AdamW decouples the two: it takes the usual
+      Adam step on the loss gradient and shrinks the weights separately, in proportion to $\lambda\theta$
+      [^2]. This restores true weight decay and improves Adam's generalization; AdamW is the optimizer
+      the 🤗 `Trainer` uses [^1]. Both keep the same two moment estimates per parameter, so their memory
+      use is the same.
     references:
       - source: hf-llm-course
         url: https://huggingface.co/learn/llm-course/chapter3/4#prepare-for-training
         locator: 'Chapter 3, A full training loop: Prepare for training'
+      - title: Loshchilov & Hutter (2019), Decoupled Weight Decay Regularization, arXiv:1711.05101
+        url: https://arxiv.org/abs/1711.05101
+        locator: Sec. 1 Introduction; Sec. 2 Decoupling the weight decay from the gradient-based update, Algorithm 2
     source:
       id: hf-llm-course
       ref: chapter3/4#q1
       url: https://huggingface.co/learn/llm-course/chapter3/4
-    status: draft
+    status: reviewed
+    reviewed_by: claude
   - id: training-004
     type: single
     difficulty: medium
@@ -122,7 +133,8 @@ questions:
       id: hf-llm-course
       ref: chapter3/4#q2
       url: https://huggingface.co/learn/llm-course/chapter3/4
-    status: draft
+    status: reviewed
+    reviewed_by: claude
   - id: training-005
     type: single
     difficulty: easy
@@ -137,17 +149,24 @@ questions:
       - text: The dataset is too small.
         why: While small datasets can contribute to overfitting, this specific pattern is the definition of overfitting regardless of dataset size.
     explanation: |
-      This is a classic sign of overfitting: the model performs well on training data but poorly on
-      unseen validation data [^1].
+      A training loss that keeps falling while the validation loss rises or stalls is the classic
+      sign of overfitting [^1]. The model still fits its training examples better and better, but what
+      it now learns are quirks and noise of those examples that do not carry over to unseen data, so
+      its generalization gets worse [^1][^2]. Typical remedies are regularization such as dropout or
+      weight decay, early stopping, data augmentation or a smaller model [^1].
     references:
       - source: hf-llm-course
         url: https://huggingface.co/learn/llm-course/chapter3/5#overfitting
         locator: 'Chapter 3, Understanding Learning Curves: Overfitting'
+      - source: d2l
+        url: https://d2l.ai/chapter_linear-regression/generalization.html#underfitting-or-overfitting
+        locator: Sec. 3.6.2 Underfitting or Overfitting?
     source:
       id: hf-llm-course
       ref: chapter3/5#q1
       url: https://huggingface.co/learn/llm-course/chapter3/5
-    status: draft
+    status: reviewed
+    reviewed_by: claude
   - id: training-006
     type: single
     difficulty: medium
@@ -162,17 +181,25 @@ questions:
       - text: The batch size is too small to give stable gradient estimates.
         why: Batch size affects training stability but doesn't explain the inherently discrete nature of accuracy metrics.
     explanation: |
-      Unlike loss, accuracy depends on discrete prediction decisions, so small improvements in
-      confidence may not change the final accuracy until a threshold is crossed [^1].
+      Accuracy counts discrete decisions: a prediction only changes when the predicted class flips,
+      i.e. when the probability of the right class crosses the decision threshold [^1]. Small gains in
+      confidence lower the loss, which is continuous, but leave accuracy unchanged until enough
+      examples cross the threshold, so the accuracy curve rises in jumps with plateaus between them
+      [^1]. Accuracy is not even differentiable, which is why training optimizes the loss and accuracy
+      is only monitored [^2].
     references:
       - source: hf-llm-course
         url: https://huggingface.co/learn/llm-course/chapter3/5#accuracy-curves
         locator: 'Chapter 3, Understanding Learning Curves: Accuracy Curves'
+      - source: d2l
+        locator: Sec. 4.3.2 Accuracy
+        url: https://d2l.ai/chapter_linear-classification/classification.html#accuracy
     source:
       id: hf-llm-course
       ref: chapter3/5#q2
       url: https://huggingface.co/learn/llm-course/chapter3/5
-    status: draft
+    status: reviewed
+    reviewed_by: claude
   - id: training-007
     type: single
     difficulty: easy
@@ -186,7 +213,12 @@ questions:
         why: Erratic curves can often be fixed with hyperparameter adjustments.
       - text: Switch to a completely different model architecture.
         why: This is premature - erratic curves are usually fixable with hyperparameter tuning.
-    explanation: Lower learning rates and larger batch sizes typically lead to more stable training [^1].
+    explanation: |
+      Frequent, large fluctuations mean the updates are too large or too noisy: steps overshoot, so the
+      loss jumps up and down instead of trending downward [^1]. A lower learning rate takes smaller,
+      more stable steps, and a larger batch averages the gradient over more examples, which reduces
+      its noise [^1]. Gradient clipping and consistent preprocessing can also help; stopping or
+      switching architectures is premature [^1].
     references:
       - source: hf-llm-course
         url: https://huggingface.co/learn/llm-course/chapter3/5#erratic-learning-curves
@@ -195,7 +227,8 @@ questions:
       id: hf-llm-course
       ref: chapter3/5#q3
       url: https://huggingface.co/learn/llm-course/chapter3/5
-    status: draft
+    status: reviewed
+    reviewed_by: claude
   - id: training-008
     type: single
     difficulty: easy
@@ -210,17 +243,24 @@ questions:
       - text: Never, as it prevents the model from reaching its full potential.
         why: Early stopping is a valuable technique that often improves final model performance by preventing overfitting.
     explanation: |
-      Early stopping helps prevent overfitting by stopping training when the model no longer
-      generalizes better, i.e. when validation performance stops improving [^1].
+      Early stopping monitors validation performance during training and stops once it no longer
+      improves or starts to get worse, usually keeping the best model seen so far [^1][^2]. From that
+      point on, more training only fits the training set more closely, which is the onset of
+      overfitting [^1]. It is one remedy among several, next to regularization, data augmentation and
+      smaller models, so it is used when that pattern appears rather than as a rule for every run [^1].
     references:
       - source: hf-llm-course
         url: https://huggingface.co/learn/llm-course/chapter3/5#overfitting
         locator: 'Chapter 3, Understanding Learning Curves: Overfitting (solutions)'
+      - source: d2l
+        locator: Sec. 5.5.3 Early Stopping
+        url: https://d2l.ai/chapter_multilayer-perceptrons/generalization-deep.html#early-stopping
     source:
       id: hf-llm-course
       ref: chapter3/5#q4
       url: https://huggingface.co/learn/llm-course/chapter3/5
-    status: draft
+    status: reviewed
+    reviewed_by: claude
   - id: training-009
     type: single
     difficulty: easy
@@ -233,10 +273,13 @@ questions:
       - text: The learning curves are very smooth with no fluctuations.
         why: Smooth curves are generally good and don't indicate underfitting.
       - text: Validation loss is decreasing faster than training loss.
-        why: This would actually be a positive sign, not a problem.
+        why: Underfitting shows in the level of the losses, both staying high; how fast each one falls does not indicate it.
     explanation: |
-      Underfitting occurs when the model lacks capacity to learn the patterns, resulting in poor
-      performance on both training and validation data [^1].
+      Underfitting means the model has not even learned the training data well: training and
+      validation loss both stay high and level off early [^1]. Causes include too little capacity, too
+      few epochs or an unsuitable learning rate, so the remedies are a larger model, longer training,
+      other learning rates and checking the data [^1]. A large gap with good training performance is
+      the opposite problem, overfitting [^1].
     references:
       - source: hf-llm-course
         url: https://huggingface.co/learn/llm-course/chapter3/5#underfitting
@@ -245,7 +288,8 @@ questions:
       id: hf-llm-course
       ref: chapter3/5#q5
       url: https://huggingface.co/learn/llm-course/chapter3/5
-    status: draft
+    status: reviewed
+    reviewed_by: claude
   - id: training-010
     type: single
     difficulty: easy
@@ -257,65 +301,87 @@ questions:
         why: This pattern actually indicates healthy training.
       - text: Training loss remains constant while validation loss decreases
         why: This would be an unusual pattern and doesn't indicate overfitting.
-    explanation: This divergence between training and validation loss is a classic sign of overfitting [^1].
+    explanation: |
+      Overfitting shows as a growing gap between the curves: the training loss keeps going down while
+      the validation loss stops improving or rises [^1][^2]. The model is then fitting details of the
+      training examples that do not generalize. When both losses decrease together, training is
+      healthy [^2].
     references:
       - source: hf-llm-course
         url: https://huggingface.co/learn/llm-course/chapter11/3
-        locator: 'Chapter 11, Supervised Fine-Tuning: Metrics to Monitor'
+        locator: 'Chapter 11, Supervised Fine-Tuning: Monitoring Training Progress (Warning Signs to Watch For)'
+      - source: hf-llm-course
+        url: https://huggingface.co/learn/llm-course/chapter3/5#overfitting
+        locator: 'Chapter 3, Understanding Learning Curves: Overfitting; Healthy Learning Curves'
     source:
       id: hf-llm-course
       ref: chapter11/3#q2
       url: https://huggingface.co/learn/llm-course/chapter11/3
-    status: draft
+    status: reviewed
+    reviewed_by: claude
   - id: training-011
     type: single
     difficulty: easy
     question: What is `gradient_accumulation_steps` used for?
     options:
-      - text: To increase effective batch size without using more memory
+      - text: To increase the effective batch size without using more memory
         correct: true
-      - text: To save checkpoints during training
+      - text: To save model checkpoints at regular intervals during training
         why: This is handled by the `save_steps` and `save_strategy` parameters.
-      - text: To control the learning rate schedule
-        why: Learning rate scheduling is controlled by `learning_rate` and `warmup_ratio`.
+      - text: To control how the learning rate changes over the course of training
+        why: The learning-rate schedule is set by `learning_rate` and warm-up options such as `warmup_ratio`.
     explanation: |
-      It accumulates gradients across multiple forward and backward passes before updating the
-      weights, which enables larger effective batch sizes [^1].
+      Gradient accumulation runs several forward and backward passes and adds up their gradients
+      before a single optimizer step, so the update behaves like one computed on a larger batch [^1].
+      Larger batches give more stable gradients but need more memory; accumulating over $k$ small
+      batches gives a $k$ times larger effective batch while only one small batch is in memory at a
+      time [^1][^2]. For example, a per-device batch size of 4 with 4 accumulation steps gives an
+      effective batch size of 16 [^2].
     references:
       - source: hf-llm-course
         url: https://huggingface.co/learn/llm-course/chapter11/3
         locator: 'Chapter 11, Supervised Fine-Tuning: Training Configuration (Batch Size Parameters)'
+      - source: hf-llm-course
+        url: https://huggingface.co/learn/llm-course/chapter3/3#advanced-training-features
+        locator: 'Chapter 3, Fine-tuning a model with the Trainer API: Advanced Training Features'
     source:
       id: hf-llm-course
       ref: chapter11/3#q3
       url: https://huggingface.co/learn/llm-course/chapter11/3
-    status: draft
+    status: reviewed
+    reviewed_by: claude
   - id: training-012
     type: single
     difficulty: easy
     question: What indicates healthy convergence during training?
     options:
-      - text: A small gap between training and validation loss
+      - text: Both losses level off with a small gap between them
         correct: true
       - text: Training loss reaching zero
         why: Extremely low loss values might indicate memorization rather than learning.
       - text: Validation loss being lower than training loss
         why: This would be unusual and might indicate problems with the validation set.
     explanation: |
-      A small gap between training and validation loss indicates that the model is learning
-      generalizable patterns rather than memorizing specific examples [^1].
+      In healthy training both losses fall and then level off, and the key indicator is a small gap
+      between training and validation loss: the model is learning patterns that generalize rather
+      than memorizing the training examples [^1]. A small gap alone is not enough, since an underfit
+      model also has close curves, but at a high loss [^2].
     references:
       - source: hf-llm-course
         url: https://huggingface.co/learn/llm-course/chapter11/3
         locator: 'Chapter 11, Supervised Fine-Tuning: The Path to Convergence'
+      - source: hf-llm-course
+        url: https://huggingface.co/learn/llm-course/chapter3/5#underfitting
+        locator: 'Chapter 3, Understanding Learning Curves: Underfitting'
     source:
       id: hf-llm-course
       ref: chapter11/3#q5
       url: https://huggingface.co/learn/llm-course/chapter11/3
-    status: draft
+    status: reviewed
+    reviewed_by: claude
   - id: training-013
     type: single
-    difficulty: medium
+    difficulty: easy
     question: Overfitting occurs because of ____
     options:
       - text: Not enough testing data
@@ -342,7 +408,8 @@ questions:
       id: ms-ai-for-beginners
       ref: quiz-105/q2
       url: https://github.com/microsoft/AI-For-Beginners/blob/392d0df1b2647cbee104942390551f1ed9e072c8/etc/quiz-app/src/assets/translations/en/lesson-5.json
-    status: draft
+    status: reviewed
+    reviewed_by: claude
   - id: training-014
     type: single
     difficulty: easy
@@ -351,7 +418,9 @@ questions:
       - text: height normalization
         correct: true
       - text: weight normalization
+        why: Weight normalization is a real technique; it writes each weight vector as a learned length times a unit direction, $\mathbf{w} = g\,\mathbf{v}/\lVert\mathbf{v}\rVert$ [^3].
       - text: layer normalization
+        why: Layer normalization is a real technique; it standardizes each example's activations over its own features [^2].
     explanation: |
       Weight normalization and layer normalization are real normalization techniques, listed in the
       course next to the most widely used one, batch normalization [^1]. Layer normalization, for
@@ -364,17 +433,22 @@ questions:
       - source: d2l
         url: https://d2l.ai/chapter_convolutional-modern/batch-norm.html#layer-normalization
         locator: Sec. 8.5.2.3 Layer Normalization
+      - title: 'Salimans & Kingma (2016), Weight Normalization: A Simple Reparameterization to Accelerate Training of Deep Neural Networks, arXiv:1602.07868'
+        url: https://arxiv.org/abs/1602.07868
+        locator: Sec. 2 Weight Normalization, Eq. (2)
     source:
       id: ms-ai-for-beginners
       ref: quiz-108/q2
       url: https://github.com/microsoft/AI-For-Beginners/blob/392d0df1b2647cbee104942390551f1ed9e072c8/etc/quiz-app/src/assets/translations/en/lesson-8.json
-    status: draft
+    status: reviewed
+    reviewed_by: claude
   - id: training-015
     type: single
     difficulty: easy
     question: We choose Stochastic Gradient Descent (SGD) in deep learning because classical gradient descent can be ____
     options:
       - text: fast
+        why: If full-batch gradient descent were fast there would be no reason to switch; it is slow because every update needs the gradient over the whole training set [^2].
       - text: slow
         correct: true
     explanation: |
@@ -394,14 +468,17 @@ questions:
       id: ms-ai-for-beginners
       ref: quiz-108/q3
       url: https://github.com/microsoft/AI-For-Beginners/blob/392d0df1b2647cbee104942390551f1ed9e072c8/etc/quiz-app/src/assets/translations/en/lesson-8.json
-    status: draft
+    status: reviewed
+    reviewed_by: claude
   - id: training-016
     type: single
     difficulty: easy
     question: Dropout layers act as a ____ technique
     options:
       - text: gradient boosting
+        why: Gradient boosting is a separate ensemble method that adds models one after another; dropout is a layer inside a single network.
       - text: training
+        why: Every layer takes part in training; what characterizes dropout is that it reduces overfitting, and it is switched off at test time [^3].
       - text: regularization
         correct: true
     explanation: |
@@ -424,7 +501,8 @@ questions:
       id: ms-ai-for-beginners
       ref: quiz-208/q1
       url: https://github.com/microsoft/AI-For-Beginners/blob/392d0df1b2647cbee104942390551f1ed9e072c8/etc/quiz-app/src/assets/translations/en/lesson-8.json
-    status: draft
+    status: reviewed
+    reviewed_by: claude
   - id: training-017
     type: single
     difficulty: easy
@@ -438,8 +516,11 @@ questions:
       - text: True, True
         correct: true
       - text: False, False
+        why: Both statements are true; the learning rate decides whether and how fast gradient descent converges, and dropout zeroes random activations [^1][^2].
       - text: True, False
+        why: Statement 2 is true; during training, dropout sets randomly chosen activations to zero [^2].
       - text: False, True
+        why: Statement 1 is true; too small a learning rate makes convergence slow, and too large a one can make training diverge [^1].
     explanation: |
       Statement 1 is true: a learning rate that is too small makes gradient descent crawl, and one
       that is too large overshoots the minimum and can diverge, so whether and how fast training
@@ -459,17 +540,21 @@ questions:
       id: mmlu-redux
       ref: machine_learning/4
       url: https://huggingface.co/datasets/edinburgh-dawg/mmlu-redux-2.0/viewer/machine_learning/test?row=4
-    status: draft
+    status: reviewed
+    reviewed_by: claude
   - id: training-018
     type: single
     difficulty: medium
     question: Which is true about Batch Normalization?
     options:
       - text: After applying batch normalization, the layer’s activations will follow a standard Gaussian distribution.
+        why: Batch normalization fixes only each unit's mean and variance over the minibatch and then applies a learned scale and shift; the normalized values are not guaranteed to be Gaussian [^1].
       - text: The bias parameter of affine layers becomes redundant if a batch normalization layer follows immediately afterward.
         correct: true
       - text: The standard weight initialization must be changed when using Batch Normalization.
+        why: Batch normalization makes training less sensitive to initialization; the usual schemes keep working [^1].
       - text: Batch Normalization is equivalent to Layer Normalization for convolutional neural networks.
+        why: Layer normalization normalizes each example on its own, batch normalization each channel across the minibatch, so they compute different statistics [^2].
     explanation: |
       When batch normalization normalizes $Wu + b$, subtracting the mini-batch mean cancels $b$, and
       BN's learned shift $\beta$ takes over its role, so the affine layer's bias is redundant [^1].
@@ -489,17 +574,21 @@ questions:
       id: mmlu-redux
       ref: machine_learning/30
       url: https://huggingface.co/datasets/edinburgh-dawg/mmlu-redux-2.0/viewer/machine_learning/test?row=30
-    status: draft
+    status: reviewed
+    reviewed_by: claude
   - id: training-019
     type: single
     difficulty: medium
     question: If your training loss increases with number of epochs, which of the following could be a possible issue with the learning process?
     options:
       - text: Regularization is too low and model is overfitting
+        why: Overfitting gives a low training loss with a large gap to the validation loss; it does not make the training loss rise [^2].
       - text: Regularization is too high and model is underfitting
+        why: Too much regularization keeps the training loss high, but it does not make it climb epoch after epoch [^2].
       - text: Step size is too large
         correct: true
       - text: Step size is too small
+        why: A step size that is too small makes the loss fall slowly; it does not make it increase [^1].
     explanation: |
       Rising training loss means the updates are making things worse, which is what a step size
       that is too large does: each update overshoots the minimum and the iterates can diverge [^1].
@@ -518,7 +607,8 @@ questions:
       id: mmlu-redux
       ref: machine_learning/95
       url: https://huggingface.co/datasets/edinburgh-dawg/mmlu-redux-2.0/viewer/machine_learning/test?row=95
-    status: draft
+    status: reviewed
+    reviewed_by: claude
   - id: training-020
     type: short_answer
     difficulty: easy
@@ -778,7 +868,12 @@ questions:
         why: 0.01 is a common starting point, but the best value differs from one model and dataset to another.
       - text: 1.0, so that training converges fastest
         why: A learning rate that is too large makes the weights bounce around and can slow down or prevent convergence.
-    explanation: Each model and dataset will have its own ideal learning rate. [^1]
+    explanation: |
+      There is no universal best value: each model and dataset has its own ideal learning rate, which
+      has to be found by experimenting [^1]. Too small a learning rate needs many iterations to
+      converge, and too large a one never converges, with a loss that bounces around or keeps
+      increasing, so 1.0 is not automatically fastest [^1]. Values such as 0.01 are only common
+      starting points for that search.
     references:
       - source: google-mlcc
         locator: 'Linear regression: Hyperparameters'
@@ -787,16 +882,24 @@ questions:
       id: google-mlcc
       ref: linear-regression/hyperparameters#q1
       url: https://developers.google.com/machine-learning/crash-course/linear-regression/hyperparameters
-    status: draft
+    status: reviewed
+    reviewed_by: claude
   - id: training-030
     type: single
+    difficulty: easy
     question: What's the best batch size when using mini-batch SGD?
     options:
       - text: It depends
         correct: true
       - text: 10 examples per batch
+        why: Small batches behave like SGD, with cheap but noisy updates; that suits some problems but not all [^1].
       - text: 100 examples per batch
-    explanation: The ideal batch size depends on the dataset and the available compute resources [^1]
+        why: Larger batches give smoother gradients, but whether 100 is best depends on the data and on the available memory and compute [^1].
+    explanation: |
+      The ideal batch size depends on the dataset and the available compute resources [^1]. Small
+      batches behave like SGD, with cheap but noisy updates, and large batches behave like full-batch
+      gradient descent, with smoother but more expensive ones [^1]. Some noise can even help the model
+      generalize, so the batch size is a hyperparameter to tune together with the learning rate [^1].
     references:
       - source: google-mlcc
         locator: 'Linear regression: Hyperparameters'
@@ -805,16 +908,23 @@ questions:
       id: google-mlcc
       ref: linear-regression/hyperparameters#q2
       url: https://developers.google.com/machine-learning/crash-course/linear-regression/hyperparameters
-    status: draft
+    status: reviewed
+    reviewed_by: claude
   - id: training-031
     type: single
+    difficulty: easy
     question: Which of the following statements is true?
     options:
       - text: Larger batches are unsuitable for data with many outliers.
         why: This statement is false. By averaging more gradients together, larger batch sizes can help reduce the negative effects of having outliers in the data.
       - text: Doubling the learning rate can slow down training.
         correct: true
-    explanation: This statement is true. Doubling the learning rate can result in a learning rate that is too large, and therefore cause the weights to "bounce around," increasing the amount of time needed to converge. As always, the best hyperparameters depend on your dataset and available compute resources. [^1]
+    explanation: |
+      "Doubling the learning rate can slow down training" is true: if the doubled rate is too large,
+      the weights bounce around the minimum and convergence takes longer, or fails [^1]. The other
+      statement is false: averaging the gradients of more examples dilutes the effect of individual
+      outliers, so larger batches can help with outlier-heavy data [^1]. As always, the best
+      hyperparameters depend on the dataset and the available compute [^1].
     references:
       - source: google-mlcc
         locator: 'Linear regression: Hyperparameters'
@@ -823,7 +933,8 @@ questions:
       id: google-mlcc
       ref: linear-regression/hyperparameters#q3
       url: https://developers.google.com/machine-learning/crash-course/linear-regression/hyperparameters
-    status: draft
+    status: reviewed
+    reviewed_by: claude
   - id: training-032
     type: single
     difficulty: easy
@@ -854,7 +965,8 @@ questions:
       id: hf-llm-course
       ref: chapter8/7#q4
       url: https://huggingface.co/learn/llm-course/chapter8/7
-    status: draft
+    status: reviewed
+    reviewed_by: claude
   - id: training-033
     type: single
     difficulty: medium
@@ -883,7 +995,8 @@ questions:
       id: hf-llm-course
       ref: chapter8/7#q7
       url: https://huggingface.co/learn/llm-course/chapter8/7
-    status: draft
+    status: reviewed
+    reviewed_by: claude
   - id: training-034
     type: single
     difficulty: medium
@@ -892,8 +1005,11 @@ questions:
       - text: During training, weights can drift and push signals out of a good range; normalizing per minibatch brings them back
         correct: true
       - text: Careful initialization is only possible with batch normalization, because without it every weight must start at zero
+        why: Initialization schemes such as Xavier work with or without batch normalization, and nothing forces weights to start at zero [^1].
       - text: It replaces the activation function, so the network no longer needs a nonlinearity
+        why: The batch normalization layer is placed before the activation function and keeps it; the network still needs its nonlinearity [^1].
       - text: It normalizes each example on its own, so training no longer needs minibatches
+        why: That describes layer normalization; batch normalization computes its statistics over the minibatch [^2].
     explanation: |
       Good initialization keeps values in a reasonable range at the start, but during training the
       weights can become arbitrarily big or small and drive the signals out of that range [^1].
@@ -913,7 +1029,8 @@ questions:
       id: ms-ai-for-beginners
       ref: quiz-208/q3
       url: https://github.com/microsoft/AI-For-Beginners/blob/392d0df1b2647cbee104942390551f1ed9e072c8/etc/quiz-app/src/assets/translations/en/lesson-8.json
-    status: draft
+    status: reviewed
+    reviewed_by: claude
   - id: training-035
     type: short_answer
     difficulty: medium
@@ -954,7 +1071,8 @@ questions:
       id: d2l
       ref: chapter_convolutional-modern/batch-norm#ex1
       url: https://d2l.ai/chapter_convolutional-modern/batch-norm.html#exercises
-    status: draft
+    status: reviewed
+    reviewed_by: claude
   - id: training-036
     type: single
     difficulty: medium
@@ -997,7 +1115,8 @@ questions:
       id: d2l
       ref: chapter_computational-performance/multiple-gpus#ex2
       url: https://d2l.ai/chapter_computational-performance/multiple-gpus.html#exercises
-    status: draft
+    status: reviewed
+    reviewed_by: claude
   - id: training-037
     type: single
     difficulty: easy
@@ -1036,7 +1155,8 @@ questions:
       id: d2l
       ref: chapter_hyperparameter-optimization/hyperopt-intro#ex1
       url: https://d2l.ai/chapter_hyperparameter-optimization/hyperopt-intro.html#exercises
-    status: draft
+    status: reviewed
+    reviewed_by: claude
   - id: training-038
     type: single
     difficulty: medium
@@ -1077,7 +1197,8 @@ questions:
       id: d2l
       ref: chapter_hyperparameter-optimization/hyperopt-intro#ex2
       url: https://d2l.ai/chapter_hyperparameter-optimization/hyperopt-intro.html#exercises
-    status: draft
+    status: reviewed
+    reviewed_by: claude
   - id: training-039
     type: single
     difficulty: hard
@@ -1123,7 +1244,8 @@ questions:
       id: d2l
       ref: chapter_hyperparameter-optimization/hyperopt-intro#ex2-b
       url: https://d2l.ai/chapter_hyperparameter-optimization/hyperopt-intro.html#exercises
-    status: draft
+    status: reviewed
+    reviewed_by: claude
   - id: training-040
     type: short_answer
     difficulty: easy
@@ -1161,7 +1283,8 @@ questions:
       id: d2l
       ref: chapter_hyperparameter-optimization/hyperopt-intro#ex3
       url: https://d2l.ai/chapter_hyperparameter-optimization/hyperopt-intro.html#exercises
-    status: draft
+    status: reviewed
+    reviewed_by: claude
   - id: training-041
     type: single
     difficulty: medium
@@ -1202,7 +1325,8 @@ questions:
       id: d2l
       ref: chapter_linear-regression/linear-regression-scratch#ex9
       url: https://d2l.ai/chapter_linear-regression/linear-regression-scratch.html#exercises
-    status: draft
+    status: reviewed
+    reviewed_by: claude
   - id: training-042
     type: multiple
     difficulty: easy
@@ -1253,7 +1377,8 @@ questions:
       id: d2l
       ref: chapter_linear-regression/weight-decay#ex5
       url: https://d2l.ai/chapter_linear-regression/weight-decay.html#exercises
-    status: draft
+    status: reviewed
+    reviewed_by: claude
   - id: training-043
     type: single
     difficulty: medium
@@ -1299,7 +1424,8 @@ questions:
       id: d2l
       ref: chapter_linear-classification/softmax-regression-concise#ex1-b
       url: https://d2l.ai/chapter_linear-classification/softmax-regression-concise.html#exercises
-    status: draft
+    status: reviewed
+    reviewed_by: claude
   - id: training-044
     type: true_false
     difficulty: medium
@@ -1340,7 +1466,8 @@ questions:
       id: d2l
       ref: chapter_linear-classification/softmax-regression-concise#ex3
       url: https://d2l.ai/chapter_linear-classification/softmax-regression-concise.html#exercises
-    status: draft
+    status: reviewed
+    reviewed_by: claude
   - id: training-045
     type: multiple
     difficulty: medium
@@ -1388,7 +1515,8 @@ questions:
       id: d2l
       ref: chapter_multilayer-perceptrons/mlp#ex6
       url: https://d2l.ai/chapter_multilayer-perceptrons/mlp.html#exercises
-    status: draft
+    status: reviewed
+    reviewed_by: claude
   - id: training-046
     type: single
     difficulty: medium
@@ -1431,7 +1559,8 @@ questions:
       id: d2l
       ref: chapter_multilayer-perceptrons/numerical-stability-and-init#ex2
       url: https://d2l.ai/chapter_multilayer-perceptrons/numerical-stability-and-init.html#exercises
-    status: draft
+    status: reviewed
+    reviewed_by: claude
   - id: training-047
     type: single
     difficulty: easy
@@ -1465,7 +1594,8 @@ questions:
       id: d2l
       ref: chapter_multilayer-perceptrons/generalization-deep#ex5
       url: https://d2l.ai/chapter_multilayer-perceptrons/generalization-deep.html#exercises
-    status: draft
+    status: reviewed
+    reviewed_by: claude
   - id: training-048
     type: short_answer
     difficulty: medium
@@ -1501,7 +1631,8 @@ questions:
       id: d2l
       ref: chapter_multilayer-perceptrons/dropout#ex3
       url: https://d2l.ai/chapter_multilayer-perceptrons/dropout.html#exercises
-    status: draft
+    status: reviewed
+    reviewed_by: claude
   - id: training-049
     type: single
     difficulty: easy
@@ -1540,7 +1671,8 @@ questions:
       id: d2l
       ref: chapter_multilayer-perceptrons/dropout#ex4
       url: https://d2l.ai/chapter_multilayer-perceptrons/dropout.html#exercises
-    status: draft
+    status: reviewed
+    reviewed_by: claude
   - id: training-050
     type: multiple
     difficulty: medium
@@ -1582,7 +1714,8 @@ questions:
       id: dsgiitr-ml-interviewqs
       ref: questions/dl.yml#q2
       url: https://github.com/dsgiitr/ML-InterviewQs/blob/8c6d228b051af7ceb429e6322befda068964e6b5/questions/dl.yml
-    status: draft
+    status: reviewed
+    reviewed_by: claude
   - id: training-051
     type: short_answer
     difficulty: easy
@@ -1615,7 +1748,8 @@ questions:
       id: udacity-dl-pytorch
       ref: weight-initialization/weight_initialization_solution.ipynb#general-rule
       url: https://github.com/udacity/deep-learning-v2-pytorch/blob/c9404fc86181fc3f0906b368697268257f348535/weight-initialization/weight_initialization_solution.ipynb
-    status: draft
+    status: reviewed
+    reviewed_by: claude
   - id: training-052
     type: single
     difficulty: medium
@@ -1652,7 +1786,8 @@ questions:
       id: neuromatch-dl
       ref: W1D2_LinearDeepLearning/W1D2_Tutorial2#think1
       url: https://github.com/NeuromatchAcademy/course-content-dl/blob/caba36c513fb8139ac3c9e7503f7a769dadde25e/tutorials/W1D2_LinearDeepLearning/instructor/W1D2_Tutorial2.ipynb
-    status: draft
+    status: reviewed
+    reviewed_by: claude
   - id: training-053
     type: single
     difficulty: hard
@@ -1690,7 +1825,8 @@ questions:
       id: neuromatch-dl
       ref: W1D2_LinearDeepLearning/W1D2_Tutorial2#think2.3
       url: https://github.com/NeuromatchAcademy/course-content-dl/blob/caba36c513fb8139ac3c9e7503f7a769dadde25e/tutorials/W1D2_LinearDeepLearning/instructor/W1D2_Tutorial2.ipynb
-    status: draft
+    status: reviewed
+    reviewed_by: claude
   - id: training-054
     type: single
     difficulty: medium
@@ -1728,7 +1864,8 @@ questions:
       id: neuromatch-dl
       ref: W1D2_LinearDeepLearning/W1D2_Tutorial3#think1
       url: https://github.com/NeuromatchAcademy/course-content-dl/blob/caba36c513fb8139ac3c9e7503f7a769dadde25e/tutorials/W1D2_LinearDeepLearning/instructor/W1D2_Tutorial3.ipynb
-    status: draft
+    status: reviewed
+    reviewed_by: claude
   - id: training-055
     type: single
     difficulty: medium
@@ -1766,7 +1903,8 @@ questions:
       id: neuromatch-dl
       ref: W1D2_LinearDeepLearning/W1D2_Tutorial3#ex4
       url: https://github.com/NeuromatchAcademy/course-content-dl/blob/caba36c513fb8139ac3c9e7503f7a769dadde25e/tutorials/W1D2_LinearDeepLearning/instructor/W1D2_Tutorial3.ipynb
-    status: draft
+    status: reviewed
+    reviewed_by: claude
   - id: training-056
     type: short_answer
     difficulty: medium
@@ -1803,7 +1941,8 @@ questions:
       id: neuromatch-dl
       ref: W1D4_Optimization/W1D4_Tutorial1#ex7
       url: https://github.com/NeuromatchAcademy/course-content-dl/blob/caba36c513fb8139ac3c9e7503f7a769dadde25e/tutorials/W1D4_Optimization/instructor/W1D4_Tutorial1.ipynb
-    status: draft
+    status: reviewed
+    reviewed_by: claude
   - id: training-057
     type: single
     difficulty: medium
@@ -1841,7 +1980,8 @@ questions:
       id: neuromatch-dl
       ref: W1D4_Optimization/W1D4_Tutorial1#think3
       url: https://github.com/NeuromatchAcademy/course-content-dl/blob/caba36c513fb8139ac3c9e7503f7a769dadde25e/tutorials/W1D4_Optimization/instructor/W1D4_Tutorial1.ipynb
-    status: draft
+    status: reviewed
+    reviewed_by: claude
   - id: training-058
     type: single
     difficulty: medium
@@ -1878,7 +2018,8 @@ questions:
       id: neuromatch-dl
       ref: W1D4_Optimization/W1D4_Tutorial1#think5.1
       url: https://github.com/NeuromatchAcademy/course-content-dl/blob/caba36c513fb8139ac3c9e7503f7a769dadde25e/tutorials/W1D4_Optimization/instructor/W1D4_Tutorial1.ipynb
-    status: draft
+    status: reviewed
+    reviewed_by: claude
   - id: training-059
     type: single
     difficulty: medium
@@ -1915,7 +2056,8 @@ questions:
       id: neuromatch-dl
       ref: W1D4_Optimization/W1D4_Tutorial1#sec6.2
       url: https://github.com/NeuromatchAcademy/course-content-dl/blob/caba36c513fb8139ac3c9e7503f7a769dadde25e/tutorials/W1D4_Optimization/instructor/W1D4_Tutorial1.ipynb
-    status: draft
+    status: reviewed
+    reviewed_by: claude
   - id: training-060
     type: true_false
     difficulty: easy
@@ -1954,7 +2096,8 @@ questions:
       id: neuromatch-dl
       ref: W1D4_Optimization/W1D4_Tutorial1#ex6
       url: https://github.com/NeuromatchAcademy/course-content-dl/blob/caba36c513fb8139ac3c9e7503f7a769dadde25e/tutorials/W1D4_Optimization/instructor/W1D4_Tutorial1.ipynb
-    status: draft
+    status: reviewed
+    reviewed_by: claude
   - id: training-061
     type: short_answer
     difficulty: easy
@@ -1987,7 +2130,8 @@ questions:
       id: neuromatch-dl
       ref: W2D1_Regularization/W2D1_Tutorial1#sec3
       url: https://github.com/NeuromatchAcademy/course-content-dl/blob/caba36c513fb8139ac3c9e7503f7a769dadde25e/tutorials/W2D1_Regularization/instructor/W2D1_Tutorial1.ipynb
-    status: draft
+    status: reviewed
+    reviewed_by: claude
   - id: training-062
     type: single
     difficulty: medium
@@ -2020,7 +2164,8 @@ questions:
       id: neuromatch-dl
       ref: W2D1_Regularization/W2D1_Tutorial2#think2.2
       url: https://github.com/NeuromatchAcademy/course-content-dl/blob/caba36c513fb8139ac3c9e7503f7a769dadde25e/tutorials/W2D1_Regularization/instructor/W2D1_Tutorial2.ipynb
-    status: draft
+    status: reviewed
+    reviewed_by: claude
   - id: training-063
     type: single
     difficulty: easy
@@ -2054,7 +2199,8 @@ questions:
       id: neuromatch-dl
       ref: W2D1_Regularization/W2D1_Tutorial2#think3.2
       url: https://github.com/NeuromatchAcademy/course-content-dl/blob/caba36c513fb8139ac3c9e7503f7a769dadde25e/tutorials/W2D1_Regularization/instructor/W2D1_Tutorial2.ipynb
-    status: draft
+    status: reviewed
+    reviewed_by: claude
   - id: training-064
     type: multiple
     difficulty: easy
@@ -2092,7 +2238,8 @@ questions:
       id: learn-pytorch
       ref: extras/solutions/04_pytorch_custom_datasets_exercise_solutions.ipynb#ex1
       url: https://github.com/mrdbourke/pytorch-deep-learning/blob/a16552001d963d078390d5bbdfc321e7e7c94bd1/extras/solutions/04_pytorch_custom_datasets_exercise_solutions.ipynb
-    status: draft
+    status: reviewed
+    reviewed_by: claude
   - id: training-065
     type: multiple
     difficulty: medium
@@ -2132,7 +2279,8 @@ questions:
       id: kaggle-learn
       ref: deep_learning_intro/ex3#q4
       url: https://github.com/Kaggle/learntools/blob/e9ba66dc899d3e17b80d3a1b9a5d29f430d310cb/notebooks/deep_learning_intro/raw/ex3.ipynb
-    status: draft
+    status: reviewed
+    reviewed_by: claude
   - id: training-066
     type: single
     difficulty: easy
@@ -2170,7 +2318,8 @@ questions:
       id: kaggle-learn
       ref: deep_learning_intro/ex4#q1
       url: https://github.com/Kaggle/learntools/blob/e9ba66dc899d3e17b80d3a1b9a5d29f430d310cb/notebooks/deep_learning_intro/raw/ex4.ipynb
-    status: draft
+    status: reviewed
+    reviewed_by: claude
   - id: training-067
     type: short_answer
     difficulty: medium
@@ -2214,7 +2363,8 @@ questions:
       id: kaggle-learn
       ref: deep_learning_intro/ex4#q3
       url: https://github.com/Kaggle/learntools/blob/e9ba66dc899d3e17b80d3a1b9a5d29f430d310cb/notebooks/deep_learning_intro/raw/ex4.ipynb
-    status: draft
+    status: reviewed
+    reviewed_by: claude
   - id: training-068
     type: single
     difficulty: medium
@@ -2252,7 +2402,8 @@ questions:
       id: kaggle-learn
       ref: deep_learning_intro/ex5#q4
       url: https://github.com/Kaggle/learntools/blob/e9ba66dc899d3e17b80d3a1b9a5d29f430d310cb/notebooks/deep_learning_intro/raw/ex5.ipynb
-    status: draft
+    status: reviewed
+    reviewed_by: claude
   - id: training-069
     type: single
     difficulty: medium
@@ -2291,7 +2442,8 @@ questions:
       id: kaggle-learn
       ref: embeddings/ex2#q5
       url: https://github.com/Kaggle/learntools/blob/e9ba66dc899d3e17b80d3a1b9a5d29f430d310cb/notebooks/embeddings/raw/2-exercises.ipynb
-    status: draft
+    status: reviewed
+    reviewed_by: claude
   - id: training-070
     type: single
     difficulty: medium
@@ -2334,7 +2486,8 @@ questions:
       id: mit-ocw-67960
       ref: mit6_7960_f24_hw2#q3c
       url: https://ocw.mit.edu/courses/6-7960-deep-learning-fall-2024/resources/mit6_7960_f24_hw2_pdf/
-    status: draft
+    status: reviewed
+    reviewed_by: claude
   - id: training-071
     type: single
     difficulty: hard
@@ -2345,8 +2498,8 @@ questions:
       - svd
     question: |
       A layer's gradient matrix has the reduced SVD $G = U \Sigma V^\top$. Steepest descent under the
-      spectral norm $\lVert \cdot \rVert_*$ (the largest singular value) solves
-      $$\operatorname*{arg\,min}_{\Delta W}\Big[\operatorname{tr}(G^\top \Delta W) + \tfrac{\lambda}{2}\lVert \Delta W \rVert_*^2\Big].$$
+      spectral norm $\lVert \cdot \rVert_2$ (the largest singular value) solves
+      $$\operatorname*{arg\,min}_{\Delta W}\Big[\operatorname{tr}(G^\top \Delta W) + \tfrac{\lambda}{2}\lVert \Delta W \rVert_2^2\Big].$$
       Which update is the solution?
     options:
       - text: $-\frac{\operatorname{tr}\Sigma}{\lambda}\, U V^\top$
@@ -2359,12 +2512,12 @@ questions:
         why: Elementwise signs are steepest descent under a max-of-entries norm; under the spectral norm the update sets all singular values equal instead [^2].
     explanation: |
       As for vectors, the solution is $-\frac{\lVert G \rVert^\dagger}{\lambda}$ times the unit-norm
-      matrix $T$ that maximizes $\operatorname{tr}(G^\top T)$ [^1]. Over matrices with spectral norm 1
-      the maximum is $\operatorname{tr}\Sigma$, reached at $T = UV^\top$, so the dual norm is the nuclear
-      norm and the step is $-\frac{\operatorname{tr}\Sigma}{\lambda} UV^\top$ [^1]. The update keeps the
-      gradient's singular vectors but sets every singular value to the same size; Shampoo without
-      accumulation takes exactly this direction [^2]. A numerical minimizer on a random $3 \times 2$
-      gradient agrees with the formula.
+      matrix $T$ that maximizes $\operatorname{tr}(G^\top T)$, where $\lVert \cdot \rVert^\dagger$ is the
+      dual norm [^1]. Over matrices with spectral norm 1 the maximum is $\operatorname{tr}\Sigma$,
+      reached at $T = UV^\top$, so the dual norm is the nuclear norm and the step is
+      $-\frac{\operatorname{tr}\Sigma}{\lambda} UV^\top$ [^1]. The update keeps the gradient's singular
+      vectors but sets every singular value to the same size; Shampoo without accumulation takes
+      exactly this direction [^2].
     references:
       - source: mit-ocw-67960
         locator: Homework 2, Steepest descent, Problem 4
@@ -2376,7 +2529,8 @@ questions:
       id: mit-ocw-67960
       ref: mit6_7960_f24_hw2#q4b
       url: https://ocw.mit.edu/courses/6-7960-deep-learning-fall-2024/resources/mit6_7960_f24_hw2_pdf/
-    status: draft
+    status: reviewed
+    reviewed_by: claude
   - id: training-072
     type: short_answer
     difficulty: medium
@@ -2392,7 +2546,7 @@ questions:
       numeric: 0.5
       tolerance: 0.001
       hint: a number
-      model: All singular values of $M$ are 1, so $\lVert W \rVert_* = \sqrt{256/1024} = 0.5$
+      model: All singular values of $M$ are 1, so $\lVert W \rVert_2 = \sqrt{256/1024} = 0.5$
     explanation: |
       A semi-orthogonal matrix has all its singular values equal to 1, so $W$'s singular values are all
       $\sqrt{256/1024} = 0.5$ [^1]. The factor is chosen so that an input whose entries have RMS size 1,
@@ -2411,7 +2565,8 @@ questions:
       id: mit-ocw-67960
       ref: mit6_7960_f24_hw2#q9
       url: https://ocw.mit.edu/courses/6-7960-deep-learning-fall-2024/resources/mit6_7960_f24_hw2_pdf/
-    status: draft
+    status: reviewed
+    reviewed_by: claude
   - id: training-073
     type: single
     difficulty: easy
@@ -2447,7 +2602,8 @@ questions:
       id: mit-ocw-67960
       ref: mit6_7960_f24_hw2#q11
       url: https://ocw.mit.edu/courses/6-7960-deep-learning-fall-2024/resources/mit6_7960_f24_hw2_pdf/
-    status: draft
+    status: reviewed
+    reviewed_by: claude
   - id: training-074
     type: short_answer
     difficulty: medium
@@ -2483,7 +2639,8 @@ questions:
       id: dl-interviews
       ref: ch8#prb235
       url: https://arxiv.org/abs/2201.00650v2
-    status: draft
+    status: reviewed
+    reviewed_by: claude
   - id: training-075
     type: multiple
     difficulty: hard
@@ -2523,7 +2680,8 @@ questions:
       id: dl-interviews
       ref: ch8#prb244
       url: https://arxiv.org/abs/2201.00650v2
-    status: draft
+    status: reviewed
+    reviewed_by: claude
   - id: training-076
     type: single
     difficulty: medium
@@ -2563,7 +2721,8 @@ questions:
       id: dl-interviews
       ref: ch8#prb234
       url: https://arxiv.org/abs/2201.00650v2
-    status: draft
+    status: reviewed
+    reviewed_by: claude
   - id: training-077
     type: short_answer
     difficulty: easy
@@ -2590,11 +2749,13 @@ questions:
         url: https://arxiv.org/abs/2201.00650v2
       - title: 'Wikipedia: Single-precision floating-point format'
         url: https://en.wikipedia.org/wiki/Single-precision_floating-point_format
+        locator: Introduction (a float32 value occupies 32 bits, i.e. 4 bytes)
     source:
       id: dl-interviews
       ref: ch8#prb251
       url: https://arxiv.org/abs/2201.00650v2
-    status: draft
+    status: reviewed
+    reviewed_by: claude
   - id: training-078
     type: single
     difficulty: hard
@@ -2637,4 +2798,5 @@ questions:
       id: dl-interviews
       ref: ch8#prb222
       url: https://arxiv.org/abs/2201.00650v2
-    status: draft
+    status: reviewed
+    reviewed_by: claude

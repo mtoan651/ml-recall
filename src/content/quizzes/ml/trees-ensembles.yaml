@@ -6,12 +6,14 @@ questions:
   - id: trees-ensembles-001
     type: single
     difficulty: easy
-    question: 'Adaboost is known for:'
+    question: 'AdaBoost is known for:'
     options:
       - text: focusing on the weights of incorrectly classified items
         correct: true
       - text: focusing on detecting outliers in the data
+        why: AdaBoost has no outlier-detection step. It reweights misclassified examples, and outliers that keep being misclassified can even come to dominate the weights [^3].
       - text: focusing on removing incorrect data
+        why: AdaBoost keeps every training example and only changes the weights, so mislabelled points make it more sensitive to noise rather than being removed [^2][^3].
     explanation: |
       AdaBoost trains a sequence of weak learners on reweighted versions of the training data.
       After each round, the examples the current model misclassified get larger weights and the
@@ -34,15 +36,19 @@ questions:
       id: ms-ml-for-beginners
       ref: quiz-24/q3
       url: https://github.com/microsoft/ML-For-Beginners/blob/de2d4e12236445198213a0711855e348e7253cd4/quiz-app/src/assets/translations/en.json
-    status: draft
+    status: reviewed
+    reviewed_by: claude
   - id: trees-ensembles-002
     type: single
     difficulty: easy
     question: Which one of the following is the main reason for pruning a Decision Tree?
     options:
       - text: To save computing time during testing
+        why: A smaller tree is faster to evaluate, but that is a side benefit; trees are pruned so that they generalise better [^2].
       - text: To save space for storing the Decision Tree
+        why: Storage savings are a side effect; the reason to prune is overfitting [^1][^2].
       - text: To make the training set error smaller
+        why: Pruning removes branches that fit the training data, so it usually makes the training error larger [^2].
       - text: To avoid overfitting the training set
         correct: true
     explanation: |
@@ -63,7 +69,8 @@ questions:
       id: mmlu-redux
       ref: machine_learning/5
       url: https://huggingface.co/datasets/edinburgh-dawg/mmlu-redux-2.0/viewer/machine_learning/test?row=5
-    status: draft
+    status: reviewed
+    reviewed_by: claude
   - id: trees-ensembles-003
     type: single
     difficulty: medium
@@ -75,10 +82,13 @@ questions:
       **Statement 2.** Consider a continuous probability distribution with density $f$ that is nonzero everywhere. The probability of a value $x$ is equal to $f(x)$.
     options:
       - text: True, True
+        why: Neither holds. ID3 is a greedy heuristic with no optimality guarantee [^1], and for a continuous variable $P(X = x) = 0$, not $f(x)$ [^2].
       - text: False, False
         correct: true
       - text: True, False
+        why: Statement 1 is false. Learning an optimal tree is NP-complete, so ID3 picks splits greedily and can miss the best tree [^1].
       - text: False, True
+        why: Statement 2 is false. A density value is not a probability; a single point has probability 0, and $f(x)$ can even exceed 1 [^2].
     explanation: |
       Statement 1 is false. Learning an optimal decision tree is NP-complete, so ID3 grows its tree
       greedily: at each node it picks the attribute with the largest information gain. Greedy,
@@ -98,7 +108,8 @@ questions:
       id: mmlu-redux
       ref: machine_learning/39
       url: https://huggingface.co/datasets/edinburgh-dawg/mmlu-redux-2.0/viewer/machine_learning/test?row=39
-    status: draft
+    status: reviewed
+    reviewed_by: claude
   - id: trees-ensembles-004
     type: single
     difficulty: hard
@@ -112,8 +123,11 @@ questions:
       - text: True, True
         correct: true
       - text: False, False
+        why: Both are true. Every misclassified example is multiplied by the same factor $e^{\alpha_t}$, and later learners face reweighted problems on which their error tends toward $\tfrac12$ [^1][^2].
       - text: True, False
+        why: Statement 2 is also true. Reweighting makes later problems harder; right after each update the previous learner has weighted error exactly $\tfrac12$ [^1].
       - text: False, True
+        why: Statement 1 is also true. The update multiplies the weight of every misclassified example by the same $e^{\alpha_t}$ before normalising [^1][^2].
     explanation: |
       Statement 1 is true. AdaBoost updates $D_{t+1}(i) \propto D_t(i)\exp(-\alpha_t y_i h_t(x_i))$,
       so every misclassified example ($y_i h_t(x_i) = -1$) is multiplied by the same factor
@@ -135,7 +149,8 @@ questions:
       id: mmlu-redux
       ref: machine_learning/49
       url: https://huggingface.co/datasets/edinburgh-dawg/mmlu-redux-2.0/viewer/machine_learning/test?row=49
-    status: draft
+    status: reviewed
+    reviewed_by: claude
   - id: trees-ensembles-005
     type: single
     difficulty: easy
@@ -145,8 +160,11 @@ questions:
       - text: Your decision trees are too shallow.
         correct: true
       - text: You need to increase the learning rate.
+        why: A decision tree is grown by greedy splitting, not by gradient steps, so it has no learning rate [^2].
       - text: You are overfitting.
+        why: Overfitting gives good training performance and poor test performance; here the training performance is bad too [^1].
       - text: None of the above.
+        why: A tree that is too shallow underfits, which explains poor results on both sets [^1][^2].
     explanation: |
       Poor results on both the training and the test set point to underfitting: the model does not
       even fit the data it was trained on [^1]. For a decision tree, depth controls complexity. The
@@ -165,7 +183,8 @@ questions:
       id: mmlu-redux
       ref: machine_learning/59
       url: https://huggingface.co/datasets/edinburgh-dawg/mmlu-redux-2.0/viewer/machine_learning/test?row=59
-    status: draft
+    status: reviewed
+    reviewed_by: claude
   - id: trees-ensembles-006
     type: single
     difficulty: medium
@@ -174,8 +193,11 @@ questions:
       - text: Averaging models trained on bootstrap samples drawn with replacement
         correct: true
       - text: Using weak classifiers (e.g. decision stumps) as the base models
+        why: Weak learners are what boosting uses; bagging works best with strong, high-variance models such as fully grown trees [^1].
       - text: Restricting the ensemble to base algorithms that rarely overfit
+        why: Bagging helps precisely the base learners that overfit, because averaging cuts their variance [^1].
       - text: Validating every base classifier on held-out data and discarding bad ones
+        why: Bagging keeps every member; out-of-bag samples can estimate accuracy, but no member is discarded [^1].
     explanation: |
       Bagging fits many copies of a base estimator, each on a random subset of the training set, and
       aggregates their predictions. Drawing the subsets with replacement (bootstrap samples) is what
@@ -194,15 +216,19 @@ questions:
       id: mmlu-redux
       ref: machine_learning/71
       url: https://huggingface.co/datasets/edinburgh-dawg/mmlu-redux-2.0/viewer/machine_learning/test?row=71
-    status: draft
+    status: reviewed
+    reviewed_by: claude
   - id: trees-ensembles-007
     type: single
     difficulty: easy
-    question: Averaging the output of multiple decision trees helps _.
+    question: 'Averaging the outputs of many decision trees mainly helps to:'
     options:
       - text: Increase bias
+        why: Raising bias is never the goal; a random forest at most accepts a slight increase in bias as the price of a large drop in variance [^1].
       - text: Decrease bias
+        why: An average of trees has about the same bias as one tree; what averaging removes is the part of the error that varies between trees [^1].
       - text: Increase variance
+        why: Averaging trees whose errors partly cancel lowers the variance; it does not raise it [^1].
       - text: Decrease variance
         correct: true
     explanation: |
@@ -220,7 +246,8 @@ questions:
       id: mmlu-redux
       ref: machine_learning/77
       url: https://huggingface.co/datasets/edinburgh-dawg/mmlu-redux-2.0/viewer/machine_learning/test?row=77
-    status: draft
+    status: reviewed
+    reviewed_by: claude
   - id: trees-ensembles-008
     type: single
     difficulty: medium
@@ -232,8 +259,11 @@ questions:
       **Statement 2.** The coefficients $\alpha$ assigned to the classifiers assembled by AdaBoost are always non-negative.
     options:
       - text: True, True
+        why: Statement 1 is false. The Gauss–Markov theorem makes least squares best only among *linear* unbiased estimators [^1].
       - text: False, False
+        why: Statement 2 is true. With weighted error $\epsilon_t < \tfrac12$, $\alpha_t = \tfrac12 \ln\frac{1-\epsilon_t}{\epsilon_t} > 0$ [^2].
       - text: True, False
+        why: Both verdicts are reversed. Least squares is best only among linear unbiased estimators [^1], and AdaBoost's $\alpha_t$ are positive whenever $\epsilon_t < \tfrac12$ [^2].
       - text: False, True
         correct: true
     explanation: |
@@ -254,7 +284,8 @@ questions:
       id: mmlu-redux
       ref: machine_learning/78
       url: https://huggingface.co/datasets/edinburgh-dawg/mmlu-redux-2.0/viewer/machine_learning/test?row=78
-    status: draft
+    status: reviewed
+    reviewed_by: claude
   - id: trees-ensembles-009
     type: single
     difficulty: medium
@@ -266,8 +297,11 @@ questions:
       **Statement 2.** Cross validation can be used to select the number of iterations in boosting; this procedure may help reduce overfitting.
     options:
       - text: True, True
+        why: Statement 1 is false. A weighted vote of linear classifiers is generally not linear, so boosting enlarges the model class [^1].
       - text: False, False
+        why: Statement 2 is true. The number of rounds is a tuning parameter, and choosing it by cross-validation works like early stopping [^2].
       - text: True, False
+        why: Both verdicts are reversed. Boosting changes the form of the boundary [^1], and cross-validating the number of rounds does help against overfitting [^2].
       - text: False, True
         correct: true
     explanation: |
@@ -290,17 +324,21 @@ questions:
       id: mmlu-redux
       ref: machine_learning/85
       url: https://huggingface.co/datasets/edinburgh-dawg/mmlu-redux-2.0/viewer/machine_learning/test?row=85
-    status: draft
+    status: reviewed
+    reviewed_by: claude
   - id: trees-ensembles-010
     type: single
     difficulty: easy
     question: High entropy means that the partitions in classification are
     options:
       - text: pure
+        why: A pure partition, with all samples of one class, has entropy 0, the lowest possible value [^1].
       - text: not pure
         correct: true
       - text: useful
+        why: Entropy measures how mixed a node is, not how useful a split is; a split is useful when it lowers entropy [^1].
       - text: useless
+        why: Entropy describes the class mix of a node, not the value of a split; high-entropy nodes are the ones worth splitting further [^1].
     explanation: |
       Entropy measures how mixed the classes in a node are: $H = -\sum_k p_k \log p_k$, where $p_k$
       is the share of class $k$ in the node [^1]. It is 0 when every sample belongs to one class (a
@@ -315,7 +353,8 @@ questions:
       id: mmlu-redux
       ref: machine_learning/87
       url: https://huggingface.co/datasets/edinburgh-dawg/mmlu-redux-2.0/viewer/machine_learning/test?row=87
-    status: draft
+    status: reviewed
+    reviewed_by: claude
   - id: trees-ensembles-011
     type: single
     difficulty: easy
@@ -345,46 +384,58 @@ questions:
       id: google-ml-courses
       ref: decision-forests/decision-trees-mce#q1
       url: https://developers.google.com/machine-learning/decision-forests/decision-trees-mce
-    status: draft
+    status: reviewed
+    reviewed_by: claude
   - id: trees-ensembles-012
     type: single
+    difficulty: easy
     question: In a decision tree, do all conditions involve only a single feature?
     options:
       - text: Yes.
         why: Oblique conditions test multiple features.
       - text: No.
         correct: true
-    explanation: Although axis-aligned conditions only involve a single feature, oblique conditions involve multiple features. [^1]
+    explanation: |
+      No. An axis-aligned condition involves a single feature, such as `num_legs ≥ 2`, while an
+      oblique condition involves several, such as `num_legs ≥ num_fingers` [^1][^2]. Trees are often
+      trained with axis-aligned conditions only, but oblique conditions are allowed: they are more
+      powerful and can express more complex patterns, at a higher training and inference cost [^2].
     references:
       - source: google-ml-courses
-        locator: 'Decision trees: Check your understanding'
+        locator: 'Decision trees: Check your understanding, Question 2'
         url: https://developers.google.com/machine-learning/decision-forests/decision-trees-mce
+      - source: google-ml-courses
+        locator: 'Decision Forests: Types of conditions, Axis-aligned vs. oblique conditions'
+        url: https://developers.google.com/machine-learning/decision-forests/conditions
     source:
       id: google-ml-courses
       ref: decision-forests/decision-trees-mce#q2
       url: https://developers.google.com/machine-learning/decision-forests/decision-trees-mce
-    status: draft
+    status: reviewed
+    reviewed_by: claude
   - id: trees-ensembles-013
     type: multiple
     difficulty: medium
     question: What are the two potential effects of increasing the minimum number of examples per leaf in a decision tree?
     options:
       - text: The size of the decision tree increases.
+        why: Raising the minimum only stops splits earlier, so the tree can only shrink or keep its size [^1].
       - text: The size of the decision tree decreases.
         correct: true
       - text: The structure of the decision tree can completely change.
+        why: Nodes near the root keep their conditions; only small, deep subtrees turn into leaves. A complete change is what new training examples can cause [^1][^2].
       - text: The structure of the decision tree remains mostly unchanged.
         correct: true
     explanation: |
-      In the course, the minimum number of examples is a stopping rule: a node with fewer examples
-      than the limit is not split any further [^1]. Greedy growth chooses each node's condition
-      using only that node's examples [^2], so raising the limit keeps the conditions near the root
-      as they were and turns some deep, small subtrees into leaves. The tree gets smaller (or keeps
-      its size), and its overall structure stays mostly the same [^1][^2]. It cannot get bigger,
-      because the change only removes splits. A completely different structure is what can happen
-      when a few *training examples* change, not when this limit rises [^1]. scikit-learn's
-      `min_samples_leaf` works slightly differently: it rejects any split that would leave a child
-      below the limit, so it can sometimes change a split higher up [^3].
+      In Google's Decision Forests course, the minimum number of examples is a stopping rule: a node
+      with fewer examples than the limit is not split any further [^1]. Greedy growth chooses each
+      node's condition using only that node's examples [^2], so raising the limit keeps the
+      conditions near the root as they were and turns some deep, small subtrees into leaves. The tree
+      gets smaller (or keeps its size), and its overall structure stays mostly the same [^1][^2]. It
+      cannot get bigger, because the change only removes splits. A completely different structure is
+      what can happen when a few *training examples* change, not when this limit rises [^1].
+      scikit-learn's `min_samples_leaf` works slightly differently: it rejects any split that would
+      leave a child below the limit, so it can sometimes change a split higher up [^3].
     references:
       - source: google-ml-courses
         url: https://developers.google.com/machine-learning/decision-forests/overfitting-and-pruning#overfitting_and_pruning
@@ -399,21 +450,25 @@ questions:
       id: google-ml-courses
       ref: decision-forests/overfitting-mce#q1
       url: https://developers.google.com/machine-learning/decision-forests/overfitting-mce
-    status: draft
+    status: reviewed
+    reviewed_by: claude
   - id: trees-ensembles-014
     type: multiple
     difficulty: medium
     question: What operations can reduce overfitting in a decision tree known to be overfitted (for example, by evaluating it on a test dataset)?
     options:
       - text: Increase the maximum depth.
+        why: A deeper tree can carve out smaller, noisier regions, which makes overfitting worse [^1][^3].
       - text: Decrease the maximum depth.
         correct: true
       - text: Increase the minimum number of observations in the leaves.
         correct: true
       - text: Decrease the minimum number of observations in the leaves.
+        why: Smaller leaves let the tree fit tiny groups of examples, which mostly reflect noise [^1][^3].
       - text: Increase the minimum gain of a new node.
         correct: true
       - text: Decrease the minimum gain of a new node.
+        why: A lower threshold accepts weaker splits, so the tree grows further and fits more noise [^2].
     explanation: |
       Each correct option makes the tree stop growing earlier, which is how a single decision tree
       is regularised [^1]. A lower maximum depth limits how many conditions the tree can stack
@@ -437,7 +492,8 @@ questions:
       id: google-ml-courses
       ref: decision-forests/overfitting-mce#q2
       url: https://developers.google.com/machine-learning/decision-forests/overfitting-mce
-    status: draft
+    status: reviewed
+    reviewed_by: claude
   - id: trees-ensembles-015
     type: multiple
     difficulty: hard
@@ -450,17 +506,18 @@ questions:
       - text: The number of sampled attributes at each node.
         correct: true
       - text: The bagging sample size.
+        why: Each tree is normally trained on a bootstrap sample as large as the training set; Google's course reports that more or fewer examples per tree tends to degrade the forest [^1].
     explanation: |
       Maximum depth is worth tuning: pure random forests grow unlimited trees, but in practice
-      capping depth (and leaf size) helps, and the course suggests tuning it [^1]. The number of
-      features sampled at each node is an important regularisation knob; fewer candidates make the
-      trees more independent and cut variance, at the cost of more bias [^1][^2]. The number of
-      trees is the trap: adding trees almost never makes a random forest worse, because its test
-      error levels off at a limit instead of rising [^1][^3], so you set it as high as compute
-      allows instead of searching for an optimum (scikit-learn's advice is simply "the larger the
-      better" [^2]). The bagging sample size is normally kept equal to the training-set size,
-      because the course reports that training each tree on more or fewer examples tends to
-      hurt [^1].
+      capping depth (and leaf size) helps, and Google's Decision Forests course lists it among the
+      hyperparameters to tune [^1]. The number of features sampled at each node is an important
+      regularisation knob; fewer candidates make the trees more independent and cut variance, at the
+      cost of more bias [^1][^2]. The number of trees is the trap: adding trees almost never makes a
+      random forest worse, because its test error levels off at a limit instead of rising [^1][^3],
+      so you set it as high as compute allows instead of searching for an optimum (scikit-learn's
+      advice is simply "the larger the better" [^2]). The bagging sample size is normally kept equal
+      to the training-set size, because training each tree on more or fewer examples tends to
+      degrade the forest [^1].
     references:
       - source: google-ml-courses
         url: https://developers.google.com/machine-learning/decision-forests/random-forests#disabling_decision_tree_regularization
@@ -477,7 +534,8 @@ questions:
       id: google-ml-courses
       ref: decision-forests/random-forests-mce#q1
       url: https://developers.google.com/machine-learning/decision-forests/random-forests-mce
-    status: draft
+    status: reviewed
+    reviewed_by: claude
   - id: trees-ensembles-016
     type: single
     difficulty: hard
@@ -515,16 +573,19 @@ questions:
       id: google-ml-courses
       ref: decision-forests/training-mce#q1
       url: https://developers.google.com/machine-learning/decision-forests/training-mce
-    status: draft
+    status: reviewed
+    reviewed_by: claude
   - id: trees-ensembles-017
     type: multiple
     difficulty: hard
     question: When the exact splitter grows a decision tree on a numerical feature, it scores every candidate threshold in a set $X$ and keeps the best one. What two answers best describe the effect of testing only half (randomly selected) of the candidate threshold values in $X$?
     options:
       - text: The information gain would be higher or equal.
+        why: A maximum over a subset of the candidates can never exceed the maximum over all of them [^1].
       - text: The information gain would be lower or equal.
         correct: true
       - text: The final decision tree would have worse testing accuracy.
+        why: Not necessarily. Random thresholds act as a regulariser, and extremely randomized trees often generalise as well or better [^3].
       - text: The final decision tree would have no better training accuracy.
         correct: true
     explanation: |
@@ -552,15 +613,17 @@ questions:
       id: google-ml-courses
       ref: decision-forests/training-mce#q2
       url: https://developers.google.com/machine-learning/decision-forests/training-mce
-    status: draft
+    status: reviewed
+    reviewed_by: claude
   - id: trees-ensembles-018
     type: single
     difficulty: medium
     question: What would happen if the "information gain" versus "threshold" curve had multiple local maxima?
     options:
       - text: It is impossible to have multiple local maxima.
-        why: Multiple local maxima are possible.
+        why: Information gain need not be unimodal in the threshold; several local maxima are possible [^1].
       - text: The algorithm would select the local maximum with the smallest threshold value.
+        why: The splitter scores every candidate and keeps the best score; nothing favours smaller thresholds [^2].
       - text: The algorithm would select the global maximum.
         correct: true
     explanation: |
@@ -587,15 +650,18 @@ questions:
       id: google-ml-courses
       ref: decision-forests/training-mce#q3
       url: https://developers.google.com/machine-learning/decision-forests/training-mce
-    status: draft
+    status: reviewed
+    reviewed_by: claude
   - id: trees-ensembles-019
     type: single
     difficulty: medium
     question: Suppose the "sum of the split score" variable importance of feature f1 is greater than the "number of nodes" variable importance of feature f2. In this case, which of the following statements is correct?
     options:
-      - text: f1 is more important than f2.
-      - text: f1 is less important than f2.
-      - text: f1 is neither more important nor less important than f2.
+      - text: f1 is more important than f2, because its importance value is larger.
+        why: The two values are on different scales, a sum of split scores versus a count of nodes, so comparing them says nothing [^1].
+      - text: f1 is less important than f2, because summed split scores are inflated.
+        why: Neither measure is inflated relative to the other; they measure different things and simply cannot be compared [^1].
+      - text: 'Neither: the two importance values cannot be compared.'
         correct: true
     explanation: |
       The two importances measure different things on different scales [^1]. "Sum of the split
@@ -617,9 +683,11 @@ questions:
       id: google-ml-courses
       ref: decision-forests/variable-importances-mce#q1
       url: https://developers.google.com/machine-learning/decision-forests/variable-importances-mce
-    status: draft
+    status: reviewed
+    reviewed_by: claude
   - id: trees-ensembles-020
     type: single
+    difficulty: easy
     question: Which of the following decision trees matches the prediction map shown below?
     figure:
       src: ./trees-ensembles/trees-ensembles-020.svg
@@ -649,7 +717,8 @@ questions:
       id: google-ml-courses
       ref: decision-forests/decision-trees-mce#q3
       url: https://developers.google.com/machine-learning/decision-forests/decision-trees-mce
-    status: draft
+    status: reviewed
+    reviewed_by: claude
   - id: trees-ensembles-021
     type: single
     difficulty: easy
@@ -658,7 +727,9 @@ questions:
       - text: ensemble
         correct: true
       - text: linear
+        why: A random forest combines many decision trees, whose axis-aligned splits give non-linear boundaries; it is not one linear separator [^1].
       - text: instance-based (nearest-neighbor)
+        why: A forest learns trees during training and predicts from them; it does not store the training set and vote among neighbours like k-NN [^3].
     explanation: |
       A random forest trains many decision trees, each on a bootstrap sample of the training set and
       with a random subset of features considered at the splits, and averages their predictions;
@@ -680,7 +751,8 @@ questions:
       id: ms-ml-for-beginners
       ref: quiz-24/q2
       url: https://github.com/microsoft/ML-For-Beginners/blob/de2d4e12236445198213a0711855e348e7253cd4/quiz-app/src/assets/translations/en.json
-    status: draft
+    status: reviewed
+    reviewed_by: claude
   - id: trees-ensembles-022
     type: single
     difficulty: easy
@@ -700,7 +772,7 @@ questions:
       - text: Make the model easier to interpret
         correct: true
       - text: Increase the complexity of the model
-        why: Depth is the course's standard example of a hyperparameter that controls complexity [^1].
+        why: '`max_depth` directly controls the complexity of a tree: a deeper tree asks more questions [^1].'
     explanation: |
       `max_depth` controls the complexity of a decision tree: a deeper tree asks more questions,
       so it fits the training data better and, with no limit, keeps splitting until every leaf is
@@ -719,7 +791,8 @@ questions:
       id: ubc-cpsc330
       ref: lectures/tutorials/solutions/midterm_prep.pdf#q5
       url: https://github.com/UBC-CS/cpsc330-2025W1/blob/a89d6131a0e2ae5f7ab36f207a3809a5b7137aef/lectures/tutorials/solutions/midterm_prep.pdf
-    status: draft
+    status: reviewed
+    reviewed_by: claude
   - id: trees-ensembles-023
     type: single
     difficulty: easy
@@ -754,7 +827,8 @@ questions:
       id: ubc-cpsc330
       ref: lectures/tutorials/solutions/final_prep.pdf#q9
       url: https://github.com/UBC-CS/cpsc330-2025W1/blob/a89d6131a0e2ae5f7ab36f207a3809a5b7137aef/lectures/tutorials/solutions/final_prep.pdf
-    status: draft
+    status: reviewed
+    reviewed_by: claude
   - id: trees-ensembles-024
     type: single
     difficulty: hard
@@ -780,7 +854,7 @@ questions:
       Permutation importance shuffles one feature at a time and measures how much the model's score
       drops [^2]. If that feature has strongly correlated partners, the model still gets the same
       information through them, so the drop is small for *each* feature, and all of them can look
-      unimportant even when the information they share is crucial [^1]. The course gives the
+      unimportant even when the information they share is crucial [^1]. UBC's CPSC 330 gives the
       matching advice: check for correlated features and be mindful of them, or remove redundant
       ones, before reading feature importances [^2]; scikit-learn suggests clustering correlated
       features and keeping one per cluster [^1].
@@ -796,7 +870,8 @@ questions:
       id: ubc-cpsc330
       ref: lectures/tutorials/solutions/final_prep.pdf#q11
       url: https://github.com/UBC-CS/cpsc330-2025W1/blob/a89d6131a0e2ae5f7ab36f207a3809a5b7137aef/lectures/tutorials/solutions/final_prep.pdf
-    status: draft
+    status: reviewed
+    reviewed_by: claude
   - id: trees-ensembles-025
     type: single
     difficulty: medium
@@ -843,7 +918,8 @@ questions:
       id: ubc-cpsc330
       ref: lectures/tutorials/solutions/final_prep.pdf#q12
       url: https://github.com/UBC-CS/cpsc330-2025W1/blob/a89d6131a0e2ae5f7ab36f207a3809a5b7137aef/lectures/tutorials/solutions/final_prep.pdf
-    status: draft
+    status: reviewed
+    reviewed_by: claude
   - id: trees-ensembles-026
     type: multiple
     difficulty: easy
@@ -882,7 +958,8 @@ questions:
       id: ubc-cpsc330
       ref: lectures/notes/02_terminology-decision-trees.ipynb#ex2.5
       url: https://github.com/UBC-CS/cpsc330-2025W1/blob/a89d6131a0e2ae5f7ab36f207a3809a5b7137aef/lectures/notes/02_terminology-decision-trees.ipynb
-    status: draft
+    status: reviewed
+    reviewed_by: claude
   - id: trees-ensembles-027
     type: single
     difficulty: medium
@@ -896,7 +973,7 @@ questions:
       - text: Each tree first draws a random subset of features and then uses only those features for all of its splits
         why: The feature subset is drawn anew at *each node*, not once per tree [^1].
       - text: The number of trees should be tuned like other hyperparameters to get better validation scores
-        why: More trees is generally better; the course chooses fewer trees only to save time, not to improve the score [^2].
+        why: More trees is generally better; UBC CPSC 330 notes that fewer trees are chosen only to save time, not to improve the score [^2].
       - text: Random forests build their trees one after another, each depending on the previous tree
         why: That describes gradient boosting; the trees of a random forest are independent, so they can be trained in parallel [^3].
       - text: Every tree in a random forest is trained on a different bootstrap sample of the training set
@@ -927,7 +1004,8 @@ questions:
       id: ubc-cpsc330
       ref: lectures/notes/11_ensembles.ipynb#ex11.1
       url: https://github.com/UBC-CS/cpsc330-2025W1/blob/a89d6131a0e2ae5f7ab36f207a3809a5b7137aef/lectures/notes/11_ensembles.ipynb
-    status: draft
+    status: reviewed
+    reviewed_by: claude
   - id: trees-ensembles-028
     type: single
     difficulty: medium
@@ -961,7 +1039,8 @@ questions:
       id: dsgiitr-ml-interviewqs
       ref: questions/ml.yml#q3
       url: https://github.com/dsgiitr/ML-InterviewQs/blob/8c6d228b051af7ceb429e6322befda068964e6b5/questions/ml.yml
-    status: draft
+    status: reviewed
+    reviewed_by: claude
   - id: trees-ensembles-029
     type: short_answer
     difficulty: easy
@@ -987,10 +1066,10 @@ questions:
       hint: a probability, 3 decimals
       model: $76 / (76 + 3) = 76/79 \approx 0.962$
     explanation: |
-      The course asks how a decision tree could quantify the certainty of its prediction at a leaf
+      UBC DSCI 571 asks how a decision tree could quantify the certainty of its prediction at a leaf
       [^1]. A natural answer, and what scikit-learn's `predict_proba` does, is the class fractions
-      of the training examples in that leaf [^2]: 76 ham and 3 spam give $P(\text{ham}) = 76/79
-      \approx 0.962$. A leaf such as [108, 262] would predict spam with a much lower certainty of
+      of the training examples in that leaf [^2]: 76 ham and 3 spam give $P(\text{ham}) = 76/79 \approx 0.962$.
+      A leaf such as [108, 262] would predict spam with a much lower certainty of
       about 0.71.
     references:
       - source: ubc-dsci571
@@ -1003,7 +1082,8 @@ questions:
       id: ubc-dsci571
       ref: lectures/notes/07_naive-Bayes.ipynb#ex7.1.1
       url: https://github.com/UBC-MDS/DSCI_571_sup-learn-1/blob/70be2d76ec40e11fe7ddcff2a8c9e602a2698129/lectures/notes/07_naive-Bayes.ipynb
-    status: draft
+    status: reviewed
+    reviewed_by: claude
   - id: trees-ensembles-030
     type: short_answer
     difficulty: medium
@@ -1036,7 +1116,8 @@ questions:
       id: ds-interviews
       ref: theory.md#q61
       url: https://github.com/alexeygrigorev/data-science-interviews/blob/919f44547ef5ffc2bd59674fd301940529f4c1a8/theory.md#decision-trees
-    status: draft
+    status: reviewed
+    reviewed_by: claude
   - id: trees-ensembles-031
     type: single
     difficulty: hard
@@ -1074,7 +1155,8 @@ questions:
       id: ds-interviews
       ref: theory.md#q73
       url: https://github.com/alexeygrigorev/data-science-interviews/blob/919f44547ef5ffc2bd59674fd301940529f4c1a8/theory.md#random-forest
-    status: draft
+    status: reviewed
+    reviewed_by: claude
   - id: trees-ensembles-032
     type: short_answer
     difficulty: medium
@@ -1108,7 +1190,8 @@ questions:
       id: ds-interviews
       ref: theory.md#q75
       url: https://github.com/alexeygrigorev/data-science-interviews/blob/919f44547ef5ffc2bd59674fd301940529f4c1a8/theory.md#gradient-boosting
-    status: draft
+    status: reviewed
+    reviewed_by: claude
   - id: trees-ensembles-033
     type: single
     difficulty: medium
@@ -1144,7 +1227,8 @@ questions:
       id: ds-interviews
       ref: theory.md#q77
       url: https://github.com/alexeygrigorev/data-science-interviews/blob/919f44547ef5ffc2bd59674fd301940529f4c1a8/theory.md#gradient-boosting
-    status: draft
+    status: reviewed
+    reviewed_by: claude
   - id: trees-ensembles-034
     type: single
     difficulty: hard
@@ -1182,7 +1266,8 @@ questions:
       id: ds-interviews
       ref: theory.md#q79
       url: https://github.com/alexeygrigorev/data-science-interviews/blob/919f44547ef5ffc2bd59674fd301940529f4c1a8/theory.md#gradient-boosting
-    status: draft
+    status: reviewed
+    reviewed_by: claude
   - id: trees-ensembles-035
     type: single
     difficulty: medium
@@ -1219,7 +1304,8 @@ questions:
       id: ds-interviews
       ref: theory.md#q80
       url: https://github.com/alexeygrigorev/data-science-interviews/blob/919f44547ef5ffc2bd59674fd301940529f4c1a8/theory.md#gradient-boosting
-    status: draft
+    status: reviewed
+    reviewed_by: claude
   - id: trees-ensembles-036
     type: single
     difficulty: medium
@@ -1256,7 +1342,8 @@ questions:
       id: ds-interviews
       ref: theory.md#q82
       url: https://github.com/alexeygrigorev/data-science-interviews/blob/919f44547ef5ffc2bd59674fd301940529f4c1a8/theory.md#gradient-boosting
-    status: draft
+    status: reviewed
+    reviewed_by: claude
   - id: trees-ensembles-037
     type: short_answer
     difficulty: medium
@@ -1291,7 +1378,8 @@ questions:
       id: mit-ocw-6034-s05
       ref: q2_soln#q1.3
       url: https://ocw.mit.edu/courses/6-034-artificial-intelligence-spring-2005/resources/q2_soln/
-    status: draft
+    status: reviewed
+    reviewed_by: claude
   - id: trees-ensembles-038
     type: single
     difficulty: medium
@@ -1328,7 +1416,8 @@ questions:
       id: mit-ocw-6034-s05
       ref: quiz2_review_sol#q4.2
       url: https://ocw.mit.edu/courses/6-034-artificial-intelligence-spring-2005/resources/quiz2_review_sol/
-    status: draft
+    status: reviewed
+    reviewed_by: claude
   - id: trees-ensembles-039
     type: multiple
     difficulty: medium
@@ -1368,7 +1457,8 @@ questions:
       id: mit-ocw-6034-s05
       ref: quiz2_review_sol#q6-pruning
       url: https://ocw.mit.edu/courses/6-034-artificial-intelligence-spring-2005/resources/quiz2_review_sol/
-    status: draft
+    status: reviewed
+    reviewed_by: claude
   - id: trees-ensembles-040
     type: single
     difficulty: medium
@@ -1413,7 +1503,8 @@ questions:
       id: mit-ocw-6034
       ref: mit6_034f10_quiz4_2009#q2c
       url: https://ocw.mit.edu/courses/6-034-artificial-intelligence-fall-2010/resources/mit6_034f10_quiz4_2009/
-    status: draft
+    status: reviewed
+    reviewed_by: claude
   - id: trees-ensembles-041
     type: short_answer
     difficulty: hard
@@ -1448,7 +1539,8 @@ questions:
       id: mit-ocw-6034
       ref: mit6_034f10_quiz4_2009#q2d
       url: https://ocw.mit.edu/courses/6-034-artificial-intelligence-fall-2010/resources/mit6_034f10_quiz4_2009/
-    status: draft
+    status: reviewed
+    reviewed_by: claude
   - id: trees-ensembles-042
     type: single
     difficulty: hard
@@ -1495,7 +1587,8 @@ questions:
       id: mit-ocw-6034
       ref: mit6_034f10_quiz4_2010#q2c
       url: https://ocw.mit.edu/courses/6-034-artificial-intelligence-fall-2010/resources/mit6_034f10_quiz4_2010/
-    status: draft
+    status: reviewed
+    reviewed_by: claude
   - id: trees-ensembles-043
     type: short_answer
     difficulty: hard
@@ -1530,7 +1623,8 @@ questions:
       id: mit-ocw-6034
       ref: mit6_034f10_quiz4_2010#q2b1
       url: https://ocw.mit.edu/courses/6-034-artificial-intelligence-fall-2010/resources/mit6_034f10_quiz4_2010/
-    status: draft
+    status: reviewed
+    reviewed_by: claude
   - id: trees-ensembles-044
     type: single
     difficulty: easy
@@ -1566,7 +1660,8 @@ questions:
       id: mit-ocw-6034-s05
       ref: q2_soln#q6.2
       url: https://ocw.mit.edu/courses/6-034-artificial-intelligence-spring-2005/resources/q2_soln/
-    status: draft
+    status: reviewed
+    reviewed_by: claude
   - id: trees-ensembles-045
     type: single
     difficulty: easy
@@ -1591,7 +1686,7 @@ questions:
       Gradient boosting builds its ensemble one model at a time, and `n_estimators` is the number of
       cycles [^1]. Too low a value causes underfitting: one tree whose predictions are multiplied by the
       learning rate of 0.1 barely moves away from the naive initial prediction [^1]. The other changes
-      are the usual ways to improve or speed up XGBoost, which the exercise asks you to contrast with a
+      are the usual ways to improve or speed up XGBoost; the Kaggle exercise contrasts them with a
       deliberately broken model [^2].
     references:
       - source: kaggle-learn
@@ -1604,7 +1699,8 @@ questions:
       id: kaggle-learn
       ref: ml_intermediate/ex6#q3
       url: https://github.com/Kaggle/learntools/blob/e9ba66dc899d3e17b80d3a1b9a5d29f430d310cb/notebooks/ml_intermediate/raw/ex6.ipynb
-    status: draft
+    status: reviewed
+    reviewed_by: claude
   - id: trees-ensembles-046
     type: short_answer
     difficulty: easy
@@ -1622,8 +1718,8 @@ questions:
       model: $\epsilon_1 = 1/8$, so $\alpha_1 = \tfrac12\ln 7 \approx 0.973$
     explanation: |
       The weighted error is the total weight of the misclassified points, $\epsilon_1 = 1/8$ [^1].
-      Then $\alpha_1 = \frac{1}{2}\ln\frac{7/8}{1/8} = \frac{1}{2}\ln 7 \approx 0.973$ [^2]. (The exam
-      writes the vote with $\log_2$, giving $\frac{1}{2}\log_2 7$; the base only rescales all votes and
+      Then $\alpha_1 = \frac{1}{2}\ln\frac{7/8}{1/8} = \frac{1}{2}\ln 7 \approx 0.973$ [^2]. (The MIT 6.867
+      exam writes the vote with $\log_2$, giving $\frac{1}{2}\log_2 7$; the base only rescales all votes and
       does not change the classifier.) A stump with error below $1/2$ always gets a positive vote [^1].
     references:
       - source: mit-ocw-6867
@@ -1636,7 +1732,8 @@ questions:
       id: mit-ocw-6867
       ref: midterm_f02soln#q5.1
       url: https://ocw.mit.edu/courses/6-867-machine-learning-fall-2006/resources/midterm_f02soln/
-    status: draft
+    status: reviewed
+    reviewed_by: claude
   - id: trees-ensembles-047
     type: short_answer
     difficulty: medium
@@ -1670,7 +1767,8 @@ questions:
       id: mit-ocw-6867
       ref: midterm_f01soln#q4.1
       url: https://ocw.mit.edu/courses/6-867-machine-learning-fall-2006/resources/midterm_f01soln/
-    status: draft
+    status: reviewed
+    reviewed_by: claude
   - id: trees-ensembles-048
     type: single
     difficulty: medium
@@ -1709,7 +1807,8 @@ questions:
       id: mit-ocw-6867
       ref: final_f03soln#q3.3
       url: https://ocw.mit.edu/courses/6-867-machine-learning-fall-2006/resources/final_f03soln/
-    status: draft
+    status: reviewed
+    reviewed_by: claude
   - id: trees-ensembles-049
     type: multiple
     difficulty: medium
@@ -1747,7 +1846,8 @@ questions:
       id: mit-ocw-6867
       ref: midterm_f02soln#q5.4
       url: https://ocw.mit.edu/courses/6-867-machine-learning-fall-2006/resources/midterm_f02soln/
-    status: draft
+    status: reviewed
+    reviewed_by: claude
   - id: trees-ensembles-050
     type: short_answer
     difficulty: hard
@@ -1783,7 +1883,8 @@ questions:
       id: mit-ocw-6867
       ref: hw4_soln#q3a
       url: https://ocw.mit.edu/courses/6-867-machine-learning-fall-2006/resources/hw4_soln/
-    status: draft
+    status: reviewed
+    reviewed_by: claude
   - id: trees-ensembles-051
     type: single
     difficulty: medium
@@ -1821,7 +1922,8 @@ questions:
       id: mit-ocw-6867
       ref: hw4_soln#q3b
       url: https://ocw.mit.edu/courses/6-867-machine-learning-fall-2006/resources/hw4_soln/
-    status: draft
+    status: reviewed
+    reviewed_by: claude
   - id: trees-ensembles-052
     type: single
     difficulty: medium
@@ -1859,7 +1961,8 @@ questions:
       id: mit-ocw-6867
       ref: final_f03soln#q3.4
       url: https://ocw.mit.edu/courses/6-867-machine-learning-fall-2006/resources/final_f03soln/
-    status: draft
+    status: reviewed
+    reviewed_by: claude
   - id: trees-ensembles-053
     type: single
     difficulty: easy
@@ -1898,7 +2001,8 @@ questions:
       id: dl-interviews
       ref: ch6#prb139
       url: https://arxiv.org/abs/2201.00650v2
-    status: draft
+    status: reviewed
+    reviewed_by: claude
   - id: trees-ensembles-054
     type: single
     difficulty: medium
@@ -1920,7 +2024,7 @@ questions:
       - text: Soft voting chooses B, hard voting chooses A
         why: This is the other way round; only one model votes for A, but its confidence lifts the average above 0.5.
     explanation: |
-      Averaging the class probabilities of several models, as the book's ensemble code does, is soft
+      Averaging the class probabilities of several models, as the ensemble code in *Deep Learning Interviews* does, is soft
       voting [^1]: here the mean probability of A is about 0.57, so the ensemble predicts A [^2]. Hard voting
       counts only the labels, two votes for B against one for A, and ignores that the single A vote is far
       more confident than the two B votes. Soft voting is recommended for well-calibrated models [^2].
@@ -1935,7 +2039,8 @@ questions:
       id: dl-interviews
       ref: ch6#prb141
       url: https://arxiv.org/abs/2201.00650v2
-    status: draft
+    status: reviewed
+    reviewed_by: claude
   - id: trees-ensembles-055
     type: short_answer
     difficulty: medium
@@ -1968,7 +2073,8 @@ questions:
       id: dl-interviews
       ref: ch6#prb142
       url: https://arxiv.org/abs/2201.00650v2
-    status: draft
+    status: reviewed
+    reviewed_by: claude
   - id: trees-ensembles-056
     type: short_answer
     difficulty: medium
@@ -1997,11 +2103,13 @@ questions:
         url: https://arxiv.org/abs/2201.00650v2
       - title: Krogh & Vedelsby (1995), Neural Network Ensembles, Cross Validation, and Active Learning (NIPS 7)
         locator: Sec. 2 (ambiguity decomposition)
+        url: https://proceedings.neurips.cc/paper/1994/hash/b8c37e33defde51cf91e1e03e51657da-Abstract.html
     source:
       id: dl-interviews
       ref: ch6#prb143
       url: https://arxiv.org/abs/2201.00650v2
-    status: draft
+    status: reviewed
+    reviewed_by: claude
   - id: trees-ensembles-057
     type: true_false
     difficulty: medium
@@ -2013,7 +2121,7 @@ questions:
       always at least as accurate as its best member.
     options:
       - text: 'True'
-        why: Averaging can only guarantee to beat the *average* member under a convex loss; weak, correlated members can outvote the best one.
+        why: Averaging only guarantees doing no worse than the *average* member under a convex loss [^2][^3]; weak, correlated members can outvote the best one.
       - text: 'False'
         correct: true
     explanation: |
@@ -2032,11 +2140,13 @@ questions:
         locator: Statements, Finite form
       - title: Krogh & Vedelsby (1995), Neural Network Ensembles, Cross Validation, and Active Learning (NIPS 7)
         locator: Sec. 2 (ambiguity decomposition)
+        url: https://proceedings.neurips.cc/paper/1994/hash/b8c37e33defde51cf91e1e03e51657da-Abstract.html
     source:
       id: dl-interviews
       ref: ch6#prb147
       url: https://arxiv.org/abs/2201.00650v2
-    status: draft
+    status: reviewed
+    reviewed_by: claude
   - id: trees-ensembles-058
     type: multiple
     difficulty: medium
@@ -2082,7 +2192,8 @@ questions:
       id: dl-interviews
       ref: ch6#prb148
       url: https://arxiv.org/abs/2201.00650v2
-    status: draft
+    status: reviewed
+    reviewed_by: claude
   - id: trees-ensembles-059
     type: short_answer
     difficulty: hard
@@ -2102,7 +2213,7 @@ questions:
       With variance $v$ and covariance $c = \rho v$, the average of $k$ errors has expected square
       $\frac{v}{k} + \frac{k - 1}{k}c$ [^2]. Uncorrelated errors ($c = 0$) would cut the error by the factor
       $k = 5$, to 0.04; with $\rho = 0.5$ the result is 0.12, and fully correlated errors ($c = v$) would
-      leave 0.2 [^2]. That is why the book stresses that in practice errors are correlated and the factor
+      leave 0.2 [^2]. That is why *Deep Learning Interviews* stresses that in practice errors are correlated and the factor
       $k$ is not reached [^1].
     references:
       - source: dl-interviews
@@ -2115,7 +2226,8 @@ questions:
       id: dl-interviews
       ref: ch6#prb151
       url: https://arxiv.org/abs/2201.00650v2
-    status: draft
+    status: reviewed
+    reviewed_by: claude
   - id: trees-ensembles-060
     type: single
     difficulty: medium
@@ -2153,7 +2265,8 @@ questions:
       id: dl-interviews
       ref: ch6#prb140
       url: https://arxiv.org/abs/2201.00650v2
-    status: draft
+    status: reviewed
+    reviewed_by: claude
   - id: trees-ensembles-061
     type: short_answer
     difficulty: medium
@@ -2187,7 +2300,8 @@ questions:
       id: dl-interviews
       ref: ch6#prb156
       url: https://arxiv.org/abs/2201.00650v2
-    status: draft
+    status: reviewed
+    reviewed_by: claude
   - id: trees-ensembles-062
     type: single
     difficulty: medium
@@ -2228,7 +2342,8 @@ questions:
       id: dl-interviews
       ref: ch6#prb153
       url: https://arxiv.org/abs/2201.00650v2
-    status: draft
+    status: reviewed
+    reviewed_by: claude
   - id: trees-ensembles-063
     type: short_answer
     difficulty: easy
@@ -2260,7 +2375,8 @@ questions:
       id: dl-interviews
       ref: ch4#prb86
       url: https://arxiv.org/abs/2201.00650v2
-    status: draft
+    status: reviewed
+    reviewed_by: claude
   - id: trees-ensembles-064
     type: single
     difficulty: easy
@@ -2308,7 +2424,8 @@ questions:
       id: dl-interviews
       ref: ch4#prb88
       url: https://arxiv.org/abs/2201.00650v2
-    status: draft
+    status: reviewed
+    reviewed_by: claude
   - id: trees-ensembles-065
     type: short_answer
     difficulty: medium
@@ -2351,7 +2468,8 @@ questions:
       id: dl-interviews
       ref: ch4#prb90
       url: https://arxiv.org/abs/2201.00650v2
-    status: draft
+    status: reviewed
+    reviewed_by: claude
   - id: trees-ensembles-066
     type: true_false
     difficulty: medium
@@ -2385,7 +2503,8 @@ questions:
       id: dl-interviews
       ref: ch4#prb91
       url: https://arxiv.org/abs/2201.00650v2
-    status: draft
+    status: reviewed
+    reviewed_by: claude
   - id: trees-ensembles-067
     type: short_answer
     difficulty: easy
@@ -2422,4 +2541,5 @@ questions:
       id: dl-interviews
       ref: ch6#prb152
       url: https://arxiv.org/abs/2201.00650v2
-    status: draft
+    status: reviewed
+    reviewed_by: claude
