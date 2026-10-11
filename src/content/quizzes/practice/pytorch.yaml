@@ -27,21 +27,40 @@ questions:
     status: draft
   - id: pytorch-002
     type: single
+    difficulty: easy
     question: What does `model.eval()` do before evaluation?
     options:
       - text: It freezes the model parameters so they can't be updated.
         why: model.eval() doesn't freeze parameters - that would be done by setting requires_grad=False.
-      - text: It changes the behavior of layers like dropout and batch normalization for inference.
+      - text: It switches layers like dropout and batch norm to inference behavior.
         correct: true
       - text: It enables gradient computation for evaluation metrics.
         why: Actually, we typically use torch.no_grad() during evaluation to disable gradient computation.
       - text: It automatically calculates evaluation metrics.
         why: model.eval() only changes layer behavior - you still need to implement metric calculation separately.
-    explanation: Correct! eval() mode disables dropout and uses running statistics for batch norm instead of computing them from the current batch. [^1]
+    explanation: |
+      `model.eval()` (equivalent to `model.train(False)`) puts the module in evaluation mode, which
+      only affects layers that behave differently during training, such as dropout and batch
+      normalization [^1]. In evaluation mode dropout passes its input through unchanged [^2], and
+      batch norm normalizes with the running mean and variance collected during training instead of
+      the current batch's statistics [^3]. It has nothing to do with gradients: it neither freezes
+      parameters nor turns gradient tracking on or off, which is the job of `requires_grad` and
+      `torch.no_grad()` [^4].
     references:
-      - source: hf-llm-course
-        locator: 'Chapter 3: Fine-tuning a pretrained model'
-        url: https://huggingface.co/learn/llm-course/chapter3/1
+      - title: torch.nn.Module (PyTorch documentation)
+        url: https://docs.pytorch.org/docs/stable/generated/torch.nn.Module.html#torch.nn.Module.eval
+        locator: Module.eval()
+      - title: torch.nn.Dropout (PyTorch documentation)
+        url: https://docs.pytorch.org/docs/stable/generated/torch.nn.Dropout.html
+        locator: Class description
+        quote: This means that during evaluation the module simply computes an identity function.
+      - title: torch.nn.BatchNorm2d (PyTorch documentation)
+        url: https://docs.pytorch.org/docs/stable/generated/torch.nn.BatchNorm2d.html
+        locator: Class description (running estimates)
+      - title: Autograd mechanics (PyTorch documentation)
+        url: https://docs.pytorch.org/docs/stable/notes/autograd.html#evaluation-mode-nn-module-eval
+        locator: Locally disabling gradient computation, Evaluation Mode (nn.Module.eval())
+        quote: Evaluation mode is not a mechanism to locally disable gradient computation.
     source:
       id: hf-llm-course
       ref: chapter3/4#q5
@@ -49,21 +68,33 @@ questions:
     status: draft
   - id: pytorch-003
     type: single
+    difficulty: easy
     question: What is the purpose of `torch.no_grad()` during evaluation?
     options:
       - text: To prevent the model from making predictions.
         why: torch.no_grad() doesn't prevent predictions, just gradient computation.
-      - text: To save memory and speed up computation by disabling gradient tracking.
+      - text: To skip gradient tracking, which saves memory and computation.
         correct: true
       - text: To enable evaluation mode for the model.
         why: Evaluation mode is enabled with model.eval(), not torch.no_grad().
       - text: To ensure consistent results across runs.
         why: Reproducibility is handled by setting random seeds, not torch.no_grad().
-    explanation: Correct! Since we don't need gradients for evaluation, disabling them saves memory and computation. [^1]
+    explanation: |
+      Inside `torch.no_grad()`, autograd does not record operations, and every result has
+      `requires_grad=False` even when its inputs require gradients [^1]. Evaluation never calls
+      `backward()`, so there is no need to build the graph or keep the intermediate values it stores;
+      skipping it reduces memory use and saves that bookkeeping work [^1]. The forward pass still
+      runs, so predictions are made as usual, and switching dropout and batch norm to inference
+      behavior is the separate job of `model.eval()` [^2].
     references:
-      - source: hf-llm-course
-        locator: 'Chapter 3: Fine-tuning a pretrained model'
-        url: https://huggingface.co/learn/llm-course/chapter3/1
+      - title: torch.no_grad (PyTorch documentation)
+        url: https://docs.pytorch.org/docs/stable/generated/torch.no_grad.html
+        locator: Class description
+        quote: Disabling gradient calculation is useful for inference, when you are sure that you will not call Tensor.backward(). It will reduce memory consumption for computations that would otherwise have requires_grad=True.
+      - title: Autograd mechanics (PyTorch documentation)
+        url: https://docs.pytorch.org/docs/stable/notes/autograd.html#evaluation-mode-nn-module-eval
+        locator: Locally disabling gradient computation, Evaluation Mode (nn.Module.eval())
+        quote: Functionally, module.eval() (or equivalently module.train(False)) are completely orthogonal to no-grad mode and inference mode.
     source:
       id: hf-llm-course
       ref: chapter3/4#q6

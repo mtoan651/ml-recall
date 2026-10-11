@@ -5,19 +5,28 @@ title: Hugging Face Ecosystem
 questions:
   - id: huggingface-001
     type: single
+    difficulty: easy
     question: Explore the Hub and look for the `roberta-large-mnli` checkpoint. What task does it perform?
     options:
       - text: Summarization
-        why: Look again on the [roberta-large-mnli page](https://huggingface.co/roberta-large-mnli).
+        why: Summarization produces a shorter version of an input text. This checkpoint outputs one of three labels for a pair of sentences.
       - text: Text classification
         correct: true
       - text: Text generation
-        why: Look again on the [roberta-large-mnli page](https://huggingface.co/roberta-large-mnli).
-    explanation: More precisely, it classifies if two sentences are logically linked across three labels (contradiction, neutral, entailment) — a task also called *natural language inference*. [^1]
+        why: Text generation continues a prompt with new text. This checkpoint is a classifier that outputs one of three labels.
+    explanation: |
+      `roberta-large-mnli` is RoBERTa-large fine-tuned on the Multi-Genre Natural Language
+      Inference (MNLI) corpus, and the Hub lists it under Text Classification [^1]. Natural language
+      inference is a classification task: given a premise and a hypothesis, the model predicts one of
+      three labels, contradiction, neutral or entailment [^2]. It outputs a label, never new text, so
+      it does neither summarization nor text generation.
     references:
-      - source: hf-llm-course
-        locator: 'Chapter 1: Transformer models'
-        url: https://huggingface.co/learn/llm-course/chapter1/1
+      - title: FacebookAI/roberta-large-mnli model card (Hugging Face Hub)
+        url: https://huggingface.co/FacebookAI/roberta-large-mnli#model-details
+        locator: Model card, sec. Model Details; task tag Text Classification
+      - title: FacebookAI/roberta-large-mnli, config.json
+        url: https://huggingface.co/FacebookAI/roberta-large-mnli/blob/main/config.json
+        locator: id2label (CONTRADICTION, NEUTRAL, ENTAILMENT)
     source:
       id: hf-llm-course
       ref: chapter1/7#q1
@@ -25,6 +34,7 @@ questions:
     status: draft
   - id: huggingface-002
     type: single
+    difficulty: easy
     question: |
       What will the following code return?
 
@@ -41,11 +51,18 @@ questions:
         why: This is incorrect — it would be a `text-generation` pipeline.
       - text: It will return the words representing persons, organizations or locations.
         correct: true
-    explanation: Furthermore, with `aggregation_strategy="simple"`, it will group together the words belonging to the same entity, like "Hugging Face". [^1]
+    explanation: |
+      `pipeline("ner")` runs named entity recognition: it finds the parts of the text that are
+      entities such as persons, organizations or locations, here Sylvain (PER), Hugging Face (ORG)
+      and Brooklyn (LOC), each returned with a score and its character offsets [^1]. With
+      `aggregation_strategy="simple"`, the pipeline also regroups the pieces that belong to the same
+      entity, so "Hugging Face" comes back as one organization and the subword pieces of "Sylvain" as
+      one word [^1]. Positive/negative labels would come from a `sentiment-analysis` pipeline, and a
+      completion of the sentence from `text-generation`.
     references:
       - source: hf-llm-course
-        locator: 'Chapter 1: Transformer models'
-        url: https://huggingface.co/learn/llm-course/chapter1/1
+        url: https://huggingface.co/learn/llm-course/chapter1/3#named-entity-recognition
+        locator: Chapter 1.3 Transformers, what can they do?, sec. Named entity recognition
     source:
       id: hf-llm-course
       ref: chapter1/7#q2
@@ -53,6 +70,7 @@ questions:
     status: draft
   - id: huggingface-003
     type: single
+    difficulty: easy
     question: |
       What should replace ... in this code sample?
 
@@ -69,11 +87,21 @@ questions:
         correct: true
       - text: This man has been waiting for you.
         why: This is incorrect. This pipeline fills in masked words, so it needs a mask token somewhere.
-    explanation: This model's mask token is [MASK]. [^1]
+    explanation: |
+      A fill-mask pipeline predicts the word hidden behind the model's mask token, so the input must
+      contain that model's exact mask token, and different checkpoints use different ones [^1].
+      BERT's is `[MASK]`, as in the `bert-base-cased` model card example
+      `unmasker("Hello I'm a [MASK] model.")` [^2]. `<mask>` is the token used in the course's
+      example with the pipeline's default checkpoint [^1]; BERT's tokenizer just splits it into
+      `<`, `mask` and `>`, so the pipeline finds no mask to fill, and a sentence without any mask
+      token has nothing to predict.
     references:
       - source: hf-llm-course
-        locator: 'Chapter 1: Transformer models'
-        url: https://huggingface.co/learn/llm-course/chapter1/1
+        url: https://huggingface.co/learn/llm-course/chapter1/3#mask-filling
+        locator: Chapter 1.3 Transformers, what can they do?, sec. Mask filling
+      - title: google-bert/bert-base-cased model card (Hugging Face Hub)
+        url: https://huggingface.co/google-bert/bert-base-cased#how-to-use
+        locator: Model card, sec. How to use
     source:
       id: hf-llm-course
       ref: chapter1/7#q3
@@ -111,6 +139,7 @@ questions:
     status: draft
   - id: huggingface-005
     type: single
+    difficulty: easy
     question: What is the order of the language modeling pipeline?
     options:
       - text: First, the model, which handles text and returns raw predictions. The tokenizer then makes sense of these predictions and converts them back to text when needed.
@@ -119,11 +148,22 @@ questions:
         why: The model's prediction cannot be text straight away. The tokenizer has to be used in order to convert the prediction back to text!
       - text: The tokenizer handles text and returns IDs. The model handles these IDs and outputs a prediction. The tokenizer can then be used once again to convert these predictions back to some text.
         correct: true
-    explanation: The tokenizer can be used for both tokenizing and de-tokenizing. [^1]
+    explanation: |
+      A model can't read raw text, so the tokenizer first splits the text into tokens and maps each
+      one to an integer ID [^1]. The model turns those IDs into numbers (hidden states, then logits
+      from the head), not text [^2]. When the task needs text back, as in generation or translation,
+      the tokenizer's `decode()` turns predicted IDs into a readable string, so the tokenizer is used
+      at both ends of the pipeline [^3].
     references:
       - source: hf-llm-course
-        locator: 'Chapter 2: Using 🤗 Transformers'
-        url: https://huggingface.co/learn/llm-course/chapter2/1
+        url: https://huggingface.co/learn/llm-course/chapter2/2#preprocessing-with-a-tokenizer
+        locator: Chapter 2.2 Behind the pipeline, sec. Preprocessing with a tokenizer
+      - source: hf-llm-course
+        url: https://huggingface.co/learn/llm-course/chapter2/2#going-through-the-model
+        locator: Chapter 2.2 Behind the pipeline, secs. Going through the model and Model heads
+      - source: hf-llm-course
+        url: https://huggingface.co/learn/llm-course/chapter2/4#decoding
+        locator: Chapter 2.4 Tokenizers, sec. Decoding
     source:
       id: hf-llm-course
       ref: chapter2/9#q1
@@ -131,19 +171,26 @@ questions:
     status: draft
   - id: huggingface-006
     type: single
+    difficulty: easy
     question: What is an AutoModel?
     options:
       - text: A model that automatically trains on your data
-        why: Are you mistaking this with our [AutoTrain](https://huggingface.co/autotrain) product?
+        why: That describes [AutoTrain](https://huggingface.co/autotrain), Hugging Face's no-code training tool. `AutoModel` only loads a model from a checkpoint.
       - text: An object that returns the correct architecture based on the checkpoint
         correct: true
       - text: A model that automatically detects the language used for its inputs to load the correct weights
         why: While some checkpoints and models are capable of handling multiple languages, there are no built-in tools for automatic checkpoint selection according to language. You should head over to the [Model Hub](https://huggingface.co/models) to find the best checkpoint for your task!
-    explanation: 'Exactly: the `AutoModel` only needs to know the checkpoint from which to initialize to return the correct architecture. [^1]'
+    explanation: |
+      `AutoModel` and its relatives are wrappers that look at the checkpoint passed to
+      `from_pretrained()`, work out which architecture it belongs to, and instantiate that model
+      class with the checkpoint's weights [^1]. So `AutoModel.from_pretrained("bert-base-cased")`
+      gives you a BERT model, just as `BertModel.from_pretrained("bert-base-cased")` would [^1]. It
+      neither trains on your data nor picks a checkpoint from the input's language: you choose the
+      checkpoint yourself.
     references:
       - source: hf-llm-course
-        locator: 'Chapter 2: Using 🤗 Transformers'
-        url: https://huggingface.co/learn/llm-course/chapter2/1
+        url: https://huggingface.co/learn/llm-course/chapter2/3#creating-a-transformer
+        locator: Chapter 2.3 Models, sec. Creating a Transformer
     source:
       id: hf-llm-course
       ref: chapter2/9#q5
@@ -177,6 +224,7 @@ questions:
     status: draft
   - id: huggingface-008
     type: single
+    difficulty: easy
     question: |
       What does the `result` variable contain in this code sample?
 
@@ -193,11 +241,18 @@ questions:
         why: Incorrect; that's what the `__call__` or `convert_tokens_to_ids` method is for!
       - text: A string containing all of the tokens
         why: This would be suboptimal, as the goal is to split the string into multiple tokens.
-    explanation: Absolutely! Convert this to IDs, and send them to a model! [^1]
+    explanation: |
+      `tokenize()` performs only the first step of encoding, splitting the text into tokens, and its
+      output is a list of strings [^1]; for `"Hello!"` that is `['Hello', '!']`. Turning tokens
+      into IDs is the second step, done by `convert_tokens_to_ids()` [^2] (calling the tokenizer
+      directly does both steps and more). Returning one joined string would undo the split.
     references:
       - source: hf-llm-course
-        locator: 'Chapter 2: Using 🤗 Transformers'
-        url: https://huggingface.co/learn/llm-course/chapter2/1
+        url: https://huggingface.co/learn/llm-course/chapter2/4#tokenization
+        locator: Chapter 2.4 Tokenizers, sec. Tokenization
+      - source: hf-llm-course
+        url: https://huggingface.co/learn/llm-course/chapter2/4#from-tokens-to-input-ids
+        locator: Chapter 2.4 Tokenizers, sec. From tokens to input IDs
     source:
       id: hf-llm-course
       ref: chapter2/9#q9
@@ -311,6 +366,7 @@ questions:
     status: draft
   - id: huggingface-013
     type: single
+    difficulty: easy
     question: What is the purpose of the `processing_class` parameter in the Trainer?
     options:
       - text: It specifies which model architecture to use.
@@ -321,11 +377,21 @@ questions:
         why: Batch size is set in TrainingArguments, not through processing_class.
       - text: It controls the evaluation frequency.
         why: Evaluation frequency is controlled by eval_strategy in TrainingArguments.
-    explanation: The processing_class parameter is a modern addition that helps the Trainer know which tokenizer to use. [^1]
+    explanation: |
+      `processing_class` is where you hand the `Trainer` your tokenizer (more generally a processor:
+      an image processor, feature extractor or multimodal processor also fits) [^1][^2]. The Trainer
+      uses it to process the inputs automatically, for instance by defaulting to a
+      `DataCollatorWithPadding` when it gets a tokenizer, and saves it with the model so that training
+      can be resumed or the fine-tuned model reused [^1][^2]. The architecture comes from the model
+      you load, while batch size and evaluation frequency are `TrainingArguments` settings [^1].
     references:
       - source: hf-llm-course
-        locator: 'Chapter 3: Fine-tuning a pretrained model'
-        url: https://huggingface.co/learn/llm-course/chapter3/1
+        url: https://huggingface.co/learn/llm-course/chapter3/3#training
+        locator: Chapter 3.3 Fine-tuning a model with the Trainer API, sec. Training
+      - title: 🤗 Transformers documentation, Trainer
+        url: https://huggingface.co/docs/transformers/main_classes/trainer#transformers.Trainer.processing_class
+        locator: Trainer, parameter `processing_class`
+        quote: Processing class used to process the data. If provided, will be used to automatically process the inputs for the model, and it will be saved along the model to make it easier to rerun an interrupted training or reuse the fine-tuned model.
     source:
       id: hf-llm-course
       ref: chapter3/3#q1
@@ -414,6 +480,7 @@ questions:
     status: draft
   - id: huggingface-017
     type: single
+    difficulty: easy
     question: What does the 🤗 Accelerate library primarily help with?
     options:
       - text: Making your models train faster by optimizing the forward pass.
@@ -424,11 +491,21 @@ questions:
         correct: true
       - text: Converting models to different frameworks like TensorFlow.
         why: Accelerate works within PyTorch and doesn't convert between frameworks.
-    explanation: Correct! Accelerate handles distributed training complexity, allowing your code to run on single or multiple devices seamlessly. [^1]
+    explanation: |
+      🤗 Accelerate lets the same PyTorch training loop run on any distributed setup, such as several
+      GPUs or TPUs, with only a few added lines [^2]: create an `Accelerator`, pass the model,
+      optimizer and dataloaders to `accelerator.prepare()`, and replace `loss.backward()` with
+      `accelerator.backward(loss)` [^1]. It takes care of device placement, the distributed setup and
+      mixed precision [^1], but it doesn't change the model's architecture, search hyperparameters or
+      convert models to other frameworks.
     references:
       - source: hf-llm-course
-        locator: 'Chapter 3: Fine-tuning a pretrained model'
-        url: https://huggingface.co/learn/llm-course/chapter3/1
+        url: https://huggingface.co/learn/llm-course/chapter3/4#supercharge-your-training-loop-with-accelerate
+        locator: Chapter 3.4 A full training loop, sec. Supercharge your training loop with 🤗 Accelerate
+      - title: 🤗 Accelerate documentation
+        url: https://huggingface.co/docs/accelerate/index
+        locator: Overview (index page)
+        quote: Accelerate is a library that enables the same PyTorch code to be run across any distributed configuration by adding just four lines of code!
     source:
       id: hf-llm-course
       ref: chapter3/4#q3
@@ -461,21 +538,28 @@ questions:
     status: draft
   - id: huggingface-019
     type: single
+    difficulty: medium
     question: What is the advantage of using a generator of lists of texts compared to a list of lists of texts when using `train_new_from_iterator()`?
     options:
       - text: That's the only type the method `train_new_from_iterator()` accepts.
-        why: A list of lists of texts is a particular kind of generator of lists of texts, so the method will accept this too. Try again!
+        why: The method takes any iterator over batches of texts, and a list of lists of texts works too; it just has to hold the whole corpus in memory.
       - text: You will avoid loading the whole dataset into memory at once.
         correct: true
       - text: This will allow the 🤗 Tokenizers library to use multiprocessing.
         why: No, it will use multiprocessing either way.
       - text: The tokenizer you train will generate better texts.
         why: The tokenizer does not generate text -- are you confusing it with a language model?
-    explanation: Right! Each batch of texts will be released from memory when you iterate, and the gain will be especially visible if you use 🤗 Datasets to store your texts. [^1]
+    explanation: |
+      `train_new_from_iterator()` takes an iterator over batches of texts; a list of lists of texts
+      works, but builds every batch in memory up front [^1]. A generator produces each batch (say
+      1,000 texts) only when the training loop asks for it, so the whole dataset is never loaded at
+      once [^1]. This matters for huge corpora, especially with 🤗 Datasets, which keeps the data on
+      disk instead of in RAM [^1]. The result is the same tokenizer either way, and a tokenizer
+      splits text rather than generating it.
     references:
       - source: hf-llm-course
-        locator: 'Chapter 6: The 🤗 Tokenizers library'
-        url: https://huggingface.co/learn/llm-course/chapter6/1
+        url: https://huggingface.co/learn/llm-course/chapter6/2#assembling-a-corpus
+        locator: Chapter 6.2 Training a new tokenizer from an old one, sec. Assembling a corpus
     source:
       id: hf-llm-course
       ref: chapter6/10#q2
@@ -539,6 +623,7 @@ questions:
     status: draft
   - id: huggingface-022
     type: single
+    difficulty: medium
     question: Why is there a specific subclass of `Trainer` for sequence-to-sequence problems?
     options:
       - text: Because sequence-to-sequence problems use a custom loss, to ignore the labels set to `-100`
@@ -549,11 +634,21 @@ questions:
         why: The `Trainer` doesn't really care about that since they have been preprocessed before.
       - text: Because we use two models in sequence-to-sequence problems
         why: We do use two models in a way, an encoder and a decoder, but they are grouped together in one model.
-    explanation: That's correct. Sequence-to-sequence models' predictions are often run using the `generate()` method. [^1]
+    explanation: |
+      During training, a sequence-to-sequence model is fed the target tokens, with a mask that hides
+      the tokens after the one it is predicting; at inference there are no labels, so the decoder
+      must produce the output one token at a time with `generate()` [^1]. `Seq2SeqTrainer` adds
+      exactly this to `Trainer`: with `predict_with_generate=True` it evaluates and predicts by
+      generating, which is what text metrics such as BLEU or ROUGE need [^1][^2]. The -100 labels
+      are ignored by the usual loss, the targets are tokenized before training, and the encoder and
+      decoder form one model, so none of these needs a special class.
     references:
       - source: hf-llm-course
-        locator: 'Chapter 7: Classical NLP tasks'
-        url: https://huggingface.co/learn/llm-course/chapter7/1
+        url: https://huggingface.co/learn/llm-course/chapter7/4?fw=pt#metrics
+        locator: Chapter 7.4 Translation (PyTorch), sec. Metrics
+      - title: 🤗 Transformers documentation, Trainer
+        url: https://huggingface.co/docs/transformers/main_classes/trainer#transformers.Seq2SeqTrainingArguments.predict_with_generate
+        locator: Seq2SeqTrainingArguments, parameter `predict_with_generate`
     source:
       id: hf-llm-course
       ref: chapter7/9#q8

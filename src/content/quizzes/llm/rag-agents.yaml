@@ -5,6 +5,7 @@ title: RAG & Agents
 questions:
   - id: rag-agents-001
     type: single
+    difficulty: easy
     question: |
       What does observability in AI agents primarily refer to?
 
@@ -14,15 +15,26 @@ questions:
         correct: true
       - text: It is solely focused on reducing the financial cost of running the agent.
         why: Observability covers cost but is not limited to it.
-      - text: It refers only to the external appearance and UI of the agent.
-        why: Observability is about the internal processes, not the UI.
-      - text: It is concerned with coding style and code aesthetics only.
-        why: Code style is unrelated to observability in this context.
-    explanation: Correct! Observability means using logs, metrics, and spans to shed light on the inner workings of the agent. [^1]
+      - text: It means scoring the agent's answers on a test set whose correct outputs are known.
+        why: That is offline evaluation. Observability collects the signals (logs, metrics, traces); evaluation analyzes them and runs tests.
+      - text: It means recording only the final answer the agent returns to the user.
+        why: Observability looks inside the run, at the actions, tool calls and model calls, not just at the final answer.
+    explanation: |
+      Observability means understanding what happens inside an agent from the signals it emits:
+      logs, metrics and traces [^1]. A trace covers one whole task, and its spans are the individual
+      steps, such as an LLM call or a tool call [^2]. Tracking actions, tool use, model calls and
+      responses this way is what lets you debug the agent and improve it [^1]. Cost is one of the
+      metrics it watches, alongside latency, request errors, user feedback and accuracy [^3].
     references:
       - source: hf-agents-course
-        locator: Bonus Unit 2. Agent Observability and Evaluation
-        url: https://huggingface.co/learn/agents-course/bonus-unit2/introduction
+        url: https://huggingface.co/learn/agents-course/bonus-unit2/what-is-agent-observability-and-evaluation#-what-is-observability
+        locator: Bonus Unit 2. AI Agent Observability and Evaluation, sec. What is Observability?
+      - source: hf-agents-course
+        url: https://huggingface.co/learn/agents-course/bonus-unit2/what-is-agent-observability-and-evaluation#traces-and-spans
+        locator: Bonus Unit 2. AI Agent Observability and Evaluation, sec. Traces and Spans
+      - source: hf-agents-course
+        url: https://huggingface.co/learn/agents-course/bonus-unit2/what-is-agent-observability-and-evaluation#-key-metrics-to-monitor
+        locator: Bonus Unit 2. AI Agent Observability and Evaluation, sec. Key Metrics to Monitor
     source:
       id: hf-agents-course
       ref: bonus-unit2/quiz#q1
@@ -55,6 +67,7 @@ questions:
     status: draft
   - id: rag-agents-003
     type: single
+    difficulty: easy
     question: |
       What best describes offline evaluation of an AI agent?
 
@@ -66,13 +79,22 @@ questions:
         correct: true
       - text: Monitoring the agent's internal logs in real-time.
         why: This is more related to observability rather than evaluation.
-      - text: Running the agent without any evaluation metrics.
-        why: This approach does not provide meaningful insights.
-    explanation: Correct! Offline evaluation uses test datasets to gauge performance against known answers. [^1]
+      - text: Comparing two versions of the agent with an A/B test on live traffic.
+        why: A/B tests run on live traffic, so they are a form of online evaluation.
+    explanation: |
+      Offline evaluation tests the agent in a controlled setting on curated datasets whose expected
+      outputs are known, for example a set of math word problems with their answers, typically
+      during development or in a CI pipeline [^1]. Because there is ground truth, it is repeatable
+      and gives clear accuracy metrics [^1]. Anything run on real user traffic in production,
+      including A/B tests, is online evaluation [^2], and watching logs as they arrive is
+      observability rather than a test against known answers.
     references:
       - source: hf-agents-course
-        locator: Bonus Unit 2. Agent Observability and Evaluation
-        url: https://huggingface.co/learn/agents-course/bonus-unit2/introduction
+        url: https://huggingface.co/learn/agents-course/bonus-unit2/what-is-agent-observability-and-evaluation#-offline-evaluation
+        locator: Bonus Unit 2. AI Agent Observability and Evaluation, sec. Offline Evaluation
+      - source: hf-agents-course
+        url: https://huggingface.co/learn/agents-course/bonus-unit2/what-is-agent-observability-and-evaluation#-online-evaluation
+        locator: Bonus Unit 2. AI Agent Observability and Evaluation, sec. Online Evaluation
     source:
       id: hf-agents-course
       ref: bonus-unit2/quiz#q3
@@ -80,6 +102,7 @@ questions:
     status: draft
   - id: rag-agents-004
     type: single
+    difficulty: easy
     question: |
       Which advantage does online evaluation of agents offer?
 
@@ -93,11 +116,20 @@ questions:
         why: Both offline and online evaluations are important and complementary.
       - text: It solely focuses on reducing the computational cost of the agent.
         why: Cost monitoring is part of observability, not the primary advantage of online evaluation.
-    explanation: Correct! Online evaluation offers insights by monitoring the agent in a live setting. [^1]
+    explanation: |
+      Online evaluation monitors the agent on real user interactions in production, so it captures
+      what a lab test set can't anticipate, such as model drift over time and unexpected kinds of
+      queries [^1]. Controlled tests on predefined datasets are offline evaluation. The two are
+      complementary, not substitutes: teams usually loop between them, adding the failures seen
+      online to the offline test set [^2]. Cost is one of many observability metrics, not the point
+      of online evaluation.
     references:
       - source: hf-agents-course
-        locator: Bonus Unit 2. Agent Observability and Evaluation
-        url: https://huggingface.co/learn/agents-course/bonus-unit2/introduction
+        url: https://huggingface.co/learn/agents-course/bonus-unit2/what-is-agent-observability-and-evaluation#-online-evaluation
+        locator: Bonus Unit 2. AI Agent Observability and Evaluation, sec. Online Evaluation
+      - source: hf-agents-course
+        url: https://huggingface.co/learn/agents-course/bonus-unit2/what-is-agent-observability-and-evaluation#-combining-the-two
+        locator: Bonus Unit 2. AI Agent Observability and Evaluation, sec. Combining the two
     source:
       id: hf-agents-course
       ref: bonus-unit2/quiz#q4
@@ -105,6 +137,7 @@ questions:
     status: draft
   - id: rag-agents-005
     type: single
+    difficulty: medium
     question: |
       What role does OpenTelemetry play in AI agent observability and evaluation?
 
@@ -113,16 +146,26 @@ questions:
       - text: It provides a standardized framework to instrument code, enabling the collection of traces, metrics, and logs for observability.
         correct: true
       - text: It acts as a replacement for manual debugging by automatically fixing code issues.
-        why: Incorrect. OpenTelemetry is used for gathering telemetry data, not for debugging code issues.
+        why: Incorrect. The telemetry it collects helps you debug, but OpenTelemetry itself never changes or fixes code.
       - text: It primarily serves as a database for storing historical logs without real-time capabilities.
-        why: Incorrect. OpenTelemetry focuses on real-time telemetry data collection and exporting data to analysis tools.
+        why: Incorrect. OpenTelemetry is not a storage backend. It generates, collects and exports telemetry, and leaves storing and visualizing it to other tools.
       - text: It is used to optimize the computational performance of the AI agent by automatically tuning model parameters.
         why: Incorrect. OpenTelemetry is centered on observability rather than performance tuning.
-    explanation: Correct! OpenTelemetry standardizes instrumentation for telemetry data, which is crucial for monitoring and diagnosing agent behavior. [^1]
+    explanation: |
+      OpenTelemetry is an open-source, vendor-neutral observability framework and toolkit. You
+      instrument your code with it to generate, collect and export telemetry such as traces, metrics
+      and logs, and any compatible backend can then store and analyze that data [^1]. Agent
+      frameworks such as smolagents use the OpenTelemetry standard to expose their runs to
+      observability tools like Langfuse [^2]. It is not a storage backend itself, and it neither
+      fixes code nor tunes the model [^1].
     references:
+      - title: What is OpenTelemetry? (OpenTelemetry documentation)
+        url: https://opentelemetry.io/docs/what-is-opentelemetry/
+        locator: What is OpenTelemetry? (definition, "OpenTelemetry is not an observability backend itself")
+        quote: OpenTelemetry is not an observability backend itself.
       - source: hf-agents-course
-        locator: Bonus Unit 2. Agent Observability and Evaluation
-        url: https://huggingface.co/learn/agents-course/bonus-unit2/introduction
+        url: https://huggingface.co/learn/agents-course/bonus-unit2/what-is-agent-observability-and-evaluation#-observability-tools
+        locator: Bonus Unit 2. AI Agent Observability and Evaluation, sec. Observability Tools
     source:
       id: hf-agents-course
       ref: bonus-unit2/quiz#q5
@@ -130,6 +173,7 @@ questions:
     status: draft
   - id: rag-agents-006
     type: single
+    difficulty: easy
     question: |
       What is an Agent?
 
@@ -143,11 +187,19 @@ questions:
         why: A chatbot like this lacks the ability to take actions, making it different from an Agent.
       - text: An online repository of information that offers static content without the capability to execute tasks or interact actively with users.
         why: An Agent actively interacts with its environment rather than just providing static information.
-    explanation: This definition captures the essential characteristics of an Agent. [^1]
+    explanation: |
+      The course defines an Agent as a system that uses an AI model to interact with its environment
+      in order to achieve a user-defined objective, combining reasoning, planning and the execution
+      of actions, often through external tools [^1]. What makes it an agent is this agency, the
+      ability to act on its environment [^2]. A system that only processes text, a chatbot that can
+      only answer questions and a static repository of information all lack it.
     references:
       - source: hf-agents-course
-        locator: Unit 1. Introduction to Agents
-        url: https://huggingface.co/learn/agents-course/unit1/introduction
+        url: https://huggingface.co/learn/agents-course/unit1/what-are-agents#lets-go-more-formal
+        locator: Unit 1. What is an Agent?, sec. Let's go more formal
+      - source: hf-agents-course
+        url: https://huggingface.co/learn/agents-course/unit1/what-are-agents#the-big-picture-alfred-the-agent
+        locator: 'Unit 1. What is an Agent?, sec. The Big Picture: Alfred The Agent'
     source:
       id: hf-agents-course
       ref: unit1/quiz1#q1
@@ -155,6 +207,7 @@ questions:
     status: draft
   - id: rag-agents-007
     type: single
+    difficulty: easy
     question: |
       What is the Role of Planning in an Agent?
 
@@ -168,11 +221,23 @@ questions:
         why: Planning ensures the Agent's actions are intentional and not random.
       - text: To merely convert or translate text, bypassing any process of formulating a deliberate sequence of actions or employing strategic reasoning.
         why: Planning is about structuring actions, not just converting text.
-    explanation: Planning helps the Agent determine the best steps and tools to complete a task. [^1]
+    explanation: |
+      In the course's example, before fulfilling a request the agent reasons and plans: it works out
+      the sequence of steps and the tools it needs, and only then acts [^1]. Planning is done by the
+      agent's AI model, its "brain", which decides which actions to take in the situation [^2].
+      Planning thoughts break a complex task into smaller steps and are revised as new observations
+      arrive [^3]. Storing past interactions is memory, not planning, and planning is exactly what
+      keeps the actions from being arbitrary.
     references:
       - source: hf-agents-course
-        locator: Unit 1. Introduction to Agents
-        url: https://huggingface.co/learn/agents-course/unit1/introduction
+        url: https://huggingface.co/learn/agents-course/unit1/what-are-agents#the-big-picture-alfred-the-agent
+        locator: 'Unit 1. What is an Agent?, sec. The Big Picture: Alfred The Agent'
+      - source: hf-agents-course
+        url: https://huggingface.co/learn/agents-course/unit1/what-are-agents#lets-go-more-formal
+        locator: Unit 1. What is an Agent?, sec. Let's go more formal (The Brain)
+      - source: hf-agents-course
+        url: https://huggingface.co/learn/agents-course/unit1/thoughts
+        locator: 'Unit 1. Thought: Internal Reasoning and the ReAct Approach, introduction'
     source:
       id: hf-agents-course
       ref: unit1/quiz1#q2
@@ -261,6 +326,7 @@ questions:
     status: draft
   - id: rag-agents-011
     type: single
+    difficulty: easy
     question: |
       Which of the Following Best Demonstrates an AI Agent?
 
@@ -274,11 +340,23 @@ questions:
         correct: true
       - text: A video game NPC that operates on a fixed script of responses, without the ability to reason, plan, or use external tools.
         why: Unless the NPC can reason, plan, and use tools, it does not function as an AI Agent.
-    explanation: This example includes reasoning, planning, and interaction with the environment. [^1]
+    explanation: |
+      An agent understands natural language, reasons and plans, and acts on its environment [^1].
+      Virtual assistants such as Siri or Alexa do all three: they interpret a spoken request, work
+      out what it needs, and carry out actions such as setting reminders or sending messages [^2]. A
+      static FAQ page and a calculator only return fixed content or apply fixed rules, and an NPC on
+      a fixed script can't reason or use tools; the course counts an NPC as an agent only when an LLM
+      lets it respond to and adapt to the player [^3].
     references:
       - source: hf-agents-course
-        locator: Unit 1. Introduction to Agents
-        url: https://huggingface.co/learn/agents-course/unit1/introduction
+        url: https://huggingface.co/learn/agents-course/unit1/what-are-agents#lets-go-more-formal
+        locator: Unit 1. What is an Agent?, sec. Let's go more formal and closing summary
+      - source: hf-agents-course
+        url: https://huggingface.co/learn/agents-course/unit1/what-are-agents#example-1-personal-virtual-assistants
+        locator: 'Unit 1. What is an Agent?, sec. Example 1: Personal Virtual Assistants'
+      - source: hf-agents-course
+        url: https://huggingface.co/learn/agents-course/unit1/what-are-agents#example-3-ai-non-playable-character-in-a-video-game
+        locator: 'Unit 1. What is an Agent?, sec. Example 3: AI Non-Playable Character in a video game'
     source:
       id: hf-agents-course
       ref: unit1/quiz1#q6

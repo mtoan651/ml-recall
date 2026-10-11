@@ -5,21 +5,28 @@ title: Fine-tuning & PEFT
 questions:
   - id: fine-tuning-001
     type: single
+    difficulty: easy
     question: Why do we use dynamic padding instead of padding all sequences to the maximum length in the dataset?
     options:
       - text: Dynamic padding is required by the model architecture.
         why: No, models can handle both fixed and dynamic padding.
-      - text: It reduces computational overhead by only padding to the maximum length in each batch.
+      - text: It pads each batch only to its own longest sequence, saving computation.
         correct: true
       - text: It improves model accuracy.
         why: Padding strategy doesn't directly affect model accuracy.
       - text: It's required when using the DataCollatorWithPadding.
         why: DataCollatorWithPadding enables dynamic padding, but you could still use fixed padding if desired.
-    explanation: Correct! Dynamic padding avoids unnecessary computation on padding tokens by only padding to the batch maximum, not the dataset maximum. [^1]
+    explanation: |
+      Padding every sample to the longest sequence in the whole dataset (or to the model's maximum
+      length) wastes computation on pad tokens. With dynamic padding, padding is postponed until
+      the batches are built: a collate function such as `DataCollatorWithPadding` pads each batch
+      only to the length of its longest sample, which speeds up training considerably [^1]. It is
+      an efficiency choice, not a requirement of the model or of the collator, and it can even cause
+      problems on TPUs, which prefer fixed shapes [^1].
     references:
       - source: hf-llm-course
-        locator: 'Chapter 3: Fine-tuning a pretrained model'
-        url: https://huggingface.co/learn/llm-course/chapter3/1
+        url: https://huggingface.co/learn/llm-course/chapter3/2#dynamic-padding
+        locator: Chapter 3.2 Processing the data, sec. Dynamic padding
     source:
       id: hf-llm-course
       ref: chapter3/2#q2
@@ -27,19 +34,28 @@ questions:
     status: draft
   - id: fine-tuning-002
     type: single
+    difficulty: easy
     question: What should you monitor during SFT training?
     options:
       - text: Both quantitative metrics and qualitative outputs
         correct: true
-      - text: Only the training loss
+      - text: Only the training loss curve
         why: Training loss alone isn't sufficient to ensure good model behavior.
-      - text: Only the model's output quality
+      - text: Only the quality of the model's generated outputs
         why: While important, qualitative evaluation alone misses important training dynamics.
-    explanation: Correct! Monitoring both types of metrics helps catch all potential issues. [^1]
+    explanation: |
+      Quantitative signals (training and validation loss, learning rate, gradient norms) reveal the
+      training dynamics: for example, validation loss rising while training loss falls signals
+      overfitting [^1]. But the loss can look fine while the model picks up unwanted behavior, such
+      as inconsistent output formatting, so you should also read the model's actual outputs
+      regularly [^2]. Each kind of check catches problems that the other misses.
     references:
       - source: hf-llm-course
-        locator: 'Chapter 11: Fine-tune Large Language Models'
-        url: https://huggingface.co/learn/llm-course/chapter11/1
+        url: https://huggingface.co/learn/llm-course/chapter11/3#metrics-to-monitor
+        locator: Chapter 11.3 Supervised Fine-Tuning, sec. Metrics to Monitor
+      - source: hf-llm-course
+        url: https://huggingface.co/learn/llm-course/chapter11/3#warning-signs-to-watch-for
+        locator: Chapter 11.3 Supervised Fine-Tuning, sec. Warning Signs to Watch For (closing warning)
     source:
       id: hf-llm-course
       ref: chapter11/3#q4
