@@ -13,9 +13,22 @@ versioning: [SemVer](https://semver.org) as defined in [docs/conventions.md](doc
   answer keys corrected) and `college_mathematics` (33). Topics with ≥ 20 questions: 4 → 7;
   `rag-agents` and `policy-gradient` are no longer empty.
 - Source registry: `hf-deep-rl-course`, `hf-agents-course`, `ms-ds-for-beginners`,
-  `openintro-stats` (CC BY-SA 3.0) and `openstax-intro-stats` (CC BY 4.0) — 25 external sources.
+  `openintro-stats` (CC BY-SA 3.0) and `openstax-intro-stats` (reference only, see Changed) — 25
+  external sources.
+- Cited explanations for 393 of the 395 imported questions that had none (all still `draft`):
+  each answer key re-solved first, every `[^n]` reference opened and checked, `difficulty` set,
+  lesson references narrowed to the section that covers the point. Main sources: d2l, the
+  course lessons, OpenIntro *Introduction to Modern Statistics*, Penn State STAT notes, Sutton &
+  Barto, scikit-learn, CS229, Interactive Linear Algebra, Active Calculus. Two questions are held
+  back for a key/wording decision (`statistics-005`, `trees-ensembles-006`).
 - Curation: `default_drop` keep-lists, per-item overrides of `exclude_prefixes`, `keep: true` for
   flagged items.
+
+### Changed
+
+- `openstax-intro-stats` is now `reference` and not used: OpenStax moved to CC BY-NC-SA 4.0 and
+  forbids ingestion into LLMs/generative AI (July 2026). CLAUDE.md and docs/sources.md say not to
+  fetch or cite such sources.
 
 ### Fixed
 

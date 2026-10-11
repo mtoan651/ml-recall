@@ -4,7 +4,7 @@ Active-recall quiz bank for AI/ML/DL: exam-style questions with LaTeX, cited exp
 mock exams and spaced repetition. Free static site on GitHub Pages.
 
 > **Status: v0.2.0 — the quiz site is live at <https://mtoan651.github.io/ml-recall/>.**
-> Next: explanations for the imported drafts, more course material, exam mode ([roadmap](docs/roadmap.md)).
+> Next: review the drafted explanations, exam mode, more course material ([roadmap](docs/roadmap.md)).
 
 ## What's inside
 
