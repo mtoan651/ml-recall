@@ -2,7 +2,8 @@
 
 The machine-readable registry is [`src/content/sources.yaml`](../src/content/sources.yaml); this
 page explains the choices. Licenses were checked on 2026-10-09 (sources 1–12, 18–25) and 2026-10-10
-(13–17) against each upstream LICENSE file or site terms.
+(13–17) against each upstream LICENSE file or site terms; Google (8, 8b) and numpy-100 (12) were
+rechecked on 2026-10-11, including for AI-use restrictions (none).
 
 **Usage:** `adapt` = may be imported/adapted with attribution · `reference` = cite only, write
 original questions. See [content-pipeline.md](content-pipeline.md#copyright-rules).
@@ -18,11 +19,12 @@ original questions. See [content-pipeline.md](content-pipeline.md#copyright-rule
 | 5 | [Deep Learning Interviews](https://arxiv.org/abs/2201.00650) (Kashani & Ivry) | hundreds of fully solved problems: math, info theory, CNNs, ensembles | CC-BY-4.0 | v0.3 — PDF → MCQ |
 | 6 | [Dive into Deep Learning](https://d2l.ai) | end-of-section exercises; main citation target for DL | CC-BY-SA-4.0 | v0.3 — exercises → MCQ |
 | 7 | [Đắm mình vào Học Sâu](https://d2l.aivivn.com/) | Vietnamese d2l translation | CC-BY-SA-4.0 | later — VI terminology |
-| 8 | [Google ML Crash Course](https://developers.google.com/machine-learning/crash-course) | module exercises & quizzes on ML basics | CC-BY-4.0 | v0.3 |
+| 8 | [Google ML Crash Course](https://developers.google.com/machine-learning/crash-course) | page quizzes with per-option feedback: regression, classification metrics, data, overfitting, production ML, fairness | CC-BY-4.0 | **v0.3 imported** (44) |
+| 8b | [Google ML courses](https://developers.google.com/machine-learning) — Decision Forests, Clustering, GANs, Problem Framing | same quiz format | CC-BY-4.0 | **v0.3 imported** (22) |
 | 9 | [Hands-On ML 3 notebooks](https://github.com/ageron/handson-ml3) | exercise solutions (notebooks only — book text is copyrighted) | Apache-2.0 | v0.3+ |
 | 10 | [LLMs from Scratch](https://github.com/rasbt/LLMs-from-scratch) | chapter exercises + solutions (repo only) | Apache-2.0 | v0.4 — code questions |
 | 11 | [Tensor / Autodiff / GPU Puzzles](https://github.com/srush/Tensor-Puzzles) | broadcasting & autodiff puzzles | MIT | v0.4 — code reading |
-| 12 | [100 NumPy exercises](https://github.com/rougier/numpy-100) | NumPy drills | MIT | v0.4 — `practice/numpy` |
+| 12 | [100 NumPy exercises](https://github.com/rougier/numpy-100) | NumPy drills with solution code | MIT | **v0.3 imported** (63, self-graded) |
 | 13 | [Hugging Face Deep RL Course](https://huggingface.co/learn/deep-rl-course) | unit quizzes: MCQ + open questions with solutions (RL basics, Q-learning, policy gradient, multi-agent) | Apache-2.0 | **v0.3 imported** (36) |
 | 14 | [Hugging Face AI Agents Course](https://huggingface.co/learn/agents-course) | unit quizzes on agents, tools, ReAct, agentic RAG, observability | Apache-2.0 | **v0.3 imported** (19) |
 | 15 | [Microsoft Data Science for Beginners](https://github.com/microsoft/Data-Science-For-Beginners) | pre/post-lecture quizzes; only data types, probability, statistics items kept | MIT | **v0.3 imported** (15) |

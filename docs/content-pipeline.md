@@ -37,8 +37,8 @@ items:
       references: [{source: mmlu-redux, locator: "row 8 — wrong_groundtruth"}]
 ```
 
-Fix keys: `question`, `options` (`{index: new text}`), `correct`, `type`, `shuffle`,
-`explanation`, `references`. Unlisted items are kept with the default topic; items flagged upstream
+Fix keys: `question`, `options` (`{index: new text}`), `why` (`{index: new feedback}`, `null`
+removes it), `correct`, `type`, `shuffle`, `explanation`, `references`. Unlisted items are kept with the default topic; items flagged upstream
 (MMLU-Redux error labels, or `image` when the text relies on a picture) are dropped unless they get
 a `fix` or `keep: true`.
 
@@ -54,7 +54,8 @@ lesson's code/dataset) · `tool-trivia` / `tool-specific` (library API trivia) �
 
 v0.1 result: 533 upstream questions → 328 kept (HF 86/132, AI4B 92/145, ML4B 60/156,
 MMLU-Redux 90/100). v0.3 adds 607 upstream → 178 kept (Deep RL 36/48, Agents 19/39,
-DS4B 15/120, MMLU-Redux statistics 75/100 and college math 33/100).
+DS4B 15/120, MMLU-Redux statistics 75/100 and college math 33/100), then 199 more → 129 kept
+(Google MLCC 44/58, Google ML courses 22/41, numpy-100 63/100).
 
 ## Path B — generate from course materials
 

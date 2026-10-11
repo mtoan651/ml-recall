@@ -89,6 +89,42 @@ OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
 ```
 
+## Google Machine Learning courses — `google-mlcc` and `google-ml-courses`
+
+Page quizzes from the Machine Learning Crash Course and the Decision Forests, Clustering, GANs and
+Problem Framing courses at <https://developers.google.com/machine-learning> (snapshot
+2026-10-11), © Google, licensed under
+[CC BY 4.0](https://creativecommons.org/licenses/by/4.0/) (code samples Apache-2.0). Some stems
+were rewritten to stand alone where the page showed a figure or an interactive widget.
+
+## 100 NumPy exercises — `numpy-100`
+
+Exercises and solutions from <https://github.com/rougier/numpy-100>:
+
+```text
+MIT License
+
+Copyright (c) 2016 Nicolas P. Rougier
+
+Permission is hereby granted, free of charge, to any person obtaining a copy
+of this software and associated documentation files (the "Software"), to deal
+in the Software without restriction, including without limitation the rights
+to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+copies of the Software, and to permit persons to whom the Software is
+furnished to do so, subject to the following conditions:
+
+The above copyright notice and this permission notice shall be included in all
+copies or substantial portions of the Software.
+
+THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
+SOFTWARE.
+```
+
 ## Cited, not copied
 
 Explanations cite *Dive into Deep Learning* (Zhang, Lipton, Li, Smola; CC BY-SA 4.0,
