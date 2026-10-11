@@ -7,6 +7,12 @@ versioning: [SemVer](https://semver.org) as defined in [docs/conventions.md](doc
 
 ### Added
 
+- 129 draft questions from three new sources: Google Machine Learning Crash Course (44), Google's
+  Decision Forests, Clustering, GANs and Problem Framing courses (22) — page quizzes with
+  per-option feedback, CC BY 4.0 — and numpy-100 (63 self-graded NumPy exercises, MIT). Stems that
+  relied on a picture or an interactive widget were rewritten to stand alone; weak upstream
+  feedback was replaced by cited explanations. New importers `google_ml` and `numpy_100`;
+  curation `fix.why` edits or removes option feedback.
 - Timed tests for every topic and tag (`/topics/<topic>/exam/`, `/tags/<tag>/exam/`): up to 20
   random auto-graded questions, 1 minute each, one question per screen or all on one page. The
   clock runs from the start time, a reload resumes the test, it is submitted at 00:00, and the

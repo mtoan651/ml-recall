@@ -19,21 +19,22 @@ mock exams and spaced repetition. Free static site on GitHub Pages.
 
 | Domain | Topics | Questions | Reviewed |
 | --- | ---: | ---: | ---: |
-| Artificial Intelligence | 5 | 21 | 1 |
-| Mathematics for ML | 5 | 22 | 9 |
-| Machine Learning | 14 | 111 | 14 |
-| Deep Learning | 8 | 104 | 32 |
+| Artificial Intelligence | 5 | 29 | 1 |
+| Mathematics for ML | 5 | 133 | 9 |
+| Machine Learning | 14 | 172 | 14 |
+| Deep Learning | 8 | 110 | 32 |
 | Computer Vision | 3 | 10 | 0 |
-| Natural Language Processing | 5 | 47 | 0 |
-| Generative Models | 2 | 10 | 0 |
-| Large Language Models | 3 | 20 | 0 |
-| Reinforcement Learning | 2 | 12 | 0 |
-| Practical Tools | 2 | 27 | 0 |
-| **Total** | | **384** | **56** |
+| Natural Language Processing | 5 | 48 | 0 |
+| Generative Models | 2 | 15 | 0 |
+| Large Language Models | 4 | 40 | 0 |
+| Reinforcement Learning | 3 | 43 | 0 |
+| Practical Tools | 3 | 92 | 0 |
+| **Total** | | **692** | **56** |
 
-Sources so far: Hugging Face LLM Course, Microsoft AI/ML for Beginners, MMLU-Redux and the CE6146
-course exercises — see
-[docs/sources.md](docs/sources.md) for all 25 registered sources and their licenses.
+Imported so far: Hugging Face LLM, Deep RL and AI Agents courses; Microsoft AI, ML and Data
+Science for Beginners; Google's ML Crash Course and ML courses; MMLU-Redux; 100 NumPy exercises;
+and the CE6146 course exercises. See [docs/sources.md](docs/sources.md) for all 26 registered
+external sources and their licenses.
 
 ## Quick start
 

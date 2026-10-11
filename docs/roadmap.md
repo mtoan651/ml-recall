@@ -29,7 +29,8 @@ Versions follow [conventions.md#versioning](conventions.md#versioning).
 - [x] Explanations with citations for imported drafts (all 395 imported drafts)
 - [ ] Review the first topics → `reviewed`
 - [ ] NCU Intro to DL lecture questions (Path B: extract → generate → review)
-- [ ] d2l exercises → MCQ / short answer; Deep Learning Interviews; Google MLCC
+- [x] Google MLCC and Google ML courses quizzes; numpy-100 exercises
+- [ ] d2l exercises → MCQ / short answer; Deep Learning Interviews (PDF only)
 - [ ] `mlr extract` (markitdown/docling), `figstyle.py`, `mlr figs`
 
 ## v0.4.0 — Review features
