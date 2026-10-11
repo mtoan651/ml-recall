@@ -294,6 +294,8 @@ def equation_parts(
         placed.append((t, bb, color, rest[0] if rest else None))
         x = bb.x1 + 0.008
     shift = (1 - x) / 2  # centre the whole equation
+    # One bar height for all parts, clear of the deepest descender (e.g. the subscript of max).
+    bar_y = min(y - 0.13, min(bb.y0 for _t, bb, _c, _l in placed) - 0.05)
     spans, number = [], 0
     for t, bb, color, label in placed:
         t.set_x(bb.x0 + shift)
@@ -302,7 +304,7 @@ def equation_parts(
         x0, x1 = bb.x0 + shift + 0.004, bb.x1 + shift - 0.004
         ax.plot(
             [x0, x1],
-            [y - 0.13, y - 0.13],
+            [bar_y, bar_y],
             color=color,
             linewidth=5,
             solid_capstyle="butt",
@@ -313,7 +315,7 @@ def equation_parts(
             label = str(number)
         ax.text(
             (x0 + x1) / 2,
-            y - 0.32,
+            bar_y - 0.19,
             label,
             fontsize=13,
             color="white",

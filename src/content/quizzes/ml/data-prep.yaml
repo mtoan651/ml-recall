@@ -122,10 +122,10 @@ questions:
     difficulty: easy
     question: What's the best reason to balance your data?
     options:
-      - text: Imbalanced data looks bad in visualizations
-      - text: Balancing your data yields better results because an ML model won't skew towards one class
+      - text: Imbalanced data looks bad in charts and other visualizations
+      - text: It yields better results because the model won't skew towards one class
         correct: true
-      - text: Balancing your data gives you more data points
+      - text: Balancing your data always gives you more data points to train on
     explanation: |
       When one class dominates, a model sees many more examples of it and learns to predict it more
       often just because it is common. Balancing removes that skew so the minority classes are
@@ -262,10 +262,10 @@ questions:
       - text: List of employees' salaries
       - text: Hotel reviews
         correct: true
-      - text: Students' marks or grades
+      - text: Students' exam scores out of 100
     explanation: |
       Qualitative data record qualities that cannot be measured objectively, and written comments
-      such as hotel reviews are a typical example [^1]. Salaries and numeric marks are numbers that
+      such as hotel reviews are a typical example [^1]. Salaries and exam scores are numbers that
       you can sensibly add or average, so they are quantitative (numerical) [^1][^2].
     references:
       - source: ms-ds-for-beginners
@@ -282,19 +282,17 @@ questions:
   - id: data-prep-011
     type: single
     difficulty: easy
-    shuffle: false
-    question: The teacher is reviewing students’ number of correct answers, what type of data is that?
+    question: A teacher is reviewing the number of correct answers each student got. What type of data is that?
     options:
-      - text: Qualitative Data
-      - text: Quantitative Data
+      - text: Qualitative data
+      - text: Quantitative data
         correct: true
-      - text: All the above
+      - text: Both qualitative and quantitative data
     explanation: |
       The number of correct answers is a count. Counts are numerical variables, more precisely
       discrete ones, because they take whole-number values on which arithmetic makes sense [^1].
       Numerical observations like these are what the lesson calls quantitative data [^2]. That rules
-      out qualitative data, and "all the above" fails because this variable is not qualitative at
-      all.
+      out qualitative data, and "both" fails because this variable is not qualitative at all.
     references:
       - title: 'OpenIntro: Introduction to Modern Statistics (2nd ed.)'
         url: https://openintro-ims.netlify.app/data-hello.html#sec-variable-types
@@ -382,9 +380,8 @@ questions:
       url: https://github.com/microsoft/Data-Science-For-Beginners/blob/4d2ac427ad6f022e73a75c4f46a28bbb7978ec3f/quiz-app/src/assets/translations/en/group-2.json
     status: draft
   - id: data-prep-015
-    type: single
-    shuffle: false
-    question: 'True or False: A machine learning model can train *directly* on raw string values, like "Red" and "Black", without converting these values to numerical vectors.'
+    type: true_false
+    question: 'A machine learning model can train *directly* on raw string values, like "Red" and "Black", without converting these values to numerical vectors.'
     options:
       - text: 'True'
         why: During training, a model can only manipulate floating-point numbers. The string `"Red"` is not a floating-point number. You must convert strings like `"Red"` to floating-point numbers.
@@ -410,9 +407,17 @@ questions:
       - text: Z-score scaling
         correct: true
       - text: Linear scaling
+        why: Linear scaling suits features spread roughly uniformly between stable bounds, such as age [^1]. This feature is bell-shaped.
       - text: Log scaling
+        why: Log scaling suits power-law or heavily skewed features, such as book sales [^1]. This histogram is roughly symmetric.
       - text: Clipping
-    explanation: The data points generally conform to a normal distribution, so Z-score scaling will force them into the range –3 to +3. [^1]
+        why: Clipping caps extreme outliers [^1]. This feature has no extreme outliers, just a bell-shaped spread.
+    explanation: |
+      The histogram rises to a single peak near the middle and falls off about evenly on both
+      sides, so the feature roughly follows a normal distribution. Z-score scaling,
+      $(x - \mu)/\sigma$, is the technique for such features [^1]. It does not cap anything, but
+      in a normal distribution about 99.7% of the values lie within three standard deviations of
+      the mean, so after scaling almost all of them fall between $-3$ and $+3$ [^1].
     references:
       - source: google-mlcc
         locator: 'Numerical data: Normalization'
@@ -480,4 +485,60 @@ questions:
       id: google-mlcc
       ref: numerical-data/binning#q1
       url: https://developers.google.com/machine-learning/crash-course/numerical-data/binning
+    status: draft
+  - id: clustering-012
+    type: single
+    question: Assume you have enough data to create quantiles. How should you process the data distribution shown below?
+    figure:
+      src: ./data-prep/clustering-012.svg
+      alt: Histogram that rises sharply to a peak at small values (around 3 to 4) and then falls off in a long tail to the right, reaching past 25.
+    options:
+      - text: Create quantiles.
+        correct: true
+      - text: Normalize.
+        why: |
+          You typically normalize data if:
+
+          * The data distribution is Gaussian.
+          * You have some insight into what the data represents in the real world that suggests the data shouldn't be transformed nonlinearly.
+
+          Neither case applies here. The data distribution isn't Gaussian because it isn't symmetric. And you don't know what these values represent in the real world.
+      - text: Log transform.
+        why: This isn't a perfect power-law distribution, so don't use a log transform.
+    explanation: Because the distribution does not match a standard data distribution, you should default to creating quantiles. [^1]
+    references:
+      - source: google-ml-courses
+        locator: Data preparation
+        url: https://developers.google.com/machine-learning/clustering/prepare-data
+    source:
+      id: google-ml-courses
+      ref: clustering/prepare-data#q1
+      url: https://developers.google.com/machine-learning/clustering/prepare-data
+    status: draft
+  - id: clustering-013
+    type: single
+    question: Assume you have enough data to create quantiles. How would you process the data distribution shown below?
+    figure:
+      src: ./data-prep/clustering-013.svg
+      alt: Histogram of a symmetric, bell-shaped distribution centred at 0, spanning about −15 to 15.
+    options:
+      - text: Normalize.
+        correct: true
+      - text: Create quantiles.
+        why: Incorrect. Since this is a Gaussian distribution, the preferred transform is normalization.
+      - text: Log transform.
+        why: Incorrect. Only apply a log transform to power-law distributions.
+    explanation: |
+      The histogram is symmetric and bell-shaped, so the data are roughly Gaussian. For data shaped
+      like a Gaussian, the recommended transform is normalization: compute z-scores [^1]. Quantiles
+      are the default when the data do not match any known distribution, and a log transform is
+      meant for data that follow a power law [^1].
+    references:
+      - source: google-ml-courses
+        locator: Data preparation
+        url: https://developers.google.com/machine-learning/clustering/prepare-data
+    source:
+      id: google-ml-courses
+      ref: clustering/prepare-data#q2
+      url: https://developers.google.com/machine-learning/clustering/prepare-data
     status: draft

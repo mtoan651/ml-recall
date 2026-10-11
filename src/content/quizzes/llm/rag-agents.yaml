@@ -185,19 +185,19 @@ questions:
 
       Why are tools essential for an Agent?
     options:
-      - text: Tools serve no real purpose and do not contribute to the Agent’s ability to perform actions beyond basic text generation.
-        why: Tools expand an Agent's capabilities by allowing it to perform actions beyond text generation.
+      - text: Tools let the LLM call external APIs by itself, so no agent code is needed to run them.
+        why: An LLM can only output text. It writes a tool call, and the agent parses it and runs the tool on the LLM's behalf.
       - text: Tools are solely designed for memory storage, lacking any capacity to facilitate the execution of tasks or enhance interactive performance.
         why: Tools are primarily for performing actions, not just for storing data.
-      - text: Tools severely restrict the Agent exclusively to generating text, thereby preventing it from engaging in a broader range of interactive actions.
-        why: On the contrary, tools allow Agents to go beyond text-based responses.
+      - text: Tools retrain the LLM's weights on new data, so the Agent permanently learns new skills.
+        why: Calling a tool doesn't change the model's weights; the tool's result is simply added to the conversation as an observation.
       - text: Tools provide the Agent with the ability to execute actions a text-generation model cannot perform natively, such as making coffee or generating images.
         correct: true
     explanation: Tools enable Agents to interact with the real world and complete tasks. [^1]
     references:
       - source: hf-agents-course
-        locator: Unit 1. Introduction to Agents
-        url: https://huggingface.co/learn/agents-course/unit1/introduction
+        url: https://huggingface.co/learn/agents-course/unit1/tools
+        locator: Unit 1. What are Tools?, "How do tools work?"
     source:
       id: hf-agents-course
       ref: unit1/quiz1#q3
@@ -213,16 +213,22 @@ questions:
       - text: Actions are the steps the Agent takes, while Tools are external resources the Agent can use to perform those actions.
         correct: true
       - text: Actions and Tools are entirely identical components that can be used interchangeably, with no clear differences between them.
-        why: No, Actions are goals or tasks, while Tools are specific utilities the Agent uses to achieve them.
-      - text: Tools are considered broad utilities available for various functions, whereas Actions are mistakenly thought to be restricted only to physical interactions.
+        why: No. Actions are the steps the Agent takes, while Tools are specific functions the Agent calls to carry some of them out.
+      - text: Tools are broad utilities available for many different functions, whereas Actions are restricted to physical interactions with the real world.
         why: Not necessarily. Actions can involve both digital and physical tasks.
       - text: Actions inherently require the use of LLMs to be determined and executed, whereas Tools are designed to function autonomously without such dependencies.
         why: While LLMs help decide Actions, Actions themselves are not dependent on LLMs.
-    explanation: Actions are higher-level objectives, while Tools are specific functions the Agent can call upon. [^1]
+    explanation: |
+      Actions are the concrete steps an Agent takes to interact with its environment, such as searching
+      the web, querying a database or replying to the user [^1]. Tools are the functions the Agent can
+      call to carry out some of those steps, for example a web-search or calculator function [^2].
     references:
       - source: hf-agents-course
-        locator: Unit 1. Introduction to Agents
-        url: https://huggingface.co/learn/agents-course/unit1/introduction
+        url: https://huggingface.co/learn/agents-course/unit1/actions
+        locator: 'Unit 1. Actions: Enabling the Agent to Engage with Its Environment'
+      - source: hf-agents-course
+        url: https://huggingface.co/learn/agents-course/unit1/tools
+        locator: Unit 1. What are Tools?
     source:
       id: hf-agents-course
       ref: unit1/quiz1#q4
@@ -239,15 +245,15 @@ questions:
         why: LLMs actively process text input and generate responses, rather than just storing information.
       - text: LLMs serve as the reasoning 'brain' of the Agent, processing text inputs to understand instructions and plan actions.
         correct: true
-      - text: LLMs are erroneously believed to be used solely for image processing, when in fact their primary function is to process and generate text.
-        why: LLMs primarily work with text, although they can sometimes interact with multimodal inputs.
-      - text: LLMs are considered completely irrelevant to the operation of AI Agents, implying that they are entirely superfluous in any practical application.
-        why: LLMs are a core component of modern AI Agents.
+      - text: LLMs execute the Agent's tools themselves, sending requests to external APIs directly without any agent code.
+        why: An LLM can only output text. It writes the tool call, and the agent runs the tool on its behalf.
+      - text: LLMs only turn the final result into polished text, while hand-written rules decide which actions to take.
+        why: In an Agent, the LLM is the reasoning engine that decides the next action, not just a text formatter.
     explanation: LLMs enable the Agent to interpret, plan, and decide on the next steps. [^1]
     references:
       - source: hf-agents-course
-        locator: Unit 1. Introduction to Agents
-        url: https://huggingface.co/learn/agents-course/unit1/introduction
+        url: https://huggingface.co/learn/agents-course/unit1/what-are-agents
+        locator: Unit 1. What is an Agent?
     source:
       id: hf-agents-course
       ref: unit1/quiz1#q5
@@ -282,15 +288,17 @@ questions:
     type: single
     question: Which of the following best describes an AI tool?
     options:
-      - text: A process that only generates text responses
-      - text: An executable process or external API that allows agents to perform specific tasks and interact with external environments
+      - text: A model component that only generates text responses
+        why: Generating text is what the LLM itself does; a tool is something the agent calls to act beyond text.
+      - text: A function or external API the agent can call to perform a specific task
         correct: true
-      - text: A feature that stores agent conversations
+      - text: A memory feature that stores the agent's past conversations
+        why: Storing conversations is the agent's memory, not a tool; a tool is a callable function with a clear objective.
     explanation: Tools are executable functions that agents can use to perform specific tasks and interact with external environments. [^1]
     references:
       - source: hf-agents-course
-        locator: Unit 1. Introduction to Agents
-        url: https://huggingface.co/learn/agents-course/unit1/introduction
+        url: https://huggingface.co/learn/agents-course/unit1/tools
+        locator: Unit 1. What are Tools?, "What are AI Tools?"
     source:
       id: hf-agents-course
       ref: unit1/quiz2#q1
@@ -300,15 +308,20 @@ questions:
     type: single
     question: How do AI agents use tools as a form of "acting" in an environment?
     options:
-      - text: By passively waiting for user instructions
-      - text: By only using pre-programmed responses
-      - text: By asking the LLM to generate tool invocation code when appropriate and running tools on behalf of the model
+      - text: By passively waiting for the user to give step-by-step instructions
+        why: An agent acts on its own initiative; its LLM decides when a tool is needed.
+      - text: By only returning pre-programmed responses to each request
+        why: That describes a rule-based bot; an agent's LLM decides which tool to call and with which arguments.
+      - text: By having the LLM write tool calls, which the agent then runs on its behalf
         correct: true
-    explanation: Agents can invoke tools and use reasoning to plan and re-plan based on the information gained. [^1]
+    explanation: |
+      An LLM can only output text, so it cannot call a tool by itself. It writes a tool call (as text or
+      code); the agent parses it, runs the tool on the LLM's behalf and adds the result to the
+      conversation, so the LLM can plan its next step [^1].
     references:
       - source: hf-agents-course
-        locator: Unit 1. Introduction to Agents
-        url: https://huggingface.co/learn/agents-course/unit1/introduction
+        url: https://huggingface.co/learn/agents-course/unit1/tools
+        locator: Unit 1. What are Tools?, "How do tools work?"
     source:
       id: hf-agents-course
       ref: unit1/quiz2#q2
@@ -372,7 +385,7 @@ questions:
         why: Although multi-agent systems can distribute tasks, CodeAgent itself can handle multiple steps on its own using ReAct.
       - text: It stores every action in JSON for easy parsing before executing them all at once
         why: This behavior matches ToolCallingAgent's JSON-based approach, not CodeAgent.
-      - text: It cycles through writing internal thoughts, generating Python code, executing the code, and logging the results until it arrives at a final answer
+      - text: It repeats a cycle of thinking, writing Python code, running it and logging the result until it reaches a final answer
         correct: true
       - text: It relies on a vision module to validate code output before continuing to the next step
         why: Vision capabilities are supported in smolagents, but they're not a default requirement for CodeAgent or the ReAct approach.

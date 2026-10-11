@@ -91,27 +91,31 @@ questions:
       url: https://github.com/microsoft/AI-For-Beginners/blob/392d0df1b2647cbee104942390551f1ed9e072c8/etc/quiz-app/src/assets/translations/en/lesson-10.json
     status: draft
   - id: gans-004
-    type: single
+    type: multiple
     difficulty: easy
-    shuffle: false
-    question: Problems of GAN training includes
+    question: Which of the following are known problems of GAN training?
     options:
       - text: Sensitivity to hyperparameters
-      - text: Keeping balance between generator and discriminator
-      - text: all of the above
         correct: true
+      - text: Keeping a balance between the generator and the discriminator
+        correct: true
+      - text: 'Mode collapse: the generator keeps producing the same few images'
+        correct: true
+      - text: Every training image needs a human-annotated class label
+        why: A plain GAN learns from unlabeled images. The discriminator's targets are created automatically, 1 for training images and 0 for generated ones [^1].
     explanation: |
-      Both are well-known difficulties of GAN training [^1]. On balance: if the discriminator
-      gets too good too fast, its loss drops to zero and the generator stops learning. If the
-      generator is trained too long without the discriminator being updated, it can collapse many
-      inputs onto the same output [^1][^2]. On hyperparameters: GANs often fail to converge until
-      the learning rate is changed. The DCGAN authors, for example, found that Adam's default
-      learning rate was too high and that $\beta_1 = 0.9$ made training oscillate, so they used
-      0.0002 and 0.5 [^1][^3].
+      All three are well-known difficulties of GAN training [^1]. On balance: if the
+      discriminator gets too good too fast, its loss drops to zero and the generator stops
+      learning. If the generator is trained too long without the discriminator being updated, it
+      can collapse many inputs onto the same output [^1][^2]. That is mode collapse: the generator
+      finds one image that fools the discriminator instead of producing a variety [^1]. On
+      hyperparameters: GANs often fail to converge until the learning rate is changed. The DCGAN
+      authors, for example, found that Adam's default learning rate was too high and that
+      $\beta_1 = 0.9$ made training oscillate, so they used 0.0002 and 0.5 [^1][^3].
     references:
       - source: ms-ai-for-beginners
         url: https://github.com/microsoft/AI-For-Beginners/blob/392d0df1b2647cbee104942390551f1ed9e072c8/lessons/4-ComputerVision/10-GANs/README.md#problems-with-gan-training
-        locator: Lesson 10 "Generative Adversarial Networks", section "Problems with GAN training"
+        locator: Lesson 10 "Generative Adversarial Networks", sections "Training the GAN" and "Problems with GAN training"
       - title: Goodfellow et al. (2014), Generative Adversarial Networks
         url: https://arxiv.org/abs/1406.2661
         locator: Sec. 6 Advantages and disadvantages
@@ -124,54 +128,82 @@ questions:
       url: https://github.com/microsoft/AI-For-Beginners/blob/392d0df1b2647cbee104942390551f1ed9e072c8/etc/quiz-app/src/assets/translations/en/lesson-10.json
     status: draft
   - id: gans-005
-    type: single
-    question: 'True or false: the discriminator network and generator network influence each other solely through the data produced by the generator and the labels produced by the discriminator. When it comes to backpropagation, they are separate networks.'
+    type: true_false
+    difficulty: medium
+    question: 'The discriminator network and generator network influence each other solely through the data produced by the generator and the labels produced by the discriminator. When it comes to backpropagation, they are separate networks.'
     options:
       - text: 'True'
         why: 'Incorrect: during generator training, gradients propagate through the discriminator network to the generator network (although the discriminator does not update its weights during generator training).'
       - text: 'False'
         correct: true
-    explanation: 'Correct: during generator training, gradients propagate through the discriminator network to the generator network (although the discriminator does not update its weights during generator training). So the weights in the discriminator network influence the updates to the generator network. [^1]'
+    explanation: |
+      During generator training, gradients propagate through the discriminator network to the
+      generator network, although the discriminator does not update its weights during generator
+      training [^1]. The generator's loss is computed from the discriminator's output, so
+      backpropagation starts there and flows back through the discriminator into the generator;
+      only the generator's weights are then changed [^2]. So the weights in the discriminator
+      network influence the updates to the generator network.
     references:
       - source: google-ml-courses
-        locator: 'Check Your Understanding: GAN Anatomy'
         url: https://developers.google.com/machine-learning/gan/check
+        locator: 'Check Your Understanding: GAN Anatomy'
+      - source: google-ml-courses
+        url: https://developers.google.com/machine-learning/gan/generator#using-the-discriminator-to-train-the-generator
+        locator: The Generator, sec. Using the Discriminator to Train the Generator
     source:
       id: google-ml-courses
       ref: gan/check#q1
       url: https://developers.google.com/machine-learning/gan/check
     status: draft
   - id: gans-006
-    type: single
-    question: 'True or false: a typical GAN trains the generator and the discriminator simultaneously.'
+    type: true_false
+    difficulty: easy
+    question: 'A typical GAN trains the generator and the discriminator simultaneously.'
     options:
       - text: 'True'
-        why: Incorrect. A typical GAN alternates between training the discriminator and training the generator. There is some [research ](https://arxiv.org/abs/1706.04156) on training the generator and discriminator simultaneously.
+        why: Incorrect. A typical GAN alternates between training the discriminator and training the generator. There is some [research](https://arxiv.org/abs/1706.04156) on training the generator and discriminator simultaneously.
       - text: 'False'
         correct: true
-    explanation: Correct. A typical GAN alternates between training the discriminator and training the generator. [^1]
+    explanation: |
+      A typical GAN alternates between training the discriminator and training the generator
+      [^1]. The discriminator trains for one or more epochs while the generator is held constant,
+      then the generator trains while the discriminator is held constant, and the two steps
+      repeat [^2].
     references:
       - source: google-ml-courses
-        locator: 'Check Your Understanding: GAN Anatomy'
         url: https://developers.google.com/machine-learning/gan/check
+        locator: 'Check Your Understanding: GAN Anatomy'
+      - source: google-ml-courses
+        url: https://developers.google.com/machine-learning/gan/training#alternating-training
+        locator: GAN Training, sec. Alternating Training
     source:
       id: google-ml-courses
       ref: gan/check#q2
       url: https://developers.google.com/machine-learning/gan/check
     status: draft
   - id: gans-007
-    type: single
-    question: 'True or false: a GAN always uses the same loss function for both discriminator and generator training.'
+    type: true_false
+    difficulty: medium
+    question: 'A GAN always uses the same loss function for both discriminator and generator training.'
     options:
       - text: 'True'
         why: Incorrect. While it's possible for a GAN to use the same loss for both generator and discriminator training (or the same loss differing only in sign), it's not required. In fact it's more common to use different losses for the discriminator and the generator.
       - text: 'False'
         correct: true
-    explanation: Correct. While it's possible for a GAN to use the same loss for both generator and discriminator training (or the same loss differing only in sign), it's not required. In fact it's more common to use different losses for the discriminator and the generator. [^1]
+    explanation: |
+      It's possible for a GAN to use the same loss for both generator and discriminator training
+      (or the same loss differing only in sign), but it's not required. In fact it's more common
+      to use different losses for the discriminator and the generator [^1]. Even in the minimax
+      and Wasserstein schemes, where both losses derive from a single distance measure, the
+      generator can only affect the term for the generated data, so the two losses end up
+      looking different [^2].
     references:
       - source: google-ml-courses
-        locator: 'Check Your Understanding: GAN Anatomy'
         url: https://developers.google.com/machine-learning/gan/check
+        locator: 'Check Your Understanding: GAN Anatomy'
+      - source: google-ml-courses
+        url: https://developers.google.com/machine-learning/gan/loss#one-loss-function-or-two
+        locator: Loss Functions, sec. One Loss Function or Two?
     source:
       id: google-ml-courses
       ref: gan/check#q3
@@ -179,6 +211,7 @@ questions:
     status: draft
   - id: gans-008
     type: single
+    difficulty: medium
     question: |
       You have IQ scores for 1000 people. You model the distribution of IQ scores with the following procedure:
 
@@ -194,7 +227,7 @@ questions:
         why: 'Incorrect: an analogous discriminative model would try to discriminate between different kinds of IQ scores. For example, a discriminative model might try to classify an IQ as fake or real.'
       - text: Not enough information to tell.
         why: This model does indeed fit the definition of one of our two kinds of models.
-    explanation: 'Correct: with every roll you are effectively generating the IQ of an imaginary person. Furthermore, your generative model captures the fact that IQ scores are distributed normally (that is, on a bell curve). [^1]'
+    explanation: 'With every roll you are effectively generating the IQ of an imaginary person, so the procedure is a generative model of IQ scores. Furthermore, your generative model captures the fact that IQ scores are distributed normally (that is, on a bell curve). [^1]'
     references:
       - source: google-ml-courses
         locator: 'Background: What is a Generative Model?'
@@ -206,6 +239,7 @@ questions:
     status: draft
   - id: gans-009
     type: single
+    difficulty: medium
     question: A model returns a probability when you give it a data instance. Is this model a generative model or a discriminative model?
     options:
       - text: Generative model

@@ -269,6 +269,9 @@ questions:
             - np.flatnonzero
             - argwhere
             - np.argwhere
+            - where
+            - np.where
+            - numpy.where
           hint: a NumPy function name
         - numeric: 4
           hint: a number
@@ -282,6 +285,8 @@ questions:
       dimension [^2]; for this 1-D input that is `(array([0, 1, 4]),)`, the numpy-100 answer [^1].
       Indices are zero-based, so the value 4 sits at index 4. `np.flatnonzero` returns the same
       indices as a single array, and `np.argwhere` groups them by element, one row each [^2].
+      `np.where` called with only a condition is a shorthand for `np.nonzero` and gives the same
+      result [^3].
     references:
       - source: numpy-100
         url: https://github.com/rougier/numpy-100/blob/8ca28aaefca69a32ad3ccbbd01c7c9a785c2d5c1/100_Numpy_exercises_with_solutions.md
@@ -289,6 +294,10 @@ questions:
       - title: numpy.nonzero (NumPy documentation)
         url: https://numpy.org/doc/stable/reference/generated/numpy.nonzero.html
         locator: Function description (argwhere); See also (flatnonzero)
+      - title: numpy.where (NumPy documentation)
+        url: https://numpy.org/doc/stable/reference/generated/numpy.where.html
+        locator: Note (only condition provided)
+        quote: When only condition is provided, this function is a shorthand for np.asarray(condition).nonzero().
     source:
       id: numpy-100
       ref: q10
@@ -742,7 +751,7 @@ questions:
         - accept:
             - (4, 4)
             - '[4, 4]'
-          pattern: '[\(\[]?\s*4\s*,\s*4\s*[\)\]]?'
+          pattern: \(\s*4\s*,\s*4\s*,?\s*\)|\[\s*4\s*,\s*4\s*,?\s*\]
           hint: repetitions per axis, e.g. (2, 3)
       model: |
         ```python
@@ -1856,8 +1865,8 @@ questions:
         - accept:
             - (-2, -1)
             - (2, 3)
-          pattern: \(?\s*(-2\s*,\s*-1|-1\s*,\s*-2|2\s*,\s*3|3\s*,\s*2)\s*\)?
-          hint: a tuple of two axis numbers
+          pattern: \(\s*((2|-2)\s*,\s*(3|-1)|(3|-1)\s*,\s*(2|-2))\s*,?\s*\)
+          hint: a tuple of two axis numbers, e.g. (0, 1)
       model: |
         ```python
         A = np.random.randint(0,10,(3,4,3,4))
@@ -2000,6 +2009,7 @@ questions:
         - numeric: 4
           accept:
             - nz+1
+            - 1+nz
           hint: the slice step
       model: |
         ```python
@@ -2084,7 +2094,7 @@ questions:
       blanks:
         - accept:
             - '[1, 0]'
-          pattern: \[?\s*1\s*,\s*0\s*\]?
+          pattern: \[\s*1\s*,\s*0\s*,?\s*\]
           hint: a list of row indices, e.g. [2, 3]
         - numeric: 5
           hint: a number
@@ -2471,8 +2481,8 @@ questions:
         - accept:
             - (1, 3)
             - (-3, -1)
-          pattern: \(?\s*(1\s*,\s*3|3\s*,\s*1|-3\s*,\s*-1|-1\s*,\s*-3)\s*\)?
-          hint: a tuple of two axis numbers
+          pattern: \(\s*((1|-3)\s*,\s*(3|-1)|(3|-1)\s*,\s*(1|-3))\s*,?\s*\)
+          hint: a tuple of two axis numbers, e.g. (0, 2)
         - numeric: 16
           hint: a number
       model: |
@@ -2638,6 +2648,7 @@ questions:
         - accept:
             - i,i,i->i
           hint: einsum subscripts using the label i
+          pattern: i\s*,\s*i\s*,\s*i\s*->\s*i
       model: |
         ```python
         # Author: Ryan G.
@@ -2826,17 +2837,21 @@ questions:
         - accept:
             - i->
           hint: einsum subscripts with the label i
+          pattern: i\s*->
         - accept:
             - i,i->i
           hint: einsum subscripts with the label i
+          pattern: i\s*,\s*i\s*->\s*i
         - accept:
             - i,i
             - i,i->
           hint: einsum subscripts with the label i
+          pattern: i\s*,\s*i(\s*->)?
         - accept:
             - i,j->ij
             - i,j
           hint: einsum subscripts with the labels i and j
+          pattern: i\s*,\s*j(\s*->\s*ij)?
       model: |
         ```python
         # Author: Alex Riley

@@ -5,6 +5,7 @@ title: NLP Tasks
 questions:
   - id: nlp-tasks-001
     type: multiple
+    difficulty: hard
     question: How does the `token-classification` pipeline handle entities that span over several tokens?
     options:
       - text: The entities with the same label are merged into one entity.
@@ -15,11 +16,23 @@ questions:
         correct: true
       - text: When a token has the label of a given entity, any other following token with the same label is considered part of the same entity, unless it's labeled as the start of a new entity.
         correct: true
-    explanation: Correct! That's one strategy to handle entities. What other answers here apply? That's the most common way to group entities together -- it's not the only right answer, though. [^1]
+    explanation: |
+      The model predicts one label per token, and entities are rebuilt from those labels. Labels come in
+      pairs: `B-XXX` marks a token at the beginning of an entity of type XXX and `I-XXX` a token inside
+      it [^1]. When grouping, consecutive tokens labelled `I-XXX` are added to the current entity, and the
+      entity stops at an `O`, a different type, or a `B-XXX` that starts a new entity of the same type
+      [^1]. With word-level strategies such as `aggregation_strategy="first"`, a word takes the tag of its
+      first token, so its pieces cannot end up in different entities [^2]. Simply merging all tokens
+      with the same label is an oversimplification: two adjacent entities of the same type would become
+      one [^1].
     references:
       - source: hf-llm-course
-        locator: 'Chapter 6: The 🤗 Tokenizers library'
-        url: https://huggingface.co/learn/llm-course/chapter6/1
+        url: https://huggingface.co/learn/llm-course/chapter6/3#grouping-entities
+        locator: Chapter 6.3 Fast tokenizers' special powers, secs. From inputs to predictions and Grouping entities
+      - title: Hugging Face Transformers documentation, Pipelines (TokenClassificationPipeline)
+        url: https://huggingface.co/docs/transformers/main_classes/pipelines#transformers.TokenClassificationPipeline
+        locator: TokenClassificationPipeline, aggregation_strategy
+        quote: Words will simply use the tag of the first token of the word when there is ambiguity.
     source:
       id: hf-llm-course
       ref: chapter6/10#q4
@@ -27,21 +40,28 @@ questions:
     status: draft
   - id: nlp-tasks-002
     type: single
+    difficulty: medium
     question: How does the `question-answering` pipeline handle long contexts?
     options:
       - text: It doesn't really, as it truncates the long context at the maximum length accepted by the model.
-        why: There is a trick you can use to handle long contexts. Do you remember what it is?
+        why: No, truncating could cut off the answer; the pipeline splits a long context into chunks instead.
       - text: It splits the context into several parts and averages the results obtained.
         why: No, it wouldn't make sense to average the results, as some parts of the context won't include the answer.
       - text: It splits the context into several parts (with overlap) and finds the maximum score for an answer in each part.
         correct: true
       - text: It splits the context into several parts (without overlap, for efficiency) and finds the maximum score for an answer in each part.
         why: No, it includes some overlap between the parts to avoid a situation where the answer would be split across two parts.
-    explanation: That's the correct answer! [^1]
+    explanation: |
+      Truncating a long context could cut off the answer. Instead, the `question-answering` pipeline
+      splits the context into chunks no longer than its maximum length (384 tokens), with some
+      overlap (the `stride`) between consecutive chunks so that the answer is not split at exactly the
+      wrong place [^1]. Every possible answer span in each chunk gets a score, the best span of each
+      chunk is kept, and the candidate with the highest score is the answer [^1]. Averaging over chunks
+      would make no sense, since most chunks do not contain the answer.
     references:
       - source: hf-llm-course
-        locator: 'Chapter 6: The 🤗 Tokenizers library'
-        url: https://huggingface.co/learn/llm-course/chapter6/1
+        url: https://huggingface.co/learn/llm-course/chapter6/3b#handling-long-contexts
+        locator: Chapter 6.3b Fast tokenizers in the QA pipeline, sec. Handling long contexts
     source:
       id: hf-llm-course
       ref: chapter6/10#q5
@@ -49,6 +69,7 @@ questions:
     status: draft
   - id: nlp-tasks-003
     type: multiple
+    difficulty: easy
     question: Which of the following tasks can be framed as a token classification problem?
     options:
       - text: Find the grammatical components in a sentence.
@@ -57,13 +78,23 @@ questions:
         why: No, this is a sequence classification problem.
       - text: Find the persons mentioned in a sentence.
         correct: true
-      - text: Find the chunk of words in a sentence that answers a question.
+      - text: Find the chunk of words in a sentence that is the answer to a question.
         why: No, that would be a question answering problem.
-    explanation: Correct! We can then label each word as a noun, verb, etc. Correct! We can label each word as person or not person. [^1]
+    explanation: |
+      Token classification gives a label to each token of a sentence [^1]. Finding the grammatical
+      components is part-of-speech tagging, which marks every word as noun, verb, adjective and so on,
+      and finding the persons is named entity recognition, which labels each token with an entity class
+      or "no entity" [^1]. Deciding whether a whole sentence is grammatical needs one label for the
+      sentence, so it is sequence classification. Finding the chunk that answers a question is
+      extractive question answering, where the model predicts the start and end positions of the answer
+      [^2].
     references:
       - source: hf-llm-course
-        locator: 'Chapter 7: Classical NLP tasks'
-        url: https://huggingface.co/learn/llm-course/chapter7/1
+        url: https://huggingface.co/learn/llm-course/chapter7/2#token-classification
+        locator: Chapter 7.2 Token classification, introduction
+      - source: hf-llm-course
+        url: https://huggingface.co/learn/llm-course/chapter7/7#processing-the-training-data
+        locator: Chapter 7.7 Question answering, sec. Processing the training data
     source:
       id: hf-llm-course
       ref: chapter7/9#q1
@@ -71,7 +102,8 @@ questions:
     status: draft
   - id: nlp-tasks-004
     type: multiple
-    question: What part of the preprocessing for token classification differs from the other preprocessing pipelines?
+    difficulty: hard
+    question: Which parts of the preprocessing for token classification differ from the other preprocessing pipelines?
     options:
       - text: There is no need to do anything; the texts are already tokenized.
         why: The texts are indeed given as separate words, but we still need to apply the subword tokenization model.
@@ -81,11 +113,18 @@ questions:
         why: That's not specific to token classification -- we always use `-100` as the label for tokens we want to ignore in the loss.
       - text: We need to make sure to truncate or pad the labels to the same size as the inputs, when applying truncation/padding.
         correct: true
-    explanation: Correct! This is different from the usual preprocessing, where we need to apply the full tokenization pipeline. Can you think of another difference? Indeed! That's not the only difference, though. [^1]
+    explanation: |
+      Token classification datasets such as CoNLL-2003 come already split into words, each with a label,
+      so instead of the full tokenization pipeline we only apply subword tokenization, passing
+      `is_split_into_words=True` to the tokenizer [^1]. The labels then have to follow the inputs: once
+      they are aligned with the tokens, they must be padded exactly like the inputs so that both keep the
+      same size, which `DataCollatorForTokenClassification` does with the value `-100` [^1]. The words
+      still have to be tokenized into subwords, and labelling special tokens with `-100` is not specific
+      to this task: `-100` is simply the index the cross-entropy loss ignores [^1].
     references:
       - source: hf-llm-course
-        locator: 'Chapter 7: Classical NLP tasks'
-        url: https://huggingface.co/learn/llm-course/chapter7/1
+        url: https://huggingface.co/learn/llm-course/chapter7/2#processing-the-data
+        locator: Chapter 7.2 Token classification, secs. Processing the data and Data collation
     source:
       id: hf-llm-course
       ref: chapter7/9#q2
@@ -93,6 +132,7 @@ questions:
     status: draft
   - id: nlp-tasks-005
     type: single
+    difficulty: medium
     question: What problem arises when we tokenize the words in a token classification problem and want to label the tokens?
     options:
       - text: The tokenizer adds special tokens and we have no labels for them.
@@ -101,11 +141,17 @@ questions:
         correct: true
       - text: The added tokens have no labels, so there is no problem.
         why: That's incorrect; we need as many labels as we have tokens or our models will error out.
-    explanation: That is the main problem, and we need to align the original labels with the tokens. [^1]
+    explanation: |
+      The dataset gives one label per word, but the subword tokenizer can split a word into several
+      tokens. In the first CoNLL-2003 sentence "lamb" becomes `la` and `##mb`, so 9 labels face 12
+      tokens once `[CLS]` and `[SEP]` are added [^1]. The labels must therefore be aligned with the
+      tokens: using `word_ids()`, each token gets the label of its word, with `B-` turned into `I-`
+      inside a word [^1]. The special tokens are the easy part: they get the label `-100`, which the loss
+      ignores [^1].
     references:
       - source: hf-llm-course
-        locator: 'Chapter 7: Classical NLP tasks'
-        url: https://huggingface.co/learn/llm-course/chapter7/1
+        url: https://huggingface.co/learn/llm-course/chapter7/2#processing-the-data
+        locator: Chapter 7.2 Token classification, sec. Processing the data
     source:
       id: hf-llm-course
       ref: chapter7/9#q3
@@ -113,6 +159,7 @@ questions:
     status: draft
   - id: nlp-tasks-006
     type: multiple
+    difficulty: easy
     question: Which of these tasks can be seen as a sequence-to-sequence problem?
     options:
       - text: Writing short reviews of long documents
@@ -123,11 +170,20 @@ questions:
         correct: true
       - text: Fixing the messages sent by my nephew/friend so they're in proper English
         correct: true
-    explanation: Yes, that's a summarization problem. Try another answer! This can be framed as a sequence-to-sequence problem. It's not the only right answer, though. That's definitely a sequence-to-sequence problem. Can you spot another one? That's a kind of translation problem, so definitely a sequence-to-sequence task. This isn't the only right answer, though! [^1]
+    explanation: |
+      A sequence-to-sequence task turns an input text into a new output text, which is what
+      encoder-decoder models are built for: summarization, translation and generative question
+      answering [^1]. Writing short reviews of long documents is summarization, translating Chinese into
+      English is translation, answering questions about a document can be framed as generative question
+      answering, and rewriting someone's messages in proper English is style transfer, a translation
+      within one language [^2]. All four options are therefore sequence-to-sequence problems.
     references:
       - source: hf-llm-course
-        locator: 'Chapter 7: Classical NLP tasks'
-        url: https://huggingface.co/learn/llm-course/chapter7/1
+        url: https://huggingface.co/learn/llm-course/chapter1/6#sequence-to-sequence-models
+        locator: Chapter 1.6 Transformer Architectures, sec. Sequence-to-sequence models
+      - source: hf-llm-course
+        url: https://huggingface.co/learn/llm-course/chapter7/4#translation
+        locator: Chapter 7.4 Translation, introduction
     source:
       id: hf-llm-course
       ref: chapter7/9#q6
@@ -135,6 +191,7 @@ questions:
     status: draft
   - id: nlp-tasks-007
     type: multiple
+    difficulty: medium
     question: What are the main challenges when preprocessing data for a question answering task?
     options:
       - text: You need to tokenize the inputs.
@@ -145,11 +202,21 @@ questions:
         why: No, unless you are framing your question answering problem as a sequence-to-sequence task.
       - text: From the answer span in the text, you have to find the start and end token in the tokenized input.
         correct: true
-    explanation: This is definitely one of the challenges. That's one of the hard parts, yes! [^1]
+    explanation: |
+      The labels for extractive QA are the indices of the tokens where the answer starts and ends, but
+      the dataset gives the answer as a character position in the context, so the offset mapping is
+      needed to turn that character span into start and end tokens [^1]. Long contexts are the other
+      difficulty: one example becomes several training features through a sliding window, and features
+      that do not contain the whole answer get the label `(0, 0)`, the `[CLS]` token [^1]. Tokenizing the
+      inputs is routine, and the answers only need tokenizing when QA is framed as a generative,
+      sequence-to-sequence task [^2].
     references:
       - source: hf-llm-course
-        locator: 'Chapter 7: Classical NLP tasks'
-        url: https://huggingface.co/learn/llm-course/chapter7/1
+        url: https://huggingface.co/learn/llm-course/chapter7/7#processing-the-training-data
+        locator: Chapter 7.7 Question answering, sec. Processing the training data
+      - source: hf-llm-course
+        url: https://huggingface.co/learn/llm-course/chapter7/4#translation
+        locator: Chapter 7.4 Translation, introduction (generative question answering)
     source:
       id: hf-llm-course
       ref: chapter7/9#q12
@@ -157,21 +224,31 @@ questions:
     status: draft
   - id: nlp-tasks-008
     type: single
+    difficulty: hard
     question: How is post-processing usually done in question answering?
     options:
       - text: The model gives you the start and end positions of the answer, and you just have to decode the corresponding span of tokens.
         why: That could be one way to do it, but it's a bit too simplistic.
       - text: The model gives you the start and end positions of the answer for each feature created by one example, and you just have to decode the corresponding span of tokens in the one that has the best score.
-        why: That's close to the post-processing we studied, but it's not entirely right.
+        why: Close, but the answer is not decoded from the tokens; the offset mapping is used to cut the matching span out of the original context text.
       - text: The model gives you the start and end positions of the answer for each feature created by one example, and you just have to match them to the span in the context for the one that has the best score.
         correct: true
       - text: The model generates an answer, and you just have to decode it.
         why: No, unless you are framing your question answering problem as a sequence-to-sequence task.
-    explanation: That's it in a nutshell! [^1]
+    explanation: |
+      The model outputs start and end logits for every token, and one long example can produce several
+      features [^1]. For each feature, valid (start, end) pairs inside the context are scored, and the
+      best candidate over all the features of the example is kept [^1][^2]. Its token positions are then
+      mapped to character positions with the offset mapping, and the answer is the matching span of the
+      original context [^1][^2]. Generating the answer token by token only happens when QA is framed as
+      a sequence-to-sequence task.
     references:
       - source: hf-llm-course
-        locator: 'Chapter 7: Classical NLP tasks'
-        url: https://huggingface.co/learn/llm-course/chapter7/1
+        url: https://huggingface.co/learn/llm-course/chapter7/7#post-processing
+        locator: Chapter 7.7 Question answering, sec. Post-processing
+      - source: hf-llm-course
+        url: https://huggingface.co/learn/llm-course/chapter6/3b#handling-long-contexts
+        locator: Chapter 6.3b Fast tokenizers in the QA pipeline, sec. Handling long contexts
     source:
       id: hf-llm-course
       ref: chapter7/9#q13
@@ -180,7 +257,7 @@ questions:
   - id: nlp-tasks-009
     type: single
     difficulty: easy
-    question: What does NER stands for?
+    question: What does NER stand for?
     options:
       - text: Nearest Estimated Region
       - text: Nearest Entity Region
@@ -233,7 +310,7 @@ questions:
   - id: nlp-tasks-011
     type: single
     difficulty: easy
-    question: To train NER model, we need
+    question: To train an NER model, we need
     options:
       - text: Labeled dataset
         correct: true
@@ -267,7 +344,7 @@ questions:
   - id: nlp-tasks-012
     type: single
     difficulty: easy
-    question: NER model is essentially a ____ model
+    question: An NER model is essentially a ____ model
     options:
       - text: text classification
       - text: token classification
@@ -324,7 +401,7 @@ questions:
   - id: nlp-tasks-014
     type: single
     difficulty: medium
-    question: NER model is a good example of ____ network architecture
+    question: An NER model is a good example of a ____ network architecture
     options:
       - text: one-to-one
       - text: one-to-many

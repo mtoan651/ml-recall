@@ -5,21 +5,29 @@ title: Training Deep Networks
 questions:
   - id: training-001
     type: single
+    difficulty: easy
     question: What does `fp16=True` in TrainingArguments enable?
     options:
-      - text: 16-bit integer precision for faster training.
+      - text: 16-bit integer weights and activations for faster training.
         why: fp16 refers to floating-point precision, not integer precision.
-      - text: Mixed precision training with 16-bit floating-point numbers for faster training and reduced memory usage.
+      - text: Mixed precision training with 16-bit floating-point numbers.
         correct: true
-      - text: Training for exactly 16 epochs.
+      - text: Training for exactly 16 epochs with the default batch size.
         why: fp16 has nothing to do with the number of epochs.
-      - text: Using 16 GPUs for distributed training.
+      - text: Distributed data-parallel training across 16 GPUs.
         why: The number of GPUs is not controlled by the fp16 parameter.
-    explanation: Mixed precision training uses 16-bit floats for forward pass and 32-bit for gradients, improving speed and reducing memory usage. [^1]
+    explanation: |
+      `fp16=True` turns on mixed precision training, which makes training faster and reduces memory
+      use [^1]. "Mixed" means that not every operation runs in 16 bits: operations such as linear
+      layers and convolutions are much faster in float16, while operations such as reductions need the
+      wider range of float32, so each operation runs in the type that suits it [^2].
     references:
       - source: hf-llm-course
-        locator: 'Chapter 3: Fine-tuning a pretrained model'
-        url: https://huggingface.co/learn/llm-course/chapter3/1
+        url: https://huggingface.co/learn/llm-course/chapter3/3#advanced-training-features
+        locator: 'Chapter 3, Fine-tuning a model with the Trainer API: Advanced Training Features'
+      - title: Automatic Mixed Precision package - torch.amp (PyTorch documentation)
+        url: https://docs.pytorch.org/docs/stable/amp.html
+        locator: Introduction
     source:
       id: hf-llm-course
       ref: chapter3/3#q3
@@ -27,21 +35,26 @@ questions:
     status: draft
   - id: training-002
     type: single
+    difficulty: easy
     question: What is gradient accumulation and how do you enable it?
     options:
-      - text: It saves gradients to disk, enabled with save_gradients=True.
+      - text: It saves gradients to disk, enabled with `save_gradients=True`.
         why: Gradient accumulation doesn't involve saving gradients to disk.
-      - text: It accumulates gradients over multiple batches before updating, enabled with gradient_accumulation_steps.
+      - text: It accumulates gradients over multiple batches before updating, enabled with `gradient_accumulation_steps`.
         correct: true
-      - text: It speeds up gradient computation, enabled automatically with fp16.
+      - text: It speeds up gradient computation, enabled automatically with `fp16`.
         why: While fp16 can speed up training, gradient accumulation is a separate technique.
-      - text: It prevents gradient overflow, enabled with gradient_clipping=True.
+      - text: It prevents gradient overflow, enabled with `gradient_clipping=True`.
         why: That describes gradient clipping, not gradient accumulation.
-    explanation: This allows you to simulate larger batch sizes by accumulating gradients over multiple forward passes. [^1]
+    explanation: |
+      Gradient accumulation adds up the gradients of several batches and updates the weights only once
+      after them, which simulates a larger batch when GPU memory is limited [^1]. In the Trainer it is
+      set with `gradient_accumulation_steps`: a per-device batch size of 4 with 4 accumulation steps
+      gives an effective batch size of 16 [^1].
     references:
       - source: hf-llm-course
-        locator: 'Chapter 3: Fine-tuning a pretrained model'
-        url: https://huggingface.co/learn/llm-course/chapter3/1
+        url: https://huggingface.co/learn/llm-course/chapter3/3#advanced-training-features
+        locator: 'Chapter 3, Fine-tuning a model with the Trainer API: Advanced Training Features'
     source:
       id: hf-llm-course
       ref: chapter3/3#q6
@@ -49,6 +62,7 @@ questions:
     status: draft
   - id: training-003
     type: single
+    difficulty: medium
     question: What is the main difference between Adam and AdamW optimizers?
     options:
       - text: AdamW uses a different learning rate schedule.
@@ -59,11 +73,13 @@ questions:
         why: AdamW can be used with any model architecture, not just transformers.
       - text: AdamW requires less memory than Adam.
         why: Both optimizers have similar memory requirements.
-    explanation: Correct! AdamW separates weight decay from the gradient-based parameter updates, leading to better regularization. [^1]
+    explanation: |
+      AdamW separates weight decay from the gradient-based parameter updates, leading to better
+      regularization [^1].
     references:
       - source: hf-llm-course
-        locator: 'Chapter 3: Fine-tuning a pretrained model'
-        url: https://huggingface.co/learn/llm-course/chapter3/1
+        url: https://huggingface.co/learn/llm-course/chapter3/4#prepare-for-training
+        locator: 'Chapter 3, A full training loop: Prepare for training'
     source:
       id: hf-llm-course
       ref: chapter3/4#q1
@@ -71,21 +87,37 @@ questions:
     status: draft
   - id: training-004
     type: single
-    question: In a training loop, what is the correct order of operations?
+    difficulty: medium
+    question: In a training loop that uses a learning-rate scheduler, what is the correct order of operations for each batch?
     options:
-      - text: Forward pass → Backward pass → Optimizer step → Zero gradients
-        why: Close, but you should zero gradients before the next forward pass to avoid accumulating old gradients.
+      - text: Forward pass → Backward pass → Scheduler step → Optimizer step → Zero gradients
+        why: The scheduler should step after the optimizer. In PyTorch, calling the scheduler before the optimizer's update skips the first value of the learning-rate schedule.
       - text: Forward pass → Backward pass → Optimizer step → Scheduler step → Zero gradients
         correct: true
       - text: Zero gradients → Forward pass → Optimizer step → Backward pass
-        why: The backward pass must come after the forward pass to compute gradients from the loss.
-      - text: Forward pass → Zero gradients → Backward pass → Optimizer step
-        why: Zeroing gradients before backward pass would eliminate the gradients you just computed.
-    explanation: 'Correct! This is the proper order: compute loss, compute gradients, update parameters, update learning rate, then clear gradients. [^1]'
+        why: The optimizer step comes before the backward pass here, so it cannot use the gradients of the current batch.
+      - text: Forward pass → Backward pass → Zero gradients → Optimizer step → Scheduler step
+        why: Zeroing the gradients between the backward pass and the optimizer step wipes out the gradients that were just computed.
+    explanation: |
+      The forward pass computes the loss, the backward pass fills in the gradients, and the optimizer
+      step uses them to update the parameters; the course's loop then steps the learning-rate scheduler
+      and clears the gradients [^1]. PyTorch also requires the scheduler to be stepped after the
+      optimizer's update [^2]. PyTorch adds each new gradient to the one already stored [^3], so the
+      gradients are cleared once per batch, but never between the backward pass and the optimizer
+      step: either at the end, as here, or at the start of the next iteration, as in PyTorch's own
+      examples [^2].
     references:
       - source: hf-llm-course
-        locator: 'Chapter 3: Fine-tuning a pretrained model'
-        url: https://huggingface.co/learn/llm-course/chapter3/1
+        url: https://huggingface.co/learn/llm-course/chapter3/4#the-training-loop
+        locator: 'Chapter 3, A full training loop: The training loop'
+      - title: torch.optim (PyTorch documentation)
+        url: https://docs.pytorch.org/docs/stable/optim.html#how-to-adjust-learning-rate
+        locator: Taking an optimization step; How to adjust learning rate
+        quote: Learning rate scheduling should be applied after optimizer’s update
+      - source: d2l
+        url: https://d2l.ai/chapter_preliminaries/autograd.html#a-simple-function
+        locator: Sec. 2.5.1 A Simple Function
+        quote: Instead, the new gradient is added to the already-stored gradient.
     source:
       id: hf-llm-course
       ref: chapter3/4#q2
@@ -93,6 +125,7 @@ questions:
     status: draft
   - id: training-005
     type: single
+    difficulty: easy
     question: What does it typically mean when training loss decreases but validation loss starts increasing?
     options:
       - text: The model is learning successfully and will continue to improve.
@@ -103,11 +136,13 @@ questions:
         why: A low learning rate would cause slow learning, not the divergence between training and validation performance.
       - text: The dataset is too small.
         why: While small datasets can contribute to overfitting, this specific pattern is the definition of overfitting regardless of dataset size.
-    explanation: Correct! This is a classic sign of overfitting - the model performs well on training data but poorly on unseen validation data. [^1]
+    explanation: |
+      This is a classic sign of overfitting: the model performs well on training data but poorly on
+      unseen validation data [^1].
     references:
       - source: hf-llm-course
-        locator: 'Chapter 3: Fine-tuning a pretrained model'
-        url: https://huggingface.co/learn/llm-course/chapter3/1
+        url: https://huggingface.co/learn/llm-course/chapter3/5#overfitting
+        locator: 'Chapter 3, Understanding Learning Curves: Overfitting'
     source:
       id: hf-llm-course
       ref: chapter3/5#q1
@@ -115,21 +150,24 @@ questions:
     status: draft
   - id: training-006
     type: single
+    difficulty: medium
     question: Why do accuracy curves often show a "steppy" or plateau-like pattern rather than smooth increases?
     options:
-      - text: There's an error in the accuracy calculation.
+      - text: There is a bug in how the accuracy is being calculated.
         why: The steppy pattern is normal and expected, not an error.
-      - text: Accuracy is a discrete metric that only changes when predictions cross decision boundaries.
+      - text: Accuracy changes only when a prediction flips to another class.
         correct: true
-      - text: The model is not learning effectively.
+      - text: The model is not learning effectively between the jumps.
         why: Steppy accuracy curves are normal even when the model is learning well.
-      - text: The batch size is too small.
+      - text: The batch size is too small to give stable gradient estimates.
         why: Batch size affects training stability but doesn't explain the inherently discrete nature of accuracy metrics.
-    explanation: Correct! Unlike loss, accuracy depends on discrete prediction decisions, so small improvements in confidence may not change the final accuracy until a threshold is crossed. [^1]
+    explanation: |
+      Unlike loss, accuracy depends on discrete prediction decisions, so small improvements in
+      confidence may not change the final accuracy until a threshold is crossed [^1].
     references:
       - source: hf-llm-course
-        locator: 'Chapter 3: Fine-tuning a pretrained model'
-        url: https://huggingface.co/learn/llm-course/chapter3/1
+        url: https://huggingface.co/learn/llm-course/chapter3/5#accuracy-curves
+        locator: 'Chapter 3, Understanding Learning Curves: Accuracy Curves'
     source:
       id: hf-llm-course
       ref: chapter3/5#q2
@@ -137,6 +175,7 @@ questions:
     status: draft
   - id: training-007
     type: single
+    difficulty: easy
     question: What is the best approach when you observe erratic, highly fluctuating learning curves?
     options:
       - text: Increase the learning rate to speed up convergence.
@@ -147,11 +186,11 @@ questions:
         why: Erratic curves can often be fixed with hyperparameter adjustments.
       - text: Switch to a completely different model architecture.
         why: This is premature - erratic curves are usually fixable with hyperparameter tuning.
-    explanation: Correct! Lower learning rates and larger batch sizes typically lead to more stable training. [^1]
+    explanation: Lower learning rates and larger batch sizes typically lead to more stable training [^1].
     references:
       - source: hf-llm-course
-        locator: 'Chapter 3: Fine-tuning a pretrained model'
-        url: https://huggingface.co/learn/llm-course/chapter3/1
+        url: https://huggingface.co/learn/llm-course/chapter3/5#erratic-learning-curves
+        locator: 'Chapter 3, Understanding Learning Curves: Erratic Learning Curves'
     source:
       id: hf-llm-course
       ref: chapter3/5#q3
@@ -159,6 +198,7 @@ questions:
     status: draft
   - id: training-008
     type: single
+    difficulty: easy
     question: When should you consider using early stopping?
     options:
       - text: Always, as it prevents any form of overfitting.
@@ -169,11 +209,13 @@ questions:
         why: If training loss is decreasing rapidly and validation performance is good, you might want to continue training.
       - text: Never, as it prevents the model from reaching its full potential.
         why: Early stopping is a valuable technique that often improves final model performance by preventing overfitting.
-    explanation: Correct! Early stopping helps prevent overfitting by stopping training when the model no longer generalizes better. [^1]
+    explanation: |
+      Early stopping helps prevent overfitting by stopping training when the model no longer
+      generalizes better, i.e. when validation performance stops improving [^1].
     references:
       - source: hf-llm-course
-        locator: 'Chapter 3: Fine-tuning a pretrained model'
-        url: https://huggingface.co/learn/llm-course/chapter3/1
+        url: https://huggingface.co/learn/llm-course/chapter3/5#overfitting
+        locator: 'Chapter 3, Understanding Learning Curves: Overfitting (solutions)'
     source:
       id: hf-llm-course
       ref: chapter3/5#q4
@@ -181,6 +223,7 @@ questions:
     status: draft
   - id: training-009
     type: single
+    difficulty: easy
     question: What indicates that your model might be underfitting?
     options:
       - text: Training accuracy is much higher than validation accuracy.
@@ -191,11 +234,13 @@ questions:
         why: Smooth curves are generally good and don't indicate underfitting.
       - text: Validation loss is decreasing faster than training loss.
         why: This would actually be a positive sign, not a problem.
-    explanation: Correct! Underfitting occurs when the model lacks capacity to learn the patterns, resulting in poor performance on both training and validation data. [^1]
+    explanation: |
+      Underfitting occurs when the model lacks capacity to learn the patterns, resulting in poor
+      performance on both training and validation data [^1].
     references:
       - source: hf-llm-course
-        locator: 'Chapter 3: Fine-tuning a pretrained model'
-        url: https://huggingface.co/learn/llm-course/chapter3/1
+        url: https://huggingface.co/learn/llm-course/chapter3/5#underfitting
+        locator: 'Chapter 3, Understanding Learning Curves: Underfitting'
     source:
       id: hf-llm-course
       ref: chapter3/5#q5
@@ -203,6 +248,7 @@ questions:
     status: draft
   - id: training-010
     type: single
+    difficulty: easy
     question: Which pattern in the loss curves indicates potential overfitting?
     options:
       - text: Validation loss increases while training loss continues to decrease
@@ -211,11 +257,11 @@ questions:
         why: This pattern actually indicates healthy training.
       - text: Training loss remains constant while validation loss decreases
         why: This would be an unusual pattern and doesn't indicate overfitting.
-    explanation: Correct! This divergence between training and validation loss is a classic sign of overfitting. [^1]
+    explanation: This divergence between training and validation loss is a classic sign of overfitting [^1].
     references:
       - source: hf-llm-course
-        locator: 'Chapter 11: Fine-tune Large Language Models'
-        url: https://huggingface.co/learn/llm-course/chapter11/1
+        url: https://huggingface.co/learn/llm-course/chapter11/3
+        locator: 'Chapter 11, Supervised Fine-Tuning: Metrics to Monitor'
     source:
       id: hf-llm-course
       ref: chapter11/3#q2
@@ -223,19 +269,22 @@ questions:
     status: draft
   - id: training-011
     type: single
-    question: What is gradient_accumulation_steps used for?
+    difficulty: easy
+    question: What is `gradient_accumulation_steps` used for?
     options:
       - text: To increase effective batch size without using more memory
         correct: true
       - text: To save checkpoints during training
-        why: This is handled by save_steps and save_strategy parameters.
+        why: This is handled by the `save_steps` and `save_strategy` parameters.
       - text: To control the learning rate schedule
-        why: Learning rate scheduling is controlled by learning_rate and warmup_ratio.
-    explanation: Correct! It accumulates gradients across multiple forward passes before updating weights. [^1]
+        why: Learning rate scheduling is controlled by `learning_rate` and `warmup_ratio`.
+    explanation: |
+      It accumulates gradients across multiple forward and backward passes before updating the
+      weights, which enables larger effective batch sizes [^1].
     references:
       - source: hf-llm-course
-        locator: 'Chapter 11: Fine-tune Large Language Models'
-        url: https://huggingface.co/learn/llm-course/chapter11/1
+        url: https://huggingface.co/learn/llm-course/chapter11/3
+        locator: 'Chapter 11, Supervised Fine-Tuning: Training Configuration (Batch Size Parameters)'
     source:
       id: hf-llm-course
       ref: chapter11/3#q3
@@ -243,6 +292,7 @@ questions:
     status: draft
   - id: training-012
     type: single
+    difficulty: easy
     question: What indicates healthy convergence during training?
     options:
       - text: A small gap between training and validation loss
@@ -251,11 +301,13 @@ questions:
         why: Extremely low loss values might indicate memorization rather than learning.
       - text: Validation loss being lower than training loss
         why: This would be unusual and might indicate problems with the validation set.
-    explanation: Correct! This indicates the model is learning generalizable patterns. [^1]
+    explanation: |
+      A small gap between training and validation loss indicates that the model is learning
+      generalizable patterns rather than memorizing specific examples [^1].
     references:
       - source: hf-llm-course
-        locator: 'Chapter 11: Fine-tune Large Language Models'
-        url: https://huggingface.co/learn/llm-course/chapter11/1
+        url: https://huggingface.co/learn/llm-course/chapter11/3
+        locator: 'Chapter 11, Supervised Fine-Tuning: The Path to Convergence'
     source:
       id: hf-llm-course
       ref: chapter11/3#q5
@@ -267,21 +319,22 @@ questions:
     question: Overfitting occurs because of ____
     options:
       - text: Not enough testing data
+        why: Test data is only used to measure the finished model, so its size does not change what the model learns.
       - text: Too powerful model
         correct: true
-      - text: Too much noise in output data
+      - text: Too much training data
+        why: More training data makes overfitting less likely; adding data is one of the lesson's remedies.
     explanation: |
       A model with more parameters than the data can support can pass through every training point
       (training error 0) while its validation error is high. The lesson lists "too powerful model"
-      as a cause of overfitting, next to too little training data and noisy input data [^1]. Noise
-      only hurts when the model is flexible enough to fit it: the lesson describes overfitting as the
-      model approximating noise instead of the real relationship [^1]. Test data is held out and only
-      used to measure an already-trained, fixed model, so having little of it does not cause
-      overfitting [^2].
+      as a cause of overfitting, next to too little training data and noisy input data [^1]. More
+      training data works the other way: increasing the amount of training data is one of the
+      lesson's ways to prevent overfitting [^1]. Test data is held out and only used to measure an
+      already-trained, fixed model, so having little of it does not cause overfitting [^2].
     references:
       - source: ms-ai-for-beginners
         url: https://github.com/microsoft/AI-For-Beginners/blob/392d0df1b2647cbee104942390551f1ed9e072c8/lessons/3-NeuralNetworks/05-Frameworks/README.md#why-overfitting-occurs
-        locator: 'Lesson: Neural Network Frameworks, Overfitting (Why overfitting occurs; Bias-Variance Tradeoff)'
+        locator: 'Lesson: Neural Network Frameworks, Overfitting (Why overfitting occurs; How to prevent overfitting)'
       - source: d2l
         url: https://d2l.ai/chapter_linear-regression/generalization.html
         locator: Sec. 3.6.1 Training Error and Generalization Error
@@ -293,7 +346,7 @@ questions:
   - id: training-014
     type: single
     difficulty: easy
-    question: One of these is not a normalization technique?
+    question: Which of these is not a normalization technique?
     options:
       - text: height normalization
         correct: true
@@ -319,7 +372,7 @@ questions:
   - id: training-015
     type: single
     difficulty: easy
-    question: We choose Stochastic Gradient Descent(SGD) in deep learning because classical gradient descent can be ____
+    question: We choose Stochastic Gradient Descent (SGD) in deep learning because classical gradient descent can be ____
     options:
       - text: fast
       - text: slow
@@ -707,12 +760,15 @@ questions:
     status: reviewed
   - id: training-029
     type: single
+    difficulty: easy
     question: What is the ideal learning rate?
     options:
-      - text: The ideal learning rate is problem-dependent.
+      - text: It is problem-dependent.
         correct: true
-      - text: '0.01'
-      - text: '1.0'
+      - text: 0.01, a common default
+        why: 0.01 is a common starting point, but the best value differs from one model and dataset to another.
+      - text: 1.0, so that training converges fastest
+        why: A learning rate that is too large makes the weights bounce around and can slow down or prevent convergence.
     explanation: Each model and dataset will have its own ideal learning rate. [^1]
     references:
       - source: google-mlcc

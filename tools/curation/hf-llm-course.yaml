@@ -13,37 +13,145 @@ items:
   "chapter1/7#q1": {topic: huggingface}
   "chapter1/7#q2": {topic: huggingface}
   "chapter1/7#q3": {topic: huggingface}
-  "chapter1/7#q4": {topic: huggingface}
+  "chapter1/7#q4":
+    topic: huggingface
+    fix:
+      options:
+        2: This pipeline needs a `model=` argument, because the task has no default checkpoint.
+      why:
+        2: Without `model=`, the pipeline falls back to a default checkpoint for the task and only prints a warning.
   "chapter1/7#q5": {topic: transfer-learning}
-  "chapter1/7#q6": {topic: language-models}
-  "chapter1/7#q7": {topic: neural-networks}
+  "chapter1/7#q6":
+    topic: language-models
+    fix:
+      type: true_false
+      question: A language model usually does not need labels for its pretraining.
+      why:
+        1: Pretraining labels are created automatically from the text itself (the next word, or a masked word), so no human labelling is needed.
+  "chapter1/7#q7":
+    topic: neural-networks
+    fix:
+      options:
+        2: An architecture is a succession of mathematical functions to build a model and its weights are those functions' parameters.
   "chapter1/7#q11": {topic: ai-ethics}
   # chapter 2 — Using 🤗 Transformers (concepts → transformers/tokenization, API → huggingface)
   "chapter2/9#q2": {topic: transformers}
-  "chapter2/9#q3": {topic: tokenization}
+  "chapter2/9#q3":
+    topic: tokenization
+    fix:
+      question: Which of the following are examples of subword tokenization?
+      shuffle: true
+      options:
+        5: Lowercasing the text and removing accents
+      why:
+        5: That's normalization, a cleanup step before the text is split; it produces no tokens.
   "chapter2/9#q4": {topic: transformers}
   "chapter2/9#q6": {topic: transformers}
-  "chapter2/9#q7": {topic: neural-networks}
+  "chapter2/9#q7":
+    topic: neural-networks
+    fix:
+      why:
+        1: Every softmax output lies between 0 and 1.
+        2: Dividing each exponentiated logit by the sum of all of them makes the outputs add up to 1, like a probability distribution.
   # chapter 3 — Fine-tuning a pretrained model
-  "chapter3/2#q1": {topic: huggingface}
+  "chapter3/2#q1":
+    topic: huggingface
+    fix:
+      options:
+        1: It tokenizes many examples per call, which is much faster.
   "chapter3/2#q3": {topic: transformers}
-  "chapter3/2#q4": {topic: huggingface}
-  "chapter3/2#q5": {topic: huggingface}
+  "chapter3/2#q4":
+    topic: huggingface
+    fix:
+      why:
+        2: The split has its own keyword argument, `split=` (e.g. `split="train"`); without it, `load_dataset` returns a `DatasetDict` with every split [^2].
+  "chapter3/2#q5":
+    topic: huggingface
+    fix:
+      options:
+        2: These text columns are not needed when computing evaluation metrics.
+        3: Dropping them makes each training step significantly faster.
   "chapter3/3#q1": {topic: huggingface}
-  "chapter3/3#q2": {topic: huggingface}
-  "chapter3/3#q3": {topic: training}
-  "chapter3/3#q4": {topic: huggingface}
-  "chapter3/3#q5": {topic: huggingface}
-  "chapter3/3#q6": {topic: training}
+  "chapter3/3#q2":
+    topic: huggingface
+    fix:
+      options:
+        0: '`eval_frequency`'
+        1: '`eval_strategy`'
+        2: '`evaluation_steps`'
+        3: '`do_eval`'
+      why:
+        0: There's no `eval_frequency` parameter in `TrainingArguments`.
+        2: There's no such parameter. The real `eval_steps` sets the number of steps between evaluations, but only when `eval_strategy="steps"`; `eval_strategy` decides if and when evaluation happens.
+        3: "`do_eval` exists, but the `Trainer` doesn't use it directly: it is a flag for your own scripts, set to `True` automatically when `eval_strategy` is not `\"no\"` [^2]."
+  "chapter3/3#q3":
+    topic: training
+    fix:
+      options:
+        0: 16-bit integer weights and activations for faster training.
+        1: Mixed precision training with 16-bit floating-point numbers.
+        2: Training for exactly 16 epochs with the default batch size.
+        3: Distributed data-parallel training across 16 GPUs.
+  "chapter3/3#q4":
+    topic: huggingface
+    fix:
+      options:
+        0: It calculates the loss that is backpropagated during training.
+        1: It computes metrics like accuracy and F1 from the model's predictions.
+        2: It determines which optimizer and learning rate to use.
+        3: It preprocesses and tokenizes the training data.
+  "chapter3/3#q5":
+    topic: huggingface
+    fix:
+      question: What happens when you don't provide an `eval_dataset` to the `Trainer` and keep the default `eval_strategy="no"`?
+      why:
+        0: Not with `eval_strategy="no"`. You only get an error if you ask for evaluation (`"steps"` or `"epoch"`) without passing an `eval_dataset`.
+  "chapter3/3#q6":
+    topic: training
+    fix:
+      options:
+        0: It saves gradients to disk, enabled with `save_gradients=True`.
+        1: It accumulates gradients over multiple batches before updating, enabled with `gradient_accumulation_steps`.
+        2: It speeds up gradient computation, enabled automatically with `fp16`.
+        3: It prevents gradient overflow, enabled with `gradient_clipping=True`.
   "chapter3/4#q1": {topic: training}
-  "chapter3/4#q2": {topic: training}
+  "chapter3/4#q2":
+    topic: training
+    fix:
+      question: In a training loop that uses a learning-rate scheduler, what is the correct order of operations for each batch?
+      options:
+        0: Forward pass → Backward pass → Scheduler step → Optimizer step → Zero gradients
+        3: Forward pass → Backward pass → Zero gradients → Optimizer step → Scheduler step
+      why:
+        0: The scheduler should step after the optimizer. In PyTorch, calling the scheduler before the optimizer's update skips the first value of the learning-rate schedule.
+        2: The optimizer step comes before the backward pass here, so it cannot use the gradients of the current batch.
+        3: Zeroing the gradients between the backward pass and the optimizer step wipes out the gradients that were just computed.
   "chapter3/4#q3": {topic: huggingface}
-  "chapter3/4#q4": {topic: pytorch}
+  "chapter3/4#q4":
+    topic: pytorch
+    fix:
+      options:
+        0: To make each training step run faster.
+        1: Because the model and the data must be on the same device.
+        2: To reduce how much memory each batch uses.
+        3: Because the DataLoader only accepts batches that are on the GPU.
   "chapter3/4#q5": {topic: pytorch}
   "chapter3/4#q6": {topic: pytorch}
-  "chapter3/4#q7": {topic: huggingface}
+  "chapter3/4#q7":
+    topic: huggingface
+    fix:
+      options:
+        1: You wrap your objects with `accelerator.prepare()` and call `accelerator.backward(loss)`.
+        2: You must hard-code the number of GPUs and their device IDs in your script.
   "chapter3/5#q1": {topic: training}
-  "chapter3/5#q2": {topic: training}
+  "chapter3/5#q2":
+    topic: training
+    fix:
+      options:
+        0: There is a bug in how the accuracy is being calculated.
+        1: Accuracy changes only when a prediction flips to another class.
+        2: The model is not learning effectively between the jumps.
+        3: The batch size is too small to give stable gradient estimates.
   "chapter3/5#q3": {topic: training}
   "chapter3/5#q4": {topic: training}
   "chapter3/5#q5": {topic: training}
@@ -51,25 +159,126 @@ items:
   "chapter6/10#q2": {topic: huggingface}
   "chapter6/10#q3": {topic: huggingface}
   "chapter6/10#q4": {topic: nlp-tasks}
-  "chapter6/10#q5": {topic: nlp-tasks}
+  "chapter6/10#q5":
+    topic: nlp-tasks
+    fix:
+      why:
+        0: No, truncating could cut off the answer; the pipeline splits a long context into chunks instead.
   # chapter 7 — Main NLP tasks
   "chapter7/9#q4": {topic: transfer-learning}
   "chapter7/9#q5": {topic: language-models}
-  "chapter7/9#q7": {topic: huggingface}
+  "chapter7/9#q7":
+    topic: huggingface
+    fix:
+      question: What is the proper way to preprocess the data for a sequence-to-sequence problem with a 🤗 Transformers tokenizer?
+      options:
+        0: Pass the inputs as usual and the targets through the tokenizer's `text_target` argument.
+        1: Tokenize the inputs and the targets with two ordinary calls, treating both the same way.
+        3: Concatenate each input with its target and tokenize the result as one sequence.
+      why:
+        1: Then the targets go through the input tokenizer; for a Marian translation model, a French target gets split into many meaningless pieces. Mark them as targets with `text_target`.
+        2: Not in a sequence-to-sequence problem; the targets are also texts we need to convert into numbers!
+        3: That is how data is prepared for a decoder-only (causal) language model; an encoder-decoder model takes the inputs and the labels separately.
+        0:
+      correct:
+        - 0
   "chapter7/9#q8": {topic: huggingface}
   "chapter7/9#q9": {drop: tool-specific}   # Keras compile(); course is PyTorch-first now
-  "chapter7/9#q10": {topic: language-models}
+  "chapter7/9#q10":
+    topic: language-models
+    fix:
+      why:
+        3: Poor results usually come from the fine-tuning setup (data, hyperparameters, bugs); debug that first, since pretraining from scratch costs far more.
   "chapter7/9#q11": {topic: language-models}
   # chapter 11 — Fine-tuning LLMs (SFT, evaluation)
-  "chapter11/3#q1": {topic: huggingface}
+  "chapter11/3#q1":
+    topic: huggingface
+    fix:
+      options:
+        0: '`num_train_epochs` and `max_steps`'
+        1: '`batch_size` and `learning_rate`'
+        2: '`gradient_checkpointing` and `warmup_ratio`'
   "chapter11/3#q2": {topic: training}
-  "chapter11/3#q3": {topic: training}
+  "chapter11/3#q3":
+    topic: training
+    fix:
+      question: What is `gradient_accumulation_steps` used for?
+      why:
+        1: This is handled by the `save_steps` and `save_strategy` parameters.
+        2: Learning rate scheduling is controlled by `learning_rate` and `warmup_ratio`.
   "chapter11/3#q5": {topic: training}
   "chapter11/5#q1": {topic: llm-basics}
   "chapter11/5#q2": {topic: llm-basics}
-  "chapter11/5#q3": {topic: llm-basics}
-  "chapter11/5#q4": {topic: llm-basics}
-  "chapter11/5#q5": {topic: llm-basics}
-  "chapter11/5#q6": {topic: llm-basics}
+  "chapter11/5#q3":
+    topic: llm-basics
+    fix:
+      options:
+        2: Letting users vote on which of two anonymous models answered better
+      why:
+        2: Incorrect! That is an evaluation arena such as Chatbot Arena, where the judges are crowds of human users, not a model.
+  "chapter11/5#q4":
+    topic: llm-basics
+    fix:
+      options:
+        0: Only standard benchmarks, since they are reproducible and comparable
+        2: Only custom datasets built from real queries in your own domain
+  "chapter11/5#q5":
+    topic: llm-basics
+    fix:
+      options:
+        0: They are too expensive to run for most model developers
+        1: A high benchmark score may not carry over to real-world use
+        2: They can only evaluate models below a certain size
+  "chapter11/5#q6":
+    topic: llm-basics
+    fix:
+      options:
+        0: To reflect your use case, e.g. with real user queries from your domain
+        1: To replace standard benchmarks entirely with in-house tests
+        2: To make evaluation easier and cheaper than running benchmarks
   # chapter 12 — Reasoning models
   "chapter12/3#q1": {drop: inaccurate}     # GRPO was introduced in DeepSeekMath, not R1
+  chapter1/7#q9:
+    fix:
+      question: You want to fine-tune a dedicated summarization model, which reads a whole document and then writes a shorter text. Which type of Transformer model is the standard choice?
+      options:
+        0: An encoder-only model
+        1: A decoder-only model
+      why:
+        1: Decoder-only LLMs can summarize a text placed in their prompt, but each token attends only to the tokens before it. Models built specifically for summarization, such as BART and T5, are encoder-decoders [^1].
+  chapter6/10#q6:
+    fix:
+      why:
+        1: No, normalization neither augments data nor removes rare words; it only cleans up the text (whitespace, case, accents).
+  chapter6/10#q10:
+    fix:
+      why:
+        3: No, frequency alone does not decide which tokens stay; Unigram removes the tokens whose removal increases the corpus loss the least.
+  chapter7/9#q1:
+    fix:
+      options:
+        3: Find the chunk of words in a sentence that is the answer to a question.
+  chapter7/9#q2:
+    fix:
+      question: Which parts of the preprocessing for token classification differ from the other preprocessing pipelines?
+  chapter7/9#q13:
+    fix:
+      why:
+        1: Close, but the answer is not decoded from the tokens; the offset mapping is used to cut the matching span out of the original context text.
+  chapter12/2#q4:
+    fix:
+      options:
+        0: To score how well the model's responses match the desired behavior
+        1: To measure how large the model's vocabulary is
+        2: To determine how fast the model is trained
+  chapter12/3#q4:
+    fix:
+      options:
+        0: It samples 4–16 answers to the same prompt and scores them together
+        1: It combines several different models into one ensemble
+  chapter12/3#q5:
+    fix:
+      options:
+        0: R1-Zero is trained with pure RL; R1 adds supervised fine-tuning
+        1: R1-Zero is a smaller version of R1 with fewer parameters
+        2: R1-Zero was pre-trained on much less text than R1

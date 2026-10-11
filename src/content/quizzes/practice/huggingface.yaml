@@ -95,8 +95,8 @@ questions:
         correct: true
       - text: This pipeline requires several sentences, not just one.
         why: This is incorrect, though when properly used, this pipeline can take a list of sentences to process (like all other pipelines).
-      - text: The 🤗 Transformers library is broken, as usual.
-        why: We won't dignify this answer with a comment!
+      - text: This pipeline needs a `model=` argument, because the task has no default checkpoint.
+        why: Without `model=`, the pipeline falls back to a default checkpoint for the task and only prints a warning.
       - text: This pipeline requires longer inputs; this one is too short.
         why: This is incorrect. Note that a very long text will be truncated when processed by this pipeline.
     explanation: Right — the correct code needs to include `candidate_labels=[...]`. [^1]
@@ -161,11 +161,15 @@ questions:
         why: Wrong! Padding is very useful, but it's just one part of the tokenizer API.
       - text: '`tokenize`'
         why: The `tokenize` method is arguably one of the most useful methods, but it isn't the core of the tokenizer API.
-    explanation: Exactly! The `__call__` method of the tokenizer is a very powerful method which can handle pretty much anything. It is also the method used to retrieve predictions from a model. [^1]
+    explanation: |
+      Calling the tokenizer directly (its `__call__` method) is the main API: in one step it splits the
+      text into tokens, converts them to IDs and adds the model's special tokens, and it can also pad,
+      truncate and return framework tensors ready for the model [^1]. Methods such as `tokenize` or
+      `pad` each cover only one of those steps.
     references:
       - source: hf-llm-course
-        locator: 'Chapter 2: Using 🤗 Transformers'
-        url: https://huggingface.co/learn/llm-course/chapter2/1
+        url: https://huggingface.co/learn/llm-course/chapter2/6
+        locator: Chapter 2.6 Putting it all together
     source:
       id: hf-llm-course
       ref: chapter2/9#q8
@@ -220,11 +224,15 @@ questions:
         correct: true
       - text: It's good practice to pad and truncate with the tokenizer as every input is a batch.
         why: It's true that every model input needs to be a batch. However, truncating or padding this sequence wouldn't necessarily make sense as there is only one of it, and those are techniques to batch together a list of sentences.
-    explanation: Right! [^1]
+    explanation: |
+      Text must be preprocessed exactly as it was when the model was pretrained, so the tokenizer and the
+      model should be loaded from the same checkpoint [^1]. Here the BERT tokenizer produces IDs from
+      BERT's vocabulary (with `[CLS]` and `[SEP]`), which GPT-2 reads as unrelated tokens of its own
+      vocabulary, so even if the code runs, the output is meaningless.
     references:
       - source: hf-llm-course
-        locator: 'Chapter 2: Using 🤗 Transformers'
-        url: https://huggingface.co/learn/llm-course/chapter2/1
+        url: https://huggingface.co/learn/llm-course/chapter2/2
+        locator: Chapter 2.2 Behind the pipeline, "Preprocessing with a tokenizer"
     source:
       id: hf-llm-course
       ref: chapter2/9#q10
@@ -236,7 +244,7 @@ questions:
     options:
       - text: It uses less memory.
         why: While it can be more memory efficient, this is not the main advantage.
-      - text: It processes multiple examples at once, making tokenization much faster.
+      - text: It tokenizes many examples per call, which is much faster.
         correct: true
       - text: It automatically handles padding for you.
         why: Batching doesn't automatically handle padding - that's done by the data collator.
@@ -261,14 +269,19 @@ questions:
       - text: The specific task or subset within the GLUE benchmark.
         correct: true
       - text: The split of the dataset (train/validation/test).
-        why: Splits are accessed after loading, not specified in the load_dataset call.
+        why: The split has its own keyword argument, `split=` (e.g. `split="train"`); without it, `load_dataset` returns a `DatasetDict` with every split [^2].
       - text: The format to return the data in.
         why: Format is set using the set_format() method after loading.
-    explanation: Correct! MRPC is one of the specific tasks within the larger GLUE benchmark collection. [^1]
+    explanation: |
+      The second positional argument of `load_dataset` is `name`, the dataset configuration [^2],
+      and MRPC is one of the specific tasks within the larger GLUE benchmark collection [^1].
     references:
       - source: hf-llm-course
-        locator: 'Chapter 3: Fine-tuning a pretrained model'
-        url: https://huggingface.co/learn/llm-course/chapter3/1
+        url: https://huggingface.co/learn/llm-course/chapter3/2
+        locator: Chapter 3.2 Processing the data, "Loading a dataset from the Hub"
+      - title: 🤗 Datasets documentation, Loading methods
+        url: https://huggingface.co/docs/datasets/package_reference/loading_methods#datasets.load_dataset
+        locator: load_dataset, parameters `name` and `split`
     source:
       id: hf-llm-course
       ref: chapter3/2#q4
@@ -282,9 +295,9 @@ questions:
         why: While it does save some memory, this is not the main reason.
       - text: The model doesn't expect these raw text columns and would throw an error.
         correct: true
-      - text: These columns are not needed for evaluation.
+      - text: These text columns are not needed when computing evaluation metrics.
         why: While true, the main reason is that the model can't process raw text.
-      - text: It improves training speed significantly.
+      - text: Dropping them makes each training step significantly faster.
         why: The speed improvement is minimal compared to avoiding errors from incompatible data types.
     explanation: Correct! Models expect numerical tensors, not raw text strings. Keeping text columns would cause errors. [^1]
     references:
@@ -322,19 +335,24 @@ questions:
     type: single
     question: Which TrainingArguments parameter controls how often evaluation occurs during training?
     options:
-      - text: eval_frequency
-        why: There's no eval_frequency parameter in TrainingArguments.
-      - text: eval_strategy
+      - text: '`eval_frequency`'
+        why: There's no `eval_frequency` parameter in `TrainingArguments`.
+      - text: '`eval_strategy`'
         correct: true
-      - text: evaluation_steps
-        why: eval_steps sets the number of steps between evaluations, but eval_strategy determines if/when evaluation happens.
-      - text: do_eval
-        why: There's no do_eval parameter in modern TrainingArguments.
-    explanation: eval_strategy can be set to 'epoch', 'steps', or 'no' to control evaluation timing. [^1]
+      - text: '`evaluation_steps`'
+        why: There's no such parameter. The real `eval_steps` sets the number of steps between evaluations, but only when `eval_strategy="steps"`; `eval_strategy` decides if and when evaluation happens.
+      - text: '`do_eval`'
+        why: "`do_eval` exists, but the `Trainer` doesn't use it directly: it is a flag for your own scripts, set to `True` automatically when `eval_strategy` is not `\"no\"` [^2]."
+    explanation: |
+      `eval_strategy` can be `"no"` (the default), `"steps"` (evaluate every `eval_steps` steps) or
+      `"epoch"` (evaluate at the end of each epoch) [^1] [^2].
     references:
       - source: hf-llm-course
-        locator: 'Chapter 3: Fine-tuning a pretrained model'
-        url: https://huggingface.co/learn/llm-course/chapter3/1
+        url: https://huggingface.co/learn/llm-course/chapter3/3
+        locator: Chapter 3.3 Fine-tuning a model with the Trainer API, "Training"
+      - title: 🤗 Transformers documentation, Trainer
+        url: https://huggingface.co/docs/transformers/main_classes/trainer#transformers.TrainingArguments
+        locator: TrainingArguments, parameters `eval_strategy` and `do_eval`
     source:
       id: hf-llm-course
       ref: chapter3/3#q2
@@ -344,13 +362,13 @@ questions:
     type: single
     question: What is the role of the `compute_metrics` function in the Trainer?
     options:
-      - text: It calculates the loss during training.
+      - text: It calculates the loss that is backpropagated during training.
         why: Loss calculation is handled automatically by the model, not by compute_metrics.
-      - text: It converts logits to predictions and calculates evaluation metrics like accuracy and F1.
+      - text: It computes metrics like accuracy and F1 from the model's predictions.
         correct: true
-      - text: It determines which optimizer to use.
+      - text: It determines which optimizer and learning rate to use.
         why: Optimizer selection is not handled by compute_metrics.
-      - text: It preprocesses the training data.
+      - text: It preprocesses and tokenizes the training data.
         why: Data preprocessing is done before training, not by compute_metrics during evaluation.
     explanation: compute_metrics takes predictions and labels, then returns metrics for evaluation. [^1]
     references:
@@ -364,21 +382,31 @@ questions:
     status: draft
   - id: huggingface-016
     type: single
-    question: What happens when you don't provide an `eval_dataset` to the Trainer?
+    question: What happens when you don't provide an `eval_dataset` to the `Trainer` and keep the default `eval_strategy="no"`?
     options:
       - text: Training will fail with an error.
-        why: Training can proceed without an eval_dataset, though you won't get evaluation metrics.
+        why: Not with `eval_strategy="no"`. You only get an error if you ask for evaluation (`"steps"` or `"epoch"`) without passing an `eval_dataset`.
       - text: The Trainer will automatically split the training data for evaluation.
         why: The Trainer doesn't automatically create validation splits.
       - text: You won't get evaluation metrics during training, but training will still work.
         correct: true
       - text: The model will use the training data for evaluation.
         why: The Trainer won't automatically use training data for evaluation - it simply won't evaluate.
-    explanation: Evaluation is optional - you can train without it, but you won't see validation metrics. [^1]
+    explanation: |
+      With `eval_strategy="no"` (the default) the `Trainer` never evaluates, so it trains normally and
+      just reports no validation metrics [^1] [^2]. If you set `eval_strategy` to `"steps"` or `"epoch"`
+      without an `eval_dataset`, the `Trainer` raises a `ValueError` as soon as it is created [^3].
     references:
       - source: hf-llm-course
-        locator: 'Chapter 3: Fine-tuning a pretrained model'
-        url: https://huggingface.co/learn/llm-course/chapter3/1
+        url: https://huggingface.co/learn/llm-course/chapter3/3
+        locator: Chapter 3.3 Fine-tuning a model with the Trainer API, "Training"
+      - title: 🤗 Transformers documentation, Trainer
+        url: https://huggingface.co/docs/transformers/main_classes/trainer#transformers.TrainingArguments
+        locator: TrainingArguments, parameter `eval_strategy` (defaults to "no")
+      - title: transformers v5.4.0 source, trainer.py
+        url: https://github.com/huggingface/transformers/blob/v5.4.0/src/transformers/trainer.py#L635
+        locator: Trainer.__init__, eval_strategy / eval_dataset check
+        quote: but you didn't pass an `eval_dataset` to `Trainer`. Either set `args.eval_strategy` to `no` or pass an `eval_dataset`.
     source:
       id: hf-llm-course
       ref: chapter3/3#q5
@@ -412,17 +440,20 @@ questions:
     options:
       - text: You must rewrite your entire training loop from scratch.
         why: Accelerate requires minimal changes to existing PyTorch code.
-      - text: You wrap key objects with accelerator.prepare() and use accelerator.backward() instead of loss.backward().
+      - text: You wrap your objects with `accelerator.prepare()` and call `accelerator.backward(loss)`.
         correct: true
-      - text: You need to specify the number of GPUs in your code.
+      - text: You must hard-code the number of GPUs and their device IDs in your script.
         why: Accelerate automatically detects available hardware.
       - text: You must use a different optimizer and scheduler.
         why: You can use the same optimizers and schedulers with Accelerate.
-    explanation: Correct! These are the main changes - prepare your objects and use accelerator.backward() for proper distributed training. [^1]
+    explanation: |
+      These are the main changes: pass the dataloaders, model and optimizer to
+      `accelerator.prepare()`, and replace `loss.backward()` with `accelerator.backward(loss)` for
+      proper distributed training [^1].
     references:
       - source: hf-llm-course
-        locator: 'Chapter 3: Fine-tuning a pretrained model'
-        url: https://huggingface.co/learn/llm-course/chapter3/1
+        url: https://huggingface.co/learn/llm-course/chapter3/4
+        locator: Chapter 3.4 A full training loop, "Supercharge your training loop with 🤗 Accelerate"
     source:
       id: hf-llm-course
       ref: chapter3/4#q7
@@ -462,11 +493,15 @@ questions:
         why: True, but slow tokenizers also do that.
       - text: It has some additional features allowing you to map tokens to the span of text that created them.
         correct: true
-    explanation: Correct! Thanks to parallelism implemented in Rust, it will be faster on batches of inputs. What other benefit can you think of? Indeed -- those are called offset mappings. That's not the only advantage, though. [^1]
+    explanation: |
+      A fast tokenizer is backed by the Rust 🤗 Tokenizers library, so it can tokenize a large batch in
+      parallel and is much faster there; on a single text it may even be slower than the slow version.
+      It also keeps track of the span of the original text that each token comes from, a feature called
+      *offset mapping*. Padding and truncation are available in both kinds of tokenizer [^1].
     references:
       - source: hf-llm-course
-        locator: 'Chapter 6: The 🤗 Tokenizers library'
-        url: https://huggingface.co/learn/llm-course/chapter6/1
+        url: https://huggingface.co/learn/llm-course/chapter6/3
+        locator: Chapter 6.3 Fast tokenizers' special powers
     source:
       id: hf-llm-course
       ref: chapter6/10#q3
@@ -474,21 +509,29 @@ questions:
     status: draft
   - id: huggingface-021
     type: single
-    question: What is the proper way to preprocess the data for a sequence-to-sequence problem?
+    question: What is the proper way to preprocess the data for a sequence-to-sequence problem with a 🤗 Transformers tokenizer?
     options:
-      - text: The inputs and targets have to be sent together to the tokenizer with `inputs=...` and `targets=...`.
-        why: This might be an API we add in the future, but that's not possible right now.
-      - text: The inputs and the targets both have to be preprocessed, in two separate calls to the tokenizer.
-        why: That is true, but incomplete. There is something you need to do to make sure the tokenizer processes both properly.
-      - text: As usual, we just have to tokenize the inputs.
-        why: Not in a sequence classification problem; the targets are also texts we need to convert into numbers!
-      - text: The inputs have to be sent to the tokenizer, and the targets too, but under a special context manager.
+      - text: Pass the inputs as usual and the targets through the tokenizer's `text_target` argument.
         correct: true
-    explanation: That's correct, the tokenizer needs to be put into target mode by that context manager. [^1]
+      - text: Tokenize the inputs and the targets with two ordinary calls, treating both the same way.
+        why: Then the targets go through the input tokenizer; for a Marian translation model, a French target gets split into many meaningless pieces. Mark them as targets with `text_target`.
+      - text: As usual, we just have to tokenize the inputs.
+        why: Not in a sequence-to-sequence problem; the targets are also texts we need to convert into numbers!
+      - text: Concatenate each input with its target and tokenize the result as one sequence.
+        why: That is how data is prepared for a decoder-only (causal) language model; an encoder-decoder model takes the inputs and the labels separately.
+    explanation: |
+      Call the tokenizer as `tokenizer(inputs, text_target=targets, ...)`: the targets are processed as
+      targets (for a translation model, with the target-language tokenizer) and returned under
+      `labels` [^1]. Older versions of the course used the `as_target_tokenizer()` context manager
+      instead; it was deprecated in favour of `text_target` and removed in Transformers v5 [^2].
     references:
       - source: hf-llm-course
-        locator: 'Chapter 7: Classical NLP tasks'
-        url: https://huggingface.co/learn/llm-course/chapter7/1
+        url: https://huggingface.co/learn/llm-course/chapter7/4
+        locator: Chapter 7.4 Translation, "Processing the data"
+      - title: transformers v4.46.0 source, tokenization_utils_base.py
+        url: https://github.com/huggingface/transformers/blob/v4.46.0/src/transformers/tokenization_utils_base.py#L4109
+        locator: PreTrainedTokenizerBase.as_target_tokenizer, deprecation warning
+        quote: '`as_target_tokenizer` is deprecated and will be removed in v5 of Transformers.'
     source:
       id: hf-llm-course
       ref: chapter7/9#q7
@@ -520,11 +563,11 @@ questions:
     type: single
     question: What parameters control the training duration in SFT?
     options:
-      - text: num_train_epochs and max_steps
+      - text: '`num_train_epochs` and `max_steps`'
         correct: true
-      - text: batch_size and learning_rate
+      - text: '`batch_size` and `learning_rate`'
         why: While these affect training, they don't directly control the duration.
-      - text: gradient_checkpointing and warmup_ratio
+      - text: '`gradient_checkpointing` and `warmup_ratio`'
         why: These parameters affect training efficiency and stability, not duration.
     explanation: Correct! These parameters determine how long the model will train, either by number of epochs or total steps. [^1]
     references:

@@ -4,18 +4,24 @@ topic: language-models
 title: Language Modeling
 questions:
   - id: language-models-001
-    type: single
-    question: True or false? A language model usually does not need labels for its pretraining.
+    type: true_false
+    difficulty: easy
+    question: A language model usually does not need labels for its pretraining.
     options:
       - text: 'True'
         correct: true
       - text: 'False'
-        why: This is not the correct answer.
-    explanation: The pretraining is usually *self-supervised*, which means the labels are created automatically from the inputs (like predicting the next word or filling in some masked words). [^1]
+        why: Pretraining labels are created automatically from the text itself (the next word, or a masked word), so no human labelling is needed.
+    explanation: |
+      Pretraining is usually *self-supervised*: the objective is computed automatically from the inputs,
+      for example predicting the next word (causal language modeling) or filling in masked words (masked
+      language modeling), so humans are not needed to label the data [^1]. Human-annotated labels come in
+      later, when the pretrained model is fine-tuned on a specific task [^1].
     references:
       - source: hf-llm-course
-        locator: 'Chapter 1: Transformer models'
-        url: https://huggingface.co/learn/llm-course/chapter1/1
+        url: https://huggingface.co/learn/llm-course/chapter1/4#transformers-are-language-models
+        locator: Chapter 1.4 How do Transformers work?, sec. Transformers are language models
+        quote: Self-supervised learning is a type of training in which the objective is automatically computed from the inputs of the model. That means that humans are not needed to label the data!
     source:
       id: hf-llm-course
       ref: chapter1/7#q6
@@ -23,6 +29,7 @@ questions:
     status: draft
   - id: language-models-002
     type: single
+    difficulty: medium
     question: What are the labels in a masked language modeling problem?
     options:
       - text: Some of the tokens in the input sentence are randomly masked and the labels are the original input tokens.
@@ -33,11 +40,20 @@ questions:
         why: That's a sequence classification problem with some data augmentation, not masked language modeling.
       - text: Some of the tokens in the two input sentences are randomly masked, and the label is whether the two sentences are similar or not.
         why: That's a sequence classification problem with some data augmentation, not masked language modeling.
-    explanation: That's it! [^1]
+    explanation: |
+      In masked language modeling the labels are a copy of the input token IDs. A data collator then
+      masks a random fraction of the tokens (15%, as for BERT), mostly by replacing them with `[MASK]`,
+      and the model learns to predict the original tokens at those positions [^1]. Labels shifted by one position belong to
+      causal language modeling, which predicts the next word [^2], and a sentiment or a
+      sentence-similarity label turns the problem into sequence classification.
     references:
       - source: hf-llm-course
-        locator: 'Chapter 7: Classical NLP tasks'
-        url: https://huggingface.co/learn/llm-course/chapter7/1
+        url: https://huggingface.co/learn/llm-course/chapter7/3#preprocessing-the-data
+        locator: Chapter 7.3 Fine-tuning a masked language model, secs. Preprocessing the data and Fine-tuning DistilBERT with the Trainer API
+        quote: in masked language modeling the objective is to predict randomly masked tokens in the input batch
+      - source: hf-llm-course
+        url: https://huggingface.co/learn/llm-course/chapter1/4#transformers-are-language-models
+        locator: Chapter 1.4 How do Transformers work?, sec. Transformers are language models
     source:
       id: hf-llm-course
       ref: chapter7/9#q5
@@ -45,6 +61,7 @@ questions:
     status: draft
   - id: language-models-003
     type: multiple
+    difficulty: medium
     question: When should you pretrain a new model?
     options:
       - text: When there is no pretrained model available for your specific language
@@ -54,12 +71,29 @@ questions:
       - text: When you have concerns about the bias of the pretrained model you are using
         correct: true
       - text: When the pretrained models available are just not good enough
-        why: Are you sure you've properly debugged your training, then?
-    explanation: That's correct. That is true, but you have to make very sure the data you will use for training is really better. [^1]
+        why: Poor results usually come from the fine-tuning setup (data, hyperparameters, bugs); debug that first, since pretraining from scratch costs far more.
+    explanation: |
+      Pretraining from scratch is expensive, so the default is to fine-tune an existing pretrained model,
+      which needs far less data, time and compute [^1]. Pretraining a new model makes sense when no
+      suitable model exists, for example none in your language, or when your data are very different
+      from what the available models were trained on [^2][^3]. Bias is the other good reason: a
+      pretrained model can produce sexist, racist or homophobic content, and fine-tuning on your data
+      won't remove that intrinsic bias [^4], so you would pretrain on data you have curated, after making
+      very sure they really are better. Having lots of data is not enough on its own when a pretrained
+      model already fits it [^3].
     references:
       - source: hf-llm-course
-        locator: 'Chapter 7: Classical NLP tasks'
-        url: https://huggingface.co/learn/llm-course/chapter7/1
+        url: https://huggingface.co/learn/llm-course/chapter1/4#transfer-learning
+        locator: Chapter 1.4 How do Transformers work?, sec. Transfer Learning
+      - source: hf-llm-course
+        url: https://huggingface.co/learn/llm-course/chapter6/2
+        locator: Chapter 6.2 Training a new tokenizer from an old one, introduction
+      - source: hf-llm-course
+        url: https://huggingface.co/learn/llm-course/chapter7/6
+        locator: Chapter 7.6 Training a causal language model from scratch, introduction
+      - source: hf-llm-course
+        url: https://huggingface.co/learn/llm-course/chapter1/9
+        locator: Chapter 1.9 Bias and limitations
     source:
       id: hf-llm-course
       ref: chapter7/9#q10
@@ -67,6 +101,7 @@ questions:
     status: draft
   - id: language-models-004
     type: single
+    difficulty: easy
     question: Why is it easy to pretrain a language model on lots and lots of texts?
     options:
       - text: Because there are plenty of texts available on the internet
@@ -75,11 +110,16 @@ questions:
         correct: true
       - text: Because the 🤗 Transformers library only requires a few lines of code to start the training
         why: Although true, that doesn't really answer the question asked. Try another answer!
-    explanation: That's correct, language modeling is a self-supervised problem. [^1]
+    explanation: |
+      Language models are trained in a self-supervised way: the objective (the next word, or a masked
+      word) is computed automatically from the raw text, so no human has to label anything [^1]. That
+      is what makes pretraining on huge amounts of text feasible [^1]. Plenty of text is indeed online
+      and the training code is short, but without a self-supervised objective all that text would still
+      need hand-made labels, which is the real bottleneck.
     references:
       - source: hf-llm-course
-        locator: 'Chapter 7: Classical NLP tasks'
-        url: https://huggingface.co/learn/llm-course/chapter7/1
+        url: https://huggingface.co/learn/llm-course/chapter1/4#transformers-are-language-models
+        locator: Chapter 1.4 How do Transformers work?, sec. Transformers are language models
     source:
       id: hf-llm-course
       ref: chapter7/9#q11
@@ -150,7 +190,7 @@ questions:
   - id: language-models-007
     type: single
     difficulty: easy
-    question: Which metric can be used to estimate the quality of a language model?
+    question: Which metric scores a language model by the probability it assigns to held-out text?
     options:
       - text: accuracy
       - text: recall
@@ -183,23 +223,29 @@ questions:
     status: draft
   - id: language-models-008
     type: single
+    difficulty: medium
     question: |
       Which language model makes better predictions for English text?
 
       * A language model based on 6-grams
       * A language model based on 5-grams
     options:
-      - text: The answer depends on the size and diversity of the training set.
+      - text: It depends on the size and diversity of the training set.
         correct: true
-      - text: The language model based on 6-grams.
+      - text: The 6-gram model, since it uses more context.
         why: This language model has more context, but unless this model has trained on a lot of documents, most of the 6-grams will be rare.
-      - text: The language model based on 5-grams.
-        why: This language model has less context, so it is unlikely to outperform the language model based on 6-grams.
-    explanation: If the training set spans millions of diverse documents, then the model based on 6-grams will probably outperform the model based on 5-grams. [^1]
+      - text: The 5-gram model, since its n-grams are less rare.
+        why: Not in general. With a large, diverse training set the 6-gram model's extra context usually wins; the 5-gram model can do better only when the data are too small for most 6-grams to repeat.
+    explanation: |
+      Longer n-grams give more context, but as $N$ grows each n-gram occurs less often, and when $N$ is
+      large most n-grams appear only once, which doesn't help predict the next token [^1]. So the answer
+      depends on the data: if the training set spans millions of diverse documents, the 6-gram model will
+      probably outperform the 5-gram model, while with a small training set most 6-grams are rare and the
+      extra context does not pay off [^1].
     references:
       - source: google-mlcc
-        locator: Introduction to Large Language Models
         url: https://developers.google.com/machine-learning/crash-course/llm
+        locator: Introduction to Large Language Models, N-gram language models and exercise
     source:
       id: google-mlcc
       ref: llm#q1

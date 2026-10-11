@@ -5,6 +5,7 @@ title: Attention & Transformers
 questions:
   - id: transformers-001
     type: single
+    difficulty: easy
     question: Which of these types of models would you use for completing prompts with generated text?
     options:
       - text: An encoder model
@@ -13,11 +14,16 @@ questions:
         correct: true
       - text: A sequence-to-sequence model
         why: Sequence-to-sequence models are better suited for tasks where you want to generate sentences in relation to the input sentences, not a given prompt.
-    explanation: Decoder models are perfectly suited for text generation from a prompt. [^1]
+    explanation: |
+      Decoder models are pretrained to predict the next word, and at each position the attention
+      layers can only see the words before it. That makes them best suited to text generation,
+      such as continuing a prompt [^1]. Encoder models read the whole sentence in both directions
+      and suit understanding tasks such as classification, and sequence-to-sequence models suit
+      generating a new text from a given input, such as a translation or a summary [^1].
     references:
       - source: hf-llm-course
-        locator: 'Chapter 1: Transformer models'
-        url: https://huggingface.co/learn/llm-course/chapter1/1
+        url: https://huggingface.co/learn/llm-course/chapter1/6#decoder-models
+        locator: Chapter 1.6 Transformer Architectures, secs. Encoder models, Decoder models, Sequence-to-sequence models and Choosing the right architecture
     source:
       id: hf-llm-course
       ref: chapter1/7#q8
@@ -25,19 +31,26 @@ questions:
     status: draft
   - id: transformers-002
     type: single
-    question: Which of those types of models would you use for summarizing texts?
+    difficulty: easy
+    question: You want to fine-tune a dedicated summarization model, which reads a whole document and then writes a shorter text. Which type of Transformer model is the standard choice?
     options:
-      - text: An encoder model
+      - text: An encoder-only model
         why: An encoder model generates a representation of the whole sentence that is better suited for tasks like classification.
-      - text: A decoder model
-        why: Decoder models are good for generating output text (like summaries), but they don't have the ability to exploit a context like the whole text to summarize.
+      - text: A decoder-only model
+        why: Decoder-only LLMs can summarize a text placed in their prompt, but each token attends only to the tokens before it. Models built specifically for summarization, such as BART and T5, are encoder-decoders [^1].
       - text: A sequence-to-sequence model
         correct: true
-    explanation: Sequence-to-sequence models are perfectly suited for a summarization task. [^1]
+    explanation: |
+      Sequence-to-sequence (encoder-decoder) models are best suited to generating a new text from
+      a given input, such as a summary or a translation. The encoder reads the whole input with
+      bidirectional attention, and the decoder then generates the output text [^1]. The course's
+      guide to choosing an architecture lists encoder-decoder models such as BART and T5 for
+      summarization [^1]. Modern decoder-only LLMs can summarize as well [^1], but they are
+      general-purpose text generators, not the dedicated architecture for this task.
     references:
       - source: hf-llm-course
-        locator: 'Chapter 1: Transformer models'
-        url: https://huggingface.co/learn/llm-course/chapter1/1
+        url: https://huggingface.co/learn/llm-course/chapter1/6#sequence-to-sequence-models
+        locator: Chapter 1.6 Transformer Architectures, secs. Sequence-to-sequence models, Modern Large Language Models (LLMs) and Choosing the right architecture
     source:
       id: hf-llm-course
       ref: chapter1/7#q9
@@ -45,6 +58,7 @@ questions:
     status: draft
   - id: transformers-003
     type: single
+    difficulty: easy
     question: Which of these types of models would you use for classifying text inputs according to certain labels?
     options:
       - text: An encoder model
@@ -53,11 +67,16 @@ questions:
         why: Decoder models are good for generating output texts, not extracting a label out of a sentence.
       - text: A sequence-to-sequence model
         why: Sequence-to-sequence models are better suited for tasks where you want to generate text based on an input sentence, not a label.
-    explanation: An encoder model generates a representation of the whole sentence which is perfectly suited for a task like classification. [^1]
+    explanation: |
+      Encoder models use bidirectional attention, so each token's representation reflects the
+      whole sentence. That is what sentence classification needs, and the course suggests encoder
+      models such as BERT and RoBERTa for text classification [^1]. Decoder models are built for
+      generating text, and sequence-to-sequence models for turning an input text into a new output
+      text, not for extracting a label [^1].
     references:
       - source: hf-llm-course
-        locator: 'Chapter 1: Transformer models'
-        url: https://huggingface.co/learn/llm-course/chapter1/1
+        url: https://huggingface.co/learn/llm-course/chapter1/6#encoder-models
+        locator: Chapter 1.6 Transformer Architectures, secs. Encoder models and Choosing the right architecture
     source:
       id: hf-llm-course
       ref: chapter1/7#q10
@@ -65,6 +84,7 @@ questions:
     status: draft
   - id: transformers-004
     type: single
+    difficulty: easy
     question: How many dimensions does the tensor output by the base Transformer model have, and what are they?
     options:
       - text: '2: The sequence length and the batch size'
@@ -73,11 +93,19 @@ questions:
         why: False! All Transformer models handle batches, even with a single sequence; that would be a batch size of 1!
       - text: '3: The sequence length, the batch size, and the hidden size'
         correct: true
-    explanation: Nicely done! [^1]
+    explanation: |
+      The base model (`AutoModel`) outputs hidden states with three dimensions: the batch size
+      (how many sequences are processed at once), the sequence length, and the hidden size (the
+      vector dimension of each input token) [^1]. In the course example, two sentences of 16 tokens
+      give `last_hidden_state.shape == torch.Size([2, 16, 768])` [^1]. The batch dimension is
+      always there: a single sentence is sent as a batch of one sequence [^2].
     references:
       - source: hf-llm-course
-        locator: 'Chapter 2: Using 🤗 Transformers'
-        url: https://huggingface.co/learn/llm-course/chapter2/1
+        url: https://huggingface.co/learn/llm-course/chapter2/2#a-high-dimensional-vector
+        locator: Chapter 2.2 Behind the pipeline, sec. A high-dimensional vector?
+      - source: hf-llm-course
+        url: https://huggingface.co/learn/llm-course/chapter2/5#models-expect-a-batch-of-inputs
+        locator: Chapter 2.5 Handling multiple sequences, sec. Models expect a batch of inputs
     source:
       id: hf-llm-course
       ref: chapter2/9#q2
@@ -85,6 +113,7 @@ questions:
     status: draft
   - id: transformers-005
     type: single
+    difficulty: easy
     question: What is a model head?
     options:
       - text: A component of the base Transformer network that redirects tensors to their correct layers
@@ -93,11 +122,16 @@ questions:
         why: The self-attention layer does contain attention "heads," but these are not adaptation heads.
       - text: An additional component, usually made up of one or a few layers, to convert the transformer predictions to a task-specific output
         correct: true
-    explanation: "That's right. Adaptation heads, also known simply as heads, come up in different forms: language modeling heads, question answering heads, sequence classification heads... [^1]"
+    explanation: |
+      The base Transformer outputs high-dimensional hidden states. A head is an extra component,
+      usually one or a few linear layers, that projects those vectors onto a task-specific output,
+      for example two logits for positive/negative sentence classification [^1]. The same base
+      model can carry different heads, such as `*ForSequenceClassification`,
+      `*ForTokenClassification`, `*ForQuestionAnswering` or `*ForCausalLM` [^1].
     references:
       - source: hf-llm-course
-        locator: 'Chapter 2: Using 🤗 Transformers'
-        url: https://huggingface.co/learn/llm-course/chapter2/1
+        url: https://huggingface.co/learn/llm-course/chapter2/2#model-heads-making-sense-out-of-numbers
+        locator: 'Chapter 2.2 Behind the pipeline, sec. Model heads: Making sense out of numbers'
     source:
       id: hf-llm-course
       ref: chapter2/9#q4
@@ -105,6 +139,7 @@ questions:
     status: draft
   - id: transformers-006
     type: multiple
+    difficulty: medium
     question: What are the techniques to be aware of when batching sequences of different lengths together?
     options:
       - text: Truncating
@@ -115,11 +150,21 @@ questions:
         correct: true
       - text: Attention masking
         correct: true
-    explanation: Yes, truncation is a correct way of evening out sequences so that they fit in a rectangular shape. Is it the only one, though? Yes, padding is a correct way of evening out sequences so that they fit in a rectangular shape. Is it the only one, though? Absolutely! Attention masks are of prime importance when handling sequences of different lengths. That's not the only technique to be aware of, however. [^1]
+    explanation: |
+      A batch must be a rectangular tensor, so sequences of different lengths have to be evened
+      out. Padding adds a padding token to the shorter sequences [^1]. An attention mask (1 for
+      real tokens, 0 for padding) then tells the attention layers to ignore the padding; without
+      it, the padded sequence gets different outputs than it would on its own [^1]. Sequences
+      longer than the model's maximum length must be truncated [^1]. Returning tensors
+      (`return_tensors="pt"`) only chooses the type of the output, PyTorch tensors or NumPy arrays,
+      and does nothing about the different lengths [^2].
     references:
       - source: hf-llm-course
-        locator: 'Chapter 2: Using 🤗 Transformers'
-        url: https://huggingface.co/learn/llm-course/chapter2/1
+        url: https://huggingface.co/learn/llm-course/chapter2/5#padding-the-inputs
+        locator: Chapter 2.5 Handling multiple sequences, secs. Padding the inputs, Attention masks and Longer sequences
+      - source: hf-llm-course
+        url: https://huggingface.co/learn/llm-course/chapter2/6
+        locator: Chapter 2.6 Putting it all together (return_tensors)
     source:
       id: hf-llm-course
       ref: chapter2/9#q6
@@ -127,6 +172,7 @@ questions:
     status: draft
   - id: transformers-007
     type: single
+    difficulty: easy
     question: What does the `token_type_ids` field represent in BERT tokenization?
     options:
       - text: The position of each token in the sequence.
@@ -137,11 +183,17 @@ questions:
         why: The attention mask is a separate field that indicates which tokens to attend to.
       - text: The vocabulary ID of each token.
         why: That's the input_ids field, not token_type_ids.
-    explanation: Correct! token_type_ids distinguish between the first sentence (0) and second sentence (1) in sentence pair tasks. [^1]
+    explanation: |
+      For a sentence pair, BERT's tokenizer builds `[CLS] sentence1 [SEP] sentence2 [SEP]`, and
+      `token_type_ids` says which part each token belongs to: 0 for `[CLS] sentence1 [SEP]` and 1
+      for `sentence2 [SEP]` [^1]. BERT uses them because it was pretrained with next sentence
+      prediction on sentence pairs; checkpoints that weren't, such as DistilBERT, don't return
+      them [^1]. The vocabulary IDs and the padding information are separate fields, `input_ids`
+      and `attention_mask` [^1].
     references:
       - source: hf-llm-course
-        locator: 'Chapter 3: Fine-tuning a pretrained model'
-        url: https://huggingface.co/learn/llm-course/chapter3/1
+        url: https://huggingface.co/learn/llm-course/chapter3/2#preprocessing-a-dataset
+        locator: Chapter 3.2 Processing the data, sec. Preprocessing a dataset
     source:
       id: hf-llm-course
       ref: chapter3/2#q3
@@ -203,17 +255,19 @@ questions:
   - id: transformers-010
     type: single
     difficulty: easy
-    question: Multi-Head Attention is used in transformers to give network the power to capture _____ of dependencies
+    question: Multi-head attention is used in transformers to give the network the power to capture _____ of dependencies
     options:
       - text: different types
         correct: true
-      - text: same type
-      - text: none
+      - text: a single type
+      - text: only short-range types
     explanation: |
       Multi-head attention runs several attention heads in parallel, each with its own learned
-      projections of the queries, keys and values, and concatenates their outputs [^2]. Each head can
-      therefore pick up a different kind of dependency, such as long-range versus short-range word
-      relations or co-reference, which is the lesson's reason for using several heads [^1][^2].
+      projections of the queries, keys and values, and concatenates their outputs [^2]. Each head
+      can therefore pick up a different kind of dependency, such as long-range versus short-range
+      word relations or co-reference, which is the lesson's reason for using several heads
+      [^1][^2]. A single type would need only one head, and the heads are not limited to short
+      range: long-range relations are among the dependencies they capture [^1][^2].
     references:
       - source: ms-ai-for-beginners
         url: https://github.com/microsoft/AI-For-Beginners/blob/392d0df1b2647cbee104942390551f1ed9e072c8/lessons/5-NLP/18-Transformers/README.md#multi-head-self-attention
