@@ -2812,3 +2812,347 @@ questions:
       ref: MIT18_065S18PSets#lec27-q5
       url: https://ocw.mit.edu/courses/18-065-matrix-methods-in-data-analysis-signal-processing-and-machine-learning-spring-2018/resources/18065-all-problem-sets-in-one-file/
     status: draft
+  - id: neural-networks-086
+    type: short_answer
+    difficulty: hard
+    tags:
+      - forward-propagation
+      - softmax
+      - cross-entropy
+    question: |
+      A network has inputs $\mathbf{x} = (0.9, 0.7)$ and three ReLU hidden units with weight rows
+      $(-0.3, 0.15)$, $(0.32, -0.91)$ and $(0.37, 0.47)$ and a bias of 0.001 each. Its two output units
+      have no bias and weight rows $(0.15, -0.46, 0.59)$ and $(0.10, 0.32, -0.79)$. A softmax turns the
+      outputs into probabilities, and the true class is the first one. What is the cross-entropy loss
+      (natural logarithm)? Round to 3 decimals.
+    answer:
+      numeric: 0.337
+      tolerance: 0.002
+      hint: a number, 3 decimals
+      model: $\mathbf{h} = (0, 0, 0.663)$, $\mathbf{o} = (0.391, -0.524)$, $\hat{y}_1 = 0.714$, $-\ln 0.714 \approx 0.337$
+    explanation: |
+      The hidden pre-activations are $-0.27 + 0.105 + 0.001 = -0.164$, $0.288 - 0.637 + 0.001 = -0.348$
+      and $0.333 + 0.329 + 0.001 = 0.663$, so ReLU gives $\mathbf{h} = (0, 0, 0.663)$ [^1][^2]. The
+      outputs are $0.59 \cdot 0.663 = 0.391$ and $-0.79 \cdot 0.663 = -0.524$, and the softmax gives
+      $\hat{y}_1 = 1 / (1 + e^{-0.915}) \approx 0.714$ [^1]. The cross-entropy with a one-hot label is
+      $-\ln \hat{y}_1 \approx 0.337$ [^3].
+    references:
+      - source: dl-interviews
+        locator: Ch. 8 (Deep Learning), Problem PRB-211, pp. 249–251; Solution SOL-211, Figs. 8.57–8.60, pp. 302–304
+        url: https://arxiv.org/abs/2201.00650v2
+      - source: d2l
+        locator: Sec. 5.3.1 Forward Propagation
+        url: https://d2l.ai/chapter_multilayer-perceptrons/backprop.html#forward-propagation
+      - source: d2l
+        locator: Sec. 4.1.2.1 Log-Likelihood
+        url: https://d2l.ai/chapter_linear-classification/softmax-regression.html#log-likelihood
+    source:
+      id: dl-interviews
+      ref: ch8#prb211
+      url: https://arxiv.org/abs/2201.00650v2
+    status: draft
+  - id: neural-networks-087
+    type: single
+    difficulty: easy
+    tags:
+      - perceptron
+      - logic-gates
+      - bias
+    question: |
+      A perceptron with weights $w_1 = w_2 = 1$ outputs 1 if $w_1 x_1 + w_2 x_2 + b > 0$ and 0 otherwise,
+      for binary inputs $x_1, x_2 \in \{0, 1\}$. With $b = -0.25$, which logic function does it compute?
+    options:
+      - text: OR
+        correct: true
+      - text: AND
+        why: For $(0, 1)$ the sum is $1 - 0.25 = 0.75 > 0$, so the output is 1; AND needs $-2 < b \le -1$, for example $b = -1.5$.
+      - text: XOR
+        why: XOR is not linearly separable, so no single perceptron computes it [^2].
+      - text: The constant 0
+        why: That happens for $b = -2.5$, where even $1 + 1 - 2.5 = -0.5$ is negative [^1].
+    explanation: |
+      The weighted sums are $-0.25$, $0.75$, $0.75$ and $1.75$ for the inputs $(0,0)$, $(0,1)$, $(1,0)$
+      and $(1,1)$, so the output is 1 unless both inputs are 0: that is OR [^1]. The bias sets the
+      threshold: with both weights 1, OR needs $-1 < b \le 0$, AND needs $-2 < b \le -1$, and $b = -2.5$
+      gives a perceptron that never fires [^1]. A single perceptron draws one straight line, which is why
+      XOR is out of reach [^2].
+    references:
+      - source: dl-interviews
+        locator: Ch. 8 (Deep Learning), Problem PRB-216, pp. 251–252; Solution SOL-216, Figs. 8.61–8.62, p. 305
+        url: https://arxiv.org/abs/2201.00650v2
+      - title: 'Wikipedia: Perceptron'
+        url: https://en.wikipedia.org/wiki/Perceptron
+        locator: Definition; Power of representation, Boolean function
+    source:
+      id: dl-interviews
+      ref: ch8#prb216
+      url: https://arxiv.org/abs/2201.00650v2
+    status: draft
+  - id: neural-networks-088
+    type: multiple
+    difficulty: medium
+    tags:
+      - activation-functions
+      - differentiability
+      - backpropagation
+    question: Which of these candidate activation functions are differentiable at $x = 0$? Select all that apply.
+    options:
+      - text: $f(x) = \lvert x \rvert$
+        why: The left derivative is $-1$ and the right derivative is $+1$ [^2].
+      - text: $f(x) = x$
+        correct: true
+      - text: $f(x) = x \sin(1/x)$ for $x \ne 0$, with $f(0) = 0$
+        why: The difference quotient $f(h)/h = \sin(1/h)$ oscillates between $-1$ and $1$ as $h \to 0$, so it has no limit [^2].
+      - text: $f(x) = x^2$ for $x > 0$ and $f(x) = -x$ for $x \le 0$
+        why: The derivative from the left is $-1$ and from the right is 0 [^2].
+      - text: $f(x) = x \lvert x \rvert$
+        correct: true
+    explanation: |
+      $f$ is differentiable at 0 when $\lim_{h \to 0} (f(h) - f(0))/h$ exists [^2]. For $f(x) = x$ the
+      quotient is 1, and for $x\lvert x \rvert$ it is $\lvert h \rvert \to 0$; for the other three the
+      one-sided limits differ or do not exist [^1]. A kink at a single point does not stop
+      backpropagation, though: ReLU is not differentiable at 0 either, and frameworks simply use a
+      one-sided derivative there [^3].
+    references:
+      - source: dl-interviews
+        locator: Ch. 8 (Deep Learning), Problem PRB-210, p. 249; Solution SOL-210, pp. 301–302
+        url: https://arxiv.org/abs/2201.00650v2
+      - source: d2l
+        locator: Sec. 22.3.1 Differential Calculus
+        url: https://d2l.ai/chapter_appendix-mathematics-for-deep-learning/single-variable-calculus.html#differential-calculus
+      - source: d2l
+        locator: Sec. 5.1.2.1 ReLU Function
+        url: https://d2l.ai/chapter_multilayer-perceptrons/mlp.html#relu-function
+    source:
+      id: dl-interviews
+      ref: ch8#prb210
+      url: https://arxiv.org/abs/2201.00650v2
+    status: draft
+  - id: neural-networks-089
+    type: short_answer
+    difficulty: medium
+    tags:
+      - sigmoid
+      - hardware
+      - derivative
+    question: |
+      Some hardware approximates $e^x$ by $2^{1.44x}$ and the sigmoid by
+      $\tilde{s}(x) = \dfrac{1}{1 + 2^{-1.5x}}$. What is $\tilde{s}'(0)$? Round to 3 decimals. (The true
+      sigmoid has $\sigma'(0) = 0.25$.)
+    answer:
+      numeric: 0.260
+      tolerance: 0.001
+      hint: a number, 3 decimals
+      model: $\tilde{s}'(0) = \dfrac{1.5 \ln 2}{4} \approx 0.260$
+    explanation: |
+      Since $2^{-1.5x} = e^{-1.5 \ln 2 \cdot x}$, the approximation is a sigmoid with a scaled input,
+      $\tilde{s}(x) = \sigma(kx)$ with $k = 1.5 \ln 2 \approx 1.040$ [^1]. By the chain rule,
+      $\tilde{s}'(x) = k\,\tilde{s}(x)(1 - \tilde{s}(x))$, so $\tilde{s}'(0) = k / 4 \approx 0.260$ [^2]. The
+      exact factor would be $\log_2 e \approx 1.4427$ instead of 1.5, which gives $k = 1$; rounding it up
+      makes the curve about 4% too steep.
+    references:
+      - source: dl-interviews
+        locator: Ch. 8 (Deep Learning), Problem PRB-217, Eqs. (8.26)–(8.28), pp. 253–256; Solution SOL-217, pp. 307–310
+        url: https://arxiv.org/abs/2201.00650v2
+      - source: d2l
+        locator: Sec. 5.1.2.2 Sigmoid Function
+        url: https://d2l.ai/chapter_multilayer-perceptrons/mlp.html#sigmoid-function
+    source:
+      id: dl-interviews
+      ref: ch8#prb217
+      url: https://arxiv.org/abs/2201.00650v2
+    status: draft
+  - id: neural-networks-090
+    type: short_answer
+    difficulty: easy
+    tags:
+      - mlp
+      - parameter-count
+      - pytorch
+    question: |
+      How many trainable parameters does this network have?
+
+      ```python
+      net = nn.Sequential(
+          nn.Linear(200, 512), nn.Tanh(),
+          nn.Linear(512, 512), nn.Tanh(),
+          nn.Linear(512, 10), nn.LogSoftmax(dim=1),
+      )
+      ```
+    answer:
+      numeric: 370698
+      tolerance: 0
+      hint: a whole number
+      model: $(200 \cdot 512 + 512) + (512 \cdot 512 + 512) + (512 \cdot 10 + 10) = 370\,698$
+    explanation: |
+      `net` is an MLP with two hidden layers of 512 tanh units [^1]. Each `nn.Linear(n_in, n_out)` has
+      $n_{\text{in}} \cdot n_{\text{out}}$ weights and $n_{\text{out}}$ biases [^2]: 102,912 for the first
+      layer, 262,656 for the second and 5,130 for the output layer. The activations and `LogSoftmax` have
+      no parameters, so the total is 370,698.
+    references:
+      - source: dl-interviews
+        locator: Ch. 8 (Deep Learning), Problem PRB-219, pp. 256–257; Solution SOL-219, p. 313
+        url: https://arxiv.org/abs/2201.00650v2
+      - source: d2l
+        locator: Sec. 5.1.1.2 Incorporating Hidden Layers
+        url: https://d2l.ai/chapter_multilayer-perceptrons/mlp.html#incorporating-hidden-layers
+    source:
+      id: dl-interviews
+      ref: ch8#prb219
+      url: https://arxiv.org/abs/2201.00650v2
+    status: draft
+  - id: neural-networks-091
+    type: short_answer
+    difficulty: medium
+    tags:
+      - swish
+      - activation-functions
+      - non-monotonic
+    question: |
+      Swish, $f(x) = x\,\sigma(x)$ with the logistic sigmoid $\sigma$, is not monotonic: it dips below
+      zero for negative inputs before rising back towards 0. What is its minimum value? Round to 3
+      decimals.
+    answer:
+      numeric: -0.278
+      tolerance: 0.002
+      hint: a negative number, 3 decimals
+      model: $f'(x) = \sigma(x)\big(1 + x(1 - \sigma(x))\big) = 0$ at $x \approx -1.278$, where $f \approx -0.278$
+    explanation: |
+      $f'(x) = \sigma(x) + x\,\sigma(x)(1 - \sigma(x))$ vanishes where $1 + x(1 - \sigma(x)) = 0$, that is
+      at $x \approx -1.278$; there $\sigma(x) \approx 0.218$ and $f(x) \approx -0.278$ [^2]. Swish was found
+      by an automated search over activation functions, and its non-monotonic bump for negative inputs
+      is one of its unusual properties [^1][^2]. For $x \to -\infty$ it tends to 0, and for large $x$ it
+      behaves like $x$.
+    references:
+      - source: dl-interviews
+        locator: Ch. 8 (Deep Learning), Problem PRB-226, p. 260; Solution SOL-226, p. 315
+        url: https://arxiv.org/abs/2201.00650v2
+      - title: Ramachandran, Zoph & Le (2017), Searching for Activation Functions
+        locator: Sec. 4 Swish (properties, non-monotonic bump)
+        url: https://arxiv.org/abs/1710.05941
+    source:
+      id: dl-interviews
+      ref: ch8#prb226
+      url: https://arxiv.org/abs/2201.00650v2
+    status: draft
+  - id: neural-networks-092
+    type: single
+    difficulty: medium
+    tags:
+      - sigmoid
+      - backpropagation
+      - code-reading
+    question: |
+      A hand-written sigmoid layer:
+
+      ```python
+      class Sigmoid:
+          def forward(self, x):
+              self.x = x
+              return 1 / (1 + np.exp(-x))
+
+          def backward(self, grad):
+              return self.x * (1 - self.x) * grad
+      ```
+
+      What does `backward(1.0)` return after `forward(2.0)`, and is it right?
+    options:
+      - text: $-2$, though the correct gradient is $\sigma(2)(1 - \sigma(2)) \approx 0.105$
+        correct: true
+      - text: About 0.105, which is the correct gradient $\sigma(2)(1 - \sigma(2))$
+        why: '`backward` uses the stored input $x = 2$, not the output $\sigma(2) \approx 0.881$, so it computes $2 \cdot (1 - 2) = -2$.'
+      - text: $-2$, which is right, because the sigmoid's derivative is $\sigma'(x) = x(1 - x)$
+        why: The identity is $\sigma'(x) = \sigma(x)(1 - \sigma(x))$; it holds for the output of the sigmoid, not its input [^2].
+      - text: About 0.881, the sigmoid output $\sigma(2)$
+        why: '`backward` never recomputes the sigmoid; it only uses the stored input.'
+    explanation: |
+      The derivative of the sigmoid is $\sigma'(x) = \sigma(x)(1 - \sigma(x))$ [^2], so `backward` needs
+      the *output* $s = \sigma(x)$. Storing the input and plugging it into $s(1 - s)$ gives
+      $2 \cdot (1 - 2) = -2$ instead of $0.881 \cdot 0.119 \approx 0.105$, with the wrong sign [^1]. The fix
+      is to save `self.s = 1 / (1 + np.exp(-x))` in `forward` and return `self.s * (1 - self.s) * grad`.
+    references:
+      - source: dl-interviews
+        locator: Ch. 5 (Calculus, Algorithmic Differentiation), Problem PRB-120, pp. 134–135; Solution SOL-120, Fig. 5.13, p. 157
+        url: https://arxiv.org/abs/2201.00650v2
+      - source: d2l
+        locator: Sec. 5.1.2.2 Sigmoid Function
+        url: https://d2l.ai/chapter_multilayer-perceptrons/mlp.html#sigmoid-function
+    source:
+      id: dl-interviews
+      ref: ch5#prb120
+      url: https://arxiv.org/abs/2201.00650v2
+    status: draft
+  - id: neural-networks-093
+    type: short_answer
+    difficulty: hard
+    tags:
+      - backpropagation
+      - chain-rule
+      - custom-activation
+    question: |
+      A tiny network has one input $y_i = 1$, a hidden unit with transfer function $x^3$ and an output
+      unit with transfer function $\sin(2x)$:
+      $\mathrm{net}_j = w_{ij} y_i$, $y_j = \mathrm{net}_j^3$, $\mathrm{net}_k = w_{jk} y_j$,
+      $y_k = \sin(2\,\mathrm{net}_k)$, and the loss is $E = \tfrac12 (y_k - d)^2$ with target $d = 0$. For
+      $w_{ij} = 0.5$ and $w_{jk} = 2$, what is $\partial E / \partial w_{ij}$? Round to 3 decimals.
+    answer:
+      numeric: 1.262
+      tolerance: 0.002
+      hint: a number, 3 decimals
+      model: $(y_k - d) \cdot 2\cos(2\,\mathrm{net}_k) \cdot w_{jk} \cdot 3\,\mathrm{net}_j^2 \cdot y_i = 0.479 \cdot 1.755 \cdot 2 \cdot 0.75 \approx 1.262$
+    explanation: |
+      Forward: $\mathrm{net}_j = 0.5$, $y_j = 0.125$, $\mathrm{net}_k = 0.25$, $y_k = \sin 0.5 \approx 0.479$.
+      Backward, one factor per node [^1][^2]: $\delta_k = (y_k - d) \cdot 2\cos(2\,\mathrm{net}_k)
+      \approx 0.479 \cdot 1.755 \approx 0.841$; $\partial E / \partial y_j = \delta_k w_{jk} \approx 1.683$;
+      $\delta_j = 1.683 \cdot 3\,\mathrm{net}_j^2 = 1.683 \cdot 0.75 \approx 1.262$; and
+      $\partial E / \partial w_{ij} = \delta_j y_i \approx 1.262$. A finite-difference check gives the same
+      value. Only the activation derivatives ($3x^2$ and $2\cos 2x$) change compared with sigmoid units [^1].
+    references:
+      - source: dl-interviews
+        locator: Ch. 5 (Calculus, Algorithmic Differentiation), Problem PRB-121, p. 135; Solution SOL-121, Eqs. (5.48)–(5.53), pp. 157–158
+        url: https://arxiv.org/abs/2201.00650v2
+      - source: d2l
+        locator: Sec. 5.3.3 Backpropagation
+        url: https://d2l.ai/chapter_multilayer-perceptrons/backprop.html#backpropagation
+    source:
+      id: dl-interviews
+      ref: ch5#prb121
+      url: https://arxiv.org/abs/2201.00650v2
+    status: draft
+  - id: neural-networks-094
+    type: true_false
+    difficulty: easy
+    tags:
+      - tanh
+      - saturation
+      - activation-functions
+    question: |
+      True or false: because tanh is symmetric around 0, tanh units cannot saturate; saturation only
+      affects sigmoid units.
+    options:
+      - text: 'True'
+        why: For $\lvert x \rvert = 3$ the derivative of tanh is already below 0.01, so large pre-activations stall learning just as with the sigmoid [^2].
+      - text: 'False'
+        correct: true
+    explanation: |
+      False. $\tanh(x) = 2\sigma(2x) - 1$ is a rescaled sigmoid, so it flattens out at $\pm 1$ in the same
+      way, and its derivative $1 - \tanh^2 x$ vanishes for large $\lvert x \rvert$: $\tanh'(3) \approx 0.0099$ [^1][^2].
+      Its zero-centred outputs help optimization compared with the sigmoid, whose outputs are centred at
+      0.5, but they do not prevent saturation [^1]. Glorot and Bengio observed that the top hidden layer
+      of sigmoid networks saturates early in training, which motivated zero-centred activations and
+      careful initialization [^3].
+    references:
+      - source: dl-interviews
+        locator: Ch. 8 (Deep Learning), Problems PRB-220 and PRB-262, pp. 257–258 and 287; Solutions SOL-220 and SOL-262, pp. 313 and 332
+        url: https://arxiv.org/abs/2201.00650v2
+      - source: d2l
+        locator: Sec. 5.1.2.3 Tanh Function
+        url: https://d2l.ai/chapter_multilayer-perceptrons/mlp.html#tanh-function
+      - title: Glorot & Bengio (2010), Understanding the Difficulty of Training Deep Feedforward Neural Networks
+        locator: Sec. 3.1 Experiments with the Sigmoid
+        url: https://proceedings.mlr.press/v9/glorot10a.html
+    source:
+      id: dl-interviews
+      ref: ch8#prb220
+      url: https://arxiv.org/abs/2201.00650v2
+    status: draft

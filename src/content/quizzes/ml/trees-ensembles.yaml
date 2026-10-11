@@ -1860,3 +1860,566 @@ questions:
       ref: final_f03soln#q3.4
       url: https://ocw.mit.edu/courses/6-867-machine-learning-fall-2006/resources/final_f03soln/
     status: draft
+  - id: trees-ensembles-053
+    type: single
+    difficulty: easy
+    tags:
+      - stacking
+      - ensembles
+      - meta-learner
+    question: |
+      Several base learners each make a prediction, and a second-level model, the "generalizer", is
+      trained to combine those predictions into the final output. Which ensembling approach is this?
+    options:
+      - text: Stacking
+        correct: true
+      - text: Bagging
+        why: Bagging trains the members on bootstrap samples and combines them by a fixed rule, averaging or voting, not by a trained model [^2].
+      - text: Snapshot ensembling
+        why: Snapshot ensembling collects several weight snapshots of one network along a single training run and averages them [^3].
+      - text: Boosting
+        why: Boosting trains the members one after another, each focusing on the examples its predecessors got wrong [^2].
+    explanation: |
+      In stacking (stacked generalization) the base learners form the first level, and a meta-learner is
+      trained on their outputs to produce the final prediction [^1][^2]. To keep the meta-learner from
+      trusting overfitted members, it is usually trained on out-of-fold predictions, i.e. predictions on
+      data the base learners did not see [^2].
+    references:
+      - source: dl-interviews
+        locator: Ch. 6 (NN Ensembles), Problem PRB-139, Fig. 6.2, p. 188; Solution SOL-139, p. 199
+        url: https://arxiv.org/abs/2201.00650v2
+      - title: scikit-learn User Guide
+        url: https://scikit-learn.org/stable/modules/ensemble.html#stacked-generalization
+        locator: Ensembles, Stacked generalization (and Bagging, AdaBoost)
+      - title: Huang et al. (2017), Snapshot Ensembles, Train 1, Get M for Free
+        locator: Sec. 3 Snapshot Ensembling
+        url: https://arxiv.org/abs/1704.00109
+    source:
+      id: dl-interviews
+      ref: ch6#prb139
+      url: https://arxiv.org/abs/2201.00650v2
+    status: draft
+  - id: trees-ensembles-054
+    type: single
+    difficulty: medium
+    tags:
+      - soft-voting
+      - hard-voting
+      - ensembles
+    question: |
+      Three CNNs give these probabilities for class A in a two-class problem (the rest goes to class B):
+      0.9, 0.4 and 0.4. Which classes do soft voting (averaging the probabilities) and hard voting
+      (majority of the predicted labels) choose?
+    options:
+      - text: Soft voting chooses A, hard voting chooses B
+        correct: true
+      - text: Both choose A
+        why: Two of the three models predict B ($0.4 < 0.5$), so the majority vote is B [^2].
+      - text: Both choose B
+        why: The average probability of A is $(0.9 + 0.4 + 0.4)/3 \approx 0.57 > 0.5$, so soft voting picks A [^2].
+      - text: Soft voting chooses B, hard voting chooses A
+        why: This is the other way round; only one model votes for A, but its confidence lifts the average above 0.5.
+    explanation: |
+      Averaging the class probabilities of several models, as the book's ensemble code does, is soft
+      voting [^1]: here the mean probability of A is about 0.57, so the ensemble predicts A [^2]. Hard voting
+      counts only the labels, two votes for B against one for A, and ignores that the single A vote is far
+      more confident than the two B votes. Soft voting is recommended for well-calibrated models [^2].
+    references:
+      - source: dl-interviews
+        locator: Ch. 6 (NN Ensembles), Problem PRB-141, Fig. 6.5, pp. 190–191; Solution SOL-141, p. 199
+        url: https://arxiv.org/abs/2201.00650v2
+      - title: scikit-learn User Guide
+        url: https://scikit-learn.org/stable/modules/ensemble.html#voting-classifier
+        locator: Ensembles, Voting Classifier (majority class labels vs. weighted average probabilities)
+    source:
+      id: dl-interviews
+      ref: ch6#prb141
+      url: https://arxiv.org/abs/2201.00650v2
+    status: draft
+  - id: trees-ensembles-055
+    type: short_answer
+    difficulty: medium
+    tags:
+      - majority-vote
+      - independent-errors
+      - ensembles
+    question: |
+      Five classifiers make independent errors, each with error rate 0.3, and are combined by majority
+      vote. What is the error rate of the ensemble? Round to 3 decimals.
+    answer:
+      numeric: 0.163
+      tolerance: 0.001
+      hint: a probability, 3 decimals
+      model: $\sum_{k=3}^{5} \binom{5}{k} 0.3^k\, 0.7^{5-k} = 0.1323 + 0.0284 + 0.0024 \approx 0.163$
+    explanation: |
+      The vote is wrong when at least 3 of the 5 members are wrong, a binomial tail:
+      $10 \cdot 0.3^3 \cdot 0.7^2 + 5 \cdot 0.3^4 \cdot 0.7 + 0.3^5 \approx 0.163$ [^2]. Hansen and Salamon's result
+      is that if each member's error rate is below 50% and the errors are independent, the majority error
+      tends to 0 as the ensemble grows (21 such members give about 0.026) [^1][^2]. In practice errors are
+      correlated, so the gain is smaller; above 50% error, voting makes things worse.
+    references:
+      - source: dl-interviews
+        locator: Ch. 6 (NN Ensembles), Problem PRB-142, p. 191; Solution SOL-142, p. 199
+        url: https://arxiv.org/abs/2201.00650v2
+      - title: "Wikipedia: Condorcet's jury theorem"
+        url: https://en.wikipedia.org/wiki/Condorcet%27s_jury_theorem
+        locator: Theorem statement
+    source:
+      id: dl-interviews
+      ref: ch6#prb142
+      url: https://arxiv.org/abs/2201.00650v2
+    status: draft
+  - id: trees-ensembles-056
+    type: short_answer
+    difficulty: medium
+    tags:
+      - ambiguity-decomposition
+      - diversity
+      - ensembles
+    question: |
+      Three regressors predict 2, 4 and 6 for an example whose target is 5, and the ensemble predicts
+      their average. By how much is the ensemble's squared error smaller than the average squared error of
+      the three members? Round to 3 decimals.
+    answer:
+      numeric: 2.667
+      tolerance: 0.002
+      hint: a number, 3 decimals
+      model: $\bar E = (9 + 1 + 1)/3 = 3.667$, $E = (4 - 5)^2 = 1$, difference $8/3 \approx 2.667$
+    explanation: |
+      The members' squared errors are 9, 1 and 1, average $\bar E = 11/3$, while the ensemble predicts 4
+      and has error $E = 1$. Krogh and Vedelsby showed that for an averaging ensemble
+      $E = \bar E - \bar A$, where the ambiguity $\bar A$ is the average squared deviation of the members
+      from the ensemble, here $(4 + 0 + 4)/3 = 8/3$ [^2]. So the ideal ensemble consists of accurate members
+      that disagree as much as possible [^1][^2].
+    references:
+      - source: dl-interviews
+        locator: Ch. 6 (NN Ensembles), Problem PRB-143, p. 191; Solution SOL-143, p. 199
+        url: https://arxiv.org/abs/2201.00650v2
+      - title: Krogh & Vedelsby (1995), Neural Network Ensembles, Cross Validation, and Active Learning (NIPS 7)
+        locator: Sec. 2 (ambiguity decomposition)
+    source:
+      id: dl-interviews
+      ref: ch6#prb143
+      url: https://arxiv.org/abs/2201.00650v2
+    status: draft
+  - id: trees-ensembles-057
+    type: true_false
+    difficulty: medium
+    tags:
+      - ensembles
+      - jensen-inequality
+    question: |
+      True or false: an ensemble that averages the predicted class probabilities of its members is
+      always at least as accurate as its best member.
+    options:
+      - text: 'True'
+        why: Averaging can only guarantee to beat the *average* member under a convex loss; weak, correlated members can outvote the best one.
+      - text: 'False'
+        correct: true
+    explanation: |
+      False. For a convex loss such as squared error or log loss, Jensen's inequality guarantees that the
+      averaged prediction is no worse than the members' *average* loss, and the ambiguity decomposition
+      shows the gain is the members' disagreement [^2][^3]. Nothing guarantees beating the *best* member:
+      if one model is always right and two identical weaker models are confidently wrong on the same 30%
+      of examples, the average follows the weak pair there. Ensembles usually help when members are
+      accurate and their errors are not strongly correlated [^1].
+    references:
+      - source: dl-interviews
+        locator: Ch. 6 (NN Ensembles), Problem PRB-147 parts 1–2, pp. 192–193; Solution SOL-147, p. 200
+        url: https://arxiv.org/abs/2201.00650v2
+      - title: "Wikipedia: Jensen's inequality"
+        url: https://en.wikipedia.org/wiki/Jensen%27s_inequality
+        locator: Statements, Finite form
+      - title: Krogh & Vedelsby (1995), Neural Network Ensembles, Cross Validation, and Active Learning (NIPS 7)
+        locator: Sec. 2 (ambiguity decomposition)
+    source:
+      id: dl-interviews
+      ref: ch6#prb147
+      url: https://arxiv.org/abs/2201.00650v2
+    status: draft
+  - id: trees-ensembles-058
+    type: multiple
+    difficulty: medium
+    tags:
+      - committee-machines
+      - mixture-of-experts
+      - bagging
+      - boosting
+    question: |
+      Committee machines combine their experts either statically, by a rule that does not look at the
+      input, or dynamically, through a gating network that does. Which of these combine their members'
+      outputs without using the input? Select all that apply.
+    options:
+      - text: Ensemble averaging
+        correct: true
+      - text: Boosting
+        correct: true
+      - text: Bagging
+        correct: true
+      - text: Mixture of experts
+        why: Its gating network reads the input and decides how much each expert's output counts for that input [^2][^4].
+    explanation: |
+      In static structures the input is not involved in combining the experts: ensemble averaging takes a
+      (weighted) linear combination of the outputs, and boosting combines weak learners with fixed weights
+      [^2]. Bagging, which averages or votes over models trained on bootstrap samples, also uses a fixed
+      rule [^3]. In dynamic structures such as the mixture of experts and its hierarchical version, a gating
+      network driven by the input weights the experts [^2][^4]. Linearly averaging the outputs of
+      individual models is therefore a static committee machine [^1].
+    references:
+      - source: dl-interviews
+        locator: Ch. 6 (NN Ensembles), Problems PRB-148 and PRB-149, p. 193; Solutions SOL-148 and SOL-149, pp. 200–201
+        url: https://arxiv.org/abs/2201.00650v2
+      - title: 'Wikipedia: Committee machine'
+        url: https://en.wikipedia.org/wiki/Committee_machine
+        locator: Types, Static structures and Dynamic structures
+      - title: 'Wikipedia: Bootstrap aggregating'
+        url: https://en.wikipedia.org/wiki/Bootstrap_aggregating
+        locator: Description of the technique
+      - title: 'Wikipedia: Mixture of experts'
+        url: https://en.wikipedia.org/wiki/Mixture_of_experts
+        locator: Basic theory (gating function)
+    source:
+      id: dl-interviews
+      ref: ch6#prb148
+      url: https://arxiv.org/abs/2201.00650v2
+    status: draft
+  - id: trees-ensembles-059
+    type: short_answer
+    difficulty: hard
+    tags:
+      - ensembles
+      - correlated-errors
+      - variance
+    question: |
+      Five regressors have errors with mean 0 and variance 0.2 each, and every pair of errors has
+      correlation 0.5. What is the expected squared error of their averaged prediction? Round to 2 decimals.
+    answer:
+      numeric: 0.12
+      tolerance: 0.005
+      hint: a number, 2 decimals
+      model: $\dfrac{v}{k} + \dfrac{k - 1}{k}c = \dfrac{0.2}{5} + \dfrac45 \cdot 0.1 = 0.04 + 0.08 = 0.12$
+    explanation: |
+      With variance $v$ and covariance $c = \rho v$, the average of $k$ errors has expected square
+      $\frac{v}{k} + \frac{k - 1}{k}c$ [^2]. Uncorrelated errors ($c = 0$) would cut the error by the factor
+      $k = 5$, to 0.04; with $\rho = 0.5$ the result is 0.12, and fully correlated errors ($c = v$) would
+      leave 0.2 [^2]. That is why the book stresses that in practice errors are correlated and the factor
+      $k$ is not reached [^1].
+    references:
+      - source: dl-interviews
+        locator: Ch. 6 (NN Ensembles), Problem PRB-151, p. 194; Solution SOL-151, p. 201
+        url: https://arxiv.org/abs/2201.00650v2
+      - title: Goodfellow, Bengio & Courville (2016), Deep Learning
+        locator: Sec. 7.11 Bagging and Other Ensemble Methods
+        url: https://www.deeplearningbook.org/contents/regularization.html
+    source:
+      id: dl-interviews
+      ref: ch6#prb151
+      url: https://arxiv.org/abs/2201.00650v2
+    status: draft
+  - id: trees-ensembles-060
+    type: single
+    difficulty: medium
+    tags:
+      - bootstrap
+      - sampling
+      - covariance
+    question: |
+      Two items are drawn one after the other, uniformly at random, from a finite training set of $N$
+      different numbers (for example $\{1, 3, 6, 10, 15, 21, 28, 36, 45\}$), and $X_1, X_2$ are their
+      values. In which sampling scheme is $\mathrm{Cov}(X_1, X_2) = 0$?
+    options:
+      - text: With replacement, as in a bootstrap sample
+        correct: true
+      - text: Without replacement, because the second item cannot repeat the first
+        why: Excluding the first value makes the draws dependent; the covariance is $-\sigma^2/(N - 1) < 0$.
+      - text: In both schemes, because each single draw is uniform over the set
+        why: Uniform marginals do not make the draws independent; without replacement they are negatively correlated.
+      - text: In neither scheme, because both draws come from the same set
+        why: With replacement the draws are independent, and independent variables have zero covariance.
+    explanation: |
+      With replacement the two draws are independent, so their covariance is 0; a bootstrap sample is drawn
+      this way [^2]. Without replacement, drawing all $N$ items gives a fixed sum, so
+      $0 = \mathrm{Var}(\sum_i X_i) = N\sigma^2 + N(N - 1)c$ and the covariance of two draws is
+      $c = -\sigma^2/(N - 1)$; for the nine numbers above, $\sigma^2 \approx 210.2$ and $c \approx -26.3$.
+      Sampling with replacement also explains why bootstrap samples repeat some examples and miss others [^1][^2].
+    references:
+      - source: dl-interviews
+        locator: Ch. 6 (NN Ensembles), Problems PRB-140 and PRB-144, pp. 189–191; Solutions SOL-140 and SOL-144, p. 199
+        url: https://arxiv.org/abs/2201.00650v2
+      - title: 'Wikipedia: Bootstrap aggregating'
+        url: https://en.wikipedia.org/wiki/Bootstrap_aggregating
+        locator: Description of the technique (sampling with replacement)
+    source:
+      id: dl-interviews
+      ref: ch6#prb140
+      url: https://arxiv.org/abs/2201.00650v2
+    status: draft
+  - id: trees-ensembles-061
+    type: short_answer
+    difficulty: medium
+    tags:
+      - snapshot-ensembles
+      - cosine-annealing
+      - learning-rate-schedule
+    question: |
+      Snapshot ensembling uses the cyclic cosine schedule
+      $\alpha(t) = \dfrac{\alpha_0}{2}\left(\cos\left(\dfrac{\pi \bmod(t - 1, \lceil T/M \rceil)}{\lceil T/M \rceil}\right) + 1\right)$,
+      where $t$ counts the updates, $T$ is their total number and $M$ the number of cycles. With
+      $\alpha_0 = 0.1$, $T = 300$ and $M = 6$, what is the learning rate at $t = 26$?
+    answer:
+      numeric: 0.05
+      tolerance: 0.0005
+      hint: a number
+      model: $\lceil 300/6 \rceil = 50$, $\bmod(25, 50) = 25$, $\alpha = 0.05\,(\cos(\pi/2) + 1) = 0.05$
+    explanation: |
+      Each cycle lasts $\lceil T/M \rceil = 50$ updates. Update 26 is halfway through the first cycle:
+      $\bmod(25, 50)/50 = 1/2$, $\cos(\pi/2) = 0$, so $\alpha = \alpha_0/2 = 0.05$ [^2]. Within a cycle the
+      rate falls from $\alpha_0$ at $t = 1$ to almost 0 at $t = 50$, and at $t = 51$ it jumps back to
+      $\alpha_0$; these warm restarts let one training run visit several minima [^1][^2].
+    references:
+      - source: dl-interviews
+        locator: Ch. 6 (NN Ensembles), Problem PRB-156, Fig. 6.10, pp. 197–198; Solution SOL-156, pp. 202–203
+        url: https://arxiv.org/abs/2201.00650v2
+      - title: Huang et al. (2017), Snapshot Ensembles, Train 1, Get M for Free
+        locator: Sec. 3 Snapshot Ensembling, Eq. (2)
+        url: https://arxiv.org/abs/1704.00109
+    source:
+      id: dl-interviews
+      ref: ch6#prb156
+      url: https://arxiv.org/abs/2201.00650v2
+    status: draft
+  - id: trees-ensembles-062
+    type: single
+    difficulty: medium
+    tags:
+      - snapshot-ensembles
+      - cyclic-learning-rate
+    shuffle: false
+    question: |
+      A snapshot ensemble trains one network with the learning-rate schedule in the figure: four cosine
+      cycles of 50 epochs, each restarted at the maximum rate. At which of the marked points (and the
+      corresponding points of the other cycles) is a snapshot for the ensemble taken?
+    figure:
+      src: ./trees-ensembles/trees-ensembles-062.svg
+      alt: Learning rate (0 to 0.1) against epoch (0 to 200) in four cosine-shaped cycles of 50 epochs, each falling from 0.1 to almost 0 and then jumping back to 0.1. Point A is at epoch 1, B at epoch 26, C at epoch 50 and D at epoch 51.
+    options:
+      - text: At C, the end of a cycle, just before the restart
+        correct: true
+      - text: At A and D, the start of a cycle, where the rate is at its maximum
+        why: Right after a restart the large learning rate has just pushed the model out of its minimum, so it is not settled [^2].
+      - text: At B, halfway through a cycle, where the rate is $\alpha_0 / 2$
+        why: Halfway through the cycle the model is still moving quickly; it settles into a minimum only as the rate approaches 0 [^2].
+      - text: At none of them, since a single snapshot is taken after epoch 200
+        why: One model at the end is ordinary training; the ensemble consists of one snapshot per cycle, $M$ in total [^2].
+    explanation: |
+      At the end of each cycle the small learning rate lets the model converge to a local minimum, so its
+      weights are saved there, before the restart perturbs the model towards the next minimum [^2]. After
+      $M$ cycles the $M$ snapshots are averaged at test time, for the training cost of a single model [^1][^2].
+      The drawback is lower diversity than independently trained models, because all snapshots come from
+      one trajectory [^1].
+    references:
+      - source: dl-interviews
+        locator: Ch. 6 (NN Ensembles), Problem PRB-153, p. 195; Solution SOL-153, p. 202
+        url: https://arxiv.org/abs/2201.00650v2
+      - title: Huang et al. (2017), Snapshot Ensembles, Train 1, Get M for Free
+        locator: Sec. 3 Snapshot Ensembling (Snapshot Ensembling paragraph)
+        url: https://arxiv.org/abs/1704.00109
+    source:
+      id: dl-interviews
+      ref: ch6#prb153
+      url: https://arxiv.org/abs/2201.00650v2
+    status: draft
+  - id: trees-ensembles-063
+    type: short_answer
+    difficulty: easy
+    tags:
+      - gini-impurity
+      - decision-trees
+      - impurity
+    question: |
+      A decision-tree node contains three classes in the proportions 0.5, 0.3 and 0.2. What is its Gini
+      impurity, $1 - \sum_i p_i^2$?
+    answer:
+      numeric: 0.62
+      tolerance: 0.001
+      hint: a number, 2 decimals
+      model: $1 - (0.25 + 0.09 + 0.04) = 0.62$
+    explanation: |
+      $1 - (0.5^2 + 0.3^2 + 0.2^2) = 1 - 0.38 = 0.62$ [^1][^2]. The other common impurity measures of the
+      same node are the entropy, $-\sum_i p_i \log_2 p_i \approx 1.485$ bits, and the misclassification error
+      $1 - \max_i p_i = 0.5$ [^1]. All three are 0 for a pure node and largest for a uniform mix of the
+      classes.
+    references:
+      - source: dl-interviews
+        locator: Ch. 4 (Information Theory), Problem PRB-86, p. 94; Solution SOL-86, Eqs. (4.21)–(4.23), pp. 110–111
+        url: https://arxiv.org/abs/2201.00650v2
+      - title: 'Wikipedia: Decision tree learning'
+        url: https://en.wikipedia.org/wiki/Decision_tree_learning#Gini_impurity
+        locator: Metrics, Gini impurity
+    source:
+      id: dl-interviews
+      ref: ch4#prb86
+      url: https://arxiv.org/abs/2201.00650v2
+    status: draft
+  - id: trees-ensembles-064
+    type: single
+    difficulty: easy
+    tags:
+      - information-gain
+      - decision-trees
+      - splits
+    question: |
+      A frog's jumps were recorded with two binary features:
+
+      | Observation | Green | Rain | Jump |
+      |---|---|---|---|
+      | $x_1$ | 1 | 0 | + |
+      | $x_2$ | 1 | 1 | + |
+      | $x_3$ | 1 | 0 | + |
+      | $x_4$ | 1 | 1 | + |
+      | $x_5$ | 1 | 0 | + |
+      | $x_6$ | 0 | 1 | + |
+      | $x_7$ | 0 | 0 | − |
+      | $x_8$ | 0 | 1 | − |
+
+      Without computing information gains, which feature should a decision tree split on first?
+    options:
+      - text: Green, because Green = 1 gives a pure node of five positives
+        correct: true
+      - text: Rain, because it splits the data into two equal halves
+        why: Both halves have three positives and one negative, the same mix as the whole set, so Rain gains nothing.
+      - text: Either one, because both are binary
+        why: Being binary says nothing about how well a feature separates the classes [^2].
+      - text: Neither, because no single split gives two pure nodes
+        why: A split is useful whenever it lowers the weighted impurity; Green does, even though one child is impure [^2].
+    explanation: |
+      Splitting on Green gives a pure node (five +) and a node with one + and two −, so the weighted
+      entropy drops from $H(6/8) \approx 0.811$ to $\tfrac38 H(1/3) \approx 0.344$ bits, a gain of about 0.467
+      [^1][^2]. Splitting on Rain leaves 3 + and 1 − on each side, exactly the class mix of the parent, so
+      its information gain is 0. The tree picks the feature with the largest gain [^2].
+    references:
+      - source: dl-interviews
+        locator: Ch. 4 (Information Theory), Problem PRB-88, Table 4.1, pp. 94–95; Solution SOL-88, p. 111
+        url: https://arxiv.org/abs/2201.00650v2
+      - title: 'Wikipedia: Information gain (decision tree)'
+        url: https://en.wikipedia.org/wiki/Information_gain_(decision_tree)
+        locator: General definition
+    source:
+      id: dl-interviews
+      ref: ch4#prb88
+      url: https://arxiv.org/abs/2201.00650v2
+    status: draft
+  - id: trees-ensembles-065
+    type: short_answer
+    difficulty: medium
+    tags:
+      - information-gain
+      - entropy
+      - decision-trees
+    question: |
+      Seven stars are labelled by whether they expanded (+) or not (−), with two binary features:
+
+      | Expansion | Dense | Near a black hole |
+      |---|---|---|
+      | + | F | T |
+      | + | T | T |
+      | + | T | T |
+      | − | F | T |
+      | + | T | F |
+      | − | F | F |
+      | − | F | F |
+
+      What is the information gain, in bits, of splitting on "Near a black hole"? Round to 3 decimals.
+    answer:
+      numeric: 0.128
+      tolerance: 0.002
+      hint: a number of bits, 3 decimals
+      model: $H(4/7) - \tfrac47 H(3/4) - \tfrac37 H(1/3) \approx 0.985 - 0.464 - 0.394 \approx 0.128$
+    explanation: |
+      The parent has 4 + and 3 −, entropy $H(4/7) \approx 0.985$ bits [^1]. "Near a black hole" = T holds
+      3 + and 1 − ($H \approx 0.811$), and F holds 1 + and 2 − ($H \approx 0.918$), so the weighted child
+      entropy is $\tfrac47 \cdot 0.811 + \tfrac37 \cdot 0.918 \approx 0.857$ and the gain is about 0.128 [^2]. "Dense"
+      gains about 0.522, because Dense = T is pure, so a tree would split on "Dense" first [^1].
+    references:
+      - source: dl-interviews
+        locator: Ch. 4 (Information Theory), Problem PRB-90, Table 4.3, pp. 97–98; Solution SOL-90, Eqs. (4.30)–(4.34), pp. 113–115
+        url: https://arxiv.org/abs/2201.00650v2
+      - title: 'Wikipedia: Information gain (decision tree)'
+        url: https://en.wikipedia.org/wiki/Information_gain_(decision_tree)
+        locator: General definition
+    source:
+      id: dl-interviews
+      ref: ch4#prb90
+      url: https://arxiv.org/abs/2201.00650v2
+    status: draft
+  - id: trees-ensembles-066
+    type: true_false
+    difficulty: medium
+    tags:
+      - information-gain
+      - conditional-entropy
+      - decision-trees
+    question: |
+      A node has 4 positive and 2 negative examples. Splitting on tumour size (S/M/L) leaves a conditional
+      entropy of 0.667 bits, and splitting on radiation therapy (T/F) leaves 0.459 bits. True or false:
+      "A tree splits on the feature that *minimizes* the information gain, so it splits on radiation
+      therapy."
+    options:
+      - text: 'True'
+        why: 'The conclusion is right but the rule is wrong: radiation therapy has the *larger* gain, $0.918 - 0.459 = 0.459$ against $0.918 - 0.667 = 0.251$ [^2].'
+      - text: 'False'
+        correct: true
+    explanation: |
+      False. Trees choose the split with the *largest* information gain $H(Y) - H(Y \mid X)$, which is the
+      split with the smallest conditional entropy [^2]. With $H(Y) = H(2/3) \approx 0.918$ bits, radiation
+      therapy gains 0.459 and tumour size 0.251, so the tree does split on radiation therapy, but because
+      it maximizes the gain [^1][^2].
+    references:
+      - source: dl-interviews
+        locator: Ch. 4 (Information Theory), Problem PRB-91, Table 4.4, p. 98; Solution SOL-91, Eqs. (4.35)–(4.37), p. 116
+        url: https://arxiv.org/abs/2201.00650v2
+      - title: 'Wikipedia: Information gain (decision tree)'
+        url: https://en.wikipedia.org/wiki/Information_gain_(decision_tree)
+        locator: General definition
+    source:
+      id: dl-interviews
+      ref: ch4#prb91
+      url: https://arxiv.org/abs/2201.00650v2
+    status: draft
+  - id: trees-ensembles-067
+    type: short_answer
+    difficulty: easy
+    tags:
+      - bagging
+      - boosting
+      - bias-variance
+    question: Bagging mainly reduces the {{1}} of its base learners, while boosting mainly reduces their {{2}}.
+    answer:
+      blanks:
+        - accept:
+            - variance
+          hint: one word
+        - accept:
+            - bias
+          hint: one word
+      model: Bagging reduces variance; boosting reduces bias.
+    explanation: |
+      Bagging trains strong but unstable learners, such as deep trees, on bootstrap samples and averages
+      them; averaging cancels much of their variance while keeping their low bias [^1][^2]. Boosting adds
+      weak, high-bias learners one at a time, each fitted to what the ensemble so far gets wrong, which
+      mainly reduces the bias [^1][^3].
+    references:
+      - source: dl-interviews
+        locator: Ch. 6 (NN Ensembles), Problem PRB-152 part 4, p. 194; Solution SOL-152, p. 201
+        url: https://arxiv.org/abs/2201.00650v2
+      - title: 'Wikipedia: Bootstrap aggregating'
+        url: https://en.wikipedia.org/wiki/Bootstrap_aggregating
+        locator: Introduction (reduces variance and helps to avoid overfitting)
+      - title: 'Wikipedia: Boosting (machine learning)'
+        url: https://en.wikipedia.org/wiki/Boosting_(machine_learning)
+        locator: Introduction (primarily reducing bias)
+    source:
+      id: dl-interviews
+      ref: ch6#prb152
+      url: https://arxiv.org/abs/2201.00650v2
+    status: draft

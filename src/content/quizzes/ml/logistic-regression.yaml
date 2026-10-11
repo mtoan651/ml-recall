@@ -1234,3 +1234,355 @@ questions:
       ref: midterm2003#q6d
       url: https://ocw.mit.edu/courses/15-062-data-mining-spring-2003/resources/midterm2003solutions/
     status: draft
+  - id: logistic-regression-034
+    type: short_answer
+    difficulty: easy
+    tags:
+      - log-odds
+      - logit
+    question: |
+      An event has probability $p = 0.1$. What are its log-odds, $\ln \frac{p}{1 - p}$? Round to 3
+      decimals.
+    answer:
+      numeric: -2.197
+      tolerance: 0.002
+      hint: a number, 3 decimals
+      model: $\ln(0.1 / 0.9) = \ln(1/9) \approx -2.197$
+    explanation: |
+      The odds are $0.1 / 0.9 = 1/9 \approx 0.111$, "1 to 9", and their natural logarithm is
+      $-\ln 9 \approx -2.197$ [^1]. Log-odds are negative exactly when $p < 0.5$, and the sigmoid maps them
+      back: $1 / (1 + e^{2.197}) = 0.1$ [^2]. Logistic regression models these log-odds as a linear
+      function of the features [^1].
+    references:
+      - source: dl-interviews
+        locator: Ch. 2 (Logistic Regression), Problem PRB-11, pp. 13–14; Solution SOL-11, Eqs. (2.10)–(2.13), pp. 29–30
+        url: https://arxiv.org/abs/2201.00650v2
+      - title: 'Wikipedia: Logit'
+        url: https://en.wikipedia.org/wiki/Logit
+        locator: Definition
+    source:
+      id: dl-interviews
+      ref: ch2#prb11
+      url: https://arxiv.org/abs/2201.00650v2
+    status: draft
+  - id: logistic-regression-035
+    type: short_answer
+    difficulty: medium
+    tags:
+      - odds-ratio
+      - contingency-table
+    question: |
+      In a simulated treatment study, tumours were eradicated in 560 of 820 breast-cancer cases (260 not
+      eradicated) and in 69 of 105 lung-cancer cases (36 not eradicated). What is the sample odds ratio of
+      eradication for breast versus lung cancer? Round to 3 decimals.
+    answer:
+      numeric: 1.124
+      tolerance: 0.002
+      hint: a number, 3 decimals
+      model: $\dfrac{560 / 260}{69 / 36} = \dfrac{560 \cdot 36}{260 \cdot 69} = \dfrac{20160}{17940} \approx 1.124$
+    explanation: |
+      The odds of eradication are $560/260 \approx 2.154$ for breast and $69/36 \approx 1.917$ for lung
+      cancer, so the odds ratio is about 1.124 [^1][^2]. The standard error of the log odds ratio is
+      $\sqrt{1/560 + 1/260 + 1/69 + 1/36} \approx 0.219$, so the 95% interval
+      $e^{0.117 \pm 1.96 \cdot 0.219} \approx (0.73, 1.73)$ contains 1: the data show no significant
+      association between cancer type and eradication [^1][^2]. The relative risk,
+      $(560/820) / (69/105) \approx 1.04$, is closer to 1 because eradication is common.
+    references:
+      - source: dl-interviews
+        locator: Ch. 2 (Logistic Regression), Problem PRB-19, pp. 16–17; Solution SOL-19, Eqs. (2.27)–(2.31), pp. 34–35
+        url: https://arxiv.org/abs/2201.00650v2
+      - title: 'Wikipedia: Odds ratio'
+        url: https://en.wikipedia.org/wiki/Odds_ratio
+        locator: Statistical inference (standard error of the log odds ratio)
+    source:
+      id: dl-interviews
+      ref: ch2#prb19
+      url: https://arxiv.org/abs/2201.00650v2
+    status: draft
+  - id: logistic-regression-036
+    type: short_answer
+    difficulty: easy
+    tags:
+      - decision-threshold
+      - log-odds
+    question: |
+      A logistic-regression model gives the log-odds of eradicating a tumour as
+      $-6 + 0.05\,x_1 + x_2$, where $x_1$ is the irradiation time in milliseconds and $x_2$ the tumour size
+      in centimetres. For a 3.5 cm tumour, how many milliseconds of irradiation give exactly a 50% chance
+      of eradication?
+    answer:
+      numeric: 50
+      tolerance: 0.01
+      hint: a number of milliseconds
+      model: $-6 + 0.05\,x_1 + 3.5 = 0 \Rightarrow x_1 = 2.5 / 0.05 = 50$
+    explanation: |
+      A probability of 0.5 means odds of 1, i.e. log-odds 0 [^2]. Setting $-6 + 0.05\,x_1 + 3.5 = 0$ gives
+      $x_1 = 50$ ms [^1]. For comparison, 40 ms gives log-odds $-0.5$ and a probability of
+      $\sigma(-0.5) \approx 0.378$.
+    references:
+      - source: dl-interviews
+        locator: Ch. 2 (Logistic Regression), Problem PRB-20, pp. 17–18; Solution SOL-20, Eqs. (2.32)–(2.35), p. 35
+        url: https://arxiv.org/abs/2201.00650v2
+      - source: google-mlcc
+        url: https://developers.google.com/machine-learning/crash-course/logistic-regression/sigmoid-function#transforming_linear_output_using_the_sigmoid_function
+        locator: 'Logistic regression: Calculating a probability with the sigmoid function (log-odds)'
+    source:
+      id: dl-interviews
+      ref: ch2#prb20
+      url: https://arxiv.org/abs/2201.00650v2
+    status: draft
+  - id: logistic-regression-037
+    type: single
+    difficulty: medium
+    tags:
+      - inference
+      - p-value
+      - coefficients
+    question: |
+      A logistic regression for "a second migraine within an hour" gives these estimates:
+
+      | Parameter | Estimate | Std. error | $z$ | $p$-value |
+      |---|---|---|---|---|
+      | Intercept | −6.363 | 3.214 | −1.98 | 0.048 |
+      | $X_1$: at least four dental amalgams (0/1) | −1.024 | 1.171 | −0.87 | 0.382 |
+      | $X_2$: cups of hot coffee per month | 0.119 | 0.055 | 2.17 | 0.030 |
+
+      Which conclusion do they support at the 5% level?
+    options:
+      - text: Coffee raises the odds of a second migraine; the amalgam effect is not significant
+        correct: true
+      - text: Having at least four amalgams significantly lowers the odds, since its estimate is negative
+        why: The $p$-value 0.38 is far above 0.05, so the data are consistent with no amalgam effect [^2].
+      - text: Neither variable matters, because the intercept −6.36 dominates the log-odds
+        why: The intercept only sets the baseline; coffee's coefficient is significant ($p = 0.03$) [^2].
+      - text: Both variables are significant, because both $|z|$ values exceed 0.5
+        why: At the 5% level a two-sided Wald test needs $|z| > 1.96$; amalgams have $|z| = 0.87$ [^2].
+    explanation: |
+      Each coefficient is tested with the Wald statistic $z = \hat\beta / \mathrm{SE}$ [^2]. Coffee has
+      $z = 2.17$, $p = 0.03 < 0.05$ and a positive estimate, so each extra monthly cup multiplies the odds by
+      about $e^{0.119} \approx 1.13$ [^1][^3]. The amalgam coefficient has $p = 0.38$, so there is no
+      statistical evidence that it changes the odds, even though its point estimate is negative [^1].
+    references:
+      - source: dl-interviews
+        locator: Ch. 2 (Logistic Regression), Problem PRB-21, pp. 19–20; Solution SOL-21, p. 36
+        url: https://arxiv.org/abs/2201.00650v2
+      - title: 'Wikipedia: Wald test'
+        url: https://en.wikipedia.org/wiki/Wald_test
+        locator: Test on a single parameter
+      - title: 'Wikipedia: Logistic regression'
+        url: https://en.wikipedia.org/wiki/Logistic_regression#The_odds_ratio
+        locator: The odds ratio
+    source:
+      id: dl-interviews
+      ref: ch2#prb21
+      url: https://arxiv.org/abs/2201.00650v2
+    status: draft
+  - id: logistic-regression-038
+    type: short_answer
+    difficulty: easy
+    tags:
+      - decision-threshold
+      - log-odds
+    question: |
+      A logistic regression predicts the probability of improvement as
+      $\sigma(-4.8792 + 0.0258\,x)$, where $x$ is a bacteria count. At what count is the predicted
+      probability exactly 0.5? Round to 1 decimal.
+    answer:
+      numeric: 189.1
+      tolerance: 0.1
+      hint: a number, 1 decimal
+      model: $x = 4.8792 / 0.0258 \approx 189.1$
+    explanation: |
+      $\sigma(z) = 0.5$ exactly when $z = 0$, so $-4.8792 + 0.0258\,x = 0$ gives
+      $x = -\hat\alpha / \hat\beta = 4.8792 / 0.0258 \approx 189.1$ [^1][^2]. At a count of 33 the model
+      predicts only $\sigma(-4.028) \approx 0.0175$: with such a small slope, the probability climbs slowly.
+    references:
+      - source: dl-interviews
+        locator: Ch. 2 (Logistic Regression), Problem PRB-22, pp. 20–21; Solution SOL-22, Eq. (2.40), p. 37
+        url: https://arxiv.org/abs/2201.00650v2
+      - source: google-mlcc
+        url: https://developers.google.com/machine-learning/crash-course/logistic-regression/sigmoid-function#transforming_linear_output_using_the_sigmoid_function
+        locator: 'Logistic regression: Calculating a probability with the sigmoid function (log-odds)'
+    source:
+      id: dl-interviews
+      ref: ch2#prb22
+      url: https://arxiv.org/abs/2201.00650v2
+    status: draft
+  - id: logistic-regression-039
+    type: single
+    difficulty: medium
+    tags:
+      - odds-ratio
+      - confidence-interval
+    question: |
+      A logistic regression has slope $\hat\beta = 0.0258$ with standard error 0.0194 for a count
+      variable. Which is the 99% confidence interval for the odds ratio per unit increase of the count
+      ($z_{0.995} = 2.576$)?
+    options:
+      - text: About $(0.976,\ 1.079)$, an interval that contains 1
+        correct: true
+      - text: About $(-0.024,\ 0.076)$; it contains 0, so the odds ratio may be negative
+        why: That is the interval for $\beta$ itself; exponentiating gives the interval for the odds ratio, which is always positive [^2].
+      - text: About $(0.988,\ 1.066)$, from $\exp(0.0258 \pm 1.96 \cdot 0.0194)$
+        why: 1.96 gives the 95% interval; a 99% interval needs 2.576 and is wider [^2].
+      - text: About $(0.999,\ 2.696)$, which shows a strong positive effect
+        why: $\exp(0.0258 + 2.576 \cdot 0.0194) = e^{0.0758} \approx 1.079$, not 2.696.
+    explanation: |
+      The interval for $\beta$ is $0.0258 \pm 2.576 \cdot 0.0194 = (-0.0242, 0.0758)$, and exponentiating
+      its ends gives the interval for the odds ratio $e^\beta$: about $(0.976, 1.079)$ [^1][^2]. The point
+      estimate $e^{0.0258} \approx 1.026$ means a 2.6% increase in the odds per unit, but the interval
+      contains 1, so a zero effect cannot be ruled out at this level.
+    references:
+      - source: dl-interviews
+        locator: Ch. 2 (Logistic Regression), Problem PRB-22 parts 3–4, p. 21; Solution SOL-22, Eqs. (2.41)–(2.45), p. 37
+        url: https://arxiv.org/abs/2201.00650v2
+      - title: 'Wikipedia: Odds ratio'
+        url: https://en.wikipedia.org/wiki/Odds_ratio
+        locator: Statistical inference
+    source:
+      id: dl-interviews
+      ref: ch2#prb22-2
+      url: https://arxiv.org/abs/2201.00650v2
+    status: draft
+  - id: logistic-regression-040
+    type: short_answer
+    difficulty: medium
+    tags:
+      - odds-ratio
+      - contingency-table
+    question: |
+      In an animal study, tumours shrank in 60 of 6893 treated animals (6833 without shrinkage) and in 130
+      of 6909 animals given a placebo (6778 without shrinkage). What is the odds ratio of shrinkage for the
+      treated group versus the placebo group? Round to 3 decimals.
+    answer:
+      numeric: 0.458
+      tolerance: 0.002
+      hint: a number, 3 decimals
+      model: $\dfrac{60 / 6833}{130 / 6778} = \dfrac{60 \cdot 6778}{130 \cdot 6833} \approx 0.458$
+    explanation: |
+      The odds of shrinkage are $60 / 6833 \approx 0.0088$ with the treatment and
+      $130 / 6778 \approx 0.0192$ with the placebo, so the odds ratio is about 0.458 [^1][^2]. Its inverse,
+      placebo versus treatment, is $1/0.458 \approx 2.18$, the value the book reports [^1]. The standard
+      error of the log odds ratio is $\sqrt{1/60 + 1/6833 + 1/130 + 1/6778} \approx 0.157$, so the 95%
+      interval for the inverse, about $(1.61, 2.97)$, excludes 1: in these data shrinkage was
+      significantly *less* likely with the treatment [^1][^2].
+    references:
+      - source: dl-interviews
+        locator: Ch. 2 (Logistic Regression), Problem PRB-23, pp. 21–22; Solution SOL-23, Eqs. (2.46)–(2.49), pp. 37–38
+        url: https://arxiv.org/abs/2201.00650v2
+      - title: 'Wikipedia: Odds ratio'
+        url: https://en.wikipedia.org/wiki/Odds_ratio
+        locator: Definition and Statistical inference
+    source:
+      id: dl-interviews
+      ref: ch2#prb23
+      url: https://arxiv.org/abs/2201.00650v2
+    status: draft
+  - id: logistic-regression-041
+    type: single
+    difficulty: easy
+    tags:
+      - generalized-linear-models
+      - link-function
+    question: Binary logistic regression is a generalized linear model. Which set of components describes it?
+    options:
+      - text: Bernoulli response; linear predictor $\beta_0 + \boldsymbol\beta^\top\mathbf{x}$; logit link
+        correct: true
+      - text: Gaussian response; linear predictor $\beta_0 + \boldsymbol\beta^\top\mathbf{x}$; identity link
+        why: That is ordinary linear regression [^2].
+      - text: Bernoulli response; predictor $\sigma(\beta_0 + \boldsymbol\beta^\top\mathbf{x})$; identity link
+        why: The systematic part is the *linear* predictor; the link maps the mean $p$ to it, here by the logit $\ln\frac{p}{1 - p}$ [^1][^2].
+      - text: Poisson response; linear predictor $\beta_0 + \boldsymbol\beta^\top\mathbf{x}$; log link
+        why: That is Poisson regression for counts [^2].
+    explanation: |
+      A GLM has three parts: a random component (the distribution of $Y$, here Bernoulli or binomial), a
+      systematic component (a linear predictor of the features) and a link function that connects the
+      mean of $Y$ to the linear predictor [^1][^2]. For logistic regression the link is the logit,
+      $\ln\frac{p}{1 - p} = \beta_0 + \boldsymbol\beta^\top\mathbf{x}$, whose inverse is the sigmoid [^2].
+    references:
+      - source: dl-interviews
+        locator: Ch. 2 (Logistic Regression), Problem PRB-14, p. 14; Solution SOL-14, p. 31
+        url: https://arxiv.org/abs/2201.00650v2
+      - title: 'Wikipedia: Generalized linear model'
+        url: https://en.wikipedia.org/wiki/Generalized_linear_model
+        locator: Model components and Link function
+    source:
+      id: dl-interviews
+      ref: ch2#prb14
+      url: https://arxiv.org/abs/2201.00650v2
+    status: draft
+  - id: logistic-regression-042
+    type: single
+    difficulty: medium
+    tags:
+      - interaction
+      - log-odds
+      - coefficients
+    question: |
+      A logistic-regression model has log-odds $\beta_0 + \beta_1 X + \beta_2 Z + \beta_3 XZ$. By how much do
+      the log-odds change when $X$ increases by 1 and $Z$ stays fixed?
+    options:
+      - text: $\beta_1 + \beta_3 Z$
+        correct: true
+      - text: $\beta_1$
+        why: This ignores the interaction term, which also contains $X$ [^2].
+      - text: $\beta_1 + \beta_3$
+        why: This is the change only when $Z = 1$.
+      - text: $\beta_1 \beta_3 Z$
+        why: The terms are added, so the change is a sum, not a product.
+    explanation: |
+      Replacing $X$ by $X + 1$ adds $\beta_1 + \beta_3 Z$ to the log-odds [^1]. With an interaction term the
+      effect of $X$ depends on the value of $Z$: the odds are multiplied by $e^{\beta_1 + \beta_3 Z}$, a
+      different factor for each $Z$ [^2]. The significance of $\beta_3$ can be tested with a Wald test or a
+      likelihood-ratio test between the models with and without $XZ$ [^1].
+    references:
+      - source: dl-interviews
+        locator: Ch. 2 (Logistic Regression), Problem PRB-6, pp. 12–13; Solution SOL-6, Eq. (2.9), p. 28
+        url: https://arxiv.org/abs/2201.00650v2
+      - title: 'Wikipedia: Interaction (statistics)'
+        url: https://en.wikipedia.org/wiki/Interaction_(statistics)
+        locator: In regression
+    source:
+      id: dl-interviews
+      ref: ch2#prb6
+      url: https://arxiv.org/abs/2201.00650v2
+    status: draft
+  - id: logistic-regression-043
+    type: short_answer
+    difficulty: hard
+    tags:
+      - loss-functions
+      - cross-entropy
+      - squared-error
+      - saturation
+    question: |
+      A logistic-regression model outputs $p = \sigma(z)$, and an example with label $y = 1$ has $z = -5$, a
+      confident wrong prediction. With cross-entropy loss, $\partial L / \partial z = p - y$; with squared
+      error $L = (p - y)^2$, $\partial L / \partial z = 2(p - y)\,p(1 - p)$. How many times larger in
+      magnitude is the cross-entropy gradient? Round to the nearest whole number.
+    answer:
+      numeric: 75
+      tolerance: 0.6
+      hint: a whole number
+      model: $\dfrac{1}{2p(1 - p)}$ with $p = \sigma(-5) \approx 0.00669$, i.e. $\approx 75$
+    explanation: |
+      The ratio is $1 / (2p(1 - p))$, and $p = \sigma(-5) \approx 0.0067$, so the cross-entropy gradient
+      ($\approx -0.993$) is about 75 times the squared-error one ($\approx -0.0132$) [^2]. With squared
+      error the factor $p(1 - p)$ from the saturated sigmoid nearly kills the gradient exactly when the
+      model is most wrong, and the loss is not convex in the weights [^1][^3]. Cross-entropy (log loss) is
+      the natural loss for binary targets [^1][^3].
+    references:
+      - source: dl-interviews
+        locator: Ch. 8 (Deep Learning), Problem PRB-266, p. 289; Solution SOL-266, p. 334
+        url: https://arxiv.org/abs/2201.00650v2
+      - source: d2l
+        locator: Sec. 4.1.2.2 Softmax and Cross-Entropy Loss
+        url: https://d2l.ai/chapter_linear-classification/softmax-regression.html#softmax-and-cross-entropy-loss
+      - source: google-mlcc
+        url: https://developers.google.com/machine-learning/crash-course/logistic-regression/loss-regularization
+        locator: 'Logistic regression: Loss and regularization (log loss)'
+    source:
+      id: dl-interviews
+      ref: ch8#prb266
+      url: https://arxiv.org/abs/2201.00650v2
+    status: draft

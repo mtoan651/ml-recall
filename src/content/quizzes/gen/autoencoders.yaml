@@ -1149,3 +1149,72 @@ questions:
       id: original
       ref: autoencoders-032
     status: draft
+  - id: autoencoders-033
+    type: short_answer
+    difficulty: easy
+    tags:
+      - bottleneck
+      - parameter-count
+      - undercomplete
+    question: |
+      A fully connected block maps 256 inputs to 32 hidden units and back to 256 outputs, with a bias in
+      each layer: $256 \to 32 \to 256$. How many parameters does it have?
+    answer:
+      numeric: 16672
+      tolerance: 0
+      hint: a whole number
+      model: $(256 \cdot 32 + 32) + (32 \cdot 256 + 256) = 8224 + 8448 = 16\,672$
+    explanation: |
+      The encoder layer has $256 \cdot 32$ weights and 32 biases, and the decoder layer $32 \cdot 256$
+      weights and 256 biases, 16,672 in total [^1]. A single $256 \to 256$ layer would need 65,792, almost
+      four times as many. Trained to reproduce its input, such a bottleneck block is an undercomplete
+      autoencoder: the 32-unit code is narrower than the input [^2].
+    references:
+      - source: dl-interviews
+        locator: Ch. 8 (Deep Learning), Problem PRB-248, p. 278; Solution SOL-248, p. 326
+        url: https://arxiv.org/abs/2201.00650v2
+      - title: Goodfellow, Bengio & Courville (2016), Deep Learning
+        locator: Ch. 14 Autoencoders, Sec. 14.1 Undercomplete Autoencoders
+        url: https://www.deeplearningbook.org/contents/autoencoders.html
+    source:
+      id: dl-interviews
+      ref: ch8#prb248
+      url: https://arxiv.org/abs/2201.00650v2
+    status: draft
+  - id: autoencoders-034
+    type: single
+    difficulty: easy
+    tags:
+      - bottleneck
+      - undercomplete
+      - representation-learning
+    question: |
+      An MLP $256 \to 32 \to 256$ is trained so that its output reproduces its input. What does the
+      32-unit bottleneck do?
+    options:
+      - text: It forces the network to squeeze each input into a 32-dimensional code
+        correct: true
+      - text: It lets the network copy any input exactly, since the output size matches the input
+        why: Everything must pass through 32 numbers, so a generic 256-dimensional input cannot be copied exactly [^2].
+      - text: It adds parameters, so that the network can memorize more training examples
+        why: The bottleneck has far fewer parameters than a $256 \to 256$ layer [^1].
+      - text: It makes nonlinear activation functions unnecessary
+        why: A linear bottleneck learns only a linear subspace, like PCA; nonlinear activations let it learn more [^2].
+    explanation: |
+      Squeezing the activations to 32 units and expanding them again forces the network to learn a
+      compressed representation of its input [^1]. An autoencoder whose code is smaller than its input is
+      called undercomplete; minimizing the reconstruction error makes the code capture the most salient
+      features of the data, and with a linear decoder and squared error it learns the same subspace as
+      PCA [^2].
+    references:
+      - source: dl-interviews
+        locator: Ch. 8 (Deep Learning), Problem PRB-248, p. 278; Solution SOL-248, p. 326
+        url: https://arxiv.org/abs/2201.00650v2
+      - title: Goodfellow, Bengio & Courville (2016), Deep Learning
+        locator: Ch. 14 Autoencoders, Sec. 14.1 Undercomplete Autoencoders
+        url: https://www.deeplearningbook.org/contents/autoencoders.html
+    source:
+      id: dl-interviews
+      ref: ch8#prb248-2
+      url: https://arxiv.org/abs/2201.00650v2
+    status: draft
