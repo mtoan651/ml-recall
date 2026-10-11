@@ -174,3 +174,80 @@ questions:
       ref: quiz-209/q3
       url: https://github.com/microsoft/AI-For-Beginners/blob/392d0df1b2647cbee104942390551f1ed9e072c8/etc/quiz-app/src/assets/translations/en/lesson-9.json
     status: draft
+  - id: autoencoders-007
+    type: single
+    difficulty: medium
+    tags:
+      - kl-divergence
+      - variational-inference
+      - elbo
+      - mode-seeking
+    question: |
+      Maximising the ELBO over a variational density $q$ minimises $\mathrm{KL}(q \,\|\, p) =
+      \mathbb{E}_q[\log q(x) - \log p(x)]$ to the true posterior $p$; this is also what trains the
+      encoder of a VAE. Suppose $p$ is bimodal with two well-separated modes, but $q$ can only be
+      unimodal (e.g. Gaussian). What does the optimal $q$ typically look like?
+    options:
+      - text: It sits on one of the two modes and largely ignores the other
+        correct: true
+      - text: It spreads over both modes, with its peak in the low-density gap between them
+        why: That is the mass-covering behaviour of $\mathrm{KL}(p \,\|\, q)$; here mass in the gap, where $p \approx 0$, is heavily penalised [^1][^2].
+      - text: It matches the overall mean and variance of $p$
+        why: Moment matching is what minimising $\mathrm{KL}(p \,\|\, q)$ over Gaussians gives, not $\mathrm{KL}(q \,\|\, p)$ [^2].
+      - text: It equals $p$, since the KL divergence is minimal at zero
+        why: A unimodal family cannot contain a bimodal $p$, so the minimum of the divergence is positive [^1].
+    explanation: |
+      In $\mathrm{KL}(q \,\|\, p)$ the expectation is under $q$ and $p$ is in the denominator of the
+      log ratio [^1]. Where $p$ is near zero, any mass of $q$ costs a lot, so $q$ must avoid the gap
+      between the modes. Regions where $p$ has mass but $q$ is zero cost nothing, so leaving out a
+      mode is cheap: reverse KL is "mode seeking" [^1][^2]. This is one reason VAE posteriors tend to
+      be too narrow.
+    references:
+      - source: gutmann-pen-paper
+        locator: Ch. 10 Variational Inference and Learning, Ex. 10.3 (a) Variational posterior approximation I
+        url: https://arxiv.org/abs/2206.13446
+      - title: 'Wikipedia: Kullback–Leibler divergence'
+        url: https://en.wikipedia.org/wiki/Kullback%E2%80%93Leibler_divergence
+        locator: Properties (asymmetry) and Relation to other quantities
+    source:
+      id: gutmann-pen-paper
+      ref: variational-inference#variational-posterior-approximation-i-a
+      url: https://github.com/michaelgutmann/ml-pen-and-paper-exercises/blob/571295dfe49b37d16884b2c5397e62e154ce5f88/topics/variational-inference.tex
+    status: draft
+  - id: autoencoders-008
+    type: short_answer
+    difficulty: hard
+    tags:
+      - kl-divergence
+      - variational-inference
+      - gaussian
+      - harmonic-mean
+    question: |
+      The true posterior is $p(x_1, x_2) = \mathcal{N}(x_1; 0, \sigma_1^2)\,\mathcal{N}(x_2; 0,
+      \sigma_2^2)$ with $\sigma_1^2 = 1$ and $\sigma_2^2 = 4$. The variational family is isotropic,
+      $q(x_1, x_2) = \mathcal{N}(x_1; 0, \lambda^2)\,\mathcal{N}(x_2; 0, \lambda^2)$. Which value of
+      $\lambda^2$ minimises $\mathrm{KL}(q \,\|\, p)$?
+    answer:
+      numeric: 1.6
+      tolerance: 0.001
+      hint: a number, 1 decimal
+      model: $J(\lambda) = -2\log\lambda + \lambda^2\left(\tfrac{1}{2\sigma_1^2} + \tfrac{1}{2\sigma_2^2}\right) + \text{const}$; $\lambda^2 = \frac{2\sigma_1^2\sigma_2^2}{\sigma_1^2 + \sigma_2^2} = 8/5 = 1.6$
+    explanation: |
+      Up to constants, $\mathrm{KL}(q \,\|\, p) = -2\log\lambda + \lambda^2(\frac{1}{2\sigma_1^2} +
+      \frac{1}{2\sigma_2^2})$, and setting the derivative to zero gives $1/\lambda^2 = \frac12(1/\sigma_1^2
+      + 1/\sigma_2^2)$ [^1]. The optimal precision is the average of the two precisions, so $\lambda^2$
+      is the harmonic mean $2 \cdot 1 \cdot 4 / 5 = 1.6$, much closer to the smaller variance [^1].
+      The compromise trades a too-narrow fit along $x_2$ against putting mass where $p$ is small along
+      $x_1$, which reverse KL penalises more [^1][^2].
+    references:
+      - source: gutmann-pen-paper
+        locator: Ch. 10 Variational Inference and Learning, Ex. 10.4 (a)–(b) Variational posterior approximation II
+        url: https://arxiv.org/abs/2206.13446
+      - title: 'Wikipedia: Kullback–Leibler divergence'
+        url: https://en.wikipedia.org/wiki/Kullback%E2%80%93Leibler_divergence
+        locator: Multivariate normal distributions
+    source:
+      id: gutmann-pen-paper
+      ref: variational-inference#variational-posterior-approximation-ii-b
+      url: https://github.com/michaelgutmann/ml-pen-and-paper-exercises/blob/571295dfe49b37d16884b2c5397e62e154ce5f88/topics/variational-inference.tex
+    status: draft

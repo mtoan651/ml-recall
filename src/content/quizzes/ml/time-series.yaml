@@ -432,3 +432,79 @@ questions:
       ref: lectures/notes/20_survival-analysis.ipynb#ex20.1
       url: https://github.com/UBC-CS/cpsc330-2025W1/blob/a89d6131a0e2ae5f7ab36f207a3809a5b7137aef/lectures/notes/20_survival-analysis.ipynb
     status: draft
+  - id: time-series-015
+    type: short_answer
+    difficulty: hard
+    tags:
+      - kalman-filter
+      - state-space-models
+      - filtering
+    question: |
+      A one-dimensional linear-Gaussian state-space model has $h_s = A h_{s-1} + B \xi_s$ and $v_s =
+      C h_s + D \eta_s$ with independent standard normal $\xi_s, \eta_s$. The filtering
+      distribution at time $s - 1$ is $p(h_{s-1} \mid v_{1:s-1}) = \mathcal{N}(0, 1)$. With $A = 1$,
+      $B^2 = 1$, $C = 1$, $D^2 = 2$ you observe $v_s = 3$. What is the mean $\mu_s$ of $p(h_s \mid
+      v_{1:s})$?
+    answer:
+      numeric: 1.5
+      tolerance: 0.01
+      hint: a number, 1 decimal
+      model: $P_s = A^2\sigma_{s-1}^2 + B^2 = 2$, $K_s = P_s C / (C^2 P_s + D^2) = 0.5$, $\mu_s = A\mu_{s-1} + K_s (v_s - C A \mu_{s-1}) = 1.5$
+    explanation: |
+      The prediction step propagates the previous posterior through the transition: mean $A\mu_{s-1}
+      = 0$, variance $P_s = A^2 \sigma_{s-1}^2 + B^2 = 2$ [^1]. The update multiplies by the
+      Gaussian likelihood of $v_s$, which gives the Kalman gain $K_s = P_s C / (C^2 P_s + D^2) = 2/4
+      = 0.5$ and $\mu_s = A\mu_{s-1} + K_s (v_s - C A \mu_{s-1}) = 0 + 0.5 \cdot 3 = 1.5$, with
+      variance $(1 - K_s C) P_s = 1$ [^1][^2]. The gain weighs the prediction error by how
+      uncertain the prediction is relative to the observation noise.
+    references:
+      - source: gutmann-pen-paper
+        locator: Ch. 7 Inference for Hidden Markov Models, Ex. 7.6 (d)–(f) Kalman filtering
+        url: https://arxiv.org/abs/2206.13446
+      - title: 'Wikipedia: Kalman filter'
+        url: https://en.wikipedia.org/wiki/Kalman_filter
+        locator: Details (Predict, Update)
+    source:
+      id: gutmann-pen-paper
+      ref: inference-for-hidden-markov-models#kalman-f
+      url: https://github.com/michaelgutmann/ml-pen-and-paper-exercises/blob/571295dfe49b37d16884b2c5397e62e154ce5f88/topics/inference-for-hidden-markov-models.tex
+    status: draft
+  - id: time-series-016
+    type: single
+    difficulty: medium
+    tags:
+      - kalman-filter
+      - kalman-gain
+      - observation-noise
+    question: |
+      In a one-dimensional Kalman filter the update is $\mu_s = A\mu_{s-1} + K_s(v_s - C A
+      \mu_{s-1})$, $\sigma_s^2 = (1 - K_s C) P_s$, with gain $K_s = P_s C / (C^2 P_s + D^2)$, where
+      $D^2$ is the observation-noise variance and $P_s$ the predicted variance. What happens as $D^2
+      \to 0$?
+    options:
+      - text: $\mu_s \to A\mu_{s-1}$ and $\sigma_s^2 \to P_s$
+        why: That is the limit of very *noisy* observations ($D^2 \to \infty$, $K_s \to 0$), where the update ignores $v_s$ [^1].
+      - text: $K_s \to 0$, so the filter keeps its prediction
+        why: With $D^2 = 0$ the gain becomes $P_s C / (C^2 P_s) = 1/C$, its largest possible value [^1].
+      - text: $\mu_s \to v_s / C$ and $\sigma_s^2 \to 0$
+        correct: true
+      - text: $\mu_s \to v_s / C$ but $\sigma_s^2$ stays at $P_s$
+        why: $\sigma_s^2 = (1 - K_s C) P_s$ and $K_s C \to 1$, so the posterior variance goes to zero [^1].
+    explanation: |
+      $v_s - CA\mu_{s-1}$ is the error of predicting the observation from the past, and the gain
+      decides how much of it moves the estimate [^1]. As $D^2 \to 0$, $K_s \to 1/C$, so $\mu_s \to
+      A\mu_{s-1} + (v_s - CA\mu_{s-1})/C = v_s / C$: the state is obtained by inverting the noiseless
+      observation equation, and $\sigma_s^2 = (1 - K_s C)P_s \to 0$ [^1][^2]. With noisy observations
+      the filter instead trusts its prediction more.
+    references:
+      - source: gutmann-pen-paper
+        locator: Ch. 7 Inference for Hidden Markov Models, Ex. 7.6 (g) Kalman filtering
+        url: https://arxiv.org/abs/2206.13446
+      - title: 'Wikipedia: Kalman filter'
+        url: https://en.wikipedia.org/wiki/Kalman_filter
+        locator: Details (Update) and Kalman gain derivation
+    source:
+      id: gutmann-pen-paper
+      ref: inference-for-hidden-markov-models#kalman-g
+      url: https://github.com/michaelgutmann/ml-pen-and-paper-exercises/blob/571295dfe49b37d16884b2c5397e62e154ce5f88/topics/inference-for-hidden-markov-models.tex
+    status: draft
