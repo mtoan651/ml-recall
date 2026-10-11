@@ -28,7 +28,7 @@ export function Feedback({ question: q, answer }: { question: QuizQuestion; answ
           <Html html={q.explanationHtml} className="mt-1.5" />
         </section>
       ) : (
-        !q.answer && <MissingExplanation question={q} />
+        !q.answer && !q.options?.some((o) => o.whyHtml) && <MissingExplanation question={q} />
       )}
       {q.explanationFigure && <Figure figure={q.explanationFigure} />}
 

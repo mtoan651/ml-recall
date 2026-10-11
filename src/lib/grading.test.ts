@@ -132,17 +132,20 @@ describe("gradeShortAnswer", () => {
     expect(gradeShortAnswer(" ", key)).toEqual({ kind: "empty" });
   });
 
-  it("is correct when any of numeric, accept or pattern matches", () => {
-    const key = {
-      accept: ["seven hundred sixty"],
-      numeric: 760,
-      pattern: "7\\s*6\\s*0\\s*params?",
-    };
+  it("is correct when numeric or pattern matches", () => {
+    const key = { accept: ["760 params"], numeric: 760, pattern: "7\\s*6\\s*0\\s*params?" };
     expect(gradeShortAnswer("760", key)).toEqual({ kind: "graded", correct: true });
-    expect(gradeShortAnswer("Seven hundred sixty", key)).toEqual({ kind: "graded", correct: true });
     expect(gradeShortAnswer("760 params", key)).toEqual({ kind: "graded", correct: true });
+    expect(gradeShortAnswer("760PARAM", key)).toEqual({ kind: "graded", correct: true });
     // With a pattern a non-number is graded, not refused.
     expect(gradeShortAnswer("many", key)).toEqual({ kind: "graded", correct: false });
+  });
+
+  it("with a pattern, accept is only an example (digit groups are not merged)", () => {
+    const key = { accept: ["(32, 3, 64, 64)"], pattern: SHAPE };
+    expect(gradeShortAnswer("(32, 3, 64, 64)", key)).toEqual({ kind: "graded", correct: true });
+    expect(gradeShortAnswer("(323, 64, 64)", key)).toEqual({ kind: "graded", correct: false });
+    expect(gradeShortAnswer("(32, 36, 4, 64)", key)).toEqual({ kind: "graded", correct: false });
   });
 });
 

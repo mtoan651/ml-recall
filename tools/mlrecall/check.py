@@ -30,6 +30,10 @@ class Report:
     questions: list[tuple[str, Question]] = field(default_factory=list)  # (domain, question)
 
 
+# Digits split by spaces/punctuation, which answer normalization drops ("1.5" == "15").
+_DIGIT_GROUPS_RE = re.compile(r"\d[^\w×]+\d")
+
+
 def run(strict: bool = False) -> int:
     report = collect()
     for e in report.errors:
@@ -98,9 +102,16 @@ def _check_question(r: Report, f: bank.BankFile, q: Question, sources: dict) -> 
         if misses:
             r.errors.append(f"{where}: accepted answers don't match `pattern`: {misses}")
         if not answer.accept:
-            r.warnings.append(
+            # The build checks each pattern against its examples in JavaScript too.
+            r.errors.append(
                 f"{where}: `pattern` without examples — add the canonical answer to `accept`"
             )
+    elif answer is not None and any(_DIGIT_GROUPS_RE.search(a) for a in answer.accept):
+        # Normalization drops separators, so "(32, 3, 64, 64)" would also accept "(323, 64, 64)".
+        r.warnings.append(
+            f"{where}: `accept` splits digits with spaces/punctuation, which grading ignores — "
+            "use `numeric` or a `pattern`"
+        )
 
     if q.shuffle and any(POSITIONAL_OPTION_RE.search(o.text) for o in options):
         r.warnings.append(f"{where}: option refers to other options — set `shuffle: false`")

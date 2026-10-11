@@ -94,3 +94,15 @@ def test_pattern_must_compile_and_be_js_compatible():
         make(type="short_answer", options=None, answer={"pattern": "(", "model": "m"})
     with pytest.raises(ValidationError, match="JavaScript"):
         make(type="short_answer", options=None, answer={"pattern": r"(?P<n>\d+)", "model": "m"})
+    with pytest.raises(ValidationError, match="JavaScript"):
+        make(type="short_answer", options=None, answer={"pattern": r"\d{,3}", "model": "m"})
+
+
+def test_pattern_uses_ascii_semantics_like_javascript():
+    q = make(
+        type="short_answer",
+        options=None,
+        answer={"pattern": r"\w+", "accept": ["abc"], "model": "m"},
+    )
+    assert q.answer.matches_pattern("ABC")
+    assert not q.answer.matches_pattern("naïve")

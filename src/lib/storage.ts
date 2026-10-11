@@ -179,13 +179,30 @@ export function loadExam(
   return parseExam(readJson(store, examKey(scope)), scope, questions);
 }
 
-export function saveExam(state: ExamState, store: KeyValueStore | null = browserStore()): void {
-  if (!store) return;
+/** Saves the test in progress. False when it could not be stored (no storage, quota). */
+export function saveExam(state: ExamState, store: KeyValueStore | null = browserStore()): boolean {
+  if (!store) return false;
   try {
     store.setItem(examKey(state.scope), serializeExam(state));
+    return true;
   } catch {
     // Quota exceeded or storage blocked: the test still runs, it just cannot be resumed.
+    return false;
   }
+}
+
+/**
+ * `startedAt` of the stored test of `scope`, without validating its questions, or null when
+ * none is stored. Another tab that started, resumed or submitted the test changes it.
+ */
+export function storedExamStart(
+  scope: string,
+  store: KeyValueStore | null = browserStore(),
+): number | null {
+  const data = readJson(store, examKey(scope));
+  if (typeof data !== "object" || data === null) return null;
+  const { v, startedAt } = data as Record<string, unknown>;
+  return v === EXAM_STATE_VERSION && typeof startedAt === "number" ? startedAt : null;
 }
 
 export function clearExam(scope: string, store: KeyValueStore | null = browserStore()): void {

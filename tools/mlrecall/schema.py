@@ -106,7 +106,7 @@ class ShortAnswer(_Strict):
     def _valid_pattern(self) -> ShortAnswer:
         if self.pattern is None:
             return self
-        for token in ("(?P", "\\A", "\\Z", "(?#", "(?i", "(?x", "(?s", "(?m"):
+        for token in ("(?P", "\\A", "\\Z", "(?#", "(?i", "(?x", "(?s", "(?m", "{,"):
             if token in self.pattern:
                 raise ValueError(f"pattern: '{token}' is not valid JavaScript regex syntax")
         try:
@@ -120,11 +120,15 @@ class ShortAnswer(_Strict):
         return self.numeric is not None or bool(self.accept) or self.pattern is not None
 
     def matches_pattern(self, text: str) -> bool:
-        """Same rule as the web app: full match, case-insensitive, NFKC-normalized, trimmed."""
+        """Same rule as the web app: full match, case-insensitive, NFKC-normalized, trimmed.
+
+        ASCII semantics like JavaScript without the `u` flag: `\\w`, `\\d`, `\\b` and case folding
+        only cover ASCII.
+        """
         if self.pattern is None:
             return False
         normalized = unicodedata.normalize("NFKC", text).strip()
-        return re.fullmatch(self.pattern, normalized, re.IGNORECASE) is not None
+        return re.fullmatch(self.pattern, normalized, re.IGNORECASE | re.ASCII) is not None
 
 
 CHOICE_TYPES = ("single", "multiple", "true_false")

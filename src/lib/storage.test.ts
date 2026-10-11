@@ -18,6 +18,7 @@ import {
   saveResult,
   saveResults,
   saveSettings,
+  storedExamStart,
   summarize,
 } from "./storage";
 
@@ -161,6 +162,17 @@ describe("timed tests", () => {
     expect(loadExam("tag:cnn", info, store)).toBeNull();
     clearExam(scope, store);
     expect(loadExam(scope, info, store)).toBeNull();
+  });
+
+  it("reports which test is stored, so a tab can tell another tab took it over", () => {
+    const store = memoryStore();
+    expect(storedExamStart(scope, store)).toBeNull();
+    expect(saveExam(state, store)).toBe(true);
+    expect(storedExamStart(scope, store)).toBe(state.startedAt);
+    store.data[examKey(scope)] = JSON.stringify({ v: 99, startedAt: 5 });
+    expect(storedExamStart(scope, store)).toBeNull();
+    expect(saveExam(state, brokenStore)).toBe(false);
+    expect(saveExam(state, null)).toBe(false);
   });
 
   it("reports the time left on a stored test", () => {

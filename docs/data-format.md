@@ -83,9 +83,13 @@ Grading of a typed answer — correct if **any** key matches:
 
 1. `numeric`: the input parses as a number (`42`, `-0.5`, `1/3`, `2.5e-3`) within `tolerance`.
 2. `accept`: equal after normalization (case, Unicode NFKC, whitespace and punctuation ignored).
+   Not used when there is a `pattern`: normalization drops separators, so `(32, 3, 64, 64)` would
+   also equal `(323, 64, 64)`. For answers made of several numbers, write a `pattern`.
 3. `pattern`: full match of the trimmed, NFKC-normalized input, case-insensitive. Write patterns
-   that are valid in both Python and JavaScript (no `(?P<…>)`, `\A`, `\Z`, inline flags); don't
-   add `^`/`$`, the whole answer is matched. Every `accept` entry must match the pattern.
+   that are valid in both Python and JavaScript (no `(?P<…>)`, `\A`, `\Z`, inline flags, `{,n}`);
+   don't add `^`/`$`, the whole answer is matched. Semantics are ASCII (JavaScript without the
+   `u` flag): `\w`, `\d`, `\b` don't match accented letters. `accept` must list at least one
+   example, and every example must match the pattern (`mlr check`).
 
 `hint` is shown under the input in practice and test mode. Without it the app shows a default:
 "Enter a number, e.g. …" for `numeric`, "A word or short phrase" otherwise. Self-graded questions

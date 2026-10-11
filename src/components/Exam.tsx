@@ -20,7 +20,9 @@ import {
 } from "../lib/exam";
 import type { SessionInput } from "../lib/session";
 import {
+  browserStore,
   clearExam,
+  examKey,
   loadExam,
   loadExamHistory,
   loadSettings,
@@ -28,6 +30,7 @@ import {
   saveExamAttempt,
   saveResults,
   saveSettings,
+  storedExamStart,
 } from "../lib/storage";
 import type { ExamScopeView, QuizQuestion } from "../lib/types";
 import { ExamResults, type FinishedExam } from "./ExamResults";
@@ -43,6 +46,11 @@ interface ExamProps {
   /** Show each question's topic (cross-topic sets such as tag pages). */
   showTopic?: boolean;
 }
+
+const SUBMITTED_ELSEWHERE =
+  "This test was submitted in another tab. Its result is in your history.";
+const OPEN_ELSEWHERE =
+  "This test is open in another tab, so it was closed here. Reload the page to continue it in this tab.";
 
 const toInput = (q: QuizQuestion): SessionInput => ({
   id: q.id,
@@ -79,8 +87,15 @@ export default function Exam({ questions, scope, excluded = 0, showTopic = false
   const [finished, setFinished] = useState<FinishedExam | null>(null);
   const [announcement, setAnnouncement] = useState("");
   const [startedHere, setStartedHere] = useState(false);
+  /** Shown on the start screen after another tab took the test over. */
+  const [notice, setNotice] = useState("");
   /** `startedAt` of the last finished test: the timer and a click must not submit twice. */
   const submittedStart = useRef<number | null>(null);
+  /**
+   * The test this tab owns. `guarded` is false when it could not be stored, so there is nothing
+   * to compare with other tabs.
+   */
+  const owned = useRef<{ startedAt: number; guarded: boolean } | null>(null);
   const viewRef = useRef<HTMLElement>(null);
   const rootRef = useRef<HTMLElement>(null);
   /** Move focus to the new view (start screen or results) after a user action. */
@@ -93,9 +108,37 @@ export default function Exam({ questions, scope, excluded = 0, showTopic = false
     [],
   );
 
+  /** True when another tab replaced or submitted `state` (only one tab may record a test). */
+  const takenElsewhere = useCallback(
+    (state: ExamState) => {
+      if (!browserStore()) return false;
+      const own = owned.current;
+      if (own?.startedAt === state.startedAt && !own.guarded) return false;
+      return storedExamStart(scopeKey) !== state.startedAt;
+    },
+    [scopeKey],
+  );
+
+  /** Stop the test here and leave it to the other tab. */
+  const yieldToOtherTab = useCallback(
+    (message: string) => {
+      owned.current = null;
+      moved.current = true;
+      setExam(null);
+      setHistory(loadExamHistory(scopeKey));
+      setNotice(message);
+      setAnnouncement(message);
+    },
+    [scopeKey],
+  );
+
   const finish = useCallback(
     (state: ExamState, timedOut: boolean) => {
       if (submittedStart.current === state.startedAt) return;
+      if (takenElsewhere(state)) {
+        yieldToOtherTab(storedExamStart(scopeKey) === null ? SUBMITTED_ELSEWHERE : OPEN_ELSEWHERE);
+        return;
+      }
       submittedStart.current = state.startedAt;
       const end = Math.min(Date.now(), state.startedAt + state.durationMs);
       const score = scoreExam(state, byId);
@@ -138,7 +181,7 @@ export default function Exam({ questions, scope, excluded = 0, showTopic = false
           : `Test submitted: ${score.correct} of ${score.total} correct.`,
       );
     },
-    [byId, scopeKey],
+    [byId, scopeKey, takenElsewhere, yieldToOtherTab],
   );
 
   // Restore settings, history and a test in progress; an expired test is submitted now.
@@ -148,6 +191,10 @@ export default function Exam({ questions, scope, excluded = 0, showTopic = false
     setLayout(settings.examLayout);
     setHistory(loadExamHistory(scopeKey));
     const stored = loadExam(scopeKey, storedInfo);
+    // A stored test whose questions changed (retired, new options) cannot be resumed: drop it
+    // so the topic page stops offering "Resume test".
+    if (!stored && storedExamStart(scopeKey) !== null) clearExam(scopeKey);
+    if (stored) owned.current = { startedAt: stored.startedAt, guarded: true };
     if (stored && isExpired(stored, Date.now())) {
       finish(stored, true);
       moved.current = false; // nothing was clicked: leave focus where the page put it
@@ -160,10 +207,32 @@ export default function Exam({ questions, scope, excluded = 0, showTopic = false
     setReady(true);
   }, [scopeKey, storedInfo, finish]);
 
-  // Save the test in progress after every change.
+  // Save the test in progress after every change. The first save of a new test claims the
+  // storage key; later saves stop if another tab has written or cleared it meanwhile.
   useEffect(() => {
-    if (exam) saveExam(exam);
-  }, [exam]);
+    if (!exam) return;
+    if (owned.current?.startedAt !== exam.startedAt) {
+      owned.current = { startedAt: exam.startedAt, guarded: saveExam(exam) };
+    } else if (takenElsewhere(exam)) {
+      yieldToOtherTab(storedExamStart(scopeKey) === null ? SUBMITTED_ELSEWHERE : OPEN_ELSEWHERE);
+    } else {
+      saveExam(exam);
+    }
+  }, [exam, scopeKey, takenElsewhere, yieldToOtherTab]);
+
+  // Another tab wrote or cleared this test (storage events only reach the other tabs): the last
+  // tab to change it keeps it.
+  const running = exam !== null;
+  useEffect(() => {
+    if (!running) return;
+    const key = examKey(scopeKey);
+    const onStorage = (event: StorageEvent) => {
+      if (event.key !== null && event.key !== key) return;
+      yieldToOtherTab(event.newValue === null ? SUBMITTED_ELSEWHERE : OPEN_ELSEWHERE);
+    };
+    window.addEventListener("storage", onStorage);
+    return () => window.removeEventListener("storage", onStorage);
+  }, [running, scopeKey, yieldToOtherTab]);
 
   const view = finished ? "results" : exam ? "running" : "start";
   // biome-ignore lint/correctness/useExhaustiveDependencies: runs when the view changes.
@@ -180,6 +249,7 @@ export default function Exam({ questions, scope, excluded = 0, showTopic = false
     const state = createExam(pool, { scope: scopeKey, reviewedOnly, layout, now: Date.now() });
     if (state.items.length === 0) return;
     setFinished(null);
+    setNotice("");
     setAnnouncement("");
     setStartedHere(true);
     setExam(state);
@@ -233,20 +303,30 @@ export default function Exam({ questions, scope, excluded = 0, showTopic = false
             onSubmit={(timedOut) => finish(exam, timedOut)}
           />
         ) : (
-          <ExamStart
-            ref={viewRef}
-            scope={scope}
-            plan={plan}
-            reviewedOnly={reviewedOnly}
-            reviewedCount={reviewedCount}
-            draftCount={eligibleCount - reviewedCount}
-            excluded={excluded}
-            layout={layout}
-            history={history}
-            onReviewedOnly={changeReviewedOnly}
-            onLayout={changeLayout}
-            onStart={start}
-          />
+          <>
+            {notice && (
+              <p
+                role="status"
+                className="mb-4 rounded-xl border border-note/40 bg-note-soft px-4 py-3 text-sm text-note"
+              >
+                {notice}
+              </p>
+            )}
+            <ExamStart
+              ref={viewRef}
+              scope={scope}
+              plan={plan}
+              reviewedOnly={reviewedOnly}
+              reviewedCount={reviewedCount}
+              draftCount={eligibleCount - reviewedCount}
+              excluded={excluded}
+              layout={layout}
+              history={history}
+              onReviewedOnly={changeReviewedOnly}
+              onLayout={changeLayout}
+              onStart={start}
+            />
+          </>
         )}
       </div>
     </section>

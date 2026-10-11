@@ -3,7 +3,9 @@
  * - choice questions: the selected set must equal the set of correct options (all-or-nothing);
  * - short answers: auto-graded when the key has `numeric` (|x − value| ≤ tolerance), `accept`
  *   (text compared after normalization) or `pattern` (regex, full match); correct if any of
- *   them matches. Otherwise the learner self-grades.
+ *   them matches. With a `pattern`, `accept` only lists examples of it and is not compared on
+ *   its own (normalization drops separators: "(323, 64, 64)" would equal "(32, 3, 64, 64)").
+ *   Otherwise the learner self-grades.
  */
 
 /** Lowercase, Unicode-normalized, without whitespace and punctuation: "Batch-Norm." → "batchnorm". */
@@ -127,7 +129,10 @@ export type ShortAnswerGrade =
   /** No `numeric`/`accept`/`pattern`: the learner compares with the model answer. */
   | { kind: "self-graded" };
 
-/** Tries the keys in order numeric → accept → pattern; correct if any matches. */
+/**
+ * Tries the keys in order numeric → accept → pattern; correct if any matches. `accept` is
+ * skipped when there is a `pattern` (see the module comment).
+ */
 export function gradeShortAnswer(input: string, key: ShortAnswerKey): ShortAnswerGrade {
   if (!isAutoGraded(key)) return { kind: "self-graded" };
   if (input.trim() === "") return { kind: "empty" };
@@ -137,8 +142,11 @@ export function gradeShortAnswer(input: string, key: ShortAnswerKey): ShortAnswe
   if (numeric !== null && parsed !== null && withinTolerance(parsed, numeric, key.tolerance)) {
     return { kind: "graded", correct: true };
   }
-  if (matchesText(input, key.accept)) return { kind: "graded", correct: true };
-  if (key.pattern && matchesPattern(input, key.pattern)) return { kind: "graded", correct: true };
+  if (key.pattern) {
+    if (matchesPattern(input, key.pattern)) return { kind: "graded", correct: true };
+  } else if (matchesText(input, key.accept)) {
+    return { kind: "graded", correct: true };
+  }
   if (parsed === null && isNumericOnly(key)) return { kind: "not-a-number" };
   return { kind: "graded", correct: false };
 }
