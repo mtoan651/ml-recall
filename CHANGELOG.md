@@ -7,6 +7,15 @@ versioning: [SemVer](https://semver.org) as defined in [docs/conventions.md](doc
 
 ### Added
 
+- Picture questions are kept and redrawn: 20 questions that had been dropped as image-only or
+  page-dependent are restored (Google MLCC 11, Google ML courses 4, HF Deep RL 5), and 21
+  questions (17 restored + 4 already kept) now show 30 SVG figures generated from code — ROC curves with exact AUCs, loss curves, histograms,
+  scatter plots, a fairness prediction grid, similarity vectors, decision trees with their
+  prediction map, a network diagram, and the Bellman/TD/Monte Carlo/Q-learning equations with
+  numbered parts (with written model answers). `tools/mlrecall/figstyle.py` (shared style and
+  helpers, deterministic SVG), `mlr figs` (re-render stale figures), curation fixes for `figure`,
+  `images`, `explanation_figure` and `answer`; `mlr check` no longer flags same-stem questions
+  about different figures as duplicates.
 - 129 draft questions from three new sources: Google Machine Learning Crash Course (44), Google's
   Decision Forests, Clustering, GANs and Problem Framing courses (22) — page quizzes with
   per-option feedback, CC BY 4.0 — and numpy-100 (63 self-graded NumPy exercises, MIT). Stems that

@@ -19,17 +19,17 @@ mock exams and spaced repetition. Free static site on GitHub Pages.
 
 | Domain | Topics | Questions | Reviewed |
 | --- | ---: | ---: | ---: |
-| Artificial Intelligence | 5 | 29 | 1 |
+| Artificial Intelligence | 5 | 30 | 1 |
 | Mathematics for ML | 5 | 133 | 9 |
-| Machine Learning | 14 | 172 | 14 |
+| Machine Learning | 14 | 186 | 14 |
 | Deep Learning | 8 | 110 | 32 |
 | Computer Vision | 3 | 10 | 0 |
 | Natural Language Processing | 5 | 48 | 0 |
 | Generative Models | 2 | 15 | 0 |
 | Large Language Models | 4 | 40 | 0 |
-| Reinforcement Learning | 3 | 43 | 0 |
+| Reinforcement Learning | 3 | 48 | 0 |
 | Practical Tools | 3 | 92 | 0 |
-| **Total** | | **692** | **56** |
+| **Total** | | **712** | **56** |
 
 Imported so far: Hugging Face LLM, Deep RL and AI Agents courses; Microsoft AI, ML and Data
 Science for Beginners; Google's ML Crash Course and ML courses; MMLU-Redux; 100 NumPy exercises;
