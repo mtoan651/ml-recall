@@ -24,7 +24,7 @@ original questions. See [content-pipeline.md](content-pipeline.md#copyright-rule
 | 9 | [Hands-On ML 3 notebooks](https://github.com/ageron/handson-ml3) | exercise solutions (notebooks only — book text is copyrighted) | Apache-2.0 | v0.3+ |
 | 10 | [LLMs from Scratch](https://github.com/rasbt/LLMs-from-scratch) | chapter exercises + solutions (repo only) | Apache-2.0 | v0.4 — code questions |
 | 11 | [Tensor / Autodiff / GPU Puzzles](https://github.com/srush/Tensor-Puzzles) | broadcasting & autodiff puzzles | MIT | v0.4 — code reading |
-| 12 | [100 NumPy exercises](https://github.com/rougier/numpy-100) | NumPy drills with solution code | MIT | **v0.3 imported** (63, self-graded) |
+| 12 | [100 NumPy exercises](https://github.com/rougier/numpy-100) | NumPy drills with solution code | MIT | **v0.3 imported** (63, fill-ins) |
 | 13 | [Hugging Face Deep RL Course](https://huggingface.co/learn/deep-rl-course) | unit quizzes: MCQ + open questions with solutions (RL basics, Q-learning, policy gradient, multi-agent) | Apache-2.0 | **v0.3 imported** (36) |
 | 14 | [Hugging Face AI Agents Course](https://huggingface.co/learn/agents-course) | unit quizzes on agents, tools, ReAct, agentic RAG, observability | Apache-2.0 | **v0.3 imported** (19) |
 | 15 | [Microsoft Data Science for Beginners](https://github.com/microsoft/Data-Science-For-Beginners) | pre/post-lecture quizzes; only data types, probability, statistics items kept | MIT | **v0.3 imported** (15) |

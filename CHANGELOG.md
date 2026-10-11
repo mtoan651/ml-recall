@@ -32,7 +32,7 @@ versioning: [SemVer](https://semver.org) as defined in [docs/conventions.md](doc
   about different figures as duplicates.
 - 129 draft questions from three new sources: Google Machine Learning Crash Course (44), Google's
   Decision Forests, Clustering, GANs and Problem Framing courses (22) — page quizzes with
-  per-option feedback, CC BY 4.0 — and numpy-100 (63 self-graded NumPy exercises, MIT). Stems that
+  per-option feedback, CC BY 4.0 — and numpy-100 (63 NumPy exercises, MIT). Stems that
   relied on a picture or an interactive widget were rewritten to stand alone; weak upstream
   feedback was replaced by cited explanations. New importers `google_ml` and `numpy_100`;
   curation `fix.why` edits or removes option feedback.
@@ -44,7 +44,7 @@ versioning: [SemVer](https://semver.org) as defined in [docs/conventions.md](doc
   checked in Python and JavaScript) and `hint` (format guidance under the input).
 - "No explanation yet" notice for questions without any explanation.
 - 178 draft questions from four new importers (pinned upstream revisions, per-item curation):
-  Hugging Face Deep RL Course (36, incl. self-graded open questions), Hugging Face AI Agents Course
+  Hugging Face Deep RL Course (36), Hugging Face AI Agents Course
   (19), Microsoft Data Science for Beginners (15) and MMLU-Redux `high_school_statistics` (75, 2
   answer keys corrected) and `college_mathematics` (33). Topics with ≥ 20 questions: 4 → 7;
   `rag-agents` and `policy-gradient` are no longer empty.

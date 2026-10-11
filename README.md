@@ -8,10 +8,10 @@ mock exams and spaced repetition. Free static site on GitHub Pages.
 
 ## What's inside
 
-- **384 questions** across 10 domains — 328 curated from open-licensed sources, 51 paraphrased from
-  CE6146 course exercises, 5 original examples; 56 reviewed.
+- **712 questions** across 10 domains — 655 curated from open-licensed sources, 51 paraphrased from
+  CE6146 course exercises, 6 original examples; 56 reviewed.
 - Four question types: `single`, `multiple` (select all), `true_false`, `short_answer`
-  (auto-graded text/numeric, or self-graded against a model answer).
+  (auto-graded fill-in: a number, a word or phrase, or a gap-fill with several blanks).
 - **Timed tests** for every topic and tag: up to 20 random questions, one minute each, scored and
   explained at the end.
 - Every question records its **source**; reviewed explanations **cite** references (`[^1]`).
