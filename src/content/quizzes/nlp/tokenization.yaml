@@ -241,3 +241,246 @@ questions:
       ref: chapter6/10#q10
       url: https://huggingface.co/learn/llm-course/chapter6/10
     status: draft
+  - id: tokenization-008
+    type: short_answer
+    difficulty: easy
+    tags:
+      - vocabulary
+      - min-freq
+      - unk-token
+    question: |
+      A vocabulary class keeps every token that occurs at least `min_freq` times and always adds an
+      unknown token:
+
+      ```python
+      counter = collections.Counter(tokens)
+      self.idx_to_token = list(sorted(set(['<unk>'] + reserved_tokens + [
+          token for token, freq in counter.items() if freq >= min_freq])))
+      ```
+
+      A word-level corpus has these counts: `the` 9, `time` 4, `machine` 3, `traveller` 3,
+      `said` 2, `hour` 1, `glass` 1. How many entries does the vocabulary have with `min_freq=3` and
+      no reserved tokens?
+    answer:
+      numeric: 5
+      tolerance: 0
+      hint: a whole number
+      model: 4 words with count ≥ 3 (`the`, `time`, `machine`, `traveller`) plus `<unk>` = 5
+    explanation: |
+      Four words reach the threshold, and `<unk>` is always added, so the vocabulary has 5 entries;
+      `said`, `hour` and `glass` will be mapped to `<unk>` [^1]. With `min_freq` of 0 or 1 all 7 words
+      stay (8 entries). Raising `min_freq` can only shrink the vocabulary, and it shrinks fast,
+      because word frequencies follow Zipf's law: most distinct words are rare [^2].
+    references:
+      - source: d2l
+        locator: Sec. 9.2.3 Vocabulary
+        url: https://d2l.ai/chapter_recurrent-neural-networks/text-sequence.html#vocabulary
+      - source: d2l
+        locator: Sec. 9.2.5 Exploratory Language Statistics
+        url: https://d2l.ai/chapter_recurrent-neural-networks/text-sequence.html#exploratory-language-statistics
+      - source: d2l
+        locator: Sec. 9.2.7 Exercises, Exercise 1
+        url: https://d2l.ai/chapter_recurrent-neural-networks/text-sequence.html#exercises
+    source:
+      id: d2l
+      ref: chapter_recurrent-neural-networks/text-sequence#ex1
+      url: https://d2l.ai/chapter_recurrent-neural-networks/text-sequence.html#exercises
+    status: draft
+  - id: tokenization-009
+    type: single
+    difficulty: easy
+    tags:
+      - vocabulary
+      - min-freq
+      - machine-translation
+    question: |
+      A translation dataset builds its source and target vocabularies from the first `max_examples`
+      sentence pairs, keeping only the words that occur at least twice. What happens to the two
+      vocabulary sizes as you raise `max_examples`?
+    options:
+      - text: 'Both grow or stay the same: new words appear and more rare words reach a count of 2'
+        correct: true
+      - text: Both shrink, because the counts are spread over more and more sentence pairs
+        why: Counts only ever increase when more pairs are tokenized; no word drops out.
+      - text: Only the source side grows; the target side is fixed by the size of its alphabet
+        why: Both sides are tokenized into words, not characters [^1].
+      - text: Neither changes, because the threshold of 2 already fixes the vocabulary size
+        why: '`min_freq` is a count threshold, not a size limit; which words pass it depends on the data.'
+    explanation: |
+      Each side is tokenized into words and the vocabulary keeps words seen at least twice [^1][^2].
+      Adding sentence pairs can only raise counts, so the set of words that pass the threshold can
+      only grow. The growth slows down once the frequent words are in, but by Zipf's law the long tail
+      of rare words keeps adding new entries [^3].
+    references:
+      - source: d2l
+        locator: Sec. 10.5.2 Tokenization
+        url: https://d2l.ai/chapter_recurrent-modern/machine-translation-and-dataset.html#tokenization
+      - source: d2l
+        locator: Sec. 10.5.3 Loading Sequences of Fixed Length
+        url: https://d2l.ai/chapter_recurrent-modern/machine-translation-and-dataset.html#loading-sequences-of-fixed-length
+      - source: d2l
+        locator: Sec. 9.2.5 Exploratory Language Statistics
+        url: https://d2l.ai/chapter_recurrent-neural-networks/text-sequence.html#exploratory-language-statistics
+      - source: d2l
+        locator: Sec. 10.5.6 Exercises, Exercise 1
+        url: https://d2l.ai/chapter_recurrent-modern/machine-translation-and-dataset.html#exercises
+    source:
+      id: d2l
+      ref: chapter_recurrent-modern/machine-translation-and-dataset#ex1
+      url: https://d2l.ai/chapter_recurrent-modern/machine-translation-and-dataset.html#exercises
+    status: draft
+  - id: tokenization-010
+    type: single
+    difficulty: easy
+    tags:
+      - word-tokenization
+      - chinese
+      - subword
+    question: |
+      Chinese and Japanese are written without spaces between words. Is splitting the text on
+      whitespace a good word-level tokenizer for these languages?
+    options:
+      - text: 'No: a whole sentence would become one token; use a word segmenter or character or subword units'
+        correct: true
+      - text: 'Yes: in these languages every character is a word, so the split already gives words'
+        why: Many words span several characters, and a whitespace split would not separate characters anyway.
+      - text: Yes, as long as the text is lowercased and punctuation is set off by spaces first
+        why: That preprocessing works for English because spaces already mark the words; here there are none.
+      - text: No, because word-level tokenization only works for languages with a Latin alphabet
+        why: Word-level tokenization works for any script in which word boundaries can be found.
+    explanation: |
+      The d2l translation pipeline lowercases the text, inserts spaces around punctuation and then
+      splits on spaces, which relies on spaces marking word boundaries [^1]. Without them, words must
+      first be found by a segmentation step, or the text can be tokenized into characters [^2] or into
+      subword units learned from data, such as byte pair encoding [^3].
+    references:
+      - source: d2l
+        locator: Sec. 10.5.1 Downloading and Preprocessing the Dataset; 10.5.2 Tokenization
+        url: https://d2l.ai/chapter_recurrent-modern/machine-translation-and-dataset.html#tokenization
+      - source: d2l
+        locator: Sec. 9.2.2 Tokenization
+        url: https://d2l.ai/chapter_recurrent-neural-networks/text-sequence.html#tokenization
+      - source: d2l
+        locator: Sec. 15.6.2 Byte Pair Encoding
+        url: https://d2l.ai/chapter_natural-language-processing-pretraining/subword-embedding.html#byte-pair-encoding
+      - source: d2l
+        locator: Sec. 10.5.6 Exercises, Exercise 2
+        url: https://d2l.ai/chapter_recurrent-modern/machine-translation-and-dataset.html#exercises
+    source:
+      id: d2l
+      ref: chapter_recurrent-modern/machine-translation-and-dataset#ex2
+      url: https://d2l.ai/chapter_recurrent-modern/machine-translation-and-dataset.html#exercises
+    status: draft
+  - id: tokenization-011
+    type: single
+    difficulty: medium
+    tags:
+      - fasttext
+      - subword
+      - hashing
+    question: |
+      English has about $3 \times 10^8$ possible character 6-grams, and fastText represents every word
+      by the sum of the vectors of its 3- to 6-grams. How does fastText keep its table of n-gram vectors
+      bounded?
+    options:
+      - text: It hashes every n-gram into one of $2 \times 10^6$ buckets, so colliding n-grams share a vector
+        correct: true
+      - text: It keeps only the 3-grams, since there are few enough of those to store
+        why: fastText uses all n-grams from 3 to 6 characters, plus the whole word [^1].
+      - text: It stores vectors only for the n-grams seen at least 100 times in the corpus and drops all others
+        why: fastText bounds memory by hashing, not by a frequency cutoff [^2].
+      - text: It stores no n-gram vectors and computes them from character embeddings at run time
+        why: The n-gram vectors $\mathbf{z}_g$ are learned parameters looked up in a table [^1].
+    explanation: |
+      With all 3- to 6-grams the subword vocabulary cannot be fixed in advance [^1]. To bound memory,
+      Bojanowski et al. hash each n-gram (with FNV-1a) to an integer from 1 to $K$, with
+      $K = 2 \times 10^6$ [^2]. Collisions make a few unrelated n-grams share a vector, but the table
+      shrinks from about $3 \times 10^8$ to $2 \times 10^6$ rows, at 300 float32 dimensions from about
+      360 GB to 2.4 GB.
+    references:
+      - source: d2l
+        locator: Sec. 15.6.1 The fastText Model; 15.6.2 Byte Pair Encoding
+        url: https://d2l.ai/chapter_natural-language-processing-pretraining/subword-embedding.html#the-fasttext-model
+      - title: Bojanowski, Grave, Joulin & Mikolov (2017), Enriching Word Vectors with Subword Information
+        url: https://arxiv.org/abs/1607.04606
+        locator: Sec. 3.2 Subword model (last paragraph)
+      - source: d2l
+        locator: Sec. 15.6.4 Exercises, Exercise 1
+        url: https://d2l.ai/chapter_natural-language-processing-pretraining/subword-embedding.html#exercises
+    source:
+      id: d2l
+      ref: chapter_natural-language-processing-pretraining/subword-embedding#ex1
+      url: https://d2l.ai/chapter_natural-language-processing-pretraining/subword-embedding.html#exercises
+    status: draft
+  - id: tokenization-012
+    type: short_answer
+    difficulty: easy
+    tags:
+      - bpe
+      - merges
+      - vocabulary-size
+    question: |
+      A byte-level BPE tokenizer starts from the 256 possible byte values as its symbols and stops
+      when the vocabulary holds 32,000 symbols. Each merge adds the merged pair as one new symbol and
+      removes nothing. How many merges does it perform?
+    answer:
+      numeric: 31744
+      tolerance: 0
+      hint: a whole number
+      model: $m - n = 32{,}000 - 256 = 31{,}744$
+    explanation: |
+      BPE repeatedly merges the most frequent pair of adjacent symbols into a new symbol, so each merge
+      grows the vocabulary by exactly one: reaching $m$ symbols from $n$ takes $m - n$ merges [^1]. In
+      d2l's example, 28 initial symbols (26 letters, `_` and `[UNK]`) plus 10 merges give 38 [^1].
+      Unlike fastText's n-grams, the final vocabulary size is chosen in advance [^1].
+    references:
+      - source: d2l
+        locator: Sec. 15.6.2 Byte Pair Encoding
+        url: https://d2l.ai/chapter_natural-language-processing-pretraining/subword-embedding.html#byte-pair-encoding
+      - source: d2l
+        locator: Sec. 15.6.4 Exercises, Exercise 3
+        url: https://d2l.ai/chapter_natural-language-processing-pretraining/subword-embedding.html#exercises
+    source:
+      id: d2l
+      ref: chapter_natural-language-processing-pretraining/subword-embedding#ex3
+      url: https://d2l.ai/chapter_natural-language-processing-pretraining/subword-embedding.html#exercises
+    status: draft
+  - id: tokenization-013
+    type: single
+    difficulty: medium
+    tags:
+      - bpe
+      - phrases
+      - merges
+    question: |
+      Byte pair encoding normally never merges symbols across word boundaries. How could you adapt it
+      to extract multi-word phrases such as "new york"?
+    options:
+      - text: Use whole words as the starting symbols and let adjacent words merge, so frequent pairs become phrases
+        correct: true
+      - text: Run it on characters with many more merges, so that the learned subwords eventually grow into whole phrases
+        why: Merges would still stop at word boundaries, so no symbol could ever span two words [^1].
+      - text: Merge the *least* frequent adjacent pairs first, since phrases are rare in text
+        why: What makes a phrase is that its words occur together often, so frequent pairs are the ones to merge.
+      - text: Hash every pair of adjacent words into a fixed number of buckets, one per phrase
+        why: Hashing bounds memory but does not decide which word pairs belong together.
+    explanation: |
+      BPE greedily merges the most frequent pair of consecutive symbols, and for efficiency it ignores
+      pairs that cross word boundaries [^1]. Lifting that restriction and starting from words turns
+      the same greedy procedure into a phrase extractor. Raw frequency alone would favor pairs like
+      "of the", which is why word2vec's phrase detector divides by the words' own counts [^2].
+    references:
+      - source: d2l
+        locator: Sec. 15.6.2 Byte Pair Encoding
+        url: https://d2l.ai/chapter_natural-language-processing-pretraining/subword-embedding.html#byte-pair-encoding
+      - title: Mikolov, Sutskever, Chen, Corrado & Dean (2013), Distributed Representations of Words and Phrases and their Compositionality
+        url: https://arxiv.org/abs/1310.4546
+        locator: Sec. 4 Learning Phrases
+      - source: d2l
+        locator: Sec. 15.6.4 Exercises, Exercise 4
+        url: https://d2l.ai/chapter_natural-language-processing-pretraining/subword-embedding.html#exercises
+    source:
+      id: d2l
+      ref: chapter_natural-language-processing-pretraining/subword-embedding#ex4
+      url: https://d2l.ai/chapter_natural-language-processing-pretraining/subword-embedding.html#exercises
+    status: draft

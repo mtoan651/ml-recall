@@ -324,3 +324,825 @@ questions:
       ref: quiz-217/q1
       url: https://github.com/microsoft/AI-For-Beginners/blob/392d0df1b2647cbee104942390551f1ed9e072c8/etc/quiz-app/src/assets/translations/en/lesson-17.json
     status: draft
+  - id: rnn-013
+    type: short_answer
+    difficulty: easy
+    tags:
+      - rnn
+      - language-model
+      - output-layer
+    question: |
+      A character-level RNN language model has a vocabulary of 28 tokens (26 letters, space and
+      `<unk>`) and 32 hidden units. It is trained on minibatches of 1024 sequences of 32 characters
+      each. How many entries does the output vector $\mathbf{o}_t$ have for one sequence at one time
+      step?
+    answer:
+      numeric: 28
+      tolerance: 0
+      hint: a whole number
+      model: The vocabulary size, 28 (one score per possible next character)
+    explanation: |
+      The output layer $\mathbf{O}_t = \mathbf{H}_t\mathbf{W}_\textrm{hq} + \mathbf{b}_\textrm{q}$
+      maps the hidden state to $q$ outputs [^1], and for a language model inputs and outputs come from
+      the same vocabulary, so $q$ equals the vocabulary size [^2]. A softmax over these 28 scores
+      gives the distribution of the next character. The 32 hidden units set the size of
+      $\mathbf{h}_t$, not of $\mathbf{o}_t$; the batch size and the number of steps are the other two
+      axes of the (1024, 32, 28) output tensor [^2].
+    references:
+      - source: d2l
+        locator: Sec. 9.4.2 Recurrent Neural Networks with Hidden States
+        url: https://d2l.ai/chapter_recurrent-neural-networks/rnn.html#recurrent-neural-networks-with-hidden-states
+      - source: d2l
+        locator: Sec. 9.5.2 RNN-Based Language Model
+        url: https://d2l.ai/chapter_recurrent-neural-networks/rnn-scratch.html#rnn-based-language-model
+      - source: d2l
+        locator: Sec. 9.4.5 Exercises, Exercise 1
+        url: https://d2l.ai/chapter_recurrent-neural-networks/rnn.html#exercises
+    source:
+      id: d2l
+      ref: chapter_recurrent-neural-networks/rnn#ex1
+      url: https://d2l.ai/chapter_recurrent-neural-networks/rnn.html#exercises
+    status: draft
+  - id: rnn-014
+    type: single
+    difficulty: medium
+    tags:
+      - rnn
+      - hidden-state
+      - language-model
+    question: |
+      An RNN language model approximates $P(x_t \mid x_{t-1}, \ldots, x_1)$ by $P(x_t \mid h_{t-1})$.
+      Why can it, in principle, condition on *all* earlier tokens, while an $n$-gram model cannot?
+    options:
+      - text: $h_t = f(x_t, h_{t-1})$ is computed recursively, so $h_{t-1}$ depends on every earlier input
+        correct: true
+      - text: It learns a separate weight matrix for every time step, so it keeps one per earlier token
+        why: The same weights are reused at every time step, so the parameter count does not grow with $t$ [^2].
+      - text: Its input at step $t$ is the concatenation of the one-hot vectors of all earlier tokens
+        why: The input at step $t$ is only $x_t$; the history arrives through $h_{t-1}$ [^2].
+      - text: Its softmax output layer adds up the scores computed at all earlier positions
+        why: The output layer sees only the current hidden state $\mathbf{H}_t$ [^2].
+    explanation: |
+      The hidden state is updated as $h_t = f(x_t, h_{t-1})$, so $h_{t-1}$ is a function of
+      $x_1, \ldots, x_{t-1}$; for a powerful enough $f$ the latent-variable model is not an
+      approximation at all, since $h_t$ may store everything seen so far [^1]. An $n$-gram model
+      instead needs $|\mathcal{V}|^n$ numbers, exponential in the context length [^1]. In practice a
+      finite hidden state and truncated backpropagation limit how much history is actually used [^3].
+    references:
+      - source: d2l
+        locator: Sec. 9.4 Recurrent Neural Networks (introduction, Eq. 9.4.2)
+        url: https://d2l.ai/chapter_recurrent-neural-networks/rnn.html
+      - source: d2l
+        locator: Sec. 9.4.2 Recurrent Neural Networks with Hidden States
+        url: https://d2l.ai/chapter_recurrent-neural-networks/rnn.html#recurrent-neural-networks-with-hidden-states
+      - source: d2l
+        locator: Sec. 9.7.1 Analysis of Gradients in RNNs
+        url: https://d2l.ai/chapter_recurrent-neural-networks/bptt.html#analysis-of-gradients-in-rnns
+      - source: d2l
+        locator: Sec. 9.4.5 Exercises, Exercise 2
+        url: https://d2l.ai/chapter_recurrent-neural-networks/rnn.html#exercises
+    source:
+      id: d2l
+      ref: chapter_recurrent-neural-networks/rnn#ex2
+      url: https://d2l.ai/chapter_recurrent-neural-networks/rnn.html#exercises
+    status: draft
+  - id: rnn-015
+    type: single
+    difficulty: medium
+    tags:
+      - bptt
+      - vanishing-gradients
+      - exploding-gradients
+    shuffle: false
+    question: |
+      For a linear RNN $\mathbf{h}_t = \mathbf{W}_\textrm{hx}\mathbf{x}_t + \mathbf{W}_\textrm{hh}\mathbf{h}_{t-1}$,
+      the gradient $\partial L / \partial \mathbf{h}_t$ contains the powers
+      $(\mathbf{W}_\textrm{hh}^\top)^{T-i}$. What happens to it when you backpropagate through a
+      sequence of 1000 steps?
+    options:
+      - text: It vanishes if all eigenvalues of $\mathbf{W}_\textrm{hh}$ are below 1 in size, and explodes if one is above 1
+        correct: true
+      - text: The $1/T$ factor in the loss averages it over the 1000 steps, so it stays well scaled
+        why: A constant factor $1/T$ cannot undo terms that scale like $\lambda^{1000}$.
+      - text: It stays bounded, because the same matrix $\mathbf{W}_\textrm{hh}$ is reused at every step
+        why: Reusing the same matrix is exactly what produces its high powers [^1].
+      - text: It explodes for every choice of $\mathbf{W}_\textrm{hh}$, which is why gradient clipping alone is enough to fix RNN training
+        why: With small eigenvalues it vanishes instead, and clipping does nothing against vanishing gradients [^2].
+    explanation: |
+      Expanding the recursion gives
+      $\partial L/\partial \mathbf{h}_t = \sum_{i=t}^T (\mathbf{W}_\textrm{hh}^\top)^{T-i}\mathbf{W}_\textrm{qh}^\top \partial L/\partial \mathbf{o}_{T+t-i}$:
+      eigenvalues smaller than 1 vanish and larger ones diverge in these powers, which shows up as
+      vanishing and exploding gradients [^1]. Gradient clipping limits the exploding case but does
+      not address vanishing gradients [^2]; truncation and gated cells such as the LSTM are the other
+      remedies [^1].
+    references:
+      - source: d2l
+        locator: Sec. 9.7.2 Backpropagation Through Time in Detail,
+        url: https://d2l.ai/chapter_recurrent-neural-networks/bptt.html#backpropagation-through-time-in-detail
+      - source: d2l
+        locator: Sec. 9.5.3 Gradient Clipping and 9.5.6 Summary
+        url: https://d2l.ai/chapter_recurrent-neural-networks/rnn-scratch.html#gradient-clipping
+      - source: d2l
+        locator: Sec. 9.4.5 Exercises, Exercise 3
+        url: https://d2l.ai/chapter_recurrent-neural-networks/rnn.html#exercises
+    source:
+      id: d2l
+      ref: chapter_recurrent-neural-networks/rnn#ex3
+      url: https://d2l.ai/chapter_recurrent-neural-networks/rnn.html#exercises
+    status: draft
+  - id: rnn-016
+    type: short_answer
+    difficulty: hard
+    tags:
+      - bptt
+      - eigenvalues
+      - power-iteration
+      - exploding-gradients
+    question: |
+      The symmetric matrix
+      $\mathbf{M} = \begin{bmatrix} 1.25 & 0.75 \\ 0.75 & 1.25 \end{bmatrix}$ has eigenvalues 2 and
+      0.5. Starting from $\mathbf{x} = (1, 0)^\top$, what is the first entry of
+      $\mathbf{M}^{10}\mathbf{x}$? Round to one decimal.
+    answer:
+      numeric: 512.0
+      tolerance: 0.1
+      hint: a number, 1 decimal
+      model: $\mathbf{x} = \tfrac12(1, 1) + \tfrac12(1, -1)$, so $\mathbf{M}^{10}\mathbf{x} = \tfrac12 2^{10}(1, 1) + \tfrac12 0.5^{10}(1, -1) \approx (512.0, 512.0)$
+    explanation: |
+      The eigenvectors are $(1, 1)/\sqrt2$ for $\lambda = 2$ and $(1, -1)/\sqrt2$ for $\lambda = 0.5$,
+      and $\mathbf{M}^k$ has the same eigenvectors with eigenvalues $\lambda_i^k$. Writing
+      $\mathbf{x} = \tfrac12(1, 1) + \tfrac12(1, -1)$, the first part grows like $2^{10} = 1024$ and
+      the second shrinks like $0.5^{10} \approx 0.001$, so $\mathbf{M}^{10}\mathbf{x} \approx
+      (512.0005, 511.9995)$: almost exactly parallel to the top eigenvector, as in power iteration
+      [^2]. Backpropagation through time multiplies gradients by powers of
+      $\mathbf{W}_\textrm{hh}^\top$, so they too line up with its top eigenvector and their size
+      scales like $|\lambda_1|^k$: exploding for $|\lambda_1| > 1$, vanishing for $|\lambda_1| < 1$
+      [^1].
+    references:
+      - source: d2l
+        locator: Sec. 9.7.2 Backpropagation Through Time in Detail
+        url: https://d2l.ai/chapter_recurrent-neural-networks/bptt.html#backpropagation-through-time-in-detail
+      - title: 'Wikipedia: Power iteration'
+        url: https://en.wikipedia.org/wiki/Power_iteration
+        locator: The method; Analysis
+      - source: d2l
+        locator: Sec. 9.7.4 Exercises, Exercise 1
+        url: https://d2l.ai/chapter_recurrent-neural-networks/bptt.html#exercises
+    source:
+      id: d2l
+      ref: chapter_recurrent-neural-networks/bptt#ex1
+      url: https://d2l.ai/chapter_recurrent-neural-networks/bptt.html#exercises
+    status: draft
+  - id: rnn-017
+    type: multiple
+    difficulty: medium
+    tags:
+      - bptt
+      - exploding-gradients
+      - truncated-bptt
+    question: |
+      Besides gradient clipping, which of these help against exploding gradients when an RNN is
+      trained with backpropagation through time? Select all that apply.
+    options:
+      - text: Truncating backpropagation after a fixed number of time steps (detaching the hidden state)
+        correct: true
+      - text: Lowering the learning rate, which shrinks every update $\eta\mathbf{g}$
+        correct: true
+      - text: Backpropagating through the full sequence instead of truncating it
+        why: The full computation is where gradients blow up; d2l notes it is almost never used in practice [^1].
+      - text: Initializing $\mathbf{W}_\textrm{hh}$ with eigenvalues well above 1, so the signal does not fade
+        why: Powers of eigenvalues above 1 are exactly what make gradients explode [^3].
+    explanation: |
+      Truncated backpropagation through time stops the gradient sum after $\tau$ steps, which keeps
+      the products of Jacobians short and biases the model toward simpler, more stable short-range
+      dependencies [^1]. A smaller learning rate bounds the change in the objective, at most
+      $L\eta\lVert\mathbf{g}\rVert$, but it slows every step just to guard against rare large
+      gradients, which is why clipping is usually preferred [^2]. Large eigenvalues of
+      $\mathbf{W}_\textrm{hh}$ make the powers $(\mathbf{W}_\textrm{hh}^\top)^k$ diverge [^3].
+    references:
+      - source: d2l
+        locator: Sec. 9.7.1 Analysis of Gradients in RNNs (Full Computation, Truncating Time Steps)
+        url: https://d2l.ai/chapter_recurrent-neural-networks/bptt.html#analysis-of-gradients-in-rnns
+      - source: d2l
+        locator: Sec. 9.5.3 Gradient Clipping
+        url: https://d2l.ai/chapter_recurrent-neural-networks/rnn-scratch.html#gradient-clipping
+      - source: d2l
+        locator: Sec. 9.7.2 Backpropagation Through Time in Detail
+        url: https://d2l.ai/chapter_recurrent-neural-networks/bptt.html#backpropagation-through-time-in-detail
+      - source: d2l
+        locator: Sec. 9.7.4 Exercises, Exercise 2
+        url: https://d2l.ai/chapter_recurrent-neural-networks/bptt.html#exercises
+    source:
+      id: d2l
+      ref: chapter_recurrent-neural-networks/bptt#ex2
+      url: https://d2l.ai/chapter_recurrent-neural-networks/bptt.html#exercises
+    status: draft
+  - id: rnn-018
+    type: single
+    difficulty: easy
+    tags:
+      - gradient-clipping
+      - exploding-gradients
+      - training
+    question: |
+      You train an RNN language model with backpropagation through time but switch off gradient
+      clipping. What should you expect?
+    options:
+      - text: Rare huge gradient steps that make the loss spike or diverge, undoing earlier progress
+        correct: true
+      - text: Slower but smoother training, because clipping only adds noise to the gradients
+        why: Clipping adds no noise; it only shrinks the rare oversized gradients and keeps their direction [^1].
+      - text: No change, because tanh keeps the hidden state, and hence its gradient, in $(-1, 1)$
+        why: A bounded state does not bound the gradient, which is a product of many Jacobians through $\mathbf{W}_\textrm{hh}$ [^2].
+      - text: Worse vanishing gradients, because clipping is what keeps small gradients alive
+        why: Clipping only ever shrinks large gradients; it never enlarges small ones [^1].
+    explanation: |
+      Backpropagating through many time steps multiplies many matrices, so the gradient norm can
+      occasionally become huge; one such step can undo thousands of iterations of progress, and
+      training then diverges or shows massive loss spikes [^1]. Clipping projects the gradient onto a
+      ball of radius $\theta$, keeping its direction [^1]; d2l calls it vital for stable RNN training
+      [^2].
+    references:
+      - source: d2l
+        locator: Sec. 9.5.3 Gradient Clipping
+        url: https://d2l.ai/chapter_recurrent-neural-networks/rnn-scratch.html#gradient-clipping
+      - source: d2l
+        locator: Sec. 9.7 Backpropagation Through Time (introduction)
+        url: https://d2l.ai/chapter_recurrent-neural-networks/bptt.html
+      - source: d2l
+        locator: Sec. 9.5.7 Exercises, Exercise 9
+        url: https://d2l.ai/chapter_recurrent-neural-networks/rnn-scratch.html#exercises
+    source:
+      id: d2l
+      ref: chapter_recurrent-neural-networks/rnn-scratch#ex9
+      url: https://d2l.ai/chapter_recurrent-neural-networks/rnn-scratch.html#exercises
+    status: draft
+  - id: rnn-019
+    type: short_answer
+    difficulty: easy
+    tags:
+      - gradient-clipping
+      - training
+    question: |
+      Gradient clipping rescales the gradient as
+      $\mathbf{g} \leftarrow \min\left(1, \theta / \lVert\mathbf{g}\rVert\right)\mathbf{g}$, where
+      $\mathbf{g}$ concatenates the gradients of all parameters. With $\theta = 1$ and
+      $\mathbf{g} = (3, 4)$, what is the first component after clipping?
+    answer:
+      numeric: 0.6
+      tolerance: 0.001
+      hint: a number, 1 decimal
+      model: $\lVert\mathbf{g}\rVert = 5$, so $\mathbf{g} \leftarrow \tfrac15(3, 4) = (0.6, 0.8)$
+    explanation: |
+      The norm is $\sqrt{3^2 + 4^2} = 5 > \theta$, so the gradient is scaled by $1/5$ to
+      $(0.6, 0.8)$. Its norm becomes exactly $\theta$ and its direction is unchanged, while a gradient
+      with norm at most $\theta$ passes untouched [^1]. d2l's implementation computes one norm over
+      all parameters together, treating them as one long vector [^1].
+    references:
+      - source: d2l
+        locator: Sec. 9.5.3 Gradient Clipping, Eq. (9.5.3)
+        url: https://d2l.ai/chapter_recurrent-neural-networks/rnn-scratch.html#gradient-clipping
+      - source: d2l
+        locator: Sec. 9.5.7 Exercises, Exercise 9
+        url: https://d2l.ai/chapter_recurrent-neural-networks/rnn-scratch.html#exercises
+    source:
+      id: d2l
+      ref: chapter_recurrent-neural-networks/rnn-scratch#ex9-b
+      url: https://d2l.ai/chapter_recurrent-neural-networks/rnn-scratch.html#exercises
+    status: draft
+  - id: rnn-020
+    type: single
+    difficulty: medium
+    tags:
+      - relu
+      - gradient-clipping
+      - exploding-gradients
+    question: |
+      You replace $\tanh$ by ReLU in a vanilla RNN,
+      $\mathbf{H}_t = \mathrm{ReLU}(\mathbf{X}_t\mathbf{W}_\textrm{xh} + \mathbf{H}_{t-1}\mathbf{W}_\textrm{hh} + \mathbf{b}_\textrm{h})$.
+      Do you still need gradient clipping?
+    options:
+      - text: 'Yes: ReLU is unbounded, and on active units it passes gradients through powers of $\mathbf{W}_\textrm{hh}$ undamped'
+        correct: true
+      - text: 'No: the derivative of ReLU is always either 0 or 1, so the gradient can never grow from one time step to the next'
+        why: A derivative of 1 means nothing damps the factor $\mathbf{W}_\textrm{hh}^\top$, which can still grow the gradient at every step [^2].
+      - text: 'No: ReLU cures vanishing gradients, and vanishing and exploding are the same problem'
+        why: They are opposite failure modes of the same matrix powers [^2].
+      - text: Only for sequences shorter than the hidden size; longer ones are safe
+        why: Longer sequences mean more factors in the product, which makes explosion more likely, not less.
+    explanation: |
+      Each backward step through time multiplies the gradient by
+      $\mathbf{W}_\textrm{hh}^\top$ and the activation's derivative. $\tanh' \le 1$ damps this
+      product, while ReLU's derivative is exactly 1 on active units, so an eigenvalue of
+      $\mathbf{W}_\textrm{hh}$ above 1 makes the gradient grow geometrically [^2]. ReLU also leaves the
+      hidden state itself unbounded. d2l notes that even modern RNNs often suffer from exploding
+      gradients and use clipping as the standard remedy [^1].
+    references:
+      - source: d2l
+        locator: Sec. 9.5.3 Gradient Clipping
+        url: https://d2l.ai/chapter_recurrent-neural-networks/rnn-scratch.html#gradient-clipping
+      - source: d2l
+        locator: Sec. 9.7.2 Backpropagation Through Time in Detail
+        url: https://d2l.ai/chapter_recurrent-neural-networks/bptt.html#backpropagation-through-time-in-detail
+      - source: d2l
+        locator: Sec. 9.5.7 Exercises, Exercise 10
+        url: https://d2l.ai/chapter_recurrent-neural-networks/rnn-scratch.html#exercises
+    source:
+      id: d2l
+      ref: chapter_recurrent-neural-networks/rnn-scratch#ex10
+      url: https://d2l.ai/chapter_recurrent-neural-networks/rnn-scratch.html#exercises
+    status: draft
+  - id: rnn-021
+    type: single
+    difficulty: easy
+    tags:
+      - lstm
+      - word-level
+      - tokenization
+    question: |
+      A character-level LSTM language model generates strings such as "the tiee traveller", with
+      misspelled words. You want it to produce only real words. What is the main change?
+    options:
+      - text: Tokenize the text into words, so its inputs and outputs range over a word vocabulary
+        correct: true
+      - text: Add more LSTM layers, so that the model memorizes the spelling of every word
+        why: A deeper character model may misspell less often, but nothing restricts its outputs to real words.
+      - text: Always pick the most likely next character, so that no unlikely letters are generated
+        why: Greedy decoding over characters can still string letters into non-words.
+      - text: Increase `num_steps`, so that every training window contains only whole words
+        why: A longer window adds context but still predicts one character at a time.
+    explanation: |
+      A word-level model predicts one vocabulary entry per step, so every token it emits is a word it
+      has seen [^1]. The price is a much larger vocabulary, tens of thousands of words instead of a
+      few dozen characters, with a larger embedding and output layer, and rare words must be mapped to
+      `<unk>` [^1][^2]. Subword tokenizations such as byte pair encoding are the usual compromise
+      between the two [^3].
+    references:
+      - source: d2l
+        locator: Sec. 9.2.2 Tokenization
+        url: https://d2l.ai/chapter_recurrent-neural-networks/text-sequence.html#tokenization
+      - source: d2l
+        locator: Sec. 10.5.3 Loading Sequences of Fixed Length
+        url: https://d2l.ai/chapter_recurrent-modern/machine-translation-and-dataset.html#loading-sequences-of-fixed-length
+      - source: d2l
+        locator: Sec. 15.6.2 Byte Pair Encoding
+        url: https://d2l.ai/chapter_natural-language-processing-pretraining/subword-embedding.html#byte-pair-encoding
+      - source: d2l
+        locator: Sec. 10.1.5 Exercises, Exercise 2
+        url: https://d2l.ai/chapter_recurrent-modern/lstm.html#exercises
+    source:
+      id: d2l
+      ref: chapter_recurrent-modern/lstm#ex2
+      url: https://d2l.ai/chapter_recurrent-modern/lstm.html#exercises
+    status: draft
+  - id: rnn-022
+    type: short_answer
+    difficulty: medium
+    tags:
+      - lstm
+      - gru
+      - computational-cost
+    question: |
+      For the same input size $d$ and hidden size $h$, every gate or candidate state of a recurrent
+      layer costs one block $\mathbf{X}_t\mathbf{W}_{\textrm{x}\cdot} + \mathbf{H}_{t-1}\mathbf{W}_{\textrm{h}\cdot} + \mathbf{b}_\cdot$
+      of matrix products. Per time step, a GRU layer needs about {{1}} times and an LSTM layer about
+      {{2}} times the multiply-adds of a vanilla RNN layer.
+    answer:
+      blanks:
+        - numeric: 3
+          tolerance: 0
+          hint: a whole number
+        - numeric: 4
+          tolerance: 0
+          hint: a whole number
+      model: GRU 3× (reset gate, update gate, candidate state), LSTM 4× (input, forget and output gates, input node)
+    explanation: |
+      A vanilla RNN computes one such block, the new hidden state. A GRU computes three: the reset
+      gate, the update gate and the candidate hidden state [^1]; the final interpolation is only
+      elementwise. An LSTM computes four: the input, forget and output gates and the input node [^2].
+      The same 1 : 3 : 4 ratio holds for the parameter counts, $h(d + h + 1)$ per block, and for the
+      backward pass, so it applies to both training and inference; none of the three removes the
+      step-by-step sequential dependence.
+    references:
+      - source: d2l
+        locator: Sec. 10.2.1 Reset Gate and Update Gate; 10.2.2 Candidate Hidden State
+        url: https://d2l.ai/chapter_recurrent-modern/gru.html#reset-gate-and-update-gate
+      - source: d2l
+        locator: Sec. 10.1.1.2 Input Gate, Forget Gate, and Output Gate; 10.1.1.3 Input Node
+        url: https://d2l.ai/chapter_recurrent-modern/lstm.html#input-gate-forget-gate-and-output-gate
+      - source: d2l
+        locator: Sec. 10.1.5 Exercises, Exercise 3
+        url: https://d2l.ai/chapter_recurrent-modern/lstm.html#exercises
+    source:
+      id: d2l
+      ref: chapter_recurrent-modern/lstm#ex3
+      url: https://d2l.ai/chapter_recurrent-modern/lstm.html#exercises
+    status: draft
+  - id: rnn-023
+    type: short_answer
+    difficulty: medium
+    tags:
+      - lstm
+      - parameter-count
+    question: |
+      An LSTM layer has $d = 28$ inputs and $h = 32$ hidden units. Count the weights and biases of the
+      input, forget and output gates and of the input node exactly as in the equations
+      $\mathbf{I}_t = \sigma(\mathbf{X}_t\mathbf{W}_\textrm{xi} + \mathbf{H}_{t-1}\mathbf{W}_\textrm{hi} + \mathbf{b}_\textrm{i})$
+      and so on, with one bias vector each. How many parameters does the layer have?
+    answer:
+      numeric: 7808
+      tolerance: 0
+      hint: a whole number
+      model: $4 \times (28 \cdot 32 + 32 \cdot 32 + 32) = 4 \times 1952 = 7808$
+    explanation: |
+      Each of the four blocks has $\mathbf{W}_\textrm{x\cdot} \in \mathbb{R}^{d \times h}$,
+      $\mathbf{W}_\textrm{h\cdot} \in \mathbb{R}^{h \times h}$ and a bias in $\mathbb{R}^h$
+      [^1][^2], i.e. $32 \times (28 + 32 + 1) = 1952$ parameters, so the layer has
+      $4 \times 1952 = 7808$. A vanilla RNN layer of the same size has 1952 and a GRU layer 5856.
+      PyTorch's `nn.LSTM` keeps two bias vectors per gate (`bias_ih` and `bias_hh`), so it reports
+      $4 \times 32 = 128$ more, 7936 [^3].
+    references:
+      - source: d2l
+        locator: Sec. 10.1.1.2 Input Gate, Forget Gate, and Output Gate
+        url: https://d2l.ai/chapter_recurrent-modern/lstm.html#input-gate-forget-gate-and-output-gate
+      - source: d2l
+        locator: Sec. 10.1.1.3 Input Node
+        url: https://d2l.ai/chapter_recurrent-modern/lstm.html#input-node
+      - title: 'PyTorch documentation: torch.nn.LSTM'
+        url: https://docs.pytorch.org/docs/stable/generated/torch.nn.LSTM.html
+        locator: Variables (weight_ih_l[k], weight_hh_l[k], bias_ih_l[k], bias_hh_l[k])
+      - source: d2l
+        locator: Sec. 10.1.5 Exercises, Exercise 3
+        url: https://d2l.ai/chapter_recurrent-modern/lstm.html#exercises
+    source:
+      id: d2l
+      ref: chapter_recurrent-modern/lstm#ex3-b
+      url: https://d2l.ai/chapter_recurrent-modern/lstm.html#exercises
+    status: draft
+  - id: rnn-024
+    type: single
+    difficulty: medium
+    tags:
+      - lstm
+      - memory-cell
+      - tanh
+    question: |
+      In an LSTM the input node $\tilde{\mathbf{C}}_t = \tanh(\cdot)$ already lies in $(-1, 1)$. Why
+      is $\tanh$ applied again in $\mathbf{H}_t = \mathbf{O}_t \odot \tanh(\mathbf{C}_t)$?
+    options:
+      - text: The cell state $\mathbf{C}_t$ is a running sum over time steps and can leave $(-1, 1)$
+        correct: true
+      - text: The output gate $\mathbf{O}_t$ can be negative, and the second $\tanh$ flips the sign back
+        why: All three gates use a sigmoid, so $\mathbf{O}_t$ lies in $(0, 1)$ [^2].
+      - text: Without the second $\tanh$, the gradient through the memory cell would always be zero
+        why: The gradient along the cell path is scaled by $\mathbf{F}_t$, not zero; the second $\tanh$ is about the range of $\mathbf{H}_t$.
+      - text: It turns $\mathbf{H}_t$ into a probability distribution over the hidden units
+        why: $\tanh$ outputs lie in $(-1, 1)$ and are not normalized to sum to 1.
+    explanation: |
+      The memory cell is a running sum,
+      $\mathbf{C}_t = \mathbf{F}_t \odot \mathbf{C}_{t-1} + \mathbf{I}_t \odot \tilde{\mathbf{C}}_t$:
+      with $\mathbf{F}_t \approx 1$, $\mathbf{I}_t \approx 1$ and
+      $\tilde{\mathbf{C}}_t \approx 0.9$ for two steps from a zero cell, $\mathbf{C}_t$ already reaches about 1.8 [^1].
+      Applying $\tanh$ before the output gate brings $\mathbf{H}_t$ back into $(-1, 1)$, so the next
+      layer and the gates of the next step see bounded inputs [^2]. The cell state itself is left
+      unsquashed, which is what lets it carry information across many steps [^1].
+    references:
+      - source: d2l
+        locator: Sec. 10.1.1.4 Memory Cell Internal State
+        url: https://d2l.ai/chapter_recurrent-modern/lstm.html#memory-cell-internal-state
+      - source: d2l
+        locator: Sec. 10.1.1.5 Hidden State
+        url: https://d2l.ai/chapter_recurrent-modern/lstm.html#hidden-state
+      - source: d2l
+        locator: Sec. 10.1.5 Exercises, Exercise 4
+        url: https://d2l.ai/chapter_recurrent-modern/lstm.html#exercises
+    source:
+      id: d2l
+      ref: chapter_recurrent-modern/lstm#ex4
+      url: https://d2l.ai/chapter_recurrent-modern/lstm.html#exercises
+    status: draft
+  - id: rnn-025
+    type: single
+    difficulty: hard
+    tags:
+      - gru
+      - reset-gate
+      - update-gate
+    question: |
+      A GRU computes
+      $\tilde{\mathbf{H}}_s = \tanh(\mathbf{X}_s\mathbf{W}_\textrm{xh} + (\mathbf{R}_s \odot \mathbf{H}_{s-1})\mathbf{W}_\textrm{hh} + \mathbf{b}_\textrm{h})$
+      and $\mathbf{H}_s = \mathbf{Z}_s \odot \mathbf{H}_{s-1} + (1 - \mathbf{Z}_s) \odot \tilde{\mathbf{H}}_s$.
+      You want its output at step $t$ to depend only on the input $\mathbf{X}_{t'}$ at an earlier step
+      $t' < t$. Which gate values achieve this?
+    options:
+      - text: 'At $t^\prime$: $\mathbf{R} = 0$, $\mathbf{Z} = 0$; at every step after $t^\prime$ up to $t$: $\mathbf{Z} = 1$'
+        correct: true
+      - text: 'At $t^\prime$: $\mathbf{R} = 1$, $\mathbf{Z} = 1$; at every step after $t^\prime$ up to $t$: $\mathbf{Z} = 0$'
+        why: $\mathbf{Z} = 1$ at $t^\prime$ copies the old state and ignores $\mathbf{X}_{t^\prime}$, and $\mathbf{Z} = 0$ later overwrites the state with new inputs.
+      - text: 'At $t^\prime$: $\mathbf{R} = 0$, $\mathbf{Z} = 1$; at every step after $t^\prime$ up to $t$: $\mathbf{R} = 0$'
+        why: $\mathbf{Z} = 1$ at $t^\prime$ ignores $\mathbf{X}_{t^\prime}$, and $\mathbf{R} = 0$ later does not stop new inputs from entering through $\tilde{\mathbf{H}}_s$.
+      - text: 'At $t^\prime$: $\mathbf{R} = 0$, $\mathbf{Z} = 0$; at every step after $t^\prime$ up to $t$: $\mathbf{R} = 0$, $\mathbf{Z} = 0$'
+        why: $\mathbf{Z} = 0$ after $t^\prime$ replaces the state by $\tilde{\mathbf{H}}_s$, which is built from the later input $\mathbf{X}_s$.
+    explanation: |
+      At $t'$, $\mathbf{Z} = 0$ makes $\mathbf{H}_{t'} = \tilde{\mathbf{H}}_{t'}$, and $\mathbf{R} = 0$
+      removes $\mathbf{H}_{t'-1}$ from the candidate, so the state is built from $\mathbf{X}_{t'}$
+      alone [^1]. For $t' < s \le t$, $\mathbf{Z} = 1$ copies the state forward and ignores
+      $\mathbf{X}_s$, effectively skipping those steps [^2]; the reset gate does not matter then, and
+      neither do the steps before $t'$. Real gates are sigmoids, so they only approach 0 and 1.
+    references:
+      - source: d2l
+        locator: Sec. 10.2.2 Candidate Hidden State
+        url: https://d2l.ai/chapter_recurrent-modern/gru.html#candidate-hidden-state
+      - source: d2l
+        locator: Sec. 10.2.3 Hidden State
+        url: https://d2l.ai/chapter_recurrent-modern/gru.html#hidden-state
+      - source: d2l
+        locator: Sec. 10.2.7 Exercises, Exercise 1
+        url: https://d2l.ai/chapter_recurrent-modern/gru.html#exercises
+    source:
+      id: d2l
+      ref: chapter_recurrent-modern/gru#ex1
+      url: https://d2l.ai/chapter_recurrent-modern/gru.html#exercises
+    status: draft
+  - id: rnn-026
+    type: single
+    difficulty: medium
+    tags:
+      - gru
+      - update-gate
+      - long-term-dependencies
+    question: |
+      You build a stripped-down GRU that keeps only one of its two gates. Which gate should you keep
+      if the task needs information carried across many time steps?
+    options:
+      - text: The update gate, because $\mathbf{Z}_t \approx 1$ copies the old state forward almost unchanged
+        correct: true
+      - text: The reset gate, because $\mathbf{R}_t \approx 1$ lets the whole old state into the update
+        why: Without an update gate, $\mathbf{H}_t = \tilde{\mathbf{H}}_t$ is rewritten through $\tanh$ and $\mathbf{W}_\textrm{hh}$ at every step, like a vanilla RNN [^1].
+      - text: Either one, because the two gates become interchangeable once they are trained
+        why: They play different roles; d2l links reset gates to short-term and update gates to long-term dependencies [^2].
+      - text: Neither, because a recurrent unit with only one gate has no hidden state at all
+        why: With no gates at all the unit is a vanilla RNN, which still has a hidden state.
+    explanation: |
+      The update gate forms the convex combination
+      $\mathbf{H}_t = \mathbf{Z}_t \odot \mathbf{H}_{t-1} + (1 - \mathbf{Z}_t) \odot \tilde{\mathbf{H}}_t$:
+      with $\mathbf{Z}_t$ near 1 the old state passes through untouched, a shortcut along which
+      information and gradients survive many steps [^1]. A reset-only unit has no such path; its
+      reset gate only masks $\mathbf{H}_{t-1}$ inside the candidate, so it captures short-term
+      dependencies [^2].
+    references:
+      - source: d2l
+        locator: Sec. 10.2.3 Hidden State
+        url: https://d2l.ai/chapter_recurrent-modern/gru.html#hidden-state
+      - source: d2l
+        locator: Sec. 10.2.3 Hidden State (summary bullets) and 10.2.6 Summary
+        url: https://d2l.ai/chapter_recurrent-modern/gru.html#summary
+      - source: d2l
+        locator: Sec. 10.2.7 Exercises, Exercise 4
+        url: https://d2l.ai/chapter_recurrent-modern/gru.html#exercises
+    source:
+      id: d2l
+      ref: chapter_recurrent-modern/gru#ex4
+      url: https://d2l.ai/chapter_recurrent-modern/gru.html#exercises
+    status: draft
+  - id: rnn-027
+    type: short_answer
+    difficulty: easy
+    tags:
+      - bidirectional-rnn
+      - tensor-shapes
+    question: |
+      A bidirectional RNN layer uses $h_f = 32$ hidden units in the forward direction and $h_b = 16$
+      in the backward direction. For a minibatch of $n = 4$ sequences, what is the shape of the
+      concatenated hidden state $\mathbf{H}_t$ at one time step?
+    answer:
+      accept:
+        - (4, 48)
+      pattern: '[(\[]?\s*4\s*[,x×]\s*48\s*[)\]]?'
+      hint: two dimensions, e.g. (8, 64)
+      model: $(4, 48)$, i.e. $n \times (h_f + h_b)$
+    explanation: |
+      The layer concatenates the forward state $\overrightarrow{\mathbf{H}}_t \in \mathbb{R}^{4 \times 32}$
+      and the backward state $\overleftarrow{\mathbf{H}}_t \in \mathbb{R}^{4 \times 16}$ along the
+      feature axis, giving $4 \times 48$ [^1]. The output layer's weight $\mathbf{W}_\textrm{hq}$ then
+      needs $h_f + h_b = 48$ rows instead of $2h$. Different sizes for the two directions are allowed
+      but rarely used in practice [^1].
+    references:
+      - source: d2l
+        locator: Sec. 10.4 Bidirectional Recurrent Neural Networks (introduction)
+        url: https://d2l.ai/chapter_recurrent-modern/bi-rnn.html
+      - source: d2l
+        locator: Sec. 10.4.4 Exercises, Exercise 1
+        url: https://d2l.ai/chapter_recurrent-modern/bi-rnn.html#exercises
+    source:
+      id: d2l
+      ref: chapter_recurrent-modern/bi-rnn#ex1
+      url: https://d2l.ai/chapter_recurrent-modern/bi-rnn.html#exercises
+    status: draft
+  - id: rnn-028
+    type: true_false
+    difficulty: easy
+    tags:
+      - encoder-decoder
+      - architecture
+    shuffle: false
+    question: |
+      True or false: in an encoder–decoder model, the encoder and the decoder must be the same type of
+      neural network, for example both RNNs.
+    options:
+      - text: 'True'
+        why: The interface only asks the encoder for a state that the decoder can be initialized from; a CNN encoder with an RNN decoder, as in image captioning, works fine [^1][^3].
+      - text: 'False'
+        correct: true
+    explanation: |
+      In d2l's interface the encoder maps a variable-length input to an encoded state, and the decoder
+      turns that state, through its `init_state` method, into a variable-length output [^1]. Nothing
+      ties the two to the same architecture. Even in the Transformer the decoder differs from the
+      encoder, with an extra encoder–decoder attention sublayer [^2], and tasks with a fixed input
+      such as image captioning naturally pair an image encoder with a text decoder [^3].
+    references:
+      - source: d2l
+        locator: Sec. 10.6.1 Encoder; 10.6.2 Decoder
+        url: https://d2l.ai/chapter_recurrent-modern/encoder-decoder.html#decoder
+      - source: d2l
+        locator: Sec. 11.7.1 Model
+        url: https://d2l.ai/chapter_attention-mechanisms-and-transformers/transformer.html#model
+      - source: d2l
+        locator: Sec. 9.1 Working with Sequences (introduction)
+        url: https://d2l.ai/chapter_recurrent-neural-networks/sequence.html
+      - source: d2l
+        locator: Sec. 10.6.5 Exercises, Exercise 1
+        url: https://d2l.ai/chapter_recurrent-modern/encoder-decoder.html#exercises
+    source:
+      id: d2l
+      ref: chapter_recurrent-modern/encoder-decoder#ex1
+      url: https://d2l.ai/chapter_recurrent-modern/encoder-decoder.html#exercises
+    status: draft
+  - id: rnn-029
+    type: single
+    difficulty: easy
+    tags:
+      - encoder-decoder
+      - seq2seq
+      - applications
+    question: |
+      Besides machine translation, which of these tasks is the most natural fit for an
+      encoder–decoder architecture?
+    options:
+      - text: Summarizing a news article as a short headline
+        correct: true
+      - text: Tagging each word of a sentence with its part of speech
+        why: The input and output are aligned, one tag per token, so an encoder with a per-token output layer suffices [^1].
+      - text: Classifying a movie review as positive or negative
+        why: The output is one fixed-size label; an encoder followed by a classifier suffices.
+      - text: Predicting tomorrow's temperature from last week's readings
+        why: The output is a single number, a job for an autoregressive regression model [^1].
+    explanation: |
+      Encoder–decoder models are the standard tool when input and output are both variable-length
+      and *unaligned* [^1][^2]. A summary is much shorter than its article and need not follow its
+      word order, like a translation. Other examples from d2l are mapping dialogue prompts to replies
+      and questions to answers [^3].
+    references:
+      - source: d2l
+        locator: Sec. 9.1 Working with Sequences (introduction, aligned vs. unaligned)
+        url: https://d2l.ai/chapter_recurrent-neural-networks/sequence.html
+      - source: d2l
+        locator: Sec. 10.6 The Encoder–Decoder Architecture (introduction)
+        url: https://d2l.ai/chapter_recurrent-modern/encoder-decoder.html
+      - source: d2l
+        locator: Sec. 10.5 Machine Translation and the Dataset (introduction)
+        url: https://d2l.ai/chapter_recurrent-modern/machine-translation-and-dataset.html
+      - source: d2l
+        locator: Sec. 10.6.5 Exercises, Exercise 2
+        url: https://d2l.ai/chapter_recurrent-modern/encoder-decoder.html#exercises
+    source:
+      id: d2l
+      ref: chapter_recurrent-modern/encoder-decoder#ex2
+      url: https://d2l.ai/chapter_recurrent-modern/encoder-decoder.html#exercises
+    status: draft
+  - id: rnn-030
+    type: single
+    difficulty: medium
+    tags:
+      - seq2seq
+      - masking
+      - padding
+      - loss
+    question: |
+      In seq2seq training, target sentences are padded with `<pad>` up to `num_steps` tokens. What
+      goes wrong if the cross-entropy loss is averaged over all positions, padding included?
+    options:
+      - text: The easy `<pad>` targets count as real tokens, diluting the loss and wasting gradient on padding
+        correct: true
+      - text: 'Nothing: `<pad>` has a fixed index, so its cross-entropy term is always exactly zero'
+        why: Each padding position is still a prediction with a nonzero loss unless it is masked [^1].
+      - text: The encoder can no longer read the source sentence, because the padding hides its final hidden state
+        why: The question is about the target-side loss; the source side tracks valid lengths separately [^2].
+      - text: Training stops with a shape error, because padded and unpadded targets differ in length
+        why: Padding exists precisely so that all targets in a minibatch have the same shape [^2].
+    explanation: |
+      Padding tokens only make sequences the same length; their predictions should be excluded from
+      the loss, which d2l does by multiplying them by zero [^1]. Without the mask, short sentences
+      contribute many trivial `<pad>` targets, so the reported loss looks better than the model's
+      real quality on words, and part of every gradient goes into learning to predict padding rather
+      than translation [^1][^2].
+    references:
+      - source: d2l
+        locator: Sec. 10.7.5 Loss Function with Masking
+        url: https://d2l.ai/chapter_recurrent-modern/seq2seq.html#loss-function-with-masking
+      - source: d2l
+        locator: Sec. 10.5.3 Loading Sequences of Fixed Length
+        url: https://d2l.ai/chapter_recurrent-modern/machine-translation-and-dataset.html#loading-sequences-of-fixed-length
+      - source: d2l
+        locator: Sec. 10.7.10 Exercises, Exercise 2
+        url: https://d2l.ai/chapter_recurrent-modern/seq2seq.html#exercises
+    source:
+      id: d2l
+      ref: chapter_recurrent-modern/seq2seq#ex2
+      url: https://d2l.ai/chapter_recurrent-modern/seq2seq.html#exercises
+    status: draft
+  - id: rnn-031
+    type: single
+    difficulty: medium
+    tags:
+      - seq2seq
+      - decoder
+      - initialization
+    question: |
+      An RNN decoder that copies the encoder's final hidden state as its initial state needs the same
+      number of layers and hidden units as the encoder. Your encoder has 2 layers of 256 units and your
+      decoder 1 layer of 512 units. How can you initialize the decoder's state?
+    options:
+      - text: Map the encoder state to the decoder's shape with a learned layer, e.g. $\tanh(\mathbf{W}\mathbf{h})$
+        correct: true
+      - text: Copy the state as it is; the framework broadcasts the 256 hidden units to the 512 the decoder expects
+        why: Hidden states are not broadcast across different sizes; the shapes must match exactly.
+      - text: You cannot; an encoder and a decoder must always have identical layer shapes
+        why: Identical shapes are only needed for copying the state directly [^1].
+      - text: Use the input embedding of the last source token as the decoder's initial state
+        why: A single token's embedding does not summarize the source sentence.
+    explanation: |
+      d2l's decoder copies the encoder's final state, which is why it requires matching shapes [^1].
+      A learned projection removes that constraint: Bahdanau et al. initialize the decoder with
+      $\mathbf{s}_0 = \tanh(\mathbf{W}_s \overleftarrow{\mathbf{h}}_1)$, computed from an encoder
+      state [^2]. Another option is to start from zeros and rely on the context vector, which d2l's
+      decoder also concatenates to the input at every step [^1].
+    references:
+      - source: d2l
+        locator: Sec. 10.7.3 Decoder
+        url: https://d2l.ai/chapter_recurrent-modern/seq2seq.html#decoder
+      - title: Bahdanau, Cho & Bengio (2014), Neural Machine Translation by Jointly Learning to Align and Translate
+        url: https://arxiv.org/abs/1409.0473
+        locator: Appendix A.2.2 Decoder
+      - source: d2l
+        locator: Sec. 10.7.10 Exercises, Exercise 3
+        url: https://d2l.ai/chapter_recurrent-modern/seq2seq.html#exercises
+    source:
+      id: d2l
+      ref: chapter_recurrent-modern/seq2seq#ex3
+      url: https://d2l.ai/chapter_recurrent-modern/seq2seq.html#exercises
+    status: draft
+  - id: rnn-032
+    type: single
+    difficulty: medium
+    tags:
+      - teacher-forcing
+      - exposure-bias
+      - seq2seq
+    question: |
+      During seq2seq training you replace teacher forcing by feeding the decoder its own prediction
+      from the previous step. What is the main trade-off?
+    options:
+      - text: Training matches test-time use, but the decoder first learns from its own errors, so learning is slower
+        correct: true
+      - text: Training gets faster, because the decoder no longer needs the target sentence
+        why: The targets are still needed for the loss at every step, and conditioning on poor early predictions slows learning.
+      - text: Nothing changes, because the decoder sees exactly the same tokens whenever its predictions are correct
+        why: Early in training most predictions are wrong, so the decoder sees very different inputs.
+      - text: The decoder can now look at future target tokens, which lowers the training loss
+        why: In neither setup does the decoder see future target tokens.
+    explanation: |
+      Teacher forcing feeds `<bos>` plus the ground-truth target, shifted by one, as decoder input
+      [^1], while at test time the decoder is fed its own previous prediction [^2]. This mismatch
+      between training and inference lets errors accumulate along a generated sequence. Feeding
+      predictions during training removes the mismatch, but early predictions are poor, so the decoder
+      learns from noisy inputs. Scheduled sampling is a curriculum that moves gradually from true to
+      generated tokens [^3].
+    references:
+      - source: d2l
+        locator: Sec. 10.7.1 Teacher Forcing
+        url: https://d2l.ai/chapter_recurrent-modern/seq2seq.html#teacher-forcing
+      - source: d2l
+        locator: Sec. 10.7.7 Prediction
+        url: https://d2l.ai/chapter_recurrent-modern/seq2seq.html#prediction
+      - title: Bengio, Vinyals, Jaitly & Shazeer (2015), Scheduled Sampling for Sequence Prediction with Recurrent Neural Networks
+        url: https://arxiv.org/abs/1506.03099
+        locator: Abstract; Sec. 1 Introduction
+      - source: d2l
+        locator: Sec. 10.7.10 Exercises, Exercise 4
+        url: https://d2l.ai/chapter_recurrent-modern/seq2seq.html#exercises
+    source:
+      id: d2l
+      ref: chapter_recurrent-modern/seq2seq#ex4
+      url: https://d2l.ai/chapter_recurrent-modern/seq2seq.html#exercises
+    status: draft

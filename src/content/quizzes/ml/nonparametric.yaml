@@ -503,3 +503,172 @@ questions:
       ref: chapter_gaussian-processes/gp-inference#ex4-b
       url: https://d2l.ai/chapter_gaussian-processes/gp-inference.html#exercises
     status: draft
+  - id: nonparametric-014
+    type: single
+    difficulty: medium
+    tags:
+      - nadaraya-watson
+      - parzen-windows
+      - kernel-density-estimation
+    question: |
+      Binary labels $y_i \in \{-1, +1\}$. Parzen windows estimate
+      $\hat{p}(\mathbf{x}, y) = \frac{1}{n}\sum_{i:\,y_i = y} k(\mathbf{x}, \mathbf{x}_i)$, and
+      Nadaraya–Watson gives $f(\mathbf{x}) = \sum_i y_i\, k(\mathbf{x}, \mathbf{x}_i) / \sum_j k(\mathbf{x}, \mathbf{x}_j)$;
+      the Parzen density estimate is $\hat{p}(\mathbf{x}) = \frac{1}{n}\sum_j k(\mathbf{x}, \mathbf{x}_j)$.
+      How are $\hat{p}(\mathbf{x}, +1) - \hat{p}(\mathbf{x}, -1)$ and $f(\mathbf{x})$ related?
+    options:
+      - text: The difference is $f(\mathbf{x})$ times $\hat{p}(\mathbf{x}) > 0$, so the predicted class is always the same
+        correct: true
+      - text: They are equal for every $\mathbf{x}$, because both are normalized by the number of training points $n$
+        why: Only the Parzen estimate divides by $n$; Nadaraya–Watson divides by the total kernel weight $\sum_j k(\mathbf{x}, \mathbf{x}_j)$.
+      - text: They predict the same class only when both classes have the same number of training points
+        why: The identity holds for any class sizes; class frequencies are already inside the sum.
+      - text: They predict the same class only for the Gaussian kernel, whose weights integrate to 1
+        why: The argument works for any nonnegative kernel.
+    explanation: |
+      Because $y_i = \pm 1$, the difference is $\frac{1}{n}\sum_i y_i\, k(\mathbf{x}, \mathbf{x}_i)$.
+      Dividing it by the density estimate $\hat{p}(\mathbf{x}) = \frac{1}{n}\sum_j k(\mathbf{x}, \mathbf{x}_j)$
+      gives exactly the Nadaraya–Watson estimate with values $v_i = y_i$ [^1][^2]. The factor is
+      positive wherever any kernel weight is, so the two classifiers always choose the same label;
+      they differ only by the local data density.
+    references:
+      - source: d2l
+        locator: Sec. 11.2 Attention Pooling by Similarity (introduction)
+        url: https://d2l.ai/chapter_attention-mechanisms-and-transformers/attention-pooling.html
+      - title: 'Wikipedia: Kernel density estimation'
+        url: https://en.wikipedia.org/wiki/Kernel_density_estimation#Definition
+        locator: Definition
+      - source: d2l
+        locator: Sec. 11.2.5 Exercises, Exercise 1
+        url: https://d2l.ai/chapter_attention-mechanisms-and-transformers/attention-pooling.html#exercises
+    source:
+      id: d2l
+      ref: chapter_attention-mechanisms-and-transformers/attention-pooling#ex1
+      url: https://d2l.ai/chapter_attention-mechanisms-and-transformers/attention-pooling.html#exercises
+    status: draft
+  - id: nonparametric-015
+    type: single
+    difficulty: medium
+    tags:
+      - nadaraya-watson
+      - kernel-width
+      - overfitting
+      - leave-one-out
+    question: |
+      You tune the width σ of a Gaussian kernel in Nadaraya–Watson regression by minimizing the
+      training error $\sum_i (f(\mathbf{x}_i) - y_i)^2$, where each $f(\mathbf{x}_i)$ is computed with
+      the pair $(\mathbf{x}_i, y_i)$ itself still in the data. Where does σ go?
+    options:
+      - text: "To 0: each point's own weight dominates, so $f(\\mathbf{x}_i) \\to y_i$ and the noise is fit"
+        correct: true
+      - text: 'To ∞: the estimate then becomes the global mean of all labels, which minimizes the squared error'
+        why: The global mean leaves a large training error, while σ → 0 drives it to zero.
+      - text: To the noise level of the labels, which balances bias against variance
+        why: Finding that balance requires held-out data; the training error keeps falling as σ shrinks.
+      - text: Nowhere in particular, since the training error does not depend on σ
+        why: Narrower kernels follow the training labels more closely, so the error depends strongly on σ [^1].
+    explanation: |
+      The narrower the kernel, the less smooth the estimate and the more it follows local variation
+      [^1]. As σ → 0 the term $k(\mathbf{x}_i, \mathbf{x}_i) = 1$ swamps all others, so
+      $f(\mathbf{x}_i) = y_i$ and the training error is zero: a useless, overfitted model. The fix
+      in the exercise's second part is to leave $(\mathbf{x}_i, y_i)$ out when predicting at
+      $\mathbf{x}_i$, i.e. leave-one-out cross-validation [^2].
+    references:
+      - source: d2l
+        locator: Sec. 11.2.3 Adapting Attention Pooling
+        url: https://d2l.ai/chapter_attention-mechanisms-and-transformers/attention-pooling.html#adapting-attention-pooling
+      - title: 'Wikipedia: Cross-validation (statistics)'
+        url: https://en.wikipedia.org/wiki/Cross-validation_(statistics)#Leave-one-out_cross-validation
+        locator: Leave-one-out cross-validation
+      - source: d2l
+        locator: Sec. 11.2.5 Exercises, Exercise 2
+        url: https://d2l.ai/chapter_attention-mechanisms-and-transformers/attention-pooling.html#exercises
+    source:
+      id: d2l
+      ref: chapter_attention-mechanisms-and-transformers/attention-pooling#ex2
+      url: https://d2l.ai/chapter_attention-mechanisms-and-transformers/attention-pooling.html#exercises
+    status: draft
+  - id: nonparametric-016
+    type: single
+    difficulty: hard
+    tags:
+      - nadaraya-watson
+      - bandwidth
+      - consistency
+      - curse-of-dimensionality
+    question: |
+      Nadaraya–Watson regression in $d$ dimensions is consistent if its kernel width σ shrinks
+      suitably as the number of points $n$ grows. Which schedule is right?
+    options:
+      - text: σ → 0 with $n\sigma^d \to \infty$; the best rate, σ ∝ $n^{-1/(d+4)}$, shrinks more slowly in high $d$
+        correct: true
+      - text: σ → 0 with $n\sigma^d \to \infty$; the best rate, σ ∝ $n^{-1/(d+4)}$, shrinks faster in high $d$
+        why: The exponent $-1/(d+4)$ gets closer to 0 as $d$ grows, so σ shrinks more slowly, not faster.
+      - text: σ stays fixed, since averaging over more points in the same window removes the error
+        why: A fixed window keeps averaging over a fixed neighborhood, so the bias never goes away.
+      - text: σ ∝ $1/n$ in every dimension, so that the window narrows as fast as the data arrive
+        why: Then $n\sigma^d$ does not grow, so windows keep holding only a handful of points and the variance does not vanish.
+    explanation: |
+      d2l notes that the estimator is consistent if the kernel is suitably narrowed as data grow
+      [^1]. The bias shrinks only if σ → 0, while the variance shrinks only if each window, whose
+      volume scales like $\sigma^d$, still holds many points: $n\sigma^d \to \infty$. Balancing the two
+      gives σ ∝ $n^{-1/(d+4)}$ and a mean squared error of order $n^{-4/(d+4)}$, the same rates as
+      for multivariate kernel density estimation [^2]. In high dimension the window must stay wide
+      and convergence is slow, an instance of the curse of dimensionality.
+    references:
+      - source: d2l
+        locator: Sec. 11.2 Attention Pooling by Similarity (introduction)
+        url: https://d2l.ai/chapter_attention-mechanisms-and-transformers/attention-pooling.html
+      - title: 'Wikipedia: Multivariate kernel density estimation'
+        url: https://en.wikipedia.org/wiki/Multivariate_kernel_density_estimation#Optimal_bandwidth_matrix_selection
+        locator: Optimal bandwidth matrix selection
+      - source: d2l
+        locator: Sec. 11.2.5 Exercises, Exercise 4
+        url: https://d2l.ai/chapter_attention-mechanisms-and-transformers/attention-pooling.html#exercises
+    source:
+      id: d2l
+      ref: chapter_attention-mechanisms-and-transformers/attention-pooling#ex4
+      url: https://d2l.ai/chapter_attention-mechanisms-and-transformers/attention-pooling.html#exercises
+    status: draft
+  - id: nonparametric-017
+    type: single
+    difficulty: medium
+    tags:
+      - nearest-neighbor-search
+      - approximate-nearest-neighbors
+      - word-similarity
+    question: |
+      Finding the 3 words most similar to "chip" by cosine similarity among 400,000 GloVe vectors
+      compares the query with every vector. How can such queries be made much faster for a very large
+      vocabulary?
+    options:
+      - text: Build an approximate nearest-neighbor index, e.g. locality-sensitive hashing or an HNSW graph
+        correct: true
+      - text: Use Euclidean distance instead of cosine similarity, since it avoids normalization
+        why: Any exact distance still has to be computed against all 400,000 vectors.
+      - text: Ask for 1 neighbor instead of 3, since the scan cost grows with the number returned
+        why: The cost of a full scan comes from the number of vectors, not from how many results are kept.
+      - text: Query with $\mathrm{vec}(c) + \mathrm{vec}(b) - \mathrm{vec}(a)$ instead of the word's own vector
+        why: That is how analogies are posed; it changes the query, not the cost of the search.
+    explanation: |
+      d2l's `knn` computes the cosine similarity between the query and every vector in the
+      vocabulary [^1], a cost linear in the vocabulary size per query. Approximate nearest-neighbor
+      methods trade exactness for speed: locality-sensitive hashing maps nearby points into the same
+      bucket with high probability, and graph-based methods such as HNSW walk greedily through a
+      proximity graph [^2]. Normalizing all vectors once also turns cosine similarity into a single
+      matrix–vector product, but that scan remains linear in the vocabulary size.
+    references:
+      - source: d2l
+        locator: Sec. 15.7.2.1 Word Similarity
+        url: https://d2l.ai/chapter_natural-language-processing-pretraining/similarity-analogy.html#word-similarity
+      - title: 'Wikipedia: Nearest neighbor search'
+        url: https://en.wikipedia.org/wiki/Nearest_neighbor_search#Approximation_methods
+        locator: Approximation methods (Greedy search in proximity neighborhood graphs; Locality sensitive hashing)
+      - source: d2l
+        locator: Sec. 15.7.4 Exercises, Exercise 2
+        url: https://d2l.ai/chapter_natural-language-processing-pretraining/similarity-analogy.html#exercises
+    source:
+      id: d2l
+      ref: chapter_natural-language-processing-pretraining/similarity-analogy#ex2
+      url: https://d2l.ai/chapter_natural-language-processing-pretraining/similarity-analogy.html#exercises
+    status: draft

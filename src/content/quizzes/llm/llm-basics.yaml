@@ -379,3 +379,81 @@ questions:
       ref: quiz-220/q1
       url: https://github.com/microsoft/AI-For-Beginners/blob/392d0df1b2647cbee104942390551f1ed9e072c8/etc/quiz-app/src/assets/translations/en/lesson-20.json
     status: draft
+  - id: llm-basics-015
+    type: single
+    difficulty: medium
+    tags:
+      - decoder-only
+      - encoder-decoder
+      - causal-attention
+    question: |
+      In machine translation the whole source sentence is known before decoding starts. What is a
+      limitation of a decoder-only Transformer that reads "source + target" as one sequence under a
+      causal mask?
+    options:
+      - text: Source tokens attend only to earlier tokens, so the source never gets a bidirectional encoding
+        correct: true
+      - text: It cannot generate a translation longer than the source sentence
+        why: A decoder generates token by token until it emits an end token, at any length.
+      - text: It cannot condition on the source at all, because a decoder-only model has no cross-attention layer
+        why: The source is in its context window, and target tokens attend to it through self-attention.
+      - text: It must be trained with a different loss than an encoder–decoder model
+        why: Both are trained with next-token cross-entropy on the target tokens.
+    explanation: |
+      In a decoder-only model each token attends only to its past [^1], so even a source token near the
+      start never sees the rest of the source. An encoder–decoder model encodes the source with
+      unrestricted self-attention, where all input tokens attend to each other, and every target token
+      attends to all of them through cross-attention [^1]. The decoder-only model also spends one
+      context window and one set of weights on both source and target.
+    references:
+      - source: d2l
+        locator: Sec. 11.9.2 Encoder–Decoder; 11.9.3.1 GPT and GPT-2
+        url: https://d2l.ai/chapter_attention-mechanisms-and-transformers/large-pretraining-transformers.html#encoder-decoder
+      - source: d2l
+        locator: Sec. 11.9.7 Exercises, Exercise 4
+        url: https://d2l.ai/chapter_attention-mechanisms-and-transformers/large-pretraining-transformers.html#exercises
+    source:
+      id: d2l
+      ref: chapter_attention-mechanisms-and-transformers/large-pretraining-transformers#ex4
+      url: https://d2l.ai/chapter_attention-mechanisms-and-transformers/large-pretraining-transformers.html#exercises
+    status: draft
+  - id: llm-basics-016
+    type: single
+    difficulty: medium
+    tags:
+      - bert
+      - pretraining
+      - cross-entropy
+    question: |
+      While a small BERT with a vocabulary of about 20,000 tokens is pretrained on WikiText-2, its
+      masked-language-modeling (MLM) loss stays far above its next-sentence-prediction (NSP) loss. Why?
+    options:
+      - text: MLM chooses among ~20,000 tokens and NSP between 2, so even uniform guessing costs far more for MLM
+        correct: true
+      - text: The MLM loss is weighted ten times more heavily than the NSP loss in the total loss
+        why: d2l simply adds the two losses with equal weight [^2].
+      - text: NSP is computed on more examples per minibatch than MLM, which averages its loss down
+        why: How many predictions are averaged does not change the typical size of each loss term.
+      - text: The MLM head starts from random weights, while the NSP head starts out already pretrained
+        why: Both heads are created and trained from scratch together during pretraining.
+    explanation: |
+      Each MLM prediction is a softmax over the whole vocabulary, while NSP is a binary decision [^1].
+      The cross-entropy of a uniform guess is the log of the number of classes,
+      $\ln 20000 \approx 9.9$ nats against $\ln 2 \approx 0.69$, and predicting a hidden word is also much harder than telling whether a sentence was
+      randomly sampled from elsewhere in the corpus [^1]. The total pretraining loss is just the sum of
+      the two [^2].
+    references:
+      - source: d2l
+        locator: Sec. 15.8.5 Pretraining Tasks
+        url: https://d2l.ai/chapter_natural-language-processing-pretraining/bert.html#pretraining-tasks
+      - source: d2l
+        locator: Sec. 15.10.1 Pretraining BERT
+        url: https://d2l.ai/chapter_natural-language-processing-pretraining/bert-pretraining.html
+      - source: d2l
+        locator: Sec. 15.10.4 Exercises, Exercise 1
+        url: https://d2l.ai/chapter_natural-language-processing-pretraining/bert-pretraining.html#exercises
+    source:
+      id: d2l
+      ref: chapter_natural-language-processing-pretraining/bert-pretraining#ex1
+      url: https://d2l.ai/chapter_natural-language-processing-pretraining/bert-pretraining.html#exercises
+    status: draft
