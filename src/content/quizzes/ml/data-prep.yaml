@@ -1580,3 +1580,174 @@ questions:
       ref: chapter1/quiz#q6
       url: https://huggingface.co/learn/audio-course/chapter1/quiz
     status: draft
+  - id: data-prep-057
+    type: short_answer
+    difficulty: easy
+    tags:
+      - pandas
+      - memory
+      - dtypes
+    question: |
+      pandas reads a whole CSV file into memory. A table has 10 million rows and 100 numeric columns,
+      which pandas stores as 64-bit floats. About how many gigabytes ($10^9$ bytes) does the raw data
+      take in memory?
+    answer:
+      numeric: 8
+      tolerance: 0.1
+      hint: a number of gigabytes
+      model: $10^7 \times 100 \times 8$ bytes $= 8 \times 10^9$ bytes $= 8$ GB
+    explanation: |
+      Each 64-bit float takes 8 bytes, so $10^7 \times 100$ values need $8 \times 10^9$ bytes, before
+      any copies made while processing. pandas keeps its data structures in memory, so datasets larger
+      than the RAM, or even a sizable fraction of it, are hard to handle this way; its scaling guide
+      suggests loading only the needed columns, using smaller dtypes (float32 halves the size) or
+      reading in chunks [^1]. These limits of time, representation and memory are what d2l's exercise
+      asks you to think through [^2].
+    references:
+      - title: 'pandas User Guide: Scaling to large datasets'
+        locator: Scaling to large datasets (introduction; Use efficient datatypes)
+        url: https://pandas.pydata.org/docs/user_guide/scale.html
+        quote: pandas provides data structures for in-memory analytics, which makes using pandas to analyze datasets that are larger than memory somewhat tricky.
+      - source: d2l
+        locator: Sec. 2.2.5 Exercises, Exercise 3
+        url: https://d2l.ai/chapter_preliminaries/pandas.html#exercises
+    source:
+      id: d2l
+      ref: chapter_preliminaries/pandas#ex3
+      url: https://d2l.ai/chapter_preliminaries/pandas.html#exercises
+    status: draft
+  - id: data-prep-058
+    type: single
+    difficulty: medium
+    tags:
+      - one-hot-encoding
+      - categorical-features
+      - identifiers
+    question: |
+      A customer table has a categorical column `customer_id` whose value differs in every row. You
+      one-hot encode all categorical columns before training a model. What does this column do?
+    options:
+      - text: One indicator per row, which lets the model memorize rows but tells it nothing about new customers
+        correct: true
+      - text: It adds a single numeric column, because a column whose values are all unique is treated as an integer feature
+        why: One-hot encoding creates one indicator column per distinct value [^1], so $n$ distinct IDs give $n$ columns.
+      - text: It becomes the most informative feature, because it identifies every training example exactly
+        why: Identifying a training row is not the same as predicting its label; a new customer's ID never appeared in training, so all its indicators are 0 [^2].
+      - text: It is harmless, because a regularized model automatically ignores columns that do not help
+        why: The model can still fit each training row through its own indicator, which is memorization, and the column adds as many features as there are rows.
+    explanation: |
+      One-hot encoding turns a categorical column into one 0/1 column per category [^1], so an
+      all-unique column becomes as many columns as there are rows, each switched on for exactly one
+      example. A model can use them to fit every training example individually, while a new customer's
+      ID matches none of the columns. d2l removes the `Id` column of its house-price data for this
+      reason: it identifies each example but carries no information for prediction [^2]. For columns
+      with many but repeated categories, rare values can instead be grouped into one "infrequent"
+      category [^3].
+    references:
+      - source: d2l
+        locator: Sec. 2.2.2 Data Preparation
+        url: https://d2l.ai/chapter_preliminaries/pandas.html#data-preparation
+      - source: d2l
+        locator: Sec. 5.7.4 Data Preprocessing
+        url: https://d2l.ai/chapter_multilayer-perceptrons/kaggle-house-price.html#data-preprocessing
+      - title: 'scikit-learn User Guide: Preprocessing data'
+        locator: Sec. 8.3.4.1 Infrequent categories
+        url: https://scikit-learn.org/stable/modules/preprocessing.html#infrequent-categories
+      - source: d2l
+        locator: Sec. 2.2.5 Exercises, Exercise 4
+        url: https://d2l.ai/chapter_preliminaries/pandas.html#exercises
+    source:
+      id: d2l
+      ref: chapter_preliminaries/pandas#ex4
+      url: https://d2l.ai/chapter_preliminaries/pandas.html#exercises
+    status: draft
+  - id: data-prep-059
+    type: single
+    difficulty: medium
+    tags:
+      - missing-values
+      - imputation
+      - mnar
+    question: |
+      A house-price table leaves `GarageArea` blank exactly for the houses that have no garage. Why is
+      filling these blanks with the column mean a poor choice?
+    options:
+      - text: 'It is fine: mean imputation is unbiased whenever fewer than half of the values are missing'
+        why: The fraction missing does not matter here; what matters is that the values are missing for a reason linked to their true value [^3].
+      - text: 'They are not missing at random: the true value is 0, which the mean misstates'
+        correct: true
+      - text: Mean imputation shifts the column's mean, which biases every other house's prediction
+        why: Filling blanks with the mean leaves the column mean unchanged; the damage is to the houses whose true value is 0.
+      - text: pandas cannot compute a mean for a column that still contains blank values
+        why: pandas skips missing values when computing the mean, as d2l's `fillna(inputs.mean())` relies on [^1].
+    explanation: |
+      d2l replaces missing numerical values by the column mean as a simple heuristic [^1][^2], which is
+      reasonable when values are missing at random. Here they are missing not at random: the blank
+      itself means "no garage", the true value is 0, and the mean (a typical garage) misstates exactly
+      those houses [^3]. Better options are to fill in 0 or to add an indicator column marking which
+      values were missing, so the model can learn from the missingness [^4].
+    references:
+      - source: d2l
+        locator: Sec. 2.2.2 Data Preparation
+        url: https://d2l.ai/chapter_preliminaries/pandas.html#data-preparation
+      - source: d2l
+        locator: Sec. 5.7.4 Data Preprocessing
+        url: https://d2l.ai/chapter_multilayer-perceptrons/kaggle-house-price.html#data-preprocessing
+      - title: 'Wikipedia: Missing data'
+        locator: Missing not at random
+        url: https://en.wikipedia.org/wiki/Missing_data#Missing_not_at_random
+      - title: 'scikit-learn User Guide: Imputation of missing values'
+        locator: Marking imputed values
+        url: https://scikit-learn.org/stable/modules/impute.html#marking-imputed-values
+      - source: d2l
+        locator: Sec. 5.7.10 Exercises, Exercise 2
+        url: https://d2l.ai/chapter_multilayer-perceptrons/kaggle-house-price.html#exercises
+    source:
+      id: d2l
+      ref: chapter_multilayer-perceptrons/kaggle-house-price#ex2
+      url: https://d2l.ai/chapter_multilayer-perceptrons/kaggle-house-price.html#exercises
+    status: draft
+  - id: data-prep-060
+    type: single
+    difficulty: medium
+    tags:
+      - standardization
+      - feature-scaling
+      - weight-decay
+    question: |
+      You train a linear model with weight decay by SGD on house data but skip standardizing the
+      numeric features: lot area is in the tens of thousands of square feet, while the number of
+      bathrooms is between 1 and 4. What goes wrong?
+    options:
+      - text: The squared loss stops being convex in the weights, so SGD gets stuck in local minima
+        why: The squared loss of a linear model is convex whatever the feature scales; the problem is conditioning, not local minima.
+      - text: The one-hot encoded categorical columns no longer work together with the numeric ones
+        why: One-hot columns are 0/1 and unaffected; the trouble comes from the large numeric columns.
+      - text: Large-scale features dominate the gradients, and the penalty treats features unevenly
+        correct: true
+      - text: A linear model can no longer represent the same predictions as with standardized features
+        why: Rescaling a feature only rescales its best weight; the set of linear functions stays the same.
+    explanation: |
+      d2l standardizes features to zero mean and unit variance for two reasons: it makes optimization
+      easier, and it avoids penalizing the coefficients of some features more than those of others
+      [^1]. A feature in the tens of thousands produces gradient components thousands of times larger
+      than a single-digit feature, so a learning rate small enough to keep its weight stable barely
+      moves the others; gradient descent converges much faster after feature scaling [^2]. And since
+      such a feature needs only a tiny weight, the penalty $\frac{\lambda}{2}\lVert\mathbf{w}\rVert^2$
+      hardly constrains it while it restricts the small-scale features heavily [^2].
+    references:
+      - source: d2l
+        locator: Sec. 5.7.4 Data Preprocessing
+        url: https://d2l.ai/chapter_multilayer-perceptrons/kaggle-house-price.html#data-preprocessing
+      - title: 'Wikipedia: Feature scaling'
+        locator: Motivation
+        url: https://en.wikipedia.org/wiki/Feature_scaling
+        quote: gradient descent converges much faster with feature scaling than without it.
+      - source: d2l
+        locator: Sec. 5.7.10 Exercises, Exercise 5
+        url: https://d2l.ai/chapter_multilayer-perceptrons/kaggle-house-price.html#exercises
+    source:
+      id: d2l
+      ref: chapter_multilayer-perceptrons/kaggle-house-price#ex5
+      url: https://d2l.ai/chapter_multilayer-perceptrons/kaggle-house-price.html#exercises
+    status: draft

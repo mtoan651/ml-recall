@@ -2184,3 +2184,79 @@ questions:
       ref: chapter_recommender-systems/seqrec#ex3
       url: https://d2l.ai/chapter_recommender-systems/seqrec.html#exercises
     status: draft
+  - id: ml-basics-078
+    type: single
+    difficulty: medium
+    tags:
+      - covariate-shift
+      - distribution-shift
+      - domain-classifier
+    question: |
+      You have labeled training data and unlabeled inputs collected after deployment. How can you check
+      whether the input distribution has shifted (covariate shift)?
+    options:
+      - text: Train a classifier to separate the two sets and check its accuracy on its own training data
+        why: A flexible classifier can reach high training accuracy by memorizing even without any shift; only held-out accuracy shows real separability.
+      - text: Train a classifier to tell training from deployment inputs; check if its held-out accuracy beats chance
+        correct: true
+      - text: Compare the model's prediction accuracy on the training set with its accuracy on the deployment inputs
+        why: The deployment inputs have no labels, so accuracy cannot be measured on them.
+      - text: Check whether the training loss keeps decreasing after the deployment inputs arrive
+        why: The training loss is computed on the training data only and says nothing about how the deployment inputs are distributed.
+    explanation: |
+      Label the training inputs $-1$ and the deployment inputs $+1$, and train a binary classifier such
+      as logistic regression to tell them apart [^1]. If the two distributions are the same, no
+      classifier can distinguish them, so its accuracy on held-out examples stays near chance (50% for
+      equal-sized sets); clearly better accuracy means the inputs have shifted [^1]. No labels of the
+      deployment data are needed, and the same classifier also yields the weights for correcting the
+      shift [^1].
+    references:
+      - source: d2l
+        locator: Sec. 4.7.3.2 Covariate Shift Correction
+        url: https://d2l.ai/chapter_linear-classification/environment-and-distribution-shift.html#covariate-shift-correction
+      - source: d2l
+        locator: Sec. 4.7.7 Exercises, Exercise 2
+        url: https://d2l.ai/chapter_linear-classification/environment-and-distribution-shift.html#exercises
+    source:
+      id: d2l
+      ref: chapter_linear-classification/environment-and-distribution-shift#ex2
+      url: https://d2l.ai/chapter_linear-classification/environment-and-distribution-shift.html#exercises
+    status: draft
+  - id: ml-basics-079
+    type: short_answer
+    difficulty: hard
+    tags:
+      - covariate-shift
+      - importance-weighting
+      - logistic-regression
+    question: |
+      To correct covariate shift, you train logistic regression to distinguish training inputs (label
+      $-1$) from equally many test inputs (label $+1$). For a training example $\mathbf{x}_i$ the
+      classifier outputs $P(z{=}1 \mid \mathbf{x}_i) = 0.75$. Which importance weight
+      $\beta_i = p(\mathbf{x}_i)/q(\mathbf{x}_i)$ should that example get in weighted empirical risk
+      minimization, where $p$ is the test and $q$ the training input distribution?
+    answer:
+      numeric: 3
+      tolerance: 0.01
+      hint: a number
+      model: $\beta_i = \dfrac{P(z{=}1 \mid \mathbf{x}_i)}{P(z{=}{-1} \mid \mathbf{x}_i)} = \dfrac{0.75}{0.25} = 3$
+    explanation: |
+      With equal sample sizes, $P(z{=}1 \mid \mathbf{x}) = p(\mathbf{x}) / (p(\mathbf{x}) + q(\mathbf{x}))$,
+      so the classifier's odds equal the density ratio of test to training inputs [^1]. For logistic
+      regression the odds are $\exp(h(\mathbf{x}))$, so $\beta_i = \exp(h(\mathbf{x}_i)) = 0.75/0.25 = 3$
+      [^1]. The example looks like test data, so its loss counts three times in
+      $\frac{1}{n}\sum_i \beta_i\,l(f(\mathbf{x}_i), y_i)$. d2l suggests capping the weights at a
+      constant $c$, $\beta_i = \min(\exp(h(\mathbf{x}_i)), c)$, because a few training points can
+      otherwise get huge weights [^1].
+    references:
+      - source: d2l
+        locator: Sec. 4.7.3.2 Covariate Shift Correction
+        url: https://d2l.ai/chapter_linear-classification/environment-and-distribution-shift.html#covariate-shift-correction
+      - source: d2l
+        locator: Sec. 4.7.7 Exercises, Exercise 3
+        url: https://d2l.ai/chapter_linear-classification/environment-and-distribution-shift.html#exercises
+    source:
+      id: d2l
+      ref: chapter_linear-classification/environment-and-distribution-shift#ex3
+      url: https://d2l.ai/chapter_linear-classification/environment-and-distribution-shift.html#exercises
+    status: draft

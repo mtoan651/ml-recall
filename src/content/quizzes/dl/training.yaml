@@ -1153,3 +1153,382 @@ questions:
       ref: chapter_hyperparameter-optimization/hyperopt-intro#ex3
       url: https://d2l.ai/chapter_hyperparameter-optimization/hyperopt-intro.html#exercises
     status: draft
+  - id: training-041
+    type: single
+    difficulty: medium
+    tags:
+      - sgd
+      - shuffling
+      - minibatches
+    question: |
+      Your regression data are stored sorted by the label $y$, and you run minibatch SGD without ever
+      shuffling them. What goes wrong?
+    options:
+      - text: Training stops with an error, because each minibatch must contain several distinct labels
+        why: Nothing in SGD requires distinct labels; the algorithm runs, it just optimizes badly.
+      - text: Each minibatch holds similar labels, so successive updates are biased and the fit drifts
+        correct: true
+      - text: Nothing changes, because each epoch still visits every example once and adds up the same gradients
+        why: The full gradient is the same, but SGD updates after every minibatch, and each update follows a biased local subset [^1].
+      - text: The fit improves, because sorted labels make neighbouring minibatches agree with each other
+        why: 'Agreement between neighbouring minibatches is the problem: successive updates all push the same way, then all the other way.'
+    explanation: |
+      Minibatch SGD relies on each minibatch being a random sample, so that its gradient is a noisy but
+      unbiased estimate of the full gradient [^1]. With label-sorted data, early minibatches contain
+      only small $y$ and pull the predictions down, later ones only large $y$ and pull them up, so the
+      parameters chase one part of the data after another and end each epoch fitted to its last part.
+      An adversary could even order the examples so that the updates cycle without converging.
+      Reshuffling every epoch, as d2l's training data loader does, avoids this [^2].
+    references:
+      - source: d2l
+        locator: Sec. 3.1.1.4 Minibatch Stochastic Gradient Descent
+        url: https://d2l.ai/chapter_linear-regression/linear-regression.html#minibatch-stochastic-gradient-descent
+      - source: d2l
+        locator: Sec. 3.3.2 Reading the Dataset
+        url: https://d2l.ai/chapter_linear-regression/synthetic-regression-data.html#reading-the-dataset
+      - source: d2l
+        locator: Sec. 3.4.6 Exercises, Exercise 9
+        url: https://d2l.ai/chapter_linear-regression/linear-regression-scratch.html#exercises
+    source:
+      id: d2l
+      ref: chapter_linear-regression/linear-regression-scratch#ex9
+      url: https://d2l.ai/chapter_linear-regression/linear-regression-scratch.html#exercises
+    status: draft
+  - id: training-042
+    type: multiple
+    difficulty: easy
+    tags:
+      - overfitting
+      - regularization
+      - dropout
+      - early-stopping
+      - data-augmentation
+    question: |
+      Besides weight decay, more training data and a model of suitable size, which of these help
+      against overfitting? Select all that apply.
+    options:
+      - text: Early stopping based on the validation error
+        correct: true
+      - text: Data augmentation, such as random crops and flips of the training images
+        correct: true
+      - text: Training for many more epochs, until the training loss reaches zero
+        why: Driving the training loss to zero makes the model fit the noise as well; early stopping does the opposite [^2].
+      - text: Adding higher-degree polynomial features of the inputs
+        why: Higher-degree features raise the model's complexity, which makes overfitting more likely [^4].
+      - text: Dropout on the hidden layers
+        correct: true
+    explanation: |
+      Dropout injects noise into the hidden layers so that no unit can rely on a specific pattern of
+      others [^1], early stopping limits the number of training epochs and with it how far the model can
+      fit noise [^2], and data augmentation enlarges the training set with label-preserving changes
+      [^3]. Training until the training loss reaches zero does the opposite: on noisy data the model
+      ends up interpolating the noise [^2]. Raising the polynomial degree increases the model's
+      complexity, which leads to overfitting on small datasets [^4].
+    references:
+      - source: d2l
+        locator: Sec. 5.6 Dropout (introduction)
+        url: https://d2l.ai/chapter_multilayer-perceptrons/dropout.html
+      - source: d2l
+        locator: Sec. 5.5.3 Early Stopping
+        url: https://d2l.ai/chapter_multilayer-perceptrons/generalization-deep.html#early-stopping
+      - source: d2l
+        locator: Sec. 14.1 Image Augmentation (introduction)
+        url: https://d2l.ai/chapter_computer-vision/image-augmentation.html
+      - source: d2l
+        locator: Sec. 3.6.2.1 Polynomial Curve Fitting
+        url: https://d2l.ai/chapter_linear-regression/generalization.html#polynomial-curve-fitting
+      - source: d2l
+        locator: Sec. 3.7.6 Exercises, Exercise 5
+        url: https://d2l.ai/chapter_linear-regression/weight-decay.html#exercises
+    source:
+      id: d2l
+      ref: chapter_linear-regression/weight-decay#ex5
+      url: https://d2l.ai/chapter_linear-regression/weight-decay.html#exercises
+    status: draft
+  - id: training-043
+    type: single
+    difficulty: medium
+    tags:
+      - mixed-precision
+      - bfloat16
+      - floating-point
+      - overflow
+    question: |
+      Mixed-precision training often uses bfloat16 rather than float16, although bfloat16 has fewer
+      mantissa bits. Why is bfloat16 safer for operations such as the $\exp$ inside a softmax?
+    options:
+      - text: It has more mantissa bits than float16, so large exponentials are rounded more precisely
+        why: bfloat16 has fewer mantissa bits than float16 (7 versus 10), so it is less precise, not more [^1].
+      - text: It saturates at its largest finite value instead of overflowing to infinity
+        why: bfloat16 overflows to infinity like the other IEEE-style formats, only much later than float16 [^1].
+      - text: It stores the logarithm of each number, so softmax never needs to exponentiate
+        why: 'bfloat16 is an ordinary floating-point format: a sign, an exponent and a shortened float32 mantissa [^1].'
+      - text: It keeps float32's 8 exponent bits, so $\exp$ overflows only above about 88.7, not 11.1
+        correct: true
+    explanation: |
+      A floating-point format's range is set by its exponent bits, its precision by its mantissa bits.
+      bfloat16 keeps float32's 8-bit exponent and cuts the mantissa to 7 bits [^1], so its largest value
+      is about $3.4 \times 10^{38}$ and $\exp$ overflows only beyond $\ln(3.4 \times 10^{38}) \approx 88.7$,
+      while float16's 5-bit exponent caps its values at 65504, i.e. $\exp$ overflows above about 11.1
+      [^2]. In training, range matters more than the last digits, because overflowing values turn into
+      `inf` and then `NaN` [^3].
+    references:
+      - title: 'Wikipedia: bfloat16 floating-point format'
+        locator: Introduction and bfloat16 floating-point format
+        url: https://en.wikipedia.org/wiki/Bfloat16_floating-point_format#bfloat16_floating-point_format
+        quote: It preserves the approximate dynamic range of 32-bit floating-point numbers by retaining 8 exponent bits
+      - title: 'Wikipedia: Half-precision floating-point format'
+        locator: Half precision examples (largest normal number, smallest normal and subnormal numbers)
+        url: https://en.wikipedia.org/wiki/Half-precision_floating-point_format#Half_precision_examples
+      - source: d2l
+        locator: Sec. 4.5.2 Softmax Revisited
+        url: https://d2l.ai/chapter_linear-classification/softmax-regression-concise.html#softmax-revisited
+      - source: d2l
+        locator: Sec. 4.5.5 Exercises, Exercise 1
+        url: https://d2l.ai/chapter_linear-classification/softmax-regression-concise.html#exercises
+    source:
+      id: d2l
+      ref: chapter_linear-classification/softmax-regression-concise#ex1-b
+      url: https://d2l.ai/chapter_linear-classification/softmax-regression-concise.html#exercises
+    status: draft
+  - id: training-044
+    type: true_false
+    difficulty: medium
+    tags:
+      - overfitting
+      - softmax-regression
+      - convexity
+      - early-stopping
+    shuffle: false
+    question: |
+      True or false: softmax regression is a convex, linear model, so training it for more epochs
+      cannot make its validation accuracy go down.
+    options:
+      - text: 'True'
+        why: Convexity makes the training loss easy to minimize; it says nothing about data the model has not seen. With 7,850 parameters, softmax regression on Fashion-MNIST can still fit quirks of the training set [^1].
+      - text: 'False'
+        correct: true
+    explanation: |
+      Convexity guarantees that gradient descent heads for the global minimum of the training loss,
+      but that minimum need not be the best model for new data. As training continues, the model keeps
+      lowering the training loss by fitting peculiarities of the training examples, and validation
+      accuracy can start to drop: the model overfits [^1]. The remedies are those for any overfitting
+      model: stop when the validation error stops improving [^2], or add weight decay [^3].
+    references:
+      - source: d2l
+        locator: Sec. 3.6.1 Training Error and Generalization Error
+        url: https://d2l.ai/chapter_linear-regression/generalization.html#training-error-and-generalization-error
+      - source: d2l
+        locator: Sec. 5.5.3 Early Stopping
+        url: https://d2l.ai/chapter_multilayer-perceptrons/generalization-deep.html#early-stopping
+      - source: d2l
+        locator: Sec. 3.7.1 Norms and Weight Decay
+        url: https://d2l.ai/chapter_linear-regression/weight-decay.html#norms-and-weight-decay
+      - source: d2l
+        locator: Sec. 4.5.5 Exercises, Exercise 3
+        url: https://d2l.ai/chapter_linear-classification/softmax-regression-concise.html#exercises
+    source:
+      id: d2l
+      ref: chapter_linear-classification/softmax-regression-concise#ex3
+      url: https://d2l.ai/chapter_linear-classification/softmax-regression-concise.html#exercises
+    status: draft
+  - id: training-045
+    type: multiple
+    difficulty: medium
+    tags:
+      - batch-normalization
+      - minibatches
+      - prediction-mode
+    question: |
+      Suppose a nonlinearity normalizes each hidden unit using the mean and variance of the current
+      minibatch, as batch normalization does. Which problems does this cause? Select all that apply.
+    options:
+      - text: With minibatches of size 1, every normalized activation is 0, so nothing can be learned
+        correct: true
+      - text: Prediction needs fixed statistics, such as averages from training, so outputs do not depend on the batch
+        correct: true
+      - text: Gradients can no longer be computed by backpropagation
+        why: The batch mean and variance are differentiable functions of the batch, so backpropagation passes through them [^3].
+      - text: The network can no longer be trained with minibatch SGD
+        why: Batch normalization is designed for minibatch SGD; it only needs minibatches large enough for stable statistics [^1][^3].
+      - text: An example's output depends on which other examples share its minibatch
+        correct: true
+    explanation: |
+      Batch statistics couple the examples: the same input is normalized differently in different
+      minibatches, which injects noise that partly acts as a regularizer [^1]. With a single example the
+      mean equals the value itself, so every activation becomes 0 after subtracting it and nothing can
+      be learned [^1]. And since a prediction for one input should not depend on what else is in the
+      batch (and there may be no batch at all), batch normalization switches to fixed statistics
+      estimated on the training data in prediction mode [^2]. Backpropagation itself is unaffected:
+      the batch mean and variance are differentiable, and d2l trains its from-scratch batch
+      normalization layer with ordinary autograd and minibatch SGD [^3].
+    references:
+      - source: d2l
+        locator: Sec. 8.5.1 Training Deep Networks
+        url: https://d2l.ai/chapter_convolutional-modern/batch-norm.html#training-deep-networks
+      - source: d2l
+        locator: Sec. 8.5.2.4 Batch Normalization During Prediction
+        url: https://d2l.ai/chapter_convolutional-modern/batch-norm.html#batch-normalization-during-prediction
+      - source: d2l
+        locator: Sec. 8.5.3 Implementation from Scratch
+        url: https://d2l.ai/chapter_convolutional-modern/batch-norm.html#implementation-from-scratch
+      - source: d2l
+        locator: Sec. 5.1.4 Exercises, Exercise 6
+        url: https://d2l.ai/chapter_multilayer-perceptrons/mlp.html#exercises
+    source:
+      id: d2l
+      ref: chapter_multilayer-perceptrons/mlp#ex6
+      url: https://d2l.ai/chapter_multilayer-perceptrons/mlp.html#exercises
+    status: draft
+  - id: training-046
+    type: single
+    difficulty: medium
+    tags:
+      - initialization
+      - symmetry
+      - softmax-regression
+    question: |
+      In a one-hidden-layer MLP, setting all weights to the same constant is fatal, because the hidden
+      units stay identical. Can you instead initialize all weights of softmax regression, which has no
+      hidden layer, to the same constant?
+    options:
+      - text: Only if the constant is zero, since nonzero constants saturate the softmax
+        why: Equal weights give equal logits and a uniform softmax whatever the constant, which is far from saturated.
+      - text: 'No: equal logits make the cross-entropy loss undefined'
+        why: Equal logits give the probabilities $1/q$ and a finite loss of $\log q$.
+      - text: "Yes: each output's gradient $(\\hat y_k - y_k)\\mathbf{x}$ differs between classes"
+        correct: true
+      - text: 'No: the rows of the weight matrix stay identical forever, like hidden units in an MLP'
+        why: 'Hidden units are interchangeable, but outputs are not: each belongs to its own class, and the label term $y_k$ makes their gradients differ [^1].'
+    explanation: |
+      With all weights equal, every logit is the same and the softmax is uniform, $\hat y_k = 1/q$. The
+      gradient for output $k$'s weights is $(\hat y_k - y_k)\mathbf{x}$, since
+      $\partial l / \partial o_k = \hat y_k - y_k$ [^1]: negative for the true class and positive for
+      the others, so the rows of $\mathbf{W}$ separate after the first update. The symmetry problem
+      arises only for hidden units, whose roles are interchangeable and which therefore receive
+      identical gradients [^2]. Linear regression has no symmetry problem either, because each weight's
+      gradient is scaled by its own feature.
+    references:
+      - source: d2l
+        locator: Sec. 4.1.2.2 Softmax and Cross-Entropy Loss
+        url: https://d2l.ai/chapter_linear-classification/softmax-regression.html#softmax-and-cross-entropy-loss
+      - source: d2l
+        locator: Sec. 5.4.1.3 Breaking the Symmetry
+        url: https://d2l.ai/chapter_multilayer-perceptrons/numerical-stability-and-init.html#breaking-the-symmetry
+      - source: d2l
+        locator: Sec. 5.4.4 Exercises, Exercise 2
+        url: https://d2l.ai/chapter_multilayer-perceptrons/numerical-stability-and-init.html#exercises
+    source:
+      id: d2l
+      ref: chapter_multilayer-perceptrons/numerical-stability-and-init#ex2
+      url: https://d2l.ai/chapter_multilayer-perceptrons/numerical-stability-and-init.html#exercises
+    status: draft
+  - id: training-047
+    type: single
+    difficulty: easy
+    tags:
+      - early-stopping
+      - compute
+    question: Besides often improving generalization, what other practical benefit does early stopping have?
+    options:
+      - text: It makes training deterministic, so that every single run can be reproduced exactly
+        why: Early stopping only decides when to stop; it does not remove the randomness of initialization or minibatch order.
+      - text: It removes the need for a separate validation set during training
+        why: 'The opposite: the stopping criterion is computed on the validation error [^1].'
+      - text: It allows much larger learning rates without any risk of divergence
+        why: Stopping early does not keep a too-large learning rate from diverging in the epochs that do run.
+      - text: It saves compute, since training ends once the validation error stops improving
+        correct: true
+    explanation: |
+      Early stopping monitors the validation error, typically once per epoch, and ends training when
+      it has not improved by more than a small amount for some number of epochs, the patience [^1].
+      Every epoch that is not run is saved compute: for large models trained for days on many GPUs,
+      d2l notes that well-tuned early stopping can save days of time and thousands of dollars [^1]. Its
+      other role is regularization, since it limits how long the model can fit noisy labels [^1].
+    references:
+      - source: d2l
+        locator: Sec. 5.5.3 Early Stopping
+        url: https://d2l.ai/chapter_multilayer-perceptrons/generalization-deep.html#early-stopping
+      - source: d2l
+        locator: Sec. 5.5.6 Exercises, Exercise 5
+        url: https://d2l.ai/chapter_multilayer-perceptrons/generalization-deep.html#exercises
+    source:
+      id: d2l
+      ref: chapter_multilayer-perceptrons/generalization-deep#ex5
+      url: https://d2l.ai/chapter_multilayer-perceptrons/generalization-deep.html#exercises
+    status: draft
+  - id: training-048
+    type: short_answer
+    difficulty: medium
+    tags:
+      - dropout
+      - variance
+      - noise-injection
+    question: |
+      With dropout probability $p = 0.2$, a hidden activation $h = 3$ is replaced by $h' = 0$ with
+      probability $p$ and by $h' = h / (1 - p)$ otherwise. What is the variance of $h'$?
+    answer:
+      numeric: 2.25
+      tolerance: 0.001
+      hint: a number
+      model: $h^2\dfrac{p}{1 - p} = 9 \times \dfrac{0.2}{0.8} = 2.25$
+    explanation: |
+      The rescaling makes dropout unbiased: $E[h'] = (1 - p)\frac{h}{1 - p} = h$ [^1]. The second
+      moment is $E[h'^2] = (1 - p)\frac{h^2}{(1 - p)^2} = \frac{h^2}{1 - p}$, so
+      $\mathrm{Var}[h'] = E[h'^2] - E[h']^2 = h^2\frac{p}{1 - p}$ [^2], here $11.25 - 9 = 2.25$. The
+      noise grows with $p$ (at $p = 0.5$ the variance equals $h^2$) and is absent without dropout,
+      which is why hidden activations fluctuate more in training mode than at test time.
+    references:
+      - source: d2l
+        locator: Sec. 5.6 Dropout (introduction), Eq. (5.6.1)
+        url: https://d2l.ai/chapter_multilayer-perceptrons/dropout.html
+      - source: d2l
+        locator: Sec. 2.6.6 Expectations (variance)
+        url: https://d2l.ai/chapter_preliminaries/probability.html#expectations
+      - source: d2l
+        locator: Sec. 5.6.5 Exercises, Exercise 3
+        url: https://d2l.ai/chapter_multilayer-perceptrons/dropout.html#exercises
+    source:
+      id: d2l
+      ref: chapter_multilayer-perceptrons/dropout#ex3
+      url: https://d2l.ai/chapter_multilayer-perceptrons/dropout.html#exercises
+    status: draft
+  - id: training-049
+    type: single
+    difficulty: easy
+    tags:
+      - dropout
+      - inference
+      - mc-dropout
+    question: Why is dropout usually switched off at test time?
+    options:
+      - text: The rescaling already makes the full network give the expected activations, so dropout is unneeded
+        correct: true
+      - text: Dropout layers learn their own weights during training, and those weights are discarded afterwards
+        why: Dropout has no weights; it only zeroes and rescales activations [^1].
+      - text: Without dropout, every activation must instead be multiplied by $1 - p$ at test time
+        why: With this (inverted) dropout the rescaling by $1/(1 - p)$ happens during training, so nothing needs rescaling at test time [^1].
+      - text: Keeping dropout at test time would leak information about the test labels into the model
+        why: Dropout does not use labels at all; at test time it would only add random noise to the predictions.
+    explanation: |
+      During training each activation is zeroed with probability $p$ and the survivors are divided by
+      $1 - p$, so the expected activation equals the one the full network computes [^1]. At test time
+      we therefore use the full network without dropping or rescaling anything, and the same input
+      always gets the same prediction [^1]. One exception: running many stochastic passes with dropout
+      switched on gives a spread of predictions that can serve as an uncertainty estimate (Monte Carlo
+      dropout) [^2].
+    references:
+      - source: d2l
+        locator: Sec. 5.6.1 Dropout in Practice
+        url: https://d2l.ai/chapter_multilayer-perceptrons/dropout.html#dropout-in-practice
+      - title: Gal and Ghahramani (2016), Dropout as a Bayesian Approximation, arXiv:1506.02142
+        locator: Abstract and Sec. 4
+        url: https://arxiv.org/abs/1506.02142
+      - source: d2l
+        locator: Sec. 5.6.5 Exercises, Exercise 4
+        url: https://d2l.ai/chapter_multilayer-perceptrons/dropout.html#exercises
+    source:
+      id: d2l
+      ref: chapter_multilayer-perceptrons/dropout#ex4
+      url: https://d2l.ai/chapter_multilayer-perceptrons/dropout.html#exercises
+    status: draft

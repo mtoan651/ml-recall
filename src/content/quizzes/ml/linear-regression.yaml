@@ -617,3 +617,735 @@ questions:
       ref: quiz-23/q2
       url: https://github.com/microsoft/ML-For-Beginners/blob/de2d4e12236445198213a0711855e348e7253cd4/quiz-app/src/assets/translations/en.json
     status: draft
+  - id: linear-regression-023
+    type: short_answer
+    difficulty: medium
+    tags:
+      - absolute-loss
+      - median
+      - outliers
+    question: |
+      You summarize the data $x = (1, 2, 3, 4, 15)$ by one constant $b$. Which $b$ minimizes
+      $\sum_i |x_i - b|$?
+    answer:
+      numeric: 3
+      tolerance: 0
+      hint: a number
+      model: The median, 3. (Squared loss would give the mean, 5.)
+    explanation: |
+      Moving $b$ a little changes $\sum_i |x_i - b|$ by the step size times (the number of points below
+      $b$ minus the number above), so the sum is smallest where equally many points lie on each side:
+      at the median [^1]. Here that is 3, and the outlier 15 does not move it. Minimizing
+      $\sum_i (x_i - b)^2$ instead sets $-2\sum_i (x_i - b)$ to zero and gives the mean, 5, which the
+      outlier drags upward; squared loss is sensitive to anomalous data in exactly this way [^2].
+    references:
+      - title: 'Wikipedia: Median'
+        locator: Optimality property
+        url: https://en.wikipedia.org/wiki/Median#Optimality_property
+      - source: d2l
+        locator: Sec. 3.1.1.2 Loss Function
+        url: https://d2l.ai/chapter_linear-regression/linear-regression.html#loss-function
+      - source: d2l
+        locator: Sec. 3.1.6 Exercises, Exercise 1
+        url: https://d2l.ai/chapter_linear-regression/linear-regression.html#exercises
+    source:
+      id: d2l
+      ref: chapter_linear-regression/linear-regression#ex1
+      url: https://d2l.ai/chapter_linear-regression/linear-regression.html#exercises
+    status: draft
+  - id: linear-regression-024
+    type: single
+    difficulty: medium
+    tags:
+      - squared-loss
+      - maximum-likelihood
+      - normal-distribution
+    question: |
+      The constant $b$ that minimizes $\sum_i (x_i - b)^2$ is the sample mean. How does this relate to
+      the normal distribution?
+    options:
+      - text: It is the maximum likelihood estimate of $\mu$ for i.i.d. data from $\mathcal{N}(\mu, \sigma^2)$
+        correct: true
+      - text: It holds only for normally distributed $x_i$; for other data the minimizer is the median
+        why: The mean minimizes the squared loss for any data; the normal model only explains why squared loss is a natural choice [^1].
+      - text: It is the maximum likelihood estimate of the variance $\sigma^2$ when the $x_i$ are i.i.d. normal
+        why: $b$ estimates the center $\mu$; the variance is estimated from the squared deviations around it, and that term does not depend on $b$ [^1].
+      - text: By the central limit theorem the minimizer is normally distributed, so it equals the mode
+        why: The minimizer is the mean by direct calculation; the central limit theorem describes its sampling distribution, not which value minimizes the loss.
+    explanation: |
+      For i.i.d. normal data the negative log-likelihood is
+      $\sum_i \frac{1}{2}\log(2\pi\sigma^2) + \frac{1}{2\sigma^2}(x_i - \mu)^2$. For a fixed $\sigma$
+      only the squared term depends on $\mu$, so maximizing the likelihood means minimizing
+      $\sum_i (x_i - \mu)^2$ [^1], and the sample mean is the maximum likelihood estimate of $\mu$. d2l
+      uses the same argument to show that least-squares linear regression is maximum likelihood under
+      additive Gaussian noise, with $\mu$ replaced by $\mathbf{w}^\top\mathbf{x} + b$ [^1].
+    references:
+      - source: d2l
+        locator: Sec. 3.1.3 The Normal Distribution and Squared Loss
+        url: https://d2l.ai/chapter_linear-regression/linear-regression.html#the-normal-distribution-and-squared-loss
+      - source: d2l
+        locator: Sec. 3.1.6 Exercises, Exercise 1
+        url: https://d2l.ai/chapter_linear-regression/linear-regression.html#exercises
+    source:
+      id: d2l
+      ref: chapter_linear-regression/linear-regression#ex1-b
+      url: https://d2l.ai/chapter_linear-regression/linear-regression.html#exercises
+    status: draft
+  - id: linear-regression-025
+    type: single
+    difficulty: easy
+    tags:
+      - bias
+      - affine-functions
+      - design-matrix
+    question: |
+      To get rid of the separate bias, you append a constant feature 1 to every input,
+      $\tilde{\mathbf{x}} = (\mathbf{x}, 1)$. Which weight vector $\tilde{\mathbf{w}}$ makes
+      $\tilde{\mathbf{w}}^\top\tilde{\mathbf{x}} = \mathbf{w}^\top\mathbf{x} + b$ for all $\mathbf{x}$?
+    options:
+      - text: "None: an affine function can't be written as a linear one"
+        why: 'It can, in one more dimension: $(\mathbf{w}, b)^\top(\mathbf{x}, 1) = \mathbf{w}^\top\mathbf{x} + b$ [^1].'
+      - text: $\tilde{\mathbf{w}} = (\mathbf{w}, b)$
+        correct: true
+      - text: $\tilde{\mathbf{w}} = (\mathbf{w}, 1)$
+        why: With last weight 1 the product adds 1, not $b$; the weight of the constant feature has to carry the bias.
+      - text: $\tilde{\mathbf{w}} = (\mathbf{w} + b\mathbf{1}, 0)$
+        why: Adding $b$ to every weight adds $b\sum_j x_j$, which depends on $\mathbf{x}$, instead of the constant $b$.
+    explanation: |
+      $(\mathbf{w}, b)^\top(\mathbf{x}, 1) = \mathbf{w}^\top\mathbf{x} + b \cdot 1$, so every affine
+      function of $\mathbf{x}$ is a linear function of $(\mathbf{x}, 1)$, and conversely the last
+      weight of any linear function of $(\mathbf{x}, 1)$ acts as a bias. d2l uses this to derive the
+      analytic solution: it subsumes $b$ into $\mathbf{w}$ by appending a column of ones to the design
+      matrix [^1]. The bias itself is needed, since without it the model could only express functions
+      through the origin [^2].
+    references:
+      - source: d2l
+        locator: Sec. 3.1.1.3 Analytic Solution
+        url: https://d2l.ai/chapter_linear-regression/linear-regression.html#analytic-solution
+      - source: d2l
+        locator: Sec. 3.1.1.1 Model
+        url: https://d2l.ai/chapter_linear-regression/linear-regression.html#model
+      - source: d2l
+        locator: Sec. 3.1.6 Exercises, Exercise 2
+        url: https://d2l.ai/chapter_linear-regression/linear-regression.html#exercises
+    source:
+      id: d2l
+      ref: chapter_linear-regression/linear-regression#ex2
+      url: https://d2l.ai/chapter_linear-regression/linear-regression.html#exercises
+    status: draft
+  - id: linear-regression-026
+    type: short_answer
+    difficulty: medium
+    tags:
+      - polynomial-features
+      - parameter-count
+    question: |
+      You want a general quadratic function of $\mathbf{x} \in \mathbb{R}^{10}$,
+      $f(\mathbf{x}) = b + \sum_i w_i x_i + \sum_{j \le i} w_{ij} x_i x_j$, and implement it as one
+      linear layer applied to the features $x_i$ and all products $x_i x_j$ with $j \le i$. How many
+      trainable parameters (weights plus bias) does the model have?
+    answer:
+      numeric: 66
+      tolerance: 0
+      hint: an integer
+      model: $1 + 10 + 55 = 66$, with $55 = \binom{10}{2} + 10$ quadratic terms
+    explanation: |
+      There are 10 linear terms, and the pairs $j \le i$ give $10 \cdot 11 / 2 = 55$ quadratic terms
+      (45 cross products and 10 squares), plus the bias. A layer that computes these products followed
+      by a fully connected layer with one output is linear in its parameters, so it trains exactly like
+      linear regression, a single-layer network on expanded inputs [^1]. The count grows fast: with $k$
+      variables there are $\binom{k + d - 1}{k - 1}$ monomials of degree $d$ [^2], which is why such
+      feature expansions call for regularization.
+    references:
+      - source: d2l
+        locator: Sec. 3.1.4 Linear Regression as a Neural Network
+        url: https://d2l.ai/chapter_linear-regression/linear-regression.html#linear-regression-as-a-neural-network
+      - source: d2l
+        locator: Sec. 3.7 Weight Decay (introduction, monomials)
+        url: https://d2l.ai/chapter_linear-regression/weight-decay.html
+      - source: d2l
+        locator: Sec. 3.1.6 Exercises, Exercise 3
+        url: https://d2l.ai/chapter_linear-regression/linear-regression.html#exercises
+    source:
+      id: d2l
+      ref: chapter_linear-regression/linear-regression#ex3
+      url: https://d2l.ai/chapter_linear-regression/linear-regression.html#exercises
+    status: draft
+  - id: linear-regression-027
+    type: single
+    difficulty: hard
+    tags:
+      - design-matrix
+      - rank-deficiency
+      - ridge-regression
+      - noise-injection
+    question: |
+      Your design matrix $\mathbf{X} \in \mathbb{R}^{n \times d}$ has linearly dependent columns, so
+      $\mathbf{X}^\top\mathbf{X}$ is singular. You add independent noise
+      $\epsilon_{ij} \sim \mathcal{N}(0, \sigma^2)$ to every entry, giving $\mathbf{X} + \mathbf{E}$.
+      What is the expected value of $(\mathbf{X} + \mathbf{E})^\top(\mathbf{X} + \mathbf{E})$?
+    options:
+      - text: $\mathbf{X}^\top\mathbf{X} + \sigma^2\mathbf{I}$, one noise variance per entry
+        why: Entry $(j, j)$ of $\mathbf{E}^\top\mathbf{E}$ adds up $n$ squared noise terms, one per example, so its mean is $n\sigma^2$.
+      - text: $\mathbf{X}^\top\mathbf{X} + d\sigma^2\mathbf{I}$, one term per feature
+        why: Entry $(j, j)$ sums over the $n$ rows of column $j$, not over the $d$ features.
+      - text: $\mathbf{X}^\top\mathbf{X} + n\sigma^2\mathbf{I}$, which is invertible
+        correct: true
+      - text: $\mathbf{X}^\top\mathbf{X}$, since the noise has mean zero
+        why: 'The cross terms $\mathbf{X}^\top\mathbf{E}$ vanish in expectation, but $\mathbf{E}^\top\mathbf{E}$ does not: its diagonal sums $n$ squared noise terms.'
+    explanation: |
+      Expanding gives $\mathbf{X}^\top\mathbf{X} + \mathbf{X}^\top\mathbf{E} + \mathbf{E}^\top\mathbf{X} + \mathbf{E}^\top\mathbf{E}$.
+      The cross terms have mean zero, and $E[(\mathbf{E}^\top\mathbf{E})_{jk}] = \sum_i E[\epsilon_{ij}\epsilon_{ik}]$
+      is $n\sigma^2$ for $j = k$ and 0 otherwise. Without noise, a singular $\mathbf{X}^\top\mathbf{X}$
+      means the minimizer is not unique [^1]. Adding $n\sigma^2\mathbf{I}$ makes the matrix invertible,
+      just like ridge regression, which solves
+      $(\mathbf{X}^\top\mathbf{X} + \lambda\mathbf{I})\mathbf{w} = \mathbf{X}^\top\mathbf{y}$ [^2]; Bishop
+      showed that training with input noise is equivalent to this kind of Tikhonov regularization [^3].
+    references:
+      - source: d2l
+        locator: Sec. 3.1.1.3 Analytic Solution
+        url: https://d2l.ai/chapter_linear-regression/linear-regression.html#analytic-solution
+      - title: 'Wikipedia: Ridge regression'
+        locator: Overview
+        url: https://en.wikipedia.org/wiki/Ridge_regression#Overview
+      - source: d2l
+        locator: Sec. 5.6 Dropout (introduction, Bishop 1995)
+        url: https://d2l.ai/chapter_multilayer-perceptrons/dropout.html
+      - source: d2l
+        locator: Sec. 3.1.6 Exercises, Exercise 4
+        url: https://d2l.ai/chapter_linear-regression/linear-regression.html#exercises
+    source:
+      id: d2l
+      ref: chapter_linear-regression/linear-regression#ex4
+      url: https://d2l.ai/chapter_linear-regression/linear-regression.html#exercises
+    status: draft
+  - id: linear-regression-028
+    type: single
+    difficulty: medium
+    tags:
+      - laplace-noise
+      - maximum-likelihood
+      - absolute-loss
+    question: |
+      Suppose the noise in $y = \mathbf{w}^\top\mathbf{x} + b + \epsilon$ follows the Laplace density
+      $p(\epsilon) = \frac{1}{2}e^{-|\epsilon|}$ instead of a Gaussian. Which loss does maximum
+      likelihood estimation minimize?
+    options:
+      - text: The log-cosh error $\sum_i \log\cosh(y_i - \mathbf{w}^\top\mathbf{x}_i - b)$
+        why: Log-cosh is a smooth stand-in for the absolute error, but the Laplace log-density is exactly $-|\epsilon| - \log 2$.
+      - text: The squared error plus an $\ell_1$ penalty $\lambda\lVert\mathbf{w}\rVert_1$
+        why: An $\ell_1$ penalty on the weights comes from a Laplace prior on $\mathbf{w}$, not from Laplace noise on $y$ [^3].
+      - text: The squared error $\sum_i (y_i - \mathbf{w}^\top\mathbf{x}_i - b)^2$
+        why: Squared error comes from Gaussian noise, whose log-density is quadratic in $\epsilon$ [^1].
+      - text: The absolute error $\sum_i |y_i - \mathbf{w}^\top\mathbf{x}_i - b|$
+        correct: true
+    explanation: |
+      The negative log-likelihood is
+      $-\sum_i \log p(y_i \mid \mathbf{x}_i) = \sum_i |y_i - \mathbf{w}^\top\mathbf{x}_i - b| + n\log 2$,
+      and the constant does not change the minimizer, so maximum likelihood here is least absolute
+      deviations [^2]. This mirrors d2l's derivation, in which Gaussian noise leads to the squared loss
+      [^1]. Unlike least squares, this problem has no closed-form solution, because the absolute value
+      has a kink at zero; it is solved iteratively, for example by linear programming or subgradient
+      descent [^2].
+    references:
+      - source: d2l
+        locator: Sec. 3.1.3 The Normal Distribution and Squared Loss
+        url: https://d2l.ai/chapter_linear-regression/linear-regression.html#the-normal-distribution-and-squared-loss
+      - title: 'Wikipedia: Least absolute deviations'
+        locator: Introduction and Solving methods
+        url: https://en.wikipedia.org/wiki/Least_absolute_deviations
+        quote: The LAD estimate also arises as the maximum likelihood estimate if the errors have a Laplace distribution.
+      - title: 'Wikipedia: Lasso (statistics)'
+        locator: Bayesian interpretation
+        url: https://en.wikipedia.org/wiki/Lasso_(statistics)#Bayesian_interpretation
+      - source: d2l
+        locator: Sec. 3.1.6 Exercises, Exercise 5
+        url: https://d2l.ai/chapter_linear-regression/linear-regression.html#exercises
+    source:
+      id: d2l
+      ref: chapter_linear-regression/linear-regression#ex5
+      url: https://d2l.ai/chapter_linear-regression/linear-regression.html#exercises
+    status: draft
+  - id: linear-regression-029
+    type: single
+    difficulty: hard
+    tags:
+      - absolute-loss
+      - sgd
+      - learning-rate
+    question: |
+      You fit a linear model to the absolute loss $|y - \hat y|$ with minibatch SGD and a constant
+      learning rate. What happens near the optimum?
+    options:
+      - text: The weights bounce around it, since each gradient keeps its size however small the residual
+        correct: true
+      - text: The updates shrink smoothly to zero as the residuals shrink, exactly as with squared loss
+        why: With squared loss the gradient is proportional to the residual; with the absolute loss it is $\pm\mathbf{x}$ whatever the residual's size [^1].
+      - text: Training halts at the first example with a zero residual, where the gradient is undefined
+        why: An exactly zero residual is rare, and frameworks use a subgradient (such as 0) there; training does not stop.
+      - text: The parameters diverge to infinity, like plain SGD with a learning rate that is too large
+        why: Each step has size at most $\eta\lVert\mathbf{x}\rVert$, so the iterates stay near the optimum; they just do not settle.
+    explanation: |
+      The derivative of $|r|$ is $\mathrm{sign}(r)$, so each example contributes $\pm\mathbf{x}$ to the
+      gradient no matter how close its prediction is; with squared loss the contribution
+      $r\mathbf{x}$ shrinks with the residual [^1]. Near the minimum the residuals have mixed signs, the
+      minibatch gradient does not go to zero, and a constant step keeps the parameters bouncing around
+      the optimum. There are two fixes: let the learning rate decay as training goes on [^2], or smooth
+      the kink, as the Huber loss does by being quadratic for small residuals [^3].
+    references:
+      - source: d2l
+        locator: Sec. 3.1.1.4 Minibatch Stochastic Gradient Descent
+        url: https://d2l.ai/chapter_linear-regression/linear-regression.html#minibatch-stochastic-gradient-descent
+      - source: d2l
+        locator: Sec. 12.4.1 Stochastic Gradient Updates
+        url: https://d2l.ai/chapter_optimization/sgd.html#stochastic-gradient-updates
+      - title: 'Wikipedia: Huber loss'
+        locator: Definition and Motivation
+        url: https://en.wikipedia.org/wiki/Huber_loss
+      - source: d2l
+        locator: Sec. 3.1.6 Exercises, Exercise 5
+        url: https://d2l.ai/chapter_linear-regression/linear-regression.html#exercises
+    source:
+      id: d2l
+      ref: chapter_linear-regression/linear-regression#ex5-b
+      url: https://d2l.ai/chapter_linear-regression/linear-regression.html#exercises
+    status: draft
+  - id: linear-regression-030
+    type: short_answer
+    difficulty: medium
+    tags:
+      - linear-layers
+      - composition
+      - affine-functions
+    question: |
+      Two linear layers are composed without an activation function in between,
+      $\mathbf{h} = \mathbf{W}_1\mathbf{x} + \mathbf{b}_1$ and $o = \mathbf{w}_2^\top\mathbf{h} + b_2$,
+      with
+
+      $$\mathbf{W}_1 = \begin{bmatrix} 1 & 2 \\ 0 & 1 \\ -1 & 1 \end{bmatrix},\quad \mathbf{b}_1 = \begin{bmatrix} 1 \\ 0 \\ 2 \end{bmatrix},\quad \mathbf{w}_2 = \begin{bmatrix} 1 \\ -1 \\ 2 \end{bmatrix},\quad b_2 = 0.5.$$
+
+      The pair computes the single layer $o = \mathbf{w}^\top\mathbf{x} + b$ with $\mathbf{w} =$
+      ( {{1}} , {{2}} ) and $b =$ {{3}}.
+    answer:
+      blanks:
+        - numeric: -1
+          tolerance: 0
+          hint: a number
+        - numeric: 3
+          tolerance: 0
+          hint: a number
+        - numeric: 5.5
+          tolerance: 0.001
+          hint: a number
+      model: $\mathbf{w}^\top = \mathbf{w}_2^\top\mathbf{W}_1 = (-1, 3)$ and $b = \mathbf{w}_2^\top\mathbf{b}_1 + b_2 = 5.5$
+    explanation: |
+      Substituting gives $o = \mathbf{w}_2^\top\mathbf{W}_1\mathbf{x} + \mathbf{w}_2^\top\mathbf{b}_1 + b_2$,
+      again an affine function of $\mathbf{x}$ [^1]. Here
+      $\mathbf{w}_2^\top\mathbf{W}_1 = (1 - 0 - 2,\; 2 - 1 + 2) = (-1, 3)$ and
+      $\mathbf{w}_2^\top\mathbf{b}_1 + b_2 = 1 - 0 + 4 + 0.5 = 5.5$. So the two-layer stack expresses
+      nothing that one linear layer cannot, while it has 13 parameters instead of 3. A nonlinear
+      activation between the layers is what prevents this collapse [^1].
+    references:
+      - source: d2l
+        locator: Sec. 5.1.1.3 From Linear to Nonlinear
+        url: https://d2l.ai/chapter_multilayer-perceptrons/mlp.html#from-linear-to-nonlinear
+        quote: An affine function of an affine function is itself an affine function.
+      - source: d2l
+        locator: Sec. 3.1.6 Exercises, Exercise 6
+        url: https://d2l.ai/chapter_linear-regression/linear-regression.html#exercises
+    source:
+      id: d2l
+      ref: chapter_linear-regression/linear-regression#ex6
+      url: https://d2l.ai/chapter_linear-regression/linear-regression.html#exercises
+    status: draft
+  - id: linear-regression-031
+    type: single
+    difficulty: medium
+    tags:
+      - target-transform
+      - log-price
+      - relative-error
+    question: |
+      Why is regressing $y = \log(\text{price})$ usually better than regressing the price itself with
+      additive Gaussian noise?
+    options:
+      - text: Taking logs removes outliers from the data, so the fitted weights become unbiased
+        why: Logs compress large values, but they neither remove outliers nor guarantee unbiased weights.
+      - text: Prices are positive and vary by percentages, which become additive errors on a log scale
+        correct: true
+      - text: A log transform makes the relationship between the features and the price linear in every case
+        why: A log transform changes the noise model and the scale of the errors; it does not make an arbitrary relationship linear.
+      - text: Additive Gaussian noise overflows numerically when the targets are as large as house prices
+        why: 'The issue is statistical, not numerical: additive noise of fixed size is the wrong model for prices of very different magnitudes.'
+    explanation: |
+      Additive Gaussian noise of fixed size can produce negative prices, and it treats a \$100,000
+      error the same for a \$125,000 house and for a \$4 million one [^1]. Prices, like stock prices,
+      change by percentages: a model $\text{price} = \text{trend} \times (1 + \text{error})$ becomes
+      additive after taking logs, where Gaussian noise is a reasonable assumption. That is why the
+      Kaggle house-price competition scores the RMSE between log prices, a measure of relative error
+      [^1]. Modeling $\log y$ as Gaussian means the price itself is log-normal, hence always positive
+      [^2].
+    references:
+      - source: d2l
+        locator: Sec. 5.7.5 Error Measure
+        url: https://d2l.ai/chapter_multilayer-perceptrons/kaggle-house-price.html#error-measure
+      - title: 'Wikipedia: Log-normal distribution'
+        locator: Introduction
+        url: https://en.wikipedia.org/wiki/Log-normal_distribution
+      - source: d2l
+        locator: Sec. 3.1.6 Exercises, Exercise 7
+        url: https://d2l.ai/chapter_linear-regression/linear-regression.html#exercises
+    source:
+      id: d2l
+      ref: chapter_linear-regression/linear-regression#ex7
+      url: https://d2l.ai/chapter_linear-regression/linear-regression.html#exercises
+    status: draft
+  - id: linear-regression-032
+    type: single
+    difficulty: medium
+    tags:
+      - poisson-regression
+      - count-data
+      - negative-log-likelihood
+    question: |
+      To predict the number of apples $k$ sold per day, you model $k \sim \mathrm{Poisson}(\lambda)$
+      with $p(k \mid \lambda) = \lambda^k e^{-\lambda} / k!$, and the network outputs
+      $\theta = \log\lambda$. Which per-example loss is the negative log-likelihood, up to a constant?
+    options:
+      - text: $-k\theta$
+        why: Without the $e^\theta$ term (the $\lambda$ term) the loss keeps decreasing as $\theta$ grows, so the model would predict ever larger counts.
+      - text: $\theta - k\log\theta$
+        why: That is the loss written for $\lambda$ with $\theta$ plugged in for $\lambda$; since $\lambda = e^\theta$, the terms become $e^\theta$ and $k\theta$.
+      - text: $e^{\theta} - k\theta$
+        correct: true
+      - text: $(k - e^{\theta})^2$
+        why: That is the squared loss of Gaussian noise; counts are nonnegative integers whose variance grows with their mean.
+    explanation: |
+      $-\log p(k \mid \lambda) = \lambda - k\log\lambda + \log k!$, and substituting
+      $\lambda = e^\theta$ gives $e^\theta - k\theta + \log k!$, where $\log k!$ does not depend on the
+      parameters [^1]. Its derivative $e^\theta - k$ vanishes at $\theta = \log k$, that is at
+      $\lambda = k$, consistent with $\lambda$ being the mean of the Poisson distribution [^2].
+      Predicting $\log\lambda$ keeps the rate positive without constraints, the log link of Poisson
+      regression [^1]; Gaussian noise would instead allow negative and fractional sales.
+    references:
+      - title: 'Wikipedia: Poisson regression'
+        locator: Maximum likelihood-based parameter estimation
+        url: https://en.wikipedia.org/wiki/Poisson_regression#Maximum_likelihood-based_parameter_estimation
+      - title: 'Wikipedia: Poisson distribution'
+        locator: Descriptive statistics (mean)
+        url: https://en.wikipedia.org/wiki/Poisson_distribution#Descriptive_statistics
+      - source: d2l
+        locator: Sec. 3.1.6 Exercises, Exercise 8
+        url: https://d2l.ai/chapter_linear-regression/linear-regression.html#exercises
+    source:
+      id: d2l
+      ref: chapter_linear-regression/linear-regression#ex8
+      url: https://d2l.ai/chapter_linear-regression/linear-regression.html#exercises
+    status: draft
+  - id: linear-regression-033
+    type: multiple
+    difficulty: medium
+    tags:
+      - initialization
+      - convexity
+      - sgd
+    question: |
+      You train linear regression with squared loss by minibatch SGD. Which statements about
+      initializing the weights are true? Select all that apply.
+    options:
+      - text: Drawing the weights with variance 1000 still converges, but it starts with a large loss and needs more steps
+        correct: true
+      - text: Zero weights make every gradient zero, so the weights never move
+        why: The gradient is $\mathbf{x}(\mathbf{w}^\top\mathbf{x} + b - y)$; at $\mathbf{w} = \mathbf{0}$ the residual is $b - y$, which is nonzero for most examples [^1].
+      - text: Variance 1000 lands in a worse local minimum than variance 0.01
+        why: The squared loss of a linear model is convex, so it has no bad local minima; the minimum is unique when the design matrix has full rank [^2].
+      - text: Zero initialization only works if the bias starts at a nonzero value
+        why: With $\mathbf{w} = \mathbf{0}$ and $b = 0$ the residuals are $-y$, which already give nonzero gradients for all weights [^1].
+      - text: Initializing all weights to zero works, because there is no hidden layer whose units need their symmetry broken
+        correct: true
+    explanation: |
+      The gradient of the squared loss with respect to $\mathbf{w}$ is
+      $\mathbf{x}^{(i)}(\mathbf{w}^\top\mathbf{x}^{(i)} + b - y^{(i)})$ [^1], which is nonzero at
+      $\mathbf{w} = \mathbf{0}$ as long as the labels are not all zero, and different for each weight
+      because the features differ. Symmetry only becomes a problem with interchangeable hidden units
+      [^3]. The loss is convex in $(\mathbf{w}, b)$, so gradient descent reaches the same global minimum
+      from any start [^2]; a huge initialization only begins with a much larger loss, so it needs more
+      steps to get there.
+    references:
+      - source: d2l
+        locator: Sec. 3.1.1.4 Minibatch Stochastic Gradient Descent
+        url: https://d2l.ai/chapter_linear-regression/linear-regression.html#minibatch-stochastic-gradient-descent
+      - source: d2l
+        locator: Sec. 3.1.1.3 Analytic Solution
+        url: https://d2l.ai/chapter_linear-regression/linear-regression.html#analytic-solution
+      - source: d2l
+        locator: Sec. 5.4.1.3 Breaking the Symmetry
+        url: https://d2l.ai/chapter_multilayer-perceptrons/numerical-stability-and-init.html#breaking-the-symmetry
+      - source: d2l
+        locator: Sec. 3.4.6 Exercises, Exercise 1
+        url: https://d2l.ai/chapter_linear-regression/linear-regression-scratch.html#exercises
+    source:
+      id: d2l
+      ref: chapter_linear-regression/linear-regression-scratch#ex1
+      url: https://d2l.ai/chapter_linear-regression/linear-regression-scratch.html#exercises
+    status: draft
+  - id: linear-regression-034
+    type: short_answer
+    difficulty: easy
+    tags:
+      - least-squares
+      - no-bias
+      - closed-form
+    question: |
+      Ohm's law says $V = RI$. You measure $(I, V) = (1, 2.1)$, $(2, 3.9)$ and $(3, 6.2)$ (amperes,
+      volts) and fit $R$ by least squares, minimizing $\sum_i (V_i - RI_i)^2$: a linear regression with
+      no bias. What is $R$? Round to 3 decimals.
+    answer:
+      numeric: 2.036
+      tolerance: 0.002
+      hint: a number, 3 decimals
+      model: $R = \dfrac{\sum_i I_iV_i}{\sum_i I_i^2} = \dfrac{28.5}{14} \approx 2.036$ ohms
+    explanation: |
+      Setting the derivative $-2\sum_i I_i(V_i - RI_i)$ to zero gives
+      $R = \sum_i I_iV_i / \sum_i I_i^2$, the one-feature case of the normal equations
+      $\mathbf{X}^\top\mathbf{X}\mathbf{w} = \mathbf{X}^\top\mathbf{y}$ [^1]. Here
+      $\sum I_iV_i = 2.1 + 7.8 + 18.6 = 28.5$ and $\sum I_i^2 = 14$. Training with autograd and SGD
+      would approach the same value iteratively, since the model is linear in $R$ [^2]; leaving out the
+      bias encodes the physics that zero current means zero voltage.
+    references:
+      - source: d2l
+        locator: Sec. 3.1.1.3 Analytic Solution
+        url: https://d2l.ai/chapter_linear-regression/linear-regression.html#analytic-solution
+      - source: d2l
+        locator: Sec. 3.4.4 Training
+        url: https://d2l.ai/chapter_linear-regression/linear-regression-scratch.html#training
+      - source: d2l
+        locator: Sec. 3.4.6 Exercises, Exercise 2
+        url: https://d2l.ai/chapter_linear-regression/linear-regression-scratch.html#exercises
+    source:
+      id: d2l
+      ref: chapter_linear-regression/linear-regression-scratch#ex2
+      url: https://d2l.ai/chapter_linear-regression/linear-regression-scratch.html#exercises
+    status: draft
+  - id: linear-regression-035
+    type: single
+    difficulty: medium
+    tags:
+      - outliers
+      - squared-loss
+      - absolute-loss
+      - robustness
+    shuffle: false
+    question: |
+      You fit linear regression to data in which one label was mistyped as $y_5 = 10000$. Compare the
+      squared loss $\frac{1}{2}(\hat y - y)^2$ with the absolute loss $|\hat y - y|$. Which statement is
+      correct?
+    options:
+      - text: The outlier's squared-loss gradient grows with its residual and dominates; absolute loss caps it at 1
+        correct: true
+      - text: Both losses are affected equally, because the outlier's residual is exactly the same under both of them
+        why: 'The residual is the same, but the gradients are not: $\hat y - y$ for squared loss versus $\mathrm{sign}(\hat y - y)$ for absolute loss.'
+      - text: Absolute loss is affected more, because $|r|$ exceeds $\frac{1}{2}r^2$ for large residuals
+        why: 'For large $|r|$ it is the other way round: $\frac{1}{2}r^2$ is far larger than $|r|$.'
+      - text: Squared loss ignores the outlier, because the gradient of the loss is zero at its minimum
+        why: Only the total gradient is zero at the minimum; the outlier's own term pulls the fit strongly toward it.
+    explanation: |
+      Each example's gradient is $(\hat y - y)\mathbf{x}$ under squared loss but
+      $\mathrm{sign}(\hat y - y)\mathbf{x}$ under absolute loss. A residual near 10000 thus pulls 10000
+      times harder than a residual of 1 under squared loss, and the fit tilts toward the outlier; d2l
+      notes this excessive sensitivity of the quadratic loss to anomalous data [^1]. The absolute loss,
+      like the $\ell_1$ norm, is much less sensitive to outliers [^2], but its constant gradient makes
+      SGD jitter near the optimum. The Huber loss combines both: quadratic for small residuals and
+      linear, with a bounded gradient, for large ones [^3].
+    references:
+      - source: d2l
+        locator: Sec. 3.1.1.2 Loss Function
+        url: https://d2l.ai/chapter_linear-regression/linear-regression.html#loss-function
+      - source: d2l
+        locator: Sec. 2.3.11 Norms
+        url: https://d2l.ai/chapter_preliminaries/linear-algebra.html#norms
+      - title: 'Wikipedia: Huber loss'
+        locator: Definition and Motivation
+        url: https://en.wikipedia.org/wiki/Huber_loss
+      - source: d2l
+        locator: Sec. 3.4.6 Exercises, Exercise 8
+        url: https://d2l.ai/chapter_linear-regression/linear-regression-scratch.html#exercises
+    source:
+      id: d2l
+      ref: chapter_linear-regression/linear-regression-scratch#ex8
+      url: https://d2l.ai/chapter_linear-regression/linear-regression-scratch.html#exercises
+    status: draft
+  - id: linear-regression-036
+    type: short_answer
+    difficulty: medium
+    tags:
+      - huber-loss
+      - robustness
+      - gradients
+    question: |
+      The Huber loss with threshold $\sigma$ is $l(r) = \frac{r^2}{2\sigma}$ for $|r| \le \sigma$ and
+      $l(r) = |r| - \frac{\sigma}{2}$ otherwise, where $r = \hat y - y$ is the residual. With
+      $\sigma = 2$, the derivative $dl/dr$ is {{1}} for a residual $r = 1.5$ and {{2}} for an outlier
+      with $r = 500$.
+    answer:
+      blanks:
+        - numeric: 0.75
+          tolerance: 0.001
+          hint: a number
+        - numeric: 1
+          tolerance: 0.001
+          hint: a number
+      model: $r/\sigma = 0.75$ inside the threshold, and $\mathrm{sign}(r) = 1$ outside it.
+    explanation: |
+      Inside the threshold the loss is quadratic, so the gradient $r/\sigma$ shrinks smoothly toward 0
+      with the residual and SGD can settle, as with squared loss. Outside it the loss is linear, so the
+      gradient never exceeds 1 in size and an outlier pulls no harder than any other badly fit point
+      [^1]. The pieces meet with equal value ($\sigma/2$) and slope (1) at $|r| = \sigma$, so the loss
+      is differentiable everywhere. This is the cheap combination of squared and absolute loss that
+      d2l's exercises ask for [^2]; PyTorch implements exactly this form as `nn.SmoothL1Loss` with
+      `beta` $= \sigma$ [^3].
+    references:
+      - title: 'Wikipedia: Huber loss'
+        locator: Definition and Motivation
+        url: https://en.wikipedia.org/wiki/Huber_loss
+      - source: d2l
+        locator: Sec. 3.5.6 Exercises, Exercise 2 (Huber's robust loss)
+        url: https://d2l.ai/chapter_linear-regression/linear-regression-concise.html#exercises
+      - title: 'PyTorch documentation: torch.nn.SmoothL1Loss'
+        locator: Class description
+        url: https://docs.pytorch.org/docs/stable/generated/torch.nn.SmoothL1Loss.html
+      - source: d2l
+        locator: Sec. 3.4.6 Exercises, Exercise 8
+        url: https://d2l.ai/chapter_linear-regression/linear-regression-scratch.html#exercises
+    source:
+      id: d2l
+      ref: chapter_linear-regression/linear-regression-scratch#ex8-b
+      url: https://d2l.ai/chapter_linear-regression/linear-regression-scratch.html#exercises
+    status: draft
+  - id: linear-regression-037
+    type: short_answer
+    difficulty: medium
+    tags:
+      - l1-regularization
+      - weight-decay
+      - sparsity
+    question: |
+      You minimize $L(\mathbf{w}) + \lambda\sum_i |w_i|$ ($\ell_1$ regularization) by gradient descent
+      with learning rate $\eta = 0.1$ and $\lambda = 0.2$. A weight has value $w = 0.5$, and the data
+      loss gives it the gradient $\partial L / \partial w = 0$. What is $w$ after one update?
+    answer:
+      numeric: 0.48
+      tolerance: 0.0005
+      hint: a number
+      model: $w - \eta(\partial L/\partial w + \lambda\,\mathrm{sign}(w)) = 0.5 - 0.1 \times 0.2 = 0.48$
+    explanation: |
+      The (sub)gradient of $\lambda|w|$ is $\lambda\,\mathrm{sign}(w)$, so $\ell_1$ regularization
+      moves every nonzero weight toward zero by the constant amount $\eta\lambda = 0.02$, whatever its
+      size. Weight decay with penalty $\frac{\lambda}{2}\lVert\mathbf{w}\rVert^2$ instead multiplies
+      the weight by $1 - \eta\lambda$ [^1], here $0.5 \times 0.98 = 0.49$: it shrinks large weights a
+      lot and small ones hardly at all. The constant pull is why $\ell_1$ drives unhelpful weights to
+      exactly zero and selects features [^1]; in practice a step that would cross zero is set to zero
+      (soft thresholding) instead of overshooting [^2].
+    references:
+      - source: d2l
+        locator: Sec. 3.7.1 Norms and Weight Decay
+        url: https://d2l.ai/chapter_linear-regression/weight-decay.html#norms-and-weight-decay
+      - title: 'Wikipedia: Lasso (statistics)'
+        locator: Basic form, Orthonormal covariates (soft thresholding)
+        url: https://en.wikipedia.org/wiki/Lasso_(statistics)#Orthonormal_covariates
+      - source: d2l
+        locator: Sec. 3.7.6 Exercises, Exercise 3
+        url: https://d2l.ai/chapter_linear-regression/weight-decay.html#exercises
+    source:
+      id: d2l
+      ref: chapter_linear-regression/weight-decay#ex3
+      url: https://d2l.ai/chapter_linear-regression/weight-decay.html#exercises
+    status: draft
+  - id: linear-regression-038
+    type: single
+    difficulty: easy
+    tags:
+      - frobenius-norm
+      - trace
+      - weight-decay
+    question: |
+      For vectors, $\lVert\mathbf{w}\rVert^2 = \mathbf{w}^\top\mathbf{w}$. Which expression equals the
+      squared Frobenius norm $\lVert\mathbf{W}\rVert_F^2$ of a matrix $\mathbf{W}$?
+    options:
+      - text: $\det(\mathbf{W}^\top\mathbf{W})$, the determinant
+        why: The determinant multiplies the eigenvalues; for $\mathbf{W} = \begin{bmatrix} 1 & 2 \\ 3 & 4 \end{bmatrix}$ it is 4, while the sum of squares is 30.
+      - text: $\mathbf{1}^\top\mathbf{W}\mathbf{1}$, the sum of all entries
+        why: It adds up the entries without squaring them, so positive and negative entries can cancel.
+      - text: $\lambda_{\max}(\mathbf{W}^\top\mathbf{W})$, the largest eigenvalue
+        why: That is the squared spectral norm; the squared Frobenius norm adds up all eigenvalues of $\mathbf{W}^\top\mathbf{W}$, not only the largest [^2].
+      - text: $\operatorname{tr}(\mathbf{W}^\top\mathbf{W})$, the trace
+        correct: true
+    explanation: |
+      The squared Frobenius norm is the sum of the squares of all entries [^1]. Diagonal entry $j$ of
+      $\mathbf{W}^\top\mathbf{W}$ is $\sum_i w_{ij}^2$, the squared length of column $j$, so the trace
+      adds up every squared entry: $\lVert\mathbf{W}\rVert_F^2 = \operatorname{tr}(\mathbf{W}^\top\mathbf{W})$
+      [^2]. For $\mathbf{W} = \begin{bmatrix} 1 & 2 \\ 3 & 4 \end{bmatrix}$ both give 30. This is the
+      penalty weight decay applies to each weight matrix of a network [^3].
+    references:
+      - source: d2l
+        locator: Sec. 2.3.11 Norms (Frobenius norm)
+        url: https://d2l.ai/chapter_preliminaries/linear-algebra.html#norms
+      - title: 'Wikipedia: Matrix norm'
+        locator: Frobenius norm
+        url: https://en.wikipedia.org/wiki/Matrix_norm#Frobenius_norm
+      - source: d2l
+        locator: Sec. 5.3.1 Forward Propagation (regularization term)
+        url: https://d2l.ai/chapter_multilayer-perceptrons/backprop.html#forward-propagation
+      - source: d2l
+        locator: Sec. 3.7.6 Exercises, Exercise 4
+        url: https://d2l.ai/chapter_linear-regression/weight-decay.html#exercises
+    source:
+      id: d2l
+      ref: chapter_linear-regression/weight-decay#ex4
+      url: https://d2l.ai/chapter_linear-regression/weight-decay.html#exercises
+    status: draft
+  - id: linear-regression-039
+    type: single
+    difficulty: medium
+    tags:
+      - weight-decay
+      - map-estimation
+      - gaussian-prior
+    question: |
+      Minimizing $-\log P(\text{data} \mid \mathbf{w}) - \log P(\mathbf{w})$ finds the most probable
+      weights a posteriori (MAP). Which prior $P(\mathbf{w})$ makes $-\log P(\mathbf{w})$ equal to the
+      weight-decay penalty $\frac{\lambda}{2}\lVert\mathbf{w}\rVert^2$, up to a constant?
+    options:
+      - text: A Gaussian centered at the least-squares weights
+        why: The penalty pulls the weights toward zero, so the prior must be centered at zero, and a prior cannot depend on the data.
+      - text: A zero-mean Gaussian, $\mathbf{w} \sim \mathcal{N}(\mathbf{0}, \lambda^{-1}\mathbf{I})$
+        correct: true
+      - text: A zero-mean Laplace prior, $P(\mathbf{w}) \propto \exp(-\lambda\lVert\mathbf{w}\rVert_1)$
+        why: Its negative log is $\lambda\lVert\mathbf{w}\rVert_1$, the lasso ($\ell_1$) penalty [^3].
+      - text: A uniform prior over all weight vectors
+        why: A flat prior only adds a constant, so MAP reduces to maximum likelihood with no penalty at all.
+    explanation: |
+      With $P(\mathbf{w}) \propto \exp(-\frac{\lambda}{2}\lVert\mathbf{w}\rVert^2)$ the negative log
+      prior is $\frac{\lambda}{2}\lVert\mathbf{w}\rVert^2$ plus a constant, exactly the term weight decay
+      adds to the loss [^1]. That density is a Gaussian with mean 0 and variance $1/\lambda$ for each
+      weight, so a larger $\lambda$ expresses a firmer belief that the weights are small; ridge
+      regression is the MAP estimate under such a prior [^2]. A Laplace prior gives the $\ell_1$
+      penalty of the lasso instead [^3].
+    references:
+      - source: d2l
+        locator: Sec. 3.7.1 Norms and Weight Decay
+        url: https://d2l.ai/chapter_linear-regression/weight-decay.html#norms-and-weight-decay
+      - title: 'Wikipedia: Ridge regression'
+        locator: Bayesian interpretation
+        url: https://en.wikipedia.org/wiki/Ridge_regression#Bayesian_interpretation
+      - title: 'Wikipedia: Lasso (statistics)'
+        locator: Bayesian interpretation
+        url: https://en.wikipedia.org/wiki/Lasso_(statistics)#Bayesian_interpretation
+      - source: d2l
+        locator: Sec. 3.7.6 Exercises, Exercise 6
+        url: https://d2l.ai/chapter_linear-regression/weight-decay.html#exercises
+    source:
+      id: d2l
+      ref: chapter_linear-regression/weight-decay#ex6
+      url: https://d2l.ai/chapter_linear-regression/weight-decay.html#exercises
+    status: draft
