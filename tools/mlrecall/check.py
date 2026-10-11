@@ -121,6 +121,11 @@ def _check_question(r: Report, f: bank.BankFile, q: Question, sources: dict) -> 
     texts += [o.text for o in options] + [o.why for o in options]
     if any(t and _unbalanced_dollars(t) for t in texts):
         r.warnings.append(f"{where}: unbalanced $ — math won't render (escape a literal $ as \\$)")
+    if any(t and _wrapped_display_math(t) for t in texts):
+        r.warnings.append(
+            f"{where}: `$$…$$` starts mid-line and wraps onto the next line, which Markdown "
+            "misreads — keep it on one line, or put each `$$` on a line of its own"
+        )
     if any(t and _math_line_starts_block(t) for t in texts):
         r.warnings.append(
             f"{where}: a line inside math starts with `+ `, `- `, `* ` or `1. `, which Markdown "
@@ -131,6 +136,15 @@ def _check_question(r: Report, f: bank.BankFile, q: Question, sources: dict) -> 
 def _unbalanced_dollars(text: str) -> bool:
     text = re.sub(r"```.*?```|`[^`\n]*`", "", text, flags=re.DOTALL)
     return len(re.findall(r"(?<!\\)\$", text)) % 2 == 1
+
+
+def _wrapped_display_math(text: str) -> bool:
+    text = re.sub(r"```.*?```", "", text, flags=re.DOTALL)
+    for m in re.finditer(r"(?<!\\)\$\$(.*?)(?<!\\)\$\$", text, flags=re.DOTALL):
+        body = m.group(1)
+        if "\n" in body.strip(" ") and not body.lstrip(" ").startswith("\n"):
+            return True
+    return False
 
 
 # Block markers that may interrupt a paragraph (CommonMark): bullets, ordered lists starting at 1.
