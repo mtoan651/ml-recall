@@ -39,13 +39,19 @@ items:
 
 Fix keys: `question`, `options` (`{index: new text}`, or a full list of options to replace
 them), `why` (`{index: new feedback}`, `null` removes it), `correct`, `type`, `shuffle`,
-`explanation`, `references`, `answer` (merged into the short-answer key — e.g. the `blanks` of an
+`explanation`, `references` (appended to the importer's; with `references_replace: true` they
+replace them), `answer` (merged into the short-answer key — e.g. the `blanks` of an
 open upstream question turned into a gap-fill; `null` removes it when it becomes a choice
 question), and the redrawn
 figures `figure`, `explanation_figure` and `images` (`{index: {src, alt}}` for option pictures) —
 see [figures.md](figures.md#redrawing-upstream-pictures). Unlisted items are kept with the default topic; items flagged upstream
 (MMLU-Redux error labels, or `image` when the text relies on a picture) are dropped unless they get
 a `fix` or `keep: true`.
+
+`uv run mlr sync-curation` writes these fixes for you: after editing imported questions in the
+bank (a review, a corrected key, a new explanation), it derives each changed item's `fix`,
+`topic`, `difficulty` and `tags` from the raw upstream item and checks that a fresh import now
+reproduces the bank; `--check` only reports the questions that differ.
 
 Keep-lists: `default_drop: <reason>` drops every item not listed (so `"quiz-7/q1": {}` keeps one
 item with its default topic), and a per-item decision overrides `exclude_prefixes`, which gives a

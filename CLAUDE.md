@@ -9,6 +9,7 @@ and a static Astro quiz site (`docs/web-app.md`). Start with `docs/overview.md`.
 uv sync                          # install tooling
 uv run mlr check                 # validate bank + quality report (must pass before committing)
 uv run mlr import <source|all> [--dry-run]
+uv run mlr sync-curation [--check]  # record bank edits of imported questions as curation fixes
 uv run mlr stats                 # Markdown stats table (README)
 uv run mlr schema                # re-export schema/*.schema.json after editing schema.py
 uv run mlr figs                  # re-render question figures from their generator scripts
@@ -49,5 +50,5 @@ pnpm lint && pnpm test && pnpm check && pnpm build   # must pass before committi
 - Keep imported questions that show pictures: redraw them from code (`docs/figures.md`), don't drop them.
 - Keep and fix rather than drop or retire: drop an upstream item only for a content reason
   (`docs/content-pipeline.md#curation`), and record every bank edit of an imported question
-  as a curation `fix` so a fresh import reproduces it.
+  as a curation `fix` so a fresh import reproduces it (`uv run mlr sync-curation` does this).
 - Run `uv run mlr check` after every data change and fix all errors.

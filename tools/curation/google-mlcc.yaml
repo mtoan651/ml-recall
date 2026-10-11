@@ -8,40 +8,49 @@ items:
   "classification/roc-and-auc#q1":
     fix:
       question: In practice, ROC curves are much less regular than textbook illustrations. Which of the following models, represented by their ROC curve and AUC, has the best performance?
-      options: {0: AUC = 0.77, 1: AUC = 0.508, 2: AUC = 0.623, 3: AUC = 0.31}
-      images:
-        0:
-          src: ./metrics/metrics-014-a.svg
-          alt: ROC curve (dashed) that rises steeply from (0, 0) and then flattens near the top; the area under it is shaded and labelled AUC = 0.77.
-        1:
-          src: ./metrics/metrics-014-b.svg
-          alt: ROC curve (dash-dot) that runs almost along the diagonal from (0, 0) to (1, 1) with small zig-zags, labelled AUC = 0.508.
-        2:
-          src: ./metrics/metrics-014-c.svg
-          alt: ROC curve (dotted) that climbs in uneven steps above the diagonal from (0, 0) to (1, 1), labelled AUC = 0.623.
-        3:
-          src: ./metrics/metrics-014-d.svg
-          alt: ROC curve that stays below the diagonal, moving right first and rising steeply only near FPR = 1, labelled AUC = 0.31.
-  "classification/roc-and-auc#q2":
-    fix:  # the options were ROC pictures; their AUC values carry the question
+      explanation: The model with AUC 0.77 has the highest AUC of the four, which corresponds with the best performance. [^1]
       options:
-        0: A model whose ROC curve has an AUC of 0.32
-        1: A model whose ROC curve has an AUC of 0.508
-        2: A model whose ROC curve has an AUC of 0.5
-        3: A model whose ROC curve has an AUC of 1.0
-      images:
-        0:
-          src: ./metrics/metrics-009-a.svg
-          alt: ROC curve that stays below the diagonal, moving right first and rising steeply only near FPR = 1, labelled AUC = 0.32.
-        1:
-          src: ./metrics/metrics-009-b.svg
-          alt: ROC curve (dash-dot) that runs almost along the diagonal with small zig-zags, labelled AUC = 0.508.
-        2:
-          src: ./metrics/metrics-009-c.svg
-          alt: ROC curve that is the straight diagonal line from (0, 0) to (1, 1), labelled AUC = 0.5.
-        3:
-          src: ./metrics/metrics-009-d.svg
-          alt: ROC curve that goes straight up from (0, 0) to (0, 1) and then straight across to (1, 1), labelled AUC = 1.0.
+        - text: AUC = 0.77
+          correct: true
+          image:
+            src: ./metrics/metrics-014-a.svg
+            alt: ROC curve (dashed) that rises steeply from (0, 0) and then flattens near the top; the area under it is shaded and labelled AUC = 0.77.
+        - text: AUC = 0.508
+          image:
+            src: ./metrics/metrics-014-b.svg
+            alt: ROC curve (dash-dot) that runs almost along the diagonal from (0, 0) to (1, 1) with small zig-zags, labelled AUC = 0.508.
+        - text: AUC = 0.623
+          image:
+            src: ./metrics/metrics-014-c.svg
+            alt: ROC curve (dotted) that climbs in uneven steps above the diagonal from (0, 0) to (1, 1), labelled AUC = 0.623.
+        - text: AUC = 0.31
+          image:
+            src: ./metrics/metrics-014-d.svg
+            alt: ROC curve that stays below the diagonal, moving right first and rising steeply only near FPR = 1, labelled AUC = 0.31.
+  "classification/roc-and-auc#q2":
+    fix:
+      explanation: The model with AUC 0.32 is the only one below 0.5, which means it performs worse than chance. [^1]
+      options:
+        - text: A model whose ROC curve has an AUC of 0.32
+          correct: true
+          image:
+            src: ./metrics/metrics-009-a.svg
+            alt: ROC curve that stays below the diagonal, moving right first and rising steeply only near FPR = 1, labelled AUC = 0.32.
+        - text: A model whose ROC curve has an AUC of 0.508
+          why: This model performs slightly better than chance.
+          image:
+            src: ./metrics/metrics-009-b.svg
+            alt: ROC curve (dash-dot) that runs almost along the diagonal with small zig-zags, labelled AUC = 0.508.
+        - text: A model whose ROC curve has an AUC of 0.5
+          why: This model performs the same as chance.
+          image:
+            src: ./metrics/metrics-009-c.svg
+            alt: ROC curve that is the straight diagonal line from (0, 0) to (1, 1), labelled AUC = 0.5.
+        - text: A model whose ROC curve has an AUC of 1.0
+          why: This is a hypothetical perfect classifier.
+          image:
+            src: ./metrics/metrics-009-d.svg
+            alt: ROC curve that goes straight up from (0, 0) to (0, 1) and then straight across to (1, 1), labelled AUC = 1.0.
   "classification/roc-and-auc#q3":
     fix:
       question: A binary classifier's ROC curve has an AUC of 0.32, so it performs worse than chance. Which change makes it perform better than chance?
@@ -80,15 +89,25 @@ items:
       options:
         1: Temperament data is more likely to be missing for dogs under 12 months in age.
   "fairness/mitigating-bias#q1":                             # MinDiff / CLP (TF Model Remediation)
+    difficulty: medium
     fix:
       question: |
         MinDiff and counterfactual logit pairing (CLP) are two bias-mitigation techniques that change
         the loss used during training. Which of the following statements about bias mitigation are
         true? Select all that apply.
+      explanation: |
+        Bias can be mitigated by augmenting the training data or by adjusting the loss. Plain log loss
+        ignores subgroup membership, so a fairness-aware penalty is added instead [^1]. MinDiff penalizes
+        differences between the *distributions* of predictions for two slices of data, while CLP
+        penalizes different predictions for a *pair* of examples that are identical except for a
+        sensitive attribute [^1]. More data helps only if its composition fixes the imbalance; data that
+        repeats the old skew will not. Augmenting the data and MinDiff or CLP can be combined, e.g. more
+        data removes 30% of a performance gap and MinDiff a further 50% [^1].
       why:
         0: Both add a penalty to the training loss for prediction errors tied to how sensitive attributes are represented in the training data.
         1: MinDiff aligns the score distributions of two subgroups; CLP makes sure an individual example is not treated differently only because of its subgroup.
   "fairness/types-of-bias#q1":                               # the course's admissions example
+    difficulty: medium
     fix:
       question: |
         A university's admissions committee uses an ML model to select applicants for its computer
@@ -96,12 +115,20 @@ items:
         feature-engineered the training data: the records of students admitted over the past 20
         years. Its predictions turn out to be skewed against some groups of applicants. Which types of
         bias could have contributed to the skewed predictions? Select all that apply.
+      explanation: |
+        Historical bias occurs when historical data reflects inequities of its time, and 20 years of
+        admission records can encode them [^1]. In-group bias is a preference for people of one's own
+        group, and confirmation bias means processing data in ways that affirm existing beliefs; both can
+        enter through how the student builders curated the data and engineered features [^1]. Automation
+        bias, favouring automated results over human ones regardless of error rates, might explain why
+        the committee chose a model at all, but not why the model's predictions are skewed [^1].
       why:
         0: Records from the past 20 years can carry past inequities; if minority students were under-represented then, the model reproduces that.
         1: Students who built the model may unconsciously prefer applicants with backgrounds like their own when curating data or choosing features.
         2: Students who built the model may hold beliefs about which qualifications predict success and shape the data so that the model confirms them.
   "linear-regression/hyperparameters#q1":
     topic: training
+    difficulty: easy
     fix:
       options:
         0: It is problem-dependent.
@@ -115,23 +142,80 @@ items:
   "linear-regression/loss#q1":
     fix:
       question: Which of the two linear models shown below has the **higher** Mean Squared Error (MSE) when evaluated on the plotted data points?
+      explanation: 'The eight examples on the line incur a total loss of 0. However, although only two points lie off the line, both of those points are *twice* as far off the line as the outlier points in the left figure. Squared loss amplifies those differences, so an offset of two incurs a loss four times as great as an offset of one: $MSE = \frac{0^2 + 0^2 + 0^2 + 2^2 + 0^2 + 0^2 + 0^2 + 2^2 + 0^2 + 0^2} {10} = 0.8$ [^1]'
       figure:
         src: ./linear-regression/linear-regression-017.svg
         alt: 'Two scatter plots, each with the same line y = 2 + 0.5x and 10 points. Left: 6 points lie on the line, 2 are 1 unit above it and 2 are 1 unit below it. Right: 8 points lie on the line, 1 is 2 units above it and 1 is 2 units below it.'
   "llm#q1":
     topic: language-models
+    difficulty: medium
     fix:
+      explanation: |
+        Longer n-grams give more context, but as $N$ grows each n-gram occurs less often, and when $N$ is
+        large most n-grams appear only once, which doesn't help predict the next token [^1]. So the answer
+        depends on the data: if the training set spans millions of diverse documents, the 6-gram model will
+        probably outperform the 5-gram model, while with a small training set most 6-grams are rare and the
+        extra context does not pay off [^1].
       options:
         0: It depends on the size and diversity of the training set.
         1: The 6-gram model, since it uses more context.
         2: The 5-gram model, since its n-grams are less rare.
       why:
         2: Not in general. With a large, diverse training set the 6-gram model's extra context usually wins; the 5-gram model can do better only when the data are too small for most 6-grams to repeat.
-  "llm/transformers#q1": {topic: transformers, keep: true}
-  "llm/tuning#q1": {topic: fine-tuning, keep: true}
+      references:
+        - source: google-mlcc
+          url: https://developers.google.com/machine-learning/crash-course/llm
+          locator: Introduction to Large Language Models, N-gram language models and exercise
+      references_replace: true
+  "llm/transformers#q1":
+    topic: transformers
+    difficulty: medium
+    fix:
+      explanation: |
+        For each token, self-attention works out how much every other token in the context should
+        shape its interpretation, and the heads learn these relationships through their trained
+        parameters [^1]. Across thousands of documents, *acacia* keeps appearing in passages about
+        what elephants eat, and the other words of idioms such as "the elephant in the room" keep
+        appearing next to *elephant*. So the trained model learns to give these pairs high attention
+        when they occur together, which is what lets it answer diet questions or read an idiom
+        correctly [^1]. Attention weights are computed afresh for each input (the page's "it … tired"
+        versus "it … wide" example), so "gaining a high score" means the model tends to assign that
+        weight whenever the words co-occur. Sarcasm and irony are not filtered out: large models
+        trained on broad data become good at recognising them and learn from them [^1].
+      references:
+        - source: google-mlcc
+          url: https://developers.google.com/machine-learning/crash-course/llm/transformers#what_is_self-attention
+          locator: "LLMs: What's a large language model?, sections 'What is self-attention?', 'What is multi-head multi-layer self-attention?' and the closing exercise"
+      references_replace: true
+  "llm/tuning#q1":
+    topic: fine-tuning
+    difficulty: easy
+    fix:
+      explanation: |
+        Distillation creates a smaller version of an LLM: typically a large teacher model labels data,
+        and that data trains a smaller student model with fewer parameters, which is cheaper to serve but
+        usually predicts a little less well [^1]. Fine-tuning only updates existing weights on
+        task-specific examples (all of them, or a subset with parameter-efficient tuning), so a fine-tuned
+        model has exactly as many parameters as the foundation model [^2]. Prompt engineering changes only
+        the input: it customizes the output without adding, removing or altering any parameter [^3].
+      references:
+        - source: google-mlcc
+          url: https://developers.google.com/machine-learning/crash-course/llm/tuning#distillation
+          locator: 'LLMs: Fine-tuning, distillation, and prompt engineering, sec. Distillation'
+        - source: google-mlcc
+          url: https://developers.google.com/machine-learning/crash-course/llm/tuning#fine-tuning
+          locator: 'LLMs: Fine-tuning, distillation, and prompt engineering, sec. Fine-tuning'
+        - source: google-mlcc
+          url: https://developers.google.com/machine-learning/crash-course/llm/tuning#prompt_engineering
+          locator: 'LLMs: Fine-tuning, distillation, and prompt engineering, sec. Prompt engineering (note)'
+      references_replace: true
   "logistic-regression/sigmoid-function#q1":
     fix:
       question: A logistic regression model with three features has bias $b = 1$ and weights $w_1 = 2$, $w_2 = -1$, $w_3 = 5$. For the input $x_1 = 0$, $x_2 = 10$, $x_3 = 2$, what is the value of $z$ (the linear output before the sigmoid)?
+      explanation: |
+        The linear part of the model is $z = b + w_1x_1 + w_2x_2 + w_3x_3 = 1 + 2x_1 - x_2 + 5x_3$.
+        Plugging in the input gives $z = 1 + 2(0) - 10 + 5(2) = 1$ [^1]. Only after that is the
+        sigmoid applied, giving the probability $\sigma(1) \approx 0.731$ [^1].
       shuffle: true
       options:
         0: '21'
@@ -140,9 +224,26 @@ items:
         1: This leaves out the bias $b = 1$.
         2: That is $\sigma(z)$, the predicted probability. $z$ is the value before the sigmoid.
   "logistic-regression/sigmoid-function#q2":
+    difficulty: medium
     fix:
-      question: 'A logistic regression model with three features has bias $b = 1$ and weights $w_1 = 2$, $w_2 = -1$, $w_3 = 5$. What does it predict for the input $x_1 = 0$, $x_2 = 10$, $x_3 = 2$?'
+      question: A logistic regression model with three features has bias $b = 1$ and weights $w_1 = 2$, $w_2 = -1$, $w_3 = 5$. What does it predict for the input $x_1 = 0$, $x_2 = 10$, $x_3 = 2$?
+      explanation: |
+        First compute the linear part (the log-odds), then pass it through the sigmoid [^1][^2]:
+        $$z = b + w_1x_1 + w_2x_2 + w_3x_3 = 1 + 2(0) + (-1)(10) + 5(2) = 1,$$
+        $$y' = \sigma(z) = \frac{1}{1 + e^{-1}} \approx \frac{1}{1.368} \approx 0.731.$$
+        The value 0.268 is $\sigma(-1)$, which you get with a sign error in $z$. The value 0.5 is
+        $\sigma(0)$, which you get by dropping the bias. The sigmoid output always lies strictly
+        between 0 and 1, so the model can never predict exactly 1 [^1][^2].
+      references:
+        - source: google-mlcc
+          url: https://developers.google.com/machine-learning/crash-course/logistic-regression/sigmoid-function#transforming_linear_output_using_the_sigmoid_function
+          locator: "Logistic regression: Calculating a probability with the sigmoid function, 'Transforming linear output using the sigmoid function' and the sigmoid table"
+        - title: Stanford CS229 Lecture Notes (Ng & Ma)
+          url: https://cs229.stanford.edu/main_notes.pdf
+          locator: Ch. 2, Sec. 2.1 Logistic regression, pp. 21-22
+      references_replace: true
   "neural-networks/nodes-hidden-layers#q1":
+    difficulty: medium
     fix:
       question: The fully connected network below has 3 input features, one hidden layer of four neurons and a single output node. How many parameters (weights and biases) does it have?
       figure:
@@ -151,9 +252,28 @@ items:
       why:
         0: Four parameters (one weight per input plus a bias) is the count for the same network without the hidden layer. The hidden layer adds more parameters.
   "neural-networks/nodes-hidden-layers#q2":
-    fix:  # interactive widget on the page
+    difficulty: medium
+    fix:
       question: A network has 3 input features, one hidden layer of four neurons and a single output node, and every node uses a linear (identity) activation. Can this model learn nonlinear relationships?
-      why: {0: null}
+      explanation: |
+        With the identity activation, each hidden neuron outputs just a weighted sum of the inputs
+        plus a bias, and the output node takes a weighted sum of those values plus another bias.
+        That is a linear calculation applied to the results of linear calculations, which is still
+        linear [^1]. Written out, $\mathbf{o} = (\mathbf{x}W^{(1)} + \mathbf{b}^{(1)})W^{(2)} + \mathbf{b}^{(2)} = \mathbf{x}W + \mathbf{b}$,
+        so the hidden layer can be folded away into one linear layer [^2]. The extra layer adds
+        parameters (21 here instead of 4) but no new kinds of functions [^1]. To learn nonlinear
+        relationships, a nonlinear activation such as ReLU has to follow each hidden affine step [^2].
+      why:
+        0:
+      references:
+        - source: google-mlcc
+          url: https://developers.google.com/machine-learning/crash-course/neural-networks/nodes-hidden-layers#exercise_2
+          locator: "Neural networks: Nodes and hidden layers, 'Exercise 2'"
+        - source: d2l
+          url: https://d2l.ai/chapter_multilayer-perceptrons/mlp.html#from-linear-to-nonlinear
+          locator: Sec. 5.1.1.3 From Linear to Nonlinear, Eq. (5.1.2)
+          quote: An affine function of an affine function is itself an affine function.
+      references_replace: true
   "numerical-data/binning#q1":
     fix:
       question: The plot below shows the median home price for each 0.2 degrees of latitude in the mythical country of Freedonia. The relationship is nonlinear, so representing latitude as a single floating-point feature is unlikely to help a model make good predictions. Perhaps bucketing latitudes would be a better idea? What would be the best bucketing strategy?
@@ -163,27 +283,45 @@ items:
   "numerical-data/normalization#q1":
     fix:
       question: Which technique would be most suitable for normalizing a feature with the distribution shown below?
+      explanation: |
+        The histogram rises to a single peak near the middle and falls off about evenly on both
+        sides, so the feature roughly follows a normal distribution. Z-score scaling,
+        $(x - \mu)/\sigma$, is the technique for such features [^1]. It does not cap anything, but
+        in a normal distribution about 99.7% of the values lie within three standard deviations of
+        the mean, so after scaling almost all of them fall between $-3$ and $+3$ [^1].
+      figure:
+        src: ./data-prep/data-prep-016.svg
+        alt: Histogram of a feature whose values range from 0 to about 200,000, rising gradually to a peak around 100,000 and falling off gradually on the other side.
       why:
         1: Linear scaling suits features spread roughly uniformly between stable bounds, such as age [^1]. This feature is bell-shaped.
         2: Log scaling suits power-law or heavily skewed features, such as book sales [^1]. This histogram is roughly symmetric.
         3: Clipping caps extreme outliers [^1]. This feature has no extreme outliers, just a bell-shaped spread.
-      figure:
-        src: ./data-prep/data-prep-016.svg
-        alt: Histogram of a feature whose values range from 0 to about 200,000, rising gradually to a peak around 100,000 and falling off gradually on the other side.
   "numerical-data/normalization#q2":
     fix:
       why: {1: null, 2: null, 3: null}
   "overfitting#q1": {keep: true}
   "overfitting#q2":                                          # "take a guess" about project time
     topic: data-prep
+    difficulty: easy
     fix:
       question: In a typical machine learning project, roughly what share of the time goes into constructing datasets and transforming data?
+      explanation: |
+        Practitioners spend most of an ML project building datasets and doing feature engineering;
+        typically about 80% of the time goes into constructing and transforming data [^1]. The same
+        module stresses why: the quality and size of the dataset matter much more than which algorithm
+        is used [^1]. Shares of a half or less underestimate the data work, which is the most common
+        planning mistake.
       options:
         - text: About 80%
           correct: true
         - text: About 50%
         - text: About 20%
         - text: About 5%
+      references:
+        - source: google-mlcc
+          url: https://developers.google.com/machine-learning/crash-course/overfitting
+          locator: Datasets, generalization, and overfitting (module introduction)
+      references_replace: true
   "overfitting/data-characteristics#q1":
     fix:  # the table was on the page
       question: |-
@@ -199,10 +337,23 @@ items:
 
         Which of the following would be a reasonable value to impute for the missing value of `Temperature`?
   "overfitting/dividing-datasets#q1":
+    difficulty: medium
     fix:
       question: Suppose you train on the training set and evaluate on the test set over multiple rounds. In each round, you use the test set results to guide how to update hyperparameters and the feature set. Can you see anything wrong with this approach?
+      explanation: |
+        Every time the test results decide a change to the hyperparameters or features, some information
+        about the test set leaks into the model. Over many rounds the model ends up fitting the test set's
+        peculiarities, like a teacher teaching to the test, and does worse on real-world data than the
+        test score suggests [^1]. The remedy is a third split: tune against a validation set and use the
+        test set only to confirm the final model [^1]. Tuning is worth the compute; the problem is which
+        data the choices are based on, and even validation and test sets "wear out" with repeated use [^1].
       why:
         1: A separate test set is not enough. Each round uses the test results to make a decision, so information about the test set leaks into the model, and after many rounds the test score no longer reflects performance on new data.
+      references:
+        - source: google-mlcc
+          url: https://developers.google.com/machine-learning/crash-course/overfitting/dividing-datasets#training_validation_and_test_sets
+          locator: 'Datasets: Dividing the original dataset, sec. Training, validation, and test sets'
+      references_replace: true
   "overfitting/dividing-datasets#q3":
     keep: true
     fix:
@@ -211,23 +362,51 @@ items:
   "overfitting/interpreting-loss-curves#q1":
     fix:
       question: The plot below shows a training loss curve. What **three** things could you do to try to improve it?
+      explanation: 'A loss curve that keeps oscillating instead of flattening usually means the updates are too large or the data is noisy [^1]. Lowering the learning rate makes each step smaller. Checking examples against a data schema and removing bad ones takes out broken examples that kick the loss around. Training on a tiny set of trustworthy examples first is a debugging step: if the model cannot converge even there, the problem is in the model or the pipeline, and once it does you can add data back gradually [^1]. Adding more examples or raising the learning rate is unlikely to calm an oscillating curve.'
       figure:
         src: ./ml-basics/ml-basics-051.svg
         alt: 'Loss against training steps: the loss swings up and down in large waves throughout training and never settles.'
   "overfitting/interpreting-loss-curves#q2":
     fix:
       question: Which **two** of the following statements identify possible reasons for the exploding loss shown in the plot below?
+      explanation: |
+        A loss that falls smoothly and then suddenly shoots up points to bad input data rather than a
+        badly tuned hyperparameter [^1]. One cause is NaNs in the input, for example from a division
+        by zero, which is more common than you might expect. Another is a batch packed with outliers,
+        which can happen when batches are not shuffled properly [^1]. A low learning rate only slows
+        training down, and a very high regularization rate can keep a model from converging, but
+        neither produces a sudden jump like this one [^1].
       figure:
         src: ./ml-basics/ml-basics-052.svg
         alt: 'Loss against training steps: the loss falls smoothly for most of training, then suddenly shoots up to a high level and keeps jumping around there.'
       why:
         3: True, a very high regularization could prevent a model from converging; however, it won't cause the strange loss curve shown in the plot.
   "overfitting/interpreting-loss-curves#q3":
+    difficulty: easy
     fix:
       question: The plot below shows the loss curves of the training and test sets. Which **one** of the following statements best identifies the reason for the difference between them?
+      explanation: |
+        The two curves fall together at first, then diverge: the training loss keeps going down while the
+        test loss levels off and starts to rise. The model is learning details of the training set that
+        don't carry over to new data, the classic sign of overfitting [^1]. A learning rate that is too
+        high would show up in the training curve itself, which would bounce around or keep increasing
+        instead of falling smoothly [^2]. Possible fixes are a simpler model (for example, fewer features),
+        a higher regularization rate, and making sure the training and test sets are statistically
+        equivalent [^3].
       figure:
         src: ./ml-basics/ml-basics-053.svg
         alt: 'Two loss curves against training steps: the training loss keeps decreasing, while the test loss decreases at first, then flattens and starts to rise.'
+      references:
+        - source: google-mlcc
+          url: https://developers.google.com/machine-learning/crash-course/overfitting/overfitting#detecting_overfitting
+          locator: Overfitting, sec. Detecting overfitting
+        - source: google-mlcc
+          url: https://developers.google.com/machine-learning/crash-course/linear-regression/hyperparameters#learning_rate
+          locator: 'Linear regression: Hyperparameters, sec. Learning rate'
+        - source: google-mlcc
+          url: https://developers.google.com/machine-learning/crash-course/overfitting/interpreting-loss-curves#exercise_3_test_loss_diverges_from_training_loss
+          locator: 'Overfitting: Interpreting loss curves, Exercise 3. Test loss diverges from training loss'
+      references_replace: true
   "overfitting/interpreting-loss-curves#q4":
     fix:
       question: Which **one** of the following statements is the most likely explanation for the erratic loss curve shown below?
@@ -246,12 +425,33 @@ items:
   "overfitting/model-complexity#q3":
     fix:
       question: Which of the following would be reasonable ways to measure a model's complexity?
+      explanation: |
+        Both statements about weights describe reasonable complexity measures, and each corresponds
+        to a standard regularization penalty [^1]. Measuring complexity from the weights themselves
+        (their absolute values) is what [L1 regularization](https://developers.google.com/machine-learning/glossary#L1_regularization)
+        penalizes, and measuring it from the squares of the weights is what
+        [L2 regularization](https://developers.google.com/machine-learning/glossary#L2_regularization)
+        penalizes [^1]. The bias terms do not measure complexity [^1].
   "overfitting/overfitting#q1":
-    fix:  # the 70/15/15 split was a picture
+    difficulty: easy
+    fix:
       question: You split a dataset into a training set (70%), a validation set (15%) and a test set (15%). What should you do to ensure that the examples in the training set have a similar statistical distribution to the examples in the validation set and the test set?
+      explanation: |
+        Good generalization requires partitions with the same distribution: the training examples should
+        be statistically similar to the validation and test examples [^1]. Shuffling the whole dataset
+        thoroughly before splitting makes this much more likely, since each partition then gets a random
+        sample of every part of the data. Sorting from earliest to latest does the opposite when the data
+        is not stationary (it doesn't stay the same over time [^1]): the training set would get the old
+        examples and the test set the newest ones. Doing nothing is risky too, because datasets are often
+        stored in some order, so different sections can differ however many examples there are.
       figure:
         src: ./ml-basics/ml-basics-036.svg
         alt: A horizontal bar split into a training part (70%), a validation part (15%) and a test part (15%).
+      references:
+        - source: google-mlcc
+          url: https://developers.google.com/machine-learning/crash-course/overfitting/overfitting#generalization_conditions
+          locator: Overfitting, sec. Generalization conditions
+      references_replace: true
   "overfitting/regularization#q1": {topic: linear-regression}
   "overfitting/regularization#q2":
     topic: linear-regression
@@ -259,9 +459,50 @@ items:
       type: true_false
       shuffle: true
   "production-ml-systems/questions#q1": {keep: true}
-  "production-ml-systems/static-vs-dynamic-inference#q1": {keep: true}
-  "production-ml-systems/static-vs-dynamic-inference#q2": {keep: true}
-  "production-ml-systems/static-vs-dynamic-training#q1": {keep: true}
+  "production-ml-systems/static-vs-dynamic-inference#q1":
+    fix:
+      explanation: |
+        Static inference computes predictions ahead of time and serves them from a cache or lookup
+        table [^1]. So the model must make a prediction for every input it may be asked about, which
+        works when the set of items is limited but not for free-form inputs with a long tail of rare
+        cases. Because the predictions exist before anyone uses them, the system can verify them
+        before serving them, and looking a prediction up is almost always faster than computing it
+        on demand as dynamic inference does [^1]. The price is that cached predictions are refreshed
+        only every few hours or days, so you cannot react quickly to changes in the world [^1].
+  "production-ml-systems/static-vs-dynamic-inference#q2":
+    difficulty: medium
+    fix:
+      explanation: |
+        Dynamic (online) inference makes a prediction on demand for whatever request comes in, so it can
+        serve any new item, including rare, long-tail inputs that a cache of precomputed predictions would
+        not contain [^1]. The price is that it is compute intensive and latency sensitive, which may force
+        a simpler model, and it needs more monitoring [^1]. Checking predictions before they are served is
+        an advantage of static inference, which computes and caches them in advance [^2]; a dynamic
+        prediction is used as soon as it is made, so at best you can monitor aggregate quality afterwards.
+      references:
+        - source: google-mlcc
+          url: https://developers.google.com/machine-learning/crash-course/production-ml-systems/static-vs-dynamic-inference#dynamic_inference
+          locator: 'Production ML systems: Static versus dynamic inference, sec. Dynamic inference'
+        - source: google-mlcc
+          url: https://developers.google.com/machine-learning/crash-course/production-ml-systems/static-vs-dynamic-inference#static_inference
+          locator: 'Production ML systems: Static versus dynamic inference, sec. Static inference'
+      references_replace: true
+  "production-ml-systems/static-vs-dynamic-training#q1":
+    difficulty: medium
+    fix:
+      explanation: |
+        With static (offline) training you train the model once and serve it for a while, so you develop
+        and test it once and can verify it before it goes into production [^1]. Because training jobs run
+        rarely, monitoring at training time is more modest than for online training, whose continuous
+        training jobs must be watched [^1]. The cost is staleness: the model can't take in new data, so its
+        predictions degrade if the relationship between features and labels changes [^1]. For the same
+        reason you still have to monitor the input data at serving time; a model trained only on summer
+        data would be unreliable in winter [^1].
+      references:
+        - source: google-mlcc
+          url: https://developers.google.com/machine-learning/crash-course/production-ml-systems/static-vs-dynamic-training
+          locator: 'Production ML systems: Static versus dynamic training, Table 1 and the text after it'
+      references_replace: true
   "production-ml-systems/static-vs-dynamic-training#q2": {keep: true}
   categorical-data/one-hot-encoding#q1:
     fix:
@@ -275,3 +516,107 @@ items:
       shuffle: true
       why:
         0: It's possible for a model's predictions to satisfy both demographic parity and equality of opportunity. See if you can think of a scenario where both metrics are satisfied; the explanation gives one.
+  linear-regression/gradient-descent#q1:
+    difficulty: easy
+    fix:
+      explanation: |
+        Gradient descent is an optimiser: it starts from initial weights and bias, computes the
+        slope (gradient) of the loss, takes a small step in the direction that lowers the loss, and
+        repeats until the loss stops falling [^1][^2]. For linear regression, the loss surface is
+        convex, so it converges to the weights and bias with the lowest loss [^1]. The loss function
+        itself (squared error, absolute error, ...) is chosen beforehand as the measure of fit, and
+        gradient descent just minimises whatever loss it is given [^2]. It never edits the dataset
+        either, so outliers must be handled during data preparation, not by the optimiser.
+      references:
+        - source: google-mlcc
+          url: https://developers.google.com/machine-learning/crash-course/linear-regression/gradient-descent#convergence_and_convex_functions
+          locator: "Linear regression: Gradient descent (intro and 'Convergence and convex functions')"
+        - source: d2l
+          url: https://d2l.ai/chapter_linear-regression/linear-regression.html#minibatch-stochastic-gradient-descent
+          locator: Sec. 3.1.1.2 Loss Function and Sec. 3.1.1.4 Minibatch Stochastic Gradient Descent, Eq. (3.1.10)
+      references_replace: true
+  overfitting/dividing-datasets#q2:
+    difficulty: medium
+    fix:
+      explanation: |
+        A test loss that is too good to be true usually means the model is being tested on examples it
+        has already seen. If the dataset has many redundant examples, shuffling and splitting puts copies
+        of training examples into the test set; in MLCC's spam example, a model reached 99% precision on
+        both sets because duplicates of the same spam emails had not been removed before the split [^1].
+        The fix is to delete from the validation and test sets every example that duplicates a training
+        example [^1]. Run-to-run randomness changes the loss only a little, and with well-shuffled data a
+        lucky test set is extremely unlikely.
+      references:
+        - source: google-mlcc
+          url: https://developers.google.com/machine-learning/crash-course/overfitting/dividing-datasets#additional_problems_with_test_sets
+          locator: 'Datasets: Dividing the original dataset, sec. Additional problems with test sets'
+      references_replace: true
+  overfitting/dividing-datasets#q4:
+    difficulty: easy
+    fix:
+      explanation: |
+        A good test set must represent the dataset as a whole and also the real-world data the model will
+        meet [^1]. Low loss on a large, statistically significant test set shows only that the test set
+        resembles the training set. If the model still fails in production, the dataset itself differs
+        from real-world data, for example because the world has changed since the data was collected;
+        good generalization needs a stationary dataset whose partitions are statistically similar to
+        real-world data [^2]. Find out how the data differs, then retrain and retest on data that matches
+        reality; rerunning the same test would only reproduce the same misleading result.
+      references:
+        - source: google-mlcc
+          url: https://developers.google.com/machine-learning/crash-course/overfitting/dividing-datasets#additional_problems_with_test_sets
+          locator: 'Datasets: Dividing the original dataset, sec. Additional problems with test sets (criteria for a good test set)'
+        - source: google-mlcc
+          url: https://developers.google.com/machine-learning/crash-course/overfitting/overfitting#generalization_conditions
+          locator: Overfitting, sec. Generalization conditions
+      references_replace: true
+  overfitting/dividing-datasets#q5:
+    difficulty: easy
+    fix:
+      explanation: |
+        A test set is there to estimate how well the model generalises, and how precise that
+        estimate is depends on the absolute number of test examples, not on a fixed share of the
+        data [^1][^2]. The standard error of a measured error rate shrinks like $1/\sqrt{n}$. To be
+        about 95% sure that the test error is within $\pm 0.01$ of the true error, you need roughly
+        10,000 examples [^2]. So 15% of a 2,000-example dataset (300 examples) is far too small,
+        while 15% of 100 million examples is far more than needed. The course says there is no
+        percentage requirement for the splits. You should find the number that gives a
+        statistically meaningful result [^1].
+      references:
+        - source: google-mlcc
+          url: https://developers.google.com/machine-learning/crash-course/overfitting/dividing-datasets#additional_problems_with_test_sets
+          locator: "Datasets: Dividing the original dataset, 'Additional problems with test sets' and 'Exercises: Check your understanding'"
+        - source: d2l
+          url: https://d2l.ai/chapter_linear-classification/generalization-classification.html#the-test-set
+          locator: Sec. 4.6.1 The Test Set
+      references_replace: true
+  overfitting/overfitting#q2:
+    difficulty: easy
+    fix:
+      explanation: |
+        A model generalizes well only if the dataset is stationary, that is, if it doesn't change
+        significantly over time [^1]. Viewers' tastes are not stationary: they keep changing in ways that
+        past behavior can't predict, so a model trained on the last ten years will probably misjudge what
+        becomes popular in the next three. A bigger dataset doesn't fix this, since hundreds of millions of
+        examples of past tastes still describe the past, and although some aspects of entertainment are
+        somewhat cyclical, that is not enough to forecast new trends reliably.
+      references:
+        - source: google-mlcc
+          url: https://developers.google.com/machine-learning/crash-course/overfitting/overfitting#generalization_conditions
+          locator: Overfitting, sec. Generalization conditions
+      references_replace: true
+  overfitting/overfitting#q3:
+    difficulty: medium
+    fix:
+      explanation: |
+        Seasonal variation is not a problem in itself; what generalization needs is that the training,
+        validation and test partitions share the same distribution [^1]. A full year of data covers all
+        four seasons, so as long as there are enough examples and every season is spread evenly across the
+        partitions (for example, by shuffling the whole year before splitting), the model is trained and
+        tested on the same mix of weather. Splitting by date would break this: a model trained on spring
+        to autumn and tested on winter would meet weather it never saw in training.
+      references:
+        - source: google-mlcc
+          url: https://developers.google.com/machine-learning/crash-course/overfitting/overfitting#generalization_conditions
+          locator: Overfitting, sec. Generalization conditions
+      references_replace: true

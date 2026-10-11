@@ -181,3 +181,25 @@ def test_curation_fix_turns_an_open_question_into_a_gap_fill_or_a_choice():
     )
     assert "answer" not in item.data
     assert [o["text"] for o in item.data["options"]] == ["y", "z"]
+
+
+def test_sync_curation_options_fix():
+    from mlrecall.curation_sync import _options_fix
+
+    base = [{"text": "a", "correct": True}, {"text": "b", "why": "old"}]
+    want = [{"text": "a", "correct": True}, {"text": "B", "why": "new"}]
+    assert _options_fix(base, want) == {"options": {1: "B"}, "why": {1: "new"}}
+    assert _options_fix(base, [{"text": "a"}, {"text": "b", "correct": True}])["correct"] == [1]
+    assert _options_fix(base, base[:1] + base + [{"text": "c"}]) == {
+        "options": base[:1] + base + [{"text": "c"}]
+    }
+
+
+def test_fix_references_replace():
+    from mlrecall.importers.common import Item, _apply_fix
+
+    item = Item(ref="r", topic="t", data={"references": [{"title": "upstream"}]})
+    _apply_fix(item, {"references": [{"title": "extra"}]})
+    assert [r["title"] for r in item.data["references"]] == ["upstream", "extra"]
+    _apply_fix(item, {"references": [{"title": "only"}], "references_replace": True})
+    assert [r["title"] for r in item.data["references"]] == ["only"]

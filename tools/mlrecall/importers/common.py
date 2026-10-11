@@ -148,8 +148,11 @@ def _apply_fix(item: Item, fix: dict[str, Any]) -> None:
         wanted = {int(i) for i in fix["correct"]}
         for i, opt in enumerate(data["options"]):
             opt["correct"] = i in wanted
-    if "references" in fix:
-        data["references"] = [*data.get("references", []), *fix["references"]]
+    if "references" in fix:  # appended to the importer's references, unless replace is set
+        refs = list(fix["references"])
+        data["references"] = (
+            refs if fix.get("references_replace") else [*data.get("references", []), *refs]
+        )
 
 
 # --------------------------------------------------------------------------- merge
