@@ -314,6 +314,7 @@ questions:
     status: draft
   - id: trees-ensembles-011
     type: single
+    difficulty: easy
     question: The inference of a decision tree runs by routing an example...
     options:
       - text: from the leaf to the root.
@@ -322,10 +323,20 @@ questions:
         why: All inference starts from the root, not from a leaf.
       - text: from the root to the leaf.
         correct: true
+    explanation: |
+      A decision tree predicts by starting at the root, testing its condition, following the
+      branch that matches the example, and repeating at each node until it reaches a leaf. The
+      leaf's value is the prediction, and the visited nodes form the inference path [^1][^2].
+      Leaves hold predictions, not conditions, so a leaf has nothing that could send an example
+      onward. You cannot start at a leaf and climb to the root, and no branch joins one leaf to
+      another [^2].
     references:
       - source: google-ml-courses
-        locator: 'Decision trees: Check your understanding'
-        url: https://developers.google.com/machine-learning/decision-forests/decision-trees-mce
+        url: https://developers.google.com/machine-learning/decision-forests/decision-trees-mce#question_1
+        locator: 'Decision trees: Check your understanding, Question 1'
+      - source: google-ml-courses
+        url: https://developers.google.com/machine-learning/decision-forests/decision-trees#the_model
+        locator: "Decision Forests: Decision trees, 'The model'"
     source:
       id: google-ml-courses
       ref: decision-forests/decision-trees-mce#q1
@@ -351,6 +362,7 @@ questions:
     status: draft
   - id: trees-ensembles-013
     type: multiple
+    difficulty: medium
     question: What are the two potential effects of increasing the minimum number of examples per leaf in a decision tree?
     options:
       - text: The size of the decision tree increases.
@@ -359,10 +371,26 @@ questions:
       - text: The structure of the decision tree can completely change.
       - text: The structure of the decision tree remains mostly unchanged.
         correct: true
+    explanation: |
+      In the course, the minimum number of examples is a stopping rule: a node with fewer examples
+      than the limit is not split any further [^1]. Greedy growth chooses each node's condition
+      using only that node's examples [^2], so raising the limit keeps the conditions near the root
+      as they were and turns some deep, small subtrees into leaves. The tree gets smaller (or keeps
+      its size), and its overall structure stays mostly the same [^1][^2]. It cannot get bigger,
+      because the change only removes splits. A completely different structure is what can happen
+      when a few *training examples* change, not when this limit rises [^1]. scikit-learn's
+      `min_samples_leaf` works slightly differently: it rejects any split that would leave a child
+      below the limit, so it can sometimes change a split higher up [^3].
     references:
       - source: google-ml-courses
-        locator: 'Decision trees: Check your understanding'
-        url: https://developers.google.com/machine-learning/decision-forests/overfitting-mce
+        url: https://developers.google.com/machine-learning/decision-forests/overfitting-and-pruning#overfitting_and_pruning
+        locator: "Decision Forests: Overfitting and pruning, sections 'Overfitting and pruning' and 'Direct decision tree interpretation'"
+      - source: google-ml-courses
+        url: https://developers.google.com/machine-learning/decision-forests/growing
+        locator: 'Decision Forests: Growing decision trees (greedy divide-and-conquer algorithm)'
+      - title: 'scikit-learn API: sklearn.tree.DecisionTreeClassifier'
+        url: https://scikit-learn.org/stable/modules/generated/sklearn.tree.DecisionTreeClassifier.html
+        locator: Parameter min_samples_leaf
     source:
       id: google-ml-courses
       ref: decision-forests/overfitting-mce#q1
@@ -370,6 +398,7 @@ questions:
     status: draft
   - id: trees-ensembles-014
     type: multiple
+    difficulty: medium
     question: What operations can reduce overfitting in a model known to be overfitted (for example, by evaluating it on a test dataset).
     options:
       - text: Increase the maximum depth.
@@ -381,10 +410,25 @@ questions:
       - text: Increase the minimum gain of a new node.
         correct: true
       - text: Decrease the minimum gain of a new node.
+    explanation: |
+      Each correct option makes the tree stop growing earlier, which is how a single decision tree
+      is regularised [^1]. A lower maximum depth limits how many conditions the tree can stack
+      [^1][^3]. A higher minimum number of examples per leaf stops the tree from carving out tiny
+      groups that mostly reflect noise [^1][^3]. A higher minimum gain (scikit-learn's
+      `min_impurity_decrease`) refuses any split whose impurity decrease is below the threshold,
+      so weak, noise-driven splits are never made [^2]. The three opposite moves (deeper trees,
+      smaller leaves, a lower gain threshold) let the tree grow further and fit even more noise,
+      which makes overfitting worse [^3].
     references:
       - source: google-ml-courses
-        locator: 'Decision trees: Check your understanding'
-        url: https://developers.google.com/machine-learning/decision-forests/overfitting-mce
+        url: https://developers.google.com/machine-learning/decision-forests/overfitting-and-pruning#overfitting_and_pruning
+        locator: 'Decision Forests: Overfitting and pruning'
+      - title: 'scikit-learn User Guide: Decision Trees'
+        url: https://scikit-learn.org/stable/modules/tree.html#mathematical-formulation
+        locator: Sec. 1.10.7 Mathematical formulation (stopping conditions)
+      - title: 'scikit-learn User Guide: Decision Trees'
+        url: https://scikit-learn.org/stable/modules/tree.html#tips-on-practical-use
+        locator: Sec. 1.10.5 Tips on practical use
     source:
       id: google-ml-courses
       ref: decision-forests/overfitting-mce#q2
@@ -392,19 +436,39 @@ questions:
     status: draft
   - id: trees-ensembles-015
     type: multiple
+    difficulty: hard
     question: Which of the following random forest hyperparameters could be tuned to improve the quality of the model?
     options:
       - text: The maximum depth of the decision trees.
         correct: true
       - text: The number of decision trees.
-        why: Surprisingly, no.
+        why: More trees almost never hurt; the error just levels off, so the count is set by compute budget, not tuned for quality [^1][^3].
       - text: The number of sampled attributes at each node.
         correct: true
       - text: The bagging sample size.
+    explanation: |
+      Maximum depth is worth tuning: pure random forests grow unlimited trees, but in practice
+      capping depth (and leaf size) helps, and the course suggests tuning it [^1]. The number of
+      features sampled at each node is an important regularisation knob; fewer candidates make the
+      trees more independent and cut variance, at the cost of more bias [^1][^2]. The number of
+      trees is the trap: adding trees almost never makes a random forest worse, because its test
+      error levels off at a limit instead of rising [^1][^3], so you set it as high as compute
+      allows instead of searching for an optimum (scikit-learn's advice is simply "the larger the
+      better" [^2]). The bagging sample size is normally kept equal to the training-set size,
+      because the course reports that training each tree on more or fewer examples tends to
+      hurt [^1].
     references:
       - source: google-ml-courses
-        url: https://developers.google.com/machine-learning/decision-forests/random-forests-mce
-        locator: ''
+        url: https://developers.google.com/machine-learning/decision-forests/random-forests#disabling_decision_tree_regularization
+        locator: "Decision Forests: Random forests, sections 'Bagging', 'Attribute sampling', 'Disabling decision tree regularization' and 'The clarity of noise'"
+      - title: 'scikit-learn User Guide: Ensembles'
+        url: https://scikit-learn.org/stable/modules/ensemble.html#parameters
+        locator: Sec. 1.11.2.3 Parameters (random forests and extra-trees)
+        quote: The larger the better, but also the longer it will take to compute.
+      - title: Breiman, Random Forests (UC Berkeley technical report, Jan. 2001)
+        url: https://www.stat.berkeley.edu/~breiman/randomforest2001.pdf
+        locator: Sec. 2.1 Random Forests Converge, Theorem 1.2, p. 4
+        quote: This result explains why random forests do not overfit as more trees are added, but produce a limiting value of the generalization error.
     source:
       id: google-ml-courses
       ref: decision-forests/random-forests-mce#q1
@@ -412,18 +476,36 @@ questions:
     status: draft
   - id: trees-ensembles-016
     type: single
+    difficulty: hard
     question: What are the effects of replacing the numerical features with their negative values (for example, changing the value +8 to -8) with the exact numerical splitter?
     options:
       - text: The same conditions will be learned; only the positive/negative children will be switched.
         correct: true
       - text: Different conditions will be learned, but the overall structure of the decision tree will remain the same.
-        why: If the features change, then the conditions will change.
+        why: 'Only the sign of each threshold flips: the same partitions are available with the same gains, so the same splits are chosen [^1].'
       - text: The structure of the decision tree will be completely different.
-        why: The structure of the decision tree will actually be pretty much the same. The conditions will change, though.
+        why: Each child receives the same examples as before, so the tree keeps its shape [^1][^2].
+    explanation: |
+      The exact splitter looks only at the order of a feature's values: it sorts them and tries a
+      threshold halfway between each pair of neighbouring distinct values [^1][^3]. Negating the
+      feature reverses that order, so the candidate thresholds are the old ones with their signs
+      flipped, and they cut the examples into exactly the same groups with the same information
+      gain [^1]. The splitter therefore picks the same partition at every node. Since conditions
+      have the form $\text{feature} \ge t$, the old $x \ge t$ reappears as $-x \ge -t$, which sends
+      the former positive-child examples to the negative child. Each child still gets the same
+      examples, so the recursion rebuilds the same tree with its branches mirrored [^2]. The other
+      two options assume the split depends on the feature values themselves, but only their order
+      matters [^1].
     references:
       - source: google-ml-courses
-        locator: 'Decision trees: Check your understanding'
-        url: https://developers.google.com/machine-learning/decision-forests/training-mce
+        url: https://developers.google.com/machine-learning/decision-forests/binary-classification
+        locator: 'Decision Forests: Exact splitter for binary classification with numerical features (candidate thresholds and the closing remark on scale)'
+      - source: google-ml-courses
+        url: https://developers.google.com/machine-learning/decision-forests/growing
+        locator: 'Decision Forests: Growing decision trees (greedy divide-and-conquer algorithm)'
+      - title: 'scikit-learn User Guide: Decision Trees'
+        url: https://scikit-learn.org/stable/modules/tree.html#mathematical-formulation
+        locator: Sec. 1.10.7 Mathematical formulation (best splitter)
     source:
       id: google-ml-courses
       ref: decision-forests/training-mce#q1
@@ -431,6 +513,7 @@ questions:
     status: draft
   - id: trees-ensembles-017
     type: multiple
+    difficulty: hard
     question: What two answers best describe the effect of testing only half (randomly selected) of the candidate threshold values in X?
     options:
       - text: The information gain would be higher or equal.
@@ -439,10 +522,27 @@ questions:
       - text: The final decision tree would have worse testing accuracy.
       - text: The final decision tree would have no better training accuracy.
         correct: true
+    explanation: |
+      At each node, the splitter returns the candidate threshold in $X$ with the highest
+      information gain [^1]. Searching only a random half of $X$ takes the maximum over a subset,
+      so the best gain found is lower than or equal to the full search's (equal when the best
+      threshold lands in the sampled half), which rules out "higher or equal" [^1]. Because each
+      split then fits the training labels no better than the exact split, the tree generally ends
+      up with no better training accuracy. Strictly, this is a tendency rather than a guarantee:
+      greedy growth is only a heuristic, so a weaker early split can occasionally lead to a better
+      tree later [^2]. Test accuracy is not necessarily worse, because random thresholds act as a
+      regulariser: extremely randomized trees, which draw random thresholds and keep the best of
+      them, often reduce variance at a small cost in bias [^3].
     references:
       - source: google-ml-courses
-        locator: 'Decision trees: Check your understanding'
-        url: https://developers.google.com/machine-learning/decision-forests/training-mce
+        url: https://developers.google.com/machine-learning/decision-forests/binary-classification
+        locator: 'Decision Forests: Exact splitter for binary classification with numerical features (information gain and the candidate set X)'
+      - source: google-ml-courses
+        url: https://developers.google.com/machine-learning/decision-forests/growing
+        locator: 'Decision Forests: Growing decision trees (NP-hardness and greedy heuristics)'
+      - title: 'scikit-learn User Guide: Ensembles'
+        url: https://scikit-learn.org/stable/modules/ensemble.html#extremely-randomized-trees
+        locator: Sec. 1.11.2.2 Extremely Randomized Trees
     source:
       id: google-ml-courses
       ref: decision-forests/training-mce#q2
@@ -450,6 +550,7 @@ questions:
     status: draft
   - id: trees-ensembles-018
     type: single
+    difficulty: medium
     question: What would happen if the "information gain" versus "threshold" curve had multiple local maxima?
     options:
       - text: It is impossible to have multiple local maxima.
@@ -457,10 +558,26 @@ questions:
       - text: The algorithm would select the local maxima with the smallest threshold value.
       - text: The algorithm would select the global maximum.
         correct: true
+    explanation: |
+      The exact splitter does not climb the information-gain curve from a starting point, the way
+      gradient ascent would. It scores every candidate threshold (the midpoints between
+      consecutive sorted values) and keeps the one with the highest score [^2][^3][^4]. So a curve
+      with several local maxima, which can happen [^1], causes no trouble: the global maximum over
+      the candidates is the one selected. No rule prefers the smallest threshold. Only the score
+      matters [^2].
     references:
       - source: google-ml-courses
-        locator: 'Decision trees: Check your understanding'
-        url: https://developers.google.com/machine-learning/decision-forests/training-mce
+        url: https://developers.google.com/machine-learning/decision-forests/training-mce#question_3
+        locator: 'Decision trees: Check your understanding (Training Decision Trees), Question 3'
+      - source: google-ml-courses
+        url: https://developers.google.com/machine-learning/decision-forests/growing
+        locator: 'Decision Forests: Growing decision trees (selecting the condition with the highest score)'
+      - source: google-ml-courses
+        url: https://developers.google.com/machine-learning/decision-forests/binary-classification
+        locator: 'Decision Forests: Exact splitter for binary classification with numerical features (candidate set X)'
+      - title: 'scikit-learn User Guide: Decision Trees'
+        url: https://scikit-learn.org/stable/modules/tree.html#mathematical-formulation
+        locator: 'Sec. 1.10.7 Mathematical formulation (best splitter: greedy exhaustive search)'
     source:
       id: google-ml-courses
       ref: decision-forests/training-mce#q3
@@ -468,16 +585,29 @@ questions:
     status: draft
   - id: trees-ensembles-019
     type: single
+    difficulty: medium
     question: Suppose the "sum of the split score" variable importance of feature f1 is greater than the "number of nodes" variable importance of feature f2. In this case, which of the following statements is correct?
     options:
       - text: f1 is more important than f2.
       - text: f1 is less important than f2.
       - text: f1 is neither more important nor less important than f2.
         correct: true
+    explanation: |
+      The two importances measure different things on different scales [^1]. "Sum of the split
+      score" adds up the scores (such as information gain) of all conditions that use the feature,
+      while "number of nodes" just counts those conditions [^1]. Comparing one feature's summed
+      gain with another feature's node count is like comparing kilograms with metres, so neither
+      "more" nor "less" important follows. Rank features with a single measure, and even then
+      expect different measures to disagree [^1]. For example, a feature used in many nodes but
+      with low permutation importance may be one the model fails to generalise from, and
+      impurity-based scores are known to favour features with many distinct values [^1][^2].
     references:
       - source: google-ml-courses
-        locator: 'Variable importances: Check your understanding'
-        url: https://developers.google.com/machine-learning/decision-forests/variable-importances-mce
+        url: https://developers.google.com/machine-learning/decision-forests/variable-importances#variable_importances
+        locator: 'Decision Forests: Variable importances'
+      - title: 'scikit-learn User Guide: Ensembles'
+        url: https://scikit-learn.org/stable/modules/ensemble.html#feature-importance-evaluation
+        locator: Sec. 1.11.2.5 Feature importance evaluation (warning box)
     source:
       id: google-ml-courses
       ref: decision-forests/variable-importances-mce#q1

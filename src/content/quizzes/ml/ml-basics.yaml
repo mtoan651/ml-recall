@@ -833,16 +833,29 @@ questions:
     status: draft
   - id: ml-basics-032
     type: single
+    difficulty: easy
     question: How many examples should the test set contain?
     options:
       - text: Enough examples to yield a statistically significant test.
         correct: true
       - text: At least 15% of the original dataset.
         why: 15% may or may not be enough examples.
+    explanation: |
+      A test set is there to estimate how well the model generalises, and how precise that
+      estimate is depends on the absolute number of test examples, not on a fixed share of the
+      data [^1][^2]. The standard error of a measured error rate shrinks like $1/\sqrt{n}$. To be
+      about 95% sure that the test error is within $\pm 0.01$ of the true error, you need roughly
+      10,000 examples [^2]. So 15% of a 2,000-example dataset (300 examples) is far too small,
+      while 15% of 100 million examples is far more than needed. The course says there is no
+      percentage requirement for the splits. You should find the number that gives a
+      statistically meaningful result [^1].
     references:
       - source: google-mlcc
-        locator: 'Datasets: Dividing the original dataset'
-        url: https://developers.google.com/machine-learning/crash-course/overfitting/dividing-datasets
+        url: https://developers.google.com/machine-learning/crash-course/overfitting/dividing-datasets#additional_problems_with_test_sets
+        locator: "Datasets: Dividing the original dataset, 'Additional problems with test sets' and 'Exercises: Check your understanding'"
+      - source: d2l
+        url: https://d2l.ai/chapter_linear-classification/generalization-classification.html#the-test-set
+        locator: Sec. 4.6.1 The Test Set
     source:
       id: google-mlcc
       ref: overfitting/dividing-datasets#q5
@@ -1076,15 +1089,24 @@ questions:
     status: draft
   - id: ml-basics-044
     type: single
+    difficulty: easy
     question: A company wants to use ML in their health and well-being app to help people feel better. Do you think they'll need to use proxy labels to accomplish their goals?
     options:
       - text: Yes, the company will need to find proxy labels. Categories like happiness and well-being can't be measured directly. Instead, they need to be approximated with respect to some other feature, like hours spent exercising per week, or time spent engaged in hobbies or with friends.
         correct: true
       - text: No, the company won't need to use proxy labels. Happiness and well-being can be directly measured.
+    explanation: |
+      You use a proxy label when the thing you really want to predict is not recorded in the data
+      and cannot be measured directly [^1]. "Feeling better", happiness and well-being are not
+      observable quantities in app data. The model has to be trained on something measurable that
+      should go along with them, such as weekly exercise hours, time with friends, or self-reported
+      mood. The course warns that every proxy is an imperfect stand-in. Pick the one with the
+      fewest problems for your use case, and check that it actually tracks the outcome you care
+      about [^1].
     references:
       - source: google-ml-courses
-        locator: Framing an ML problem
-        url: https://developers.google.com/machine-learning/problem-framing/ml-framing
+        url: https://developers.google.com/machine-learning/problem-framing/ml-framing#proxy_labels
+        locator: "Problem Framing: Framing an ML problem, 'Proxy labels'"
     source:
       id: google-ml-courses
       ref: problem-framing/ml-framing#q1
@@ -1092,6 +1114,7 @@ questions:
     status: draft
   - id: ml-basics-045
     type: single
+    difficulty: medium
     question: |
       A fashion firm wants to sell more clothes. Someone suggests using ML to determine which clothes the firm should manufacture. They think they can train a model to determine which type of clothes are in fashion. After they train the model, they want to apply it to their catalog to decide which clothes to make.
 
@@ -1115,10 +1138,20 @@ questions:
 
           **Success metrics**: Sell seventy percent or more of the clothes made.
         why: The ideal outcome isn't to determine how much fabric and supplies to order. It's to determine if an item should be manufactured. Thus, the model's goal addresses the wrong objective.
+    explanation: |
+      In the course's framing template, the ideal outcome is the product goal in non-ML terms, the
+      model's goal says what the model must predict to serve it, the output type must match that
+      prediction, and the success metric measures the business result rather than model
+      accuracy [^1]. The firm's decision is which clothes to make, and the proposed model judges
+      whether an item is in fashion. So a binary `in_fashion` / `not_in_fashion` classifier fits,
+      and success is measured by sell-through (selling at least 70% of what is made) [^1]. The
+      other framing switches the ideal outcome to ordering fabric and supplies, which is not the
+      problem described. Its goal ("how much of each item") is also a quantity, which does not
+      match a binary `make` / `do_not_make` output [^1].
     references:
       - source: google-ml-courses
-        locator: Framing an ML problem
-        url: https://developers.google.com/machine-learning/problem-framing/ml-framing
+        url: https://developers.google.com/machine-learning/problem-framing/ml-framing#define_the_ideal_outcome_and_the_models_goal
+        locator: "Problem Framing: Framing an ML problem, sections 'Define the ideal outcome and the model's goal', 'Identify the output you need' and 'Define the success metrics'"
     source:
       id: google-ml-courses
       ref: problem-framing/ml-framing#q2
@@ -1126,15 +1159,28 @@ questions:
     status: draft
   - id: ml-basics-046
     type: single
+    difficulty: easy
     question: Why is it important to have a non-ML solution or heuristic in place before analyzing an ML solution?
     options:
       - text: A non-ML solution is the benchmark to measure an ML solution against.
         correct: true
       - text: Non-ML solutions help you determine how much an ML solution will cost.
+    explanation: |
+      Before you commit to ML, the course says to optimise your existing non-ML solution, or try a
+      simple heuristic if you have none, and to use that result as the baseline for judging any ML
+      solution [^1]. The key question is how much better ML would be: if the gain over the
+      heuristic is small, the simpler solution may be the right one [^1]. Google's Rules of ML make
+      the same point: a heuristic often gets you a large share of the benefit, so you may launch
+      without ML at first [^2]. Cost is weighed in the comparison too, but you estimate it from the
+      ML system's compute, maintenance and staffing needs; the heuristic does not tell you what ML
+      will cost [^1].
     references:
       - source: google-ml-courses
-        locator: Understand the problem
-        url: https://developers.google.com/machine-learning/problem-framing/problem
+        url: https://developers.google.com/machine-learning/problem-framing/problem#clear_use_case_for_ml
+        locator: "Problem Framing: Understand the problem, 'Clear use case for ML'"
+      - title: 'Rules of Machine Learning: Best Practices for ML Engineering (Zinkevich, Google)'
+        url: https://developers.google.com/machine-learning/guides/rules-of-ml#before_machine_learning
+        locator: "Before Machine Learning, Rule #1: Don't be afraid to launch a product without machine learning"
     source:
       id: google-ml-courses
       ref: problem-framing/problem#q1
@@ -1142,6 +1188,7 @@ questions:
     status: draft
   - id: ml-basics-047
     type: multiple
+    difficulty: easy
     question: When analyzing your datasets, what are three key attributes you should look for?
     options:
       - text: Representative of the real world.
@@ -1152,10 +1199,19 @@ questions:
         correct: true
       - text: Small enough to load onto a local machine.
       - text: Gathered from a variety of unpredictable sources.
+    explanation: |
+      Predictive ML lives on its data, and the course lists representativeness, correctness and
+      predictive features among the qualities to check [^1]. *Representative*: if the data do not
+      reflect the real-world behaviour being modelled, the model will predict poorly once deployed.
+      *Correct*: a few wrong labels are unavoidable, but if more than a small fraction are wrong,
+      predictions suffer. *Predictive power*: features must be correlated with the label, or the
+      model has nothing to learn from [^1]. Size is not a limit (the course wants abundant data,
+      the more relevant examples the better), and unpredictable sources go against its call for
+      consistent, reliable and trusted data [^1].
     references:
       - source: google-ml-courses
-        locator: Understand the problem
-        url: https://developers.google.com/machine-learning/problem-framing/problem
+        url: https://developers.google.com/machine-learning/problem-framing/problem#predictive_ml_and_data
+        locator: "Problem Framing: Understand the problem, 'Predictive ML and data' and 'Predictive power'"
     source:
       id: google-ml-courses
       ref: problem-framing/problem#q2
@@ -1163,6 +1219,7 @@ questions:
     status: draft
   - id: ml-basics-048
     type: single
+    difficulty: medium
     question: |
       Based on the following scenario, determine if using ML is the best approach to the problem.
 
@@ -1177,10 +1234,23 @@ questions:
       - text: "**Use ML**. The engineering team has a clearly defined goal. Their heuristic won't be good enough for their use case. The dataset appears to have predictive features for the label, `time_on_hold`."
         correct: true
       - text: "**Don't use ML**. Although they have a clearly defined goal, they should implement and optimize a non-ML solution first. Also, their dataset doesn't appear to contain enough features with predictive power."
+    explanation: |
+      The course's checks are: a clearly stated goal, a non-ML baseline to compare against, and
+      data whose features can predict the label [^1]. The goal here is clear. The heuristic is
+      already known to fall short, because it assumes every call takes about 10 minutes when
+      resolution times run from 2 to over 45 minutes depending on the issue [^1]. Columns such as
+      `user_issue` and call volume plausibly correlate with `time_on_hold`, so the data look
+      predictive [^1]. Google's Rules of ML also advise moving to ML once you have data and a
+      clear goal, rather than patching together a complex heuristic that becomes hard to
+      maintain [^2]. One caveat from the same page: a column like `time_to_resolve` can be used as
+      a feature only if its value is available at prediction time [^1].
     references:
       - source: google-ml-courses
-        locator: Understand the problem
-        url: https://developers.google.com/machine-learning/problem-framing/problem
+        url: https://developers.google.com/machine-learning/problem-framing/problem#check-your-understanding_5
+        locator: "Problem Framing: Understand the problem, 'Clear use case for ML', 'Predictive ML and data' and the third 'Check Your Understanding'"
+      - title: 'Rules of Machine Learning: Best Practices for ML Engineering (Zinkevich, Google)'
+        url: https://developers.google.com/machine-learning/guides/rules-of-ml#rule_3_choose_machine_learning_over_a_complex_heuristic
+        locator: 'Rule #3: Choose machine learning over a complex heuristic'
     source:
       id: google-ml-courses
       ref: problem-framing/problem#q3
@@ -1188,15 +1258,27 @@ questions:
     status: draft
   - id: ml-basics-049
     type: single
+    difficulty: easy
     question: Why is problem framing important?
     options:
       - text: Problem framing ensures that an ML approach is a good solution to the problem before beginning to work with data and train a model.
         correct: true
       - text: Problem framing helps diagnose problems with existing ML models and uncovers issues with data.
+    explanation: |
+      Problem framing means taking a problem apart to see which pieces need solving. That tells you
+      whether the project is technically feasible and gives it clear goals and success
+      criteria [^1]. It has two steps: deciding whether ML is the right approach at all and, if so,
+      stating the problem in ML terms. Both happen before any data work or model training [^1].
+      The first step matters because ML is a specialised tool, and a simpler non-ML solution may
+      do the job [^2]. Diagnosing an existing model or finding data issues is debugging and
+      evaluation work that comes later, not framing.
     references:
       - source: google-ml-courses
-        locator: Overview
         url: https://developers.google.com/machine-learning/problem-framing/problem-framing
+        locator: 'Problem Framing: Overview'
+      - source: google-ml-courses
+        url: https://developers.google.com/machine-learning/problem-framing/problem#clear_use_case_for_ml
+        locator: "Problem Framing: Understand the problem, 'Clear use case for ML'"
     source:
       id: google-ml-courses
       ref: problem-framing/problem-framing#q1
