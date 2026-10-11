@@ -1,4 +1,6 @@
-"""Three DAGs over v, w, x, y, z with the same skeleton. Redrawn from the TikZ source of Gutmann, Pen and Paper Exercises in Machine Learning (CC BY 4.0), Ex. 5.1 (a)."""
+"""Three DAGs over v, w, x, y, z with the same skeleton. Redrawn from the TikZ source of Gutmann,
+Pen and Paper Exercises in Machine Learning (CC BY 4.0), Ex. 5.1 (a).
+"""
 
 import matplotlib.pyplot as plt
 from matplotlib.patches import Circle, FancyArrowPatch, Rectangle
@@ -6,36 +8,56 @@ from matplotlib.patches import Circle, FancyArrowPatch, Rectangle
 from mlrecall.figstyle import INK, LIGHT, save
 
 R = 0.28  # node radius (data units)
-PANELS = [{'title': 'Graph 1',
-  'nodes': {'v': (0, 0, '$v$'),
-            'x': (1.6, 0, '$x$'),
-            'z': (3.2, 0, '$z$'),
-            'w': (0.8, -1.1, '$w$'),
-            'y': (2.4, -1.1, '$y$')},
-  'edges': [('v', 'w', 'd', 0.0),
-            ('w', 'x', 'd', 0.0),
-            ('x', 'y', 'd', 0.0),
-            ('z', 'y', 'd', 0.0)]},
- {'title': 'Graph 2',
-  'nodes': {'v': (0, 0, '$v$'),
-            'x': (1.6, 0, '$x$'),
-            'z': (3.2, 0, '$z$'),
-            'w': (0.8, -1.1, '$w$'),
-            'y': (2.4, -1.1, '$y$')},
-  'edges': [('w', 'v', 'd', 0.0),
-            ('x', 'w', 'd', 0.0),
-            ('x', 'y', 'd', 0.0),
-            ('z', 'y', 'd', 0.0)]},
- {'title': 'Graph 3',
-  'nodes': {'v': (0, 0, '$v$'),
-            'x': (1.6, 0, '$x$'),
-            'z': (3.2, 0, '$z$'),
-            'w': (0.8, -1.1, '$w$'),
-            'y': (2.4, -1.1, '$y$')},
-  'edges': [('w', 'v', 'd', 0.0),
-            ('x', 'w', 'd', 0.0),
-            ('y', 'x', 'd', 0.0),
-            ('z', 'y', 'd', 0.0)]}]
+PANELS = [
+    {
+        "title": "Graph 1",
+        "nodes": {
+            "v": (0, 0, "$v$"),
+            "x": (1.6, 0, "$x$"),
+            "z": (3.2, 0, "$z$"),
+            "w": (0.8, -1.1, "$w$"),
+            "y": (2.4, -1.1, "$y$"),
+        },
+        "edges": [
+            ("v", "w", "d", 0.0),
+            ("w", "x", "d", 0.0),
+            ("x", "y", "d", 0.0),
+            ("z", "y", "d", 0.0),
+        ],
+    },
+    {
+        "title": "Graph 2",
+        "nodes": {
+            "v": (0, 0, "$v$"),
+            "x": (1.6, 0, "$x$"),
+            "z": (3.2, 0, "$z$"),
+            "w": (0.8, -1.1, "$w$"),
+            "y": (2.4, -1.1, "$y$"),
+        },
+        "edges": [
+            ("w", "v", "d", 0.0),
+            ("x", "w", "d", 0.0),
+            ("x", "y", "d", 0.0),
+            ("z", "y", "d", 0.0),
+        ],
+    },
+    {
+        "title": "Graph 3",
+        "nodes": {
+            "v": (0, 0, "$v$"),
+            "x": (1.6, 0, "$x$"),
+            "z": (3.2, 0, "$z$"),
+            "w": (0.8, -1.1, "$w$"),
+            "y": (2.4, -1.1, "$y$"),
+        },
+        "edges": [
+            ("w", "v", "d", 0.0),
+            ("x", "w", "d", 0.0),
+            ("y", "x", "d", 0.0),
+            ("z", "y", "d", 0.0),
+        ],
+    },
+]
 
 
 def draw(ax, panel):
@@ -75,20 +97,36 @@ def draw(ax, panel):
             )
         )
     if panel.get("title"):
-        ys = [y for x, y, _ in nodes.values()] + [y for x, y, *_ in panel.get("factors", {}).values()]
-        xs = [x for x, y, _ in nodes.values()] + [x for x, y, *_ in panel.get("factors", {}).values()]
-        ax.text((min(xs) + max(xs)) / 2, min(ys) - R - 0.35, panel["title"], ha="center",
-                va="top", fontsize=13, color=INK, fontweight="bold")
+        ys = [y for x, y, _ in nodes.values()] + [
+            y for x, y, *_ in panel.get("factors", {}).values()
+        ]
+        xs = [x for x, y, _ in nodes.values()] + [
+            x for x, y, *_ in panel.get("factors", {}).values()
+        ]
+        ax.text(
+            (min(xs) + max(xs)) / 2,
+            min(ys) - R - 0.35,
+            panel["title"],
+            ha="center",
+            va="top",
+            fontsize=13,
+            color=INK,
+            fontweight="bold",
+        )
     ax.set_aspect("equal")
     ax.axis("off")
     ax.autoscale_view()
 
 
 fig, axes = plt.subplots(1, len(PANELS), figsize=(9.0, 2.2), squeeze=False)
-for ax, panel in zip(axes[0], PANELS):
+for ax, panel in zip(axes[0], PANELS, strict=False):
     draw(ax, panel)
-    xs = [x for x, y, _ in panel["nodes"].values()] + [x for x, y, *_ in panel.get("factors", {}).values()]
-    ys = [y for x, y, _ in panel["nodes"].values()] + [y for x, y, *_ in panel.get("factors", {}).values()]
+    xs = [x for x, y, _ in panel["nodes"].values()] + [
+        x for x, y, *_ in panel.get("factors", {}).values()
+    ]
+    ys = [y for x, y, _ in panel["nodes"].values()] + [
+        y for x, y, *_ in panel.get("factors", {}).values()
+    ]
     pad = 0.45
     bottom = 0.75 if panel.get("title") else 0
     ax.set_xlim(min(xs) - pad, max(xs) + pad)

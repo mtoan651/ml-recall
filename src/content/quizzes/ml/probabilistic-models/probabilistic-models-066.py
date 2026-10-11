@@ -1,4 +1,6 @@
-"""A DAG with x3->x2 reversed and an undirected chain HMM. Redrawn from the TikZ source of Gutmann, Pen and Paper Exercises in Machine Learning (CC BY 4.0), Ex. 5.3 (c)."""
+"""A DAG with x3->x2 reversed and an undirected chain HMM. Redrawn from the TikZ source of Gutmann,
+Pen and Paper Exercises in Machine Learning (CC BY 4.0), Ex. 5.3 (c).
+"""
 
 import matplotlib.pyplot as plt
 from matplotlib.patches import Circle, FancyArrowPatch, Rectangle
@@ -6,38 +8,52 @@ from matplotlib.patches import Circle, FancyArrowPatch, Rectangle
 from mlrecall.figstyle import INK, LIGHT, save
 
 R = 0.28  # node radius (data units)
-PANELS = [{'title': 'Directed',
-  'nodes': {'x1': (0, 2, '$x_1$'),
-            'x2': (2, 2, '$x_2$'),
-            'x3': (4, 2, '$x_3$'),
-            'x4': (6, 2, '$x_4$'),
-            'y1': (0, 0, '$y_1$'),
-            'y2': (2, 0, '$y_2$'),
-            'y3': (4, 0, '$y_3$'),
-            'y4': (6, 0, '$y_4$')},
-  'edges': [('x1', 'x2', 'd', 0.0),
-            ('x3', 'x2', 'd', 0.0),
-            ('x3', 'x4', 'd', 0.0),
-            ('x1', 'y1', 'd', 0.0),
-            ('x2', 'y2', 'd', 0.0),
-            ('x3', 'y3', 'd', 0.0),
-            ('x4', 'y4', 'd', 0.0)]},
- {'title': 'Undirected',
-  'nodes': {'x1': (0, 2, '$x_1$'),
-            'x2': (2, 2, '$x_2$'),
-            'x3': (4, 2, '$x_3$'),
-            'x4': (6, 2, '$x_4$'),
-            'y1': (0, 0, '$y_1$'),
-            'y2': (2, 0, '$y_2$'),
-            'y3': (4, 0, '$y_3$'),
-            'y4': (6, 0, '$y_4$')},
-  'edges': [('x1', 'x2', 'u', 0.0),
-            ('x2', 'x3', 'u', 0.0),
-            ('x3', 'x4', 'u', 0.0),
-            ('x1', 'y1', 'u', 0.0),
-            ('x2', 'y2', 'u', 0.0),
-            ('x3', 'y3', 'u', 0.0),
-            ('x4', 'y4', 'u', 0.0)]}]
+PANELS = [
+    {
+        "title": "Directed",
+        "nodes": {
+            "x1": (0, 2, "$x_1$"),
+            "x2": (2, 2, "$x_2$"),
+            "x3": (4, 2, "$x_3$"),
+            "x4": (6, 2, "$x_4$"),
+            "y1": (0, 0, "$y_1$"),
+            "y2": (2, 0, "$y_2$"),
+            "y3": (4, 0, "$y_3$"),
+            "y4": (6, 0, "$y_4$"),
+        },
+        "edges": [
+            ("x1", "x2", "d", 0.0),
+            ("x3", "x2", "d", 0.0),
+            ("x3", "x4", "d", 0.0),
+            ("x1", "y1", "d", 0.0),
+            ("x2", "y2", "d", 0.0),
+            ("x3", "y3", "d", 0.0),
+            ("x4", "y4", "d", 0.0),
+        ],
+    },
+    {
+        "title": "Undirected",
+        "nodes": {
+            "x1": (0, 2, "$x_1$"),
+            "x2": (2, 2, "$x_2$"),
+            "x3": (4, 2, "$x_3$"),
+            "x4": (6, 2, "$x_4$"),
+            "y1": (0, 0, "$y_1$"),
+            "y2": (2, 0, "$y_2$"),
+            "y3": (4, 0, "$y_3$"),
+            "y4": (6, 0, "$y_4$"),
+        },
+        "edges": [
+            ("x1", "x2", "u", 0.0),
+            ("x2", "x3", "u", 0.0),
+            ("x3", "x4", "u", 0.0),
+            ("x1", "y1", "u", 0.0),
+            ("x2", "y2", "u", 0.0),
+            ("x3", "y3", "u", 0.0),
+            ("x4", "y4", "u", 0.0),
+        ],
+    },
+]
 
 
 def draw(ax, panel):
@@ -77,20 +93,36 @@ def draw(ax, panel):
             )
         )
     if panel.get("title"):
-        ys = [y for x, y, _ in nodes.values()] + [y for x, y, *_ in panel.get("factors", {}).values()]
-        xs = [x for x, y, _ in nodes.values()] + [x for x, y, *_ in panel.get("factors", {}).values()]
-        ax.text((min(xs) + max(xs)) / 2, min(ys) - R - 0.35, panel["title"], ha="center",
-                va="top", fontsize=13, color=INK, fontweight="bold")
+        ys = [y for x, y, _ in nodes.values()] + [
+            y for x, y, *_ in panel.get("factors", {}).values()
+        ]
+        xs = [x for x, y, _ in nodes.values()] + [
+            x for x, y, *_ in panel.get("factors", {}).values()
+        ]
+        ax.text(
+            (min(xs) + max(xs)) / 2,
+            min(ys) - R - 0.35,
+            panel["title"],
+            ha="center",
+            va="top",
+            fontsize=13,
+            color=INK,
+            fontweight="bold",
+        )
     ax.set_aspect("equal")
     ax.axis("off")
     ax.autoscale_view()
 
 
 fig, axes = plt.subplots(1, len(PANELS), figsize=(10.0, 2.6), squeeze=False)
-for ax, panel in zip(axes[0], PANELS):
+for ax, panel in zip(axes[0], PANELS, strict=False):
     draw(ax, panel)
-    xs = [x for x, y, _ in panel["nodes"].values()] + [x for x, y, *_ in panel.get("factors", {}).values()]
-    ys = [y for x, y, _ in panel["nodes"].values()] + [y for x, y, *_ in panel.get("factors", {}).values()]
+    xs = [x for x, y, _ in panel["nodes"].values()] + [
+        x for x, y, *_ in panel.get("factors", {}).values()
+    ]
+    ys = [y for x, y, _ in panel["nodes"].values()] + [
+        y for x, y, *_ in panel.get("factors", {}).values()
+    ]
     pad = 0.45
     bottom = 0.75 if panel.get("title") else 0
     ax.set_xlim(min(xs) - pad, max(xs) + pad)
