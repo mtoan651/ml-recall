@@ -77,9 +77,17 @@ export function QuestionCard({
         {q.status === "draft" && (
           <span
             className="rounded-full bg-note-soft px-2 py-0.5 text-note"
-            title="Imported or generated and not yet checked by a human; may contain errors."
+            title="Imported or generated and not yet checked; may contain errors."
           >
             unreviewed
+          </span>
+        )}
+        {q.status === "reviewed" && q.reviewed_by === "claude" && (
+          <span
+            className="rounded-full bg-subtle px-2 py-0.5 text-muted"
+            title="Checked by Claude (an AI model) at the owner's request: key re-derived, explanation cited. Not yet verified by a human."
+          >
+            AI-checked
           </span>
         )}
         {showTopic && (

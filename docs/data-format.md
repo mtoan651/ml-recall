@@ -43,6 +43,7 @@ questions:
 | `references` | reviewed | citations, numbered from 1 in list order |
 | `source` | ✓ | provenance: `id` (registry), `ref` (locator inside it), `url` |
 | `status` | ✓ | `draft` · `reviewed` · `retired` |
+| `reviewed_by` | reviewed | `owner` (the repository owner) · `claude` (Claude, at the owner's request) |
 
 ### Question types
 
@@ -142,8 +143,8 @@ marker in its explanation. Prefer precise locators (section, page, slide) over a
 
 | Status | Meaning | Shown in the app |
 | --- | --- | --- |
-| `draft` | imported or AI-generated, not yet checked by a human | yes, with an "unreviewed" badge (filter available) |
-| `reviewed` | checked; has `difficulty` and a cited `explanation` | yes |
+| `draft` | imported or AI-generated, not yet checked | yes, with an "unreviewed" badge (filter available) |
+| `reviewed` | checked; has `difficulty`, a cited `explanation` and `reviewed_by` | yes; `reviewed_by: claude` shows an "AI-checked" badge |
 | `retired` | removed from rotation; id kept forever | no |
 
 ## Text: Markdown and math

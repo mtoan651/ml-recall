@@ -22,7 +22,7 @@ from ..check import POSITIONAL_OPTION_RE
 
 QUESTION_KEY_ORDER = [
     "id", "type", "difficulty", "tags", "shuffle", "question", "figure", "options", "answer",
-    "explanation", "explanation_figure", "references", "source", "status",
+    "explanation", "explanation_figure", "references", "source", "status", "reviewed_by",
 ]  # fmt: skip
 
 

@@ -33,8 +33,10 @@ pnpm lint && pnpm test && pnpm check && pnpm build   # must pass before committi
 - Follow `docs/conventions.md` (naming, ids, versioning) and `docs/git-workflow.md`
   (branch `<type>/<desc>`, squash merge, Conventional Commit titles).
 - Question ids are permanent: never renumber/reuse/delete — use `status: retired`.
-- New or generated questions are `draft`. Only mark `reviewed` when the user has verified them;
-  reviewed questions need `difficulty` and an explanation that cites `[^n]` references.
+- New or generated questions are `draft`. A question becomes `reviewed` with `reviewed_by: owner`
+  when the user has verified it, or `reviewed_by: claude` when Claude reviewed it at the user's
+  request (key re-derived, explanation cited); reviewed questions need `difficulty`, an
+  explanation that cites `[^n]` references, and `reviewed_by`.
 - Never use a `reference`-only source as `source.id`; write an original question and cite it.
 - The project is non-commercial (study and research). Sources under NonCommercial licences
   without ND (e.g. CC BY-NC-SA) may be adapted; each question keeps its source's licence. ND,
