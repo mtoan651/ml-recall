@@ -16,7 +16,6 @@ original questions. See [content-pipeline.md](content-pipeline.md#copyright-rule
 | 2 | [Microsoft AI for Beginners](https://github.com/microsoft/AI-For-Beginners) | pre/post-lecture quizzes: NN, CV, NLP, GANs, RL, ethics | MIT | **v0.1 imported** (92) |
 | 3 | [Microsoft ML for Beginners](https://github.com/microsoft/ML-For-Beginners) | pre/post-lecture quizzes: classical ML, time series, NLP basics | MIT | **v0.1 imported** (60) |
 | 4 | [MMLU-Redux 2.0](https://huggingface.co/datasets/edinburgh-dawg/mmlu-redux-2.0) — machine_learning, high_school_statistics, college_mathematics | exam-style MCQ with expert error labels (MMLU itself is MIT) | CC-BY-4.0 | **imported** (90 + 75 + 33) |
-| 5 | [Deep Learning Interviews](https://arxiv.org/abs/2201.00650) (Kashani & Ivry) | hundreds of fully solved problems: math, info theory, CNNs, ensembles | CC-BY-4.0 | v0.3 — PDF → MCQ |
 | 6 | [Dive into Deep Learning](https://d2l.ai) | end-of-section exercises; main citation target for DL | CC-BY-SA-4.0 | v0.3 — exercises → MCQ |
 | 7 | [Đắm mình vào Học Sâu](https://d2l.aivivn.com/) | Vietnamese d2l translation | CC-BY-SA-4.0 | later — VI terminology |
 | 8 | [Google ML Crash Course](https://developers.google.com/machine-learning/crash-course) | page quizzes with per-option feedback: regression, classification metrics, data, overfitting, production ML, fairness | CC-BY-4.0 | **v0.3 imported** (44) |
@@ -42,6 +41,7 @@ original questions. See [content-pipeline.md](content-pipeline.md#copyright-rule
 | 23 | [Understanding Deep Learning](https://udlbook.github.io/udlbook/) (Prince) | end-of-chapter problems + notebooks | CC-BY-NC-ND-4.0 |
 | 24 | [fastbook questionnaires](https://github.com/fastai/fastbook) | quiz-like questions at the end of each chapter | prose not redistributable |
 | 25 | [Machine Learning Q and AI](https://sebastianraschka.com/books/ml-q-and-ai/) (Raschka) | 30 Q&A chapters with exercises, free online | all rights reserved |
+| 5 | [Deep Learning Interviews](https://arxiv.org/abs/2201.00650) (Kashani & Ivry) | **not used**: arXiv lists CC BY 4.0, but the book's own copyright page says all rights reserved, personal use only, no quoting or paraphrasing without consent (moved from Adapt on 2026-10-11; d2l exercises are used instead) | contradictory |
 | 17 | [OpenStax Introductory Statistics 2e](https://openstax.org/details/books/introductory-statistics-2e) | **not used**: since July 2026 all OpenStax books forbid ingestion into LLMs/generative AI without permission, so we neither import nor fetch them (moved from Adapt on 2026-10-11) | CC-BY-NC-SA-4.0 |
 
 Internal sources: `original` (questions written here, CC BY-SA 4.0) and `ncu-intro-dl` (own course
