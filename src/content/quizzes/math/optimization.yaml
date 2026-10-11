@@ -2446,3 +2446,198 @@ questions:
       ref: chapter_preliminaries/calculus#ex10
       url: https://d2l.ai/chapter_preliminaries/calculus.html#exercises
     status: draft
+  - id: optimization-076
+    type: single
+    difficulty: medium
+    tags:
+      - matrix-calculus
+      - gradient
+      - quadratic-form
+    question: |
+      For a general square matrix $A$ (not necessarily symmetric), what is the gradient of
+      $J(\mathbf{w}) = \mathbf{w}^\top A \mathbf{w}$ with respect to the column vector $\mathbf{w}$?
+    options:
+      - text: $2A\mathbf{w}$
+        why: This holds only for symmetric $A$, where $A + A^\top = 2A$ [^1][^2].
+      - text: $A^\top \mathbf{w}$
+        why: This is only one of the two terms; $\mathbf{w}$ appears on both sides of $A$, so both $A\mathbf{w}$ and $A^\top\mathbf{w}$ contribute [^1].
+      - text: $(A + A^\top)\mathbf{w}$
+        correct: true
+      - text: $A\mathbf{w}$
+        why: Differentiating only the right-hand $\mathbf{w}$ misses the contribution of the left-hand $\mathbf{w}^\top$ [^1].
+    explanation: |
+      Perturbing $\mathbf{w}$ by $\epsilon\mathbf{h}$ gives $J(\mathbf{w} + \epsilon\mathbf{h}) =
+      J(\mathbf{w}) + \epsilon(\mathbf{w}^\top A\mathbf{h} + \mathbf{h}^\top A\mathbf{w}) +
+      O(\epsilon^2)$ [^1]. Since $\mathbf{h}^\top A\mathbf{w} = \mathbf{w}^\top A^\top\mathbf{h}$, the
+      linear term is $\epsilon\,\mathbf{w}^\top(A + A^\top)\mathbf{h}$, so $\nabla J = (A +
+      A^\top)\mathbf{w}$ [^1][^2]. Special cases: $\nabla\,\mathbf{w}^\top\mathbf{w} = 2\mathbf{w}$, and
+      $2A\mathbf{w}$ for symmetric $A$ such as a Hessian or covariance matrix.
+    references:
+      - source: gutmann-pen-paper
+        locator: Ch. 2 Optimisation, Ex. 2.1 (b) Gradient of vector-valued functions
+        url: https://arxiv.org/abs/2206.13446
+      - source: d2l
+        locator: Sec. 22.4.7 A Little Matrix Calculus
+        url: https://d2l.ai/chapter_appendix-mathematics-for-deep-learning/multivariable-calculus.html#a-little-matrix-calculus
+    source:
+      id: gutmann-pen-paper
+      ref: optimisation#grad-vector-b
+      url: https://github.com/michaelgutmann/ml-pen-and-paper-exercises/blob/571295dfe49b37d16884b2c5397e62e154ce5f88/topics/optimisation.tex
+    status: draft
+  - id: optimization-077
+    type: single
+    difficulty: medium
+    tags:
+      - newtons-method
+      - hessian
+      - second-order-optimization
+    question: |
+      Near the current point $\mathbf{w}_0$, a function $J$ is approximated by
+      $f(\mathbf{w}) = J(\mathbf{w}_0) + \mathbf{g}^\top(\mathbf{w} - \mathbf{w}_0) + \tfrac12(\mathbf{w}
+      - \mathbf{w}_0)^\top H(\mathbf{w} - \mathbf{w}_0)$, where $\mathbf{g}$ is the gradient and $H$ a
+      symmetric positive definite Hessian. Which point minimises $f$, i.e. what is the Newton update?
+    options:
+      - text: $\mathbf{w}^* = \mathbf{w}_0 - H\mathbf{g}$
+        why: Setting $\nabla f = \mathbf{g} + H(\mathbf{w} - \mathbf{w}_0) = 0$ requires solving with $H$, i.e. multiplying by $H^{-1}$, not by $H$ [^1].
+      - text: $\mathbf{w}^* = \mathbf{w}_0 + H^{-1}\mathbf{g}$
+        why: With a positive definite $H$ this moves uphill; the minimiser lies against the gradient direction [^1].
+      - text: $\mathbf{w}^* = \mathbf{w}_0 - \mathbf{g}$
+        why: This is a plain gradient step with step size 1; it ignores the curvature information in $H$ [^1][^2].
+      - text: $\mathbf{w}^* = \mathbf{w}_0 - H^{-1}\mathbf{g}$
+        correct: true
+    explanation: |
+      The gradient of the quadratic model is $\nabla f(\mathbf{w}) = \mathbf{g} + H(\mathbf{w} -
+      \mathbf{w}_0)$, which vanishes at $\mathbf{w}^* = \mathbf{w}_0 - H^{-1}\mathbf{g}$ [^1]. Because
+      $H$ is positive definite, $f$ grows quadratically away from this point, so it is the minimiser
+      [^1]. One Newton step jumps to the minimum of the local quadratic model; in practice one solves
+      $H\mathbf{p} = \mathbf{g}$ instead of inverting $H$, and often adds a step size from a line
+      search [^1][^2].
+    references:
+      - source: gutmann-pen-paper
+        locator: Ch. 2 Optimisation, Ex. 2.2 (a)–(c) Newton's method
+        url: https://arxiv.org/abs/2206.13446
+      - source: d2l
+        locator: Sec. 12.3.3.1 Newton's Method
+        url: https://d2l.ai/chapter_optimization/gd.html#newtons-method
+    source:
+      id: gutmann-pen-paper
+      ref: optimisation#newtons-method-c
+      url: https://github.com/michaelgutmann/ml-pen-and-paper-exercises/blob/571295dfe49b37d16884b2c5397e62e154ce5f88/topics/optimisation.tex
+    status: draft
+  - id: optimization-078
+    type: single
+    difficulty: hard
+    tags:
+      - matrix-calculus
+      - gradient
+      - linear-layer
+      - outer-product
+    question: |
+      Let $W \in \mathbb{R}^{n \times m}$ have rows $\mathbf{w}_1^\top, \ldots, \mathbf{w}_n^\top$, let
+      $\mathbf{v} \in \mathbb{R}^m$, and let $f: \mathbb{R} \to \mathbb{R}$ be differentiable. What is
+      the gradient of $J(W) = \sum_{k=1}^n f(\mathbf{w}_k^\top \mathbf{v})$ with respect to $W$ (an
+      $n \times m$ matrix)? Here $f'$ acts element-wise on the vector $W\mathbf{v}$.
+    options:
+      - text: $f'(W\mathbf{v})\,\mathbf{v}^\top$
+        correct: true
+      - text: $\mathbf{v}\, f'(W\mathbf{v})^\top$
+        why: This is the transpose, an $m \times n$ matrix; the gradient must have the shape of $W$ [^1].
+      - text: $W^\top f'(W\mathbf{v})$
+        why: This $m$-vector is the gradient with respect to the input $\mathbf{v}$, not with respect to the weights [^1].
+      - text: $f'(W\mathbf{v}) \odot (W\mathbf{v})$
+        why: This is an $n$-vector; the derivative with respect to $W_{ij}$ needs the input component $v_j$, which an outer product supplies [^1].
+    explanation: |
+      $\partial J/\partial W_{ij} = f'(\mathbf{w}_i^\top\mathbf{v})\,\partial(\mathbf{w}_i^\top
+      \mathbf{v})/\partial W_{ij} = f'(\mathbf{w}_i^\top \mathbf{v})\, v_j$, which is entry $(i, j)$ of the
+      outer product $f'(W\mathbf{v})\,\mathbf{v}^\top$ [^1]. This is the familiar weight gradient of a
+      linear layer: the error signal at the outputs times the transposed input [^1][^2].
+    references:
+      - source: gutmann-pen-paper
+        locator: Ch. 2 Optimisation, Ex. 2.3 (c) Gradient of matrix-valued functions
+        url: https://arxiv.org/abs/2206.13446
+      - source: d2l
+        locator: Sec. 22.4.7 A Little Matrix Calculus
+        url: https://d2l.ai/chapter_appendix-mathematics-for-deep-learning/multivariable-calculus.html#a-little-matrix-calculus
+    source:
+      id: gutmann-pen-paper
+      ref: optimisation#grad-matrix-c
+      url: https://github.com/michaelgutmann/ml-pen-and-paper-exercises/blob/571295dfe49b37d16884b2c5397e62e154ce5f88/topics/optimisation.tex
+    status: draft
+  - id: optimization-079
+    type: single
+    difficulty: hard
+    tags:
+      - matrix-calculus
+      - log-determinant
+      - ica
+      - normalising-flows
+    question: |
+      Log-likelihoods of ICA and of normalising flows contain the term $\log\lvert\det W\rvert$ for
+      an invertible square matrix $W$. What is its gradient $\nabla_W \log\lvert\det W\rvert$?
+    options:
+      - text: $W^{-1}$
+        why: The transpose matters for non-symmetric $W$; $\partial\log\lvert\det W\rvert/\partial W_{ij}$ is entry $(j, i)$ of $W^{-1}$ [^1][^2].
+      - text: $(W^{-1})^\top$
+        correct: true
+      - text: $\frac{1}{\det W}\, I$
+        why: The derivative of $\log\lvert\det W\rvert$ is not a multiple of the identity; it depends on all entries of $W$ through the cofactors [^2].
+      - text: $W^\top$
+        why: That would be the gradient of $\frac12\lVert W\rVert_F^2$, not of the log-determinant [^1].
+    explanation: |
+      With the eigendecomposition $W = U\Lambda V^\top$, $\log\lvert\det W\rvert = \sum_i
+      \log\lvert\lambda_i\rvert$ and $\nabla_W\lambda_i = \mathbf{v}_i\mathbf{u}_i^\top$, so $\nabla_W =
+      \sum_i \mathbf{v}_i\mathbf{u}_i^\top/\lambda_i = (W^{-1})^\top$ [^1]. The same result follows from
+      Jacobi's formula $d\det W = \det W\,\mathrm{tr}(W^{-1}dW)$ [^2]. In ICA this term pushes the
+      unmixing matrix away from singular solutions.
+    references:
+      - source: gutmann-pen-paper
+        locator: Ch. 2 Optimisation, Ex. 2.4 (a)–(d) Gradient of the log-determinant
+        url: https://arxiv.org/abs/2206.13446
+      - title: "Wikipedia: Jacobi's formula"
+        url: https://en.wikipedia.org/wiki/Jacobi%27s_formula
+        locator: Statement and Corollary
+    source:
+      id: gutmann-pen-paper
+      ref: optimisation#grad-log-det-d
+      url: https://github.com/michaelgutmann/ml-pen-and-paper-exercises/blob/571295dfe49b37d16884b2c5397e62e154ce5f88/topics/optimisation.tex
+    status: draft
+  - id: optimization-080
+    type: single
+    difficulty: easy
+    tags:
+      - gradient-descent
+      - sgd
+      - minibatch
+    question: |
+      Which of the following optimisation algorithms produces the same sequence of parameter updates
+      no matter in which order the training examples are stored?
+    options:
+      - text: Mini-batch gradient descent
+        why: The order determines which examples end up in each mini-batch, and hence the sequence of updates [^2].
+      - text: Stochastic gradient descent
+        why: SGD updates after every single example, so a different order gives a different trajectory [^1].
+      - text: Stochastic gradient descent with momentum
+        why: Momentum averages past gradients, but those gradients still come from examples visited in a particular order [^1].
+      - text: Batch (full) gradient descent
+        correct: true
+    explanation: |
+      Batch gradient descent computes the gradient of the loss over the whole training set before
+      each update; this is a sum over examples, and sums do not depend on order [^3]. Stochastic and
+      mini-batch methods update the parameters after each example or small batch, so the order in
+      which data are visited (usually shuffled every epoch) changes the path through parameter space
+      [^1][^2].
+    references:
+      - source: d2l
+        locator: Sec. 12.4 Stochastic Gradient Descent
+        url: https://d2l.ai/chapter_optimization/sgd.html
+      - source: d2l
+        locator: Sec. 12.5.2 Minibatches
+        url: https://d2l.ai/chapter_optimization/minibatch-sgd.html#minibatches
+      - source: d2l
+        locator: Sec. 12.3.2 Multivariate Gradient Descent
+        url: https://d2l.ai/chapter_optimization/gd.html#multivariate-gradient-descent
+    source:
+      id: dsgiitr-ml-interviewqs
+      ref: questions/ml.yml#q1
+      url: https://github.com/dsgiitr/ML-InterviewQs/blob/8c6d228b051af7ceb429e6322befda068964e6b5/questions/ml.yml
+    status: draft

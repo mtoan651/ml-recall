@@ -3097,3 +3097,418 @@ questions:
       ref: lectures/notes/20_survival-analysis.ipynb#ex20.2
       url: https://github.com/UBC-CS/cpsc330-2025W1/blob/a89d6131a0e2ae5f7ab36f207a3809a5b7137aef/lectures/notes/20_survival-analysis.ipynb
     status: draft
+  - id: statistics-107
+    type: short_answer
+    difficulty: easy
+    tags:
+      - maximum-likelihood
+      - gaussian
+      - variance
+    question: |
+      You fit a Gaussian $\mathcal{N}(\mu, \sigma^2)$ by maximum likelihood to the iid data
+      $\{1, 2, 3, 6\}$. What is the maximum likelihood estimate $\hat{\sigma}^2$ of the variance?
+    answer:
+      numeric: 3.5
+      tolerance: 0.001
+      hint: a number, 1 decimal
+      model: $\hat\mu = 3$, $\hat\sigma^2 = \frac{1}{4}\left[(1-3)^2 + (2-3)^2 + (3-3)^2 + (6-3)^2\right] = 14/4 = 3.5$
+    explanation: |
+      Setting the derivatives of $\ell(\mu, v) = -\frac{n}{2}\log(2\pi v) - \frac{1}{2v}\sum_i (x_i -
+      \mu)^2$ to zero gives $\hat\mu = \bar x$ and $\hat v = \frac{1}{n}\sum_i (x_i - \bar x)^2$; the
+      Hessian there is negative definite, so it is the maximum [^1]. Here $\bar x = 3$ and the squared
+      deviations sum to 14, so $\hat\sigma^2 = 14/4 = 3.5$ [^1][^2]. Note the divisor $n$: the
+      unbiased sample variance would divide by $n - 1$ and give $4.67$.
+    references:
+      - source: gutmann-pen-paper
+        locator: Ch. 8 Model-Based Learning, Ex. 8.1 (c) Maximum likelihood estimation for a Gaussian
+        url: https://arxiv.org/abs/2206.13446
+      - title: 'Wikipedia: Maximum likelihood estimation'
+        url: https://en.wikipedia.org/wiki/Maximum_likelihood_estimation
+        locator: Examples, Continuous distribution, continuous parameter space (normal distribution)
+    source:
+      id: gutmann-pen-paper
+      ref: model-based-learning#gauss-mle-c
+      url: https://github.com/michaelgutmann/ml-pen-and-paper-exercises/blob/571295dfe49b37d16884b2c5397e62e154ce5f88/topics/model-based-learning.tex
+    status: draft
+  - id: statistics-108
+    type: short_answer
+    difficulty: medium
+    tags:
+      - bayesian-inference
+      - gaussian
+      - conjugate-prior
+      - posterior-mean
+    question: |
+      Data $x_1, \ldots, x_4$ are iid $\mathcal{N}(\mu, \sigma^2)$ with known $\sigma^2 = 4$, and their
+      sample mean is $\bar x = 2$. The prior on the mean is $\mu \sim \mathcal{N}(0, 1)$. What is the
+      posterior mean $\mathbb{E}[\mu \mid x_{1:4}]$?
+    answer:
+      numeric: 1.0
+      tolerance: 0.001
+      hint: a number, 1 decimal
+      model: $\sigma^2/n = 1$, so $\mu_n = \frac{\sigma_0^2}{\sigma_0^2 + \sigma^2/n}\,\bar x + \frac{\sigma^2/n}{\sigma_0^2 + \sigma^2/n}\,\mu_0 = \frac{1}{2}\cdot 2 + \frac{1}{2}\cdot 0 = 1$
+    explanation: |
+      As a function of $\mu$ the likelihood is proportional to $\mathcal{N}(\mu; \bar x, \sigma^2/n)$,
+      and the product of two Gaussian densities in $\mu$ is again Gaussian [^1]. Its precision is the
+      sum of the precisions, $1/\sigma_n^2 = n/\sigma^2 + 1/\sigma_0^2 = 1 + 1$, and its mean is the
+      precision-weighted average of $\bar x$ and $\mu_0$: here $\frac{1}{2}(2) + \frac{1}{2}(0) = 1$,
+      with posterior variance $0.5$ [^1][^2]. As $n$ grows, $\sigma^2/n \to 0$ and the posterior mean
+      moves from the prior mean to the MLE $\bar x$.
+    references:
+      - source: gutmann-pen-paper
+        locator: Ch. 8 Model-Based Learning, Ex. 8.2 Posterior of the mean of a Gaussian with known variance
+        url: https://arxiv.org/abs/2206.13446
+      - title: 'Wikipedia: Conjugate prior'
+        url: https://en.wikipedia.org/wiki/Conjugate_prior
+        locator: Table of conjugate distributions (normal with known variance)
+    source:
+      id: gutmann-pen-paper
+      ref: model-based-learning#posterior-of-the-mean-of-a-gaussian-with-known-variance
+      url: https://github.com/michaelgutmann/ml-pen-and-paper-exercises/blob/571295dfe49b37d16884b2c5397e62e154ce5f88/topics/model-based-learning.tex
+    status: draft
+  - id: statistics-109
+    type: short_answer
+    difficulty: easy
+    tags:
+      - bayesian-inference
+      - beta-prior
+      - posterior-predictive
+      - bernoulli
+    question: |
+      A Bernoulli model $p(x \mid \theta) = \theta^x (1 - \theta)^{1 - x}$ has the prior $\theta \sim
+      \mathrm{Beta}(2, 2)$. You observe 10 iid outcomes with 7 ones. What is the posterior predictive
+      probability $p(x_{\text{new}} = 1 \mid \text{data})$?
+    answer:
+      numeric: 0.643
+      tolerance: 0.002
+      hint: a probability, 3 decimals (a fraction like 2/3 also works)
+      model: Posterior $\mathrm{Beta}(2 + 7, 2 + 3)$; predictive $= \mathbb{E}[\theta \mid \text{data}] = 9/14 \approx 0.643$
+    explanation: |
+      Multiplying the likelihood $\theta^{n_1}(1 - \theta)^{n_0}$ by the Beta prior gives the posterior
+      $\mathrm{Beta}(\alpha_0 + n_1, \beta_0 + n_0) = \mathrm{Beta}(9, 5)$, so the hyperparameters act
+      as pseudo-counts [^1]. The predictive probability is $\int \theta\, p(\theta \mid \text{data})\,
+      d\theta$, the posterior mean $\alpha_n / (\alpha_n + \beta_n) = 9/14 \approx 0.643$ [^1][^2]. It
+      lies between the prior mean $0.5$ and the MLE $0.7$, and tends to the MLE as $n$ grows.
+    references:
+      - source: gutmann-pen-paper
+        locator: Ch. 8 Model-Based Learning, Ex. 8.5 (a)–(c) Bayesian inference for the Bernoulli model
+        url: https://arxiv.org/abs/2206.13446
+      - title: 'Wikipedia: Beta distribution'
+        url: https://en.wikipedia.org/wiki/Beta_distribution
+        locator: Bayesian inference (Bernoulli/binomial likelihood)
+    source:
+      id: gutmann-pen-paper
+      ref: model-based-learning#bayesian-inference-bernoulli-c
+      url: https://github.com/michaelgutmann/ml-pen-and-paper-exercises/blob/571295dfe49b37d16884b2c5397e62e154ce5f88/topics/model-based-learning.tex
+    status: draft
+  - id: statistics-110
+    type: single
+    difficulty: medium
+    tags:
+      - score-matching
+      - unnormalised-models
+      - partition-function
+    question: |
+      Score matching fits a model $p(\mathbf{x}; \theta) = \tilde p(\mathbf{x}; \theta)/Z(\theta)$ by
+      minimising $J(\theta) = \frac{1}{n}\sum_i \sum_j \left[\partial_j \psi_j(\mathbf{x}_i; \theta) +
+      \tfrac{1}{2}\psi_j(\mathbf{x}_i; \theta)^2\right]$, where $\psi_j = \partial \log p /
+      \partial x_j$. Why does it not need the partition function $Z(\theta)$?
+    options:
+      - text: $\log Z(\theta)$ is constant in $\mathbf{x}$, so its derivatives in $x_j$ vanish
+        correct: true
+      - text: $Z(\theta)$ cancels because the objective only involves ratios of model densities
+        why: Ratios of densities cancel $Z$ in Metropolis–Hastings or importance weights; score matching instead differentiates with respect to the data [^1].
+      - text: $Z(\theta)$ is estimated on the fly with Monte Carlo samples
+        why: No sampling is involved; the objective is computed from the data points and derivatives of the unnormalised log density [^1][^2].
+      - text: The exponential family always has $Z(\theta) = 1$
+        why: Exponential-family models generally have a non-trivial $Z(\theta)$, e.g. a Gaussian; score matching works without knowing it [^1].
+    explanation: |
+      $\psi_j(\mathbf{x}; \theta) = \partial_{x_j} \log \tilde p(\mathbf{x}; \theta) - \partial_{x_j}
+      \log Z(\theta)$, and the second term is zero [^1][^2]. For exponential families the objective
+      becomes a quadratic form in $\theta$; for the zero-mean Gaussian $p \propto \exp(\theta x^2)$ it
+      gives $\hat\sigma^2 = \frac{1}{n}\sum_i x_i^2$, the same as maximum likelihood [^1]. The price is
+      that $\mathbf{x}$ must be continuous, because the method needs derivatives with respect to the
+      data.
+    references:
+      - source: gutmann-pen-paper
+        locator: Ch. 8 Model-Based Learning, Ex. 8.11 (a)–(b) Score matching for the exponential family
+        url: https://arxiv.org/abs/2206.13446
+      - title: Hyvärinen (2005), Estimation of Non-Normalized Statistical Models by Score Matching, JMLR 6
+        url: https://jmlr.org/papers/v6/hyvarinen05a.html
+        locator: Sec. 2 Score matching
+    source:
+      id: gutmann-pen-paper
+      ref: model-based-learning#score-matching-exp-family-b
+      url: https://github.com/michaelgutmann/ml-pen-and-paper-exercises/blob/571295dfe49b37d16884b2c5397e62e154ce5f88/topics/model-based-learning.tex
+    status: draft
+  - id: statistics-111
+    type: short_answer
+    difficulty: hard
+    tags:
+      - maximum-likelihood
+      - ising-model
+      - partition-function
+      - moment-matching
+    question: |
+      The Ising model $p(x_1, x_2; \theta) \propto \exp(\theta x_1 x_2 + x_1 + x_2)$ with $x_i \in
+      \{-1, 1\}$ has $Z(\theta) = 2e^{-\theta} + e^{\theta + 2} + e^{\theta - 2}$. The figure shows
+      $f(\theta) = \partial \log Z(\theta)/\partial\theta$. You observe the three data points
+      $(x_1, x_2) = (-1, -1)$, $(-1, 1)$ and $(1, -1)$. Read the maximum likelihood estimate
+      $\hat\theta$ off the figure.
+    figure:
+      src: ./statistics/statistics-111.svg
+      alt: An increasing S-shaped curve f(theta) for theta from -4 to 2, rising from about -1 to about 1, with gridlines every 0.25 in theta and every 1/3 in f.
+    answer:
+      numeric: -1.0
+      tolerance: 0.15
+      hint: a number read from the plot, 1 decimal
+      model: Setting $\partial\ell/\partial\theta = 0$ gives $f(\hat\theta) = \frac{1}{3}(1 - 1 - 1) = -\frac{1}{3}$, reached at $\hat\theta \approx -1$
+    explanation: |
+      The log-likelihood is $\ell(\theta) = \theta \sum_i x_1^i x_2^i + \sum_i (x_1^i + x_2^i) - n\log
+      Z(\theta)$, so the stationarity condition is $\frac{1}{n}\sum_i x_1^i x_2^i = f(\theta)$ [^1].
+      The products are $1, -1, -1$, with mean $-1/3$, and the curve reaches $-1/3$ at $\theta \approx
+      -1$ (the exact root is $-1.01$) [^1]. Since $f(\theta) = \mathbb{E}_\theta[x_1 x_2]$, this is
+      moment matching: the MLE makes the model's expected sufficient statistic equal its data average,
+      as for every exponential family [^2].
+    references:
+      - source: gutmann-pen-paper
+        locator: Ch. 8 Model-Based Learning, Ex. 8.12 Maximum likelihood estimation and unnormalised models
+        url: https://arxiv.org/abs/2206.13446
+      - title: 'Wikipedia: Exponential family'
+        url: https://en.wikipedia.org/wiki/Exponential_family
+        locator: Maximum likelihood estimation / moments of the sufficient statistic
+    source:
+      id: gutmann-pen-paper
+      ref: model-based-learning#maximum-likelihood-estimation-and-unnormalised-models-b
+      url: https://github.com/michaelgutmann/ml-pen-and-paper-exercises/blob/571295dfe49b37d16884b2c5397e62e154ce5f88/topics/model-based-learning.tex
+    status: draft
+  - id: statistics-112
+    type: single
+    difficulty: hard
+    tags:
+      - importance-sampling
+      - monte-carlo
+      - heavy-tails
+      - variance
+    question: |
+      To check that the standard Cauchy density $p(x) = \frac{1}{\pi(1 + x^2)}$ integrates to one, a
+      friend uses importance sampling with a standard normal proposal $q$:
+      $\int p(x)\,dx \approx \frac{1}{n}\sum_{i=1}^n p(x_i)/q(x_i)$, $x_i \sim q$. Two independent
+      runs give clearly different values, and within each run the estimate jumps around as $n$
+      grows. Why?
+    options:
+      - text: The estimator is biased, because the proposal does not cover the same support as $p$
+        why: Both densities are positive on all of $\mathbb{R}$, so the estimator is unbiased; the problem is its variance [^1].
+      - text: The sample sizes are just too small; any run with enough samples settles down quickly
+        why: With infinite variance the error does not shrink like $1/\sqrt{n}$, so more samples do not give reliable, reproducible estimates [^1][^2].
+      - text: Importance sampling cannot estimate normalising constants at all
+        why: Estimating normalising constants is a standard use of importance sampling; it needs a proposal whose tails are at least as heavy as the target's [^2].
+      - text: 'The weights $p/q$ have infinite variance: normal tails are far lighter than Cauchy tails'
+        correct: true
+    explanation: |
+      The weight is $w(x) = p(x)/q(x) = \sqrt{2\pi}\,e^{x^2/2}/(\pi(1 + x^2))$, and its second moment
+      under $q$ is proportional to $\int e^{x^2/2}/(1 + x^2)^2\,dx = \infty$ [^1]. The estimator is
+      unbiased, but rare samples in the tails get enormous weights, so runs disagree and estimates
+      jump [^1][^2]. A proposal with heavier tails than the target, e.g. a Cauchy or Student-t,
+      avoids this.
+    references:
+      - source: gutmann-pen-paper
+        locator: Ch. 9 Sampling and Monte Carlo Integration, Ex. 9.2 Monte Carlo integration and importance sampling
+        url: https://arxiv.org/abs/2206.13446
+      - title: 'Wikipedia: Importance sampling'
+        url: https://en.wikipedia.org/wiki/Importance_sampling
+        locator: Basic theory and Evaluation of importance sampling
+    source:
+      id: gutmann-pen-paper
+      ref: sampling-and-monte-carlo-integration#monte-carlo-integration-and-importance-sampling
+      url: https://github.com/michaelgutmann/ml-pen-and-paper-exercises/blob/571295dfe49b37d16884b2c5397e62e154ce5f88/topics/sampling-and-monte-carlo-integration.tex
+    status: draft
+  - id: statistics-113
+    type: single
+    difficulty: medium
+    tags:
+      - metropolis-hastings
+      - mcmc
+      - acceptance-ratio
+    question: |
+      Random-walk Metropolis–Hastings proposes $\theta^* \sim \mathcal{N}(\theta, \epsilon^2 I)$ from
+      the current state $\theta$ and targets $p(\theta) \propto p^*(\theta)$, where $p^*$ is
+      unnormalised. With which probability is $\theta^*$ accepted?
+    options:
+      - text: $\min\left(1, \; p^*(\theta) / p^*(\theta^*)\right)$
+        why: This ratio favours moves to *less* probable states; the proposed state belongs in the numerator [^1][^2].
+      - text: $\min\left(1, \; p^*(\theta^*) / p^*(\theta)\right)$
+        correct: true
+      - text: $p(\theta^*)$, which requires normalising $p^*$ first
+        why: Only the ratio $p^*(\theta^*)/p^*(\theta)$ is needed, in which the normalising constant cancels [^1].
+      - text: $\min\left(1, \; q(\theta^* \mid \theta)\, p^*(\theta^*) / p^*(\theta)\right)$
+        why: The general rule multiplies by the ratio $q(\theta \mid \theta^*)/q(\theta^* \mid \theta)$, which equals 1 for a symmetric Gaussian; a lone proposal density in the numerator is not part of it [^2].
+    explanation: |
+      The general acceptance probability is $\min\left(1, \frac{q(\theta \mid \theta^*)\,
+      p^*(\theta^*)}{q(\theta^* \mid \theta)\, p^*(\theta)}\right)$ [^1][^2]. A Gaussian random walk is
+      symmetric, $q(\theta \mid \theta^*) = q(\theta^* \mid \theta)$, so the proposal terms cancel, and
+      so does the unknown normalising constant of $p$. In practice the ratio is computed in the log
+      domain to avoid underflow [^1].
+    references:
+      - source: gutmann-pen-paper
+        locator: Ch. 9 Sampling and Monte Carlo Integration, Ex. 9.8 (b) Basic Markov chain Monte Carlo inference
+        url: https://arxiv.org/abs/2206.13446
+      - title: 'Wikipedia: Metropolis–Hastings algorithm'
+        url: https://en.wikipedia.org/wiki/Metropolis%E2%80%93Hastings_algorithm
+        locator: Description and Formal derivation (acceptance ratio)
+    source:
+      id: gutmann-pen-paper
+      ref: sampling-and-monte-carlo-integration#basic-mcmc-b
+      url: https://github.com/michaelgutmann/ml-pen-and-paper-exercises/blob/571295dfe49b37d16884b2c5397e62e154ce5f88/topics/sampling-and-monte-carlo-integration.tex
+    status: draft
+  - id: statistics-114
+    type: single
+    difficulty: easy
+    tags:
+      - mcmc
+      - burn-in
+      - warm-up
+      - metropolis-hastings
+    question: |
+      You run Metropolis–Hastings on $p(x, y) = \mathcal{N}(x; 0, 1)\,\mathcal{N}(y; 0, 1)$, starting at
+      $(x, y) = (7, 7)$. A scatter plot shows a trail of early samples leading from $(7, 7)$ towards
+      the origin. Why is it common to discard the first $W$ samples ("warm-up" or "burn-in")?
+    options:
+      - text: To make the remaining samples independent of each other
+        why: Discarding the start does not remove the correlation between consecutive samples; that is what thinning or a better proposal addresses [^1].
+      - text: Because Metropolis–Hastings rejects all proposals during the first $W$ steps
+        why: Early proposals are accepted or rejected by the same rule as later ones; the issue is where the chain is, not the acceptance rule [^1][^2].
+      - text: They still reflect the arbitrary starting point rather than the target distribution
+        correct: true
+      - text: To give the proposal variance time to adapt to the target
+        why: In the basic algorithm the proposal variance is fixed; warm-up only discards samples taken before the chain reaches the high-probability region [^1].
+    explanation: |
+      MCMC samples follow the target only once the chain has converged [^1]. Started far out in the
+      tail, the first samples form a trail towards the region with most of the probability mass, and
+      including them would bias sample averages [^1][^2]. Discarding a warm-up period, or starting
+      near a mode such as the MAP estimate, reduces this initialisation bias.
+    references:
+      - source: gutmann-pen-paper
+        locator: Ch. 9 Sampling and Monte Carlo Integration, Ex. 9.8 (c)–(d) Basic Markov chain Monte Carlo inference
+        url: https://arxiv.org/abs/2206.13446
+      - title: 'Wikipedia: Metropolis–Hastings algorithm'
+        url: https://en.wikipedia.org/wiki/Metropolis%E2%80%93Hastings_algorithm
+        locator: Description (burn-in period)
+    source:
+      id: gutmann-pen-paper
+      ref: sampling-and-monte-carlo-integration#basic-mcmc-d
+      url: https://github.com/michaelgutmann/ml-pen-and-paper-exercises/blob/571295dfe49b37d16884b2c5397e62e154ce5f88/topics/sampling-and-monte-carlo-integration.tex
+    status: draft
+  - id: statistics-115
+    type: single
+    difficulty: medium
+    tags:
+      - bayesian-inference
+      - mcmc
+      - poisson-regression
+      - unnormalised-posterior
+    question: |
+      Bayesian Poisson regression: $\alpha, \beta \sim \mathcal{N}(0, 100)$ independently and $y_n
+      \sim \mathrm{Poisson}(\exp(\alpha x_n + \beta))$ for $n = 1, \ldots, N$. Which function can serve
+      as the target $p^*(\alpha, \beta)$ for Metropolis–Hastings sampling of the posterior?
+    options:
+      - text: $\prod_{n=1}^N \mathrm{Poisson}(y_n; e^{\alpha x_n + \beta})$
+        why: This is the likelihood alone; sampling it ignores the prior, so it does not target the posterior [^1].
+      - text: The expression in the first option divided by $p(\mathcal{D})$, which must be computed first
+        why: That is the normalised posterior; MCMC only needs a function proportional to it, so $p(\mathcal{D})$ is never computed [^1][^2].
+      - text: $\prod_{n=1}^N \mathcal{N}(\alpha; 0, 100)\,\mathcal{N}(\beta; 0, 100)\, \mathrm{Poisson}(y_n; e^{\alpha x_n + \beta})$
+        why: The prior appears once, not once per data point; this version raises the prior to the power $N$ [^1].
+      - text: $\mathcal{N}(\alpha; 0, 100)\,\mathcal{N}(\beta; 0, 100) \prod_{n=1}^N \mathrm{Poisson}(y_n; e^{\alpha x_n + \beta})$
+        correct: true
+    explanation: |
+      By the product rule the joint $p(\alpha, \beta, \mathcal{D}) = p(\alpha)p(\beta)\prod_n p(y_n
+      \mid x_n, \alpha, \beta)$ is proportional to the posterior as a function of $(\alpha, \beta)$,
+      with constant $1/p(\mathcal{D})$ [^1]. Metropolis–Hastings uses only ratios of the target, so this
+      unnormalised posterior is exactly what it needs [^1][^2]. The resulting samples can then be used
+      for posterior means and correlations of $\alpha$ and $\beta$.
+    references:
+      - source: gutmann-pen-paper
+        locator: Ch. 9 Sampling and Monte Carlo Integration, Ex. 9.9 (a) Bayesian Poisson regression
+        url: https://arxiv.org/abs/2206.13446
+      - title: 'Wikipedia: Metropolis–Hastings algorithm'
+        url: https://en.wikipedia.org/wiki/Metropolis%E2%80%93Hastings_algorithm
+        locator: Bayesian inference
+    source:
+      id: gutmann-pen-paper
+      ref: sampling-and-monte-carlo-integration#poisson-reg-a
+      url: https://github.com/michaelgutmann/ml-pen-and-paper-exercises/blob/571295dfe49b37d16884b2c5397e62e154ce5f88/topics/sampling-and-monte-carlo-integration.tex
+    status: draft
+  - id: statistics-116
+    type: single
+    difficulty: medium
+    tags:
+      - metropolis-hastings
+      - mcmc
+      - mixing
+      - trace-plots
+      - proposal-variance
+    question: |
+      You run random-walk Metropolis–Hastings on the same posterior with a very small and with a very
+      large proposal variance (compared with the scale of the posterior). What do the trace plots of a
+      parameter typically look like?
+    options:
+      - text: 'Small: nearly all moves accepted but tiny, a slow drift; large: most rejected, long flat stretches'
+        correct: true
+      - text: 'Small: most moves rejected, long flat stretches; large: nearly all accepted, a slow drift'
+        why: It is the other way round; tiny steps barely change $p^*$, so the ratio is close to 1 and moves are accepted [^1].
+      - text: Both look like well-mixed noise; only the acceptance rate differs between the two
+        why: Both extremes mix poorly; consecutive samples are strongly correlated in either case [^1][^2].
+      - text: 'Small: well mixed; large: a slow drift, because big jumps overshoot the mode'
+        why: Big jumps usually land where $p^*$ is tiny and are rejected, which produces repeated identical values rather than a drift [^1].
+    explanation: |
+      With a symmetric proposal the acceptance ratio is $p^*(\theta^*)/p^*(\theta)$ [^1]. Tiny steps
+      keep it near 1, so almost every move is accepted, but the chain explores slowly and the samples
+      are highly correlated. Huge steps usually land in low-probability regions, the ratio is tiny, and
+      the chain copies its current value many times [^1][^2]. A well-tuned variance lies in between.
+    references:
+      - source: gutmann-pen-paper
+        locator: Ch. 9 Sampling and Monte Carlo Integration, Ex. 9.10 (a) Mixing and convergence of Metropolis–Hastings MCMC
+        url: https://arxiv.org/abs/2206.13446
+      - title: 'Wikipedia: Metropolis–Hastings algorithm'
+        url: https://en.wikipedia.org/wiki/Metropolis%E2%80%93Hastings_algorithm
+        locator: Description (choice of proposal width)
+    source:
+      id: gutmann-pen-paper
+      ref: sampling-and-monte-carlo-integration#mh-mixing-a
+      url: https://github.com/michaelgutmann/ml-pen-and-paper-exercises/blob/571295dfe49b37d16884b2c5397e62e154ce5f88/topics/sampling-and-monte-carlo-integration.tex
+    status: draft
+  - id: statistics-117
+    type: short_answer
+    difficulty: medium
+    tags:
+      - effective-sample-size
+      - mcmc
+      - correlation
+      - variance
+    question: |
+      Two MCMC samples $\theta_1, \theta_2$ have the same mean and variance $\sigma^2$ and correlation
+      coefficient $\rho = 0.6$. The variance of their average can be written as $\mathrm{Var}(\bar\theta)
+      = \sigma^2 / n_{\text{eff}}$. What is the effective sample size $n_{\text{eff}}$?
+    answer:
+      numeric: 1.25
+      tolerance: 0.005
+      hint: a number, 2 decimals
+      model: $\mathrm{Var}(\bar\theta) = \tfrac14(2\sigma^2 + 2\rho\sigma^2) = \tfrac{\sigma^2(1 + \rho)}{2}$, so $n_{\text{eff}} = 2/(1 + \rho) = 1.25$
+    explanation: |
+      $\mathrm{Var}(\frac12(\theta_1 + \theta_2)) = \frac14(\sigma^2 + \sigma^2 + 2\rho\sigma^2) =
+      \sigma^2(1 + \rho)/2$ [^1][^2]. Two uncorrelated samples would give $\sigma^2/2$, so the
+      correlation shrinks the sample size by the factor $1 + \rho$: $n_{\text{eff}} = 2/1.6 = 1.25$. As
+      $\rho \to 1$ the two samples count as one; the general definition $\text{ESS} = S/(1 +
+      2\sum_k \rho(k))$ extends this to whole chains [^1].
+    references:
+      - source: gutmann-pen-paper
+        locator: Ch. 9 Sampling and Monte Carlo Integration, Ex. 9.10 (b) Mixing and convergence of Metropolis–Hastings MCMC
+        url: https://arxiv.org/abs/2206.13446
+      - title: 'Wikipedia: Variance'
+        url: https://en.wikipedia.org/wiki/Variance#Sum_of_correlated_variables
+        locator: Sum of correlated variables
+    source:
+      id: gutmann-pen-paper
+      ref: sampling-and-monte-carlo-integration#mh-mixing-b
+      url: https://github.com/michaelgutmann/ml-pen-and-paper-exercises/blob/571295dfe49b37d16884b2c5397e62e154ce5f88/topics/sampling-and-monte-carlo-integration.tex
+    status: draft

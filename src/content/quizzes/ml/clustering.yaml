@@ -739,3 +739,113 @@ questions:
       ref: lectures/notes/15_DBSCAN-hierarchical.ipynb#ex15.3
       url: https://github.com/UBC-CS/cpsc330-2025W1/blob/a89d6131a0e2ae5f7ab36f207a3809a5b7137aef/lectures/notes/15_DBSCAN-hierarchical.ipynb
     status: draft
+  - id: clustering-026
+    type: short_answer
+    difficulty: medium
+    tags:
+      - em-algorithm
+      - gaussian-mixture
+      - responsibilities
+      - e-step
+    question: |
+      A one-dimensional mixture of two Gaussians has weights $\pi_1 = \pi_2 = 0.5$ and components
+      $\mathcal{N}(x; 0, 1)$ and $\mathcal{N}(x; 2, 1)$ at the current EM iteration. In the E-step,
+      what is the responsibility $w_{1} = p(h = 1 \mid x = 0)$ of component 1 for the data point
+      $x = 0$?
+    answer:
+      numeric: 0.881
+      tolerance: 0.002
+      hint: a probability, 3 decimals
+      model: $w_1 = \frac{0.5\,\mathcal{N}(0; 0, 1)}{0.5\,\mathcal{N}(0; 0, 1) + 0.5\,\mathcal{N}(0; 2, 1)} = \frac{1}{1 + e^{-2}} \approx 0.881$
+    explanation: |
+      The E-step computes the posterior over the latent component, $w_{ik} = \pi_k p_k(x_i) / \sum_j
+      \pi_j p_j(x_i)$ [^1]. The normalising constants of the two unit-variance Gaussians cancel, leaving
+      $e^{0}/(e^{0} + e^{-(0-2)^2/2}) = 1/(1 + e^{-2}) \approx 0.881$ [^1][^2]. These soft assignments
+      weight each point's contribution to every component in the M-step; hard EM would instead assign
+      the point fully to component 1.
+    references:
+      - source: gutmann-pen-paper
+        locator: Ch. 10 Variational Inference and Learning, Ex. 10.5 (c) EM algorithm for mixture models
+        url: https://arxiv.org/abs/2206.13446
+      - title: 'Wikipedia: Expectation–maximization algorithm'
+        url: https://en.wikipedia.org/wiki/Expectation%E2%80%93maximization_algorithm
+        locator: Examples, Gaussian mixture (E step)
+    source:
+      id: gutmann-pen-paper
+      ref: variational-inference#em-mixture-models-c
+      url: https://github.com/michaelgutmann/ml-pen-and-paper-exercises/blob/571295dfe49b37d16884b2c5397e62e154ce5f88/topics/variational-inference.tex
+    status: draft
+  - id: clustering-027
+    type: single
+    difficulty: medium
+    tags:
+      - em-algorithm
+      - mixture-models
+      - mixing-weights
+      - m-step
+    question: |
+      In EM for a mixture model $p(\mathbf{x}) = \sum_{k=1}^K \pi_k p_k(\mathbf{x}; \theta_k)$, the
+      E-step gives responsibilities $w_{ik} = p(h_i = k \mid \mathbf{x}_i)$ for $n$ data points. What
+      is the M-step update for the mixing weight $\pi_k$?
+    options:
+      - text: The fraction of points for which component $k$ has the largest responsibility
+        why: That is the hard-EM variant, which rounds the soft assignments; standard EM averages the responsibilities themselves [^1].
+      - text: $\pi_k \propto \sum_{i=1}^n w_{ik}\, p_k(\mathbf{x}_i; \theta_k)$
+        why: The component densities already entered through $w_{ik}$; the objective for $\pi$ is $\sum_k (\sum_i w_{ik})\log\pi_k$, whose maximiser is proportional to $\sum_i w_{ik}$ [^1].
+      - text: $\pi_k = \frac{1}{n}\sum_{i=1}^n w_{ik}$, the average responsibility of component $k$
+        correct: true
+      - text: $\pi_k$ stays at its initial value; only $\theta_k$ is updated in the M-step
+        why: The mixing weights are parameters of the model and are re-estimated in every M-step [^1][^2].
+    explanation: |
+      The expected complete-data log-likelihood is $\sum_i \sum_k w_{ik}\log[\pi_k p_k(\mathbf{x}_i;
+      \theta_k)]$; the part depending on $\pi$ is $\sum_k \omega_k \log \pi_k$ with $\omega_k = \sum_i
+      w_{ik}$ [^1]. Under $\sum_k \pi_k = 1$ this is maximised by $\pi_k = \omega_k / \sum_j \omega_j =
+      \frac{1}{n}\sum_i w_{ik}$, since the responsibilities of each point sum to one [^1][^2]. The
+      component parameters are updated separately by weighted maximum likelihood.
+    references:
+      - source: gutmann-pen-paper
+        locator: Ch. 10 Variational Inference and Learning, Ex. 10.5 (e)–(f) EM algorithm for mixture models
+        url: https://arxiv.org/abs/2206.13446
+      - title: 'Wikipedia: Expectation–maximization algorithm'
+        url: https://en.wikipedia.org/wiki/Expectation%E2%80%93maximization_algorithm
+        locator: Examples, Gaussian mixture (M step)
+    source:
+      id: gutmann-pen-paper
+      ref: variational-inference#em-mixture-models-e
+      url: https://github.com/michaelgutmann/ml-pen-and-paper-exercises/blob/571295dfe49b37d16884b2c5397e62e154ce5f88/topics/variational-inference.tex
+    status: draft
+  - id: clustering-028
+    type: short_answer
+    difficulty: medium
+    tags:
+      - em-algorithm
+      - gaussian-mixture
+      - m-step
+      - weighted-mle
+    question: |
+      In EM for a one-dimensional Gaussian mixture, four data points $x = 0, 1, 3, 4$ have
+      responsibilities $0.9, 0.6, 0.2, 0.1$ for component 1. What is the updated mean $\mu_1$ after
+      the M-step?
+    answer:
+      numeric: 0.889
+      tolerance: 0.002
+      hint: a number, 3 decimals
+      model: $\mu_1 = \frac{0.9 \cdot 0 + 0.6 \cdot 1 + 0.2 \cdot 3 + 0.1 \cdot 4}{0.9 + 0.6 + 0.2 + 0.1} = 1.6/1.8 \approx 0.889$
+    explanation: |
+      With no parameters shared between components, the M-step for $(\mu_k, \Sigma_k)$ is a weighted
+      maximum-likelihood fit with weights $w_{ik}$ [^1]. For a Gaussian this gives the weighted mean
+      $\mu_k = \sum_i W_{ik} x_i$ with normalised weights $W_{ik} = w_{ik}/\sum_j w_{jk}$, here
+      $1.6/1.8 \approx 0.889$; the covariance is the correspondingly weighted covariance around the new
+      mean [^1][^2].
+    references:
+      - source: gutmann-pen-paper
+        locator: Ch. 10 Variational Inference and Learning, Ex. 10.6 (a)–(b) EM algorithm for mixture of Gaussians
+        url: https://arxiv.org/abs/2206.13446
+      - title: 'Wikipedia: Expectation–maximization algorithm'
+        url: https://en.wikipedia.org/wiki/Expectation%E2%80%93maximization_algorithm
+        locator: Examples, Gaussian mixture (M step)
+    source:
+      id: gutmann-pen-paper
+      ref: variational-inference#em-mog-b
+      url: https://github.com/michaelgutmann/ml-pen-and-paper-exercises/blob/571295dfe49b37d16884b2c5397e62e154ce5f88/topics/variational-inference.tex
+    status: draft
