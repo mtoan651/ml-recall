@@ -251,3 +251,70 @@ questions:
       ref: W2D5_TimeSeriesAndNaturalLanguageProcessing/W2D5_Tutorial2#sec4-finetuning
       url: https://github.com/NeuromatchAcademy/course-content-dl/blob/caba36c513fb8139ac3c9e7503f7a769dadde25e/tutorials/W2D5_TimeSeriesAndNaturalLanguageProcessing/instructor/W2D5_Tutorial2.ipynb
     status: draft
+  - id: fine-tuning-008
+    type: short_answer
+    difficulty: medium
+    tags:
+      - lora
+      - peft
+      - parameter-count
+    question: |
+      LoRA with rank $r = 16$ is applied to one $4096 \times 4096$ projection matrix $W$ of a frozen model:
+      the update is $\Delta W = BA$ with $B \in \mathbb{R}^{4096 \times 16}$ and
+      $A \in \mathbb{R}^{16 \times 4096}$. How many trainable parameters does this add for that matrix?
+    answer:
+      numeric: 131072
+      tolerance: 0
+      hint: a whole number
+      model: $2 \cdot 4096 \cdot 16 = 131{,}072$ (vs. $4096^2 \approx 16.8$ million in $W$)
+    explanation: |
+      LoRA freezes $W$ and trains only the low-rank factors $B$ and $A$, with
+      $4096 \cdot 16 + 16 \cdot 4096 = 131{,}072$ parameters, about 0.8% of the $16.8$ million entries of
+      $W$ [^1]. The rank $r$ trades capacity against size, and the update is scaled by $\alpha/r$
+      (`lora_alpha=16` with `r=16` gives scale 1) [^1][^2]. Applying it to several projections, such as
+      the query, key, value and output projections, multiplies this count accordingly [^2].
+    references:
+      - title: 'Hu et al. (2021), LoRA: Low-Rank Adaptation of Large Language Models, arXiv:2106.09685'
+        url: https://arxiv.org/abs/2106.09685
+        locator: Sec. 4.1 Low-Rank-Parametrized Update Matrices
+      - source: galaxy-training
+        locator: Fine-tuning a LLM for DNA Sequence Classification — Configure LoRA for Parameter-Efficient Fine-Tuning
+        url: https://training.galaxyproject.org/training-material/topics/statistics/tutorials/genomic-llm-finetuning/tutorial.html
+    source:
+      id: galaxy-training
+      ref: genomic-llm-finetuning#q4
+      url: https://github.com/galaxyproject/training-material/blob/917e68d1d61c2915c7a970d75468b8494be90c0d/topics/statistics/tutorials/genomic-llm-finetuning/tutorial.md
+    status: draft
+  - id: fine-tuning-009
+    type: short_answer
+    difficulty: easy
+    tags:
+      - quantization
+      - qlora
+      - memory
+    question: |
+      A model has 7 billion parameters. In bfloat16 its weights take $7 \times 10^9 \times 2$ bytes
+      $= 14$ GB. You load it with 4-bit quantization (`load_in_4bit=True`). Ignoring the small overhead of
+      quantization constants, how many GB do the weights take now?
+    answer:
+      numeric: 3.5
+      tolerance: 0.01
+      hint: a number of GB (1 GB = 10^9 bytes)
+      model: $7 \times 10^9 \times 0.5$ bytes $= 3.5$ GB
+    explanation: |
+      Four bits are half a byte, so the weights need $7 \times 10^9 \times 0.5 = 3.5$ GB, a quarter of
+      the bfloat16 size [^1][^2]. QLoRA-style fine-tuning keeps these 4-bit weights frozen, computes in
+      bfloat16 (`bnb_4bit_compute_dtype`), and trains small LoRA adapters on top; double quantization
+      also compresses the quantization constants to save a little more memory [^1][^2].
+    references:
+      - title: 'Dettmers et al. (2023), QLoRA: Efficient Finetuning of Quantized LLMs, arXiv:2305.14314'
+        url: https://arxiv.org/abs/2305.14314
+        locator: Sec. 3 QLoRA Finetuning (4-bit NormalFloat, Double Quantization)
+      - source: galaxy-training
+        locator: Fine-tuning a LLM for DNA Sequence Classification — Specify settings for quantization
+        url: https://training.galaxyproject.org/training-material/topics/statistics/tutorials/genomic-llm-finetuning/tutorial.html
+    source:
+      id: galaxy-training
+      ref: genomic-llm-finetuning#q2
+      url: https://github.com/galaxyproject/training-material/blob/917e68d1d61c2915c7a970d75468b8494be90c0d/topics/statistics/tutorials/genomic-llm-finetuning/tutorial.md
+    status: draft

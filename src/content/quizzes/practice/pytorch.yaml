@@ -1936,3 +1936,534 @@ questions:
       ref: W1D3_MultiLayerPerceptrons/W1D3_Tutorial1#think2.3.1
       url: https://github.com/NeuromatchAcademy/course-content-dl/blob/caba36c513fb8139ac3c9e7503f7a769dadde25e/tutorials/W1D3_MultiLayerPerceptrons/instructor/W1D3_Tutorial1.ipynb
     status: draft
+  - id: pytorch-048
+    type: short_answer
+    difficulty: medium
+    tags:
+      - lr-scheduler
+      - steplr
+      - learning-rate-decay
+    question: |
+      ```python
+      optimizer = torch.optim.SGD(model.parameters(), lr=0.1)
+      scheduler = torch.optim.lr_scheduler.StepLR(optimizer, step_size=30, gamma=0.1)
+      for epoch in range(100):
+          train_one_epoch(model, optimizer)
+          scheduler.step()
+      ```
+      What learning rate does the optimizer use during the epoch with `epoch == 65`?
+    answer:
+      numeric: 0.001
+      tolerance: 0.0000001
+      hint: a number, e.g. 0.05
+      model: $0.1 \cdot 0.1^{\lfloor 65/30 \rfloor} = 0.1 \cdot 0.01 = 0.001$
+    explanation: |
+      `StepLR` multiplies the learning rate by `gamma` every `step_size` calls of `scheduler.step()`,
+      so after 65 epochs it has decayed $\lfloor 65/30\rfloor = 2$ times: $0.1 \to 0.01 \to 0.001$ [^1].
+      The epochs 0–29 use 0.1, 30–59 use 0.01 and 60–89 use 0.001. Starting large and decaying the
+      learning rate in steps is a classic schedule: big steps make fast progress early, small steps let
+      the parameters settle later [^2].
+    references:
+      - title: torch.optim.lr_scheduler.StepLR (PyTorch documentation)
+        url: https://pytorch.org/docs/stable/generated/torch.optim.lr_scheduler.StepLR.html
+        locator: StepLR (parameters `step_size`, `gamma`)
+      - source: d2l
+        locator: Sec. 12.11.3.2 Multi Factor Scheduler
+        url: https://d2l.ai/chapter_optimization/lr-scheduler.html#multi-factor-scheduler
+    source:
+      id: ds-interviews
+      ref: theory.md#q102
+      url: https://github.com/alexeygrigorev/data-science-interviews/blob/919f44547ef5ffc2bd59674fd301940529f4c1a8/theory.md#optimization-in-neural-networks
+    status: draft
+  - id: pytorch-049
+    type: short_answer
+    difficulty: easy
+    tags:
+      - matmul
+      - tensor-shapes
+      - transpose
+    question: |
+      ```python
+      X = torch.rand(7, 7)
+      Y = torch.rand(1, 7)
+      Z = torch.matmul(X, Y.T)
+      ```
+      `torch.matmul(X, Y)` would raise a shape error. What is the shape of `Z`?
+    answer:
+      accept:
+        - (7, 1)
+      pattern: '[(\[]?\s*7(?:\s*[,x×*]\s*|\s+)1\s*[)\]]?'
+      hint: Two dimensions, e.g. (3, 4)
+      model: $(7, 1)$ — $(7 \times 7) \cdot (7 \times 1)$
+    explanation: |
+      A matrix product needs the inner dimensions to match: $(7 \times 7)$ times $(1 \times 7)$ fails
+      because $7 \neq 1$ [^1]. Transposing `Y` gives shape $(7, 1)$, so the product is
+      $(7 \times 7)(7 \times 1) = (7 \times 1)$ [^1][^2]. Checking the inner and outer dimensions is the
+      quickest way to debug most shape errors.
+    references:
+      - title: torch.matmul (PyTorch documentation)
+        url: https://pytorch.org/docs/stable/generated/torch.matmul.html
+        locator: torch.matmul (2-D × 2-D is the matrix-matrix product)
+      - source: learn-pytorch
+        locator: 00 PyTorch Fundamentals exercise solutions, Exercise 3
+        url: https://github.com/mrdbourke/pytorch-deep-learning/blob/a16552001d963d078390d5bbdfc321e7e7c94bd1/extras/solutions/00_pytorch_fundamentals_exercise_solutions.ipynb
+    source:
+      id: learn-pytorch
+      ref: extras/solutions/00_pytorch_fundamentals_exercise_solutions.ipynb#ex3
+      url: https://github.com/mrdbourke/pytorch-deep-learning/blob/a16552001d963d078390d5bbdfc321e7e7c94bd1/extras/solutions/00_pytorch_fundamentals_exercise_solutions.ipynb
+    status: draft
+  - id: pytorch-050
+    type: short_answer
+    difficulty: easy
+    tags:
+      - argmax
+      - flattened-index
+      - code-reading
+    question: |
+      ```python
+      C = torch.tensor([[0.36, 0.47],
+                        [0.52, 0.56]])
+      print(torch.argmax(C))
+      ```
+      What number does `torch.argmax(C)` return?
+    answer:
+      numeric: 3
+      tolerance: 0
+      hint: a whole number
+      model: 3 — without `dim`, argmax indexes the flattened tensor `[0.36, 0.47, 0.52, 0.56]`
+    explanation: |
+      Without a `dim` argument, `torch.argmax` returns the index of the maximum in the *flattened*
+      tensor [^1]. Flattened row by row, `C` is `[0.36, 0.47, 0.52, 0.56]`, so the answer is 3, not the
+      pair (1, 1). Use `dim=0` or `dim=1` to get per-column or per-row indices, as when picking the
+      predicted class of each example with `logits.argmax(dim=1)` [^1][^2].
+    references:
+      - title: torch.argmax (PyTorch documentation)
+        url: https://pytorch.org/docs/stable/generated/torch.argmax.html
+        locator: torch.argmax ("returns the indices of the maximum value of all elements in the input tensor")
+      - source: learn-pytorch
+        locator: 00 PyTorch Fundamentals exercise solutions, Exercise 9
+        url: https://github.com/mrdbourke/pytorch-deep-learning/blob/a16552001d963d078390d5bbdfc321e7e7c94bd1/extras/solutions/00_pytorch_fundamentals_exercise_solutions.ipynb
+    source:
+      id: learn-pytorch
+      ref: extras/solutions/00_pytorch_fundamentals_exercise_solutions.ipynb#ex9
+      url: https://github.com/mrdbourke/pytorch-deep-learning/blob/a16552001d963d078390d5bbdfc321e7e7c94bd1/extras/solutions/00_pytorch_fundamentals_exercise_solutions.ipynb
+    status: draft
+  - id: pytorch-051
+    type: short_answer
+    difficulty: medium
+    tags:
+      - squeeze
+      - tensor-shapes
+    question: |
+      ```python
+      x = torch.rand(1, 1, 1, 10)
+      a = x.squeeze()
+      b = x.squeeze(0)
+      ```
+      `a` has shape `(10,)`. What is the shape of `b`?
+    answer:
+      accept:
+        - (1, 1, 10)
+      pattern: '[(\[]?\s*1(?:\s*[,x×*]\s*|\s+)1(?:\s*[,x×*]\s*|\s+)10\s*[)\]]?'
+      hint: Three dimensions, e.g. (2, 3, 4)
+      model: $(1, 1, 10)$ — only dimension 0 is removed
+    explanation: |
+      `squeeze()` without arguments removes *every* dimension of size 1, giving `(10,)` [^1]. With a
+      dimension argument it removes only that dimension (if its size is 1), so `squeeze(0)` turns
+      `(1, 1, 1, 10)` into `(1, 1, 10)` [^1][^2]. Passing the dimension explicitly is safer in models,
+      because a plain `squeeze()` also removes a batch dimension that happens to be 1.
+    references:
+      - title: torch.squeeze (PyTorch documentation)
+        url: https://pytorch.org/docs/stable/generated/torch.squeeze.html
+        locator: torch.squeeze (parameter `dim`)
+      - source: learn-pytorch
+        locator: 00 PyTorch Fundamentals exercise solutions, Exercise 10
+        url: https://github.com/mrdbourke/pytorch-deep-learning/blob/a16552001d963d078390d5bbdfc321e7e7c94bd1/extras/solutions/00_pytorch_fundamentals_exercise_solutions.ipynb
+    source:
+      id: learn-pytorch
+      ref: extras/solutions/00_pytorch_fundamentals_exercise_solutions.ipynb#ex10
+      url: https://github.com/mrdbourke/pytorch-deep-learning/blob/a16552001d963d078390d5bbdfc321e7e7c94bd1/extras/solutions/00_pytorch_fundamentals_exercise_solutions.ipynb
+    status: draft
+  - id: pytorch-052
+    type: single
+    difficulty: medium
+    tags:
+      - device
+      - tensor-to
+      - module-to
+      - code-reading
+    question: |
+      On a machine with a GPU:
+
+      ```python
+      t = torch.rand(2, 3)
+      t.to("cuda")
+      model = nn.Linear(3, 1)
+      model.to("cuda")
+      print(t.device, next(model.parameters()).device)
+      ```
+      What is printed?
+    options:
+      - text: '`cuda:0 cuda:0`'
+        why: '`Tensor.to` returns a new tensor and leaves `t` unchanged; you must write `t = t.to("cuda")` [^1].'
+      - text: '`cpu cuda:0`'
+        correct: true
+      - text: '`cpu cpu`'
+        why: "`nn.Module.to` moves the module's parameters in place, so the model is on the GPU even without reassignment [^2]."
+      - text: '`cuda:0 cpu`'
+        why: It is the other way round; only the module call works in place [^1][^2].
+    explanation: |
+      `Tensor.to(device)` returns a copy on the target device and does not change the original tensor,
+      so the result must be assigned [^1]. `nn.Module.to(device)` modifies the module in place (and
+      returns it for convenience), so its parameters do move [^2]. That asymmetry explains why
+      solution code writes `X = X.to(device)` for data but often just `model.to(device)` [^3].
+    references:
+      - title: torch.Tensor.to (PyTorch documentation)
+        url: https://pytorch.org/docs/stable/generated/torch.Tensor.to.html
+        locator: torch.Tensor.to (returns a tensor; `self` if already on the device)
+      - title: torch.nn.Module (PyTorch documentation)
+        url: https://pytorch.org/docs/stable/generated/torch.nn.Module.html#torch.nn.Module.to
+        locator: Module.to ("This method modifies the module in-place.")
+      - source: learn-pytorch
+        locator: 00 PyTorch Fundamentals exercise solutions, Exercise 6; 01 PyTorch Workflow exercise solutions, Exercise 2
+        url: https://github.com/mrdbourke/pytorch-deep-learning/blob/a16552001d963d078390d5bbdfc321e7e7c94bd1/extras/solutions/00_pytorch_fundamentals_exercise_solutions.ipynb
+    source:
+      id: learn-pytorch
+      ref: extras/solutions/00_pytorch_fundamentals_exercise_solutions.ipynb#ex6
+      url: https://github.com/mrdbourke/pytorch-deep-learning/blob/a16552001d963d078390d5bbdfc321e7e7c94bd1/extras/solutions/00_pytorch_fundamentals_exercise_solutions.ipynb
+    status: draft
+  - id: pytorch-053
+    type: short_answer
+    difficulty: hard
+    tags:
+      - l1-loss
+      - gradients
+      - sgd
+    question: |
+      A linear model `y_pred = w * X + b` starts at $w = 0.3367$, $b = 0.1288$ and is trained with
+      `nn.L1Loss()` and `torch.optim.SGD(lr=0.01)` on data from $y = 0.3x + 0.9$ with $x \in [0, 0.8)$.
+      At the start every prediction is *below* its target. What is $b$ after the first optimizer step?
+      Give 4 decimals.
+    answer:
+      numeric: 0.1388
+      tolerance: 0.00005
+      hint: a number, 4 decimals
+      model: $\partial L/\partial b = \frac1n\sum \operatorname{sign}(\hat y_i - y_i) = -1$, so $b = 0.1288 + 0.01 = 0.1388$
+    explanation: |
+      The L1 loss is the mean of $|\hat y_i - y_i|$, whose derivative with respect to $\hat y_i$ is the
+      sign of the error [^1]. With all predictions too low, every sign is $-1$, so
+      $\partial L/\partial b = -1$ and SGD adds $\text{lr} \cdot 1 = 0.01$ to $b$ [^2]. Unlike the squared
+      loss, the step size does not shrink as the error shrinks, which is why L1 training with a constant
+      learning rate tends to jitter around the optimum [^1].
+    references:
+      - title: torch.nn.L1Loss (PyTorch documentation)
+        url: https://pytorch.org/docs/stable/generated/torch.nn.L1Loss.html
+        locator: torch.nn.L1Loss (mean absolute error)
+      - source: learn-pytorch
+        locator: 01 PyTorch Workflow exercise solutions, Exercises 2–3 (model, L1 loss, SGD with lr = 0.01)
+        url: https://github.com/mrdbourke/pytorch-deep-learning/blob/a16552001d963d078390d5bbdfc321e7e7c94bd1/extras/solutions/01_pytorch_workflow_exercise_solutions.ipynb
+    source:
+      id: learn-pytorch
+      ref: extras/solutions/01_pytorch_workflow_exercise_solutions.ipynb#ex3
+      url: https://github.com/mrdbourke/pytorch-deep-learning/blob/a16552001d963d078390d5bbdfc321e7e7c94bd1/extras/solutions/01_pytorch_workflow_exercise_solutions.ipynb
+    status: draft
+  - id: pytorch-054
+    type: short_answer
+    difficulty: easy
+    tags:
+      - parameter-count
+      - nn-linear
+      - mlp
+    question: |
+      ```python
+      class MoonModel(nn.Module):
+          def __init__(self):
+              super().__init__()
+              self.layer1 = nn.Linear(2, 10)
+              self.layer2 = nn.Linear(10, 10)
+              self.layer3 = nn.Linear(10, 1)
+              self.relu = nn.ReLU()
+          def forward(self, x):
+              return self.layer3(self.relu(self.layer2(self.relu(self.layer1(x)))))
+      ```
+      How many trainable parameters does `MoonModel()` have?
+    answer:
+      numeric: 151
+      tolerance: 0
+      hint: a whole number
+      model: $(2\cdot10+10) + (10\cdot10+10) + (10\cdot1+1) = 30 + 110 + 11 = 151$
+    explanation: |
+      An `nn.Linear(in, out)` layer has an `out × in` weight matrix plus `out` biases [^1]. The three
+      layers have $30 + 110 + 11 = 151$ parameters, and `nn.ReLU` has none [^1][^2]. The single `relu`
+      module can be reused between layers because it holds no state.
+    references:
+      - title: torch.nn.Linear (PyTorch documentation)
+        url: https://pytorch.org/docs/stable/generated/torch.nn.Linear.html
+        locator: torch.nn.Linear (weight of shape (out_features, in_features), bias of shape (out_features))
+      - source: learn-pytorch
+        locator: 02 PyTorch Classification exercise solutions, Exercise 2 (MoonModelV0)
+        url: https://github.com/mrdbourke/pytorch-deep-learning/blob/a16552001d963d078390d5bbdfc321e7e7c94bd1/extras/solutions/02_pytorch_classification_exercise_solutions.ipynb
+    source:
+      id: learn-pytorch
+      ref: extras/solutions/02_pytorch_classification_exercise_solutions.ipynb#ex2
+      url: https://github.com/mrdbourke/pytorch-deep-learning/blob/a16552001d963d078390d5bbdfc321e7e7c94bd1/extras/solutions/02_pytorch_classification_exercise_solutions.ipynb
+    status: draft
+  - id: pytorch-055
+    type: single
+    difficulty: medium
+    tags:
+      - tanh
+      - overflow
+      - float32
+      - numerical-stability
+    question: |
+      ```python
+      x = torch.arange(-100, 100)          # integers -100 ... 99
+      def tanh(x):
+          return (torch.exp(x) - torch.exp(-x)) / (torch.exp(x) + torch.exp(-x))
+      y = tanh(x)
+      ```
+      What does `y` contain at `x = 99` and at `x = -100`, where `torch.tanh` would give 1 and −1?
+    options:
+      - text: Exactly 1 and −1, as with `torch.tanh`
+        why: '`torch.exp(99)` exceeds the largest float32 value (about $3.4 \times 10^{38}$) and becomes `inf`; `inf/inf` is `nan` [^1][^2].'
+      - text: '`nan` at both ends'
+        correct: true
+      - text: '`inf` and `-inf`'
+        why: The numerator and the denominator both overflow, and dividing infinity by infinity gives `nan`, not `inf` [^2].
+      - text: 0 at both ends, because the exponentials underflow
+        why: $e^{-99} \approx 10^{-43}$ is tiny but still representable, while $e^{99}$ overflows, so the ratio is `inf/inf`.
+    explanation: |
+      `torch.exp` of an integer tensor returns float32, whose largest value is about $3.4 \times 10^{38}$,
+      so $e^{x}$ overflows to `inf` once $x \ge 89$ [^1]. For $x = 99$ the formula computes
+      $(\infty - \varepsilon)/(\infty + \varepsilon) = \infty/\infty = \text{nan}$ with a tiny
+      $\varepsilon = e^{-99}$, and symmetrically for $x = -100$ [^2]. Library functions
+      such as `torch.tanh` use numerically stable formulations and saturate correctly at ±1 [^3].
+    references:
+      - title: 'Wikipedia: Single-precision floating-point format'
+        url: https://en.wikipedia.org/wiki/Single-precision_floating-point_format
+        locator: Introduction (largest finite value $\approx 3.4028235 \times 10^{38}$)
+      - title: 'Wikipedia: NaN'
+        url: https://en.wikipedia.org/wiki/NaN#Operations_generating_NaN
+        locator: Section "Operations generating NaN" ($\infty/\infty$)
+      - source: learn-pytorch
+        locator: 02 PyTorch Classification exercise solutions, Exercise 6 (replicate tanh in pure PyTorch)
+        url: https://github.com/mrdbourke/pytorch-deep-learning/blob/a16552001d963d078390d5bbdfc321e7e7c94bd1/extras/solutions/02_pytorch_classification_exercise_solutions.ipynb
+    source:
+      id: learn-pytorch
+      ref: extras/solutions/02_pytorch_classification_exercise_solutions.ipynb#ex6
+      url: https://github.com/mrdbourke/pytorch-deep-learning/blob/a16552001d963d078390d5bbdfc321e7e7c94bd1/extras/solutions/02_pytorch_classification_exercise_solutions.ipynb
+    status: draft
+  - id: pytorch-056
+    type: true_false
+    difficulty: easy
+    tags:
+      - softmax
+      - argmax
+      - predictions
+    question: |
+      For a multi-class model, `torch.softmax(logits, dim=1).argmax(dim=1)` and
+      `logits.argmax(dim=1)` can return different predicted labels.
+    options:
+      - text: 'True'
+        why: Softmax is strictly increasing in each logit within a row, so it never changes which entry is largest [^1].
+      - text: 'False'
+        correct: true
+    explanation: |
+      Softmax exponentiates and normalizes each row, a strictly monotonic transformation that keeps the
+      order of the logits [^1]. The largest logit therefore always has the largest probability, so both
+      expressions give the same labels; the softmax is only needed when you want the probabilities
+      themselves [^1][^2].
+    references:
+      - source: d2l
+        locator: Sec. 4.1.1.2 The Softmax (softmax preserves the ordering of its arguments)
+        url: https://d2l.ai/chapter_linear-classification/softmax-regression.html#the-softmax
+      - source: learn-pytorch
+        locator: 02 PyTorch Classification exercise solutions, Exercise 5 (`plot_decision_boundary`)
+        url: https://github.com/mrdbourke/pytorch-deep-learning/blob/a16552001d963d078390d5bbdfc321e7e7c94bd1/extras/solutions/02_pytorch_classification_exercise_solutions.ipynb
+    source:
+      id: learn-pytorch
+      ref: extras/solutions/02_pytorch_classification_exercise_solutions.ipynb#ex5
+      url: https://github.com/mrdbourke/pytorch-deep-learning/blob/a16552001d963d078390d5bbdfc321e7e7c94bd1/extras/solutions/02_pytorch_classification_exercise_solutions.ipynb
+    status: draft
+  - id: pytorch-057
+    type: short_answer
+    difficulty: medium
+    tags:
+      - cross-entropy
+      - initial-loss
+      - sanity-check
+    question: |
+      A freshly initialized 3-class classifier outputs logits that are all (close to) 0. What value of
+      `nn.CrossEntropyLoss()` should you expect at the very first training step? Give 3 decimals.
+    answer:
+      numeric: 1.099
+      tolerance: 0.002
+      hint: a number, 3 decimals
+      model: $-\ln(1/3) = \ln 3 \approx 1.099$
+    explanation: |
+      Equal logits give the uniform distribution $1/3$ over the classes, so the cross-entropy of any
+      label is $-\ln(1/3) = \ln 3 \approx 1.099$ [^1][^2]. Checking that the first loss is near
+      $\ln K$ for $K$ classes (0.693 for binary classification) is a quick sanity test of a training
+      loop; a much larger value suggests a bug such as applying softmax twice or wrong targets.
+    references:
+      - title: torch.nn.CrossEntropyLoss (PyTorch documentation)
+        url: https://pytorch.org/docs/stable/generated/torch.nn.CrossEntropyLoss.html
+        locator: torch.nn.CrossEntropyLoss (loss for class-index targets)
+      - source: d2l
+        locator: Sec. 4.1.2.2 Softmax and Cross-Entropy Loss
+        url: https://d2l.ai/chapter_linear-classification/softmax-regression.html
+    source:
+      id: learn-pytorch
+      ref: extras/solutions/02_pytorch_classification_exercise_solutions.ipynb#ex7
+      url: https://github.com/mrdbourke/pytorch-deep-learning/blob/a16552001d963d078390d5bbdfc321e7e7c94bd1/extras/solutions/02_pytorch_classification_exercise_solutions.ipynb
+    status: draft
+  - id: pytorch-058
+    type: single
+    difficulty: medium
+    tags:
+      - cross-entropy
+      - targets
+      - dtype
+    question: |
+      A spiral dataset has 240 training points in 3 classes. The model returns logits of shape
+      `(240, 3)` and you use `nn.CrossEntropyLoss()` with class-index targets. What must the target
+      tensor `y` look like?
+    options:
+      - text: Shape `(240,)` with integer (`torch.long`) class indices 0, 1 or 2
+        correct: true
+      - text: Shape `(240, 1)` with float values 0.0, 1.0 or 2.0
+        why: Class-index targets are a 1-D tensor of integers; float targets are interpreted as class probabilities of shape `(240, 3)` [^1].
+      - text: Shape `(240, 3)` holding the softmax probabilities predicted by the model
+        why: The targets come from the labels, not from the model; and the loss applies log-softmax to the raw logits itself [^1].
+      - text: Shape `(3,)` holding the number of examples in each class
+        why: The loss needs one target per example, not class counts.
+    explanation: |
+      For class-index targets, `CrossEntropyLoss` expects input of shape $(N, C)$ with raw logits and a
+      target of shape $(N,)$ with integer class indices in $[0, C)$ [^1]. That is why the solution casts
+      the labels with `torch.from_numpy(y).type(torch.LongTensor)` [^2]. The loss applies log-softmax
+      internally, so the model must not end with a softmax layer.
+    references:
+      - title: torch.nn.CrossEntropyLoss (PyTorch documentation)
+        url: https://pytorch.org/docs/stable/generated/torch.nn.CrossEntropyLoss.html
+        locator: Shape section (Input $(N, C)$, Target $(N)$ with class indices)
+      - source: learn-pytorch
+        locator: 02 PyTorch Classification exercise solutions, Exercise 7 (spirals, labels as LongTensor)
+        url: https://github.com/mrdbourke/pytorch-deep-learning/blob/a16552001d963d078390d5bbdfc321e7e7c94bd1/extras/solutions/02_pytorch_classification_exercise_solutions.ipynb
+    source:
+      id: learn-pytorch
+      ref: extras/solutions/02_pytorch_classification_exercise_solutions.ipynb#ex7-b
+      url: https://github.com/mrdbourke/pytorch-deep-learning/blob/a16552001d963d078390d5bbdfc321e7e7c94bd1/extras/solutions/02_pytorch_classification_exercise_solutions.ipynb
+    status: draft
+  - id: pytorch-059
+    type: single
+    difficulty: easy
+    tags:
+      - image-tensors
+      - chw
+      - permute
+      - matplotlib
+    question: |
+      `img` is an RGB image tensor of shape `(3, 64, 64)` in PyTorch's channels-first layout.
+      `plt.imshow` expects height × width × channels. Which call gives a correct picture?
+    options:
+      - text: '`plt.imshow(img.reshape(64, 64, 3))`'
+        why: '`reshape` keeps the memory order, so it mixes values from different channels into each pixel instead of moving the channel axis [^2].'
+      - text: '`plt.imshow(img.squeeze())`'
+        why: '`squeeze` only removes size-1 dimensions; it works for a `(1, 28, 28)` grayscale image but leaves `(3, 64, 64)` unchanged.'
+      - text: '`plt.imshow(img.permute(1, 2, 0))`'
+        correct: true
+      - text: '`plt.imshow(img.permute(2, 0, 1))`'
+        why: This gives shape `(64, 3, 64)`, which is not an image layout at all.
+    explanation: |
+      PyTorch stores images as (channels, height, width), while Matplotlib wants (height, width,
+      channels) [^1]. `permute(1, 2, 0)` reorders the axes to $(64, 64, 3)$ and keeps each pixel's three
+      color values together [^2]. A `reshape` to the same shape would scramble the pixels, because it
+      reinterprets the data in memory order instead of swapping axes [^2].
+    references:
+      - source: learn-pytorch
+        locator: 03 PyTorch Computer Vision exercise solutions, Exercises 5–6 (CHW vs HWC note)
+        url: https://github.com/mrdbourke/pytorch-deep-learning/blob/a16552001d963d078390d5bbdfc321e7e7c94bd1/extras/solutions/03_pytorch_computer_vision_exercise_solutions.ipynb
+      - title: torch.permute (PyTorch documentation)
+        url: https://pytorch.org/docs/stable/generated/torch.permute.html
+        locator: torch.permute (returns a view with the dimensions permuted)
+    source:
+      id: learn-pytorch
+      ref: extras/solutions/03_pytorch_computer_vision_exercise_solutions.ipynb#ex6
+      url: https://github.com/mrdbourke/pytorch-deep-learning/blob/a16552001d963d078390d5bbdfc321e7e7c94bd1/extras/solutions/03_pytorch_computer_vision_exercise_solutions.ipynb
+    status: draft
+  - id: pytorch-060
+    type: short_answer
+    difficulty: medium
+    tags:
+      - cnn
+      - flatten
+      - tensor-shapes
+      - tinyvgg
+    question: |
+      A TinyVGG-style model gets RGB images of $64 \times 64$ pixels. It has two blocks, each made of two
+      `nn.Conv2d(..., out_channels=10, kernel_size=3, stride=1, padding=1)` + ReLU followed by
+      `nn.MaxPool2d(kernel_size=2)`. Then `nn.Flatten()` feeds an `nn.Linear(in_features=?, 10)`.
+      What must `in_features` be?
+    answer:
+      numeric: 2560
+      tolerance: 0
+      hint: a whole number
+      model: $64 \to 32 \to 16$ after the two poolings, so $10 \cdot 16 \cdot 16 = 2560$
+    explanation: |
+      A $3 \times 3$ convolution with padding 1 and stride 1 keeps the height and width, and each
+      $2 \times 2$ max-pooling halves them: $64 \to 32 \to 16$ [^1]. The last block outputs
+      $10 \times 16 \times 16$, which `Flatten` turns into $2560$ features per image [^1][^2]. For
+      $28 \times 28$ MNIST images the same model needs $10 \cdot 7 \cdot 7 = 490$.
+    references:
+      - source: d2l
+        locator: Sec. 7.3 Padding and Stride; Sec. 7.5 Pooling
+        url: https://d2l.ai/chapter_convolutional-neural-networks/padding-and-strides.html
+      - source: learn-pytorch
+        locator: 03 PyTorch Computer Vision exercise solutions, Exercise 8 (TinyVGG, `hidden_units*7*7`)
+        url: https://github.com/mrdbourke/pytorch-deep-learning/blob/a16552001d963d078390d5bbdfc321e7e7c94bd1/extras/solutions/03_pytorch_computer_vision_exercise_solutions.ipynb
+    source:
+      id: learn-pytorch
+      ref: extras/solutions/03_pytorch_computer_vision_exercise_solutions.ipynb#ex8
+      url: https://github.com/mrdbourke/pytorch-deep-learning/blob/a16552001d963d078390d5bbdfc321e7e7c94bd1/extras/solutions/03_pytorch_computer_vision_exercise_solutions.ipynb
+    status: draft
+  - id: pytorch-061
+    type: short_answer
+    difficulty: hard
+    tags:
+      - broadcasting
+      - silent-bug
+      - ddpg
+    question: |
+      In a DDPG implementation the critic forgets to squeeze its output:
+
+      ```python
+      r, d = batch["rew"], batch["done"]       # both shape (100,)
+      q_pi_targ = q_targ(o2, pi_targ(o2))      # shape (100, 1) -- not squeezed
+      backup = r + gamma * (1 - d) * q_pi_targ
+      ```
+      What is the shape of `backup`?
+    answer:
+      accept:
+        - (100, 100)
+      pattern: '[(\[]?\s*100(?:\s*[,x×*]\s*|\s+)100\s*[)\]]?'
+      hint: Two dimensions, e.g. (8, 4)
+      model: $(100, 100)$ — shapes $(100,)$ and $(100, 1)$ broadcast to a $100 \times 100$ matrix
+    explanation: |
+      Broadcasting aligns trailing dimensions: a $(100,)$ tensor acts like a row $(1, 100)$, and combined
+      with a $(100, 1)$ column it expands to $(100, 100)$ [^1]. So `(1 - d) * q_pi_targ` becomes an outer
+      product, $z_{ij} = r_j + \gamma(1-d_j)q'_i$, and the critic's loss averages over all $n^2$
+      mismatched pairs instead of $n$ matched ones [^2]. The code runs without any error, but DDPG then
+      learns poorly — a typical silent RL bug [^2].
+    references:
+      - title: 'PyTorch documentation: Broadcasting semantics'
+        url: https://pytorch.org/docs/stable/notes/broadcasting.html
+        locator: General semantics
+      - source: spinning-up
+        locator: Solution to Exercise 2.2 (Silent Bug in DDPG), "How it Gums Up the Works"
+        url: https://spinningup.openai.com/en/latest/spinningup/exercise2_2_soln.html
+    source:
+      id: spinning-up
+      ref: docs/spinningup/exercises.rst#q5
+      url: https://github.com/openai/spinningup/blob/038665d62d569055401d91856abb287263096178/docs/spinningup/exercises.rst
+    status: draft

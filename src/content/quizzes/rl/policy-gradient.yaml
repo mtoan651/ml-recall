@@ -391,3 +391,320 @@ questions:
       ref: quiz-222/q3
       url: https://github.com/microsoft/AI-For-Beginners/blob/392d0df1b2647cbee104942390551f1ed9e072c8/etc/quiz-app/src/assets/translations/en/lesson-22.json
     status: draft
+  - id: policy-gradient-012
+    type: short_answer
+    difficulty: medium
+    tags:
+      - gaussian-policy
+      - log-likelihood
+      - continuous-actions
+    question: |
+      A diagonal Gaussian policy has mean $\mu = (0.5,\ -1)$ and log standard deviations
+      $\log\sigma = (0,\ \ln 2)$ in some state. What is $\log \pi(a \mid s)$ of the action
+      $a = (1.5,\ 1)$? Use
+      $\log\pi = -\tfrac12\left(\sum_i \left[\frac{(a_i-\mu_i)^2}{\sigma_i^2} + 2\log\sigma_i\right] + k\log 2\pi\right)$
+      and give 3 decimals.
+    answer:
+      numeric: -3.531
+      tolerance: 0.002
+      hint: a number, 3 decimals
+      model: $-\tfrac12\left(1 + 0 + 1 + 2\ln 2 + 2\ln 2\pi\right) = -3.531$
+    explanation: |
+      Here $\sigma = (1, 2)$ and $k = 2$ [^1]. The squared standardized errors are $1^2/1 = 1$ and
+      $2^2/4 = 1$, the log-std terms add $2\ln 2 = 1.386$, and $k\ln 2\pi = 3.676$; so
+      $\log\pi = -\frac12(1 + 1 + 1.386 + 3.676) = -3.531$ [^1]. Equivalently it is the sum of two 1-D
+      normal log-densities, $-1.419 + (-2.112)$, because a diagonal Gaussian factorizes over action
+      dimensions [^1][^2].
+    references:
+      - source: spinning-up
+        locator: 'Part 1: Key Concepts in RL, Stochastic Policies — Diagonal Gaussian Policies (Log-Likelihood)'
+        url: https://spinningup.openai.com/en/latest/spinningup/rl_intro.html#stochastic-policies
+      - source: spinning-up
+        locator: 'Exercises, Problem Set 1: Exercise 1.1 Gaussian Log-Likelihood'
+        url: https://spinningup.openai.com/en/latest/spinningup/exercises.html
+    source:
+      id: spinning-up
+      ref: docs/spinningup/exercises.rst#q1
+      url: https://github.com/openai/spinningup/blob/038665d62d569055401d91856abb287263096178/docs/spinningup/exercises.rst
+    status: draft
+  - id: policy-gradient-013
+    type: single
+    difficulty: medium
+    tags:
+      - gaussian-policy
+      - log-std
+      - parameterization
+    question: |
+      A PPO policy for continuous actions is a diagonal Gaussian whose mean comes from a neural network.
+      Many implementations keep a separate parameter vector $\log\sigma$ (not depending on the state) and
+      use $\sigma = \exp(\log\sigma)$. Why learn $\log\sigma$ rather than $\sigma$ directly?
+    options:
+      - text: $\log\sigma$ can take any real value, while $\sigma$ must stay positive
+        correct: true
+      - text: It makes $\sigma$ depend on the state through the mean network
+        why: In this design $\log\sigma$ is a standalone parameter vector; a state-dependent $\sigma$ would need its own network output [^1].
+      - text: The log makes the policy deterministic, which PPO requires
+        why: A Gaussian with $\sigma > 0$ is stochastic either way; PPO in fact relies on a stochastic policy for exploration [^1].
+      - text: Sampling actions is only possible when the standard deviation is in log space
+        why: Sampling uses $a = \mu + \sigma \odot z$ with the exponentiated $\sigma$; the log space only matters for learning it [^1].
+    explanation: |
+      A standard deviation must be non-negative, and enforcing that constraint during gradient-based
+      training is awkward [^1]. Learning $\log\sigma$, which is free to be any real number, and
+      exponentiating it removes the constraint without losing anything [^1]. Spinning Up's VPG, TRPO and
+      PPO use a state-independent $\log\sigma$ vector; the alternative is a network head that outputs
+      $\log\sigma_\theta(s)$ [^1][^2].
+    references:
+      - source: spinning-up
+        locator: 'Part 1: Key Concepts in RL, Stochastic Policies — Diagonal Gaussian Policies'
+        url: https://spinningup.openai.com/en/latest/spinningup/rl_intro.html#stochastic-policies
+      - source: spinning-up
+        locator: 'Exercises, Problem Set 1: Exercise 1.2 Policy for PPO'
+        url: https://spinningup.openai.com/en/latest/spinningup/exercises.html
+    source:
+      id: spinning-up
+      ref: docs/spinningup/exercises.rst#q2
+      url: https://github.com/openai/spinningup/blob/038665d62d569055401d91856abb287263096178/docs/spinningup/exercises.rst
+    status: draft
+  - id: policy-gradient-014
+    type: single
+    difficulty: hard
+    tags:
+      - value-function
+      - advantage-estimation
+      - trpo
+    question: |
+      You run TRPO on a locomotion task twice: once fitting the value function $V_\phi$ with 80
+      gradient steps per epoch, once with 0 steps (so $V_\phi$ stays at its random initialization). The
+      second run gets stuck early. Why?
+    options:
+      - text: Without value-function updates, the policy network receives no gradient at all
+        why: The policy is still updated every epoch; only the quality of its advantage weights changes.
+      - text: The advantage estimates that weight each update are built from $V_\phi$ and become poor
+        correct: true
+      - text: The environment's rewards are rescaled by the value function, so they stay near zero
+        why: Rewards come from the environment unchanged; the value function only serves as a baseline for estimating advantages.
+      - text: TRPO's trust region shrinks to zero when the value function is not trained
+        why: The KL trust region constrains policy updates only; it does not depend on how much the value function is trained.
+    explanation: |
+      Policy-gradient methods such as TRPO weight each $\nabla\log\pi_\theta(a_t\mid s_t)$ by an
+      advantage estimate, here computed with GAE from the learned $V_\phi$ [^1][^2]. A good $V_\phi$ is a
+      baseline that reduces variance; an untrained one makes the advantage estimates noisy and biased
+      (GAE also bootstraps from $V_\phi$), so the updates barely improve the policy [^2]. The exercise's reference results show exactly this: fast
+      progress with a fitted value function, stagnation without one [^3].
+    references:
+      - source: spinning-up
+        locator: 'Part 3: Intro to Policy Optimization, Baselines in Policy Gradients and Other Forms of the Policy Gradient'
+        url: https://spinningup.openai.com/en/latest/spinningup/rl_intro3.html#baselines-in-policy-gradients
+      - title: Schulman et al. (2016), High-Dimensional Continuous Control Using Generalized Advantage Estimation, arXiv:1506.02438
+        url: https://arxiv.org/abs/1506.02438
+        locator: Sec. 3 Advantage Function Estimation
+      - source: spinning-up
+        locator: Solution to Exercise 2.1 (value function fitting in TRPO)
+        url: https://spinningup.openai.com/en/latest/spinningup/exercise2_1_soln.html
+    source:
+      id: spinning-up
+      ref: docs/spinningup/exercises.rst#q4
+      url: https://github.com/openai/spinningup/blob/038665d62d569055401d91856abb287263096178/docs/spinningup/exercises.rst
+    status: draft
+  - id: policy-gradient-015
+    type: short_answer
+    difficulty: easy
+    tags:
+      - reward-to-go
+      - policy-gradient-weights
+    question: |
+      An episode has rewards $r_0, r_1, r_2, r_3 = 1, 0, 2, 3$ (undiscounted). The simplest policy
+      gradient weights every $\nabla\log\pi(a_t\mid s_t)$ by the total return $R(\tau) = 6$. With the
+      reward-to-go form instead, what weight does the action taken at $t = 1$ get?
+    answer:
+      numeric: 5
+      tolerance: 0
+      hint: a whole number
+      model: $\hat R_1 = r_1 + r_2 + r_3 = 0 + 2 + 3 = 5$
+    explanation: |
+      The reward-to-go $\hat R_t = \sum_{t' \ge t} r_{t'}$ only counts rewards obtained *after* the
+      action, because earlier rewards cannot have been caused by it [^1]. For $t = 1$ that is
+      $0 + 2 + 3 = 5$; the weights of the four actions are $6, 5, 5, 3$ instead of $6, 6, 6, 6$ [^1].
+    references:
+      - source: spinning-up
+        locator: "Part 3: Intro to Policy Optimization, Don't Let the Past Distract You"
+        url: https://spinningup.openai.com/en/latest/spinningup/rl_intro3.html#don-t-let-the-past-distract-you
+    source:
+      id: spinning-up
+      ref: docs/spinningup/rl_intro3.rst#q1
+      url: https://github.com/openai/spinningup/blob/038665d62d569055401d91856abb287263096178/docs/spinningup/rl_intro3.rst
+    status: draft
+  - id: policy-gradient-016
+    type: single
+    difficulty: medium
+    tags:
+      - reward-to-go
+      - variance-reduction
+    question: |
+      Replacing $R(\tau)$ by the reward-to-go $\hat R_t$ in the policy-gradient estimator improves
+      learning. What exactly changes?
+    options:
+      - text: The estimator becomes biased, but the bias is small enough to be worth it
+        why: Dropping terms whose expectation is zero keeps the estimator unbiased [^1][^2].
+      - text: The expected gradient changes so that it points more directly to the optimum
+        why: Both forms have the same expectation; the dropped terms have mean zero [^1].
+      - text: It removes the need to sample trajectories from the current policy
+        why: Reward-to-go is still an on-policy estimator built from trajectories of the current policy [^1].
+      - text: The expected gradient stays the same, but its sample estimate has lower variance
+        correct: true
+    explanation: |
+      The terms that reinforce an action in proportion to rewards obtained *before* it have zero mean
+      but nonzero variance; they only add noise [^1]. Removing them leaves the expected policy gradient
+      unchanged, a consequence of the expected grad-log-prob lemma, while fewer sample trajectories are
+      needed for a good estimate [^1][^2].
+    references:
+      - source: spinning-up
+        locator: "Part 3: Intro to Policy Optimization, Don't Let the Past Distract You (You Should Know: But how is this better?)"
+        url: https://spinningup.openai.com/en/latest/spinningup/rl_intro3.html#don-t-let-the-past-distract-you
+      - source: spinning-up
+        locator: Extra Material, Proof for Don't Let the Past Distract You
+        url: https://spinningup.openai.com/en/latest/spinningup/extra_pg_proof1.html
+    source:
+      id: spinning-up
+      ref: docs/spinningup/rl_intro3.rst#q2
+      url: https://github.com/openai/spinningup/blob/038665d62d569055401d91856abb287263096178/docs/spinningup/rl_intro3.rst
+    status: draft
+  - id: policy-gradient-017
+    type: multiple
+    difficulty: hard
+    tags:
+      - baselines
+      - advantage
+      - eglp-lemma
+    question: |
+      The policy gradient can be written
+      $\nabla_\theta J = \mathbb{E}\big[\sum_t \nabla_\theta\log\pi_\theta(a_t\mid s_t)\,\Phi_t\big]$.
+      Which choices of the weight $\Phi_t$ give the **same** expected gradient? Select all that apply.
+    options:
+      - text: The reward-to-go minus an arbitrary function of the action taken, $\hat R_t - b(a_t)$
+        why: The zero-mean argument needs a baseline that does not depend on the action; $\mathbb{E}_{a}[\nabla\log\pi(a\mid s)\,b(a)]$ is generally not zero, so this biases the gradient [^1].
+      - text: The advantage $A^{\pi}(s_t, a_t) = Q^{\pi}(s_t, a_t) - V^{\pi}(s_t)$
+        correct: true
+      - text: The reward obtained just before the action, $r_{t-1}$
+        why: Rewards obtained before $a_t$ contribute zero in expectation, so this weight drops the actual signal and gives a different (zero) expected gradient [^1].
+      - text: The reward-to-go minus a baseline that depends only on the state, $\hat R_t - b(s_t)$
+        correct: true
+      - text: The total return $R(\tau)$ of the episode
+        correct: true
+    explanation: |
+      By the expected grad-log-prob lemma, $\mathbb{E}_{a\sim\pi}[\nabla\log\pi(a\mid s)\,b(s)] = 0$
+      for any $b$ that depends only on the state, so state baselines can be added or subtracted freely
+      [^1]. All of $R(\tau)$, $\hat R_t$, $\hat R_t - b(s_t)$, $Q^{\pi}(s_t,a_t)$ and $A^{\pi}(s_t,a_t)$ give
+      the same expectation with different variances [^1][^2]. A weight that depends on the action through
+      something other than its consequences, or that only looks at the past, changes the expectation.
+    references:
+      - source: spinning-up
+        locator: 'Part 3: Intro to Policy Optimization, Expected Grad-Log-Prob Lemma; Baselines in Policy Gradients; Other Forms of the Policy Gradient'
+        url: https://spinningup.openai.com/en/latest/spinningup/rl_intro3.html#other-forms-of-the-policy-gradient
+      - title: Schulman et al. (2016), High-Dimensional Continuous Control Using Generalized Advantage Estimation, arXiv:1506.02438
+        url: https://arxiv.org/abs/1506.02438
+        locator: Sec. 2 Preliminaries (list of valid $\Psi_t$)
+    source:
+      id: spinning-up
+      ref: docs/spinningup/rl_intro3.rst#q3
+      url: https://github.com/openai/spinningup/blob/038665d62d569055401d91856abb287263096178/docs/spinningup/rl_intro3.rst
+    status: draft
+  - id: policy-gradient-018
+    type: true_false
+    difficulty: medium
+    tags:
+      - policy-gradient-loss
+      - surrogate-objective
+    question: |
+      In a vanilla policy-gradient implementation the "loss" is `-(logp * weights).mean()` over a batch
+      of data from the current policy. If this loss keeps decreasing during training, the policy's
+      expected return must be improving.
+    options:
+      - text: 'True'
+        why: The loss only has the right *gradient* at the current parameters on fresh data; its value does not track performance [^1].
+      - text: 'False'
+        correct: true
+    explanation: |
+      This "loss" is not a performance measure: its gradient equals the negative policy gradient only
+      when evaluated at the current parameters, with data generated by those parameters [^1]. Its value
+      can fall — even towards $-\infty$ when optimized hard on one batch — while the return gets worse.
+      In policy-gradient methods you should monitor the average return, not this loss [^1].
+    references:
+      - source: spinning-up
+        locator: 'Part 3: Intro to Policy Optimization, Implementing the Simplest Policy Gradient (You Should Know: the loss function means nothing)'
+        url: https://spinningup.openai.com/en/latest/spinningup/rl_intro3.html#implementing-the-simplest-policy-gradient
+    source:
+      id: spinning-up
+      ref: docs/spinningup/rl_intro3.rst#q4
+      url: https://github.com/openai/spinningup/blob/038665d62d569055401d91856abb287263096178/docs/spinningup/rl_intro3.rst
+    status: draft
+  - id: policy-gradient-019
+    type: single
+    difficulty: medium
+    tags:
+      - log-prob
+      - gaussian-policy
+      - tensor-shapes
+    question: |
+      A diagonal Gaussian policy for a 6-dimensional action space computes
+      `logp = Normal(mu, std).log_prob(act)` for a batch of 64 actions, where `mu`, `std` and `act`
+      all have shape `(64, 6)`. What do you need for the policy-gradient loss?
+    options:
+      - text: '`logp` has shape `(64, 6)`; sum over the last dimension to get one log-probability per action, shape `(64,)`'
+        correct: true
+      - text: '`logp` already has shape `(64,)`, one value per action'
+        why: '`Normal.log_prob` returns one value per component, so the result keeps the shape `(64, 6)` [^1].'
+      - text: '`logp` has shape `(64, 6)`; average over the last dimension to get one value per action'
+        why: The log-density of a product of independent components is the *sum* of their log-densities, not the mean [^1].
+      - text: '`logp` has shape `(64, 6)`; take the maximum over the last dimension'
+        why: All components belong to the same action, so all their log-probabilities add up; the maximum is meaningless here.
+    explanation: |
+      PyTorch's `Normal` treats each component separately, so `log_prob` returns a tensor of shape
+      `(batch, act_dim)` [^1]. A diagonal Gaussian's log-likelihood is the sum over action dimensions, so
+      you use `log_prob(act).sum(axis=-1)` to get shape `(64,)` for the RL loss [^1][^2].
+    references:
+      - source: spinning-up
+        locator: 'Part 3: Intro to Policy Optimization, Implementing the Simplest Policy Gradient (You Should Know: log_prob of a Normal distribution)'
+        url: https://spinningup.openai.com/en/latest/spinningup/rl_intro3.html#implementing-the-simplest-policy-gradient
+      - source: spinning-up
+        locator: 'Part 1: Key Concepts in RL, Stochastic Policies — Diagonal Gaussian Policies (Log-Likelihood)'
+        url: https://spinningup.openai.com/en/latest/spinningup/rl_intro.html#stochastic-policies
+    source:
+      id: spinning-up
+      ref: docs/spinningup/rl_intro3.rst#q5
+      url: https://github.com/openai/spinningup/blob/038665d62d569055401d91856abb287263096178/docs/spinningup/rl_intro3.rst
+    status: draft
+  - id: policy-gradient-020
+    type: single
+    difficulty: medium
+    tags:
+      - log-derivative-trick
+      - model-free
+      - trajectory-probability
+    question: |
+      The gradient of the log-probability of a trajectory $\tau = (s_0, a_0, \dots, s_{T+1})$ under policy
+      $\pi_\theta$ is used to derive the policy gradient. Why can the policy gradient be estimated without
+      a model of the environment's dynamics?
+    options:
+      - text: The log-derivative trick converts the transition probabilities into rewards along the way
+        why: The trick rewrites $\nabla P$ as $P\,\nabla\log P$; it does not convert probabilities into rewards [^1].
+      - text: The derivation assumes deterministic transitions, so all their probabilities are equal to 1
+        why: The derivation allows stochastic transitions; their terms vanish because they do not depend on $\theta$, not because they equal 1.
+      - text: Only the policy's log-probabilities depend on $\theta$; the environment terms have zero gradient
+        correct: true
+      - text: The transition probabilities are learned together with the policy and then cancel
+        why: Nothing is learned about the transitions; their log-probabilities simply have zero gradient with respect to $\theta$ [^1].
+    explanation: |
+      $\log P(\tau\mid\theta) = \log\rho_0(s_0) + \sum_t[\log P(s_{t+1}\mid s_t,a_t) + \log\pi_\theta(a_t\mid s_t)]$,
+      and the environment terms do not depend on $\theta$, so their gradients are zero [^1]. That leaves
+      $\sum_t\nabla_\theta\log\pi_\theta(a_t\mid s_t)$, which we can compute from the policy alone, and the
+      expectation over trajectories is estimated by simply running the policy [^1].
+    references:
+      - source: spinning-up
+        locator: 'Part 3: Intro to Policy Optimization, Deriving the Simplest Policy Gradient (facts 3–5)'
+        url: https://spinningup.openai.com/en/latest/spinningup/rl_intro3.html#deriving-the-simplest-policy-gradient
+    source:
+      id: spinning-up
+      ref: docs/spinningup/rl_intro3.rst#q6
+      url: https://github.com/openai/spinningup/blob/038665d62d569055401d91856abb287263096178/docs/spinningup/rl_intro3.rst
+    status: draft

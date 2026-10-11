@@ -854,3 +854,177 @@ questions:
       ref: W3D3_HiddenDynamics/W3D3_Tutorial3#demo1.1
       url: https://github.com/NeuromatchAcademy/course-content/blob/44634e960df7a14cd0bf7398187f2d209d26b0e8/tutorials/W3D3_HiddenDynamics/instructor/W3D3_Tutorial3.ipynb
     status: draft
+  - id: time-series-029
+    type: short_answer
+    difficulty: medium
+    tags:
+      - cross-validation
+      - time-series-split
+      - forward-chaining
+    question: |
+      Ordinary $K$-fold cross-validation shuffles away the time order, so for a series of 100
+      observations you use forward-chaining splits instead (scikit-learn's `TimeSeriesSplit` with
+      `n_splits=4`). The data are cut into 5 consecutive blocks of 20; split $i$ trains on all blocks
+      before block $i+1$ and tests on block $i+1$. How many observations does the **third** split train
+      on?
+    answer:
+      numeric: 60
+      tolerance: 0
+      hint: a whole number
+      model: 60 — it trains on observations 1–60 and tests on 61–80
+    explanation: |
+      Forward chaining always trains on the past and tests on the next block, so the training window
+      grows: 20, 40, 60 and 80 observations for the four splits, each tested on the following 20 [^1].
+      This mimics how the model will be used and avoids training on the future, which shuffled
+      $K$-fold would do [^2][^3].
+    references:
+      - title: scikit-learn User Guide
+        url: https://scikit-learn.org/stable/modules/cross_validation.html#time-series-split
+        locator: Sec. 3.1.2.6 Cross validation of time series data — Time Series Split
+      - title: 'Hyndman & Athanasopoulos, Forecasting: Principles and Practice (3rd ed.)'
+        url: https://otexts.com/fpp3/tscv.html
+        locator: Sec. 5.10 Time series cross-validation
+      - source: ds-interviews
+        locator: theory.md, Validation — "What is K-fold cross-validation?" ("It should not be used in a time series data.")
+        url: https://github.com/alexeygrigorev/data-science-interviews/blob/919f44547ef5ffc2bd59674fd301940529f4c1a8/theory.md#validation
+    source:
+      id: ds-interviews
+      ref: theory.md#q19
+      url: https://github.com/alexeygrigorev/data-science-interviews/blob/919f44547ef5ffc2bd59674fd301940529f4c1a8/theory.md#validation
+    status: draft
+  - id: time-series-030
+    type: short_answer
+    difficulty: medium
+    tags:
+      - exponential-smoothing
+      - forecasting
+    question: |
+      Simple exponential smoothing with $\alpha = 0.3$ forecasts
+      $\hat y_{t+1} = \alpha y_t + (1-\alpha)\hat y_t$. Starting from $\hat y_1 = 10$, the observations are
+      $y_1 = 10$, $y_2 = 14$, $y_3 = 8$. What is the forecast $\hat y_4$? Give 2 decimals.
+    answer:
+      numeric: 10.24
+      tolerance: 0.005
+      hint: a number, 2 decimals
+      model: $\hat y_2 = 10$, $\hat y_3 = 0.3 \cdot 14 + 0.7 \cdot 10 = 11.2$, $\hat y_4 = 0.3 \cdot 8 + 0.7 \cdot 11.2 = 10.24$
+    explanation: |
+      Each forecast is a weighted average of the newest observation and the previous forecast, so the
+      weights on older observations decay geometrically as $\alpha(1-\alpha)^j$ [^1]. Here
+      $\hat y_2 = 10$, $\hat y_3 = 11.2$ and $\hat y_4 = 2.4 + 7.84 = 10.24$. Simple exponential
+      smoothing has no trend or seasonal component; Holt's and Holt–Winters' methods add them [^1][^2].
+    references:
+      - title: 'Hyndman & Athanasopoulos, Forecasting: Principles and Practice (3rd ed.)'
+        url: https://otexts.com/fpp3/ses.html
+        locator: Sec. 8.1 Simple exponential smoothing
+      - source: ds-interviews
+        locator: theory.md, Time series — "Which models do you know for solving time series problems?"
+        url: https://github.com/alexeygrigorev/data-science-interviews/blob/919f44547ef5ffc2bd59674fd301940529f4c1a8/theory.md#time-series
+    source:
+      id: ds-interviews
+      ref: theory.md#q162
+      url: https://github.com/alexeygrigorev/data-science-interviews/blob/919f44547ef5ffc2bd59674fd301940529f4c1a8/theory.md#time-series
+    status: draft
+  - id: time-series-031
+    type: short_answer
+    difficulty: medium
+    tags:
+      - differencing
+      - trend
+      - stationarity
+    question: |
+      A noise-free series has the quadratic trend $y_t = 5 + 3t + 0.5t^2$. You difference it once,
+      $y'_t = y_t - y_{t-1}$, and then a second time, $y''_t = y'_t - y'_{t-1}$. What constant value does
+      the twice-differenced series take?
+    answer:
+      numeric: 1
+      tolerance: 0.001
+      hint: a number
+      model: $y'_t = 2.5 + t$, so $y''_t = 1$ for all $t$
+    explanation: |
+      Differencing removes a polynomial trend one degree at a time: $y'_t = 3 + 0.5(2t - 1) = 2.5 + t$
+      still has a linear trend, and the second difference is the constant $1$ [^1]. Many forecasting
+      models (ARIMA, for example) need a stationary series, so a trend is removed by differencing or
+      modelled explicitly before fitting, and the forecasts are integrated back afterwards [^1][^2].
+    references:
+      - title: 'Hyndman & Athanasopoulos, Forecasting: Principles and Practice (3rd ed.)'
+        url: https://otexts.com/fpp3/stationarity.html
+        locator: Sec. 9.1 Stationarity and differencing (second-order differencing)
+      - source: ds-interviews
+        locator: theory.md, Time series — "If there's a trend in our series, how we can remove it? And why would we want to do it?"
+        url: https://github.com/alexeygrigorev/data-science-interviews/blob/919f44547ef5ffc2bd59674fd301940529f4c1a8/theory.md#time-series
+    source:
+      id: ds-interviews
+      ref: theory.md#q163
+      url: https://github.com/alexeygrigorev/data-science-interviews/blob/919f44547ef5ffc2bd59674fd301940529f4c1a8/theory.md#time-series
+    status: draft
+  - id: time-series-032
+    type: short_answer
+    difficulty: easy
+    tags:
+      - autoregressive-model
+      - ar1
+      - forecasting
+    question: |
+      An AR(1) model $y_t = 2 + 0.6\,y_{t-1} + \varepsilon_t$ (noise with mean 0) is fitted to a series whose
+      last value is $y_T = 10$. What is the two-step-ahead forecast $\hat y_{T+2}$?
+    answer:
+      numeric: 6.8
+      tolerance: 0.001
+      hint: a number
+      model: $\hat y_{T+1} = 2 + 0.6 \cdot 10 = 8$, $\hat y_{T+2} = 2 + 0.6 \cdot 8 = 6.8$
+    explanation: |
+      An autoregressive model regresses the series on its own lagged values [^1][^2]. Forecasts are
+      made recursively, replacing unknown future values by their forecasts and the noise by its mean 0:
+      $8$, then $6.8$. Further ahead, the forecasts converge to the mean $2/(1-0.6) = 5$ [^1].
+    references:
+      - title: 'Hyndman & Athanasopoulos, Forecasting: Principles and Practice (3rd ed.)'
+        url: https://otexts.com/fpp3/AR.html
+        locator: Sec. 9.3 Autoregressive models
+      - source: ds-interviews
+        locator: theory.md, Time series — "You have a series with only one variable 'y' measured at time t. How do predict 'y' at time t+1?"
+        url: https://github.com/alexeygrigorev/data-science-interviews/blob/919f44547ef5ffc2bd59674fd301940529f4c1a8/theory.md#time-series
+    source:
+      id: ds-interviews
+      ref: theory.md#q164
+      url: https://github.com/alexeygrigorev/data-science-interviews/blob/919f44547ef5ffc2bd59674fd301940529f4c1a8/theory.md#time-series
+    status: draft
+  - id: time-series-033
+    type: single
+    difficulty: medium
+    tags:
+      - tree-based-models
+      - extrapolation
+      - differencing
+    question: |
+      Monthly sales grow steadily, and future months will exceed every value in the training data. You
+      want to use gradient-boosted trees with lag features. Which target choice lets the trees handle
+      the trend?
+    options:
+      - text: Predict $y_t$ directly after standardizing it with the training mean and standard deviation
+        why: Standardizing is a fixed linear rescaling; the future values still lie outside the scaled training range.
+      - text: Shuffle the months before training so the trees see future values
+        why: Shuffling leaks the future into training and makes validation scores meaningless for forecasting [^2].
+      - text: Predict $y_t$ directly but use more and deeper trees
+        why: Any tree predicts averages of training targets, so however many trees you add it cannot output values beyond the training range [^1].
+      - text: Predict the change $y_t - y_{t-1}$ and add it to the last observed value
+        correct: true
+    explanation: |
+      A regression tree predicts the mean target of a leaf, so a tree ensemble can only output values
+      within the range seen in training and flattens out on a growing series [^1][^3]. Differencing
+      removes the trend: the month-to-month changes have a stable range the trees can learn, and adding
+      the predicted change to the last value lets the forecast keep rising [^2].
+    references:
+      - source: ds-interviews
+        locator: theory.md, Time series — "What are the problems with using trees for solving time series problems?"
+        url: https://github.com/alexeygrigorev/data-science-interviews/blob/919f44547ef5ffc2bd59674fd301940529f4c1a8/theory.md#time-series
+      - title: 'Hyndman & Athanasopoulos, Forecasting: Principles and Practice (3rd ed.)'
+        url: https://otexts.com/fpp3/stationarity.html
+        locator: Sec. 9.1 Stationarity and differencing
+      - title: 'scikit-learn User Guide: Decision Trees'
+        url: https://scikit-learn.org/stable/modules/tree.html#regression
+        locator: Sec. 1.10.2 Regression
+    source:
+      id: ds-interviews
+      ref: theory.md#q166
+      url: https://github.com/alexeygrigorev/data-science-interviews/blob/919f44547ef5ffc2bd59674fd301940529f4c1a8/theory.md#time-series
+    status: draft

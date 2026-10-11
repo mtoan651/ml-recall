@@ -1532,3 +1532,76 @@ questions:
       ref: W3D1_AttentionAndTransformers/W3D1_Tutorial1#sec6
       url: https://github.com/NeuromatchAcademy/course-content-dl/blob/caba36c513fb8139ac3c9e7503f7a769dadde25e/tutorials/W3D1_AttentionAndTransformers/instructor/W3D1_Tutorial1.ipynb
     status: draft
+  - id: transformers-046
+    type: short_answer
+    difficulty: hard
+    tags:
+      - multi-head-attention
+      - parameter-count
+      - vit
+    question: |
+      ViT-Base uses `nn.MultiheadAttention(embed_dim=768, num_heads=12)` (with biases) in each encoder
+      layer. How many parameters does this attention module have?
+    answer:
+      numeric: 2362368
+      tolerance: 0
+      hint: a whole number
+      model: $4\,(768^2 + 768) = 2{,}362{,}368$, independent of the number of heads
+    explanation: |
+      The module has a query, a key, a value and an output projection, each a $768 \times 768$ matrix
+      plus a bias of 768: $4(768^2 + 768) = 2{,}362{,}368$ [^1][^2]. Splitting into 12 heads does not add
+      parameters, because each head of size $768/12 = 64$ just uses a slice of the same projections
+      [^2]. That count matches the summary printed in the ViT solution [^3].
+    references:
+      - title: torch.nn.MultiheadAttention (PyTorch documentation)
+        url: https://pytorch.org/docs/stable/generated/torch.nn.MultiheadAttention.html
+        locator: Parameters `embed_dim`, `num_heads` ("embed_dim will be split across num_heads") and `bias` (biases of the input/output projections)
+      - source: d2l
+        locator: Sec. 11.5.1 Model (multi-head attention with $p_q h = p_k h = p_v h = p_o$)
+        url: https://d2l.ai/chapter_attention-mechanisms-and-transformers/multihead-attention.html
+      - source: learn-pytorch
+        locator: 08 PyTorch Paper Replicating exercise solutions, Exercise 1 (torchinfo summary of the encoder layer)
+        url: https://github.com/mrdbourke/pytorch-deep-learning/blob/a16552001d963d078390d5bbdfc321e7e7c94bd1/extras/solutions/08_pytorch_paper_replicating_exercise_solutions.ipynb
+    source:
+      id: learn-pytorch
+      ref: extras/solutions/08_pytorch_paper_replicating_exercise_solutions.ipynb#ex1
+      url: https://github.com/mrdbourke/pytorch-deep-learning/blob/a16552001d963d078390d5bbdfc321e7e7c94bd1/extras/solutions/08_pytorch_paper_replicating_exercise_solutions.ipynb
+    status: draft
+  - id: transformers-047
+    type: short_answer
+    difficulty: medium
+    tags:
+      - vit
+      - patch-embedding
+      - conv2d
+      - parameter-count
+    question: |
+      A ViT turns $224 \times 224$ RGB images into patch embeddings with
+      `nn.Conv2d(in_channels=3, out_channels=768, kernel_size=16, stride=16)`, which embeds each
+      $16 \times 16$ patch into a 768-dimensional vector. How many parameters does this layer have?
+    answer:
+      numeric: 590592
+      tolerance: 0
+      hint: a whole number
+      model: $768 \cdot 3 \cdot 16 \cdot 16 + 768 = 590{,}592$
+    explanation: |
+      A convolution has $c_o \times c_i \times k_h \times k_w$ weights plus one bias per output channel
+      [^1]: $768 \cdot 3 \cdot 16 \cdot 16 + 768 = 590{,}592$. With kernel size equal to stride, the
+      patches do not overlap, so this is the same as flattening each patch to $3 \cdot 16 \cdot 16 = 768$
+      numbers and applying one shared linear layer; the image becomes $14 \times 14 = 196$ patch tokens
+      [^2][^3].
+    references:
+      - source: d2l
+        locator: Sec. 7.4 Multiple Input and Multiple Output Channels
+        url: https://d2l.ai/chapter_convolutional-neural-networks/channels.html
+      - source: d2l
+        locator: Sec. 11.8.1 Model; 11.8.2 Patch Embedding
+        url: https://d2l.ai/chapter_attention-mechanisms-and-transformers/vision-transformer.html
+      - source: learn-pytorch
+        locator: 08 PyTorch Paper Replicating exercise solutions, Exercise 1 (PatchEmbedding; summary shows 590,592)
+        url: https://github.com/mrdbourke/pytorch-deep-learning/blob/a16552001d963d078390d5bbdfc321e7e7c94bd1/extras/solutions/08_pytorch_paper_replicating_exercise_solutions.ipynb
+    source:
+      id: learn-pytorch
+      ref: extras/solutions/08_pytorch_paper_replicating_exercise_solutions.ipynb#ex1-b
+      url: https://github.com/mrdbourke/pytorch-deep-learning/blob/a16552001d963d078390d5bbdfc321e7e7c94bd1/extras/solutions/08_pytorch_paper_replicating_exercise_solutions.ipynb
+    status: draft

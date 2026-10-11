@@ -1875,3 +1875,327 @@ questions:
       ref: lectures/06_L2-L1-regularization.ipynb#collinearity
       url: https://github.com/UBC-MDS/DSCI_573_feat-model-select/blob/741d72d4f4dd495a86352d4d6ee990dea41914ac/lectures/06_L2-L1-regularization.ipynb
     status: draft
+  - id: linear-regression-056
+    type: multiple
+    difficulty: medium
+    tags:
+      - ols
+      - assumptions
+      - multicollinearity
+    question: |
+      You fit ordinary least squares (OLS) and want to trust its standard errors and confidence
+      intervals. Which of these are assumptions of the classical linear regression model? Select all
+      that apply.
+    options:
+      - text: The expected target is a linear function of the coefficients and the features
+        correct: true
+      - text: The features must be uncorrelated with each other
+        why: Only *perfect* multicollinearity (one feature an exact linear combination of others) breaks OLS; correlated features are allowed and only inflate the variance of the coefficient estimates [^1][^2].
+      - text: The errors are uncorrelated with one another and have constant variance
+        correct: true
+      - text: Each feature must itself follow a normal distribution
+        why: Normality, when assumed, is about the errors (the noise around the regression line), not about the distribution of the features [^1].
+      - text: For exact small-sample tests and intervals, the errors are normally distributed
+        correct: true
+    explanation: |
+      The classical model assumes linearity in the parameters, errors that are uncorrelated and
+      homoscedastic (constant variance), and, for exact $t$- and $F$-based inference, normally
+      distributed errors [^1]. It also needs the design matrix to have full column rank, which rules
+      out *perfect* collinearity but not ordinary correlation between features [^1][^2]. Correlated
+      features make individual coefficients hard to pin down, yet the fit remains valid [^2].
+    references:
+      - title: 'Wikipedia: Linear regression'
+        url: https://en.wikipedia.org/wiki/Linear_regression#Assumptions
+        locator: Section "Assumptions"
+      - title: 'Wikipedia: Multicollinearity'
+        url: https://en.wikipedia.org/wiki/Multicollinearity
+        locator: Introduction (perfect vs. imperfect multicollinearity)
+    source:
+      id: ds-interviews
+      ref: theory.md#q4
+      url: https://github.com/alexeygrigorev/data-science-interviews/blob/919f44547ef5ffc2bd59674fd301940529f4c1a8/theory.md#linear-regression
+    status: draft
+  - id: linear-regression-057
+    type: short_answer
+    difficulty: medium
+    tags:
+      - normal-equation
+      - condition-number
+      - numerical-stability
+    question: |
+      A design matrix $X$ has (2-norm) condition number $\kappa(X) = \sigma_{\max}/\sigma_{\min} = 10^3$,
+      the ratio of its largest to smallest singular value. You solve least squares through the normal
+      equations, i.e. you form and solve with $X^\top X$. What is the condition number of $X^\top X$?
+    answer:
+      numeric: 1000000
+      tolerance: 0
+      hint: a number, e.g. 1e4
+      model: $\kappa(X^\top X) = \kappa(X)^2 = 10^6$
+    explanation: |
+      With the SVD $X = U\Sigma V^\top$ we get $X^\top X = V\Sigma^2 V^\top$: the singular values of
+      $X^\top X$ are the squares of those of $X$, so its condition number is $\kappa(X)^2 = 10^6$ [^1].
+      Forming the normal equations therefore loses about twice as many digits of accuracy as needed,
+      which is why QR- or SVD-based solvers work on $X$ directly and avoid forming $X^\top X$ [^2][^3].
+    references:
+      - title: 'Wikipedia: Singular value decomposition'
+        url: https://en.wikipedia.org/wiki/Singular_value_decomposition
+        locator: Relation of the singular values of $M$ to the eigenvalues of $M^*M$
+      - title: 'Wikipedia: Numerical methods for linear least squares'
+        url: https://en.wikipedia.org/wiki/Numerical_methods_for_linear_least_squares#Orthogonal_decomposition_methods
+        locator: Section "Orthogonal decomposition methods"
+      - source: ds-interviews
+        locator: theory.md, Linear regression — "What methods for solving linear regression do you know?"
+        url: https://github.com/alexeygrigorev/data-science-interviews/blob/919f44547ef5ffc2bd59674fd301940529f4c1a8/theory.md#linear-regression
+    source:
+      id: ds-interviews
+      ref: theory.md#q8
+      url: https://github.com/alexeygrigorev/data-science-interviews/blob/919f44547ef5ffc2bd59674fd301940529f4c1a8/theory.md#linear-regression
+    status: draft
+  - id: linear-regression-058
+    type: short_answer
+    difficulty: easy
+    tags:
+      - normal-equation
+      - simple-linear-regression
+    question: |
+      Fit $\hat y = b_0 + b_1 x$ by least squares (the normal equations) to the three points
+      $(x, y) = (1, 2), (2, 3), (3, 5)$. What is the slope $b_1$?
+    answer:
+      numeric: 1.5
+      tolerance: 0.001
+      hint: a number
+      model: $b_1 = \frac{\sum (x_i - \bar x)(y_i - \bar y)}{\sum (x_i - \bar x)^2} = \frac{3}{2} = 1.5$ (and $b_0 = \bar y - b_1 \bar x = 1/3$)
+    explanation: |
+      Setting the derivatives of the squared error to zero gives the normal equations
+      $X^\top X \mathbf{b} = X^\top \mathbf{y}$ [^1]. For one feature they reduce to
+      $b_1 = \sum (x_i-\bar x)(y_i-\bar y) / \sum (x_i-\bar x)^2$. Here $\bar x = 2$, $\bar y = 10/3$,
+      the numerator is $(-1)(-\tfrac43) + 0 + (1)(\tfrac53) = 3$ and the denominator is $2$, so
+      $b_1 = 1.5$ and $b_0 = 10/3 - 3 = 1/3$ [^2].
+    references:
+      - source: d2l
+        locator: Sec. 3.1.1.2 Analytic Solution
+        url: https://d2l.ai/chapter_linear-regression/linear-regression.html#analytic-solution
+      - title: 'Wikipedia: Simple linear regression'
+        url: https://en.wikipedia.org/wiki/Simple_linear_regression#Formulation_and_computation
+        locator: Section "Formulation and computation"
+    source:
+      id: ds-interviews
+      ref: theory.md#q10
+      url: https://github.com/alexeygrigorev/data-science-interviews/blob/919f44547ef5ffc2bd59674fd301940529f4c1a8/theory.md#linear-regression
+    status: draft
+  - id: linear-regression-059
+    type: short_answer
+    difficulty: medium
+    tags:
+      - collinearity
+      - design-matrix
+      - rank
+    question: |
+      A dataset of 500 rows has features $x$, $y$ and $z$, where $z = x + y$ exactly (and $x$, $y$ are
+      not proportional). With an intercept, the design matrix has the four columns
+      $[\mathbf{1}, x, y, z]$. What is its rank?
+    answer:
+      numeric: 3
+      tolerance: 0
+      hint: a whole number
+      model: 3 — the column $z$ equals $x + y$, so only three columns are linearly independent
+    explanation: |
+      Because $z$ is an exact linear combination of $x$ and $y$, the four columns span only a
+      three-dimensional space, so the rank is 3 [^1]. Then $X^\top X$ is singular, the normal equations
+      have infinitely many solutions (any weight can be shifted from $z$ onto $x$ and $y$), and OLS has
+      no unique coefficients [^1][^2]. The fix is to drop the redundant column or regularize, e.g. with
+      ridge regression.
+    references:
+      - title: 'Wikipedia: Multicollinearity'
+        url: https://en.wikipedia.org/wiki/Multicollinearity#Perfect_multicollinearity
+        locator: Section "Perfect multicollinearity"
+      - source: ds-interviews
+        locator: theory.md, Regularization — "What happens to our linear regression model if ... z is a sum of x and y?"
+        url: https://github.com/alexeygrigorev/data-science-interviews/blob/919f44547ef5ffc2bd59674fd301940529f4c1a8/theory.md#regularization
+    source:
+      id: ds-interviews
+      ref: theory.md#q40
+      url: https://github.com/alexeygrigorev/data-science-interviews/blob/919f44547ef5ffc2bd59674fd301940529f4c1a8/theory.md#regularization
+    status: draft
+  - id: linear-regression-060
+    type: single
+    difficulty: medium
+    tags:
+      - multicollinearity
+      - coefficient-variance
+    question: |
+      In an OLS model with features $x$, $y$ and $z$, the column $z$ equals $x + y$ plus a little random
+      noise, so the three features are almost collinear. What is the typical consequence?
+    options:
+      - text: The predictions on new data from the same distribution become much less accurate
+        why: Near-collinearity mostly hurts the individual coefficients; the fitted values and predictions in the same region of feature space stay accurate [^1].
+      - text: The fit fails with an error because $X^\top X$ cannot be inverted
+        why: With noise added, $X^\top X$ is invertible (if badly conditioned); exact singularity needs exact collinearity.
+      - text: The three coefficients get large standard errors and vary a lot between samples
+        correct: true
+      - text: The coefficient of $z$ is automatically forced to exactly zero
+        why: OLS has no mechanism that zeroes coefficients; that is what an L1 penalty (lasso) does.
+    explanation: |
+      When features are nearly collinear, many combinations of their coefficients fit the data almost
+      equally well, so the estimates have high variance and large standard errors, and can even flip
+      sign between samples [^1]. Predictions are much less affected, because the collinear combination
+      is still estimated well [^1]. Ridge (L2) regularization, dropping a feature or PCA stabilise the
+      coefficients [^2].
+    references:
+      - title: 'Wikipedia: Multicollinearity'
+        url: https://en.wikipedia.org/wiki/Multicollinearity#Effects_on_coefficient_estimates
+        locator: Section "Effects on coefficient estimates"
+      - source: ds-interviews
+        locator: theory.md, Regularization — "... z is a sum of columns x and y and some random noise?"
+        url: https://github.com/alexeygrigorev/data-science-interviews/blob/919f44547ef5ffc2bd59674fd301940529f4c1a8/theory.md#regularization
+    source:
+      id: ds-interviews
+      ref: theory.md#q41
+      url: https://github.com/alexeygrigorev/data-science-interviews/blob/919f44547ef5ffc2bd59674fd301940529f4c1a8/theory.md#regularization
+    status: draft
+  - id: linear-regression-061
+    type: short_answer
+    difficulty: hard
+    tags:
+      - lasso
+      - soft-thresholding
+      - sparsity
+    question: |
+      The features are orthonormal ($X^\top X = I$) and the OLS coefficients are
+      $\hat\beta = (3,\ 0.5,\ -1.2,\ 0.8)$. You fit the lasso, minimizing
+      $\tfrac12\lVert \mathbf{y} - X\boldsymbol\beta\rVert^2 + \lambda\lVert\boldsymbol\beta\rVert_1$ with
+      $\lambda = 1$. How many of the four lasso coefficients are exactly zero?
+    answer:
+      numeric: 2
+      tolerance: 0
+      hint: a whole number
+      model: 2 — soft-thresholding gives $(2,\ 0,\ -0.2,\ 0)$
+    explanation: |
+      With orthonormal features the lasso solution is the soft-thresholded OLS estimate,
+      $\beta_j = \operatorname{sign}(\hat\beta_j)\max(|\hat\beta_j| - \lambda, 0)$ [^1]. Here that gives
+      $(2, 0, -0.2, 0)$: the two coefficients with $|\hat\beta_j| < 1$ become exactly zero, which is why
+      L1 regularization performs feature selection [^1][^2]. Ridge regression would instead scale every
+      coefficient by $1/(1+\lambda)$ and set none to zero [^1].
+    references:
+      - title: Hastie, Tibshirani & Friedman, The Elements of Statistical Learning (2nd ed.)
+        url: https://hastie.su.domains/ElemStatLearn/
+        locator: 'Sec. 3.4.3 Discussion: Subset Selection, Ridge Regression and the Lasso, Table 3.4'
+      - source: ds-interviews
+        locator: theory.md, Regularization — "What's the difference between L2 and L1 regularization?"
+        url: https://github.com/alexeygrigorev/data-science-interviews/blob/919f44547ef5ffc2bd59674fd301940529f4c1a8/theory.md#regularization
+    source:
+      id: ds-interviews
+      ref: theory.md#q49
+      url: https://github.com/alexeygrigorev/data-science-interviews/blob/919f44547ef5ffc2bd59674fd301940529f4c1a8/theory.md#regularization
+    status: draft
+  - id: linear-regression-062
+    type: single
+    difficulty: medium
+    tags:
+      - intercept
+      - centering
+      - interpretation
+    question: |
+      You standardize every feature to mean 0 before fitting a linear regression with an intercept
+      $b_0$ by least squares. What does the fitted intercept equal?
+    options:
+      - text: Zero, because the features are centered
+        why: Centering the features does not center the target; the intercept absorbs the target's mean.
+      - text: The prediction for the training example closest to the origin
+        why: The intercept is the prediction at $\mathbf{x} = \mathbf{0}$, which after centering is the average feature vector, not any particular example.
+      - text: The average difference between true and predicted values
+        why: For OLS with an intercept the residuals always average to zero; the intercept is not a measure of error or statistical bias.
+      - text: The mean of the training targets, $\bar y$
+        correct: true
+    explanation: |
+      The intercept is the model's prediction when every feature is 0 [^1]. The least-squares fit
+      always passes through the point of means, $\bar y = b_0 + \mathbf{w}^\top\bar{\mathbf{x}}$, so with
+      centered features ($\bar{\mathbf{x}} = \mathbf{0}$) we get $b_0 = \bar y$ [^1][^2]. This is why
+      ridge and lasso can leave the intercept unpenalized and simply estimate it by $\bar y$ after
+      centering [^2].
+    references:
+      - title: 'Wikipedia: Simple linear regression'
+        url: https://en.wikipedia.org/wiki/Simple_linear_regression#Formulation_and_computation
+        locator: Section "Formulation and computation" ($\hat\alpha = \bar y - \hat\beta\bar x$)
+      - title: Hastie, Tibshirani & Friedman, The Elements of Statistical Learning (2nd ed.)
+        url: https://hastie.su.domains/ElemStatLearn/
+        locator: Sec. 3.4.1 Ridge Regression (intercept estimated by $\bar y$ after centering)
+    source:
+      id: ds-interviews
+      ref: theory.md#q51
+      url: https://github.com/alexeygrigorev/data-science-interviews/blob/919f44547ef5ffc2bd59674fd301940529f4c1a8/theory.md#regularization
+    status: draft
+  - id: linear-regression-063
+    type: single
+    difficulty: medium
+    tags:
+      - feature-scaling
+      - coefficients
+      - ridge
+    question: |
+      In a house-price model, the feature `distance` is measured in kilometres. You re-express it in
+      metres (multiply it by 1000) and refit. What happens with plain OLS, and what with ridge regression?
+    options:
+      - text: 'OLS: the coefficient is multiplied by 1000; ridge: unchanged'
+        why: The product coefficient × feature must stay the same, so the coefficient shrinks, not grows, when the feature is multiplied by 1000.
+      - text: 'OLS: its coefficient is divided by 1000 and predictions are unchanged; ridge: predictions can change'
+        correct: true
+      - text: 'OLS: predictions change because larger numbers dominate the fit; ridge: unchanged'
+        why: Unregularized least squares is equivariant to rescaling a feature; only the coefficient adjusts [^1].
+      - text: 'OLS and ridge alike: the coefficient is divided by 1000 and the predictions stay exactly the same in both'
+        why: The ridge penalty depends on the size of the coefficient, so a feature whose coefficient must shrink by 1000 is penalized much less and the fit changes [^2].
+    explanation: |
+      OLS can undo any rescaling exactly: the coefficient becomes $1/1000$ of its old value and the
+      product, hence every prediction, stays the same [^1]. So a coefficient's size depends on the unit,
+      and only comparing coefficients of standardized features says something about importance [^1].
+      Ridge and lasso penalize coefficient size, so they are not equivariant under scaling; features
+      should be standardized before regularizing [^2].
+    references:
+      - title: 'scikit-learn: Common pitfalls in the interpretation of coefficients of linear models'
+        url: https://scikit-learn.org/stable/auto_examples/inspection/plot_linear_model_coefficient_interpretation.html
+        locator: 'Sections "Interpreting coefficients: scale matters" and "Checking the variability of the coefficients"'
+      - title: Hastie, Tibshirani & Friedman, The Elements of Statistical Learning (2nd ed.)
+        url: https://hastie.su.domains/ElemStatLearn/
+        locator: Sec. 3.4.1 Ridge Regression ("not equivariant under scaling of the inputs")
+    source:
+      id: ds-interviews
+      ref: theory.md#q54
+      url: https://github.com/alexeygrigorev/data-science-interviews/blob/919f44547ef5ffc2bd59674fd301940529f4c1a8/theory.md#regularization
+    status: draft
+  - id: linear-regression-064
+    type: single
+    difficulty: medium
+    tags:
+      - overfitting
+      - high-dimensional
+      - p-greater-than-n
+    question: |
+      Ordinary linear regression is fit to 73 potato samples using 200 gene-expression features. On the
+      training data it reaches $R^2 = 1.00$ and MSE $= 0.00$; on new samples $R^2$ is only 0.47. What is the
+      explanation?
+    options:
+      - text: The model is underfitting the data, so it needs even more gene features
+        why: A training $R^2$ of 1 means the model fits the training data perfectly; the gap to new data is overfitting, which more features would worsen.
+      - text: The genes must be uninformative, since otherwise new-data $R^2$ would also be 1
+        why: Even informative features cannot rescue a model that also fits the noise; regularization or validation is needed [^1].
+      - text: $R^2$ cannot be computed on new data, so 0.47 is meaningless
+        why: $R^2$ can be computed on any labelled data; on held-out data it measures generalization [^2].
+      - text: 'With more features than samples, it can fit the training data exactly: overfitting'
+        correct: true
+    explanation: |
+      With $p = 200$ features and only $n = 73$ samples, a linear model has enough free coefficients to
+      pass exactly through every training point, so training error says nothing about generalization
+      [^1]. The tutorial then adds regularization (lasso) and a validation set, and later
+      cross-validation, to control this [^1][^2].
+    references:
+      - source: galaxy-training
+        locator: 'Foundational Aspects of Machine Learning using Python — Linear regression, Approach 1: Simple linear regression; Approach 2: Adding regularization and validation set'
+        url: https://training.galaxyproject.org/training-material/topics/statistics/tutorials/intro-to-ml-with-python/tutorial.html
+      - title: Hastie, Tibshirani & Friedman, The Elements of Statistical Learning (2nd ed.)
+        url: https://hastie.su.domains/ElemStatLearn/
+        locator: Sec. 18.1 When p is Much Bigger than N
+    source:
+      id: galaxy-training
+      ref: intro-to-ml-with-python#q5
+      url: https://github.com/galaxyproject/training-material/blob/917e68d1d61c2915c7a970d75468b8494be90c0d/topics/statistics/tutorials/intro-to-ml-with-python/tutorial.md
+    status: draft

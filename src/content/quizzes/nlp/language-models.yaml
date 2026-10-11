@@ -1051,3 +1051,146 @@ questions:
       ref: W2D5_TimeSeriesAndNaturalLanguageProcessing/W2D5_Tutorial2#think4.3
       url: https://github.com/NeuromatchAcademy/course-content-dl/blob/caba36c513fb8139ac3c9e7503f7a769dadde25e/tutorials/W2D5_TimeSeriesAndNaturalLanguageProcessing/instructor/W2D5_Tutorial2.ipynb
     status: draft
+  - id: language-models-030
+    type: single
+    difficulty: medium
+    tags:
+      - causal-lm
+      - logits
+      - lm-head
+      - tensor-shapes
+    question: |
+      A causal language model has `embed_tokens = Embedding(4096, 256)`, 8 decoder layers and
+      `lm_head = Linear(256, 4096)`. You run `out = model(input_ids)` on one sequence of 17 tokens. What
+      is `out[0]` (the first output of the `...ForCausalLM` model)?
+    options:
+      - text: A single embedding of the whole sequence, of shape `(1, 4096)`
+        why: The model gives one output per position; pooling over the sequence would be a separate step.
+      - text: Token embeddings of shape `(17, 256)` from the input layer
+        why: The embedding layer is the first step of the model, not its output, and the batch dimension is kept [^1].
+      - text: Next-token logits over the vocabulary, shape `(1, 17, 4096)`
+        correct: true
+      - text: The hidden states of the last decoder layer, of shape `(1, 17, 256)`
+        why: Hidden states are 256-dimensional, but a `...ForCausalLM` model returns the output of `lm_head` first; hidden states need `output_hidden_states=True` [^1].
+    explanation: |
+      The causal-LM head projects each position's 256-dimensional hidden state to the 4096-token
+      vocabulary, so the first output is a logits tensor of shape (batch, sequence length,
+      vocabulary size) = $(1, 17, 4096)$ [^1][^2]. The last dimension is 4096 *because* these are
+      vocabulary scores; the tutorial calls them "hidden states", but the hidden size is 256 [^2].
+    references:
+      - title: 'Hugging Face Transformers documentation: Model outputs (CausalLMOutput)'
+        url: https://huggingface.co/docs/transformers/main_classes/output
+        locator: CausalLMOutputWithPast (`logits` of shape (batch_size, sequence_length, config.vocab_size); `hidden_states` optional)
+      - source: galaxy-training
+        locator: Pretraining a Large Language Model (LLM) from Scratch on DNA Sequences — Choose the LLM architecture (model printout); Compute the embedding of a DNA sequence
+        url: https://training.galaxyproject.org/training-material/topics/statistics/tutorials/genomic-llm-pretraining/tutorial.html
+    source:
+      id: galaxy-training
+      ref: genomic-llm-pretraining#q17
+      url: https://github.com/galaxyproject/training-material/blob/917e68d1d61c2915c7a970d75468b8494be90c0d/topics/statistics/tutorials/genomic-llm-pretraining/tutorial.md
+    status: draft
+  - id: language-models-031
+    type: single
+    difficulty: easy
+    tags:
+      - causal-lm
+      - data-collator
+      - pretraining-objective
+    question: |
+      For pretraining, a DNA language model uses
+      `DataCollatorForLanguageModeling(tokenizer=tokenizer, mlm=False)`. What training objective does
+      `mlm=False` select?
+    options:
+      - text: Sequence classification — predict one label per sequence
+        why: A language-modelling collator builds token-level targets from the text itself; classification needs separate labels.
+      - text: No objective — the collator only pads and skips the loss
+        why: The collator also creates the labels, so the model computes a language-modelling loss [^1].
+      - text: Causal language modelling — predict each token from the tokens before it
+        correct: true
+      - text: Masked language modelling — predict about 15% of the tokens, hidden at random
+        why: That is what `mlm=True` would select; with `mlm=False` no tokens are masked [^1].
+    explanation: |
+      With `mlm=False` the collator copies the input IDs into the labels (padding positions are
+      ignored), and the causal LM shifts them internally, so each position learns to predict the next
+      token [^1][^2]. This matches the decoder-only (Mistral/Mixtral-style) model trained in the tutorial
+      [^3]. With `mlm=True` it would instead mask random tokens, BERT-style [^1].
+    references:
+      - title: 'Hugging Face Transformers documentation: Data Collator'
+        url: https://huggingface.co/docs/transformers/main_classes/data_collator#transformers.DataCollatorForLanguageModeling
+        locator: DataCollatorForLanguageModeling, parameter `mlm`
+      - source: hf-llm-course
+        locator: Chapter 7.6 Training a causal language model from scratch
+        url: https://huggingface.co/learn/llm-course/chapter7/6
+      - source: galaxy-training
+        locator: Pretraining a Large Language Model (LLM) from Scratch on DNA Sequences — Data Collation
+        url: https://training.galaxyproject.org/training-material/topics/statistics/tutorials/genomic-llm-pretraining/tutorial.html
+    source:
+      id: galaxy-training
+      ref: genomic-llm-pretraining#q13
+      url: https://github.com/galaxyproject/training-material/blob/917e68d1d61c2915c7a970d75468b8494be90c0d/topics/statistics/tutorials/genomic-llm-pretraining/tutorial.md
+    status: draft
+  - id: language-models-032
+    type: short_answer
+    difficulty: medium
+    tags:
+      - temperature
+      - sampling
+      - softmax
+    question: |
+      A language model's next-token logits are $(2, 1, 0)$. Generation samples from
+      $\operatorname{softmax}(\text{logits}/T)$. What probability does the most likely token get at
+      temperature $T = 0.5$? Give 3 decimals.
+    answer:
+      numeric: 0.867
+      tolerance: 0.001
+      hint: a number between 0 and 1, 3 decimals
+      model: $\operatorname{softmax}(4, 2, 0)_1 = e^4/(e^4 + e^2 + 1) \approx 0.867$ (at $T = 1$ it is 0.665)
+    explanation: |
+      Dividing the logits by $T = 0.5$ doubles them to $(4, 2, 0)$, and the softmax gives
+      $e^4/(e^4+e^2+1) = 54.6/63.0 = 0.867$ for the top token, versus $0.665$ at $T = 1$ [^1]. Low
+      temperatures sharpen the distribution, so sampled sequences become more similar to each other; in
+      the tutorial, generated DNA sequences grow more variable as the temperature rises [^2].
+    references:
+      - title: 'Wikipedia: Softmax function'
+        url: https://en.wikipedia.org/wiki/Softmax_function#Definition
+        locator: Section "Definition" (temperature $T = 1/\beta$)
+      - source: galaxy-training
+        locator: Generating Artificial Yeast DNA Sequences using a DNA LLM — Generate Synthetic DNA Sequences (temperatures 0.001 to 1.5)
+        url: https://training.galaxyproject.org/training-material/topics/statistics/tutorials/genomic-llm-sequence-generation/tutorial.html
+    source:
+      id: galaxy-training
+      ref: genomic-llm-sequence-generation#q5
+      url: https://github.com/galaxyproject/training-material/blob/917e68d1d61c2915c7a970d75468b8494be90c0d/topics/statistics/tutorials/genomic-llm-sequence-generation/tutorial.md
+    status: draft
+  - id: language-models-033
+    type: short_answer
+    difficulty: medium
+    tags:
+      - top-k-sampling
+      - decoding
+    question: |
+      The next-token distribution over five tokens is $(0.5, 0.2, 0.15, 0.1, 0.05)$. With top-$k$ sampling
+      and $k = 3$, what is the probability of sampling the third token (originally 0.15)? Give 3
+      decimals.
+    answer:
+      numeric: 0.176
+      tolerance: 0.001
+      hint: a number between 0 and 1, 3 decimals
+      model: $0.15/(0.5 + 0.2 + 0.15) = 0.15/0.85 \approx 0.176$
+    explanation: |
+      Top-$k$ sampling keeps only the $k$ most probable tokens and renormalizes their probabilities to
+      sum to 1 [^1]. The kept mass is $0.85$, so the third token gets $0.15/0.85 = 0.176$, and the last
+      two tokens cannot be sampled at all [^1][^2]. This cuts off the unreliable tail of the distribution
+      while keeping some randomness.
+    references:
+      - title: 'Hugging Face blog: How to generate text — Top-K Sampling'
+        url: https://huggingface.co/blog/how-to-generate#top-k-sampling
+        locator: Section "Top-K Sampling"
+      - source: galaxy-training
+        locator: Generating Artificial Yeast DNA Sequences using a DNA LLM — Build the Sequence Generator (`do_sample=True`, `top_k=50`)
+        url: https://training.galaxyproject.org/training-material/topics/statistics/tutorials/genomic-llm-sequence-generation/tutorial.html
+    source:
+      id: galaxy-training
+      ref: genomic-llm-sequence-generation#q2
+      url: https://github.com/galaxyproject/training-material/blob/917e68d1d61c2915c7a970d75468b8494be90c0d/topics/statistics/tutorials/genomic-llm-sequence-generation/tutorial.md
+    status: draft

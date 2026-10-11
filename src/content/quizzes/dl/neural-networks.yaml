@@ -1796,3 +1796,76 @@ questions:
       ref: W1D2_LinearDeepLearning/W1D2_Tutorial2#ex1.1
       url: https://github.com/NeuromatchAcademy/course-content-dl/blob/caba36c513fb8139ac3c9e7503f7a769dadde25e/tutorials/W1D2_LinearDeepLearning/instructor/W1D2_Tutorial2.ipynb
     status: draft
+  - id: neural-networks-059
+    type: short_answer
+    difficulty: medium
+    tags:
+      - sigmoid
+      - vanishing-gradients
+      - backpropagation
+    question: |
+      The derivative of the sigmoid, $\sigma'(x) = \sigma(x)(1 - \sigma(x))$, is at most $0.25$. A
+      gradient flows backwards through 5 sigmoid activations; ignore the weights (treat them as 1).
+      What is the largest factor by which these 5 activations can scale the gradient? Give the exact
+      value or 3 significant digits.
+    answer:
+      numeric: 0.000977
+      tolerance: 0.0000015
+      hint: a number, e.g. 0.0123 or 1/81
+      model: $0.25^5 = 1/1024 \approx 0.000977$
+    explanation: |
+      By the chain rule the gradient is multiplied by $\sigma'$ at every sigmoid layer, and
+      $\sigma'(x) = \sigma(x)(1-\sigma(x)) \le 0.25$, with the maximum at $x = 0$ [^1]. Five layers
+      therefore shrink it by at least a factor $0.25^5 \approx 0.001$, and far more when the units
+      saturate, where $\sigma' \approx 0$ [^1][^2]. This vanishing gradient is a main reason ReLU, whose
+      derivative is exactly 1 for positive inputs, replaced the sigmoid in hidden layers [^1].
+    references:
+      - source: d2l
+        locator: Sec. 5.4.1.1 Vanishing Gradients
+        url: https://d2l.ai/chapter_multilayer-perceptrons/numerical-stability-and-init.html#vanishing-gradients
+      - source: ds-interviews
+        locator: theory.md, Neural networks — "What are the problems with sigmoid as an activation function?"
+        url: https://github.com/alexeygrigorev/data-science-interviews/blob/919f44547ef5ffc2bd59674fd301940529f4c1a8/theory.md#neural-networks
+    source:
+      id: ds-interviews
+      ref: theory.md#q88
+      url: https://github.com/alexeygrigorev/data-science-interviews/blob/919f44547ef5ffc2bd59674fd301940529f4c1a8/theory.md#neural-networks
+    status: draft
+  - id: neural-networks-060
+    type: single
+    difficulty: hard
+    tags:
+      - initialization
+      - zero-init
+      - symmetry
+      - tanh
+    question: |
+      A regression MLP $\hat y = \mathbf{w}_2^\top \tanh(W_1\mathbf{x} + \mathbf{b}_1) + b_2$ is initialized
+      with **all** weights and biases equal to 0 and trained with gradient descent on MSE. What happens?
+    options:
+      - text: Training works normally, because the output bias gets a gradient and breaks the symmetry
+        why: The output bias does change, but it only shifts the prediction; the hidden weights and biases still receive exactly zero gradient.
+      - text: Only the output bias $b_2$ ever changes, so the network can only learn a constant
+        correct: true
+      - text: The hidden units learn identical but nonzero weights, so the network behaves like one hidden unit
+        why: That happens with a constant nonzero initialization; with zeros and $\tanh(0) = 0$, the gradients of $W_1$ and $\mathbf{w}_2$ are exactly zero at every step.
+      - text: The loss becomes NaN after the first step because of a division by zero
+        why: Nothing is divided by the weights; the gradients are simply zero, not undefined.
+    explanation: |
+      With zero weights every hidden activation is $\tanh(0) = 0$. The gradient of $\mathbf{w}_2$ is
+      $\delta\,\mathbf{h} = \mathbf{0}$, and the gradient reaching the hidden layer is
+      $\mathbf{w}_2\delta = \mathbf{0}$, so $W_1$ and $\mathbf{b}_1$ never move either; only $b_2$ gets
+      the gradient $\delta$ and converges to the mean target. Initialization must break the symmetry
+      between hidden units, which is why weights are drawn at random [^1][^2].
+    references:
+      - source: d2l
+        locator: Sec. 5.4.1.3 Breaking the Symmetry
+        url: https://d2l.ai/chapter_multilayer-perceptrons/numerical-stability-and-init.html#breaking-the-symmetry
+      - source: d2l
+        locator: Sec. 5.3 Forward Propagation, Backward Propagation, and Computational Graphs (5.3.3 Backpropagation)
+        url: https://d2l.ai/chapter_multilayer-perceptrons/backprop.html
+    source:
+      id: ds-interviews
+      ref: theory.md#q91
+      url: https://github.com/alexeygrigorev/data-science-interviews/blob/919f44547ef5ffc2bd59674fd301940529f4c1a8/theory.md#neural-networks
+    status: draft

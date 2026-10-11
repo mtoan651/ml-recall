@@ -1004,3 +1004,256 @@ questions:
       ref: lectures/notes/07_naive-Bayes.ipynb#ex7.1.1
       url: https://github.com/UBC-MDS/DSCI_571_sup-learn-1/blob/70be2d76ec40e11fe7ddcff2a8c9e602a2698129/lectures/notes/07_naive-Bayes.ipynb
     status: draft
+  - id: trees-ensembles-030
+    type: short_answer
+    difficulty: medium
+    tags:
+      - gini-impurity
+      - decision-trees
+      - splitting
+    question: |
+      A decision-tree node holds 10 examples: 6 of class A and 4 of class B (Gini impurity 0.48). A
+      candidate split sends 5 A to the left child and 1 A plus 4 B to the right child. What is the
+      weighted Gini impurity of the two children (weights = fraction of examples in each child)?
+    answer:
+      numeric: 0.16
+      tolerance: 0.001
+      hint: a number, 2 decimals
+      model: 'Left: $0$; right: $1 - 0.2^2 - 0.8^2 = 0.32$; weighted: $0.5 \cdot 0 + 0.5 \cdot 0.32 = 0.16$'
+    explanation: |
+      Gini impurity is $1 - \sum_k p_k^2$ [^1]. The left child is pure (impurity 0); the right child has
+      $p = (0.2, 0.8)$ and impurity $0.32$. Weighting each child by its share of the examples gives
+      $0.16$, a decrease of $0.48 - 0.16 = 0.32$ from the parent. Training greedily picks, at each
+      node, the feature and threshold with the largest such decrease [^1][^2].
+    references:
+      - title: 'scikit-learn User Guide: Decision Trees'
+        url: https://scikit-learn.org/stable/modules/tree.html#classification-criteria
+        locator: Sec. 1.10.7.1 Classification criteria (Gini)
+      - source: ds-interviews
+        locator: theory.md, Decision trees — "How do we train decision trees?"
+        url: https://github.com/alexeygrigorev/data-science-interviews/blob/919f44547ef5ffc2bd59674fd301940529f4c1a8/theory.md#decision-trees
+    source:
+      id: ds-interviews
+      ref: theory.md#q61
+      url: https://github.com/alexeygrigorev/data-science-interviews/blob/919f44547ef5ffc2bd59674fd301940529f4c1a8/theory.md#decision-trees
+    status: draft
+  - id: trees-ensembles-031
+    type: single
+    difficulty: hard
+    tags:
+      - extra-trees
+      - random-forest
+      - random-splits
+    question: |
+      Instead of searching every threshold of each candidate feature for the best split, a tree
+      ensemble draws **one random threshold per candidate feature** and keeps the best of these random
+      splits. What is this method, and what is its usual effect compared with a random forest?
+    options:
+      - text: Bagging; each tree sees a bootstrap sample but uses exhaustive splits
+        why: Plain bagging still searches for the best threshold; it randomizes only the training sample.
+      - text: Extremely randomized trees; training is faster and variance drops a bit more, at a small cost in bias
+        correct: true
+      - text: Extremely randomized trees; they always overfit more than a random forest because every split is random
+        why: Random thresholds act as extra regularization; they usually reduce variance, not increase overfitting [^1].
+      - text: Gradient boosting; each tree corrects the residual errors of the previous ones
+        why: Boosting is about fitting trees sequentially to residuals, not about how thresholds are chosen.
+    explanation: |
+      This is Extra-Trees (extremely randomized trees): like a random forest it considers a random
+      subset of features, but it draws thresholds at random and picks the best of them instead of
+      optimizing them [^1][^2]. Skipping the threshold search makes training faster, and the extra
+      randomness decorrelates the trees further, which usually lowers variance slightly at the cost of
+      a slightly higher bias [^1].
+    references:
+      - title: scikit-learn User Guide
+        url: https://scikit-learn.org/stable/modules/ensemble.html#extremely-randomized-trees
+        locator: Sec. 1.11.2.2 Extremely Randomized Trees
+      - title: Geurts, Ernst & Wehenkel (2006), Extremely randomized trees, Machine Learning 63(1)
+        url: https://doi.org/10.1007/s10994-006-6226-1
+        locator: Sec. 2 Extra-Trees algorithm
+    source:
+      id: ds-interviews
+      ref: theory.md#q73
+      url: https://github.com/alexeygrigorev/data-science-interviews/blob/919f44547ef5ffc2bd59674fd301940529f4c1a8/theory.md#random-forest
+    status: draft
+  - id: trees-ensembles-032
+    type: short_answer
+    difficulty: medium
+    tags:
+      - gradient-boosting
+      - residuals
+      - learning-rate
+    question: |
+      Gradient boosting with squared loss starts from the constant prediction $F_0$ = mean of the targets
+      $y = (3, 5, 10)$. The first regression tree fits the residuals perfectly, and the learning rate is
+      $0.1$. What is the model's prediction $F_1$ for the third example ($y = 10$)?
+    answer:
+      numeric: 6.4
+      tolerance: 0.001
+      hint: a number
+      model: $F_0 = 6$, residual $10 - 6 = 4$, $F_1 = 6 + 0.1 \cdot 4 = 6.4$
+    explanation: |
+      For squared loss the negative gradient is the residual $y - F_0$, here $(-3, -1, 4)$, and each new
+      tree is fit to it [^1]. The tree's output is added after scaling by the learning rate (shrinkage),
+      so the third prediction moves from $6$ to $6 + 0.1 \cdot 4 = 6.4$ [^1]. Trees are built one after
+      another, each correcting what the ensemble so far gets wrong — unlike a random forest, whose
+      trees are independent [^2].
+    references:
+      - title: scikit-learn User Guide
+        url: https://scikit-learn.org/stable/modules/ensemble.html#mathematical-formulation
+        locator: Sec. 1.11.1.2.3 Mathematical formulation and 1.11.1.2.5 Shrinkage via learning rate
+      - source: ds-interviews
+        locator: theory.md, Gradient boosting — "What's the difference between random forest and gradient boosting?"
+        url: https://github.com/alexeygrigorev/data-science-interviews/blob/919f44547ef5ffc2bd59674fd301940529f4c1a8/theory.md#gradient-boosting
+    source:
+      id: ds-interviews
+      ref: theory.md#q75
+      url: https://github.com/alexeygrigorev/data-science-interviews/blob/919f44547ef5ffc2bd59674fd301940529f4c1a8/theory.md#gradient-boosting
+    status: draft
+  - id: trees-ensembles-033
+    type: single
+    difficulty: medium
+    tags:
+      - gradient-boosting
+      - parallelism
+      - xgboost
+    question: |
+      You want to speed up training on many CPU cores. Which statement about parallelizing tree
+      ensembles is correct?
+    options:
+      - text: Gradient boosting trains all its trees at once on separate cores, since each tree sees its own bootstrap sample
+        why: Each boosted tree is fit to the residuals of the ensemble so far, so tree $m$ cannot start before tree $m-1$ is done.
+      - text: Neither method can use more than one core, because tree growing is inherently sequential
+        why: Libraries parallelize random forests across trees and gradient boosting within each tree [^1][^2].
+      - text: Gradient boosting adds trees one by one, so it parallelizes the work inside each tree, e.g. the split search
+        correct: true
+      - text: A random forest cannot be parallelized because every tree depends on the previous one
+        why: Random-forest trees are grown independently, so they can be trained in parallel across cores [^2].
+    explanation: |
+      Boosting is sequential across trees, so libraries such as XGBoost parallelize the expensive part
+      of building one tree: sorting or histogramming each feature and evaluating candidate splits, which
+      can be done for many features at once [^1]. A random forest's trees are independent, which makes it
+      embarrassingly parallel across trees (`n_jobs` in scikit-learn) [^2].
+    references:
+      - title: 'Chen & Guestrin (2016), XGBoost: A Scalable Tree Boosting System, arXiv:1603.02754'
+        url: https://arxiv.org/abs/1603.02754
+        locator: Sec. 4.1 Column Block for Parallel Learning
+      - title: scikit-learn User Guide
+        url: https://scikit-learn.org/stable/modules/ensemble.html#parallelization
+        locator: Sec. 1.11.2.4 Parallelization
+    source:
+      id: ds-interviews
+      ref: theory.md#q77
+      url: https://github.com/alexeygrigorev/data-science-interviews/blob/919f44547ef5ffc2bd59674fd301940529f4c1a8/theory.md#gradient-boosting
+    status: draft
+  - id: trees-ensembles-034
+    type: single
+    difficulty: hard
+    tags:
+      - feature-importance
+      - impurity-importance
+      - cardinality
+    question: |
+      A gradient-boosted tree model is trained on a binary feature and on a continuous feature with
+      thousands of distinct values; both are pure noise, unrelated to the target. Which feature will the
+      impurity-based (split-gain) importance typically rank higher?
+    options:
+      - text: Neither; impurity importance gives every noise feature exactly zero
+        why: Impurity importance is computed on the training data, where splits on noise still reduce the training loss a little [^1].
+      - text: Both equally, because split-gain importance is normalized by each feature's number of distinct values
+        why: Impurity importances are not corrected for cardinality, which is exactly why they are biased [^1].
+      - text: The continuous feature, because its many possible split points let it fit noise more often
+        correct: true
+      - text: The binary feature, because a single clean split is more informative
+        why: A noise feature has no real information either way; the bias comes from how many split candidates a feature offers.
+    explanation: |
+      Impurity-based importances add up the training-loss reductions of all splits on a feature [^1].
+      A high-cardinality (e.g. continuous) feature offers many more thresholds, so by chance it finds
+      splits that reduce the training loss and collects importance even when it is useless; scikit-learn
+      warns that these importances favour high-cardinality features [^1][^2]. Permutation importance
+      measured on held-out data does not have this bias [^1].
+    references:
+      - title: 'scikit-learn: Permutation Importance vs Random Forest Feature Importance (MDI)'
+        url: https://scikit-learn.org/stable/auto_examples/inspection/plot_permutation_importance.html
+        locator: Introduction and section "Tree's Feature Importance from Mean Decrease in Impurity (MDI)"
+      - title: scikit-learn User Guide
+        url: https://scikit-learn.org/stable/modules/permutation_importance.html#relation-to-impurity-based-importance-in-trees
+        locator: Sec. 5.2.2 Relation to impurity-based importance in trees
+    source:
+      id: ds-interviews
+      ref: theory.md#q79
+      url: https://github.com/alexeygrigorev/data-science-interviews/blob/919f44547ef5ffc2bd59674fd301940529f4c1a8/theory.md#gradient-boosting
+    status: draft
+  - id: trees-ensembles-035
+    type: single
+    difficulty: medium
+    tags:
+      - gradient-boosting
+      - learning-rate
+      - n-estimators
+    question: |
+      A gradient-boosting model reaches a good validation score with learning rate $0.1$ and 200 trees.
+      You lower the learning rate to $0.05$. What should you expect?
+    options:
+      - text: You will need half as many trees, since each tree is now more accurate
+        why: Each tree's contribution is scaled down, so more of them are needed, not fewer [^1].
+      - text: You will need roughly twice as many trees to reach a similar training fit
+        correct: true
+      - text: The trees will be grown deeper automatically to compensate
+        why: Tree depth is a separate hyperparameter; the learning rate only scales each tree's output.
+      - text: The number of trees no longer matters, because a small learning rate prevents overfitting
+        why: Boosting can still overfit with enough trees; the number of trees is tuned together with the learning rate, e.g. by early stopping [^1].
+    explanation: |
+      The learning rate (shrinkage) multiplies each tree's contribution, so with half the step size the
+      ensemble needs about twice as many steps to get as far [^1]. scikit-learn notes that smaller
+      learning rates need more weak learners for the same training error, and usually generalize better
+      [^1]. Both hyperparameters are therefore tuned together, with the number of trees picked on
+      validation data [^2].
+    references:
+      - title: scikit-learn User Guide
+        url: https://scikit-learn.org/stable/modules/ensemble.html#shrinkage-via-learning-rate
+        locator: Sec. 1.11.1.2.5 Shrinkage via learning rate
+      - source: ds-interviews
+        locator: theory.md, Gradient boosting — "What are the main parameters in the gradient boosting model?"
+        url: https://github.com/alexeygrigorev/data-science-interviews/blob/919f44547ef5ffc2bd59674fd301940529f4c1a8/theory.md#gradient-boosting
+    source:
+      id: ds-interviews
+      ref: theory.md#q80
+      url: https://github.com/alexeygrigorev/data-science-interviews/blob/919f44547ef5ffc2bd59674fd301940529f4c1a8/theory.md#gradient-boosting
+    status: draft
+  - id: trees-ensembles-036
+    type: single
+    difficulty: medium
+    tags:
+      - n-estimators
+      - overfitting
+      - random-forest
+      - gradient-boosting
+    question: |
+      You keep all other settings fixed and only increase the number of trees from 100 to 5000. Which
+      ensemble can start to overfit because of this?
+    options:
+      - text: Neither; more trees can only help
+        why: Each boosting step reduces the training loss further, so with enough trees it eventually fits the noise [^2].
+      - text: A random forest, but not gradient boosting
+        why: A random forest averages independent trees, so its test error converges as trees are added instead of rising [^1].
+      - text: Gradient boosting, but not a random forest
+        correct: true
+      - text: Both, to about the same degree
+        why: Only boosting keeps fitting the training data more closely with every tree; averaging more forest trees just reduces the variance of the average [^1][^2].
+    explanation: |
+      Adding trees to a random forest only averages more independent, identically built trees; Breiman
+      showed the generalization error converges, so more trees cost time but do not overfit [^1]. In
+      gradient boosting each tree reduces the training loss further, so too many trees overfit, and the
+      number of trees is chosen by validation or early stopping [^2].
+    references:
+      - title: Breiman, Random Forests (UC Berkeley technical report, Jan. 2001)
+        url: https://www.stat.berkeley.edu/~breiman/randomforest2001.pdf
+        locator: Sec. 2.1 Random Forests Converge, Theorem 1.2, p. 4
+      - title: scikit-learn User Guide
+        url: https://scikit-learn.org/stable/modules/ensemble.html#shrinkage-via-learning-rate
+        locator: Sec. 1.11.1.2.5 Shrinkage via learning rate (n_estimators chosen large enough for early stopping)
+    source:
+      id: ds-interviews
+      ref: theory.md#q82
+      url: https://github.com/alexeygrigorev/data-science-interviews/blob/919f44547ef5ffc2bd59674fd301940529f4c1a8/theory.md#gradient-boosting
+    status: draft
