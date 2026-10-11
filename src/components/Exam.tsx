@@ -179,7 +179,9 @@ export default function Exam({ questions, scope, showTopic = false }: ExamProps)
         previousBest,
       });
       const toGrade =
-        score.pending > 0 ? ` ${score.pending} open answers are waiting for your own grade.` : "";
+        score.pending === 0
+          ? ""
+          : ` ${score.pending} open ${score.pending === 1 ? "answer is" : "answers are"} waiting for your own grade.`;
       setAnnouncement(
         (timedOut
           ? `Time is up. The test was submitted: ${score.correct} of ${score.total} correct.`

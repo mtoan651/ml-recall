@@ -81,7 +81,10 @@ export function ExamResults({
   const [jumpTo, setJumpTo] = useState<string | null>(null);
   const wrongCount = score.incorrect + score.unanswered + score.pending;
   const rows = state.items.map((item, k) => ({ item, k, outcome: score.outcomes[item.id] }));
-  const visible = onlyIncorrect ? rows.filter((r) => r.outcome !== "correct") : rows;
+  // Open answers graded while the filter is on stay in view (they don't vanish on "I got it").
+  const visible = onlyIncorrect
+    ? rows.filter((r) => r.outcome !== "correct" || r.item.id in selfGrades)
+    : rows;
 
   // Jump to a question from the grid (showing it first if the filter hides it).
   useEffect(() => {
