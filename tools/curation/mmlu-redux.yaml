@@ -2,6 +2,8 @@
 # (see docs/content-pipeline.md#curation).
 # Refs: <subset>/<row>, 0-based. Every kept row needs a topic.
 # Rows flagged by MMLU-Redux experts are dropped unless they have a `fix` here.
+# econometrics and college_computer_science (2026-10-11): keep-lists only, 20 + 9 rows; two
+# upstream keys corrected (econometrics/30 Durbin–Watson sign, econometrics/82 MA roots).
 # machine_learning reviewed 2026-10-09 — 90 of 100 kept (2 answer keys corrected, 4 flagged rows
 # repaired); re-reviewed 2026-10-11 — 95 kept.
 exclude_prefixes:
@@ -1283,3 +1285,546 @@ items:
   college_mathematics/98:
     drop: off-scope
     comment: set theory (cardinalities of function spaces)
+  # ---- econometrics keep-list (20 of 100; reviewed 2026-10-11) ----
+  # General time-series / regression concepts only. Needs `exclude_prefixes: {"econometrics/": off-scope}`
+  # (and the same for college_computer_science/) so that unlisted rows are dropped.
+  "econometrics/0":
+    topic: time-series
+    difficulty: medium
+    fix:
+      question: |-
+        Consider the following AR(2) process, where $u_t$ is white noise:
+
+        $$y_t = 1.5\,y_{t-1} - 0.5\,y_{t-2} + u_t$$
+
+        This is a
+      why:
+        0: 'Stationarity needs every root of $1 - 1.5z + 0.5z^2 = 0$ outside the unit circle, but one root is exactly $z = 1$.'
+        2: 'An explosive process has a characteristic root inside the unit circle; here the roots are $z = 1$ and $z = 2$.'
+        3: A unit-root process is non-stationary by definition, so it cannot be both.
+      explanation: |-
+        The characteristic equation $1 - 1.5z + 0.5z^2 = 0$ factors as $(1 - z)(1 - 0.5z) = 0$, so its roots are $z = 1$ and $z = 2$. Because 1 is a root, the process has a unit root and is non-stationary [^2]. Indeed $\Delta y_t = 0.5\,\Delta y_{t-1} + u_t$ is a stationary AR(1): one difference makes the series stationary, so $y_t$ is an I(1), unit-root process [^1].
+      references:
+        - {source: mmlu-redux, locator: "econometrics row 0"}
+        - title: 'Wikipedia: Unit root'
+          url: https://en.wikipedia.org/wiki/Unit_root
+          locator: Definition
+  "econometrics/4":
+    topic: linear-regression
+    difficulty: medium
+    fix:
+      shuffle: false
+      explanation: |-
+        $R^2 = 1 - SS_{\text{res}}/SS_{\text{tot}}$, so $R^2 = 0$ means the model explains none of the variation of $y$ about its mean: it does no better than always predicting $\bar{y}$ [^2]. With an intercept (and regressors that are not perfectly collinear), that happens only when every slope estimate is zero, so the fitted line is flat in every explanatory variable — statements (i)–(iii). The intercept estimate is then $\bar{y}$, which need not be zero, so (iv) is false [^1].
+      references:
+        - {source: mmlu-redux, locator: "econometrics row 4"}
+        - title: 'Wikipedia: Coefficient of determination'
+          url: https://en.wikipedia.org/wiki/Coefficient_of_determination
+          locator: Definitions
+  "econometrics/6":
+    topic: time-series
+    difficulty: easy
+    fix:
+      shuffle: false
+      explanation: |-
+        A process is weakly (covariance) stationary when its mean is constant, its variance is finite and constant, and its autocovariances depend only on the lag, not on the point in time [^2]. Requiring the whole probability distribution to stay the same over time is *strict* stationarity, a stronger condition that weak stationarity does not need, so (iv) is not necessary [^1].
+      references:
+        - {source: mmlu-redux, locator: "econometrics row 6"}
+        - title: 'Wikipedia: Stationary process'
+          url: https://en.wikipedia.org/wiki/Stationary_process#Weak_or_wide-sense_stationarity
+          locator: Weak or wide-sense stationarity, Definition
+  "econometrics/12":
+    topic: time-series
+    difficulty: easy
+    fix:
+      why:
+        0: Forecasts are also made from cross-sectional data, e.g. predicting the price of a house that is not in the sample.
+        1: A mis-specified model is not *certain* to forecast badly; simple, "wrong" models often forecast well.
+        2: A structural model needs forecasts of its explanatory variables first, so it is usually harder to forecast with than a pure time-series model.
+      explanation: |-
+        A model can fit the data it was estimated on very well and still forecast poorly, because in-sample fit rewards overfitting. The accuracy of forecasts can only be judged on new data that were not used to fit the model, such as a held-out test period [^2]. That is why in-sample forecasting ability is a poor test of model adequacy [^1].
+      references:
+        - {source: mmlu-redux, locator: "econometrics row 12"}
+        - title: 'Hyndman & Athanasopoulos, Forecasting: Principles and Practice (3rd ed.)'
+          url: https://otexts.com/fpp3/accuracy.html
+          locator: Sec. 5.8 Evaluating point forecast accuracy, Training and test sets
+  "econometrics/22":
+    topic: time-series
+    difficulty: medium
+    fix:
+      question: 'An ARMA($p, q$) model, with $p$ and $q$ both positive integers, will have'
+      why:
+        1: 'A PACF that cuts off after lag $p$ is the signature of a pure AR($p$); the MA part of an ARMA model keeps the PACF from cutting off.'
+        2: 'A PACF that cuts off belongs to a pure AR process, and it cuts off after $p$ lags, not $q$.'
+        3: 'These cut-offs are reversed and belong to pure processes: an MA($q$) ACF is zero after lag $q$, an AR($p$) PACF after lag $p$.'
+      explanation: |-
+        A pure AR($p$) has an ACF that tails off and a PACF that cuts off after lag $p$; a pure MA($q$) shows the reverse pattern [^2]. An ARMA($p, q$) mixes both, so neither function cuts off: the ACF and the PACF both decay geometrically (or as damped sine waves). This is why, when $p$ and $q$ are both positive, ACF and PACF plots do not reveal the orders, and they are chosen with information criteria instead [^2][^1].
+      references:
+        - {source: mmlu-redux, locator: "econometrics row 22"}
+        - title: 'Hyndman & Athanasopoulos, Forecasting: Principles and Practice (3rd ed.)'
+          url: https://otexts.com/fpp3/non-seasonal-arima.html
+          locator: Sec. 9.5 Non-seasonal ARIMA models, ACF and PACF plots
+  "econometrics/30":
+    topic: linear-regression
+    difficulty: medium
+    fix:
+      correct: [1]
+      why:
+        0: 'A value near 2 corresponds to $\hat\rho \approx 0$, i.e. no first-order autocorrelation.'
+        2: 'An autocorrelation near $-1$ gives a statistic near 4, not near 0.'
+        3: The two signs sit at opposite ends of the 0–4 scale, so a value near zero is not ambiguous.
+      explanation: |-
+        For large samples the Durbin–Watson statistic is approximately $d \approx 2(1 - \hat\rho)$, where $\hat\rho$ is the lag-1 autocorrelation of the residuals; small values of $d$ indicate positive autocorrelation [^2]. So $d$ near 0 means $\hat\rho$ near $+1$, $d$ near 2 means no autocorrelation, and $d$ near 4 means $\hat\rho$ near $-1$. The upstream key ("close to minus one") is wrong and is corrected here [^1].
+      references:
+        - {source: mmlu-redux, locator: "econometrics row 30"}
+        - title: 'Wikipedia: Durbin–Watson statistic'
+          url: https://en.wikipedia.org/wiki/Durbin%E2%80%93Watson_statistic
+          locator: Computing and interpreting the Durbin–Watson statistic
+  "econometrics/31":
+    topic: time-series
+    difficulty: medium
+    fix:
+      question: |-
+        The following sample autocorrelations were estimated from a series of $T = 250$ observations:
+
+        | Lag | 1 | 2 | 3 |
+        | --- | --- | --- | --- |
+        | Autocorrelation | $0.2$ | $-0.15$ | $-0.1$ |
+
+        Assuming that the coefficients are approximately normally distributed, which of them are statistically significant at the 5% level (two-sided)?
+      options:
+        0: Lag 1 only
+        1: Lags 1 and 2 only
+        2: Lags 1, 2 and 3
+      why:
+        0: '$\lvert -0.15 \rvert > 0.124$, so lag 2 is significant as well.'
+        2: '$\lvert -0.1 \rvert < 0.124$, so lag 3 is not significant.'
+        3: 'Under the null of zero autocorrelation, the standard error of a sample autocorrelation is about $1/\sqrt{T}$, so it does not need to be given.'
+      explanation: |-
+        Under the null hypothesis of zero autocorrelation, a sample autocorrelation has a standard error of about $1/\sqrt{T}$, so the 5% bounds are $\pm 1.96/\sqrt{T} = \pm 1.96/\sqrt{250} \approx \pm 0.124$ — the dashed lines on an ACF plot [^2]. Lags 1 ($0.2$) and 2 ($-0.15$) lie outside these bounds and lag 3 ($-0.1$) lies inside, so only the first two are significant [^1].
+      references:
+        - {source: mmlu-redux, locator: "econometrics row 31"}
+        - title: 'Hyndman & Athanasopoulos, Forecasting: Principles and Practice (3rd ed.)'
+          url: https://otexts.com/fpp3/wn.html
+          locator: Sec. 2.9 White noise
+  "econometrics/44":
+    topic: time-series
+    difficulty: medium
+    fix:
+      why:
+        0: These tools describe dependence over time, not the shape of the marginal distribution.
+        2: No *linear* dependence does not rule out non-linear dependence, e.g. between the squares of the observations (volatility clustering).
+        3: The tail behaviour of the distribution is not visible in autocorrelations or in the spectrum.
+      explanation: |-
+        The ACF, the PACF and the spectrum are all built from autocovariances, so they only detect *linear* dependence between observations. Finding no structure therefore shows that the data are uncorrelated over time, but not that they are independent: uncorrelated variables can still be dependent, e.g. $X$ and $Y = X^2$ for $X$ uniform on $[-1, 1]$ [^2]. "Uncorrelated" is the strongest conclusion these tools support [^1].
+      references:
+        - {source: mmlu-redux, locator: "econometrics row 44"}
+        - title: 'Wikipedia: Uncorrelatedness (probability theory)'
+          url: https://en.wikipedia.org/wiki/Uncorrelatedness_(probability_theory)
+          locator: Introduction and Examples of dependence without correlation
+  "econometrics/53":
+    topic: time-series
+    difficulty: medium
+    fix:
+      question: |-
+        An AR($p$) process $y_t = \phi_1 y_{t-1} + \dots + \phi_p y_{t-p} + u_t$ has the characteristic equation $1 - \phi_1 z - \phi_2 z^2 - \dots - \phi_p z^p = 0$. Which condition is necessary and sufficient for the process to be stationary?
+      options:
+        3: 'Every coefficient must satisfy $\lvert \phi_i \rvert < 1$'
+      why:
+        0: 'Roots inside the unit circle make the process explosive. It is the *inverse* roots, the roots of $\lambda^p - \phi_1 \lambda^{p-1} - \dots - \phi_p = 0$, that must lie inside.'
+        1: A root on the unit circle is a unit root; the process is then non-stationary, like a random walk.
+        3: 'Neither necessary nor sufficient: $y_t = 1.5\,y_{t-1} - 0.6\,y_{t-2} + u_t$ is stationary (roots of modulus 1.29), while $y_t = 0.9\,y_{t-1} + 0.5\,y_{t-2} + u_t$ is explosive (a root at 0.78).'
+      explanation: |-
+        An AR($p$) process is stationary when all $p$ (possibly complex) roots of $\phi(z) = 1 - \phi_1 z - \dots - \phi_p z^p$ lie outside the unit circle, $\lvert z \rvert > 1$ [^2]. For an AR(1) the only root is $z = 1/\phi_1$, which gives the familiar condition $\lvert \phi_1 \rvert < 1$. Software often plots the *inverse* roots instead, which must then lie inside the unit circle — the same condition in the other convention [^2][^1].
+      references:
+        - {source: mmlu-redux, locator: "econometrics row 53"}
+        - title: 'Hyndman & Athanasopoulos, Forecasting: Principles and Practice (3rd ed.)'
+          url: https://otexts.com/fpp3/arima-r.html
+          locator: Sec. 9.7 ARIMA modelling in fable, Plotting the characteristic roots
+  "econometrics/54":
+    topic: linear-regression
+    difficulty: medium
+    fix:
+      shuffle: false
+      question: |-
+        Which of the following assumptions about the disturbances $u_t$ are required to show the consistency, unbiasedness and efficiency of the OLS estimator?
+
+        i) $E(u_t) = 0$
+
+        ii) $\operatorname{Var}(u_t) = \sigma^2$
+
+        iii) $\operatorname{Cov}(u_t, u_{t-j}) = 0$ for all $j \neq 0$
+
+        iv) $u_t \sim N(0, \sigma^2)$
+      explanation: |-
+        By the Gauss–Markov theorem, OLS is the best (minimum-variance) linear unbiased estimator when the errors have zero mean, equal variances and are uncorrelated (given exogenous regressors without perfect collinearity); the errors do not need to be normal [^2]. Normality (iv) is only needed for the exact $t$ and $F$ distributions of test statistics in small samples. The upstream statement (iii) said "for all $j$", which includes $j = 0$ and would contradict (ii); it is restricted to $j \neq 0$ here [^1].
+      references:
+        - {source: mmlu-redux, locator: "econometrics row 54"}
+        - title: 'Wikipedia: Gauss–Markov theorem'
+          url: https://en.wikipedia.org/wiki/Gauss%E2%80%93Markov_theorem
+          locator: Introduction and Statement
+  "econometrics/59":
+    topic: time-series
+    difficulty: hard
+    fix:
+      shuffle: false
+      explanation: |-
+        (i) holds for every model: at lag 1 there is nothing in between to remove, so the first partial autocorrelation equals the first autocorrelation [^2]. (ii) and (iii) are the identification rules: an MA($q$) PACF tails off, while an AR($p$) PACF has no spikes beyond lag $p$. (iv) fails: for an MA(1) the ACF is 0 at lag 2, but the PACF there is $\phi_{22} = -\rho_1^2/(1 - \rho_1^2) \neq 0$, e.g. $-0.135$ when $\theta = 0.4$ [^1].
+      references:
+        - {source: mmlu-redux, locator: "econometrics row 59"}
+        - title: 'Hyndman & Athanasopoulos, Forecasting: Principles and Practice (3rd ed.)'
+          url: https://otexts.com/fpp3/non-seasonal-arima.html
+          locator: Sec. 9.5 Non-seasonal ARIMA models, ACF and PACF plots
+  "econometrics/62":
+    topic: metrics
+    difficulty: easy
+    fix:
+      options:
+        0: Mean squared error is expressed in the same units as the forecast variable
+      why:
+        0: MSE is in squared units of the data; only its square root, the RMSE, is on the original scale [^2].
+        1: MAE is a linear (absolute-value) loss; the quadratic loss is the MSE.
+        2: Returns are often close to zero, and percentage errors become extreme or undefined when the actual value is near or equal to zero [^3].
+      explanation: |-
+        MSE averages *squared* errors, so an error twice as large costs four times as much and a few large misses dominate the score [^2]. MAE grows only linearly with the size of an error, which makes it less sensitive to outliers: minimising MAE leads to forecasts of the median, minimising MSE to forecasts of the mean [^3][^1].
+      references:
+        - {source: mmlu-redux, locator: "econometrics row 62"}
+        - title: 'Wikipedia: Mean squared error'
+          url: https://en.wikipedia.org/wiki/Mean_squared_error
+          locator: Introduction; Loss function, Criticism
+        - title: 'Hyndman & Athanasopoulos, Forecasting: Principles and Practice (3rd ed.)'
+          url: https://otexts.com/fpp3/accuracy.html
+          locator: Sec. 5.8 Evaluating point forecast accuracy, Scale-dependent errors and Percentage errors
+  "econometrics/63":
+    topic: linear-regression
+    difficulty: medium
+    fix:
+      question: What will be the properties of the OLS estimator in the presence of near (but not perfect) multicollinearity, if all the other classical assumptions hold?
+      why:
+        1: Near multicollinearity breaks no Gauss–Markov assumption, so OLS still has the smallest variance among linear unbiased estimators; that variance is just large.
+        2: Correlated regressors do not bias OLS; bias comes from problems such as omitted variables or regressors correlated with the error.
+        3: Consistency is not affected; with more data the estimates still converge to the true values.
+      explanation: |-
+        The Gauss–Markov theorem only rules out *perfect* multicollinearity, so with near multicollinearity OLS stays consistent, unbiased and efficient (BLUE) [^2]. The cost is precision: the variances and standard errors of the coefficients become large, so individual coefficients can look insignificant even when the regressors matter jointly, while predictive performance need not suffer [^2][^1].
+      references:
+        - {source: mmlu-redux, locator: "econometrics row 63"}
+        - title: 'Wikipedia: Multicollinearity'
+          url: https://en.wikipedia.org/wiki/Multicollinearity
+          locator: Introduction; Effects on coefficient estimates
+  "econometrics/71":
+    topic: ml-basics
+    difficulty: hard
+    fix:
+      shuffle: false
+      question: |-
+        Which of the following statements are true concerning information criteria?
+
+        (i) Adjusted $R^2$, like an information criterion, trades off goodness of fit against the number of parameters
+
+        (ii) If the residual sum of squares falls when an additional term is added, the value of the information criterion will fall
+
+        (iii) With $T \ge 8$ observations, Akaike's information criterion always leads to model orders that are at least as large as those of Schwarz's information criterion
+
+        (iv) Akaike's information criterion is consistent
+      explanation: |-
+        Information criteria add a penalty for every extra parameter to a measure of fit such as $\ln(\text{RSS}/T)$, and adjusted $R^2$ likewise stops rewarding extra regressors (i); so a smaller RSS does not guarantee a lower criterion (ii is false) [^2]. Schwarz's (Bayesian) criterion charges $\ln T$ per parameter against AIC's 2, which is more once $T \ge 8$ ($\ln 8 \approx 2.08$), so SBIC never selects a larger model than AIC (iii) [^3]. SBIC is consistent — it finds the true model as $T \to \infty$ if that model is among the candidates — while AIC is not (iv is false) [^2][^1].
+      references:
+        - {source: mmlu-redux, locator: "econometrics row 71"}
+        - title: 'Hyndman & Athanasopoulos, Forecasting: Principles and Practice (3rd ed.)'
+          url: https://otexts.com/fpp3/selecting-predictors.html
+          locator: Sec. 7.5 Selecting predictors (Adjusted R², AIC, BIC)
+        - title: 'Wikipedia: Akaike information criterion'
+          url: https://en.wikipedia.org/wiki/Akaike_information_criterion#Comparison_with_BIC
+          locator: Comparison with BIC
+  "econometrics/75":
+    topic: linear-regression
+    difficulty: medium
+    fix:
+      shuffle: false
+      explanation: |-
+        Heteroscedasticity leaves the OLS coefficients unbiased but makes them inefficient and the usual standard errors unreliable [^2]. The standard remedies are a variance-stabilising transformation such as logarithms (i), heteroscedasticity-consistent ("robust") standard errors (ii), and weighted or generalised least squares (iii) [^2]. Adding lagged values (iv) addresses residual autocorrelation or missing dynamics, not a non-constant error variance [^1].
+      references:
+        - {source: mmlu-redux, locator: "econometrics row 75"}
+        - title: 'Wikipedia: Homoscedasticity and heteroscedasticity'
+          url: https://en.wikipedia.org/wiki/Homoscedasticity_and_heteroscedasticity
+          locator: Introduction; Consequences; Correction
+  "econometrics/82":
+    topic: time-series
+    difficulty: hard
+    fix:
+      question: |-
+        Write the MA(2) process
+
+        $$y_t = u_t - 3u_{t-1} + 2u_{t-2}$$
+
+        as $y_t = \theta(L)\,u_t$ with the lag operator $L$. What are the characteristic roots of the process, i.e. the roots of $\theta(z) = 0$?
+      why:
+        0: 'These are the roots of the reversed polynomial $\lambda^2 - 3\lambda + 2$, i.e. the inverse roots $1/z$.'
+        2: '$\theta(2) = 1 - 6 + 8 = 3 \neq 0$, so 2 is not a root.'
+        3: '$\theta(-3) = 1 + 9 + 18 = 28 \neq 0$; the coefficient $-3$ is not a root.'
+      explanation: |-
+        Here $\theta(L) = 1 - 3L + 2L^2$, so the characteristic equation is $1 - 3z + 2z^2 = (1 - z)(1 - 2z) = 0$, with roots $z = 1$ and $z = 0.5$. An MA process is invertible (can be written as an AR($\infty$)) only if all these roots lie outside the unit circle [^2], so this one is not. The upstream question gave the coefficient of $u_{t-2}$ as 1, which has roots $(3 \pm \sqrt{5})/2 \approx 2.62$ and $0.38$ and matches no option; it is corrected to 2, consistent with the key [^1].
+      references:
+        - {source: mmlu-redux, locator: "econometrics row 82"}
+        - title: 'Hyndman & Athanasopoulos, Forecasting: Principles and Practice (3rd ed.)'
+          url: https://otexts.com/fpp3/arima-r.html
+          locator: Sec. 9.7 ARIMA modelling in fable, Plotting the characteristic roots
+  "econometrics/83":
+    topic: linear-regression
+    difficulty: easy
+    fix:
+      question: 'In the linear regression model $y = X\beta + u$ with $T$ observations and $k$ regressors, what are the dimensions of $\hat{u}^\top \hat{u}$, where $\hat{u}$ is the vector of OLS residuals?'
+      options:
+        0: '$T \times k$'
+        1: '$T \times 1$'
+        2: '$k \times 1$'
+        3: '$1 \times 1$'
+      why:
+        0: '$T \times k$ is the shape of the regressor matrix $X$.'
+        1: '$T \times 1$ is the shape of $\hat{u}$ itself; $\hat{u}^\top \hat{u}$ is an inner product.'
+        2: '$k \times 1$ is the shape of the coefficient vector $\hat\beta$.'
+      explanation: |-
+        $\hat{u} = y - X\hat\beta$ is a $T \times 1$ vector, so $\hat{u}^\top \hat{u}$ is $(1 \times T)(T \times 1) = 1 \times 1$: a scalar, the residual sum of squares $\sum_t \hat{u}_t^2$ that OLS minimises [^2]. The outer product $\hat{u}\hat{u}^\top$ would be $T \times T$ [^1].
+      references:
+        - {source: mmlu-redux, locator: "econometrics row 83"}
+        - title: 'Wikipedia: Residual sum of squares'
+          url: https://en.wikipedia.org/wiki/Residual_sum_of_squares
+          locator: Matrix expression for the OLS residual sum of squares
+  "econometrics/89":
+    topic: linear-regression
+    difficulty: medium
+    fix:
+      shuffle: false
+      question: |-
+        If OLS is used in the presence of autocorrelated errors (the regressors are exogenous and do not include a lagged dependent variable), which of the following will be likely consequences?
+
+        i) Coefficient estimates will be biased
+
+        ii) Hypothesis tests could reach the wrong conclusions
+
+        iii) Forecasts made from the model will be biased
+
+        iv) Standard errors may be inappropriate
+      explanation: |-
+        Autocorrelated errors do not bias the OLS coefficients, but OLS is no longer efficient and the usual standard errors are wrong — with positive autocorrelation they tend to be too small and the $t$-statistics too large [^2]. Tests and confidence intervals can therefore mislead (ii, iv), while forecasts stay unbiased, only with wider prediction intervals than necessary (i and iii are false) [^3]. The stem excludes a lagged dependent variable, the case in which autocorrelated errors would also make OLS biased and inconsistent [^1].
+      references:
+        - {source: mmlu-redux, locator: "econometrics row 89"}
+        - title: 'Wikipedia: Autocorrelation'
+          url: https://en.wikipedia.org/wiki/Autocorrelation#Regression_analysis
+          locator: Regression analysis
+        - title: 'Hyndman & Athanasopoulos, Forecasting: Principles and Practice (3rd ed.)'
+          url: https://otexts.com/fpp3/regression-evaluation.html
+          locator: Sec. 7.3 Evaluating the regression model, ACF plot of residuals
+  "econometrics/96":
+    topic: linear-regression
+    difficulty: medium
+    fix:
+      shuffle: false
+      explanation: |-
+        In simple regression $\operatorname{SE}(\hat\beta) = s / \sqrt{\sum_t (x_t - \bar{x})^2}$ with $s^2 = \sum_t \hat{u}_t^2 / (T - 2)$ [^2]. It grows with the residual variance (i); it shrinks when the $x$ values are more spread out (ii) and as $T$ grows, because the sum in the denominator gains a term for every observation (iii); and it measures how precisely the slope is estimated (iv) [^1].
+      references:
+        - {source: mmlu-redux, locator: "econometrics row 96"}
+        - title: 'Wikipedia: Simple linear regression'
+          url: https://en.wikipedia.org/wiki/Simple_linear_regression
+          locator: Sec. 4.2.1 Variance of regressor coefficients
+  "econometrics/97":
+    topic: time-series
+    difficulty: easy
+    fix:
+      why:
+        1: Zero is the optimal forecast of the *change* in a random walk without drift, not of its level.
+        2: Nothing in a random walk pulls its level towards 1.
+        3: The sample mean is the optimal forecast for a series that fluctuates around a constant mean (e.g. white noise), not for a random walk, whose level wanders.
+      explanation: |-
+        A random walk is $y_t = y_{t-1} + u_t$ with unpredictable white noise $u_t$, so $E(y_{t+1} \mid y_t, y_{t-1}, \dots) = y_t$: the best forecast is the last observation. This "naïve" forecast is optimal when the data follow a random walk, which is why it is also called the random walk forecast and serves as a standard benchmark [^2][^1].
+      references:
+        - {source: mmlu-redux, locator: "econometrics row 97"}
+        - title: 'Hyndman & Athanasopoulos, Forecasting: Principles and Practice (3rd ed.)'
+          url: https://otexts.com/fpp3/simple-methods.html
+          locator: Sec. 5.2 Some simple forecasting methods, Naïve method
+
+  # ---- college_computer_science keep-list (9 of 100; AI/ML-relevant; reviewed 2026-10-11) ----
+  "college_computer_science/22":
+    topic: search
+    difficulty: medium
+    fix:
+      question: Let $G = (V, E)$ be a connected, undirected graph, and let $a$ and $b$ be two distinct vertices in $V$. Let $P_1$ be the problem of finding a shortest simple path between $a$ and $b$, and let $P_2$ be the problem of finding a longest simple path between $a$ and $b$. Which of the following statements about $P_1$ and $P_2$ is true?
+      options:
+        0: Both $P_1$ and $P_2$ can be solved in polynomial time.
+        1: $P_1$ can be solved in polynomial time but $P_2$ is not known to be solvable in polynomial time.
+        2: $P_1$ is not known to be solvable in polynomial time but $P_2$ can be solved in polynomial time.
+        3: It is not known whether either $P_1$ or $P_2$ can be solved in polynomial time.
+      why:
+        0: No polynomial algorithm is known for the longest simple path; the problem is NP-hard.
+        2: This is reversed — shortest paths are easy, longest simple paths are hard.
+        3: Shortest paths are solvable in polynomial time, e.g. by breadth-first search on an unweighted graph.
+      explanation: |-
+        A shortest path is found in polynomial time — by breadth-first search when edges are unweighted, or by Dijkstra's algorithm for non-negative weights. A longest simple path is NP-hard: asking for a simple path through all $\lvert V \rvert$ vertices is the Hamiltonian path problem, so no polynomial-time algorithm is known [^2][^1].
+      references:
+        - {source: mmlu-redux, locator: "college_computer_science row 22"}
+        - title: 'Wikipedia: Longest path problem'
+          url: https://en.wikipedia.org/wiki/Longest_path_problem
+          locator: Introduction; NP-hardness
+  "college_computer_science/31":
+    topic: knowledge-rep
+    difficulty: medium
+    fix:
+      shuffle: false
+      question: |-
+        Two expressions $E$ and $F$ are *unifiable* if some substitution for their variables makes them lexically identical. In the three expressions below, only $w$, $x$, $y$ and $z$ are variables ($1$ is a constant and $f$, $g$ are function symbols).
+
+        I. $f(w, w)$
+
+        II. $f(x, 1)$
+
+        III. $f(y, g(z))$
+
+        Which pairs of these expressions are unifiable?
+      why:
+        0: '(I, III) unify too, with $\{w \mapsto g(z),\ y \mapsto g(z)\}$.'
+        1: '(I, II) unify too, with $\{w \mapsto 1,\ x \mapsto 1\}$.'
+        2: '(II, III) would need the constant $1$ to equal the compound term $g(z)$, which no substitution achieves.'
+      explanation: |-
+        (I, II): the arguments give $w = x$ and $w = 1$, solved by $\{w \mapsto 1, x \mapsto 1\}$. (I, III): $w = y$ and $w = g(z)$, solved by $\{w \mapsto g(z), y \mapsto g(z)\}$. (II, III) fails on the second argument, because a constant never unifies with a term built from a different symbol such as $g(z)$ — a symbol clash [^2][^1].
+      references:
+        - {source: mmlu-redux, locator: "college_computer_science row 31"}
+        - title: 'Wikipedia: Unification (computer science)'
+          url: https://en.wikipedia.org/wiki/Unification_(computer_science)
+          locator: Syntactic unification of first-order terms (Conflict rule)
+  "college_computer_science/32":
+    topic: linear-algebra
+    difficulty: hard
+    fix:
+      question: Multiplying a $p \times q$ matrix by a $q \times r$ matrix takes time proportional to $pqr$ and gives a $p \times r$ matrix. Consider the product $N_1 N_2 N_3$ of matrices of sizes $w \times x$, $x \times y$ and $y \times z$. Under what condition does computing $(N_1 N_2) N_3$ take less time than computing $N_1 (N_2 N_3)$?
+      options:
+        0: There is no such condition; both orders always take the same time.
+        1: '$\frac{1}{x} + \frac{1}{z} < \frac{1}{w} + \frac{1}{y}$'
+        2: '$x > y$'
+        3: '$\frac{1}{w} + \frac{1}{x} < \frac{1}{y} + \frac{1}{z}$'
+      why:
+        0: 'Associativity guarantees the same result, not the same cost: for sizes $10 \times 30$, $30 \times 5$ and $5 \times 60$ the two orders need 4,500 and 27,000 multiplications.'
+        2: 'With $(w, x, y, z) = (10, 3, 2, 1)$ we have $x > y$, yet $(N_1N_2)N_3$ costs 80 and $N_1(N_2N_3)$ only 36.'
+        3: 'With $(w, x, y, z) = (2, 1, 1, 1)$ the inequality holds, yet $(N_1N_2)N_3$ costs 4 and $N_1(N_2N_3)$ only 3.'
+      explanation: |-
+        $(N_1N_2)N_3$ costs $wxy$ for $N_1N_2$ (a $w \times y$ matrix) plus $wyz$, while $N_1(N_2N_3)$ costs $xyz$ plus $wxz$ [^2]. Dividing $wxy + wyz < xyz + wxz$ by $wxyz$ gives $\frac{1}{z} + \frac{1}{x} < \frac{1}{w} + \frac{1}{y}$. Choosing the cheapest bracketing of a longer product is the matrix chain ordering problem [^2][^1].
+      references:
+        - {source: mmlu-redux, locator: "college_computer_science row 32"}
+        - title: 'Wikipedia: Matrix chain multiplication'
+          url: https://en.wikipedia.org/wiki/Matrix_chain_multiplication
+          locator: Introduction
+  "college_computer_science/43":
+    topic: information-theory
+    difficulty: easy
+    fix:
+      why:
+        0: Asking about one number at a time is the worst strategy, not the optimal one.
+        1: 999 questions is the worst case of guessing the numbers one by one; halving needs far fewer.
+        2: Halving the remaining range each time needs far fewer than 500 questions.
+      explanation: |-
+        Each yes/no answer can at most halve the set of remaining candidates, so $k$ questions can tell apart at most $2^k$ numbers; since $2^9 = 512 < 1000 \le 1024 = 2^{10}$, 10 questions are necessary. Binary search — always asking whether the number lies above the middle of the remaining range — needs at most $\lfloor \log_2 1000 \rfloor + 1 = 10$ questions [^2]. In information terms, the answer carries $\log_2 1000 \approx 9.97$ bits and each reply gives at most one bit [^1].
+      references:
+        - {source: mmlu-redux, locator: "college_computer_science row 43"}
+        - title: 'Wikipedia: Binary search'
+          url: https://en.wikipedia.org/wiki/Binary_search
+          locator: Performance
+  "college_computer_science/51":
+    topic: knowledge-rep
+    difficulty: hard
+    fix:
+      shuffle: false
+      question: |-
+        Resolution theorem proving for showing that a formula of propositional logic is not satisfiable has which of the following properties?
+
+        I. It is *sound*: there is no resolution proof of the unsatisfiability of a satisfiable formula.
+
+        II. It is *complete*: every unsatisfiable formula of propositional logic has a resolution proof of unsatisfiability.
+
+        III. It is *succinct*: whenever an unsatisfiable formula $F$ has a resolution proof, $F$ also has one whose length is polynomial in the length of $F$.
+      explanation: |-
+        Resolution is sound — every resolvent follows from its parent clauses, so deriving the empty clause proves unsatisfiability — and refutation-complete: from every unsatisfiable set of clauses the empty clause can be derived [^2]. It is not succinct: Haken (1985) proved that formulas expressing the pigeonhole principle need resolution proofs of exponential length [^3]. This lower bound also limits SAT solvers based on resolution [^1].
+      references:
+        - {source: mmlu-redux, locator: "college_computer_science row 51"}
+        - title: 'Wikipedia: Resolution (logic)'
+          url: https://en.wikipedia.org/wiki/Resolution_(logic)
+          locator: Introduction; Resolution in propositional logic, A resolution technique
+        - title: 'Wikipedia: Proof complexity'
+          url: https://en.wikipedia.org/wiki/Proof_complexity
+          locator: Lower bounds
+  "college_computer_science/56":
+    topic: search
+    difficulty: hard
+    fix:
+      shuffle: false
+      question: |-
+        Let $T$ be a depth-first search tree of a connected undirected graph $G$. For each vertex $v$ of $T$, let $\mathrm{pre}(v)$ be the number of nodes visited up to and including $v$ during a preorder traversal of $T$, and $\mathrm{post}(v)$ the number of nodes visited up to and including $v$ during a postorder traversal of $T$. The lowest common ancestor of vertices $u$ and $v$ in $T$ is a vertex $w$ of $T$ such that $w$ is an ancestor of both $u$ and $v$, and no child of $w$ is an ancestor of both. Let $(u, v)$ be an edge of $G$ that is not in $T$, with $\mathrm{pre}(u) < \mathrm{pre}(v)$. Which of the following statements about $u$ and $v$ must be true?
+
+        I. $\mathrm{post}(u) < \mathrm{post}(v)$
+
+        II. $u$ is an ancestor of $v$ in $T$.
+
+        III. If $w$ is the lowest common ancestor of $u$ and $v$ in $T$, then $w = u$.
+      explanation: |-
+        In a depth-first search of an undirected graph every edge is either a tree edge or a back edge joining a vertex to one of its ancestors; there are no cross edges [^2]. Since $u$ was visited first, $u$ is the ancestor of $v$ (II), so the lowest common ancestor is $u$ itself (III). Postorder finishes descendants before their ancestors, so $\mathrm{post}(v) < \mathrm{post}(u)$ and I is false [^1].
+      references:
+        - {source: mmlu-redux, locator: "college_computer_science row 56"}
+        - title: 'Wikipedia: Depth-first search'
+          url: https://en.wikipedia.org/wiki/Depth-first_search
+          locator: Output of a depth-first search
+  "college_computer_science/64":
+    topic: knowledge-rep
+    difficulty: medium
+    fix:
+      shuffle: false
+      question: |-
+        Which of the following conditions can be expressed by a Boolean formula in the Boolean variables $p_1, p_2, p_3, p_4$ using only the connectives $\land$ and $\lor$ (without $\neg$)?
+
+        I. At least three of $p_1, p_2, p_3, p_4$ are true.
+
+        II. Exactly three of $p_1, p_2, p_3, p_4$ are true.
+
+        III. An even number of $p_1, p_2, p_3, p_4$ are true.
+      explanation: |-
+        Formulas built from $\land$ and $\lor$ alone define exactly the monotone Boolean functions: switching an input from false to true can never switch the output from true to false [^2]. "At least three" is monotone — it is the $\lor$ over the four triples of the $\land$ of each triple. "Exactly three" is not monotone (making the fourth variable true breaks it), and neither is "an even number" (going from zero true variables to one) [^1].
+      references:
+        - {source: mmlu-redux, locator: "college_computer_science row 64"}
+        - title: 'Wikipedia: Monotonic function'
+          url: https://en.wikipedia.org/wiki/Monotonic_function#In_Boolean_functions
+          locator: In Boolean functions
+  "college_computer_science/83":
+    topic: clustering
+    difficulty: easy
+    fix:
+      question: |-
+        You want to cluster 7 points into 3 clusters with the k-means algorithm. After the first iteration, the clusters contain these two-dimensional points:
+
+        - $C_1$: $(0, 6)$, $(6, 0)$
+        - $C_2$: $(2, 2)$, $(4, 4)$, $(6, 6)$
+        - $C_3$: $(5, 5)$, $(7, 7)$
+
+        What are the cluster centers computed for these 3 clusters?
+      why:
+        1: '$C_2$ and $C_3$ are not divided by their number of points: $(6, 6)$ is the $C_2$ sum divided by 2, and $(12, 12)$ is the raw $C_3$ sum.'
+        2: These are the coordinate sums of each cluster, not divided by the number of points.
+        3: These multiply the points' coordinates instead of averaging them.
+      explanation: |-
+        The k-means update step moves each center to the mean (centroid) of the points currently assigned to it [^2]: $C_1$: $\frac{(0,6) + (6,0)}{2} = (3, 3)$; $C_2$: $\frac{(2,2) + (4,4) + (6,6)}{3} = (4, 4)$; $C_3$: $\frac{(5,5) + (7,7)}{2} = (6, 6)$. The next assignment step then moves every point to its nearest new center [^1].
+      references:
+        - {source: mmlu-redux, locator: "college_computer_science row 83"}
+        - title: 'Wikipedia: k-means clustering'
+          url: https://en.wikipedia.org/wiki/K-means_clustering#Standard_algorithm_(naive_k-means)
+          locator: Algorithms, Standard algorithm (naive k-means)
+  "college_computer_science/97":
+    topic: probability
+    difficulty: easy
+    fix:
+      why:
+        0: '$2/9$ is the joint probability $P(Y \cap D)$, not the conditional one.'
+        1: '$4/9$ is the prior $P(Y)$, before learning that the chip is defective.'
+        2: '$1/2$ is $P(D \mid Y)$, the defect rate of Company Y — the conditional the wrong way round.'
+      explanation: |-
+        Three of the 9 chips are defective and 2 of those come from Company Y, so $P(Y \mid D) = 2/3$. Bayes' theorem gives the same result: $P(Y \mid D) = \frac{P(D \mid Y)\,P(Y)}{P(D)} = \frac{(2/4)(4/9)}{3/9} = \frac{2}{3}$ [^2][^1].
+      references:
+        - {source: mmlu-redux, locator: "college_computer_science row 97"}
+        - title: "Wikipedia: Bayes' theorem"
+          url: https://en.wikipedia.org/wiki/Bayes%27_theorem
+          locator: Statement of theorem
