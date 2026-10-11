@@ -792,3 +792,123 @@ questions:
       ref: mit6_7960_f24_hw5_sol#q3
       url: https://ocw.mit.edu/courses/6-7960-deep-learning-fall-2024/resources/mit6_7960_f24_hw5_sol_pdf/
     status: draft
+  - id: autoencoders-024
+    type: single
+    difficulty: hard
+    tags:
+      - variational-inference
+      - partition-function
+      - lower-bound
+    question: |
+      A distribution $p(x) = \tilde{p}(x) / Z$ has an intractable normaliser $Z$. Variational
+      inference picks a tractable $q$ and minimises
+      $$J(q) = \sum_x q(x) \log \frac{q(x)}{\tilde{p}(x)}.$$
+      What does $J(q)$ tell you about $\log Z$?
+    options:
+      - text: $\log Z \ge -J(q)$, with equality when $q = p$
+        correct: true
+      - text: $\log Z \ge J(q)$, with equality when $q = p$
+        why: 'Since $J(q) = \mathrm{KL}(q \,\|\, p) - \log Z$, the bound has the opposite sign: it is $-J(q)$ that lies below $\log Z$.'
+      - text: $\log Z \le -J(q)$, so $-J(q)$ is an upper bound
+        why: $\log Z = -J(q) + \mathrm{KL}(q \,\|\, p)$ and the KL term is non-negative, so $-J(q)$ is a lower bound.
+      - text: $\log Z = -J(q)$ for every choice of $q$
+        why: Equality holds only when $\mathrm{KL}(q \,\|\, p) = 0$, i.e. when $q = p$.
+    explanation: |
+      Substituting $\tilde{p} = Z p$ gives $J(q) = \sum_x q \log (q / p) - \log Z = \mathrm{KL}(q \,\|\, p) -
+      \log Z$ [^1]. As the KL divergence is non-negative, $\log Z = \mathrm{KL}(q \,\|\, p) - J(q) \ge
+      -J(q)$, so minimising $J$ both tightens this lower bound and pulls $q$ toward $p$ in reverse KL
+      [^1][^2]. In a VAE the same identity with $\tilde{p}(z) = p(x, z)$ and $Z = p(x)$ makes $-J$ the
+      evidence lower bound (ELBO) [^2].
+    references:
+      - source: nptel-deep-learning-2
+        locator: Assignment 6, Q3–Q4 (goal of variational inference; lower bound on log Z(θ))
+        url: https://archive.nptel.ac.in/content/storage2/courses/downloads_new/106106201/noc19_cs18-assessmentid-73.pdf
+      - title: 'Wikipedia: Evidence lower bound'
+        url: https://en.wikipedia.org/wiki/Evidence_lower_bound#Deriving_the_ELBO
+        locator: Motivation — Deriving the ELBO; Maximizing the ELBO
+    source:
+      id: nptel-deep-learning-2
+      ref: deep-learning-2/assignment6#q4
+      url: https://archive.nptel.ac.in/content/storage2/courses/downloads_new/106106201/noc19_cs18-assessmentid-73.pdf
+    status: draft
+  - id: autoencoders-025
+    type: multiple
+    difficulty: medium
+    tags:
+      - vae
+      - decoder
+      - gaussian-likelihood
+    question: |
+      A VAE decoder outputs a mean vector $f_\theta(z)$ and models the data as
+      $P(X \mid z) = \mathcal{N}\big(f_\theta(z), I\big)$, a Gaussian with unit variance in every
+      dimension. Which statements follow? Select all that apply.
+    options:
+      - text: The covariance matrix of $P(X \mid z)$ is the identity matrix
+        correct: true
+      - text: Given $z$, the components of $X$ (e.g. pixels) are independent of each other
+        correct: true
+      - text: Maximising $\log P(X \mid z)$ amounts to minimising $\lVert X - f_\theta(z) \rVert^2$
+        correct: true
+      - text: The decoder must also output a separate variance for every pixel
+        why: The variance is fixed at 1, so the decoder only outputs the mean.
+      - text: Given $z$, neighbouring pixels stay correlated through the covariance
+        why: A diagonal (identity) covariance has no off-diagonal terms, so there is no such correlation given $z$.
+    explanation: |
+      Unit variance in each dimension with no stated correlation means $\Sigma = I$ [^1]. A Gaussian
+      with diagonal covariance factorises over dimensions, so given $z$ the pixels are independent;
+      all dependence between them must come through $z$ [^1][^2]. The log-density is
+      $-\tfrac12\lVert X - f_\theta(z)\rVert^2$ plus a constant, so the reconstruction term of the
+      VAE objective becomes a squared error [^2].
+    references:
+      - source: nptel-deep-learning-2
+        locator: Assignment 6, Q1 (decoder P(X|z) Gaussian with unit variance)
+        url: https://archive.nptel.ac.in/content/storage2/courses/downloads_new/106106201/noc19_cs18-assessmentid-73.pdf
+      - title: Kingma & Welling (2013), Auto-Encoding Variational Bayes, arXiv:1312.6114
+        url: https://arxiv.org/abs/1312.6114
+        locator: 'Sec. 3 Example: Variational Auto-Encoder; Appendix C.2 Gaussian MLP as encoder or decoder'
+    source:
+      id: nptel-deep-learning-2
+      ref: deep-learning-2/assignment6#q1
+      url: https://archive.nptel.ac.in/content/storage2/courses/downloads_new/106106201/noc19_cs18-assessmentid-73.pdf
+    status: draft
+  - id: autoencoders-026
+    type: single
+    difficulty: medium
+    tags:
+      - vae
+      - rbm
+      - intractable-likelihood
+      - gibbs-sampling
+    question: |
+      Restricted Boltzmann machines and variational autoencoders are both latent-variable models
+      whose likelihood $P(X)$ is intractable. How does each cope with it?
+    options:
+      - text: RBMs use Gibbs sampling; VAEs fit an encoder $Q_\theta(z \mid X)$ to the posterior
+        correct: true
+      - text: Both use Gibbs sampling to approximate the gradient of $\log P(X)$
+        why: VAEs need no sampling chains; they sample $z$ once from the encoder and use the reparameterisation trick [^3].
+      - text: Both fit an encoder $Q_\theta(z \mid X)$ to the posterior and maximise a lower bound
+        why: A standard RBM has no encoder network or variational bound; it is trained with contrastive divergence, i.e. Gibbs sampling [^2].
+      - text: Neither needs to approximate, since both compute $P(X)$ in closed form
+        why: The RBM's partition function and the VAE's integral over $z$ are both intractable, which is the whole difficulty.
+    explanation: |
+      An RBM's log-likelihood gradient contains an expectation under the model, which is estimated by
+      alternating Gibbs sampling of hidden and visible units (contrastive divergence) [^1][^2]. A VAE
+      instead introduces an approximate posterior $Q_\theta(z \mid X)$, computed by an encoder, and
+      maximises the evidence lower bound, avoiding both the intractable posterior $P(z \mid X)$ and
+      sampling chains [^3].
+    references:
+      - source: nptel-deep-learning-2
+        locator: Assignment 6, Q2 (how RBMs and VAEs deal with the intractable P(X))
+        url: https://archive.nptel.ac.in/content/storage2/courses/downloads_new/106106201/noc19_cs18-assessmentid-73.pdf
+      - title: 'Wikipedia: Restricted Boltzmann machine'
+        url: https://en.wikipedia.org/wiki/Restricted_Boltzmann_machine#Training_algorithm
+        locator: Training algorithm
+      - title: Kingma & Welling (2013), Auto-Encoding Variational Bayes, arXiv:1312.6114
+        url: https://arxiv.org/abs/1312.6114
+        locator: Sec. 2.2 The variational bound; Sec. 2.4 The reparameterization trick
+    source:
+      id: nptel-deep-learning-2
+      ref: deep-learning-2/assignment6#q2
+      url: https://archive.nptel.ac.in/content/storage2/courses/downloads_new/106106201/noc19_cs18-assessmentid-73.pdf
+    status: draft

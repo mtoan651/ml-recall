@@ -775,3 +775,200 @@ questions:
       ref: W2D3_GenerativeModelsAndDeepLearningDiscussion1/W2D3_Tutorial1#think1.2
       url: https://github.com/NeuromatchAcademy/course-content-dl/blob/caba36c513fb8139ac3c9e7503f7a769dadde25e/tutorials/W2D3_GenerativeModelsAndDeepLearningDiscussion1/instructor/W2D3_Tutorial1.ipynb
     status: draft
+  - id: gans-024
+    type: single
+    difficulty: hard
+    tags:
+      - lsgan
+      - optimal-discriminator
+      - least-squares
+    question: |
+      A least-squares GAN trains its discriminator by minimising
+      $$\tfrac{1}{2}\,\mathbb{E}_{x \sim p_{\text{data}}}\big[(D(x) - b)^2\big] + \tfrac{1}{2}\,\mathbb{E}_{z \sim p_z}\big[(D(G(z)) - a)^2\big],$$
+      where $b$ is the target for real samples and $a$ the target for generated ones. For a fixed
+      generator whose samples have density $p_g$, what is the optimal discriminator $D^*(x)$?
+    options:
+      - text: $D^*(x) = \dfrac{b\,p_{\text{data}}(x) + a\,p_g(x)}{p_{\text{data}}(x) + p_g(x)}$
+        correct: true
+      - text: $D^*(x) = \dfrac{a\,p_{\text{data}}(x) + b\,p_g(x)}{p_{\text{data}}(x) + p_g(x)}$
+        why: This swaps the targets; where only real data has density, $D^*$ must equal the real target $b$.
+      - text: $D^*(x) = \dfrac{p_{\text{data}}(x)}{p_{\text{data}}(x) + p_g(x)}$
+        why: That is the optimum of the original cross-entropy GAN loss; it is the special case $b = 1$, $a = 0$ [^3].
+      - text: $D^*(x) = \dfrac{p_{\text{data}}(x) + p_g(x)}{b\,p_{\text{data}}(x) + a\,p_g(x)}$
+        why: This is the reciprocal of the weighted average; it is not even bounded between $a$ and $b$.
+    explanation: |
+      Write the loss as $\int \tfrac12\left[p_{\text{data}}(x)(D(x) - b)^2 + p_g(x)(D(x) - a)^2\right]dx$
+      and minimise pointwise in $D(x)$ [^2]. Setting the derivative $p_{\text{data}}(D - b) + p_g(D - a)$
+      to zero gives the density-weighted average of the two targets,
+      $D^* = (b\,p_{\text{data}} + a\,p_g)/(p_{\text{data}} + p_g)$ [^1][^2]. With $a = 0$, $b = 1$ it reduces
+      to the familiar $p_{\text{data}}/(p_{\text{data}} + p_g)$ of the cross-entropy GAN [^3].
+    references:
+      - source: nptel-deep-learning-2
+        locator: Assignment 8, Q1 (optimal discriminator of the modified objective)
+        url: https://archive.nptel.ac.in/content/storage2/courses/downloads_new/106106201/noc19_cs18-assessmentid-84.pdf
+      - title: Mao et al. (2017), Least Squares Generative Adversarial Networks, arXiv:1611.04076
+        url: https://arxiv.org/abs/1611.04076
+        locator: Sec. 3.2 Least Squares Generative Adversarial Networks (relation to f-divergence, optimal D)
+      - title: Goodfellow et al. (2014), Generative Adversarial Nets, arXiv:1406.2661
+        url: https://arxiv.org/abs/1406.2661
+        locator: Sec. 4.1 Global Optimality of p_g = p_data (Proposition 1)
+    source:
+      id: nptel-deep-learning-2
+      ref: deep-learning-2/assignment8#q1
+      url: https://archive.nptel.ac.in/content/storage2/courses/downloads_new/106106201/noc19_cs18-assessmentid-84.pdf
+    status: draft
+  - id: gans-025
+    type: single
+    difficulty: medium
+    tags:
+      - conditional-gan
+      - objective
+    question: |
+      A conditional GAN must generate digits of a requested class $y$ (e.g. MNIST label 7), and its
+      discriminator judges whether an image is a real example *of that class*. Which objective
+      describes it?
+    options:
+      - text: $\min_G \max_D\; \mathbb{E}_{x}[\log D(x \mid y)] + \mathbb{E}_{z}[\log(1 - D(G(z \mid y)))]$
+        correct: true
+      - text: $\min_G \max_D\; \mathbb{E}_{x}[\log D(x)] + \mathbb{E}_{z}[\log(1 - D(G(z \mid y)))]$
+        why: A discriminator that never sees $y$ cannot tell a realistic 3 from the requested 7, so the generator could ignore $y$.
+      - text: $\min_G \max_D\; \mathbb{E}_{x}[\log D(x \mid y)] + \mathbb{E}_{z}[\log(1 - D(G(z)))]$
+        why: The generator is never told $y$, so it has no way to produce the requested class.
+      - text: $\min_D \max_G\; \mathbb{E}_{x}[\log D(x \mid y)] + \mathbb{E}_{z}[\log(1 - D(G(z \mid y)))]$
+        why: This swaps the players' roles; the generator would then try to make its samples easy to reject.
+    explanation: |
+      Mirza and Osindero condition both players on the extra information $y$: it is fed to the
+      generator together with the noise, and to the discriminator together with the image [^2]. The
+      value function is the usual GAN objective with every $D$ and $G$ conditioned on $y$ [^1][^2].
+      Conditioning the generator lets you choose the class at sampling time; conditioning the
+      discriminator is what forces the generated image to match that class.
+    references:
+      - source: nptel-deep-learning-2
+        locator: Assignment 8, Q2 (objective of the class-conditional GAN variant)
+        url: https://archive.nptel.ac.in/content/storage2/courses/downloads_new/106106201/noc19_cs18-assessmentid-84.pdf
+      - title: Mirza & Osindero (2014), Conditional Generative Adversarial Nets, arXiv:1411.1784
+        url: https://arxiv.org/abs/1411.1784
+        locator: Sec. 3.2 Conditional Adversarial Nets, Eq. (2)
+    source:
+      id: nptel-deep-learning-2
+      ref: deep-learning-2/assignment8#q2
+      url: https://archive.nptel.ac.in/content/storage2/courses/downloads_new/106106201/noc19_cs18-assessmentid-84.pdf
+    status: draft
+  - id: gans-026
+    type: single
+    difficulty: medium
+    tags:
+      - generator-loss
+      - non-saturating
+      - training
+    question: |
+      Early in GAN training the discriminator $D_\theta$ rejects the generator's samples with high
+      confidence, $D_\theta(G_\phi(z)) \approx 0$. Which generator update still gives a strong gradient
+      in this situation?
+    options:
+      - text: Ascend $\nabla_\phi \frac{1}{m}\sum_i \log D_\theta(G_\phi(z^{(i)}))$
+        correct: true
+      - text: Descend $\nabla_\phi \frac{1}{m}\sum_i \log\left(1 - D_\theta(G_\phi(z^{(i)}))\right)$
+        why: 'This is the original minimax update, and it saturates: near $D = 0$ the curve $\log(1 - D)$ is flat, so the gradient is tiny [^2].'
+      - text: Ascend $\nabla_\phi \frac{1}{m}\sum_i \left[\log D_\theta(x^{(i)}) + \log\left(1 - D_\theta(G_\phi(z^{(i)}))\right)\right]$
+        why: Ascending this would help the discriminator's objective, the opposite of what the generator wants; the $x^{(i)}$ term does not even depend on $\phi$.
+      - text: Ascend $\nabla_\phi \frac{1}{m}\sum_i \log G_\phi(D_\theta(z^{(i)}))$
+        why: The discriminator takes samples, not noise, and the generator does not take the discriminator's output, so this composition is meaningless.
+    explanation: |
+      The discriminator ascends $\frac1m\sum[\log D(x^{(i)}) + \log(1 - D(G(z^{(i)})))]$, while the
+      generator's minimax goal would be to descend $\log(1 - D(G(z)))$ [^1][^2]. When $D(G(z))$ is
+      near 0 that term has almost no slope, so Goodfellow et al. instead train $G$ to maximise
+      $\log D(G(z))$, which has the same fixed point but steep gradients exactly when the generator is
+      poor [^2]. This "non-saturating" loss is the standard choice in practice [^3].
+    references:
+      - source: nptel-deep-learning-2
+        locator: Assignment 8, Q4–Q5 (discriminator and generator updates in the GAN training pseudo-code)
+        url: https://archive.nptel.ac.in/content/storage2/courses/downloads_new/106106201/noc19_cs18-assessmentid-84.pdf
+      - title: Goodfellow et al. (2014), Generative Adversarial Nets, arXiv:1406.2661
+        url: https://arxiv.org/abs/1406.2661
+        locator: Sec. 3 Adversarial nets (last paragraph); Algorithm 1
+      - source: d2l
+        locator: Sec. 20.1 Generative Adversarial Networks (introduction, generator loss)
+        url: https://d2l.ai/chapter_generative-adversarial-networks/gan.html
+    source:
+      id: nptel-deep-learning-2
+      ref: deep-learning-2/assignment8#q5
+      url: https://archive.nptel.ac.in/content/storage2/courses/downloads_new/106106201/noc19_cs18-assessmentid-84.pdf
+    status: draft
+  - id: gans-027
+    type: short_answer
+    difficulty: hard
+    tags:
+      - jensen-shannon
+      - minimax-value
+      - disjoint-support
+    question: |
+      For the original GAN, the value of the game at the optimal discriminator is
+      $C(G) = \max_D V(D, G) = -\log 4 + 2\,\mathrm{JSD}(p_{\text{data}} \,\|\, p_g)$ (natural log).
+      Its minimum, $-\log 4$, is reached when $p_g = p_{\text{data}}$. What is $C(G)$ when
+      $p_{\text{data}}$ and $p_g$ have disjoint supports?
+    answer:
+      numeric: 0
+      tolerance: 0.001
+      hint: a number
+      model: $\mathrm{JSD} = \log 2$, so $C(G) = -\log 4 + 2\log 2 = 0$
+    explanation: |
+      The Jensen–Shannon divergence is symmetric and bounded by $\log 2$, a value it reaches when the
+      two distributions do not overlap [^1][^3]. Then $C(G) = -\log 4 + 2 \log 2 = 0$: the optimal
+      discriminator outputs 1 on real and 0 on generated data, and both log terms vanish [^2]. Because
+      $C(G)$ is then the same constant for every such generator, it gives no signal on how close
+      $p_g$ is to $p_{\text{data}}$, one explanation of vanishing generator gradients when the
+      discriminator is too good [^3].
+    references:
+      - source: nptel-deep-learning-2
+        locator: Assignment 8, Q6–Q7 (minimum loss −log 4 at the optimal generator; KL vs JSD symmetry)
+        url: https://archive.nptel.ac.in/content/storage2/courses/downloads_new/106106201/noc19_cs18-assessmentid-84.pdf
+      - title: Goodfellow et al. (2014), Generative Adversarial Nets, arXiv:1406.2661
+        url: https://arxiv.org/abs/1406.2661
+        locator: Sec. 4.1 Global Optimality of p_g = p_data (Theorem 1)
+      - title: 'Wikipedia: Generative adversarial network'
+        url: https://en.wikipedia.org/wiki/Generative_adversarial_network#Vanishing_gradient
+        locator: Mathematical properties — Main theorems for GAN game; Training — Vanishing gradient
+    source:
+      id: nptel-deep-learning-2
+      ref: deep-learning-2/assignment8#q6
+      url: https://archive.nptel.ac.in/content/storage2/courses/downloads_new/106106201/noc19_cs18-assessmentid-84.pdf
+    status: draft
+  - id: gans-028
+    type: multiple
+    difficulty: medium
+    tags:
+      - gan-properties
+      - implicit-density
+      - markov-chains
+    question: Which statements about the original GAN framework are true? Select all that apply.
+    options:
+      - text: The generator never writes down $p_g(x)$; it only produces samples
+        correct: true
+      - text: The discriminator must be kept well synchronized with the generator during training
+        correct: true
+      - text: No Markov chains are needed, neither to train the model nor to draw samples
+        correct: true
+      - text: Drawing a sample from a trained generator requires running a Markov chain to convergence
+        why: Sampling is a single forward pass of the generator on a noise vector [^2].
+      - text: Training also yields an encoder that maps each data point back to its latent code $z$
+        why: A vanilla GAN learns only $x = G(z)$; inferring $z$ from $x$ needs an extension such as an extra encoder network [^2].
+    explanation: |
+      Goodfellow et al. list the trade-offs: the model has no explicit representation of $p_g(x)$, and
+      $D$ must be synchronised with $G$ (if $G$ is trained too much without updating $D$, it can
+      collapse many $z$ onto one $x$) [^2]. On the plus side, only backpropagation is needed and no
+      Markov chains, unlike Boltzmann machines [^1][^2]. A GAN is a pure sampler: it generates, but it
+      cannot map an image back to its latent code, which the NPTEL course calls "abstraction" and
+      which RBMs and VAEs provide [^1].
+    references:
+      - source: nptel-deep-learning-2
+        locator: Assignment 8, Q3 and Q8 (statements about GANs; models capable of abstraction and generation)
+        url: https://archive.nptel.ac.in/content/storage2/courses/downloads_new/106106201/noc19_cs18-assessmentid-84.pdf
+      - title: Goodfellow et al. (2014), Generative Adversarial Nets, arXiv:1406.2661
+        url: https://arxiv.org/abs/1406.2661
+        locator: Sec. 6 Advantages and disadvantages; Sec. 7 Conclusions and future work
+    source:
+      id: nptel-deep-learning-2
+      ref: deep-learning-2/assignment8#q3
+      url: https://archive.nptel.ac.in/content/storage2/courses/downloads_new/106106201/noc19_cs18-assessmentid-84.pdf
+    status: draft

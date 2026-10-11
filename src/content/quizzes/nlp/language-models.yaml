@@ -1449,3 +1449,149 @@ questions:
       ref: hw3#q2
       url: https://ocw.mit.edu/courses/6-864-advanced-natural-language-processing-fall-2005/resources/hw3/
     status: draft
+  - id: language-models-041
+    type: short_answer
+    difficulty: medium
+    tags:
+      - n-gram
+      - bigram
+      - maximum-likelihood
+    question: |
+      A bigram model is estimated by maximum likelihood (relative counts) from this corpus of three
+      sentences:
+
+      ```text
+      <s> the sunset is nice </s>
+      <s> people watch the sunset </s>
+      <s> they enjoy the beautiful sunset </s>
+      ```
+
+      What probability does it give to `<s> people watch the beautiful sunset </s>`? Multiply the six
+      bigram probabilities, from the one for `<s> people` to the one for `sunset </s>`.
+    answer:
+      numeric: 0.0741
+      tolerance: 0.0005
+      hint: a probability, 3 significant digits (a fraction such as 1/9 also works)
+      model: $\frac{1}{3} \cdot 1 \cdot 1 \cdot \frac{1}{3} \cdot 1 \cdot \frac{2}{3} = \frac{2}{27} \approx 0.0741$
+    explanation: |
+      Each bigram probability is a count ratio, $P(w \mid v) = c(v\,w) / c(v)$ [^2]. Three sentences start
+      with `<s>` and one continues with "people" (1/3); "people watch" and "watch the" are certain;
+      "the" occurs three times and once before "beautiful" (1/3); "beautiful sunset" is certain; and
+      "sunset" occurs three times, twice before `</s>` (2/3). The product is $2/27 \approx 0.074$
+      [^1].
+    references:
+      - source: nptel-intro-llms
+        locator: Assignment 2, Q4 (bigram probability of a sentence, accepted answer 2/27)
+        url: https://archive.nptel.ac.in/content/storage2/courses/downloads_new/106102576/noc25_cs45_assignment_Week_2.png
+      - source: d2l
+        locator: Sec. 9.3.1.1 Markov Models and n-grams
+        url: https://d2l.ai/chapter_recurrent-neural-networks/language-model.html#markov-models-and-n-grams
+    source:
+      id: nptel-intro-llms
+      ref: intro-llms/assignment2#q4
+      url: https://archive.nptel.ac.in/content/storage2/courses/downloads_new/106102576/noc25_cs45_assignment_Week_2.png
+    status: draft
+  - id: language-models-042
+    type: short_answer
+    difficulty: medium
+    tags:
+      - perplexity
+      - evaluation
+    question: |
+      A language model assigns the sentence `<s> people watch the beautiful sunset </s>` the
+      probability $P = 2/27$ (this already includes the step into `</s>`). Its perplexity is
+      $P^{-1/N}$, where $N$ is the number of words, here counted without `<s>` and `</s>`, so $N = 5$.
+      What is the perplexity?
+    answer:
+      numeric: 1.683
+      tolerance: 0.002
+      hint: a number, 3 decimals
+      model: $(27/2)^{1/5} = 13.5^{0.2} \approx 1.683$
+    explanation: |
+      Perplexity is the inverse probability normalised by length, the exponential of the average
+      negative log-likelihood per token [^2]: $\exp(-\tfrac{1}{5}\ln\tfrac{2}{27}) = 13.5^{1/5} \approx
+      1.683$ [^1]. It is the effective number of equally likely choices per word, so lower is better.
+      Conventions differ: counting `</s>` as a sixth token, as many textbooks do, gives
+      $13.5^{1/6} \approx 1.543$, so compare perplexities only under the same convention.
+    references:
+      - source: nptel-intro-llms
+        locator: Assignment 2, Q5 (perplexity of the sentence, accepted answer (27/2)^(1/5))
+        url: https://archive.nptel.ac.in/content/storage2/courses/downloads_new/106102576/noc25_cs45_assignment_Week_2.png
+      - source: d2l
+        locator: Sec. 9.3.2 Perplexity
+        url: https://d2l.ai/chapter_recurrent-neural-networks/language-model.html#perplexity
+    source:
+      id: nptel-intro-llms
+      ref: intro-llms/assignment2#q5
+      url: https://archive.nptel.ac.in/content/storage2/courses/downloads_new/106102576/noc25_cs45_assignment_Week_2.png
+    status: draft
+  - id: language-models-043
+    type: short_answer
+    difficulty: easy
+    tags:
+      - n-gram
+      - markov-assumption
+    question: |
+      A 5-gram language model predicts each word from a fixed number of preceding words. Viewed as a
+      Markov model, what is its order, i.e. how many previous words does it condition on?
+    answer:
+      numeric: 4
+      tolerance: 0
+      hint: a whole number
+      model: '4: $P(w_t \mid w_{t-4}, \dots, w_{t-1})$'
+    explanation: |
+      An $n$-gram model approximates $P(w_t \mid w_1, \dots, w_{t-1})$ by
+      $P(w_t \mid w_{t-n+1}, \dots, w_{t-1})$, keeping only the last $n - 1$ words [^2]. A 5-gram model
+      therefore uses a context of 4 words and is a fourth-order Markov model; a bigram model is first
+      order [^1][^2].
+    references:
+      - source: nptel-intro-llms
+        locator: Assignment 2, Q1 (a 5-gram model is a fourth-order Markov model)
+        url: https://archive.nptel.ac.in/content/storage2/courses/downloads_new/106102576/noc25_cs45_assignment_Week_2.png
+      - source: d2l
+        locator: Sec. 9.3.1.1 Markov Models and n-grams
+        url: https://d2l.ai/chapter_recurrent-neural-networks/language-model.html#markov-models-and-n-grams
+    source:
+      id: nptel-intro-llms
+      ref: intro-llms/assignment2#q1
+      url: https://archive.nptel.ac.in/content/storage2/courses/downloads_new/106102576/noc25_cs45_assignment_Week_2.png
+    status: draft
+  - id: language-models-044
+    type: single
+    difficulty: medium
+    tags:
+      - kneser-ney
+      - smoothing
+      - continuation-probability
+    question: |
+      The word "Kong" is frequent in a corpus, but almost only after "Hong". When a bigram has not
+      been seen, Kneser–Ney smoothing falls back on a continuation probability
+      $P_{\text{cont}}(w)$ instead of the plain unigram frequency. What does $P_{\text{cont}}(w)$
+      measure, and why does it help?
+    options:
+      - text: How many distinct words precede $w$; "Kong" gets little mass in new contexts
+        correct: true
+      - text: How often $w$ occurs overall; frequent words like "Kong" should get more mass
+        why: That is the plain unigram estimate, which would wrongly favour "Kong" after unseen histories [^2].
+      - text: The length of $w$ in characters; longer words are rarer in new contexts
+        why: Kneser–Ney is defined on counts of word types and contexts, not on word length [^2].
+      - text: The perplexity of $w$ on held-out data; it picks words that minimise perplexity
+        why: The continuation count is computed from training counts, without held-out perplexity [^2].
+    explanation: |
+      $P_{\text{cont}}(w)$ is proportional to the number of different words that precede $w$, so it
+      asks how likely $w$ is to appear as a novel continuation [^2]. "Kong" follows only one word, so
+      although its unigram count is high, it gets a small share of the backoff mass, while a word
+      that follows many different words gets a large share [^1][^2]. This is why Kneser–Ney
+      usually beats backoff to raw unigram frequencies.
+    references:
+      - source: nptel-intro-llms
+        locator: Assignment 2, Q6 (main intuition behind Kneser–Ney smoothing)
+        url: https://archive.nptel.ac.in/content/storage2/courses/downloads_new/106102576/noc25_cs45_assignment_Week_2.png
+      - title: 'Wikipedia: Kneser–Ney smoothing'
+        url: https://en.wikipedia.org/wiki/Kneser%E2%80%93Ney_smoothing#Method
+        locator: Method
+    source:
+      id: nptel-intro-llms
+      ref: intro-llms/assignment2#q6
+      url: https://archive.nptel.ac.in/content/storage2/courses/downloads_new/106102576/noc25_cs45_assignment_Week_2.png
+    status: draft

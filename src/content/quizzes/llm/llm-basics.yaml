@@ -857,3 +857,149 @@ questions:
       ref: lessons/04-structured-output#q1
       url: https://github.com/microsoft/generative-ai-with-javascript/blob/03e41953411ca192bd69d37e6b784a0baaaab65b/lessons/04-structured-output/README.md#knowledge-check
     status: draft
+  - id: llm-basics-028
+    type: single
+    difficulty: easy
+    tags:
+      - tree-of-thought
+      - chain-of-thought
+      - prompting
+    question: |
+      What lets Tree-of-Thought (ToT) prompting solve problems that Chain-of-Thought (CoT) prompting
+      fails on?
+    options:
+      - text: It explores several reasoning paths, evaluates them and can backtrack
+        correct: true
+      - text: It fine-tunes the model with reinforcement learning on each new problem
+        why: ToT is an inference-time method; it uses the frozen model to propose and evaluate thoughts [^2].
+      - text: It adds domain-specific heuristics that remove hallucinations
+        why: ToT is a general search framework; it has no built-in domain knowledge and does not guarantee factuality [^2].
+      - text: It removes the need to write any prompt for the model
+        why: ToT still prompts the model, both to generate thoughts and to evaluate them [^2].
+    explanation: |
+      CoT generates one chain of reasoning left to right, so an early mistake cannot be undone [^1].
+      ToT treats intermediate "thoughts" as nodes of a tree: the model proposes several next thoughts,
+      rates how promising each is, and a search algorithm such as breadth-first or depth-first search
+      expands the good ones and backtracks from dead ends [^2]. On tasks like the Game of 24 this
+      deliberate search raised the success rate far above CoT [^2].
+    references:
+      - source: nptel-intro-llms
+        locator: Assignment 8, Q5 (why Tree-of-Thought is more effective than Chain-of-Thought)
+        url: https://archive.nptel.ac.in/content/storage2/courses/downloads_new/106102576/noc25_cs45_assignment_Week_8.png
+      - title: 'Yao et al. (2023), Tree of Thoughts: Deliberate Problem Solving with Large Language Models, arXiv:2305.10601'
+        url: https://arxiv.org/abs/2305.10601
+        locator: Abstract; Sec. 3 Tree of Thoughts
+    source:
+      id: nptel-intro-llms
+      ref: intro-llms/assignment8#q5
+      url: https://archive.nptel.ac.in/content/storage2/courses/downloads_new/106102576/noc25_cs45_assignment_Week_8.png
+    status: draft
+  - id: llm-basics-029
+    type: single
+    difficulty: medium
+    tags:
+      - quantization
+      - post-training-quantization
+      - calibration
+    question: |
+      Post-training quantization (PTQ) converts a trained LLM to low precision without retraining it,
+      but it still runs the model on a small calibration dataset. What is that data for?
+    options:
+      - text: To estimate scale factors for weights and activations on representative inputs
+        correct: true
+      - text: To fine-tune all of the weights briefly on that data and then save the updated model
+        why: That would be quantization-aware training or fine-tuning; PTQ leaves the weights' values to rounding [^2].
+      - text: To precompute and store the attention matrices of typical inputs
+        why: Attention matrices depend on each new input and are never cached from calibration data.
+      - text: To find outlier dimensions that magnitude pruning then removes
+        why: Pruning is a separate compression method; calibration sets the quantization ranges [^2].
+    explanation: |
+      To map floating-point values to a few integer levels, PTQ needs a scale (and zero point) for
+      each tensor or group [^1]. Weights are known in advance, but activation ranges depend on the
+      inputs, so the model is run on a few hundred representative examples to measure them; methods
+      such as GPTQ also use these activations to choose how to round the weights [^2].
+    references:
+      - source: nptel-intro-llms
+        locator: Assignment 10, Q5 (why PTQ uses a calibration dataset)
+        url: https://archive.nptel.ac.in/content/storage2/courses/downloads_new/106102576/noc25_cs45_assignment_Week_10.png
+      - title: 'Frantar et al. (2022), GPTQ: Accurate Post-Training Quantization for Generative Pre-trained Transformers, arXiv:2210.17323'
+        url: https://arxiv.org/abs/2210.17323
+        locator: Abstract; Sec. 3 Background (layer-wise quantization on calibration data)
+    source:
+      id: nptel-intro-llms
+      ref: intro-llms/assignment10#q5
+      url: https://archive.nptel.ac.in/content/storage2/courses/downloads_new/106102576/noc25_cs45_assignment_Week_10.png
+    status: draft
+  - id: llm-basics-030
+    type: multiple
+    difficulty: medium
+    tags:
+      - knowledge-distillation
+      - sequence-level-distillation
+      - compression
+    question: |
+      Which statements about sequence-level knowledge distillation for language models are true?
+      Select all that apply.
+    options:
+      - text: The student is trained on whole output sequences produced by the teacher, e.g. its beam-search outputs
+        correct: true
+      - text: It can be combined with word-level distillation, which matches the teacher's per-token distributions
+        correct: true
+      - text: It needs only the teacher's top-1 token at each position, with no sequence-level search
+        why: Sequence-level distillation approximates the teacher's distribution over whole sequences, typically with beam search [^2].
+      - text: It requires the teacher to write a chain-of-thought explanation for each example
+        why: The student simply imitates the teacher's output sequences; no explanations are needed [^2].
+    explanation: |
+      Word-level distillation trains the student to match the teacher's next-token distribution at
+      each position [^2]. Sequence-level distillation instead runs the teacher (e.g. with beam search)
+      to produce output sequences and trains the student on them as targets, transferring the
+      teacher's sequence-level behaviour [^1][^2]. Kim and Rush found the two complementary and
+      combined them, with large gains for small translation models [^2].
+    references:
+      - source: nptel-intro-llms
+        locator: Assignment 10, Q10 (sequence-level distillation)
+        url: https://archive.nptel.ac.in/content/storage2/courses/downloads_new/106102576/noc25_cs45_assignment_Week_10.png
+      - title: Kim & Rush (2016), Sequence-Level Knowledge Distillation, arXiv:1606.07947
+        url: https://arxiv.org/abs/1606.07947
+        locator: Sec. 3.1 Word-Level Knowledge Distillation; Sec. 3.2 Sequence-Level Knowledge Distillation
+    source:
+      id: nptel-intro-llms
+      ref: intro-llms/assignment10#q10
+      url: https://archive.nptel.ac.in/content/storage2/courses/downloads_new/106102576/noc25_cs45_assignment_Week_10.png
+    status: draft
+  - id: llm-basics-031
+    type: single
+    difficulty: medium
+    tags:
+      - mechanistic-interpretability
+      - induction-heads
+      - in-context-learning
+    question: |
+      Interpretability research on transformers found "induction heads". What does an induction head
+      do?
+    options:
+      - text: It looks back for an earlier copy of the current token and predicts what followed it
+        correct: true
+      - text: It attends only to punctuation tokens, in order to detect where sentences begin and end
+        why: Induction heads copy continuations of repeated tokens; they are not specialised for punctuation [^2].
+      - text: It masks future tokens so the model cannot look ahead
+        why: The causal mask does that for every head; it is not a learned behaviour of one head.
+      - text: It is a feed-forward layer that stores out-of-distribution facts
+        why: An induction head is an attention head, formed together with a previous-token head [^2].
+    explanation: |
+      In a sequence "… A B … A", an induction head attends from the second A to the token after the
+      first A, i.e. B, and copies it, so the model predicts B [^1][^2]. It works with a
+      previous-token head in an earlier layer, forming a two-layer circuit, and Olsson et al. argue
+      that such heads are a major mechanism behind in-context learning [^2].
+    references:
+      - source: nptel-intro-llms
+        locator: Assignment 10, Q7–Q8 (induction heads; circuits)
+        url: https://archive.nptel.ac.in/content/storage2/courses/downloads_new/106102576/noc25_cs45_assignment_Week_10.png
+      - title: Olsson et al. (2022), In-context Learning and Induction Heads, arXiv:2209.11895
+        url: https://arxiv.org/abs/2209.11895
+        locator: Abstract; Introduction (definition of induction heads)
+    source:
+      id: nptel-intro-llms
+      ref: intro-llms/assignment10#q7
+      url: https://archive.nptel.ac.in/content/storage2/courses/downloads_new/106102576/noc25_cs45_assignment_Week_10.png
+    status: draft

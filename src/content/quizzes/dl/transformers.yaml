@@ -1828,3 +1828,143 @@ questions:
       ref: mit6_7960_f24_hw3#q4i
       url: https://ocw.mit.edu/courses/6-7960-deep-learning-fall-2024/resources/mit6_7960_f24_hw3_pdf/
     status: draft
+  - id: transformers-054
+    type: short_answer
+    difficulty: medium
+    tags:
+      - attention
+      - dot-product-attention
+      - softmax
+    question: |
+      A decoder attends over three encoder hidden states $\mathbf{h}_1 = (1, 2)$,
+      $\mathbf{h}_2 = (3, 4)$, $\mathbf{h}_3 = (5, 6)$ with the decoder state $\mathbf{s} = (0.5, 1)$.
+      The scores are the plain dot products $\mathbf{s}^\top \mathbf{h}_i$ (no scaling), and the
+      attention weights are their softmax. What weight does $\mathbf{h}_3$ get?
+    answer:
+      numeric: 0.950
+      tolerance: 0.001
+      hint: a number, 3 decimals
+      model: Scores $2.5, 5.5, 8.5$; weight $\frac{e^{8.5}}{e^{2.5} + e^{5.5} + e^{8.5}} \approx 0.950$
+    explanation: |
+      The scores are $0.5 + 2 = 2.5$, $1.5 + 4 = 5.5$ and $2.5 + 6 = 8.5$ [^1]. Softmax turns them
+      into weights $(0.0024, 0.0473, 0.9503)$, so almost all attention goes to $\mathbf{h}_3$ [^2].
+      Each score gap of 3 multiplies the weight by $e^3 \approx 20$; this sharpness grows with the
+      dimension, which is why transformers divide dot products by $\sqrt{d}$ [^2].
+    references:
+      - source: nptel-intro-llms
+        locator: Assignment 5, Q8 (dot-product attention weights 0.00235, 0.04731, 0.9503)
+        url: https://archive.nptel.ac.in/content/storage2/courses/downloads_new/106102576/noc25_cs45_assignment_Week_5.png
+      - source: d2l
+        locator: Sec. 11.3.1 Dot Product Attention and 11.3.3 Scaled Dot Product Attention
+        url: https://d2l.ai/chapter_attention-mechanisms-and-transformers/attention-scoring-functions.html#dot-product-attention
+    source:
+      id: nptel-intro-llms
+      ref: intro-llms/assignment5#q8
+      url: https://archive.nptel.ac.in/content/storage2/courses/downloads_new/106102576/noc25_cs45_assignment_Week_5.png
+    status: draft
+  - id: transformers-055
+    type: short_answer
+    difficulty: medium
+    tags:
+      - masked-self-attention
+      - causal-mask
+      - softmax
+    question: |
+      In a decoder with masked (causal) self-attention, token $w_3$ of the sequence
+      $(w_1, w_2, w_3, w_4)$ has the unmasked attention scores $(5, 2, 1, 3)$ for $w_1, \dots, w_4$.
+      After masking, what attention weight does $w_3$ give to $w_1$?
+    answer:
+      numeric: 0.936
+      tolerance: 0.001
+      hint: a number, 3 decimals
+      model: Mask $w_4$; $\frac{e^5}{e^5 + e^2 + e^1} \approx 0.936$, giving weights $(0.936, 0.047, 0.017, 0)$
+    explanation: |
+      The causal mask stops a token from attending to later positions, here $w_4$, by setting its
+      score to $-\infty$ before the softmax [^2]. The remaining scores $(5, 2, 1)$ give
+      $e^5 / (e^5 + e^2 + e^1) = 148.4 / 158.5 \approx 0.936$ for $w_1$, then $0.047$ and $0.017$, and
+      exactly 0 for $w_4$ [^1]. Masking during training keeps the model from seeing the tokens it must
+      predict.
+    references:
+      - source: nptel-intro-llms
+        locator: Assignment 6, Q5 (masked self-attention weights for w3, accepted [0.9362, 0.0466, 0.0171, 0])
+        url: https://archive.nptel.ac.in/content/storage2/courses/downloads_new/106102576/noc25_cs45_assignment_Week_6.png
+      - source: d2l
+        locator: Sec. 11.3.2.1 Masked Softmax Operation
+        url: https://d2l.ai/chapter_attention-mechanisms-and-transformers/attention-scoring-functions.html#masked-softmax-operation
+    source:
+      id: nptel-intro-llms
+      ref: intro-llms/assignment6#q5
+      url: https://archive.nptel.ac.in/content/storage2/courses/downloads_new/106102576/noc25_cs45_assignment_Week_6.png
+    status: draft
+  - id: transformers-056
+    type: single
+    difficulty: medium
+    tags:
+      - positional-encoding
+      - sinusoidal
+    question: |
+      The sinusoidal positional encoding is $PE(p, 2i) = \sin\left(p / 10000^{2i/d}\right)$ and
+      $PE(p, 2i+1) = \cos\left(p / 10000^{2i/d}\right)$. With $d = 512$, what are the entries of
+      position $p = 10$ in dimensions 2 and 3?
+    options:
+      - text: $\sin\left(10 / 10000^{1/256}\right)$ and $\cos\left(10 / 10000^{1/256}\right)$
+        correct: true
+      - text: $\sin\left(10 / 10000^{2/512}\right)$ and $\cos\left(10 / 10000^{3/512}\right)$
+        why: Dimensions $2i$ and $2i+1$ share the frequency set by $i$; dimension 3 has $i = 1$, not an exponent of $3/512$.
+      - text: $\cos\left(10 / 10000^{1/256}\right)$ and $\sin\left(10 / 10000^{1/256}\right)$
+        why: Even dimensions use sine and odd dimensions cosine, not the other way round.
+      - text: $\sin\left(10 / 10000^{1/512}\right)$ and $\cos\left(10 / 10000^{1/512}\right)$
+        why: For $i = 1$ the exponent is $2i/d = 2/512 = 1/256$, not $1/512$.
+    explanation: |
+      Dimension 2 is $2i$ with $i = 1$ and dimension 3 is $2i + 1$ with the same $i = 1$, so both use
+      the angle $10 / 10000^{2/512} = 10 / 10000^{1/256}$, sine for the even and cosine for the odd
+      dimension [^1][^2]. Each pair of dimensions is one rotating sinusoid, and the wavelengths grow
+      geometrically along the dimensions, which also lets the model express relative offsets as
+      linear maps [^2].
+    references:
+      - source: nptel-intro-llms
+        locator: Assignment 6, Q8 (sinusoidal positional encoding, d_model = 512, p = 10)
+        url: https://archive.nptel.ac.in/content/storage2/courses/downloads_new/106102576/noc25_cs45_assignment_Week_6.png
+      - source: d2l
+        locator: Sec. 11.6.3 Positional Encoding (11.6.3.1, 11.6.3.2)
+        url: https://d2l.ai/chapter_attention-mechanisms-and-transformers/self-attention-and-positional-encoding.html#positional-encoding
+    source:
+      id: nptel-intro-llms
+      ref: intro-llms/assignment6#q8
+      url: https://archive.nptel.ac.in/content/storage2/courses/downloads_new/106102576/noc25_cs45_assignment_Week_6.png
+    status: draft
+  - id: transformers-057
+    type: multiple
+    difficulty: medium
+    tags:
+      - rope
+      - rotary-position-embedding
+      - positional-encoding
+    question: Which statements about Rotary Position Embedding (RoPE) are true? Select all that apply.
+    options:
+      - text: It multiplies queries and keys by a position-dependent rotation matrix
+        correct: true
+      - text: Each rotated vector encodes its absolute position, while their dot product depends only on the relative offset
+        correct: true
+      - text: Like sinusoidal encodings, it is added to the token embeddings at the input layer
+        why: RoPE is applied multiplicatively to the queries and keys inside each attention layer, not added to the input [^2].
+      - text: It removes the need for any positional information in the model
+        why: RoPE is itself a way of supplying positional information to attention [^2].
+    explanation: |
+      RoPE splits each query and key into 2-D pairs and rotates pair $j$ of the vector at position $m$
+      by the angle $m\theta_j$ [^2]. A rotated vector thus carries its absolute position, and because
+      rotations compose, $\langle R_m \mathbf{q}, R_n \mathbf{k} \rangle$ depends on $m - n$ only, so
+      attention scores see relative positions [^1][^2]. Since the rotation multiplies the vectors
+      inside attention, nothing is added to the embeddings.
+    references:
+      - source: nptel-intro-llms
+        locator: Assignment 6, Q4 (statements about RoPE)
+        url: https://archive.nptel.ac.in/content/storage2/courses/downloads_new/106102576/noc25_cs45_assignment_Week_6.png
+      - title: 'Su et al. (2021), RoFormer: Enhanced Transformer with Rotary Position Embedding, arXiv:2104.09864'
+        url: https://arxiv.org/abs/2104.09864
+        locator: Abstract; Sec. 3.2 Rotary position embedding
+    source:
+      id: nptel-intro-llms
+      ref: intro-llms/assignment6#q4
+      url: https://archive.nptel.ac.in/content/storage2/courses/downloads_new/106102576/noc25_cs45_assignment_Week_6.png
+    status: draft

@@ -318,3 +318,118 @@ questions:
       ref: genomic-llm-finetuning#q2
       url: https://github.com/galaxyproject/training-material/blob/917e68d1d61c2915c7a970d75468b8494be90c0d/topics/statistics/tutorials/genomic-llm-finetuning/tutorial.md
     status: draft
+  - id: fine-tuning-010
+    type: single
+    difficulty: medium
+    tags:
+      - prefix-tuning
+      - adapters
+      - peft
+    question: |
+      Prefix tuning and adapters both fine-tune a frozen transformer with few new parameters. Where
+      does each put its task-specific parameters?
+    options:
+      - text: 'Prefix tuning: key/value vectors prepended at every layer; adapters: small bottleneck layers in each block'
+        correct: true
+      - text: 'Prefix tuning: small bottleneck layers inside each block; adapters: key/value vectors prepended at every layer'
+        why: 'This swaps the two methods: adapters are inserted modules, prefixes are prepended activations [^2][^3].'
+      - text: Both retrain only the final output layer, with different learning rates
+        why: Both methods change the computation inside the network while keeping the pretrained weights frozen [^2][^3].
+      - text: Both write task knowledge into the attention mask instead of adding parameters
+        why: Both add trainable parameters; neither works by editing the attention mask [^2][^3].
+    explanation: |
+      Prefix tuning keeps the language model frozen and optimises a sequence of continuous vectors
+      that act like virtual tokens: they are prepended to the keys and values at every layer, so all
+      real tokens can attend to them [^2]. Adapters insert small bottleneck feed-forward modules
+      (down-projection, nonlinearity, up-projection, residual) inside each transformer block and train
+      only those [^3]. Either way, a task costs a small fraction of the model's parameters [^1].
+    references:
+      - source: nptel-intro-llms
+        locator: Assignment 10, Q1 (prefix tuning vs adapters)
+        url: https://archive.nptel.ac.in/content/storage2/courses/downloads_new/106102576/noc25_cs45_assignment_Week_10.png
+      - title: 'Li & Liang (2021), Prefix-Tuning: Optimizing Continuous Prompts for Generation, arXiv:2101.00190'
+        url: https://arxiv.org/abs/2101.00190
+        locator: Abstract; Sec. 4 Prefix-Tuning
+      - title: Houlsby et al. (2019), Parameter-Efficient Transfer Learning for NLP, arXiv:1902.00751
+        url: https://arxiv.org/abs/1902.00751
+        locator: Sec. 2.1 Instantiation for Transformer Networks (Fig. 2)
+    source:
+      id: nptel-intro-llms
+      ref: intro-llms/assignment10#q1
+      url: https://archive.nptel.ac.in/content/storage2/courses/downloads_new/106102576/noc25_cs45_assignment_Week_10.png
+    status: draft
+  - id: fine-tuning-011
+    type: single
+    difficulty: medium
+    tags:
+      - qlora
+      - quantization
+      - double-quantization
+    question: |
+      QLoRA fine-tunes LoRA adapters on top of a base model stored in 4-bit precision. What does its
+      "double quantization" do?
+    options:
+      - text: It also quantizes the quantization constants, saving more memory
+        correct: true
+      - text: It quantizes every weight twice to reach 1-bit storage
+        why: The weights stay at 4 bits; the second quantization is applied to the per-block scaling constants [^2].
+      - text: It swaps weights back to 16 bits whenever the loss gets worse
+        why: QLoRA keeps the base weights in 4 bits throughout and dequantizes them only for computation [^2].
+      - text: It quantizes the LoRA adapters as well as the frozen base model weights
+        why: The LoRA adapters are trained in 16-bit precision; only the frozen base model is quantized [^2].
+    explanation: |
+      Block-wise 4-bit quantization stores one scaling constant per block of weights (e.g. 64), and in
+      32-bit precision those constants add about 0.5 bit per parameter [^2]. Double quantization
+      quantizes these constants themselves to 8 bits, cutting the overhead from 0.5 to about 0.127
+      bit per parameter, which saves roughly 3 GB on a 65B model [^1][^2]. It is one of QLoRA's three memory savings,
+      besides the 4-bit NormalFloat format and paged optimizers [^2].
+    references:
+      - source: nptel-intro-llms
+        locator: Assignment 10, Q9 (role of double quantization in QLoRA)
+        url: https://archive.nptel.ac.in/content/storage2/courses/downloads_new/106102576/noc25_cs45_assignment_Week_10.png
+      - title: 'Dettmers et al. (2023), QLoRA: Efficient Finetuning of Quantized LLMs, arXiv:2305.14314'
+        url: https://arxiv.org/abs/2305.14314
+        locator: Abstract; Sec. 3 QLoRA Finetuning (Double Quantization)
+    source:
+      id: nptel-intro-llms
+      ref: intro-llms/assignment10#q9
+      url: https://archive.nptel.ac.in/content/storage2/courses/downloads_new/106102576/noc25_cs45_assignment_Week_10.png
+    status: draft
+  - id: fine-tuning-012
+    type: multiple
+    difficulty: medium
+    tags:
+      - soft-prompts
+      - prompt-tuning
+      - peft
+    question: |
+      Soft prompts (prompt tuning) prepend trainable embedding vectors to the input of a frozen
+      model, instead of hand-written text prompts. What are their main drawbacks? Select all that
+      apply.
+    options:
+      - text: They must be learned by gradient descent on task data, unlike written prompts
+        correct: true
+      - text: The learned vectors match no words, so users cannot read or edit them
+        correct: true
+      - text: A forward pass is much slower than with a text prompt of the same length
+        why: A soft prompt of $k$ vectors costs the same as $k$ ordinary token embeddings in the forward pass [^2].
+      - text: They need a transformer architecture different from the standard one
+        why: The vectors are simply prepended to the input embeddings of an unchanged model [^2].
+    explanation: |
+      A soft prompt is a short sequence of continuous vectors trained by backpropagation while the
+      model stays frozen [^2]. That is cheap compared with full fine-tuning, but unlike a discrete
+      prompt it needs labelled data and a training run for each task [^1]. The vectors need not lie
+      near any word embedding, so they cannot be read or tweaked by hand. The model and its forward
+      pass are unchanged apart from a few extra input positions [^2].
+    references:
+      - source: nptel-intro-llms
+        locator: Assignment 8, Q2 (challenges of soft prompts)
+        url: https://archive.nptel.ac.in/content/storage2/courses/downloads_new/106102576/noc25_cs45_assignment_Week_8.png
+      - title: Lester et al. (2021), The Power of Scale for Parameter-Efficient Prompt Tuning, arXiv:2104.08691
+        url: https://arxiv.org/abs/2104.08691
+        locator: Sec. 2 Prompt Tuning; Sec. 7 Interpretability
+    source:
+      id: nptel-intro-llms
+      ref: intro-llms/assignment8#q2
+      url: https://archive.nptel.ac.in/content/storage2/courses/downloads_new/106102576/noc25_cs45_assignment_Week_8.png
+    status: draft

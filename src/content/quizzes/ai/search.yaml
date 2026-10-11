@@ -1981,3 +1981,1044 @@ questions:
       ref: game_ai/ex3#q1
       url: https://github.com/Kaggle/learntools/blob/e9ba66dc899d3e17b80d3a1b9a5d29f430d310cb/notebooks/game_ai/raw/ex3.ipynb
     status: draft
+  - id: search-053
+    type: short_answer
+    difficulty: medium
+    tags:
+      - state-space-search
+      - breadth-first-search
+      - water-jug
+    question: |
+      Three jugs hold at most 8, 5 and 3 litres. A state is $(a, b, c)$, the litres in the 8-, 5- and
+      3-litre jugs, and the start state is $(8, 0, 0)$. A move pours water from one jug into another
+      until the source is empty or the destination is full; no water is added or spilled. What is the
+      smallest number of moves that reaches $(4, 4, 0)$?
+    answer:
+      numeric: 7
+      tolerance: 0
+      hint: a whole number of moves
+      model: '$(8,0,0) \to (3,5,0) \to (3,2,3) \to (6,2,0) \to (6,0,2) \to (1,5,2) \to (1,4,3) \to (4,4,0)$: 7 moves'
+    explanation: |
+      The puzzle is a state-space search: MoveGen produces the states reachable by one pour, and
+      breadth-first search explores the states level by level, so the first time it meets $(4,4,0)$ it
+      has found a shortest sequence of moves [^1]. Only 16 states are reachable from $(8,0,0)$, and
+      $(4,4,0)$ first appears at depth 7, e.g. via $(3,5,0), (3,2,3), (6,2,0), (6,0,2), (1,5,2),
+      (1,4,3)$. This 8–5–3 instance is the standard example of the water pouring puzzle [^2].
+    references:
+      - source: nptel-ai-search-methods
+        locator: Assignment 2, Q1–Q2 (water jug problem, accepted answer 7)
+        url: https://archive.nptel.ac.in/content/storage2/courses/downloads_new/106106126/Week_02_Assignment_02.pdf
+      - title: 'Wikipedia: Water pouring puzzle'
+        url: https://en.wikipedia.org/wiki/Water_pouring_puzzle#Standard_example
+        locator: Standard example
+    source:
+      id: nptel-ai-search-methods
+      ref: ai-search-methods/assignment2#q2
+      url: https://archive.nptel.ac.in/content/storage2/courses/downloads_new/106106126/Week_02_Assignment_02.pdf
+    status: draft
+  - id: search-054
+    type: multiple
+    difficulty: hard
+    tags:
+      - state-space-search
+      - water-jug
+      - reversibility
+    question: |
+      Take the 8–5–3 litre jug puzzle again: the state $(a, b, c)$ gives the litres in the 8-, 5- and
+      3-litre jugs, the start is $(8, 0, 0)$, and a move pours from one jug into another until the
+      source is empty or the destination is full. Consider the states reachable from the start.
+      Select all that apply.
+    options:
+      - text: Every reachable state can be reached from every other reachable state
+        correct: true
+      - text: Each of the volumes 1, 2, …, 8 litres appears in some jug in some reachable state
+        correct: true
+      - text: Every move can be undone by a single move
+        why: From $(6,2,0)$, pouring the 8-litre jug into the 5-litre jug gives $(3,5,0)$, and no single pour leads from $(3,5,0)$ back to $(6,2,0)$ [^2].
+      - text: Some reachable states have no legal move at all
+        why: The 8 litres always sit in at least one jug while another jug has room, so every state has a move out.
+      - text: All 24 triples with $a + b + c = 8$ that fit the jugs are reachable
+        why: Only 16 states are reachable; states such as $(4, 2, 2)$ never occur, because after each pour some jug is empty or full.
+    explanation: |
+      Running breadth-first search from every state of this space shows that it is strongly
+      connected: 16 states are reachable and each can reach all the others, so every volume from 1 to
+      8 litres can be measured [^1]. Connectivity does not mean that single moves are reversible. A
+      pour stops when the source is empty or the destination is full, so undoing a pour sometimes
+      needs a detour of several moves; Wikipedia discusses this asymmetry of actions [^2]. Every
+      reachable state has at least one jug empty or full, which is why only 16 of the 24 candidate
+      triples occur.
+    references:
+      - source: nptel-ai-search-methods
+        locator: Assignment 2, Q3 and Q8 (properties of the water-jug state space)
+        url: https://archive.nptel.ac.in/content/storage2/courses/downloads_new/106106126/Week_02_Assignment_02.pdf
+      - title: 'Wikipedia: Water pouring puzzle'
+        url: https://en.wikipedia.org/wiki/Water_pouring_puzzle#Reversibility_of_actions
+        locator: Reversibility of actions
+    source:
+      id: nptel-ai-search-methods
+      ref: ai-search-methods/assignment2#q8
+      url: https://archive.nptel.ac.in/content/storage2/courses/downloads_new/106106126/Week_02_Assignment_02.pdf
+    status: draft
+  - id: search-055
+    type: single
+    difficulty: medium
+    tags:
+      - depth-first-search
+      - graph-search
+      - closed-list
+    question: |
+      A graph is given by its MoveGen function, which lists the neighbours of each node in order:
+
+      | Node | MoveGen |
+      | --- | --- |
+      | S | A, B |
+      | A | C, S |
+      | B | D, S |
+      | C | E, D, A |
+      | D | C, E, B, G |
+      | E | C, D, G |
+      | G | D, E |
+
+      Depth-first search starts at S with goal G. OPEN is a stack: the new neighbours are put on top
+      in MoveGen order, so the first one is picked next. A node already on OPEN or CLOSED is not added
+      again, and the goal test is applied when a node is picked from OPEN. Which path does the search
+      return?
+    options:
+      - text: S → A → C → E → G
+        correct: true
+      - text: S → B → D → G
+        why: That is the path breadth-first search returns; DFS commits to A first and never returns to B before reaching G.
+      - text: S → A → C → D → G
+        why: C's neighbours are E then D, so DFS goes on to E, and E already reaches G.
+      - text: S → A → C → E → D → G
+        why: When E is expanded, G is one of its new neighbours and is picked next, so D is never needed on the path.
+    explanation: |
+      DFS picks S, puts A and B on OPEN, and takes A (its first neighbour) [^2]. From A only C is new
+      (S is closed); from C the new nodes are E and D, and E comes first. E's neighbour D is already on
+      OPEN, so only G is added, and G is picked next. Following the parent pointers gives
+      S → A → C → E → G, a 4-edge path, although S → B → D → G has only 3 edges: DFS returns the first
+      path it finds, not the shortest [^1][^2].
+    references:
+      - source: nptel-ai-search-methods
+        locator: Assignment 2, Q11 (DFS on the MoveGen graph, accepted answer S,A,C,E,G)
+        url: https://archive.nptel.ac.in/content/storage2/courses/downloads_new/106106126/Week_02_Assignment_02.pdf
+      - title: 'Wikipedia: Depth-first search'
+        url: https://en.wikipedia.org/wiki/Depth-first_search
+        locator: Properties; Pseudocode
+    source:
+      id: nptel-ai-search-methods
+      ref: ai-search-methods/assignment2#q11
+      url: https://archive.nptel.ac.in/content/storage2/courses/downloads_new/106106126/Week_02_Assignment_02.pdf
+    status: draft
+  - id: search-056
+    type: single
+    difficulty: hard
+    tags:
+      - iterative-deepening
+      - depth-first-search
+      - closed-list
+      - optimality
+    question: |
+      On a graph whose shortest S-to-G route is S → B → D → G (3 edges), depth-first iterative
+      deepening (DFID) runs depth-bounded DFS with bound 0, 1, 2, … In each pass it keeps a CLOSED
+      list and never adds a node that is already on OPEN or CLOSED. The neighbour lists are
+      S: A, B; A: C, S; B: D, S; C: E, D, A; D: C, E, B, G. In the depth-3 pass, DFS reaches D first
+      through S → A → C. DFID ends up returning S → A → C → E → G (4 edges). Why does the depth-3
+      pass miss the 3-edge path?
+    options:
+      - text: D was closed at depth 3 via A and C, so the route via B never adds it
+        correct: true
+      - text: DFID always returns the path that plain depth-first search would return
+        why: DFID with a fresh search per bound normally returns a shortest path in edges; here it fails only because of the CLOSED-list pruning.
+      - text: The depth bound counts path cost, and the route through B is more expensive
+        why: The bound counts edges, and all edges here count equally; S → B → D → G is the shorter route.
+      - text: DFID is incomplete on graphs with cycles, so it can skip paths at random
+        why: DFID is complete on finite graphs; the miss is deterministic and caused by never re-opening D.
+    explanation: |
+      Without pruning, DFID explores every path up to the bound, so it finds a goal at the smallest
+      depth where one exists [^2]. In this pass, though, D is first generated as a child of C at depth
+      3, where the bound forbids expanding it, and it goes to CLOSED. When the search later reaches B
+      (depth 1), D is already closed and is not added again, so the 3-edge route through B is lost. The
+      goal is found only in the depth-4 pass, through E [^1]. To keep the shortest-path guarantee, a
+      depth-bounded search must re-open a node that it reaches again at a smaller depth, or not prune
+      against CLOSED at all.
+    references:
+      - source: nptel-ai-search-methods
+        locator: Assignment 2, Q14–Q15 (DFID on the MoveGen graph, accepted answer S,A,C,E,G)
+        url: https://archive.nptel.ac.in/content/storage2/courses/downloads_new/106106126/Week_02_Assignment_02.pdf
+      - title: 'Wikipedia: Iterative deepening depth-first search'
+        url: https://en.wikipedia.org/wiki/Iterative_deepening_depth-first_search#Properties
+        locator: Properties
+    source:
+      id: nptel-ai-search-methods
+      ref: ai-search-methods/assignment2#q15
+      url: https://archive.nptel.ac.in/content/storage2/courses/downloads_new/106106126/Week_02_Assignment_02.pdf
+    status: draft
+  - id: search-057
+    type: short_answer
+    difficulty: easy
+    tags:
+      - heuristic
+      - manhattan-distance
+      - 8-puzzle
+    question: |
+      In the 8-puzzle below, `_` is the blank. What is the Manhattan-distance heuristic of the start
+      state, i.e. the sum over the eight tiles (not the blank) of the horizontal plus vertical distance
+      between each tile's position and its goal position?
+
+      | Start | | | | Goal | | |
+      | --- | --- | --- | --- | --- | --- | --- |
+      | 6 | _ | 2 | | 1 | 2 | 3 |
+      | 1 | 8 | 4 | | 8 | _ | 4 |
+      | 7 | 3 | 5 | | 7 | 6 | 5 |
+    answer:
+      numeric: 9
+      tolerance: 0
+      hint: a whole number
+      model: '6: 3, 2: 1, 1: 1, 8: 1, 3: 3, tiles 4, 7, 5: 0, so the sum is 9'
+    explanation: |
+      Tiles 4, 7 and 5 are already in place. Tile 6 must move two rows down and one column right
+      (3), tile 3 two rows up and one column right (3), and tiles 2, 1 and 8 one step each, so the sum
+      is 9 [^1]. The simpler "misplaced tiles" heuristic counts five tiles out of place, giving 5.
+      Both heuristics are admissible, because every misplaced tile needs at least one move and at
+      least its Manhattan distance in moves; Manhattan distance is the larger, better-informed of the
+      two [^2].
+    references:
+      - source: nptel-ai-search-methods
+        locator: Assignment 3, Q3–Q4 (8-puzzle heuristics h1 = 5, h2 = 9)
+        url: https://archive.nptel.ac.in/content/storage2/courses/downloads_new/106106126/Week_03_Assignment_03.pdf
+      - title: 'Wikipedia: Admissible heuristic'
+        url: https://en.wikipedia.org/wiki/Admissible_heuristic#Examples
+        locator: Examples (fifteen puzzle, Hamming and Manhattan distance)
+    source:
+      id: nptel-ai-search-methods
+      ref: ai-search-methods/assignment3#q4
+      url: https://archive.nptel.ac.in/content/storage2/courses/downloads_new/106106126/Week_03_Assignment_03.pdf
+    status: draft
+  - id: search-058
+    type: single
+    difficulty: medium
+    tags:
+      - hill-climbing
+      - heuristic
+      - 8-puzzle
+    question: |
+      Hill climbing solves the 8-puzzle by always moving to the neighbour with the fewest misplaced
+      tiles (blank not counted). From the start state below, which move does it make first?
+
+      | Start | | | | Goal | | |
+      | --- | --- | --- | --- | --- | --- | --- |
+      | 6 | _ | 2 | | 1 | 2 | 3 |
+      | 1 | 8 | 4 | | 8 | _ | 4 |
+      | 7 | 3 | 5 | | 7 | 6 | 5 |
+    options:
+      - text: Tile 2 slides left into the blank
+        correct: true
+      - text: Tile 6 slides right into the blank
+        why: Tile 6 is still out of place after this move, so five tiles remain misplaced; no improvement.
+      - text: Tile 8 slides up into the blank
+        why: Tile 8 is out of place before and after the move, so the count stays at five.
+      - text: None, since no neighbour improves the heuristic
+        why: Sliding tile 2 left puts it in its goal square and lowers the count from 5 to 4.
+    explanation: |
+      The start state has five misplaced tiles (6, 2, 1, 8 and 3) [^1]. The blank has three
+      neighbours: moving 6 right or 8 up leaves five tiles misplaced, while moving 2 left puts tile 2
+      on its goal square, giving 4. Hill climbing takes the best neighbour if it improves on the
+      current state, so it moves tile 2 [^2]. With the Manhattan heuristic (9 at the start) moving 2 or
+      6 both give 8, a tie that the tie-breaking rule must settle.
+    references:
+      - source: nptel-ai-search-methods
+        locator: Assignment 3, Q5–Q6 (hill climbing on the 8-puzzle with h1 and h2)
+        url: https://archive.nptel.ac.in/content/storage2/courses/downloads_new/106106126/Week_03_Assignment_03.pdf
+      - title: 'Wikipedia: Hill climbing'
+        url: https://en.wikipedia.org/wiki/Hill_climbing#Variants
+        locator: Variants (simple and steepest-ascent hill climbing)
+    source:
+      id: nptel-ai-search-methods
+      ref: ai-search-methods/assignment3#q5
+      url: https://archive.nptel.ac.in/content/storage2/courses/downloads_new/106106126/Week_03_Assignment_03.pdf
+    status: draft
+  - id: search-059
+    type: single
+    difficulty: hard
+    tags:
+      - hill-climbing
+      - sat
+      - local-search
+    question: |
+      A SAT formula over $a, b, c, d$ has six clauses:
+      $(a \lor \lnot b)$, $(\lnot a \lor b \lor c)$, $(\lnot c \lor d)$, $(d)$,
+      $(\lnot a \lor b \lor d)$, $(\lnot a \lor \lnot d)$.
+      A state is a bit string $abcd$, its neighbours flip exactly one bit, and $h$ is the number of
+      satisfied clauses. Steepest-ascent hill climbing starts at $1010$ and stops when no neighbour has
+      a higher $h$. Where does it stop?
+    options:
+      - text: At $0011$, which satisfies all six clauses, after two moves
+        correct: true
+      - text: At $1011$, a local maximum with five satisfied clauses
+        why: From $1011$ the neighbour $0011$ satisfies all six clauses, so the search moves on.
+      - text: At $0001$, the other satisfying assignment, after three moves
+        why: The first move goes to $1011$ ($h = 5$) and the second to $0011$ ($h = 6$); $0001$ is not on this path.
+      - text: At $1010$, because every neighbour is worse
+        why: The neighbour $1011$ satisfies five clauses against three for $1010$.
+    explanation: |
+      At $1010$ only three clauses hold. Its neighbours score $0010{:}\,4$, $1110{:}\,4$, $1000{:}\,3$ and
+      $1011{:}\,5$, so hill climbing moves to $1011$ [^1]. From there $0011$ scores 6, the maximum, and
+      no neighbour can beat it, so the search stops at a satisfying assignment. Hill climbing moves to
+      the best neighbour only while it improves the objective, so on another formula the same
+      procedure could stop at a local maximum below 6 [^2].
+    references:
+      - source: nptel-ai-search-methods
+        locator: Assignment 3, Q7–Q8 (SAT with h = number of satisfied clauses, start 1010)
+        url: https://archive.nptel.ac.in/content/storage2/courses/downloads_new/106106126/Week_03_Assignment_03.pdf
+      - title: 'Wikipedia: Hill climbing'
+        url: https://en.wikipedia.org/wiki/Hill_climbing#Local_maxima
+        locator: Problems — Local maxima
+    source:
+      id: nptel-ai-search-methods
+      ref: ai-search-methods/assignment3#q8
+      url: https://archive.nptel.ac.in/content/storage2/courses/downloads_new/106106126/Week_03_Assignment_03.pdf
+    status: draft
+  - id: search-060
+    type: short_answer
+    difficulty: medium
+    tags:
+      - tsp
+      - nearest-neighbour
+      - constructive-heuristic
+    question: |
+      Six cities have the symmetric distances below. The nearest-neighbour heuristic starts at A,
+      repeatedly goes to the closest unvisited city, and finally returns to A. What is the length of
+      the tour it builds?
+
+      | | B | C | D | E | F |
+      | --- | --- | --- | --- | --- | --- |
+      | A | 10 | 20 | 30 | 40 | 50 |
+      | B | | 31 | 21 | 51 | 41 |
+      | C | | | 12 | 59 | 100 |
+      | D | | | | 5 | 8 |
+      | E | | | | | 69 |
+    answer:
+      numeric: 245
+      tolerance: 0
+      hint: a whole number
+      model: 'A→B (10) → D (21) → E (5) → C (59) → F (100) → A (50): 245'
+    explanation: |
+      From A the closest city is B (10), from B it is D (21), from D it is E (5), from E the closest
+      unvisited city is C (59), and F is left (100), before the return F→A (50); the total is 245 [^1].
+      The greedy choices force the expensive edges C–E and C–F at the end. The greedy-edge heuristic,
+      which adds the shortest edges that keep a valid tour (D–E, D–F, A–B, A–C, B–F, C–E), finds
+      the tour A, B, F, D, E, C of length 143, which is optimal here. Nearest neighbour is fast but
+      can be far from optimal [^2].
+    references:
+      - source: nptel-ai-search-methods
+        locator: Assignment 4, Q12–Q14 (greedy and nearest-neighbour tours on Table 4.1)
+        url: https://archive.nptel.ac.in/content/storage2/courses/downloads_new/106106126/Week_04_Assignment_04.pdf
+      - title: 'Wikipedia: Nearest neighbour algorithm'
+        url: https://en.wikipedia.org/wiki/Nearest_neighbour_algorithm#Algorithm
+        locator: Algorithm
+    source:
+      id: nptel-ai-search-methods
+      ref: ai-search-methods/assignment4#q13
+      url: https://archive.nptel.ac.in/content/storage2/courses/downloads_new/106106126/Week_04_Assignment_04.pdf
+    status: draft
+  - id: search-061
+    type: multiple
+    difficulty: medium
+    tags:
+      - tsp
+      - 2-opt
+      - local-search
+      - neighbourhood
+    question: |
+      A TSP local search uses the 2-edge exchange (2-opt) neighbourhood: remove two edges of the
+      closed tour and reconnect the two paths the other way. The current tour visits
+      H, G, F, E, D, C, B, A and then returns to H. Which tours are neighbours of it? Select all that
+      apply.
+    options:
+      - text: H, G, B, C, D, E, F, A
+        correct: true
+      - text: H, G, F, A, B, C, D, E
+        correct: true
+      - text: G, H, F, E, D, C, B, A
+        correct: true
+      - text: H, G, F, D, C, E, B, A
+        why: This changes three edges (F–E, C–B and E–D are replaced), which is a 3-opt move.
+      - text: H, B, F, E, G, C, D, A
+        why: Swapping cities in this way replaces five edges of the tour, far more than two.
+    explanation: |
+      A 2-opt move deletes two edges and reverses the segment between them, so a neighbour is the old
+      tour with one contiguous segment reversed [^2]. Reversing F…B gives H, G, B, C, D, E, F, A
+      (edges G–F and B–A become G–B and F–A); reversing E…A gives H, G, F, A, B, C, D, E; reversing
+      the segment H, G gives G, H, F, …, A (edges A–H and G–F become A–G and H–F). The other two tours
+      differ from the current one in three and five edges [^1].
+    references:
+      - source: nptel-ai-search-methods
+        locator: Assignment 4, Q11 (2-edge exchange neighbours of tour H,G,F,E,D,C,B,A)
+        url: https://archive.nptel.ac.in/content/storage2/courses/downloads_new/106106126/Week_04_Assignment_04.pdf
+      - title: 'Wikipedia: 2-opt'
+        url: https://en.wikipedia.org/wiki/2-opt
+        locator: Introduction and Pseudocode
+    source:
+      id: nptel-ai-search-methods
+      ref: ai-search-methods/assignment4#q11
+      url: https://archive.nptel.ac.in/content/storage2/courses/downloads_new/106106126/Week_04_Assignment_04.pdf
+    status: draft
+  - id: search-062
+    type: single
+    difficulty: easy
+    tags:
+      - simulated-annealing
+      - temperature
+      - local-search
+    question: |
+      Simulated annealing picks a random neighbour and accepts a worse one with probability
+      $e^{-\Delta E / T}$, where $\Delta E > 0$ is how much worse it is. How does it behave at the two
+      extremes of the temperature $T$?
+    options:
+      - text: Very high $T$ acts like a random walk, $T \to 0$ like hill climbing
+        correct: true
+      - text: Very high $T$ acts like hill climbing, $T \to 0$ like a random walk
+        why: At high $T$ the acceptance probability is close to 1 even for bad moves, which is a random walk, not hill climbing [^2].
+      - text: Both extremes reduce it to exhaustive breadth-first search of the space
+        why: Simulated annealing keeps a single current state and never enumerates the space systematically.
+      - text: $T$ only scales the step size, so the behaviour is the same
+        why: $T$ changes which worse moves are accepted, not how far a move goes [^2].
+    explanation: |
+      For large $T$, $e^{-\Delta E/T} \approx 1$, so almost every random neighbour is accepted and the
+      search wanders like a random walk (pure exploration) [^1]. As $T \to 0$ the probability of
+      accepting a worse move vanishes and only improving moves remain, which is hill climbing (pure
+      exploitation) [^2]. Annealing lowers $T$ gradually so that early on it can escape local optima
+      and later it settles into a good one.
+    references:
+      - source: nptel-ai-search-methods
+        locator: Assignment 4, Q10 (simulated annealing at high and low temperature)
+        url: https://archive.nptel.ac.in/content/storage2/courses/downloads_new/106106126/Week_04_Assignment_04.pdf
+      - title: 'Wikipedia: Simulated annealing'
+        url: https://en.wikipedia.org/wiki/Simulated_annealing#Acceptance_probabilities
+        locator: Overview (Acceptance probability); Parameter selection — Acceptance probabilities
+    source:
+      id: nptel-ai-search-methods
+      ref: ai-search-methods/assignment4#q10
+      url: https://archive.nptel.ac.in/content/storage2/courses/downloads_new/106106126/Week_04_Assignment_04.pdf
+    status: draft
+  - id: search-063
+    type: multiple
+    difficulty: medium
+    tags:
+      - tabu-search
+      - local-search
+      - local-optimum
+    question: Which statements about tabu search are true? Select all that apply.
+    options:
+      - text: It may move to the best neighbour even when that neighbour is worse than the current state
+        correct: true
+      - text: Recent moves are made tabu for a few iterations, so it does not drop straight back into the optimum it just left
+        correct: true
+      - text: With a fixed tie-breaking rule, the sequence of states it visits is deterministic
+        correct: true
+      - text: It never accepts a neighbour that is worse than the current state
+        why: That is hill climbing; tabu search keeps moving to the best allowed neighbour even when it is worse [^2].
+      - text: It accepts a random worse neighbour with a probability that falls over time
+        why: That is simulated annealing; tabu search chooses the best non-tabu neighbour, without randomness [^2].
+    explanation: |
+      Tabu search is a local search that always moves to the best neighbour that is not tabu, even if
+      it is worse, which lets it walk out of a local optimum [^2]. A short-term memory (the tabu list,
+      with a tenure of a few moves) forbids undoing recent changes, so the search does not bounce
+      straight back [^1][^2]. Nothing in this rule is random, so with fixed tie-breaking it is
+      deterministic, unlike simulated annealing or random walk.
+    references:
+      - source: nptel-ai-search-methods
+        locator: Assignment 4, Q3 and Q6 (deterministic local search; properties of tabu search)
+        url: https://archive.nptel.ac.in/content/storage2/courses/downloads_new/106106126/Week_04_Assignment_04.pdf
+      - title: 'Wikipedia: Tabu search'
+        url: https://en.wikipedia.org/wiki/Tabu_search#Basic_description
+        locator: Basic description; Types of memory
+    source:
+      id: nptel-ai-search-methods
+      ref: ai-search-methods/assignment4#q6
+      url: https://archive.nptel.ac.in/content/storage2/courses/downloads_new/106106126/Week_04_Assignment_04.pdf
+    status: draft
+  - id: search-064
+    type: multiple
+    difficulty: medium
+    tags:
+      - a-star
+      - admissibility
+      - completeness
+    question: |
+      A* expands nodes in order of $f(n) = g(n) + h(n)$. Which conditions together guarantee that it
+      terminates with an optimal (least-cost) path whenever a path exists, even on an infinite graph?
+      Select all that apply.
+    options:
+      - text: Every node has finitely many successors
+        correct: true
+      - text: Every edge costs at least some fixed $\varepsilon > 0$
+        correct: true
+      - text: $h(n)$ never exceeds the true cost $h^*(n)$ from $n$ to a goal
+        correct: true
+      - text: $h(n) \ge h^*(n)$ for every node, so that $h$ is never too optimistic
+        why: An overestimating heuristic can make A* stop on a suboptimal path; admissibility needs $h \le h^*$ [^2].
+      - text: The search space must be a tree rather than a graph
+        why: A* works on graphs; it handles repeated states with its OPEN and CLOSED lists [^2].
+    explanation: |
+      With a finite branching factor and edge costs bounded away from zero, only finitely many nodes
+      have $f$ below the optimal cost, so A* cannot run forever along an infinite path [^2]. If in
+      addition $h(n) \le h^*(n)$ (an admissible heuristic), the goal cannot be picked from OPEN while a
+      cheaper path is still pending, so the first goal expanded is optimal [^1][^2]. These are the
+      three conditions of the admissibility theorem for A*.
+    references:
+      - source: nptel-ai-search-methods
+        locator: Assignment 6, Q3–Q4 (conditions for the admissibility and termination of A*)
+        url: https://archive.nptel.ac.in/content/storage2/courses/downloads_new/106106126/Week_06_Assignment_06.pdf
+      - title: 'Wikipedia: A* search algorithm'
+        url: https://en.wikipedia.org/wiki/A*_search_algorithm#Properties
+        locator: Properties — Termination and completeness; Admissibility
+    source:
+      id: nptel-ai-search-methods
+      ref: ai-search-methods/assignment6#q3
+      url: https://archive.nptel.ac.in/content/storage2/courses/downloads_new/106106126/Week_06_Assignment_06.pdf
+    status: draft
+  - id: search-065
+    type: multiple
+    difficulty: hard
+    tags:
+      - a-star
+      - consistent-heuristic
+      - monotone
+    question: |
+      A heuristic is consistent (monotone) if $h(m) \le c(m, n) + h(n)$ for every edge $m \to n$, and
+      $h = 0$ at goal nodes. What follows when A* uses a consistent heuristic? Select all that apply.
+    options:
+      - text: When A* picks a node from OPEN, it has already found an optimal path to that node
+        correct: true
+      - text: The $f$-values of the nodes A* picks for expansion never decrease
+        correct: true
+      - text: The heuristic may still overestimate the cost to the goal at some nodes
+        why: Summing the inequality along any path to a goal gives $h(n) \le h^*(n)$, so a consistent heuristic is admissible [^2].
+      - text: Closed nodes must be re-opened whenever a cheaper path to them turns up
+        why: With a consistent heuristic a cheaper path to a closed node never turns up, so no node is expanded twice [^2].
+    explanation: |
+      Along an edge $m \to n$, consistency gives $f(n) = g(m) + c(m,n) + h(n) \ge g(m) + h(m) = f(m)$,
+      so $f$ never decreases along a path and A* picks nodes in non-decreasing order of $f$ [^1][^2].
+      It follows that when a node is picked its $g$ value is already optimal, so A* never needs to
+      re-open a closed node and expands each node at most once [^2]. Consistency also implies
+      admissibility, so A* stays optimal.
+    references:
+      - source: nptel-ai-search-methods
+        locator: Assignment 7, Q3–Q4 (monotone heuristics)
+        url: https://archive.nptel.ac.in/content/storage2/courses/downloads_new/106106126/Week_07_Assignment_07.pdf
+      - title: 'Wikipedia: Consistent heuristic'
+        url: https://en.wikipedia.org/wiki/Consistent_heuristic#Consequences_of_monotonicity
+        locator: Introduction; Consequences of monotonicity
+    source:
+      id: nptel-ai-search-methods
+      ref: ai-search-methods/assignment7#q4
+      url: https://archive.nptel.ac.in/content/storage2/courses/downloads_new/106106126/Week_07_Assignment_07.pdf
+    status: draft
+  - id: search-066
+    type: single
+    difficulty: medium
+    tags:
+      - weighted-a-star
+      - bounded-suboptimality
+    question: |
+      Weighted A* orders OPEN by $f(n) = g(n) + w \cdot h(n)$ with $w = 2$ and an admissible $h$.
+      What is guaranteed about the cost of the path it returns, compared with the optimal cost $C^*$?
+    options:
+      - text: It is at most $2C^*$
+        correct: true
+      - text: It equals $C^*$, because $h$ is admissible
+        why: Multiplying $h$ by 2 can make $w \cdot h$ overestimate, so optimality is lost; only a bound remains [^2].
+      - text: It is at least $2C^*$
+        why: The weight trades optimality for speed, but the returned path is often optimal or close to it; the guarantee is an upper bound.
+      - text: Nothing; with $w > 1$ the path can be arbitrarily bad
+        why: With an admissible $h$, weighted A* is $w$-admissible, so its path costs at most $w$ times the optimum [^2].
+    explanation: |
+      Inflating the heuristic makes A* greedier: it expands fewer nodes but may return a costlier
+      path. In the NPTEL example, A* finds a path of cost 148, while weighted A* with $w = 2$ returns
+      one of cost 153 [^1]. With an admissible $h$, the path returned by weighted A* costs at most
+      $w \cdot C^*$, so here at most twice the optimum [^2].
+    references:
+      - source: nptel-ai-search-methods
+        locator: Assignment 6, Q5 and Assignment 7, Q7 (A* cost 148 vs weighted A* cost 153 on Fig. 3.2)
+        url: https://archive.nptel.ac.in/content/storage2/courses/downloads_new/106106126/Week_07_Assignment_07.pdf
+      - title: 'Wikipedia: A* search algorithm'
+        url: https://en.wikipedia.org/wiki/A*_search_algorithm#Bounded_relaxation
+        locator: Bounded relaxation (weighted A*)
+    source:
+      id: nptel-ai-search-methods
+      ref: ai-search-methods/assignment7#q7
+      url: https://archive.nptel.ac.in/content/storage2/courses/downloads_new/106106126/Week_07_Assignment_07.pdf
+    status: draft
+  - id: search-067
+    type: single
+    difficulty: medium
+    tags:
+      - ida-star
+      - memory
+      - space-saving-search
+    question: |
+      Compared with A* using the same admissible heuristic, what does iterative deepening A* (IDA*)
+      gain and what does it pay?
+    options:
+      - text: Memory linear in the path depth, paid for by re-expanding nodes
+        correct: true
+      - text: Fewer node expansions than A*, paid for by storing more nodes in memory
+        why: IDA* repeats work across iterations, so it usually expands more nodes, while its memory is only linear in depth [^2].
+      - text: No need for a heuristic, paid for by losing completeness
+        why: IDA* uses the $f = g + h$ threshold, so it needs a heuristic, and it stays complete [^2].
+      - text: Faster and smaller, paid for by possibly suboptimal paths
+        why: With an admissible heuristic and thresholds raised to the next smallest $f$, IDA* stays optimal; it is usually slower than A* [^2].
+    explanation: |
+      IDA* runs depth-first searches bounded by a threshold on $f = g + h$, raising the threshold to the
+      smallest $f$ that exceeded it in the previous pass [^2]. Being depth-first, it stores only the
+      current path, so its memory is linear in the solution depth, while A* keeps all of OPEN and
+      CLOSED. The price is time: every iteration re-expands the nodes of the previous ones [^1][^2].
+    references:
+      - source: nptel-ai-search-methods
+        locator: Assignment 7, Q5–Q6 (space-saving versions of A*, IDA*)
+        url: https://archive.nptel.ac.in/content/storage2/courses/downloads_new/106106126/Week_07_Assignment_07.pdf
+      - title: 'Wikipedia: Iterative deepening A*'
+        url: https://en.wikipedia.org/wiki/Iterative_deepening_A*#Properties
+        locator: Description; Properties
+    source:
+      id: nptel-ai-search-methods
+      ref: ai-search-methods/assignment7#q6
+      url: https://archive.nptel.ac.in/content/storage2/courses/downloads_new/106106126/Week_07_Assignment_07.pdf
+    status: draft
+  - id: search-068
+    type: single
+    difficulty: hard
+    tags:
+      - ao-star
+      - and-or-graph
+      - problem-decomposition
+    question: |
+      AO* searches an AND/OR graph. The root has heuristic value 39 and two ways to be solved: an OR
+      edge to node X (heuristic 23), or an AND arc (hyperedge) that requires both node Y
+      (heuristic 4) and node Z (heuristic 8). Every edge costs 10. Which node(s) can AO* expand
+      (refine) next?
+    options:
+      - text: Y and Z, the leaves of the AND arc
+        correct: true
+      - text: X only, the leaf of the OR edge
+        why: The OR option costs $10 + 23 = 33$, more than the AND arc's 32, so it is not on the best partial solution.
+      - text: X, Y and Z, since all three are unexpanded leaves
+        why: AO* only refines leaves of the currently best partial solution graph, not every open node.
+      - text: The root again, because its value 39 overestimates both options
+        why: The root's value is revised by backing up the children's costs; it is not re-expanded itself.
+    explanation: |
+      AO* keeps the best partial solution graph and refines one of its unsolved leaves [^1]. Here the
+      OR edge costs $10 + 23 = 33$, while the AND arc must solve both children: $(10 + 4) + (10 + 8) =
+      32$. The AND arc is cheaper, so the root's value is revised to 32 and the next node to refine is
+      Y or Z [^1]. Had X's heuristic been 13, the OR edge (23) would beat the AND arc and X would be
+      refined instead. An AND arc is solved only when all its children are, an OR choice when any one
+      is, the usual structure of problem decomposition [^2].
+    references:
+      - source: nptel-ai-search-methods
+        locator: Assignment 8, Q6–Q7 (AO* on Figs. 8.1 and 8.2)
+        url: https://archive.nptel.ac.in/content/storage2/courses/downloads_new/106106126/Week_08_Assignment_08.pdf
+      - title: 'Wikipedia: And–or tree'
+        url: https://en.wikipedia.org/wiki/And%E2%80%93or_tree#Definitions
+        locator: Definitions; Search strategies
+    source:
+      id: nptel-ai-search-methods
+      ref: ai-search-methods/assignment8#q6
+      url: https://archive.nptel.ac.in/content/storage2/courses/downloads_new/106106126/Week_08_Assignment_08.pdf
+    status: draft
+  - id: search-069
+    type: short_answer
+    difficulty: hard
+    tags:
+      - alpha-beta-pruning
+      - minimax
+      - game-tree
+    question: |
+      A game tree has a MAX root with three MIN children. Each MIN child has three MAX children, each
+      of those has two MIN children, and each of those has two leaves. The table lists the leaf values
+      from left to right; a cell is one MAX node, written as its two MIN nodes' leaf pairs.
+
+      | MIN child | 1st MAX node | 2nd MAX node | 3rd MAX node |
+      | --- | --- | --- | --- |
+      | 1 | (50, 12) (40, 30) | (40, 60) (80, 90) | (70, 25) (20, 60) |
+      | 2 | (55, 25) (60, 57) | (17, 13) (60, 70) | (75, 80) (77, 88) |
+      | 3 | (45, 35) (20, 80) | (25, 60) (32, 33) | (28, 99) (40, 38) |
+
+      Alpha–beta pruning searches the children of every node from left to right. How many of the 36
+      leaves does it evaluate?
+    answer:
+      numeric: 20
+      tolerance: 0
+      hint: a whole number of leaves
+      model: 20 leaves; the minimax value is 57
+    explanation: |
+      Minimax gives the three MIN children the values 25, 57 and 32, so the root's value is 57 [^1].
+      Alpha–beta skips a subtree once it cannot change the decision at an ancestor [^2]. Under the
+      first MIN child it evaluates 9 leaves; for example, its second MAX node is abandoned after
+      (40, 60), because that MAX node is already worth at least 40 while MIN can hold it to 30. The
+      second MIN child costs 9 more leaves and raises $\alpha$ to 57. Under the third MIN child, each
+      MIN node stops after its first leaf (45, then 20), both below $\alpha = 57$; the first MAX node
+      is then worth 45, so the whole third subtree is worth at most 45 and is cut after 2 leaves.
+      That makes $9 + 9 + 2 = 20$ leaves, against 25 when the search runs right to left [^1].
+    references:
+      - source: nptel-ai-search-methods
+        locator: Assignment 9, Q5–Q12 (Minimax and AlphaBeta on Fig. 9.1)
+        url: https://archive.nptel.ac.in/content/storage2/courses/downloads_new/106106126/Week_09_Assignment_09.pdf
+      - title: 'Wikipedia: Alpha–beta pruning'
+        url: https://en.wikipedia.org/wiki/Alpha%E2%80%93beta_pruning#Core_idea
+        locator: Core idea; Pseudocode
+    source:
+      id: nptel-ai-search-methods
+      ref: ai-search-methods/assignment9#q9
+      url: https://archive.nptel.ac.in/content/storage2/courses/downloads_new/106106126/Week_09_Assignment_09.pdf
+    status: draft
+  - id: search-070
+    type: single
+    difficulty: medium
+    tags:
+      - minimax
+      - alpha-beta-pruning
+      - sss-star
+    question: |
+      Minimax, alpha–beta and SSS* search the same game tree to the same depth. Let MM, AB and SSS be
+      the numbers of leaves each one evaluates. Which statement is true?
+    options:
+      - text: All three return the same value, and MM ≥ AB ≥ SSS
+        correct: true
+      - text: All three return the same value, and MM ≤ AB ≤ SSS
+        why: Minimax evaluates every leaf, so it can never evaluate fewer than a pruning algorithm.
+      - text: SSS* evaluates fewest leaves because it settles for an approximate value
+        why: SSS* returns the exact minimax value; it saves work by searching best-first [^2].
+      - text: Alpha–beta evaluates fewest leaves, and SSS* returns a different value
+        why: SSS* never examines a node that alpha–beta prunes, and it returns the minimax value [^2].
+    explanation: |
+      Alpha–beta prunes only subtrees that cannot affect the result, so it returns the minimax value
+      while evaluating at most as many leaves as full minimax [^1]. SSS* is a best-first algorithm that
+      never examines a node that alpha–beta would prune and may prune more, and it also returns the
+      minimax value [^2]. Its cost is memory: it keeps and sorts an OPEN list of nodes, which is why
+      alpha–beta remains the common choice [^2].
+    references:
+      - source: nptel-ai-search-methods
+        locator: Assignment 9, Q3–Q4 (MM ≥ AB ≥ SSS; all compute the same minimax value)
+        url: https://archive.nptel.ac.in/content/storage2/courses/downloads_new/106106126/Week_09_Assignment_09.pdf
+      - title: 'Wikipedia: SSS*'
+        url: https://en.wikipedia.org/wiki/SSS*
+        locator: Introduction; Algorithm
+    source:
+      id: nptel-ai-search-methods
+      ref: ai-search-methods/assignment9#q4
+      url: https://archive.nptel.ac.in/content/storage2/courses/downloads_new/106106126/Week_09_Assignment_09.pdf
+    status: draft
+  - id: search-071
+    type: single
+    difficulty: medium
+    tags:
+      - game-tree
+      - and-or-tree
+      - strategy
+    question: |
+      A game tree can be read as an AND/OR tree in which a solution is a strategy that wins for MAX.
+      Which reading is right?
+    options:
+      - text: MAX nodes are OR nodes and MIN nodes are AND nodes
+        correct: true
+      - text: MAX nodes are AND nodes and MIN nodes are OR nodes
+        why: MAX picks its own move, so one good child suffices; that is an OR node.
+      - text: All nodes are OR nodes, because both players choose a move
+        why: MAX does not control MIN's choice, so a strategy must handle every MIN reply; those nodes are AND nodes.
+      - text: All nodes are AND nodes, because every move must be explored
+        why: At its own nodes MAX needs only one winning move, so they are OR nodes.
+    explanation: |
+      A strategy for MAX fixes one move at each MAX node but must answer every possible move at each
+      MIN node [^1]. So a MAX node is solved if any child is solved (OR), and a MIN node only if all
+      children are solved (AND) [^2]. Seen this way, a winning strategy is a solution subtree of the
+      AND/OR tree, the same structure that AO* and SSS* work with.
+    references:
+      - source: nptel-ai-search-methods
+        locator: Assignment 9, Q1 (game tree as an AND/OR tree)
+        url: https://archive.nptel.ac.in/content/storage2/courses/downloads_new/106106126/Week_09_Assignment_09.pdf
+      - title: 'Wikipedia: And–or tree'
+        url: https://en.wikipedia.org/wiki/And%E2%80%93or_tree#Relationship_with_two-player_games
+        locator: Relationship with two-player games
+    source:
+      id: nptel-ai-search-methods
+      ref: ai-search-methods/assignment9#q1
+      url: https://archive.nptel.ac.in/content/storage2/courses/downloads_new/106106126/Week_09_Assignment_09.pdf
+    status: draft
+  - id: search-072
+    type: single
+    difficulty: medium
+    tags:
+      - planning
+      - strips
+      - regression
+    question: |
+      In STRIPS, an action $a$ has a precondition set $pre(a)$, an add set $add(a)$ and a delete set
+      $del(a)$. Backward state-space planning regresses a goal set $g$ through an action $a$ that is
+      relevant to it. Which formula gives the regressed goal $g'$?
+    options:
+      - text: $g' = (g \setminus add(a)) \cup pre(a)$
+        correct: true
+      - text: $g' = (g \setminus del(a)) \cup pre(a)$
+        why: The goals that $a$ achieves are its add effects, so those are the ones removed from $g$.
+      - text: $g' = (g \setminus del(a)) \cup add(a)$
+        why: This is progression of a state through $a$, used in forward planning, not regression.
+      - text: $g' = (g \setminus add(a)) \cap pre(a)$
+        why: The preconditions must all be added as new subgoals, so they are joined with a union.
+    explanation: |
+      Forward planning progresses a state: $S' = (S \setminus del(a)) \cup add(a)$, applicable when
+      $pre(a) \subseteq S$ [^1][^2]. Backward planning asks what must hold before $a$ so that $g$ holds
+      after it: the goals that $a$ achieves ($g \cap add(a)$) are no longer needed, and $a$'s
+      preconditions become new subgoals, so $g' = (g \setminus add(a)) \cup pre(a)$ [^1]. The action
+      must be relevant: it achieves some goal and deletes none.
+    references:
+      - source: nptel-ai-search-methods
+        locator: Assignment 11, Q6–Q9 (progression, relevant and applicable actions, regression)
+        url: https://archive.nptel.ac.in/content/storage2/courses/downloads_new/106106126/Week_11_Assignment_11.pdf
+      - title: 'Wikipedia: Stanford Research Institute Problem Solver'
+        url: https://en.wikipedia.org/wiki/Stanford_Research_Institute_Problem_Solver#Definition
+        locator: Definition (operators, state transition)
+    source:
+      id: nptel-ai-search-methods
+      ref: ai-search-methods/assignment11#q9
+      url: https://archive.nptel.ac.in/content/storage2/courses/downloads_new/106106126/Week_11_Assignment_11.pdf
+    status: draft
+  - id: search-073
+    type: multiple
+    difficulty: medium
+    tags:
+      - planning
+      - blocks-world
+      - applicable-actions
+    question: |
+      Blocks world with STRIPS operators (AE = arm empty):
+
+      - Pickup(X): pre ontable(X), clear(X), AE
+      - Putdown(X): pre holding(X)
+      - Unstack(X, Y): pre on(X, Y), clear(X), AE
+      - Stack(X, Y): pre holding(X), clear(Y)
+
+      The initial state is ontable(A), ontable(C), on(D, A), on(B, C), clear(D), clear(B), AE. Which
+      actions are applicable in it? Select all that apply.
+    options:
+      - text: Unstack(D, A)
+        correct: true
+      - text: Unstack(B, C)
+        correct: true
+      - text: Pickup(A)
+        why: A is on the table but D sits on it, so clear(A) is false.
+      - text: Pickup(C)
+        why: C is under B, so clear(C) is false.
+      - text: Stack(B, D)
+        why: Stack needs holding(B), but the arm is empty.
+    explanation: |
+      An action is applicable when all its preconditions are in the state, $pre(a) \subseteq S$
+      [^1][^2]. D and B are the clear blocks, both resting on other blocks, and the arm is empty, so
+      only Unstack(D, A) and Unstack(B, C) qualify. Picking up A or C needs them to be clear, and
+      stacking needs a block in hand.
+    references:
+      - source: nptel-ai-search-methods
+        locator: Assignment 11, Q8 and Q13 (applicable actions in the blocks-world problem)
+        url: https://archive.nptel.ac.in/content/storage2/courses/downloads_new/106106126/Week_11_Assignment_11.pdf
+      - title: 'Wikipedia: Stanford Research Institute Problem Solver'
+        url: https://en.wikipedia.org/wiki/Stanford_Research_Institute_Problem_Solver#Definition
+        locator: Definition
+    source:
+      id: nptel-ai-search-methods
+      ref: ai-search-methods/assignment11#q13
+      url: https://archive.nptel.ac.in/content/storage2/courses/downloads_new/106106126/Week_11_Assignment_11.pdf
+    status: draft
+  - id: search-074
+    type: single
+    difficulty: medium
+    tags:
+      - planning
+      - blocks-world
+      - regression
+      - backward-search
+    question: |
+      In the blocks world, Stack(X, Y) has preconditions holding(X), clear(Y); add effects on(X, Y),
+      clear(X), AE; delete effects holding(X), clear(Y). Backward state-space planning starts from the
+      goal $G = \{on(A, B), on(B, C)\}$. What is the subgoal $G'$ obtained by regressing $G$ through
+      Stack(A, B)?
+    options:
+      - text: $\{on(B, C), holding(A), clear(B)\}$
+        correct: true
+      - text: $\{holding(A), clear(B)\}$
+        why: The goal on(B, C) is not achieved by Stack(A, B), so it stays in the regressed goal.
+      - text: $\{on(A, B), on(B, C), holding(A), clear(B)\}$
+        why: on(A, B) is achieved by the action itself, so it is removed from the goal.
+      - text: Stack(A, B) is not relevant to $G$
+        why: It adds on(A, B), a goal, and deletes neither goal, so it is relevant.
+    explanation: |
+      Stack(A, B) is relevant because it adds on(A, B) and deletes neither goal [^1]. Regression
+      removes what the action achieves and adds its preconditions:
+      $G' = (G \setminus \{on(A,B), clear(A), AE\}) \cup \{holding(A), clear(B)\} =
+      \{on(B, C), holding(A), clear(B)\}$ [^1][^2]. The other relevant action here is Stack(B, C).
+    references:
+      - source: nptel-ai-search-methods
+        locator: Assignment 11, Q12 and Q14 (BSSP regression through Stack(A,B); relevant actions)
+        url: https://archive.nptel.ac.in/content/storage2/courses/downloads_new/106106126/Week_11_Assignment_11.pdf
+      - title: 'Wikipedia: Stanford Research Institute Problem Solver'
+        url: https://en.wikipedia.org/wiki/Stanford_Research_Institute_Problem_Solver#Definition
+        locator: Definition
+    source:
+      id: nptel-ai-search-methods
+      ref: ai-search-methods/assignment11#q12
+      url: https://archive.nptel.ac.in/content/storage2/courses/downloads_new/106106126/Week_11_Assignment_11.pdf
+    status: draft
+  - id: search-075
+    type: single
+    difficulty: medium
+    tags:
+      - planning
+      - sussman-anomaly
+      - linear-planning
+    question: |
+      In the Sussman anomaly, block C is on A, A and B are on the table, and the goal is
+      on(A, B) ∧ on(B, C). What goes wrong for a linear planner that achieves the two subgoals one
+      after the other?
+    options:
+      - text: Whichever subgoal it achieves first, achieving the second one undoes it
+        correct: true
+      - text: Neither subgoal can be achieved on its own, starting from the initial state
+        why: 'Each subgoal alone is easy: e.g. put C on the table and stack A on B; the trouble is combining them.'
+      - text: The goal is unreachable, so every planner fails on it
+        why: A plan exists (C to the table, B on C, A on B); interleaving the subgoals finds it [^2].
+      - text: It succeeds only if it achieves on(B, C) before on(A, B)
+        why: Stacking B on C first leaves C on A, and clearing A then means removing B and C again; neither order works.
+    explanation: |
+      A linear planner solves one subgoal completely before the next. If it first achieves on(A, B),
+      it must later unstack A to put B on C; if it first achieves on(B, C), A is buried under C and B
+      [^2]. The subgoals are not serializable, so the solution must interleave work on them: move C to
+      the table, stack B on C, then A on B [^1][^2]. Partial-order planners handle this naturally.
+    references:
+      - source: nptel-ai-search-methods
+        locator: Assignment 11, Q5 (Sussman's anomaly)
+        url: https://archive.nptel.ac.in/content/storage2/courses/downloads_new/106106126/Week_11_Assignment_11.pdf
+      - title: 'Wikipedia: Sussman anomaly'
+        url: https://en.wikipedia.org/wiki/Sussman_anomaly
+        locator: Introduction
+    source:
+      id: nptel-ai-search-methods
+      ref: ai-search-methods/assignment11#q5
+      url: https://archive.nptel.ac.in/content/storage2/courses/downloads_new/106106126/Week_11_Assignment_11.pdf
+    status: draft
+  - id: search-076
+    type: multiple
+    difficulty: hard
+    tags:
+      - plan-space-planning
+      - causal-link
+      - threat
+    question: |
+      In plan-space (partial-order) planning, a causal link $(a_2, P, a_3)$ records that action $a_2$
+      produces the condition $P$ for action $a_3$. Which conditions are required for another action
+      $a_1$ in the partial plan to be a threat to this link? Select all that apply.
+    options:
+      - text: $a_1$ has an effect $\lnot Q$ where $Q$ can be unified with $P$
+        correct: true
+      - text: $a_1$ can be ordered after $a_2$
+        correct: true
+      - text: $a_1$ can be ordered before $a_3$
+        correct: true
+      - text: $a_1$ also produces $P$
+        why: Producing $P$ cannot break the link; only deleting it can [^2].
+      - text: $a_1$ must already be ordered before $a_2$
+        why: If $a_1$ is forced before $a_2$, then $a_2$ re-establishes $P$ afterwards, so there is no threat.
+    explanation: |
+      A threat is an action that could delete $P$ in the interval between producer and consumer [^2].
+      That needs an effect $\lnot Q$ unifiable with $P$, and an ordering that allows $a_1$ to fall
+      between $a_2$ and $a_3$ [^1]. The planner resolves a threat by promotion (order $a_1$ after
+      $a_3$), demotion (before $a_2$) or by binding constraints that keep $Q$ from unifying with $P$
+      [^2].
+    references:
+      - source: nptel-ai-search-methods
+        locator: Assignment 12, Q12 (necessary conditions for a threat to a causal link)
+        url: https://archive.nptel.ac.in/content/storage2/courses/downloads_new/106106126/Week_12_Assignment_12.pdf
+      - title: 'Wikipedia: Partial-order planning'
+        url: https://en.wikipedia.org/wiki/Partial-order_planning#Threats
+        locator: Partial-order planner — Threats
+    source:
+      id: nptel-ai-search-methods
+      ref: ai-search-methods/assignment12#q12
+      url: https://archive.nptel.ac.in/content/storage2/courses/downloads_new/106106126/Week_12_Assignment_12.pdf
+    status: draft
+  - id: search-077
+    type: single
+    difficulty: medium
+    tags:
+      - plan-space-planning
+      - partial-plan
+      - initial-plan
+    question: |
+      Plan-space planning starts from a partial plan with two dummy actions, $A_0$ and $A_\infty$.
+      What are they?
+    options:
+      - text: $A_0$ has the start state as its effects; $A_\infty$ has the goal as its preconditions
+        correct: true
+      - text: $A_0$ has the goal as its effects; $A_\infty$ has the start state as its preconditions
+        why: The plan must start from the start state and end in the goal, so the roles are the other way round.
+      - text: Both have no preconditions and no effects; they only mark the start and end
+        why: 'Their conditions are what makes the search work: open preconditions of $A_\infty$ are the initial flaws [^2].'
+      - text: $A_0$ holds every action applicable in the start state, $A_\infty$ every relevant action
+        why: The initial plan contains just these two actions; real actions are added later to fix flaws.
+    explanation: |
+      The empty plan is $\{A_0 \prec A_\infty\}$ [^1]. $A_0$ has no preconditions and asserts the start
+      state as its effects, and $A_\infty$ has no effects and requires the goal as its preconditions
+      [^2]. Planning then repeatedly repairs flaws: an open precondition gets a causal link from an
+      existing or new action, and threats are resolved by ordering constraints [^2].
+    references:
+      - source: nptel-ai-search-methods
+        locator: Assignment 12, Q4–Q6 (start node of plan-space search; A0 and A-infinity)
+        url: https://archive.nptel.ac.in/content/storage2/courses/downloads_new/106106126/Week_12_Assignment_12.pdf
+      - title: 'Wikipedia: Partial-order planning'
+        url: https://en.wikipedia.org/wiki/Partial-order_planning#Partial-order_planner
+        locator: Partial-order planner; Plan space
+    source:
+      id: nptel-ai-search-methods
+      ref: ai-search-methods/assignment12#q5
+      url: https://archive.nptel.ac.in/content/storage2/courses/downloads_new/106106126/Week_12_Assignment_12.pdf
+    status: draft
+  - id: search-078
+    type: multiple
+    difficulty: hard
+    tags:
+      - planning
+      - forward-search
+      - backward-search
+      - plan-space-planning
+    question: |
+      A problem's solution needs several actions. Compare the first action that each planner adds to
+      its plan with the position of that action in the final plan. Which statements are true? Select
+      all that apply.
+    options:
+      - text: The first action chosen by forward state-space planning is the first one executed
+        correct: true
+      - text: The first action chosen by backward state-space planning is the last one executed
+        correct: true
+      - text: The first action added by plan-space planning can end up first, last or in between
+        correct: true
+      - text: The first action chosen by backward state-space planning is the first one executed
+        why: Backward search regresses from the goal, so its first choice is the action that achieves the goal, executed last.
+      - text: In plan-space planning, the order of actions is fixed when each action is added
+        why: Plan-space planning adds actions with only the ordering constraints it needs, so the final position stays open [^2].
+    explanation: |
+      Forward search grows the plan from the start state, so each new action is appended at the end
+      and the first one chosen runs first [^1]. Backward search grows it from the goal, so its first
+      choice runs last. Plan-space planning works on a partial order: an action is inserted with only
+      the ordering constraints that causal links and threats demand, so the action added first may be
+      executed at any point of the final linearization [^1][^2].
+    references:
+      - source: nptel-ai-search-methods
+        locator: 'Assignment 12, Q8–Q10 (FSSP, BSSP and PSP: first action selected vs executed)'
+        url: https://archive.nptel.ac.in/content/storage2/courses/downloads_new/106106126/Week_12_Assignment_12.pdf
+      - title: 'Wikipedia: Partial-order planning'
+        url: https://en.wikipedia.org/wiki/Partial-order_planning#Partial-order_vs._total-order_planning
+        locator: Partial-order vs. total-order planning
+    source:
+      id: nptel-ai-search-methods
+      ref: ai-search-methods/assignment12#q9
+      url: https://archive.nptel.ac.in/content/storage2/courses/downloads_new/106106126/Week_12_Assignment_12.pdf
+    status: draft

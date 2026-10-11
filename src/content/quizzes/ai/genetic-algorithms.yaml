@@ -295,3 +295,229 @@ questions:
       ref: mit6_034f10_quiz3_2009#q2c5
       url: https://ocw.mit.edu/courses/6-034-artificial-intelligence-fall-2010/resources/mit6_034f10_quiz3_2009/
     status: draft
+  - id: genetic-algorithms-011
+    type: single
+    difficulty: medium
+    tags:
+      - crossover
+      - permutation-encoding
+      - tsp
+    question: |
+      A genetic algorithm for an 8-city TSP stores each tour as the list of cities in visiting order
+      (path representation). Single-point crossover after position 5 is applied to the parents
+      $P_1 = (2, 7, 8, 4, 6, 3, 1, 5)$ and $P_2 = (1, 4, 7, 8, 6, 2, 3, 5)$: each child takes the
+      first five genes of one parent and the last three of the other. What do you get?
+    options:
+      - text: Neither child is a valid tour
+        correct: true
+      - text: Both children are valid tours
+        why: The first child is $(2,7,8,4,6,2,3,5)$, which visits city 2 twice and never visits city 1.
+      - text: Only the child that starts with $P_1$'s genes is valid
+        why: That child, $(2,7,8,4,6,2,3,5)$, repeats city 2 and misses city 1.
+      - text: Only the child that starts with $P_2$'s genes is valid
+        why: That child, $(1,4,7,8,6,3,1,5)$, repeats city 1 and misses city 2.
+    explanation: |
+      The children are $(2,7,8,4,6 \mid 2,3,5)$ and $(1,4,7,8,6 \mid 3,1,5)$ [^1]. Each repeats one
+      city and leaves another out, so neither is a permutation. In the path representation a gene's
+      meaning depends on the other genes, and ordinary one-point crossover does not preserve the
+      permutation property; this is why TSP genetic algorithms use permutation operators such as PMX,
+      order crossover or cycle crossover, or a different encoding [^2].
+    references:
+      - source: nptel-ai-search-methods
+        locator: Assignment 5, Q10 (single-point crossover of two path-represented tours)
+        url: https://archive.nptel.ac.in/content/storage2/courses/downloads_new/106106126/Week_05_Assignment_05.pdf
+      - title: 'Wikipedia: Crossover (evolutionary algorithm)'
+        url: https://en.wikipedia.org/wiki/Crossover_(evolutionary_algorithm)#Crossover_for_permutations
+        locator: Crossover for permutations
+    source:
+      id: nptel-ai-search-methods
+      ref: ai-search-methods/assignment5#q10
+      url: https://archive.nptel.ac.in/content/storage2/courses/downloads_new/106106126/Week_05_Assignment_05.pdf
+    status: draft
+  - id: genetic-algorithms-012
+    type: short_answer
+    difficulty: medium
+    tags:
+      - adjacency-representation
+      - tsp
+      - encoding
+    question: |
+      In the adjacency representation of a TSP tour, position $i$ of the list holds the city that is
+      visited right after city $i$. Write the adjacency representation of the tour
+      1 → 3 → 2 → 5 → 4 → 6 → 7 → 8 → (back to 1).
+    answer:
+      accept:
+        - 3,5,2,6,4,7,8,1
+      pattern: \(?\s*3\s*[,;\s]\s*5\s*[,;\s]\s*2\s*[,;\s]\s*6\s*[,;\s]\s*4\s*[,;\s]\s*7\s*[,;\s]\s*8\s*[,;\s]\s*1\s*\)?
+      hint: eight numbers separated by commas, e.g. 2,4,6,8,1,3,5,7
+      model: (3, 5, 2, 6, 4, 7, 8, 1)
+    explanation: |
+      Read off each city's successor: 1 → 3, 2 → 5, 3 → 2, 4 → 6, 5 → 4, 6 → 7, 7 → 8 and 8 → 1, which
+      gives (3, 5, 2, 6, 4, 7, 8, 1) [^1]. Unlike the path representation, each tour has a single
+      adjacency list (once the direction is fixed), but not every permutation is a tour: a list can
+      describe several disjoint sub-cycles, so crossover operators for this encoding must avoid them
+      [^1][^2].
+    references:
+      - source: nptel-ai-search-methods
+        locator: Assignment 5, Q7 and Q11 (adjacency representation of tours)
+        url: https://archive.nptel.ac.in/content/storage2/courses/downloads_new/106106126/Week_05_Assignment_05.pdf
+      - title: 'Wikipedia: Crossover (evolutionary algorithm)'
+        url: https://en.wikipedia.org/wiki/Crossover_(evolutionary_algorithm)#Crossover_for_permutations
+        locator: Crossover for permutations (order-based and adjacency-based problems)
+    source:
+      id: nptel-ai-search-methods
+      ref: ai-search-methods/assignment5#q11
+      url: https://archive.nptel.ac.in/content/storage2/courses/downloads_new/106106126/Week_05_Assignment_05.pdf
+    status: draft
+  - id: genetic-algorithms-013
+    type: short_answer
+    difficulty: hard
+    tags:
+      - ordinal-representation
+      - tsp
+      - encoding
+    question: |
+      The ordinal representation encodes a tour against a reference list, here (A, B, C, D, E, F, G,
+      H). For each city of the tour in turn, write its 1-based position in the current reference
+      list, then delete that city from the list. Encode the tour (A, D, C, G, H, B, E, F).
+    answer:
+      accept:
+        - 1,3,2,4,4,1,1,1
+      pattern: \(?\s*1\s*[,;\s]\s*3\s*[,;\s]\s*2\s*[,;\s]\s*4\s*[,;\s]\s*4\s*[,;\s]\s*1\s*[,;\s]\s*1\s*[,;\s]\s*1\s*\)?
+      hint: eight numbers separated by commas, e.g. 2,1,3,1,2,1,1,1
+      model: (1, 3, 2, 4, 4, 1, 1, 1)
+    explanation: |
+      A is 1st in (A…H); D is 3rd in (B, C, D, E, F, G, H); C is 2nd in (B, C, E, F, G, H); G is 4th
+      in (B, E, F, G, H); H is 4th in (B, E, F, H); then B, E and F are each 1st of what remains [^1].
+      The $k$-th gene can be any number from 1 to $9 - k$ and every such string decodes to a valid
+      tour, so plain one-point crossover never produces an invalid child in this encoding, unlike
+      the path representation [^1][^2].
+    references:
+      - source: nptel-ai-search-methods
+        locator: Assignment 5, Q13–Q14 (ordinal representation, reference list A–H)
+        url: https://archive.nptel.ac.in/content/storage2/courses/downloads_new/106106126/Week_05_Assignment_05.pdf
+      - title: 'Wikipedia: Crossover (evolutionary algorithm)'
+        url: https://en.wikipedia.org/wiki/Crossover_(evolutionary_algorithm)#Crossover_for_permutations
+        locator: Crossover for permutations
+    source:
+      id: nptel-ai-search-methods
+      ref: ai-search-methods/assignment5#q13
+      url: https://archive.nptel.ac.in/content/storage2/courses/downloads_new/106106126/Week_05_Assignment_05.pdf
+    status: draft
+  - id: genetic-algorithms-014
+    type: single
+    difficulty: hard
+    tags:
+      - pmx
+      - partially-mapped-crossover
+      - tsp
+    question: |
+      Partially mapped crossover (PMX) is applied to $P_1 = (2, 7, 8, 4, 6, 3, 1, 5)$ and
+      $P_2 = (1, 4, 7, 8, 6, 2, 3, 5)$ with cut points after positions 3 and 6. The child keeps $P_2$'s
+      middle segment $(8, 6, 2)$ in positions 4–6 and takes the other positions from $P_1$, resolving
+      duplicates through the mapping between the two middle segments. Which child results?
+    options:
+      - text: (3, 7, 4, 8, 6, 2, 1, 5)
+        correct: true
+      - text: (2, 7, 8, 8, 6, 2, 1, 5)
+        why: This copies $P_1$'s outer genes without the mapping, so 2 and 8 appear twice and 3 and 4 are missing.
+      - text: (1, 8, 7, 4, 6, 3, 2, 5)
+        why: This is the sibling, which keeps $P_1$'s middle segment $(4, 6, 3)$ and takes the rest from $P_2$.
+      - text: (7, 4, 3, 8, 6, 2, 1, 5)
+        why: This is order crossover, which fills the free positions in $P_1$'s cyclic order after the second cut instead of using the mapping.
+    explanation: |
+      The two middle segments define the mapping $8 \leftrightarrow 4$, $6 \leftrightarrow 6$,
+      $2 \leftrightarrow 3$ [^2]. Copying $P_1$'s outer genes $(2, 7, 8)$ and $(1, 5)$ around
+      $(8, 6, 2)$ would duplicate 2 and 8, so 2 is replaced by its partner 3 and 8 by 4, giving
+      $(3, 7, 4, 8, 6, 2, 1, 5)$ [^1]. The child keeps absolute positions from both parents and is
+      always a valid permutation.
+    references:
+      - source: nptel-ai-search-methods
+        locator: Assignment 5, Q15 (PMX with cuts after the 3rd and 6th city)
+        url: https://archive.nptel.ac.in/content/storage2/courses/downloads_new/106106126/Week_05_Assignment_05.pdf
+      - title: 'Wikipedia: Crossover (evolutionary algorithm)'
+        url: https://en.wikipedia.org/wiki/Crossover_(evolutionary_algorithm)#Partially_mapped_crossover_(PMX)
+        locator: Partially mapped crossover (PMX)
+    source:
+      id: nptel-ai-search-methods
+      ref: ai-search-methods/assignment5#q15
+      url: https://archive.nptel.ac.in/content/storage2/courses/downloads_new/106106126/Week_05_Assignment_05.pdf
+    status: draft
+  - id: genetic-algorithms-015
+    type: single
+    difficulty: hard
+    tags:
+      - cycle-crossover
+      - tsp
+      - permutation-encoding
+    question: |
+      Cycle crossover (CX) is applied to $P_1 = (2, 7, 8, 4, 6, 3, 1, 5)$ and
+      $P_2 = (1, 4, 7, 8, 6, 2, 3, 5)$. The positions are split into cycles (start at position 1, look
+      up the value of $P_2$ there, find that value's position in $P_1$, and repeat until back at the
+      start). Child $C_1$ takes the first cycle from $P_1$, the second from $P_2$, the third from
+      $P_1$, and so on. What is $C_1$?
+    options:
+      - text: (2, 4, 7, 8, 6, 3, 1, 5)
+        correct: true
+      - text: (1, 7, 8, 4, 6, 2, 3, 5)
+        why: This is the sibling $C_2$, which starts by taking the first cycle from $P_2$.
+      - text: (2, 7, 8, 4, 6, 2, 3, 5)
+        why: This is one-point crossover after position 5; it repeats city 2, while CX always yields a permutation.
+      - text: (3, 7, 4, 8, 6, 2, 1, 5)
+        why: This is the PMX child for cuts after positions 3 and 6; CX copies whole cycles, so position 1 keeps the 2 of $P_1$.
+    explanation: |
+      Position 1 holds 2 in $P_1$ and 1 in $P_2$; 1 sits at position 7 of $P_1$, where $P_2$ has 3;
+      3 sits at position 6, where $P_2$ has 2, closing the first cycle {1, 6, 7} with values 2, 3, 1
+      [^1]. Starting at position 2 gives the second cycle {2, 3, 4} (values 7, 8, 4 in $P_1$), and
+      positions 5 and 8 agree in both parents. $C_1$ takes cycle 1 from $P_1$ and cycle 2 from $P_2$:
+      $(2, 4, 7, 8, 6, 3, 1, 5)$. Every city keeps the position it had in one of the parents, and the
+      result is always a permutation [^2].
+    references:
+      - source: nptel-ai-search-methods
+        locator: Assignment 5, Q17–Q20 (cycle crossover; accepted C1 = 2,4,7,8,6,3,1,5)
+        url: https://archive.nptel.ac.in/content/storage2/courses/downloads_new/106106126/Week_05_Assignment_05.pdf
+      - title: 'Wikipedia: Crossover (evolutionary algorithm)'
+        url: https://en.wikipedia.org/wiki/Crossover_(evolutionary_algorithm)#Further_crossover_operators_for_permutations
+        locator: Further crossover operators for permutations (cycle crossover)
+    source:
+      id: nptel-ai-search-methods
+      ref: ai-search-methods/assignment5#q19
+      url: https://archive.nptel.ac.in/content/storage2/courses/downloads_new/106106126/Week_05_Assignment_05.pdf
+    status: draft
+  - id: genetic-algorithms-016
+    type: single
+    difficulty: easy
+    tags:
+      - ant-colony-optimization
+      - pheromone
+      - tsp
+    question: |
+      In ant colony optimisation for the TSP, each ant builds a tour and then deposits pheromone on
+      the edges it used. How much pheromone does an ant deposit per edge?
+    options:
+      - text: An amount inversely proportional to the length of its tour
+        correct: true
+      - text: An amount proportional to the length of its tour
+        why: Long tours would then attract more ants, the opposite of what the search needs [^2].
+      - text: The same amount for every ant, whatever the length of its tour
+        why: Then pheromone would reflect only how often an edge is used, not how good the tours through it are [^2].
+      - text: An amount inversely proportional to that edge's own length
+        why: Edge length enters the ants' choice as the heuristic visibility $1/d_{ij}$, not the deposit, which depends on the whole tour [^2].
+    explanation: |
+      In the Ant System an ant $k$ that completes a tour of length $L_k$ adds
+      $\Delta\tau_{ij}^k = Q / L_k$ to every edge $(i, j)$ of its tour, and all pheromone evaporates a
+      little each round [^2]. Edges that lie on short tours therefore build up more pheromone, and
+      later ants, which choose edges with a probability that grows with pheromone and with $1/d_{ij}$,
+      are pulled toward good tours [^1][^2].
+    references:
+      - source: nptel-ai-search-methods
+        locator: Assignment 5, Q8–Q9 (how ants build tours; pheromone deposit)
+        url: https://archive.nptel.ac.in/content/storage2/courses/downloads_new/106106126/Week_05_Assignment_05.pdf
+      - title: 'Wikipedia: Ant colony optimization algorithms'
+        url: https://en.wikipedia.org/wiki/Ant_colony_optimization_algorithms#Pheromone_update
+        locator: Algorithm and formula — Edge selection; Pheromone update
+    source:
+      id: nptel-ai-search-methods
+      ref: ai-search-methods/assignment5#q9
+      url: https://archive.nptel.ac.in/content/storage2/courses/downloads_new/106106126/Week_05_Assignment_05.pdf
+    status: draft

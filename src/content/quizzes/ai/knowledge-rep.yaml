@@ -2427,3 +2427,295 @@ questions:
       ref: mit6_034f10_final_2007#q5.1b
       url: https://ocw.mit.edu/courses/6-034-artificial-intelligence-fall-2010/resources/mit6_034f10_final_2007/
     status: draft
+  - id: knowledge-rep-063
+    type: multiple
+    difficulty: hard
+    tags:
+      - rule-based-systems
+      - conflict-set
+      - production-rules
+    question: |
+      A bank's rule-based system has three rules (OPS5-like; variables in angle brackets):
+
+      - **N**: (applicant ^name ⟨n⟩ ^salary < 35000 ^status NIL) → modify status to No
+      - **LC1**: (applicant ^name ⟨n⟩ ^salary > 100000 ^status NIL), (stocks ^holder ⟨n⟩ ^worth > 20000) → modify status to C1
+      - **LC2**: (applicant ^name ⟨n⟩ ^salary > 85000 ^status NIL), (stocks ^holder ⟨n⟩ ^worth > 50000), (credit ^user ⟨n⟩ ^score > 150) → modify status to C2
+
+      Working memory, by timestamp: 1 (applicant a, salary 5000, NIL); 2 (applicant b, salary
+      1035000, NIL); 3 (applicant c, salary 95000, NIL); 4 (credit b, score 100); 5 (credit c, score
+      155); 6 (stocks a, worth 10000); 7 (stocks c, worth 60000); 8 (stocks b, worth 25000).
+      Which instantiations ⟨rule, WMEs⟩ are in the conflict set after the match phase? Select all
+      that apply.
+    options:
+      - text: ⟨N, 1⟩
+        correct: true
+      - text: ⟨LC1, 2, 8⟩
+        correct: true
+      - text: ⟨LC2, 3, 5, 7⟩
+        correct: true
+      - text: ⟨LC2, 2, 4, 8⟩
+        why: Applicant b's stocks are worth 25000, not more than 50000, and b's credit score is 100, so LC2 fails for b.
+      - text: ⟨LC1, 3, 7⟩
+        why: Applicant c earns 95000, which is not more than 100000, so LC1's first condition fails for c.
+    explanation: |
+      The match phase pairs every rule with every combination of WMEs that satisfies all its
+      conditions with consistent variable bindings [^1]. Applicant a earns less than 35000, so N
+      matches WME 1. Only b earns over 100000, and b's stocks (WME 8) are worth over 20000, so LC1
+      matches ⟨2, 8⟩. For LC2, b fails on stocks and credit, but c (WME 3) has stocks of 60000 (7) and
+      a score of 155 (5) [^1]. The conflict set holds all instantiations that could fire; a
+      conflict-resolution strategy then picks one, e.g. recency picks ⟨LC1, 2, 8⟩ (it has the newest
+      WME, 8) and specificity picks ⟨LC2, 3, 5, 7⟩ (most conditions) [^2].
+    references:
+      - source: nptel-ai-search-methods
+        locator: Assignment 10, Q15–Q17 (loan rules N, LC1, LC2 and their conflict set)
+        url: https://archive.nptel.ac.in/content/storage2/courses/downloads_new/106106126/Week_10_Assignment_10.pdf
+      - title: 'Wikipedia: Rete algorithm'
+        url: https://en.wikipedia.org/wiki/Rete_algorithm#Conflict_resolution
+        locator: Description — Conflict resolution
+    source:
+      id: nptel-ai-search-methods
+      ref: ai-search-methods/assignment10#q17
+      url: https://archive.nptel.ac.in/content/storage2/courses/downloads_new/106106126/Week_10_Assignment_10.pdf
+    status: draft
+  - id: knowledge-rep-064
+    type: single
+    difficulty: medium
+    tags:
+      - rule-based-systems
+      - conflict-resolution
+      - recency
+      - specificity
+    question: |
+      A production system has two rules:
+
+      - **R1**: (thread ^name ⟨x⟩) → make (process ^name ⟨x⟩ ^isAlive yes)
+      - **R2**: (thread ^name ⟨x⟩), (killed ^name ⟨x⟩) → make (process ^name ⟨x⟩ ^isAlive no)
+
+      Working memory holds, in timestamp order: 1 (thread ^name t1), 2 (thread ^name t2),
+      3 (killed ^name t2). Which conclusion is made first under the conflict-resolution strategy
+      *specificity*, and which under *recency*?
+    options:
+      - text: Both strategies fire R2 on WMEs 2 and 3, making process t2 not alive
+        correct: true
+      - text: Specificity fires R2 on WMEs 2 and 3, while recency fires R1 on WME 2
+        why: Recency prefers the instantiation with the newest WME, and only R2's instantiation contains WME 3.
+      - text: Specificity fires R1 on WME 1, while recency fires R2 on WMEs 2 and 3
+        why: Specificity prefers the rule with more conditions, which is R2, not R1.
+      - text: Both strategies fire R1 on WME 1, making process t1 alive
+        why: R1 has fewer conditions and its instantiations use older WMEs, so neither strategy picks it first.
+    explanation: |
+      The conflict set is {⟨R1, 1⟩, ⟨R1, 2⟩, ⟨R2, 2, 3⟩} [^1]. Specificity prefers the instantiation
+      whose rule has more conditions, which is R2. Recency prefers the instantiation that matches the
+      most recently added WME, here WME 3, again R2 [^1][^2]. Either way the system first concludes
+      (process ^name t2 ^isAlive no), which is also the sensible answer: the more specific rule
+      knows that t2 was killed.
+    references:
+      - source: nptel-ai-search-methods
+        locator: Assignment 10, Q12–Q14 (thread-management rules; specificity and recency)
+        url: https://archive.nptel.ac.in/content/storage2/courses/downloads_new/106106126/Week_10_Assignment_10.pdf
+      - title: 'Wikipedia: Rete algorithm'
+        url: https://en.wikipedia.org/wiki/Rete_algorithm#Conflict_resolution
+        locator: Description — Conflict resolution
+    source:
+      id: nptel-ai-search-methods
+      ref: ai-search-methods/assignment10#q13
+      url: https://archive.nptel.ac.in/content/storage2/courses/downloads_new/106106126/Week_10_Assignment_10.pdf
+    status: draft
+  - id: knowledge-rep-065
+    type: single
+    difficulty: easy
+    tags:
+      - forward-chaining
+      - backward-chaining
+      - inference
+    question: |
+      A rule-based system can reason by forward chaining or by backward chaining. Which description
+      fits the two?
+    options:
+      - text: Forward chaining is data-driven, backward chaining is goal-directed
+        correct: true
+      - text: Forward chaining is goal-directed, backward chaining is data-driven
+        why: Forward chaining starts from the known facts; backward chaining starts from the goal and works back [^2].
+      - text: Both are data-driven and differ only in the order of rule firing
+        why: Backward chaining starts from a goal and looks for rules that conclude it, which is goal-directed [^2].
+      - text: Forward chaining needs a goal to start; backward chaining cannot use facts
+        why: Forward chaining needs no goal at all, and backward chaining ends its chains at known facts [^2].
+    explanation: |
+      Forward chaining starts from the facts in working memory and fires every rule whose conditions
+      hold, adding conclusions until nothing new follows: data-driven, and "eager" because it derives
+      facts whether or not they are needed [^1][^2]. Backward chaining starts from a goal, finds rules
+      whose conclusion matches it and turns their conditions into subgoals: goal-directed and "lazy",
+      deriving only what the goal requires [^2].
+    references:
+      - source: nptel-ai-search-methods
+        locator: Assignment 10, Q2 (forward chaining eager and data-driven, backward chaining lazy and goal-directed)
+        url: https://archive.nptel.ac.in/content/storage2/courses/downloads_new/106106126/Week_10_Assignment_10.pdf
+      - title: 'Wikipedia: Forward chaining'
+        url: https://en.wikipedia.org/wiki/Forward_chaining
+        locator: Introduction; Example
+    source:
+      id: nptel-ai-search-methods
+      ref: ai-search-methods/assignment10#q2
+      url: https://archive.nptel.ac.in/content/storage2/courses/downloads_new/106106126/Week_10_Assignment_10.pdf
+    status: draft
+  - id: knowledge-rep-066
+    type: single
+    difficulty: medium
+    tags:
+      - rete
+      - rule-based-systems
+      - pattern-matching
+    question: |
+      A rule-based system runs the Match–Resolve–Execute cycle. Which phase is the most expensive, and
+      how does the Rete algorithm reduce its cost?
+    options:
+      - text: Matching; Rete keeps partial matches from cycle to cycle and updates them as WMEs change
+        correct: true
+      - text: Conflict resolution; Rete sorts the conflict set faster by keeping it in a priority queue
+        why: Picking one instantiation is cheap; the costly part is finding all instantiations, which Rete speeds up [^2].
+      - text: Execution; Rete compiles rule actions into machine code before running them
+        why: Rete is a matching algorithm; it does not change how actions are executed [^2].
+      - text: Matching; Rete re-matches every rule against all of working memory in parallel
+        why: Rete avoids re-matching from scratch; it stores intermediate matches in alpha and beta memories [^2].
+    explanation: |
+      Most of the run time of a production system is spent matching rule conditions against working
+      memory [^1]. Since each cycle changes only a few WMEs, Rete compiles the rules into a network:
+      alpha nodes test single conditions, beta nodes join conditions on shared variables, and both
+      store their partial matches [^2]. A new or removed WME only propagates its change through the
+      network, instead of matching every rule against all of working memory again [^2].
+    references:
+      - source: nptel-ai-search-methods
+        locator: Assignment 10, Q4–Q5 (most expensive phase; motivation for Rete)
+        url: https://archive.nptel.ac.in/content/storage2/courses/downloads_new/106106126/Week_10_Assignment_10.pdf
+      - title: 'Wikipedia: Rete algorithm'
+        url: https://en.wikipedia.org/wiki/Rete_algorithm#Overview
+        locator: Overview; Description — Alpha network, Beta network
+    source:
+      id: nptel-ai-search-methods
+      ref: ai-search-methods/assignment10#q5
+      url: https://archive.nptel.ac.in/content/storage2/courses/downloads_new/106106126/Week_10_Assignment_10.pdf
+    status: draft
+  - id: knowledge-rep-067
+    type: single
+    difficulty: easy
+    tags:
+      - knowledge-graph-embedding
+      - transe
+      - link-prediction
+    question: |
+      TransE embeds entities and relations as vectors and scores a triple (subject, relation, object)
+      by $f(s, r, o) = \lVert \mathbf{e}_s + \mathbf{e}_r - \mathbf{e}_o \rVert$. What does a low value of
+      $f$ mean?
+    options:
+      - text: The triple is likely to be a true fact in the graph
+        correct: true
+      - text: The triple is likely to be false
+        why: TransE trains true triples to have $\mathbf{e}_s + \mathbf{e}_r \approx \mathbf{e}_o$, i.e. a small distance [^2].
+      - text: The subject and object embeddings are orthogonal to each other
+        why: The score measures a translation distance, not an angle between $\mathbf{e}_s$ and $\mathbf{e}_o$.
+      - text: The relation embedding is the zero vector
+        why: A small distance only says that $\mathbf{e}_s + \mathbf{e}_r$ lands near $\mathbf{e}_o$; the relation vector need not be zero.
+    explanation: |
+      TransE models a relation as a translation: for a true triple the subject's embedding moved by
+      the relation vector should land near the object's embedding [^2]. Training uses a margin loss
+      that pushes the distance of observed triples below that of corrupted ones, so a small $f$ means
+      a plausible fact; link prediction ranks candidate objects by $f$ and reports metrics such as
+      hits@K [^1][^2].
+    references:
+      - source: nptel-intro-llms
+        locator: Assignment 9, Q7–Q8 (hits@K; meaning of a low TransE score)
+        url: https://archive.nptel.ac.in/content/storage2/courses/downloads_new/106102576/noc25_cs45_assignment_Week_9.png
+      - title: 'Wikipedia: Knowledge graph embedding'
+        url: https://en.wikipedia.org/wiki/Knowledge_graph_embedding#Pure_translational_models
+        locator: Models — Geometric models — Pure translational models (TransE); Performance indicators
+    source:
+      id: nptel-intro-llms
+      ref: intro-llms/assignment9#q8
+      url: https://archive.nptel.ac.in/content/storage2/courses/downloads_new/106102576/noc25_cs45_assignment_Week_9.png
+    status: draft
+  - id: knowledge-rep-068
+    type: multiple
+    difficulty: hard
+    tags:
+      - knowledge-graph-embedding
+      - distmult
+      - complex
+      - symmetry
+    question: |
+      DistMult scores a triple by $\langle \mathbf{e}_s, \mathbf{r}, \mathbf{e}_o \rangle = \sum_k
+      e_{s,k}\, r_k\, e_{o,k}$, i.e. $\mathbf{e}_s^\top \mathrm{diag}(\mathbf{r})\, \mathbf{e}_o$. ComplEx
+      uses complex vectors and scores $\mathrm{Re}\left(\sum_k e_{s,k}\, r_k\, \overline{e_{o,k}}\right)$.
+      Which statements are true? Select all that apply.
+    options:
+      - text: DistMult gives $(s, r, o)$ and $(o, r, s)$ the same score, so it cannot model antisymmetric relations
+        correct: true
+      - text: ComplEx can model antisymmetric relations because of the complex conjugate on the object
+        correct: true
+      - text: If a ComplEx relation vector has zero imaginary part, its scores are symmetric
+        correct: true
+      - text: DistMult gives each relation a full $D \times D$ matrix
+        why: DistMult restricts the relation matrix to a diagonal, i.e. one vector of $D$ numbers [^2].
+      - text: ComplEx replaces the products of DistMult by sums of real vectors
+        why: ComplEx keeps the trilinear product; it changes the number field to complex numbers [^3].
+    explanation: |
+      With a diagonal relation matrix the DistMult score is unchanged when subject and object swap, so
+      every relation it learns is symmetric [^2]. ComplEx conjugates the object embedding, and swapping
+      subject and object conjugates the product; the real part then differs whenever the relation
+      has an imaginary component [^3]. With purely real relation vectors the score is symmetric again,
+      so ComplEx covers both cases, still with linear time and space per relation [^1][^3].
+    references:
+      - source: nptel-intro-llms
+        locator: Assignment 11, Q2–Q3 (DistMult and its ComplEx extension)
+        url: https://archive.nptel.ac.in/content/storage2/courses/downloads_new/106102576/noc25_cs45_assignment_Week_11.png
+      - title: Yang et al. (2015), Embedding Entities and Relations for Learning and Inference in Knowledge Bases, arXiv:1412.6575
+        url: https://arxiv.org/abs/1412.6575
+        locator: Sec. 3 Multi-relational representation learning (bilinear-diag model)
+      - title: Trouillon et al. (2016), Complex Embeddings for Simple Link Prediction, arXiv:1606.06357
+        url: https://arxiv.org/abs/1606.06357
+        locator: Sec. 2 Relations as Real Part of Low-Rank Normal Matrices; Sec. 3 Application to Binary Multi-Relational Data
+    source:
+      id: nptel-intro-llms
+      ref: intro-llms/assignment11#q3
+      url: https://archive.nptel.ac.in/content/storage2/courses/downloads_new/106102576/noc25_cs45_assignment_Week_11.png
+    status: draft
+  - id: knowledge-rep-069
+    type: single
+    difficulty: hard
+    tags:
+      - knowledge-graph-embedding
+      - rotate
+      - symmetry
+    question: |
+      RotatE models each relation as an element-wise rotation in the complex plane:
+      $\mathbf{e}_o \approx \mathbf{e}_s \circ \mathbf{r}$ with $|r_k| = 1$, i.e. $r_k = e^{i\theta_k}$.
+      What must hold for a relation $r$ that is symmetric, so that $(s, r, o)$ and $(o, r, s)$ both
+      fit?
+    options:
+      - text: $\mathbf{r} \circ \mathbf{r} = \mathbf{1}$, so every $\theta_k$ is 0 or $\pi$
+        correct: true
+      - text: Every $\theta_k$ equals $\pi/2$, a quarter turn in each coordinate
+        why: Two rotations by $\pi/2$ give a rotation by $\pi$, which maps $\mathbf{e}_s$ to $-\mathbf{e}_s$, not back to itself.
+      - text: The relation vector is the zero vector, so it adds nothing
+        why: RotatE requires $|r_k| = 1$, so $r_k$ can never be 0.
+      - text: The magnitudes $|r_k|$ exceed 1, so that the rotations also stretch the vectors
+        why: RotatE fixes $|r_k| = 1$; only the phases $\theta_k$ are learned [^2].
+    explanation: |
+      If $\mathbf{e}_o = \mathbf{e}_s \circ \mathbf{r}$ and $\mathbf{e}_s = \mathbf{e}_o \circ
+      \mathbf{r}$, then $\mathbf{e}_s = \mathbf{e}_s \circ \mathbf{r} \circ \mathbf{r}$, so
+      $r_k^2 = 1$ and $r_k = \pm 1$: each coordinate rotates by 0 or 180°, and the relation is its own
+      inverse [^2]. The official NPTEL wording ("a 180° rotation when squared") is loose: it is the
+      rotation itself that is 0° or 180° per coordinate, and its square is the identity [^1]. Other
+      phases make a relation antisymmetric, and composing relations adds their angles, which is how
+      RotatE covers symmetry, antisymmetry, inversion and composition [^2].
+    references:
+      - source: nptel-intro-llms
+        locator: Assignment 9, Q9–Q10 (symmetric relations in RotatE; rotation vs translation models)
+        url: https://archive.nptel.ac.in/content/storage2/courses/downloads_new/106102576/noc25_cs45_assignment_Week_9.png
+      - title: 'Sun et al. (2019), RotatE: Knowledge Graph Embedding by Relational Rotation in Complex Space, arXiv:1902.10197'
+        url: https://arxiv.org/abs/1902.10197
+        locator: Sec. 3.1 Modeling and Inferring Relation Patterns (Lemmas 1–3)
+    source:
+      id: nptel-intro-llms
+      ref: intro-llms/assignment9#q9
+      url: https://archive.nptel.ac.in/content/storage2/courses/downloads_new/106102576/noc25_cs45_assignment_Week_9.png
+    status: draft

@@ -708,3 +708,42 @@ questions:
       ref: docs/spinningup/rl_intro3.rst#q6
       url: https://github.com/openai/spinningup/blob/038665d62d569055401d91856abb287263096178/docs/spinningup/rl_intro3.rst
     status: draft
+  - id: policy-gradient-021
+    type: single
+    difficulty: medium
+    tags:
+      - reinforce
+      - log-derivative-trick
+      - score-function
+    question: |
+      REINFORCE uses the log-derivative trick
+      $\nabla_\theta \mathbb{E}_{y \sim \pi_\theta}[R(y)] = \mathbb{E}_{y \sim \pi_\theta}[R(y)\,\nabla_\theta \log \pi_\theta(y)]$.
+      Why is this useful when fine-tuning a language model with a reward?
+    options:
+      - text: The gradient can be estimated from sampled outputs without differentiating the reward
+        correct: true
+      - text: It removes the need to sample any outputs from the model while the policy is being trained
+        why: The right-hand side is an expectation under $\pi_\theta$, estimated precisely by sampling outputs [^2].
+      - text: It makes the gradient estimate exact, with zero variance
+        why: REINFORCE estimates are notoriously noisy; baselines are used to reduce their variance [^2].
+      - text: It enlarges the vocabulary that the model can sample tokens from
+        why: The trick rewrites a gradient; it has nothing to do with the vocabulary.
+    explanation: |
+      The expected reward depends on $\theta$ only through the sampling distribution, and the reward
+      itself (a human rating or a reward model's score of a discrete text) is not differentiable [^1].
+      Using $\nabla_\theta \pi_\theta = \pi_\theta \nabla_\theta \log \pi_\theta$ turns the gradient
+      into an expectation that can be estimated by sampling $y$, scoring it, and weighting
+      $\nabla_\theta \log \pi_\theta(y)$ by the reward [^2]. Subtracting a baseline from $R$ keeps the
+      estimate unbiased while lowering its variance [^2].
+    references:
+      - source: nptel-intro-llms
+        locator: Assignment 8, Q9 (advantage of the log-derivative trick in REINFORCE)
+        url: https://archive.nptel.ac.in/content/storage2/courses/downloads_new/106102576/noc25_cs45_assignment_Week_8.png
+      - title: 'Wikipedia: Policy gradient method'
+        url: https://en.wikipedia.org/wiki/Policy_gradient_method#REINFORCE
+        locator: REINFORCE — Policy gradient; Variance reduction — REINFORCE with baseline
+    source:
+      id: nptel-intro-llms
+      ref: intro-llms/assignment8#q9
+      url: https://archive.nptel.ac.in/content/storage2/courses/downloads_new/106102576/noc25_cs45_assignment_Week_8.png
+    status: draft
