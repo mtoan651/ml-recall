@@ -348,3 +348,429 @@ questions:
       ref: machine_learning/94
       url: https://huggingface.co/datasets/edinburgh-dawg/mmlu-redux-2.0/viewer/machine_learning/test?row=94
     status: draft
+  - id: probabilistic-models-011
+    type: single
+    difficulty: easy
+    tags:
+      - gaussian-processes
+      - epistemic-uncertainty
+      - aleatoric-uncertainty
+    question: |
+      A Gaussian process regression model is fit to noisy measurements $y = f(x) + \epsilon$.
+      Which statement correctly separates epistemic uncertainty from observation (aleatoric)
+      uncertainty?
+    options:
+      - text: Epistemic uncertainty is about the unknown $f$ and shrinks with more data; the noise does not
+        correct: true
+      - text: Epistemic uncertainty comes from the measurement noise, so it is the part that more data cannot remove
+        why: That describes the observation noise. Epistemic uncertainty comes from not knowing $f$, and more data reduces it [^1].
+      - text: Observation uncertainty grows away from the training inputs, while epistemic uncertainty is the same everywhere
+        why: It is the other way round. The noise variance $\sigma^2$ is the same at every input, while epistemic uncertainty grows away from the data [^1][^2].
+      - text: Both kinds shrink to zero as the dataset grows, only at different rates
+        why: The noise variance is irreducible. Only the epistemic part disappears as data accumulate [^2].
+    explanation: |
+      Epistemic uncertainty is the reducible uncertainty about the function itself: where there is
+      little data, many functions fit, so the posterior varies a lot, and it grows away from the
+      observations [^1]. Aleatoric uncertainty is the observation noise
+      $\epsilon \sim \mathcal{N}(0, \sigma^2)$; the data come with it and no amount of data removes
+      it [^2]. In GP regression the epistemic part is the posterior variance of the latent $f(x)$,
+      while the aleatoric part is the noise variance $\sigma^2$ [^2].
+    references:
+      - source: d2l
+        locator: Sec. 18.1 Introduction to Gaussian Processes (epistemic uncertainty and the credible set)
+        url: https://d2l.ai/chapter_gaussian-processes/gp-intro.html
+      - source: d2l
+        locator: Sec. 18.3.4 Worked Example from Scratch (epistemic and aleatoric uncertainty)
+        url: https://d2l.ai/chapter_gaussian-processes/gp-inference.html#worked-example-from-scratch
+      - source: d2l
+        locator: Sec. 18.1.2 Exercises, Exercise 1
+        url: https://d2l.ai/chapter_gaussian-processes/gp-intro.html#exercises
+    source:
+      id: d2l
+      ref: chapter_gaussian-processes/gp-intro#ex1
+      url: https://d2l.ai/chapter_gaussian-processes/gp-intro.html#exercises
+    status: draft
+  - id: probabilistic-models-012
+    type: multiple
+    difficulty: medium
+    tags:
+      - gaussian-distribution
+      - conditioning
+      - marginalization
+      - gaussian-processes
+    question: |
+      Gaussian process inference relies on closure properties of Gaussian random variables. Which
+      statements are true? Select all that apply.
+    options:
+      - text: If $X$ and $Y$ are independent Gaussians, $X + Y$ is Gaussian
+        correct: true
+      - text: If $X$ and $Y$ are independent standard Gaussians, the product $XY$ is Gaussian
+        why: The product has density $K_0(|z|)/\pi$, a sharp peak at 0 with heavy tails (kurtosis 9 instead of 3), so it is not Gaussian [^3].
+      - text: If $(a, b)$ is jointly Gaussian, then $a$ given $b = \beta$ is Gaussian for every $\beta$
+        correct: true
+      - text: If $(a, b)$ is jointly Gaussian, then the marginal distribution of $a$ is Gaussian
+        correct: true
+      - text: If $a$ and $b$ are each Gaussian, then the pair $(a, b)$ is jointly Gaussian
+        why: 'Counterexample: $b = Sa$ with an independent random sign $S$. Then $b$ is Gaussian, but $a + b = 0$ with probability 1/2, so $(a, b)$ is not jointly Gaussian [^2].'
+    explanation: |
+      A GP prediction conditions a joint Gaussian over $(f(x), f(x_1), \dots, f(x_n))$ on the
+      observed values and gets a Gaussian posterior [^1]. Jointly Gaussian vectors are closed under
+      marginalization, conditioning and affine maps, and a sum of independent Gaussians is Gaussian
+      [^2][^4]. Two caveats: each variable being Gaussian does not make the pair jointly Gaussian
+      [^2], and products of Gaussians are not Gaussian [^3]. The sum rule is why $f(x) = w_0 + w_1 x$
+      with Gaussian weights is a GP [^4].
+    references:
+      - source: d2l
+        locator: Sec. 18.1 Introduction to Gaussian Processes (conditioning the joint Gaussian, the posterior mean $m$ and variance $s^2$)
+        url: https://d2l.ai/chapter_gaussian-processes/gp-intro.html
+      - title: 'Wikipedia: Multivariate normal distribution'
+        locator: Joint normality (incl. "Two normally distributed random variables need not be jointly bivariate normal"), Conditional distributions, Marginal distributions
+        url: https://en.wikipedia.org/wiki/Multivariate_normal_distribution
+      - title: 'Wikipedia: Product distribution'
+        locator: Special cases, Independent central-normal distributions
+        url: https://en.wikipedia.org/wiki/Product_distribution
+      - source: d2l
+        locator: Sec. 18.2.2 A Simple Gaussian Process (Gaussians are closed under addition)
+        url: https://d2l.ai/chapter_gaussian-processes/gp-priors.html#a-simple-gaussian-process
+      - source: d2l
+        locator: Sec. 18.1.2 Exercises, Exercise 4
+        url: https://d2l.ai/chapter_gaussian-processes/gp-intro.html#exercises
+    source:
+      id: d2l
+      ref: chapter_gaussian-processes/gp-intro#ex4
+      url: https://d2l.ai/chapter_gaussian-processes/gp-intro.html#exercises
+    status: draft
+  - id: probabilistic-models-013
+    type: single
+    difficulty: medium
+    tags:
+      - gaussian-processes
+      - posterior-variance
+      - conditioning
+    question: |
+      A noise-free GP has $k(x, x) = k(x_1, x_1) = k(x_2, x_2) = 1$ and $k(x, x_1) = 0.9$. Observing
+      $f(x_1) = 1.2$ gives $f(x) \mid f(x_1) \sim \mathcal{N}(1.08,\ 0.19)$. You then also observe
+      $f(x_2) = 1.4$, where $k(x, x_2) = 0.8$. How does the new posterior variance of $f(x)$ compare
+      with $0.19$?
+    options:
+      - text: It is at most 0.19 whatever $k(x_1, x_2)$ is, since conditioning on more data never increases it
+        correct: true
+      - text: It is larger than 0.19, because the second value 1.4 disagrees with 1.08, the current mean of $f(x)$
+        why: The posterior variance $k(x,x) - k(x, x_{1:n}) K^{-1} k(x_{1:n}, x)$ does not involve the observed values at all [^1][^2].
+      - text: Even its direction cannot be determined without knowing $k(x_1, x_2)$
+        why: The amount of the drop depends on $k(x_1, x_2)$, but the variance can only go down or stay the same [^3].
+      - text: It depends on how close 1.4 is to 1.2, the first observed value
+        why: Only the kernel values enter the variance; the observed numbers affect the mean, not the variance [^2].
+    explanation: |
+      The posterior variance is $s^2 = k(x,x) - k(x, x_{1:n})\, k(x_{1:n}, x_{1:n})^{-1} k(x_{1:n}, x)$
+      [^1]. It depends only on the inputs through the kernel, not on the observed values [^2].
+      Conditioning a Gaussian on an extra variable subtracts a positive semidefinite term from the
+      covariance, so the variance of $f(x)$ can only drop or stay the same [^3]: we are at least as
+      certain as before. Its exact value, and the new mean, need $k(x_1, x_2)$; with
+      $k(x_1, x_2) = 0.8$, for example, the variance falls to about $0.17$.
+    references:
+      - source: d2l
+        locator: Sec. 18.1 Introduction to Gaussian Processes (the posterior mean $m$ and variance $s^2$, the $f(x_1) = 1.2$ example)
+        url: https://d2l.ai/chapter_gaussian-processes/gp-intro.html
+      - source: d2l
+        locator: Sec. 18.3.3 Interpreting Equations for Learning and Predictions (the predictive variance does not depend on $\mathbf{y}$)
+        url: https://d2l.ai/chapter_gaussian-processes/gp-inference.html#interpreting-equations-for-learning-and-predictions
+      - title: 'Wikipedia: Multivariate normal distribution'
+        locator: Conditional distributions (the conditional covariance is a Schur complement)
+        url: https://en.wikipedia.org/wiki/Multivariate_normal_distribution
+      - source: d2l
+        locator: Sec. 18.1.2 Exercises, Exercise 5
+        url: https://d2l.ai/chapter_gaussian-processes/gp-intro.html#exercises
+    source:
+      id: d2l
+      ref: chapter_gaussian-processes/gp-intro#ex5
+      url: https://d2l.ai/chapter_gaussian-processes/gp-intro.html#exercises
+    status: draft
+  - id: probabilistic-models-014
+    type: single
+    difficulty: medium
+    tags:
+      - gaussian-processes
+      - length-scale
+      - noise-variance
+      - hyperparameters
+    question: |
+      In GP regression with an RBF kernel, you fix the observation-noise variance $\sigma^2$ at a
+      larger value than before and re-learn the length-scale $\ell$ by maximizing the marginal
+      likelihood. Which way does the learned $\ell$ typically move?
+    options:
+      - text: 'It grows: more of the wiggles count as noise, so a smoother function suffices'
+        correct: true
+      - text: 'It shrinks: the function must vary faster to reach the noisier points'
+        why: With more noise the model no longer has to pass close to each point, so it can use a slower-varying function [^1][^2].
+      - text: 'It stays the same: noise and length-scale are learned independently'
+        why: They trade off against each other, which is why the marginal likelihood can have separate local optima [^1].
+      - text: 'It shrinks: a larger $\sigma^2$ needs a smaller $\ell$ to keep $K + \sigma^2 I$ invertible'
+        why: Adding $\sigma^2$ to the diagonal improves the conditioning of the matrix; it does not force a shorter length-scale [^3].
+    explanation: |
+      The length-scale and the noise compete to explain the same variation in the data. A large
+      $\ell$ assumes a slowly varying function, which is plausible for wiggly data only if a large
+      noise variance absorbs the wiggles; a small $\ell$ fits the variations and leaves little for
+      noise [^1]. In the classic example, forcing $\ell = 0.3$ drives the learned noise down to
+      $\sigma_n \approx 0.00005$, while $\ell = 3$ pushes it up to $0.89$ [^2]. So a higher noise
+      estimate goes with a longer learned length-scale.
+    references:
+      - source: d2l
+        locator: Sec. 18.3.7 Exercises, Exercise 2 (large length-scale with large noise versus small length-scale with small noise)
+        url: https://d2l.ai/chapter_gaussian-processes/gp-inference.html#exercises
+      - title: Rasmussen & Williams, Gaussian Processes for Machine Learning (MIT Press, 2006)
+        locator: Sec. 2.3 Varying the Hyperparameters, Fig. 2.5, pp. 19–21
+        url: http://gaussianprocess.org/gpml/chapters/RW2.pdf
+      - source: d2l
+        locator: Sec. 18.3.3 Interpreting Equations for Learning and Predictions (noise on the diagonal improves conditioning)
+        url: https://d2l.ai/chapter_gaussian-processes/gp-inference.html#interpreting-equations-for-learning-and-predictions
+      - source: d2l
+        locator: Sec. 18.1.2 Exercises, Exercise 6
+        url: https://d2l.ai/chapter_gaussian-processes/gp-intro.html#exercises
+    source:
+      id: d2l
+      ref: chapter_gaussian-processes/gp-intro#ex6
+      url: https://d2l.ai/chapter_gaussian-processes/gp-intro.html#exercises
+    status: draft
+  - id: probabilistic-models-015
+    type: short_answer
+    difficulty: medium
+    tags:
+      - gaussian-processes
+      - posterior-variance
+      - rbf-kernel
+      - extrapolation
+    question: |
+      A zero-mean GP with RBF kernel
+      $k(x, x') = a^2 \exp\left(-\frac{(x - x')^2}{2\ell^2}\right)$, $a = 2$, $\ell = 1$, is conditioned
+      on noise-free observations with inputs in $[0, 5]$. As the test input moves far from the data
+      (say $x = 50$), the posterior standard deviation of $f(x)$ stops growing. Which value does it
+      approach?
+    answer:
+      numeric: 2
+      tolerance: 0.01
+      hint: a number
+      model: $s^2 = k(x,x) - k(x, X) K^{-1} k(X, x) \to k(x,x) = a^2 = 4$, so $s \to a = 2$
+    explanation: |
+      The posterior variance is $k(x,x) - k(x, x_{1:n}) K^{-1} k(x_{1:n}, x)$ [^1]. Far from the
+      data every $k(x, x_i)$ decays to 0, so the subtracted term vanishes and the variance returns to
+      the prior variance $k(x, x) = a^2 = 4$, a standard deviation of $2$. The data carry no
+      information there, so the posterior reverts to the prior: error bars far from the data reflect
+      the prior standard deviation of the process [^2]. A stationary kernel has the same prior
+      variance everywhere, hence the plateau.
+    references:
+      - source: d2l
+        locator: Sec. 18.1 Introduction to Gaussian Processes (posterior variance $s^2$; uncertainty grows away from the data)
+        url: https://d2l.ai/chapter_gaussian-processes/gp-intro.html
+      - title: Rasmussen & Williams, Gaussian Processes for Machine Learning (MIT Press, 2006)
+        locator: Sec. 2.3 Varying the Hyperparameters, pp. 20–21 (error bars away from the data reflect the prior standard deviation)
+        url: http://gaussianprocess.org/gpml/chapters/RW2.pdf
+      - source: d2l
+        locator: Sec. 18.1.2 Exercises, Exercise 7
+        url: https://d2l.ai/chapter_gaussian-processes/gp-intro.html#exercises
+    source:
+      id: d2l
+      ref: chapter_gaussian-processes/gp-intro#ex7
+      url: https://d2l.ai/chapter_gaussian-processes/gp-intro.html#exercises
+    status: draft
+  - id: probabilistic-models-016
+    type: true_false
+    difficulty: medium
+    tags:
+      - gaussian-processes
+      - product-of-gaussians
+      - kernels
+    shuffle: false
+    question: |
+      True or false: if $f \sim \mathcal{GP}(m_1, k_1)$ and $g \sim \mathcal{GP}(m_2, k_2)$ are
+      independent, then the product $u(x) = f(x)g(x)$ is also a Gaussian process.
+    options:
+      - text: 'True'
+        why: Even at a single input, the product of two independent Gaussians is not Gaussian, so $u$ cannot be a GP [^1][^2].
+      - text: 'False'
+        correct: true
+    explanation: |
+      A GP needs every finite set of values to be jointly Gaussian. Already one value fails: for two
+      independent standard normals, $XY$ has the density $K_0(|z|)/\pi$, peaked at 0 and
+      heavy-tailed [^2]. The product does have a mean, $m_1 m_2$, and a covariance,
+      $k_1 k_2 + m_1(x)m_1(x')\,k_2 + m_2(x)m_2(x')\,k_1$, but these do not make it Gaussian. For
+      zero means the covariance is $k_1 k_2$, and the product of two kernels is a valid kernel, but
+      the GP with that kernel is a different process from $fg$ [^1].
+    references:
+      - title: Rasmussen & Williams, Gaussian Processes for Machine Learning (MIT Press, 2006)
+        locator: Sec. 4.2.4 Making New Kernels from Old (product, footnote 8), p. 95
+        url: http://gaussianprocess.org/gpml/chapters/RW4.pdf
+      - title: 'Wikipedia: Product distribution'
+        locator: Special cases, Independent central-normal distributions
+        url: https://en.wikipedia.org/wiki/Product_distribution
+      - source: d2l
+        locator: Sec. 18.2.7 Exercises, Exercise 5
+        url: https://d2l.ai/chapter_gaussian-processes/gp-priors.html#exercises
+    source:
+      id: d2l
+      ref: chapter_gaussian-processes/gp-priors#ex5
+      url: https://d2l.ai/chapter_gaussian-processes/gp-priors.html#exercises
+    status: draft
+  - id: probabilistic-models-017
+    type: single
+    difficulty: medium
+    tags:
+      - gaussian-processes
+      - marginal-likelihood
+      - local-optima
+    question: |
+      You learn $\ell$ and $\sigma^2$ of a GP regression model by maximizing the log marginal
+      likelihood twice: once starting from a large $\ell$ with a large $\sigma^2$, once from a small
+      $\ell$ with a small $\sigma^2$. The two runs end at different hyperparameters. What is the best
+      explanation?
+    options:
+      - text: A slow function with much noise and a wiggly one with little noise both fit, giving separate local optima
+        correct: true
+      - text: The optimizer must be buggy, since the log marginal likelihood is a convex function of $(\ell, \sigma^2)$ with one optimum
+        why: The marginal likelihood is not a convex function of the hyperparameters [^1].
+      - text: The complexity term always prefers the smallest $\ell$, so the result only shows how long each run lasted
+        why: The log-determinant (complexity) term penalizes overly flexible fits, which favours simpler, smoother explanations, not the smallest $\ell$ [^2].
+      - text: Marginal likelihood can learn the noise variance but not the length-scale, so $\ell$ stays near its start
+        why: The marginal likelihood is in fact good at learning length-scales; the trouble is that there can be more than one good one [^1].
+    explanation: |
+      The log marginal likelihood is not convex in the kernel hyperparameters [^1]. Data that vary a
+      lot are consistent with a slowly varying function only if a large noise variance explains the
+      variation, and with a quickly varying function if the noise is small; both can be local optima,
+      and the start decides which one the optimizer finds [^1]. The objective splits into a data-fit
+      term and a log-determinant complexity term, which favours the simplest fit consistent with the
+      data [^2]. Trying several initializations, or a sensible prior, guards against a poor optimum.
+    references:
+      - source: d2l
+        locator: Sec. 18.3.7 Exercises, Exercise 2 (non-convex objective, interpretable local optima)
+        url: https://d2l.ai/chapter_gaussian-processes/gp-inference.html#exercises
+      - source: d2l
+        locator: Sec. 18.3.3 Interpreting Equations for Learning and Predictions (model fit and complexity terms)
+        url: https://d2l.ai/chapter_gaussian-processes/gp-inference.html#interpreting-equations-for-learning-and-predictions
+    source:
+      id: d2l
+      ref: chapter_gaussian-processes/gp-inference#ex2
+      url: https://d2l.ai/chapter_gaussian-processes/gp-inference.html#exercises
+    status: draft
+  - id: probabilistic-models-018
+    type: single
+    difficulty: medium
+    tags:
+      - gaussian-processes
+      - extrapolation
+      - epistemic-uncertainty
+      - aleatoric-uncertainty
+    question: |
+      A zero-mean GP with an RBF kernel (amplitude 1, learned length-scale well below 1) is fit to
+      noisy samples of $f(x) = \sin x + \frac{1}{2}\sin 4x$, noise standard deviation about 0.25, with
+      training inputs in $[0, 5]$. You now predict on $[6, 10]$. What happens there, and what would a
+      band showing only the aleatoric uncertainty (mean $\pm 2\sigma$) look like?
+    options:
+      - text: The mean returns to 0 and the epistemic band widens to about $\pm 2$; a noise-only band stays near $\pm 0.5$ and misses much of $f$
+        correct: true
+      - text: The mean keeps following $\sin x + \frac{1}{2}\sin 4x$ there, because the GP has learned the frequency of the data
+        why: An RBF kernel has no notion of periodicity; beyond a few length-scales from the data the posterior reverts to the prior mean 0 [^1][^2].
+      - text: Both bands keep the width they have inside $[0, 5]$, because the noise level is the same at every input
+        why: Only the aleatoric band has constant width; the epistemic band grows away from the data [^1].
+      - text: The epistemic band grows without limit there, and the noise-only band also covers the true function
+        why: The epistemic band levels off at the prior, $\pm 2a = \pm 2$, and a $\pm 0.5$ band around 0 cannot cover values of $f$ up to about 1.4 [^1].
+    explanation: |
+      Away from the data the kernel values $k(x, x_i)$ vanish, so the posterior mean returns to the
+      prior mean 0 and the epistemic variance to the prior variance $a^2 = 1$, a band of about
+      $\pm 2$ [^1][^2]. That band still covers the true function, whose values stay within about
+      $\pm 1.4$ there. The aleatoric uncertainty is the noise variance, the same everywhere [^1]; a
+      band of $\pm 2\sigma \approx \pm 0.5$ around a mean of 0 would look confident while missing
+      the true curve over about half of $[6, 10]$. Representing epistemic uncertainty is what tells
+      us that we know little there [^1].
+    references:
+      - source: d2l
+        locator: Sec. 18.3.4 Worked Example from Scratch (epistemic versus aleatoric uncertainty, credible sets)
+        url: https://d2l.ai/chapter_gaussian-processes/gp-inference.html#worked-example-from-scratch
+      - source: d2l
+        locator: Sec. 18.1 Introduction to Gaussian Processes (uncertainty grows away from the data)
+        url: https://d2l.ai/chapter_gaussian-processes/gp-intro.html
+      - source: d2l
+        locator: Sec. 18.3.7 Exercises, Exercise 3
+        url: https://d2l.ai/chapter_gaussian-processes/gp-inference.html#exercises
+    source:
+      id: d2l
+      ref: chapter_gaussian-processes/gp-inference#ex3
+      url: https://d2l.ai/chapter_gaussian-processes/gp-inference.html#exercises
+    status: draft
+  - id: probabilistic-models-019
+    type: short_answer
+    difficulty: medium
+    tags:
+      - gaussian-processes
+      - predictive-distribution
+      - aleatoric-uncertainty
+    question: |
+      At a test input, the GP posterior of the latent noise-free function has standard deviation
+      $0.15$. The observation noise has standard deviation $\sigma = 0.2$. What is the half-width
+      of the 95% band (mean $\pm 2$ standard deviations) for a new noisy observation $y_*$ at that
+      input?
+    answer:
+      numeric: 0.5
+      tolerance: 0.005
+      hint: a number, 2 decimals
+      model: $2\sqrt{0.15^2 + 0.2^2} = 2\sqrt{0.0625} = 0.5$
+    explanation: |
+      A new observation is $y_* = f(x_*) + \epsilon$ with independent noise, so the variances add:
+      $0.15^2 + 0.2^2 = 0.0625$, a standard deviation of $0.25$ and a band of $\pm 0.5$. The band for
+      the latent function alone is only $\pm 0.3$. The d2l code forms the observed band exactly this
+      way, adding the noise variance to the posterior variance before taking the square root [^1],
+      and Rasmussen and Williams note that noisy test predictions just add $\sigma_n^2$ to the
+      variance of $f_*$ [^2]. This is why the GPyTorch plot, drawn in observation space, shows a wider
+      band than the from-scratch plot of the latent function [^1].
+    references:
+      - source: d2l
+        locator: Sec. 18.3.4 Worked Example from Scratch (credible set for the observations) and Sec. 18.3.5 Making Life Easy with GPyTorch
+        url: https://d2l.ai/chapter_gaussian-processes/gp-inference.html#worked-example-from-scratch
+      - title: Rasmussen & Williams, Gaussian Processes for Machine Learning (MIT Press, 2006)
+        locator: Sec. 2.2, text after Algorithm 2.1, p. 19
+        url: http://gaussianprocess.org/gpml/chapters/RW2.pdf
+      - source: d2l
+        locator: Sec. 18.3.7 Exercises, Exercise 6
+        url: https://d2l.ai/chapter_gaussian-processes/gp-inference.html#exercises
+    source:
+      id: d2l
+      ref: chapter_gaussian-processes/gp-inference#ex6
+      url: https://d2l.ai/chapter_gaussian-processes/gp-inference.html#exercises
+    status: draft
+  - id: probabilistic-models-020
+    type: single
+    difficulty: medium
+    tags:
+      - bayesian-networks
+      - naive-bayes
+      - xor
+    question: |
+      Naive Bayes fails on XOR data ($y = x_1 \oplus x_2$). A Bayesian network with the edges
+      $y \to x_1$, $y \to x_2$ and $x_1 \to x_2$ classifies it perfectly. Why?
+    options:
+      - text: It models $p(x_2 \mid x_1, y)$, which can encode $x_2 = x_1 \oplus y$
+        correct: true
+      - text: The extra edge acts like a hidden layer, which makes the model nonlinear
+        why: The network has no hidden variables; it only lets $x_2$ depend on $x_1$ as well as on $y$.
+      - text: It smooths the counts for $x_2$, which breaks the ties of naive Bayes
+        why: Smoothing XOR counts still gives every class-conditional probability $\frac{1}{2}$, so the ties remain.
+      - text: It drops the prior $p(y)$, which pulled every posterior to one half
+        why: The prior is $\frac{1}{2}$ for both classes and does not cause the ties; the factorization does.
+    explanation: |
+      By the chain rule, $p(\mathbf{x} \mid y) = p(x_1 \mid y)\, p(x_2 \mid x_1, y)$ holds exactly;
+      naive Bayes replaces the second factor by $p(x_2 \mid y)$, assuming conditional independence
+      [^1]. In XOR data $x_2 = x_1 \oplus y$, so the full conditional table puts probability 1 on the
+      correct $x_2$. With the edge $x_1 \to x_2$ the network learns exactly that, every training
+      input gets posterior 1 for its true label, and the classifier is perfect. Without the edge
+      every factor is $\frac{1}{2}$ and all posteriors tie [^2].
+    references:
+      - source: d2l
+        locator: Sec. 22.9.2 The Probabilistic Model for Classification (chain rule) and Sec. 22.9.3 The Naive Bayes Classifier
+        url: https://d2l.ai/chapter_appendix-mathematics-for-deep-learning/naive-bayes.html#the-probabilistic-model-for-classification
+      - source: d2l
+        locator: Sec. 22.9.6 Exercises, Exercises 1 and 3
+        url: https://d2l.ai/chapter_appendix-mathematics-for-deep-learning/naive-bayes.html#exercises
+    source:
+      id: d2l
+      ref: chapter_appendix-mathematics-for-deep-learning/naive-bayes#ex3
+      url: https://d2l.ai/chapter_appendix-mathematics-for-deep-learning/naive-bayes.html#exercises
+    status: draft

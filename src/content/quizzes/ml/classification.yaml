@@ -284,3 +284,83 @@ questions:
       ref: quiz-23/q1
       url: https://github.com/microsoft/ML-For-Beginners/blob/de2d4e12236445198213a0711855e348e7253cd4/quiz-app/src/assets/translations/en.json
     status: draft
+  - id: classification-011
+    type: short_answer
+    difficulty: medium
+    tags:
+      - naive-bayes
+      - xor
+      - conditional-independence
+    question: |
+      A naive Bayes classifier with binary features is trained (with plain counting) on the XOR data:
+      inputs $(0,0), (0,1), (1,0), (1,1)$ with labels $0, 1, 1, 0$. What posterior
+      $P(y = 1 \mid \mathbf{x} = (1, 1))$ does it output?
+    answer:
+      numeric: 0.5
+      tolerance: 0.001
+      hint: a probability, e.g. 0.25
+      model: $P(y) = \frac{1}{2}$ and every $P(x_i = 1 \mid y) = \frac{1}{2}$, so both classes score $\frac{1}{8}$ and the posterior is $0.5$
+    explanation: |
+      Naive Bayes estimates $P(y)$ and each $P(x_i \mid y)$ by counting [^2]. Each class has two
+      examples, and in each class each feature is 1 exactly once, so $P(y) = \frac{1}{2}$ and
+      $P(x_i = 1 \mid y) = \frac{1}{2}$ for all $i$ and $y$. Every input then gets the same score
+      $\frac{1}{2} \cdot \frac{1}{2} \cdot \frac{1}{2}$ for both classes, so the posterior is $0.5$
+      everywhere and the classifier is at chance level; Laplace smoothing gives
+      $\frac{1+1}{2+2} = \frac{1}{2}$ too. The violated assumption is that the features are
+      conditionally independent given the label [^1]: given $y$, $x_2$ is determined by $x_1$.
+    references:
+      - source: d2l
+        locator: Sec. 22.9.3 The Naive Bayes Classifier (conditional independence given the label)
+        url: https://d2l.ai/chapter_appendix-mathematics-for-deep-learning/naive-bayes.html#the-naive-bayes-classifier
+      - source: d2l
+        locator: Sec. 22.9.4 Training (estimates by counting, pseudo-counts)
+        url: https://d2l.ai/chapter_appendix-mathematics-for-deep-learning/naive-bayes.html#training
+      - source: d2l
+        locator: Sec. 22.9.6 Exercises, Exercise 1
+        url: https://d2l.ai/chapter_appendix-mathematics-for-deep-learning/naive-bayes.html#exercises
+    source:
+      id: d2l
+      ref: chapter_appendix-mathematics-for-deep-learning/naive-bayes#ex1
+      url: https://d2l.ai/chapter_appendix-mathematics-for-deep-learning/naive-bayes.html#exercises
+    status: draft
+  - id: classification-012
+    type: single
+    difficulty: medium
+    tags:
+      - naive-bayes
+      - laplace-smoothing
+      - zero-probability
+    question: |
+      A naive Bayes digit classifier on binarized 784-pixel images is trained without Laplace
+      smoothing. In training, pixel 17 was never on in any image of class 3. A test image has pixel
+      17 on. What score $P(y = 3)\prod_i P(x_i \mid y = 3)$ does class 3 get?
+    options:
+      - text: Zero (log-score $-\infty$), whatever the other 783 pixels say
+        correct: true
+      - text: A slightly lower score, since one unusual pixel is outvoted by the other 783
+        why: The score is a product, so a single factor of 0 makes it 0; nothing can outvote it [^1].
+      - text: Just the prior $P(y = 3)$, because unseen pixel values are skipped
+        why: Nothing is skipped; the estimate $P(x_{17} = 1 \mid y = 3) = 0/n_3 = 0$ enters the product [^1].
+      - text: The same score as with smoothing, since smoothing only changes the priors
+        why: Laplace smoothing changes the pixel estimates to $(n_{iy} + 1)/(n_y + 2)$, exactly to avoid these zeros [^1].
+    explanation: |
+      Without pseudo-counts the estimate is $P(x_{17} = 1 \mid y = 3) = n_{17,3}/n_3 = 0$, and one zero
+      factor makes the whole product 0, a log-score of $-\infty$ [^1][^2]. Class 3 is then ruled out
+      by a single pixel. If a value never occurred with any class, every class scores 0 and the
+      prediction is meaningless. Laplace smoothing, using $n_{iy} + 1$ and $n_y + 2$, keeps every
+      estimate strictly between 0 and 1 [^1].
+    references:
+      - source: d2l
+        locator: Sec. 22.9.4 Training (pseudo-counts $n_{iy} + 1$ and $n_y + 2$; log-space prediction)
+        url: https://d2l.ai/chapter_appendix-mathematics-for-deep-learning/naive-bayes.html#training
+      - source: d2l
+        locator: Sec. 22.9.3 The Naive Bayes Classifier, Eq. (22.9.1)
+        url: https://d2l.ai/chapter_appendix-mathematics-for-deep-learning/naive-bayes.html#the-naive-bayes-classifier
+      - source: d2l
+        locator: Sec. 22.9.6 Exercises, Exercise 2
+        url: https://d2l.ai/chapter_appendix-mathematics-for-deep-learning/naive-bayes.html#exercises
+    source:
+      id: d2l
+      ref: chapter_appendix-mathematics-for-deep-learning/naive-bayes#ex2
+      url: https://d2l.ai/chapter_appendix-mathematics-for-deep-learning/naive-bayes.html#exercises
+    status: draft

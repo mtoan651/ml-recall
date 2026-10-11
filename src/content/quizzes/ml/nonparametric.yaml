@@ -168,3 +168,338 @@ questions:
       ref: quiz-23/q3
       url: https://github.com/microsoft/ML-For-Beginners/blob/de2d4e12236445198213a0711855e348e7253cd4/quiz-app/src/assets/translations/en.json
     status: draft
+  - id: nonparametric-006
+    type: single
+    difficulty: medium
+    tags:
+      - gaussian-processes
+      - rbf-kernel
+      - periodic-kernel
+      - kernel-choice
+    question: |
+      The RBF kernel $k(x, x') = a^2 \exp\left(-\frac{\lVert x - x' \rVert^2}{2\ell^2}\right)$ makes the
+      correlation between $f(x)$ and $f(x')$ fall steadily as $\lVert x - x' \rVert$ grows. For which
+      data is that assumption most clearly wrong?
+    options:
+      - text: Hourly electricity demand over a year, where readings exactly 24 hours apart are strongly related
+        correct: true
+      - text: Air temperature along a highway, where nearby points are more alike than distant ones
+        why: Similarity that fades with distance is exactly what the RBF kernel encodes [^1].
+      - text: A smooth growth curve measured at irregular, unevenly spaced times
+        why: The kernel only needs the distances between inputs, so uneven spacing is no problem [^2].
+      - text: Noisy sensor readings of a slowly drifting quantity
+        why: Noise goes into the noise variance and a slow drift into a long length-scale; correlation still fades with distance [^1].
+    explanation: |
+      With the RBF kernel, function values farther apart than about $\ell$ are nearly uncorrelated
+      [^1]. Periodic data break this: demand at 9 am today resembles demand at 9 am tomorrow more than
+      at 9 pm today, so correlation rises again at multiples of the period. Kernels encode high-level
+      properties such as smoothness and periodicity [^2]; a periodic kernel such as
+      $\exp\left(-2\sin^2\left(\frac{x - x'}{2}\right) / \ell^2\right)$ captures repeating structure
+      [^3], and it can be combined with an RBF kernel for a slow trend.
+    references:
+      - source: d2l
+        locator: Sec. 18.1 Introduction to Gaussian Processes (the length-scale and correlation at distance $\ell$)
+        url: https://d2l.ai/chapter_gaussian-processes/gp-intro.html
+      - source: d2l
+        locator: Sec. 18.2.6 Summary (kernels encode smoothness and periodicity)
+        url: https://d2l.ai/chapter_gaussian-processes/gp-priors.html#summary
+      - title: Rasmussen & Williams, Gaussian Processes for Machine Learning (MIT Press, 2006)
+        locator: Sec. 4.2.3 (periodic random function, Eq. 4.31), p. 92
+        url: http://gaussianprocess.org/gpml/chapters/RW4.pdf
+      - source: d2l
+        locator: Sec. 18.1.2 Exercises, Exercises 2 and 3
+        url: https://d2l.ai/chapter_gaussian-processes/gp-intro.html#exercises
+    source:
+      id: d2l
+      ref: chapter_gaussian-processes/gp-intro#ex3
+      url: https://d2l.ai/chapter_gaussian-processes/gp-intro.html#exercises
+    status: draft
+  - id: nonparametric-007
+    type: single
+    difficulty: medium
+    tags:
+      - gaussian-processes
+      - kernels
+      - ornstein-uhlenbeck
+      - smoothness
+    question: |
+      You draw prior sample functions from a zero-mean GP with the Ornstein–Uhlenbeck (exponential)
+      kernel $k_{\textrm{OU}}(x, x') = \exp\left(-\frac{|x - x'|}{2\ell}\right)$ and from a GP with the
+      RBF kernel with the same $\ell$. How do the OU samples look different?
+    options:
+      - text: They are continuous but jagged, with no derivative anywhere, while RBF samples are very smooth
+        correct: true
+      - text: They are smoother, because $|x - x'|$ grows more slowly than its square
+        why: The kink of $|x - x'|$ at zero makes nearby values less tightly linked, which gives rough samples, not smoother ones [^1].
+      - text: They look about the same, because both kernels decay with distance at a rate set by the same $\ell$
+        why: The two kernels differ most at short distances, and that behaviour decides how smooth the samples are [^1].
+      - text: They repeat periodically, because the absolute value makes the kernel symmetric
+        why: Every kernel is symmetric in $x$ and $x'$; periodic samples need a periodic kernel [^1].
+    explanation: |
+      The OU kernel is the Matérn kernel with $\nu = 1/2$: the process is mean-square continuous but
+      not mean-square differentiable, so its samples look very rough, like a random walk [^1]. The
+      RBF (squared exponential) kernel is infinitely differentiable, so its samples have derivatives
+      of all orders and look very smooth [^1][^2]. The difference comes from the kernel near zero
+      distance: $1 - |\tau|/(2\ell)$ falls linearly, while $1 - \tau^2/(2\ell^2)$ is flat at the
+      top.
+    references:
+      - title: Rasmussen & Williams, Gaussian Processes for Machine Learning (MIT Press, 2006)
+        locator: Sec. 4.2.1, Squared Exponential and Ornstein-Uhlenbeck/Exponential Covariance Functions, Fig. 4.1, pp. 83–86
+        url: http://gaussianprocess.org/gpml/chapters/RW4.pdf
+      - source: d2l
+        locator: Sec. 18.2.4 The Radial Basis Function (RBF) Kernel (smooth RBF prior samples)
+        url: https://d2l.ai/chapter_gaussian-processes/gp-priors.html#the-radial-basis-function-rbf-kernel
+      - source: d2l
+        locator: Sec. 18.2.7 Exercises, Exercise 1
+        url: https://d2l.ai/chapter_gaussian-processes/gp-priors.html#exercises
+    source:
+      id: d2l
+      ref: chapter_gaussian-processes/gp-priors#ex1
+      url: https://d2l.ai/chapter_gaussian-processes/gp-priors.html#exercises
+    status: draft
+  - id: nonparametric-008
+    type: single
+    difficulty: easy
+    tags:
+      - gaussian-processes
+      - rbf-kernel
+      - amplitude
+      - hyperparameters
+    question: |
+      In the RBF kernel $k(x, x') = a^2 \exp\left(-\frac{\lVert x - x' \rVert^2}{2\ell^2}\right)$ you
+      raise the amplitude $a^2$ from 1 to 4 and keep $\ell$ fixed. What happens to the prior sample
+      functions?
+    options:
+      - text: Their vertical spread doubles; how fast they wiggle is unchanged
+        correct: true
+      - text: Their vertical spread grows fourfold, as the variance grew fourfold
+        why: The variance $a^2$ grew fourfold, so the standard deviation $a$, which sets the vertical spread, only doubles [^2].
+      - text: They wiggle twice as fast, because a larger amplitude acts like a shorter length-scale
+        why: Only $\ell$ sets the rate of variation; the amplitude scales the values without changing it [^1].
+      - text: They get smoother, because a larger covariance links neighbouring values more strongly
+        why: The correlation $k(x,x')/\sqrt{k(x,x)k(x',x')} = \exp(-\lVert x - x' \rVert^2/2\ell^2)$ does not depend on $a$ [^2].
+    explanation: |
+      The amplitude sets the vertical scale of the functions, while the length-scale sets their rate
+      of variation (wiggliness) [^1]. Each $f(x)$ has prior variance $k(x,x) = a^2$, so its standard
+      deviation is $a$: going from $a^2 = 1$ to $a^2 = 4$ doubles the typical height of the samples.
+      The correlation between two function values is $\exp(-\lVert x - x' \rVert^2 / 2\ell^2)$
+      whatever $a$ is [^2], so the shape of the samples is unchanged; they are just stretched
+      vertically by a factor of 2.
+    references:
+      - source: d2l
+        locator: Sec. 18.1 Introduction to Gaussian Processes (amplitude controls the vertical scale, not the rate of variation)
+        url: https://d2l.ai/chapter_gaussian-processes/gp-intro.html
+      - source: d2l
+        locator: Sec. 18.2.4 The Radial Basis Function (RBF) Kernel
+        url: https://d2l.ai/chapter_gaussian-processes/gp-priors.html#the-radial-basis-function-rbf-kernel
+      - source: d2l
+        locator: Sec. 18.2.7 Exercises, Exercise 2
+        url: https://d2l.ai/chapter_gaussian-processes/gp-priors.html#exercises
+    source:
+      id: d2l
+      ref: chapter_gaussian-processes/gp-priors#ex2
+      url: https://d2l.ai/chapter_gaussian-processes/gp-priors.html#exercises
+    status: draft
+  - id: nonparametric-009
+    type: single
+    difficulty: medium
+    tags:
+      - gaussian-processes
+      - kernels
+      - kernel-algebra
+    question: |
+      $f \sim \mathcal{GP}(m_1, k_1)$ and $g \sim \mathcal{GP}(m_2, k_2)$ are independent, and
+      $u(x) = f(x) + 2g(x)$. What is $u$?
+    options:
+      - text: A GP with mean $m_1 + 2m_2$ and covariance $k_1 + 4k_2$
+        correct: true
+      - text: A GP with mean $m_1 + 2m_2$ and covariance $k_1 + 2k_2$
+        why: Scaling a random function by 2 scales its covariance by $2^2 = 4$ [^2].
+      - text: A GP with covariance $k_1 + 4k_2$ plus a cross-covariance term between $f$ and $g$
+        why: Independence makes every cross-covariance $\textrm{Cov}(f(x), g(x'))$ zero [^2].
+      - text: Not a GP, since a sum of two random functions is not Gaussian in general
+        why: Values of independent GPs are jointly Gaussian, and any linear combination of jointly Gaussian values is Gaussian [^1].
+    explanation: |
+      Any finite set of values $u(x_1), \dots, u(x_n)$ is a linear function of the values of $f$ and
+      $g$, which are jointly Gaussian because $f$ and $g$ are independent GPs, so $u$ is a GP [^1].
+      Its mean is $m_1(x) + 2m_2(x)$, and its covariance is
+      $\textrm{Cov}(u(x), u(x')) = k_1(x, x') + 4k_2(x, x')$, since the cross terms vanish by
+      independence [^2]. This is the rule behind sum kernels, for example adding kernels with
+      different length-scales [^2]. Without independence (the d2l exercise does not state it) the
+      covariance would gain cross terms, and $u$ need not be a GP.
+    references:
+      - source: d2l
+        locator: Sec. 18.2.1 Definition and Sec. 18.2.2 A Simple Gaussian Process (closure under addition)
+        url: https://d2l.ai/chapter_gaussian-processes/gp-priors.html#definition
+      - title: Rasmussen & Williams, Gaussian Processes for Machine Learning (MIT Press, 2006)
+        locator: Sec. 4.2.4 Making New Kernels from Old (sum), p. 95
+        url: http://gaussianprocess.org/gpml/chapters/RW4.pdf
+      - source: d2l
+        locator: Sec. 18.2.7 Exercises, Exercise 3
+        url: https://d2l.ai/chapter_gaussian-processes/gp-priors.html#exercises
+    source:
+      id: d2l
+      ref: chapter_gaussian-processes/gp-priors#ex3
+      url: https://d2l.ai/chapter_gaussian-processes/gp-priors.html#exercises
+    status: draft
+  - id: nonparametric-010
+    type: single
+    difficulty: medium
+    tags:
+      - gaussian-processes
+      - kernels
+      - non-stationary
+    question: $f \sim \mathcal{GP}(0, k)$ with an RBF kernel $k$, and $g(x) = x^2 f(x)$. What is $g$?
+    options:
+      - text: A GP with mean 0 and covariance $x^2 x'^2 k(x, x')$, whose samples are pinned to 0 at $x = 0$ and swing wider as $|x|$ grows
+        correct: true
+      - text: A GP with mean 0 and covariance $x^2\, k(x, x')$, which stays stationary because $k$ is stationary
+        why: Both arguments get the factor, so the covariance is $a(x)k(x,x')a(x') = x^2 x'^2 k(x, x')$, and it depends on where $x$ and $x'$ are, not only on $x - x'$ [^1].
+      - text: "A GP with mean $x^2$ and covariance $k(x, x')$: the samples of $f$ shifted up by a parabola"
+        why: That would be $x^2 + f(x)$. Multiplying by $x^2$ scales the values of $f$; it does not shift them [^2].
+      - text: Not a GP, because multiplying by $x^2$ makes the values non-Gaussian
+        why: $x^2$ is a fixed number at each input, and a Gaussian times a constant is Gaussian [^1].
+    explanation: |
+      For a deterministic $a(x)$, $g(x) = a(x)f(x)$ is a GP with covariance $a(x)\,k(x, x')\,a(x')$
+      (vertical rescaling) [^1]. Here $\textrm{Var}\, g(x) = x^4 k(x, x)$, so every sample passes
+      through 0 at $x = 0$ and its typical size grows like $x^2$ away from the origin. The same result
+      follows from the weight-space view: if $f(x) = w^\top \phi(x)$, then
+      $g(x) = w^\top (x^2 \phi(x))$, which changes the features and gives
+      $k(x,x') = x^2 x'^2\, \phi(x)^\top S \phi(x')$ [^2]. The new kernel is non-stationary.
+    references:
+      - title: Rasmussen & Williams, Gaussian Processes for Machine Learning (MIT Press, 2006)
+        locator: Sec. 4.2.4 Making New Kernels from Old (vertical rescaling), p. 95
+        url: http://gaussianprocess.org/gpml/chapters/RW4.pdf
+      - source: d2l
+        locator: Sec. 18.2.3 From Weight Space to Function Space ($k(x,x') = \phi(x)^\top S \phi(x')$)
+        url: https://d2l.ai/chapter_gaussian-processes/gp-priors.html#from-weight-space-to-function-space
+      - source: d2l
+        locator: Sec. 18.2.7 Exercises, Exercise 4
+        url: https://d2l.ai/chapter_gaussian-processes/gp-priors.html#exercises
+    source:
+      id: d2l
+      ref: chapter_gaussian-processes/gp-priors#ex4
+      url: https://d2l.ai/chapter_gaussian-processes/gp-priors.html#exercises
+    status: draft
+  - id: nonparametric-011
+    type: multiple
+    difficulty: medium
+    tags:
+      - gaussian-processes
+      - length-scale
+      - noise-variance
+      - hyperparameters
+    question: |
+      You skip hyperparameter learning in GP regression with an RBF kernel and set the length-scale
+      $\ell$ and the noise variance $\sigma^2$ by hand. Which outcomes do you expect? Select all that
+      apply.
+    options:
+      - text: A very large $\ell$ gives an over-smooth mean that misses fast variation in the data
+        correct: true
+      - text: A very small $\ell$ makes the uncertainty grow quickly between and away from the training points
+        correct: true
+      - text: A large $\sigma^2$ lets the mean pass farther from the data points, treating more variation as noise
+        correct: true
+      - text: A small $\sigma^2$ makes the mean smoother, because the model then trusts the prior more
+        why: A small noise variance makes the model trust each observation, so the mean is pulled through the noisy points and gets more wiggly [^2].
+      - text: Changing $\ell$ moves the predictive mean but leaves the width of the credible band unchanged
+        why: The predictive variance depends on the kernel, so $\ell$ changes the band too, for example how fast it widens away from the data [^1].
+    explanation: |
+      A larger length-scale makes functions vary more slowly, and a small one lets them wiggle, with
+      uncertainty that rises quickly as we leave the data [^1]. The noise variance decides how much of
+      the variation in $\mathbf{y}$ is treated as noise: with a large $\sigma^2$ the predictive mean
+      $K(x_*, X)[K + \sigma^2 I]^{-1}\mathbf{y}$ follows the data loosely, and with a tiny
+      $\sigma^2$ it nearly interpolates the noisy points [^2]. Learning $\ell$ and $\sigma^2$ by
+      marginal likelihood picks a balance between these failure modes [^3].
+    references:
+      - source: d2l
+        locator: Sec. 18.1 Introduction to Gaussian Processes (effect of the length-scale on samples and uncertainty)
+        url: https://d2l.ai/chapter_gaussian-processes/gp-intro.html
+      - title: Rasmussen & Williams, Gaussian Processes for Machine Learning (MIT Press, 2006)
+        locator: Sec. 2.3 Varying the Hyperparameters, Fig. 2.5, pp. 19–21
+        url: http://gaussianprocess.org/gpml/chapters/RW2.pdf
+      - source: d2l
+        locator: Sec. 18.3.2 Equations for Making Predictions and Learning Kernel Hyperparameters in GP Regression, and Sec. 18.3.7 Exercises, Exercise 1
+        url: https://d2l.ai/chapter_gaussian-processes/gp-inference.html#exercises
+    source:
+      id: d2l
+      ref: chapter_gaussian-processes/gp-inference#ex1
+      url: https://d2l.ai/chapter_gaussian-processes/gp-inference.html#exercises
+    status: draft
+  - id: nonparametric-012
+    type: short_answer
+    difficulty: easy
+    tags:
+      - gaussian-processes
+      - computational-complexity
+      - scalability
+    question: |
+      Exact GP regression training is dominated by a Cholesky factorization of the $n \times n$
+      kernel matrix, which costs $\mathcal{O}(n^3)$. Training on 10,000 points takes 2 minutes. About
+      how many minutes should training on 40,000 points take?
+    answer:
+      numeric: 128
+      tolerance: 1
+      hint: minutes, a whole number
+      model: $(40{,}000 / 10{,}000)^3 = 4^3 = 64$, so $2 \times 64 = 128$ minutes
+    explanation: |
+      The bottleneck is solving a linear system and computing a log-determinant with the $n \times n$
+      matrix $K + \sigma^2 I$, which costs $\mathcal{O}(n^3)$ time and $\mathcal{O}(n^2)$ memory
+      [^1]. Four times the data therefore costs $4^3 = 64$ times the time and $16$ times the memory.
+      This cubic cost long limited exact GPs to roughly 10,000 points, which is why scalable
+      approximations exist [^1].
+    references:
+      - source: d2l
+        locator: Sec. 18.3.3 Interpreting Equations for Learning and Predictions ($\mathcal{O}(n^3)$ computation, $\mathcal{O}(n^2)$ storage)
+        url: https://d2l.ai/chapter_gaussian-processes/gp-inference.html#interpreting-equations-for-learning-and-predictions
+      - source: d2l
+        locator: Sec. 18.3.7 Exercises, Exercise 4
+        url: https://d2l.ai/chapter_gaussian-processes/gp-inference.html#exercises
+    source:
+      id: d2l
+      ref: chapter_gaussian-processes/gp-inference#ex4
+      url: https://d2l.ai/chapter_gaussian-processes/gp-inference.html#exercises
+    status: draft
+  - id: nonparametric-013
+    type: single
+    difficulty: medium
+    tags:
+      - gaussian-processes
+      - computational-complexity
+      - prediction
+    question: |
+      After training a GP regression model on $n$ points you store the Cholesky factor $L$ of
+      $K + \sigma^2 I$ and the vector $\boldsymbol{\alpha} = (K + \sigma^2 I)^{-1}\mathbf{y}$. What
+      does each new test point cost?
+    options:
+      - text: $\mathcal{O}(n)$ for the predictive mean and $\mathcal{O}(n^2)$ for the predictive variance
+        correct: true
+      - text: $\mathcal{O}(n^3)$ for both, since every prediction factorizes the kernel matrix all over again
+        why: The factorization is done once in training; predictions reuse $L$ and $\boldsymbol{\alpha}$ [^2].
+      - text: $\mathcal{O}(n^2)$ for the predictive mean and $\mathcal{O}(n)$ for the predictive variance
+        why: The mean is one dot product $\mathbf{k}_*^\top \boldsymbol{\alpha}$; the variance needs a triangular solve with $L$, which is the more expensive part [^2].
+      - text: $\mathcal{O}(1)$ for both, since a GP keeps no weights to evaluate
+        why: Being nonparametric is exactly why prediction touches all $n$ training points, like a nearest-neighbour method [^1].
+    explanation: |
+      The predictive mean is a linear combination of the training targets weighted by the kernel
+      [^1]: with $\boldsymbol{\alpha}$ stored it is $\mathbf{k}_*^\top \boldsymbol{\alpha}$, $n$ kernel
+      evaluations and one dot product, $\mathcal{O}(n)$. The predictive variance
+      $k(x_*, x_*) - \mathbf{v}^\top \mathbf{v}$ needs $\mathbf{v} = L^{-1}\mathbf{k}_*$, a triangular
+      solve costing about $n^2/2$ operations per test point [^2]. So for $m$ test points the means cost
+      $\mathcal{O}(mn)$ and the variances $\mathcal{O}(mn^2)$, on top of the one-off
+      $\mathcal{O}(n^3)$ training cost.
+    references:
+      - source: d2l
+        locator: Sec. 18.3.3 Interpreting Equations for Learning and Predictions (the predictive mean as a weighted combination of targets)
+        url: https://d2l.ai/chapter_gaussian-processes/gp-inference.html#interpreting-equations-for-learning-and-predictions
+      - title: Rasmussen & Williams, Gaussian Processes for Machine Learning (MIT Press, 2006)
+        locator: Sec. 2.2, Algorithm 2.1 and its complexity note, p. 19
+        url: http://gaussianprocess.org/gpml/chapters/RW2.pdf
+      - source: d2l
+        locator: Sec. 18.3.7 Exercises, Exercise 4
+        url: https://d2l.ai/chapter_gaussian-processes/gp-inference.html#exercises
+    source:
+      id: d2l
+      ref: chapter_gaussian-processes/gp-inference#ex4-b
+      url: https://d2l.ai/chapter_gaussian-processes/gp-inference.html#exercises
+    status: draft

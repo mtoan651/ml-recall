@@ -2826,3 +2826,200 @@ questions:
       ref: high_school_statistics/94
       url: https://huggingface.co/datasets/edinburgh-dawg/mmlu-redux-2.0/viewer/high_school_statistics/test?row=94
     status: draft
+  - id: statistics-100
+    type: short_answer
+    difficulty: easy
+    tags:
+      - maximum-likelihood
+      - exponential-distribution
+    question: |
+      A nonnegative random variable has density $\alpha e^{-\alpha x}$ for some unknown $\alpha > 0$.
+      You observe a single value, $x = 3$. What is the maximum likelihood estimate of $\alpha$?
+    answer:
+      numeric: 0.3333
+      tolerance: 0.001
+      hint: a number, 3 decimals
+      model: $\frac{d}{d\alpha}(\log\alpha - 3\alpha) = \frac{1}{\alpha} - 3 = 0$, so $\hat{\alpha} = 1/3$
+    explanation: |
+      For continuous data we maximize the density of the observations, or equivalently minimize the
+      negative log-likelihood [^1][^2]. Here
+      $-\log p(3 \mid \alpha) = -\log\alpha + 3\alpha$, whose derivative $-1/\alpha + 3$ vanishes at
+      $\hat{\alpha} = 1/3$; the second derivative $1/\alpha^2$ is positive, so this is a minimum of
+      the negative log-likelihood. In general the MLE of an exponential rate is one over the sample
+      mean, here $1/3$.
+    references:
+      - source: d2l
+        locator: Sec. 22.7.3 Maximum Likelihood for Continuous Variables
+        url: https://d2l.ai/chapter_appendix-mathematics-for-deep-learning/maximum-likelihood.html#maximum-likelihood-for-continuous-variables
+      - source: d2l
+        locator: Sec. 22.7.2 Numerical Optimization and the Negative Log-Likelihood
+        url: https://d2l.ai/chapter_appendix-mathematics-for-deep-learning/maximum-likelihood.html#numerical-optimization-and-the-negative-log-likelihood
+      - source: d2l
+        locator: Sec. 22.7.5 Exercises, Exercise 1
+        url: https://d2l.ai/chapter_appendix-mathematics-for-deep-learning/maximum-likelihood.html#exercises
+    source:
+      id: d2l
+      ref: chapter_appendix-mathematics-for-deep-learning/maximum-likelihood#ex1
+      url: https://d2l.ai/chapter_appendix-mathematics-for-deep-learning/maximum-likelihood.html#exercises
+    status: draft
+  - id: statistics-101
+    type: single
+    difficulty: easy
+    tags:
+      - maximum-likelihood
+      - gaussian-distribution
+      - squared-loss
+    question: |
+      Samples $x_1, \dots, x_N$ come from $\mathcal{N}(\mu, 1)$ with unknown mean $\mu$. Which
+      statement about the maximum likelihood estimate of $\mu$ is correct?
+    options:
+      - text: It is the sample mean, as the negative log-likelihood is $\frac{1}{2}\sum_i (x_i - \mu)^2$ plus a constant
+        correct: true
+      - text: It is the sample median, because the Gaussian density is symmetric about $\mu$
+        why: The median is the maximum likelihood estimate of the location under Laplace noise, which leads to absolute errors [^3].
+      - text: It is the sample mean only for large $N$; for small samples the estimate is the most frequent value
+        why: The derivation gives $\bar{x}$ for every $N$; nothing changes with the sample size [^1].
+      - text: It cannot be found without first estimating the variance from the same data
+        why: The variance is known here, and in any case the $\mu$ that maximizes a Gaussian likelihood does not depend on $\sigma^2$ [^2].
+    explanation: |
+      For continuous data we minimize the negative log-likelihood [^1]:
+      $-\log p(x_{1:N} \mid \mu) = \frac{N}{2}\log 2\pi + \frac{1}{2}\sum_i (x_i - \mu)^2$. Its derivative
+      $-\sum_i (x_i - \mu)$ vanishes at $\hat{\mu} = \frac{1}{N}\sum_i x_i$, the sample mean. Minimizing
+      a sum of squared deviations is the same calculation as least squares: with Gaussian noise,
+      maximum likelihood and squared loss give the same estimate [^2].
+    references:
+      - source: d2l
+        locator: Sec. 22.7.3 Maximum Likelihood for Continuous Variables
+        url: https://d2l.ai/chapter_appendix-mathematics-for-deep-learning/maximum-likelihood.html#maximum-likelihood-for-continuous-variables
+      - source: d2l
+        locator: Sec. 3.1.3 The Normal Distribution and Squared Loss
+        url: https://d2l.ai/chapter_linear-regression/linear-regression.html#the-normal-distribution-and-squared-loss
+      - title: 'Wikipedia: Laplace distribution'
+        locator: Statistical inference (the MLE of the location is the sample median)
+        url: https://en.wikipedia.org/wiki/Laplace_distribution
+      - source: d2l
+        locator: Sec. 22.7.5 Exercises, Exercise 2
+        url: https://d2l.ai/chapter_appendix-mathematics-for-deep-learning/maximum-likelihood.html#exercises
+    source:
+      id: d2l
+      ref: chapter_appendix-mathematics-for-deep-learning/maximum-likelihood#ex2
+      url: https://d2l.ai/chapter_appendix-mathematics-for-deep-learning/maximum-likelihood.html#exercises
+    status: draft
+  - id: statistics-102
+    type: single
+    difficulty: medium
+    tags:
+      - estimators
+      - bias
+      - variance
+      - mean-squared-error
+    question: |
+      $X_1, \dots, X_{10}$ are i.i.d. $\textrm{Unif}(0, \theta)$. Two estimators of $\theta$ are
+      $\hat{\theta} = \max_i X_i$ and $\tilde{\theta} = 2\bar{X}$. Which statement is correct?
+    options:
+      - text: '$\hat{\theta}$ is biased low but has the smaller MSE: about $0.015\theta^2$ versus $0.033\theta^2$'
+        correct: true
+      - text: '$\tilde{\theta}$ is better: it is unbiased, and an unbiased estimator always has the smaller MSE of the two'
+        why: MSE is bias squared plus variance, so a small bias can be worth a much smaller variance [^1].
+      - text: '$\hat{\theta}$ is better because it is unbiased: on average the largest sample equals $\theta$'
+        why: The maximum is always below $\theta$; its mean is $\frac{n}{n+1}\theta = \frac{10}{11}\theta$.
+      - text: Both have MSE $\theta^2/30$, because they use the same ten samples
+        why: Only $\tilde{\theta}$ has MSE $\theta^2/(3n) = \theta^2/30$; the maximum uses the data differently and does better.
+    explanation: |
+      For the maximum, $E[\hat{\theta}] = \frac{n}{n+1}\theta$ (bias $-\theta/11$) and
+      $\textrm{Var}(\hat{\theta}) = \frac{n\theta^2}{(n+1)^2(n+2)}$, so
+      $\textrm{MSE} = \textrm{bias}^2 + \textrm{Var} = \frac{2\theta^2}{(n+1)(n+2)} = \frac{2\theta^2}{132} \approx 0.015\theta^2$
+      [^1]. $2\bar{X}$ is unbiased with variance $4 \cdot \frac{\theta^2}{12n} = \frac{\theta^2}{30}$,
+      which is also its MSE. The biased estimator wins, and its advantage grows with $n$ (order
+      $1/n^2$ against $1/n$); rescaling to $\frac{n+1}{n}\hat{\theta}$ removes the bias and does
+      better still. Statistical bias alone does not decide which estimator is better [^2].
+    references:
+      - source: d2l
+        locator: Sec. 22.10.1.4 The Bias-Variance Trade-off (MSE = bias² + variance)
+        url: https://d2l.ai/chapter_appendix-mathematics-for-deep-learning/statistics.html#the-bias-variance-trade-off
+      - source: d2l
+        locator: Sec. 22.10.1.2 Statistical Bias (biased estimators are frequently used)
+        url: https://d2l.ai/chapter_appendix-mathematics-for-deep-learning/statistics.html#statistical-bias
+      - source: d2l
+        locator: Sec. 22.10.5 Exercises, Exercise 1
+        url: https://d2l.ai/chapter_appendix-mathematics-for-deep-learning/statistics.html#exercises
+    source:
+      id: d2l
+      ref: chapter_appendix-mathematics-for-deep-learning/statistics#ex1
+      url: https://d2l.ai/chapter_appendix-mathematics-for-deep-learning/statistics.html#exercises
+    status: draft
+  - id: statistics-103
+    type: short_answer
+    difficulty: medium
+    tags:
+      - estimators
+      - bias
+      - order-statistics
+    question: |
+      $X_1, \dots, X_{10}$ are i.i.d. $\textrm{Unif}(0, 1)$, so $\theta = 1$. What is the statistical
+      bias $E[\hat{\theta}] - \theta$ of the estimator $\hat{\theta} = \max_i X_i$?
+    answer:
+      numeric: -0.0909
+      tolerance: 0.001
+      hint: a number, 4 decimals (it can be negative)
+      model: $P(\hat{\theta} \le x) = x^{10}$, so $E[\hat{\theta}] = \int_0^1 x \cdot 10x^9\,dx = \frac{10}{11}$ and the bias is $-\frac{1}{11} \approx -0.0909$
+    explanation: |
+      The maximum is at most $x$ exactly when all ten samples are, so its CDF is $x^{10}$ and its
+      density $10x^9$ on $[0, 1]$. Then $E[\hat{\theta}] = 10/11$ and the bias is
+      $E[\hat{\theta}] - \theta = -1/11 \approx -0.0909$ [^1]. In general the bias is
+      $-\theta/(n+1)$, which tends to 0, so the estimator is asymptotically unbiased [^1].
+    references:
+      - source: d2l
+        locator: Sec. 22.10.1.2 Statistical Bias, Eq. (22.10.2)
+        url: https://d2l.ai/chapter_appendix-mathematics-for-deep-learning/statistics.html#statistical-bias
+      - source: d2l
+        locator: Sec. 22.10.5 Exercises, Exercise 1
+        url: https://d2l.ai/chapter_appendix-mathematics-for-deep-learning/statistics.html#exercises
+    source:
+      id: d2l
+      ref: chapter_appendix-mathematics-for-deep-learning/statistics#ex1-b
+      url: https://d2l.ai/chapter_appendix-mathematics-for-deep-learning/statistics.html#exercises
+    status: draft
+  - id: statistics-104
+    type: single
+    difficulty: medium
+    tags:
+      - confidence-intervals
+      - interpretation
+      - small-samples
+    question: |
+      With $N = 2$ samples per dataset you build 100 intervals
+      $\hat{\mu} \pm t^*\hat{\sigma}/\sqrt{N}$ with $t^* = 1$ (a 50% confidence interval for $N = 2$),
+      where the true mean is 0. About half of them contain 0, and some very short intervals lie far
+      from 0. Does this contradict the 50% interpretation?
+    options:
+      - text: 'No: 50% describes the procedure over many datasets; a short interval just means the two samples were close'
+        correct: true
+      - text: 'Yes: every observed 50% interval, the short ones included, should contain 0 with probability exactly one half'
+        why: Once computed, a particular interval either contains 0 or it does not; the 50% refers to the procedure [^1].
+      - text: 'Yes: short intervals come from precise estimates, so they should cover the mean more often'
+        why: This is a known fallacy; with $N = 2$, $\hat{\sigma}$ is very noisy and a small value does not mean the estimate is precise [^1].
+      - text: No, but only because $t^* = 1$ is too small for $N = 2$, so the real coverage is just 25%
+        why: With one degree of freedom, $P(|T| \le 1) = \frac{2}{\pi}\arctan 1 = 0.5$, so $t^* = 1$ is exactly right.
+    explanation: |
+      A confidence interval is a random interval: the guarantee is that, over many datasets, 50% of
+      the intervals produced by the procedure contain the true mean [^1]. It says nothing about any
+      single interval. With $N = 2$ the estimated standard deviation is extremely noisy; when the two
+      samples happen to land close together the interval is short, wherever they landed. This is the
+      fallacy "narrow confidence intervals mean precise estimates" [^1][^2]. So the short, far-off
+      intervals are expected, and short intervals should not be read as high precision here.
+    references:
+      - source: d2l
+        locator: Sec. 22.10.3.2 Interpretation (the three fallacies) and Sec. 22.10.3.3 A Gaussian Example
+        url: https://d2l.ai/chapter_appendix-mathematics-for-deep-learning/statistics.html#interpretation
+      - title: Morey et al., The fallacy of placing confidence in confidence intervals (Psychonomic Bulletin & Review, 2016)
+        locator: Fallacy 2, the precision fallacy
+        url: https://pmc.ncbi.nlm.nih.gov/articles/PMC4742505/
+      - source: d2l
+        locator: Sec. 22.10.5 Exercises, Exercise 3
+        url: https://d2l.ai/chapter_appendix-mathematics-for-deep-learning/statistics.html#exercises
+    source:
+      id: d2l
+      ref: chapter_appendix-mathematics-for-deep-learning/statistics#ex3
+      url: https://d2l.ai/chapter_appendix-mathematics-for-deep-learning/statistics.html#exercises
+    status: draft
