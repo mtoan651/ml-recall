@@ -681,3 +681,250 @@ questions:
       ref: quiz-24/q2
       url: https://github.com/microsoft/ML-For-Beginners/blob/de2d4e12236445198213a0711855e348e7253cd4/quiz-app/src/assets/translations/en.json
     status: draft
+  - id: trees-ensembles-022
+    type: single
+    difficulty: easy
+    tags:
+      - decision-trees
+      - max-depth
+      - model-complexity
+      - interpretability
+    question: |
+      Increasing the maximum depth of a decision tree does all of the following except one. Which
+      one does it NOT do?
+    options:
+      - text: Improve its accuracy on the training examples
+        why: A deeper tree can split the training data further; with no depth limit it grows until the leaves are pure [^1].
+      - text: Increase the risk of overfitting
+        why: Deep trees learn very specific rules for a few examples, which is the overfitting regime [^2].
+      - text: Make the model easier to interpret
+        correct: true
+      - text: Increase the complexity of the model
+        why: Depth is the course's standard example of a hyperparameter that controls complexity [^1].
+    explanation: |
+      `max_depth` controls the complexity of a decision tree: a deeper tree asks more questions,
+      so it fits the training data better and, with no limit, keeps splitting until every leaf is
+      pure, creating rules based on single examples [^1]. That lowers training error but raises the
+      risk of overfitting [^2]. A shallow tree is a short list of if/else rules a person can read;
+      a deep tree has many more paths from root to leaf, so it becomes harder, not easier, to
+      interpret.
+    references:
+      - source: ubc-cpsc330
+        locator: 'Lecture 2: Terminology, Baselines, Decision Trees — Parameters and hyperparameters (max_depth)'
+        url: https://github.com/UBC-CS/cpsc330-2025W1/blob/a89d6131a0e2ae5f7ab36f207a3809a5b7137aef/lectures/notes/02_terminology-decision-trees.ipynb
+      - source: ubc-cpsc330
+        locator: 'Lecture 3: Machine Learning Fundamentals — Overfitting'
+        url: https://github.com/UBC-CS/cpsc330-2025W1/blob/a89d6131a0e2ae5f7ab36f207a3809a5b7137aef/lectures/notes/03_ml-fundamentals.ipynb
+    source:
+      id: ubc-cpsc330
+      ref: lectures/tutorials/solutions/midterm_prep.pdf#q5
+      url: https://github.com/UBC-CS/cpsc330-2025W1/blob/a89d6131a0e2ae5f7ab36f207a3809a5b7137aef/lectures/tutorials/solutions/midterm_prep.pdf
+    status: draft
+  - id: trees-ensembles-023
+    type: single
+    difficulty: easy
+    tags:
+      - random-forest
+      - bootstrap
+      - feature-subsampling
+    question: Which option correctly describes the sources of randomness in a random forest?
+    options:
+      - text: Bootstrap samples of the training data, with all features considered at every split
+        why: A random forest also restricts each split to a random subset of features, so the trees differ more [^1].
+      - text: Bootstrap samples of the training data and a random subset of features at each split
+        correct: true
+      - text: Random feature subsets at each split, with every tree trained on the full training set
+        why: Each tree is also grown on its own bootstrap sample drawn with replacement [^1].
+      - text: Random initial values for the leaf predictions, refined during training
+        why: Leaf predictions are not initialized randomly; they are the majority class (or mean target) of the training examples in the leaf [^2].
+    explanation: |
+      To make the trees diverse, a random forest injects randomness in two ways: each tree is built
+      on a bootstrap sample, drawn with replacement from the training set, and at each node only a
+      random subset of features is considered for the best split (`max_features`) [^1]. The trees
+      are then combined by voting or averaging, which reduces the overfitting of single deep
+      trees [^1].
+    references:
+      - source: ubc-cpsc330
+        locator: 'Lecture 11: Ensembles — Inject randomness in the classifier construction'
+        url: https://github.com/UBC-CS/cpsc330-2025W1/blob/a89d6131a0e2ae5f7ab36f207a3809a5b7137aef/lectures/notes/11_ensembles.ipynb
+      - source: ubc-cpsc330
+        locator: 'Lecture 2: Terminology, Baselines, Decision Trees — Some terminology related to trees (leaf node)'
+        url: https://github.com/UBC-CS/cpsc330-2025W1/blob/a89d6131a0e2ae5f7ab36f207a3809a5b7137aef/lectures/notes/02_terminology-decision-trees.ipynb
+    source:
+      id: ubc-cpsc330
+      ref: lectures/tutorials/solutions/final_prep.pdf#q9
+      url: https://github.com/UBC-CS/cpsc330-2025W1/blob/a89d6131a0e2ae5f7ab36f207a3809a5b7137aef/lectures/tutorials/solutions/final_prep.pdf
+    status: draft
+  - id: trees-ensembles-024
+    type: single
+    difficulty: hard
+    tags:
+      - permutation-importance
+      - correlated-features
+      - random-forest
+    question: |
+      A random forest is trained on data in which several features are strongly correlated with
+      each other (near-copies of the same information), and the forest uses all of them in its
+      splits. You compute permutation importance on held-out data. What pattern should you expect
+      for these correlated features?
+    options:
+      - text: Each of them gets a very high importance, because each one carries the signal
+        why: Permuting one feature leaves its correlated copies intact, so the model loses little and the measured drop in score stays small [^1].
+      - text: Exactly one of them gets almost all the importance and the others get almost none
+        why: That pattern appears when a model relies on only one copy; a forest that splits on all of them can fall back on the others when one is permuted [^1].
+      - text: Each of them gets a low importance, even though their shared information matters
+        correct: true
+      - text: The computation fails and returns missing values for them
+        why: Permutation importance can always be computed; correlation only makes its values misleading [^1].
+    explanation: |
+      Permutation importance shuffles one feature at a time and measures how much the model's score
+      drops [^2]. If that feature has strongly correlated partners, the model still gets the same
+      information through them, so the drop is small for *each* feature, and all of them can look
+      unimportant even when the information they share is crucial [^1]. The course gives the
+      matching advice: check for correlated features and be mindful of them, or remove redundant
+      ones, before reading feature importances [^2]; scikit-learn suggests clustering correlated
+      features and keeping one per cluster [^1].
+    references:
+      - title: 'scikit-learn User Guide: Permutation feature importance'
+        locator: Sec. 5.2.3 Misleading values on strongly correlated features
+        url: https://scikit-learn.org/stable/modules/permutation_importance.html#misleading-values-on-strongly-correlated-features
+        quote: When two features are correlated and one of the features is permuted, the model still has access to the latter through its correlated feature.
+      - source: ubc-cpsc330
+        locator: "Lecture 12: Feature importances and model transparency — sklearn's feature_importances_ attribute vs permutation_importance; Do we have correlated features?"
+        url: https://github.com/UBC-CS/cpsc330-2025W1/blob/a89d6131a0e2ae5f7ab36f207a3809a5b7137aef/lectures/notes/12_feat-importances.ipynb
+    source:
+      id: ubc-cpsc330
+      ref: lectures/tutorials/solutions/final_prep.pdf#q11
+      url: https://github.com/UBC-CS/cpsc330-2025W1/blob/a89d6131a0e2ae5f7ab36f207a3809a5b7137aef/lectures/tutorials/solutions/final_prep.pdf
+    status: draft
+  - id: trees-ensembles-025
+    type: single
+    difficulty: medium
+    tags:
+      - feature-engineering
+      - scaling
+      - tree-based-models
+    question: |
+      You are preparing features for a tree-based ensemble such as a random forest. Which
+      transformation can usually be skipped for the trees, even though it matters for k-NN, RBF
+      SVMs or the interpretation of linear-model coefficients?
+    options:
+      - text: Standardizing the continuous features
+        correct: true
+      - text: Encoding the categorical features as numbers
+        why: scikit-learn's trees need numeric input, so categories must still be encoded (one-hot or ordinal) [^3].
+      - text: Turning a raw text column into bag-of-words counts
+        why: Raw text has no fixed set of values; any model, a tree included, needs it encoded as numeric features first [^4].
+      - text: Extracting month and hour features from a timestamp
+        why: Trees cannot extrapolate a raw timestamp beyond the training range, so date parts help them as much as other models [^5].
+    explanation: |
+      A tree splits on thresholds of one feature at a time. Rescaling a feature monotonically, as
+      standardization does, moves the thresholds but not the partitions, so the predictions do not
+      change; random forests "don't require scaling of data" [^1]. Scaling matters for models that
+      compare distances, such as $k$-NN and RBF SVMs, and when comparing coefficient sizes of
+      linear models [^2]. The best features depend on the model you use [^2].
+    references:
+      - source: ubc-cpsc330
+        locator: 'Lecture 11: Ensembles — Random forests: Strengths and weaknesses'
+        url: https://github.com/UBC-CS/cpsc330-2025W1/blob/a89d6131a0e2ae5f7ab36f207a3809a5b7137aef/lectures/notes/11_ensembles.ipynb
+      - source: ubc-cpsc330
+        locator: 'Lecture 13: Feature engineering and feature selection — The best features may be dependent on the model you use'
+        url: https://github.com/UBC-CS/cpsc330-2025W1/blob/a89d6131a0e2ae5f7ab36f207a3809a5b7137aef/lectures/notes/13_feature-engineering-selection.ipynb
+      - source: ubc-cpsc330
+        locator: 'Lecture 5: Preprocessing and sklearn pipelines — Can we use this feature in the model?'
+        url: https://github.com/UBC-CS/cpsc330-2025W1/blob/a89d6131a0e2ae5f7ab36f207a3809a5b7137aef/lectures/notes/05_preprocessing-pipelines.ipynb
+      - source: ubc-cpsc330
+        locator: 'Lecture 6: sklearn ColumnTransformer and Text Features — Encoding text data'
+        url: https://github.com/UBC-CS/cpsc330-2025W1/blob/a89d6131a0e2ae5f7ab36f207a3809a5b7137aef/lectures/notes/06_column-transformer-text-feats.ipynb
+      - source: ubc-cpsc330
+        locator: 'Lecture 19: Time series — POSIX time feature; Interim summary'
+        url: https://github.com/UBC-CS/cpsc330-2025W1/blob/a89d6131a0e2ae5f7ab36f207a3809a5b7137aef/lectures/notes/19_time-series.ipynb
+    source:
+      id: ubc-cpsc330
+      ref: lectures/tutorials/solutions/final_prep.pdf#q12
+      url: https://github.com/UBC-CS/cpsc330-2025W1/blob/a89d6131a0e2ae5f7ab36f207a3809a5b7137aef/lectures/tutorials/solutions/final_prep.pdf
+    status: draft
+  - id: trees-ensembles-026
+    type: multiple
+    difficulty: easy
+    tags:
+      - baselines
+      - decision-trees
+      - prediction
+    question: Which statements about baselines and decision trees are true? Select all that apply.
+    options:
+      - text: Changing the features, for example binarizing them, changes the predictions of a most-frequent baseline classifier
+        why: A most-frequent baseline ignores the features and always predicts the most frequent training label [^1].
+      - text: Making a prediction needs only an example's features, while training a model and scoring its accuracy also need the targets
+        correct: true
+      - text: A decision tree only works if all feature values are binary
+        why: Trees also handle numeric features; for each split the algorithm picks a feature and a threshold [^3].
+      - text: A decision tree predicts by routing the example from the root down to a leaf
+        correct: true
+    explanation: |
+      A baseline such as the most-frequent classifier uses a rule of thumb that ignores $X$, which
+      makes it a sanity check for real models [^1]. The usual workflow passes $X$ and $y$ to `fit`
+      and to `score` (which compares predictions with the true targets) but only $X$ to
+      `predict` [^2]. A decision tree learns a hierarchy of questions; numeric features are split at a
+      learned threshold, and a new example is routed from the root through the questions until it
+      reaches a leaf, which holds the prediction [^3].
+    references:
+      - source: ubc-cpsc330
+        locator: 'Lecture 2: Terminology, Baselines, Decision Trees — Baselines; DummyClassifier'
+        url: https://github.com/UBC-CS/cpsc330-2025W1/blob/a89d6131a0e2ae5f7ab36f207a3809a5b7137aef/lectures/notes/02_terminology-decision-trees.ipynb
+      - source: ubc-cpsc330
+        locator: 'Lecture 2: Terminology, Baselines, Decision Trees — fit, predict, and score summary'
+        url: https://github.com/UBC-CS/cpsc330-2025W1/blob/a89d6131a0e2ae5f7ab36f207a3809a5b7137aef/lectures/notes/02_terminology-decision-trees.ipynb
+      - source: ubc-cpsc330
+        locator: 'Lecture 2: Terminology, Baselines, Decision Trees — How does predict work?; Decision trees with continuous features'
+        url: https://github.com/UBC-CS/cpsc330-2025W1/blob/a89d6131a0e2ae5f7ab36f207a3809a5b7137aef/lectures/notes/02_terminology-decision-trees.ipynb
+    source:
+      id: ubc-cpsc330
+      ref: lectures/notes/02_terminology-decision-trees.ipynb#ex2.5
+      url: https://github.com/UBC-CS/cpsc330-2025W1/blob/a89d6131a0e2ae5f7ab36f207a3809a5b7137aef/lectures/notes/02_terminology-decision-trees.ipynb
+    status: draft
+  - id: trees-ensembles-027
+    type: single
+    difficulty: medium
+    tags:
+      - random-forest
+      - bootstrap
+      - averaging
+      - boosting
+    question: Which statement about random forests and averaging is the most accurate?
+    options:
+      - text: Each tree first draws a random subset of features and then uses only those features for all of its splits
+        why: The feature subset is drawn anew at *each node*, not once per tree [^1].
+      - text: The number of trees should be tuned like other hyperparameters to get better validation scores
+        why: More trees is generally better; the course chooses fewer trees only to save time, not to improve the score [^2].
+      - text: Random forests build their trees one after another, each depending on the previous tree
+        why: That describes gradient boosting; the trees of a random forest are independent, so they can be trained in parallel [^3].
+      - text: Every tree in a random forest is trained on a different bootstrap sample of the training set
+        correct: true
+      - text: Averaging classifiers with training errors of 10%, 20% and 30% gives at best a training error of 10%
+        why: If the models make different mistakes, a majority vote can be right where each single model is wrong, so the ensemble can beat its best member [^4].
+    explanation: |
+      A random forest injects randomness twice: each tree is grown on its own bootstrap sample of
+      the training set, and each node considers only a random subset of features [^1]. The trees
+      are independent and vote, which reduces overfitting; adding trees rarely hurts [^2].
+      Boosting, by contrast, builds trees sequentially, each correcting the previous ones [^3].
+      Averaging can beat the best single model when the models' errors differ: three models that
+      are each wrong on a different example can all be outvoted to give a correct ensemble [^4].
+    references:
+      - source: ubc-cpsc330
+        locator: 'Lecture 11: Ensembles — Inject randomness in the classifier construction; The random forests classifier'
+        url: https://github.com/UBC-CS/cpsc330-2025W1/blob/a89d6131a0e2ae5f7ab36f207a3809a5b7137aef/lectures/notes/11_ensembles.ipynb
+      - source: ubc-cpsc330
+        locator: 'Lecture 11: Ensembles — Number of trees and fundamental trade-off'
+        url: https://github.com/UBC-CS/cpsc330-2025W1/blob/a89d6131a0e2ae5f7ab36f207a3809a5b7137aef/lectures/notes/11_ensembles.ipynb
+      - source: ubc-cpsc330
+        locator: 'Lecture 11: Ensembles — Gradient boosted trees'
+        url: https://github.com/UBC-CS/cpsc330-2025W1/blob/a89d6131a0e2ae5f7ab36f207a3809a5b7137aef/lectures/notes/11_ensembles.ipynb
+      - source: ubc-cpsc330
+        locator: 'Lecture 11: Ensembles — Averaging (how the average can beat the best model)'
+        url: https://github.com/UBC-CS/cpsc330-2025W1/blob/a89d6131a0e2ae5f7ab36f207a3809a5b7137aef/lectures/notes/11_ensembles.ipynb
+    source:
+      id: ubc-cpsc330
+      ref: lectures/notes/11_ensembles.ipynb#ex11.1
+      url: https://github.com/UBC-CS/cpsc330-2025W1/blob/a89d6131a0e2ae5f7ab36f207a3809a5b7137aef/lectures/notes/11_ensembles.ipynb
+    status: draft

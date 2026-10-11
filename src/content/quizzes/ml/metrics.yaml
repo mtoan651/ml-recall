@@ -429,3 +429,353 @@ questions:
       ref: managing-ml-projects/success#q1
       url: https://developers.google.com/machine-learning/managing-ml-projects/success
     status: draft
+  - id: metrics-018
+    type: single
+    difficulty: easy
+    tags:
+      - roc-curve
+      - auc
+      - random-classifier
+    question: |
+      For a binary classification problem with balanced classes, a lazy classifier labels each
+      example by tossing a coin (heads = positive, tails = negative). Which ROC curve in the figure
+      best matches this approach?
+    figure:
+      src: ./metrics/metrics-018.svg
+      alt: Three ROC plots with false positive rate on the x-axis and true positive rate on the y-axis, both from 0 to 1. Panel A rises steeply to the top-left corner, panel B runs close to the diagonal from (0, 0) to (1, 1), and panel C stays near the bottom and only rises at the right edge.
+    options:
+      - text: Panel A
+        why: A curve hugging the top-left corner reaches high recall at a low false positive rate, which needs scores that actually rank positives above negatives [^1].
+      - text: Panel B
+        correct: true
+      - text: Panel C
+        why: A curve below the diagonal ranks negatives above positives, which is worse than chance; a coin does not prefer either class, so on average it cannot do that [^1].
+    explanation: |
+      A coin ignores the input, so an actual positive and an actual negative are labeled positive
+      with the same probability $p$ (the chance of heads). Hence $\text{TPR} = \text{FPR} = p$: a fair
+      coin gives the point (0.5, 0.5), and coins with other biases trace out the diagonal from
+      (0, 0) to (1, 1) [^1]. This is the ROC of random guessing, with AUC = 0.5, "random chance" in
+      the course's words [^1]. The class balance does not change this, since TPR and FPR are each
+      computed within one class.
+    references:
+      - source: ubc-cpsc330
+        locator: 'Lecture 9: Classification metrics — Receiver Operating Characteristic (ROC) curve; Area under the curve (AUC)'
+        url: https://github.com/UBC-CS/cpsc330-2025W1/blob/a89d6131a0e2ae5f7ab36f207a3809a5b7137aef/lectures/notes/09_classification-metrics.ipynb
+    source:
+      id: ubc-cpsc330
+      ref: lectures/tutorials/solutions/midterm_prep.pdf#q16
+      url: https://github.com/UBC-CS/cpsc330-2025W1/blob/a89d6131a0e2ae5f7ab36f207a3809a5b7137aef/lectures/tutorials/solutions/midterm_prep.pdf
+    status: draft
+  - id: metrics-019
+    type: single
+    difficulty: easy
+    tags:
+      - recall
+      - precision
+      - confusion-matrix
+    question: A binary classifier reaches a recall of 100% on the test set. What can you conclude?
+    options:
+      - text: Its accuracy must also be 100%, as no positive is missed
+        why: False positives still count as errors in accuracy, and recall does not see them [^1].
+      - text: It makes no false positive predictions on the test set
+        why: Recall is $TP/(TP+FN)$ and contains no FP term; predicting every example as positive already gives recall 1 [^1].
+      - text: It found every positive example, though it may also flag negatives
+        correct: true
+      - text: Its precision must be high as well, since recall is perfect
+        why: Precision $TP/(TP+FP)$ can be low; if the model predicts everything as positive, precision equals the share of positives [^1].
+    explanation: |
+      Recall is $\frac{TP}{TP+FN}$: of all actual positives, how many did the model catch [^1]? A
+      recall of 1 means $FN = 0$, so no positive was missed. It says nothing about false positives,
+      which enter precision, $\frac{TP}{TP+FP}$, and accuracy. The trivial classifier that labels
+      everything positive has recall 1 but poor precision, which is why recall is reported together
+      with precision or summarized by the F1-score [^1].
+    references:
+      - source: ubc-cpsc330
+        locator: 'Lecture 9: Classification metrics — Precision, recall, f1 score'
+        url: https://github.com/UBC-CS/cpsc330-2025W1/blob/a89d6131a0e2ae5f7ab36f207a3809a5b7137aef/lectures/notes/09_classification-metrics.ipynb
+    source:
+      id: ubc-cpsc330
+      ref: lectures/tutorials/solutions/midterm_prep.pdf#q17
+      url: https://github.com/UBC-CS/cpsc330-2025W1/blob/a89d6131a0e2ae5f7ab36f207a3809a5b7137aef/lectures/tutorials/solutions/midterm_prep.pdf
+    status: draft
+  - id: metrics-020
+    type: single
+    difficulty: medium
+    tags:
+      - r2
+      - baselines
+      - cross-validation
+      - regression-metrics
+    question: |
+      The table shows 10-fold cross-validation results of a regressor, scored with $R^2$ (the
+      default regression score in scikit-learn):
+
+      | fold | test_score | train_score |
+      | ---: | ---: | ---: |
+      | 0 | −0.003547 | 0.0 |
+      | 1 | −0.001266 | 0.0 |
+      | 2 | −0.011767 | 0.0 |
+      | 3 | −0.006744 | 0.0 |
+      | 4 | −0.076533 | 0.0 |
+      | 5 | −0.003133 | 0.0 |
+      | 6 | −0.000397 | 0.0 |
+      | 7 | −0.003785 | 0.0 |
+      | 8 | −0.001740 | 0.0 |
+      | 9 | −0.000117 | 0.0 |
+
+      Which regressor most likely produced these scores?
+    options:
+      - text: A baseline that always predicts the median of the training targets
+        why: The mean minimizes the squared error, so a median predictor has $R^2 \le 0$ on its own training data, and below 0 whenever median and mean differ [^1].
+      - text: A support vector regressor with an RBF kernel
+        why: An SVR learns from the features, so on its training folds it would score clearly above 0 [^2].
+      - text: A support vector regressor with a linear kernel
+        why: A linear SVR also uses the features and would fit its training folds better than a constant, giving a positive training $R^2$ [^2].
+      - text: A baseline that always predicts the mean of the training targets
+        correct: true
+    explanation: |
+      $R^2 = 1 - \frac{\sum_i (y_i - \hat y_i)^2}{\sum_i (y_i - \bar y)^2}$ [^1]. If the model always
+      predicts the training mean $\bar y$, numerator and denominator are equal on the training fold,
+      so the training $R^2$ is exactly 0, as in every row of the table. On a validation fold the
+      training mean is slightly off from that fold's mean, so $R^2$ is slightly negative; the course
+      reads a negative $R^2$ as "worse than `DummyRegressor`", the mean baseline itself [^1][^2]. A
+      model that uses the features would have a positive training score.
+    references:
+      - source: ubc-cpsc330
+        locator: 'Lecture 10: Regression metrics — R^2 (not in detail)'
+        url: https://github.com/UBC-CS/cpsc330-2025W1/blob/a89d6131a0e2ae5f7ab36f207a3809a5b7137aef/lectures/notes/10_regression-metrics.ipynb
+      - source: ubc-cpsc330
+        locator: 'Lecture 2: Terminology, Baselines, Decision Trees — DummyRegressor'
+        url: https://github.com/UBC-CS/cpsc330-2025W1/blob/a89d6131a0e2ae5f7ab36f207a3809a5b7137aef/lectures/notes/02_terminology-decision-trees.ipynb
+    source:
+      id: ubc-cpsc330
+      ref: lectures/tutorials/solutions/midterm_prep.pdf#q18
+      url: https://github.com/UBC-CS/cpsc330-2025W1/blob/a89d6131a0e2ae5f7ab36f207a3809a5b7137aef/lectures/tutorials/solutions/midterm_prep.pdf
+    status: draft
+  - id: metrics-021
+    type: single
+    difficulty: hard
+    tags:
+      - mape
+      - r2
+      - regression-metrics
+    question: |
+      A model predicts the monthly revenue of business units of very different sizes. On the test
+      set it reaches $R^2 = 0.92$ but a mean absolute percentage error (MAPE) of 40%: it is accurate
+      for the large units and poor for the small ones. What best explains how both numbers can hold?
+    options:
+      - text: One of the metrics must be miscomputed, because a high $R^2$ implies a low MAPE
+        why: The two metrics measure different things, and neither implies the other, so this pair of results is perfectly possible [^1].
+      - text: $R^2$ is dominated by squared errors on large units; MAPE weighs every unit's relative error equally
+        correct: true
+      - text: A MAPE of 40% means the model explains only 60% of the variance, so $R^2$ must be wrong
+        why: MAPE is the average absolute error as a share of each true value; it is not $1 - R^2$ [^1].
+      - text: $R^2$ ignores the large units because it is computed on percentages
+        why: $R^2$ uses squared errors in the target's units, so the large units, with the largest errors, dominate it [^1].
+    explanation: |
+      $R^2$ compares squared errors in the target's units with the target's variance, so units with
+      large revenues, and therefore large absolute errors and spread, dominate it; the course makes
+      the same point for MSE, where expensive houses dominate [^1]. MAPE averages each unit's error
+      *as a percentage of its true value*, so an error of 30,000 is 5% for a large unit but 50% for
+      a small one [^1]. Poor relative accuracy on many small units thus inflates MAPE without
+      hurting $R^2$ much. Which number matters depends on the goal; note also that MAPE becomes
+      unstable when true values are close to zero, since it divides by them.
+    references:
+      - source: ubc-cpsc330
+        locator: 'Lecture 10: Regression metrics — MAPE; Transforming the targets'
+        url: https://github.com/UBC-CS/cpsc330-2025W1/blob/a89d6131a0e2ae5f7ab36f207a3809a5b7137aef/lectures/notes/10_regression-metrics.ipynb
+    source:
+      id: ubc-cpsc330
+      ref: lectures/tutorials/solutions/midterm_prep.pdf#q19
+      url: https://github.com/UBC-CS/cpsc330-2025W1/blob/a89d6131a0e2ae5f7ab36f207a3809a5b7137aef/lectures/tutorials/solutions/midterm_prep.pdf
+    status: draft
+  - id: metrics-022
+    type: single
+    difficulty: easy
+    tags:
+      - roc-curve
+      - auc
+      - thresholds
+    question: |
+      Which metric measures how well a binary classifier separates the two classes across all
+      possible classification thresholds?
+    options:
+      - text: Precision of the positive class
+        why: Precision is computed from the hard predictions at one threshold [^1].
+      - text: Recall of the positive class
+        why: Recall also comes from one confusion matrix, that is, from one threshold [^1].
+      - text: Area under the ROC curve
+        correct: true
+      - text: F1-score of the positive class
+        why: F1 combines precision and recall at a single threshold; it measures the quality of `predict`, not of the scores [^2].
+    explanation: |
+      An ROC curve plots the true positive rate against the false positive rate for every
+      threshold on the classifier's scores, from (0, 0) to (1, 1) [^1]. The area under it (AUC)
+      summarizes all thresholds in one number: 0.5 is random chance and 1.0 means every positive
+      gets a higher score than every negative, so AUC can be read as the probability that a random
+      positive is ranked above a random negative [^1]. Precision, recall and F1 describe one
+      operating point [^2].
+    references:
+      - source: ubc-cpsc330
+        locator: 'Lecture 9: Classification metrics — Receiver Operating Characteristic (ROC) curve; Area under the curve (AUC)'
+        url: https://github.com/UBC-CS/cpsc330-2025W1/blob/a89d6131a0e2ae5f7ab36f207a3809a5b7137aef/lectures/notes/09_classification-metrics.ipynb
+      - source: ubc-cpsc330
+        locator: 'Lecture 9: Classification metrics — AP vs. F1-score'
+        url: https://github.com/UBC-CS/cpsc330-2025W1/blob/a89d6131a0e2ae5f7ab36f207a3809a5b7137aef/lectures/notes/09_classification-metrics.ipynb
+    source:
+      id: ubc-cpsc330
+      ref: lectures/tutorials/solutions/final_prep.pdf#q7
+      url: https://github.com/UBC-CS/cpsc330-2025W1/blob/a89d6131a0e2ae5f7ab36f207a3809a5b7137aef/lectures/tutorials/solutions/final_prep.pdf
+    status: draft
+  - id: metrics-023
+    type: single
+    difficulty: easy
+    tags:
+      - rmse
+      - mae
+      - outliers
+      - regression-metrics
+    question: |
+      In regression, which pair correctly names a metric that is very sensitive to large outliers
+      and one that is more robust to them? (MAE: mean absolute error, RMSE: root mean squared
+      error, MAPE: mean absolute percentage error.)
+    options:
+      - text: MAE is sensitive; $R^2$ is robust
+        why: MAE grows only linearly with an error, so it is the more robust one, while $R^2$ is built on squared errors [^2].
+      - text: $R^2$ is sensitive; RMSE is robust
+        why: RMSE squares the errors before averaging, which makes it one of the most outlier-sensitive metrics [^1].
+      - text: MAPE is sensitive; RMSE is robust
+        why: RMSE is not robust, because of the squaring; MAPE's weak spot is true values near zero, not large outliers [^1].
+      - text: RMSE is sensitive; MAE is robust
+        correct: true
+    explanation: |
+      RMSE squares each error before averaging, so one prediction that is off by 10 contributes as
+      much as a hundred predictions off by 1; a few large outliers can dominate it [^1][^2]. MAE
+      adds the absolute errors, so each error counts in proportion to its size and outliers have
+      much less influence [^1]. $R^2$ is a normalized squared error and shares RMSE's sensitivity [^2].
+    references:
+      - source: google-mlcc
+        locator: 'Linear regression: Loss — Choosing a loss'
+        url: https://developers.google.com/machine-learning/crash-course/linear-regression/loss#choosing_a_loss
+      - source: ubc-cpsc330
+        locator: 'Lecture 10: Regression metrics — Mean squared error (MSE); RMSE; R^2'
+        url: https://github.com/UBC-CS/cpsc330-2025W1/blob/a89d6131a0e2ae5f7ab36f207a3809a5b7137aef/lectures/notes/10_regression-metrics.ipynb
+    source:
+      id: ubc-cpsc330
+      ref: lectures/tutorials/solutions/final_prep.pdf#q8
+      url: https://github.com/UBC-CS/cpsc330-2025W1/blob/a89d6131a0e2ae5f7ab36f207a3809a5b7137aef/lectures/tutorials/solutions/final_prep.pdf
+    status: draft
+  - id: metrics-024
+    type: multiple
+    difficulty: medium
+    tags:
+      - false-positives
+      - false-negatives
+      - precision
+      - recall
+      - accuracy
+    question: Which statements about classification errors and metrics are true? Select all that apply.
+    options:
+      - text: In screening for a serious disease (positive = has the disease), false positives are usually more damaging than false negatives
+        why: A false negative sends a sick person home untreated, while a false positive usually leads to a follow-up test, so missing cases is typically worse [^1].
+      - text: In spam filtering (positive = spam), false positives are usually more damaging than false negatives
+        correct: true
+      - text: If method A has a higher accuracy than method B, then A also has a higher precision
+        why: 'Counterexample: A with TN = 90, FP = 5, FN = 5, TP = 0 has accuracy 0.90 and precision 0, while B with TN = 80, FP = 15, FN = 0, TP = 5 has accuracy 0.85 and precision 0.25 [^2].'
+      - text: If method A has a higher accuracy than method B, then A also has a higher recall
+        why: In the same counterexample A finds none of the 5 positives (recall 0) while B finds all of them (recall 1) [^2].
+    explanation: |
+      Which error is worse depends on the cost of each mistake in the application [^1]. A spam
+      filter that sends an important email to the junk folder (a false positive) does more harm
+      than one that lets a spam message through, whereas missing a disease (a false negative) is
+      usually the costlier error in medical screening. Accuracy mixes both kinds of errors, so it
+      can rank models differently from precision $TP/(TP+FP)$ and recall $TP/(TP+FN)$, especially
+      with class imbalance, as the course's two confusion matrices show [^2].
+    references:
+      - source: ubc-cpsc330
+        locator: 'Lecture 9: Classification metrics — What is "positive" and "negative"?; Which type of error is more important?'
+        url: https://github.com/UBC-CS/cpsc330-2025W1/blob/a89d6131a0e2ae5f7ab36f207a3809a5b7137aef/lectures/notes/09_classification-metrics.ipynb
+      - source: ubc-cpsc330
+        locator: 'Lecture 9: Classification metrics — iClicker Exercise 9.1 (Method A and Method B confusion matrices); Precision, recall, f1 score'
+        url: https://github.com/UBC-CS/cpsc330-2025W1/blob/a89d6131a0e2ae5f7ab36f207a3809a5b7137aef/lectures/notes/09_classification-metrics.ipynb
+    source:
+      id: ubc-cpsc330
+      ref: lectures/notes/09_classification-metrics.ipynb#ex9.1
+      url: https://github.com/UBC-CS/cpsc330-2025W1/blob/a89d6131a0e2ae5f7ab36f207a3809a5b7137aef/lectures/notes/09_classification-metrics.ipynb
+    status: draft
+  - id: metrics-025
+    type: multiple
+    difficulty: medium
+    tags:
+      - classification-threshold
+      - precision
+      - recall
+    question: |
+      A classifier labels an example positive when its predicted probability exceeds a threshold.
+      Which statements are true? Select all that apply.
+    options:
+      - text: Raising the threshold tends to decrease both true positives and false positives
+        correct: true
+      - text: Raising the threshold tends to decrease both true negatives and false negatives
+        why: A higher threshold labels more examples negative, so true and false negatives *increase* [^1].
+      - text: Lowering the threshold generally increases recall
+        correct: true
+      - text: Raising the threshold can improve precision if it removes many false positives without losing many true positives
+        correct: true
+    explanation: |
+      A higher threshold is a higher bar for predicting positive: fewer examples are labeled
+      positive, so both TP and FP fall, and both TN and FN rise [^1]. Recall $TP/(TP+FN)$ can then
+      only stay the same or go down, which is why lowering the threshold is the way to raise
+      recall [^1]. Precision $TP/(TP+FP)$ usually goes up with the threshold when the removed
+      predictions are mostly false positives, though it can occasionally go down [^1].
+    references:
+      - source: ubc-cpsc330
+        locator: 'Lecture 9: Classification metrics — Precision/Recall tradeoff; Decreasing the threshold; Increasing the threshold'
+        url: https://github.com/UBC-CS/cpsc330-2025W1/blob/a89d6131a0e2ae5f7ab36f207a3809a5b7137aef/lectures/notes/09_classification-metrics.ipynb
+    source:
+      id: ubc-cpsc330
+      ref: lectures/notes/09_classification-metrics.ipynb#ex9.2
+      url: https://github.com/UBC-CS/cpsc330-2025W1/blob/a89d6131a0e2ae5f7ab36f207a3809a5b7137aef/lectures/notes/09_classification-metrics.ipynb
+    status: draft
+  - id: metrics-026
+    type: multiple
+    difficulty: medium
+    tags:
+      - regression-metrics
+      - rmse
+      - mse
+      - r2
+      - mape
+    question: Which statements about regression metrics are true? Select all that apply.
+    options:
+      - text: Precision and recall can still be used for regression problems, alongside other metrics
+        why: Precision and recall count exact class matches; a regression prediction is almost never exactly right, so we need scores of how far off it is [^1].
+      - text: An $R^2$ below 0 means the model does worse than always predicting the mean of the targets
+        correct: true
+      - text: RMSE is never negative
+        correct: true
+      - text: MSE by itself does not tell you whether the model is underpredicting or overpredicting
+        correct: true
+      - text: MAPE is expressed in the same units as the target
+        why: MAPE averages errors as percentages of the true values, so it is unitless; RMSE is the metric in the target's units [^3].
+    explanation: |
+      Regression needs scores that reflect how wrong each prediction is, not whether it is exactly
+      right [^1]. MSE and RMSE square the errors, so they are never negative and lose the sign of
+      each error: over- and underprediction count the same [^2]. $R^2$ is 1 for perfect predictions
+      and negative when the model is worse than the mean baseline [^2]. RMSE is in the units of the
+      target, while MAPE is a unitless percentage [^3].
+    references:
+      - source: ubc-cpsc330
+        locator: 'Lecture 10: Regression metrics — Regression scoring functions'
+        url: https://github.com/UBC-CS/cpsc330-2025W1/blob/a89d6131a0e2ae5f7ab36f207a3809a5b7137aef/lectures/notes/10_regression-metrics.ipynb
+      - source: ubc-cpsc330
+        locator: 'Lecture 10: Regression metrics — Mean squared error (MSE); RMSE; R^2'
+        url: https://github.com/UBC-CS/cpsc330-2025W1/blob/a89d6131a0e2ae5f7ab36f207a3809a5b7137aef/lectures/notes/10_regression-metrics.ipynb
+      - source: ubc-cpsc330
+        locator: 'Lecture 10: Regression metrics — What did we learn today? (scoring metrics)'
+        url: https://github.com/UBC-CS/cpsc330-2025W1/blob/a89d6131a0e2ae5f7ab36f207a3809a5b7137aef/lectures/notes/10_regression-metrics.ipynb
+    source:
+      id: ubc-cpsc330
+      ref: lectures/notes/10_regression-metrics.ipynb#ex10.2
+      url: https://github.com/UBC-CS/cpsc330-2025W1/blob/a89d6131a0e2ae5f7ab36f207a3809a5b7137aef/lectures/notes/10_regression-metrics.ipynb
+    status: draft
