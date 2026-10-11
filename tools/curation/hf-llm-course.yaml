@@ -1,6 +1,9 @@
 # Curation for hf-llm-course (see docs/content-pipeline.md#curation).
 # Items not listed are kept with their chapter's default topic (importers/hf_course.py).
-# Reviewed 2026-10-09.
+# Reviewed 2026-10-09 — 86 of 132 kept. Re-reviewed 2026-10-11 under keep-and-fix — 106 kept: the
+# Hub/Datasets/debugging items that test common APIs or general concepts are kept by per-item
+# decisions (which override the group exclusions below); Gradio, Argilla, forum etiquette and
+# removed APIs stay dropped.
 exclude_prefixes:
   "chapter4/": tool-specific   # sharing models on the Hub
   "chapter5/": tool-specific   # 🤗 Datasets library
@@ -183,7 +186,28 @@ items:
       correct:
         - 0
   "chapter7/9#q8": {topic: huggingface}
-  "chapter7/9#q9": {drop: tool-specific}   # Keras compile(); course is PyTorch-first now
+  "chapter7/9#q9":                         # Keras compile(); course is PyTorch-first now
+    topic: huggingface
+    fix:
+      question: |
+        In a PyTorch training loop for a 🤗 Transformers model you can write
+
+        ```py
+        outputs = model(**batch)
+        loss = outputs.loss
+        loss.backward()
+        ```
+
+        without defining a loss function yourself. Why?
+      options:
+        - text: Transformer models are trained without supervision, so they need no loss function
+          why: Every model trained by gradient descent needs a loss; here the model computes it internally.
+        - text: When the batch contains `labels`, the model computes the loss itself and returns it
+          correct: true
+        - text: '`outputs.loss` is the metric that `compute_metrics()` returns after each evaluation'
+          why: '`compute_metrics()` reports evaluation metrics; it is not run in the forward pass and is not what gets back-propagated.'
+        - text: The optimizer computes the loss from the gradients during `optimizer.step()`
+          why: It is the other way round. The loss comes first, `backward()` turns it into gradients, and the optimizer only uses them to update the weights.
   "chapter7/9#q10":
     topic: language-models
     fix:
@@ -237,7 +261,18 @@ items:
         1: To replace standard benchmarks entirely with in-house tests
         2: To make evaluation easier and cheaper than running benchmarks
   # chapter 12 — Reasoning models
-  "chapter12/3#q1": {drop: inaccurate}     # GRPO was introduced in DeepSeekMath, not R1
+  "chapter12/3#q1":                        # GRPO was introduced in DeepSeekMath, not R1
+    fix:
+      question: What is the main contribution of the DeepSeek-R1 paper (2025)?
+      options:
+        - text: Introducing GRPO, a new RL algorithm that compares groups of sampled answers
+          why: R1 is trained with GRPO, but GRPO was introduced earlier, in the DeepSeekMath paper (2024).
+        - text: Training with far more GPUs and compute than any earlier language model
+          why: The contribution is the training method, not the amount of compute.
+        - text: Scaling the model to more parameters than any existing language model
+          why: The contribution is the training method, not the model size.
+        - text: Showing that reasoning can emerge from RL alone, without human-written reasoning examples
+          correct: true
   chapter1/7#q9:
     fix:
       question: You want to fine-tune a dedicated summarization model, which reads a whole document and then writes a shorter text. Which type of Transformer model is the standard choice?
@@ -282,3 +317,313 @@ items:
         0: R1-Zero is trained with pure RL; R1 adds supervised fine-tuning
         1: R1-Zero is a smaller version of R1 with fewer parameters
         2: R1-Zero was pre-trained on much less text than R1
+  chapter4/6#q1:
+    fix:
+      question: Which models can be hosted on the Hugging Face Hub?
+      options:
+        - text: Only models built with the 🤗 Transformers library
+          why: Models from the 🤗 Transformers library are supported on the Hub, but they are not the only ones.
+        - text: Only models whose interface matches the 🤗 Transformers API
+          why: There is no interface requirement for uploading a model to the Hub.
+        - text: Models from many libraries and fields, e.g. timm for vision or pyannote for speech
+          correct: true
+        - text: Only models for natural language processing (NLP) tasks
+          why: There is no requirement on the field of application; the Hub also hosts vision and speech models.
+  chapter4/6#q2:
+    fix:
+      question: Every model on the Hugging Face Hub lives in a repository. How are the files in these repositories versioned and managed?
+      options:
+        - text: With git, using a large-file extension (Git LFS, now also Xet) for big files such as weights
+          correct: true
+        - text: Through your own Google Cloud (GCP) account, which stores the model files
+          why: The Hub stores the files itself; no cloud account of yours is involved.
+        - text: Through peer-to-peer distribution among the users who download the model
+          why: Files are served from the Hub's own storage, not shared peer to peer.
+        - text: Only through the website, since repositories cannot be cloned and keep no history
+          why: Hub repositories can be cloned, pushed to and browsed by revision like any git repository.
+  chapter4/6#q4:
+    fix:
+      question: What is a model card on the Hugging Face Hub?
+      options:
+        - text: A Markdown README documenting the model's intended uses, limitations, biases, data and evaluation
+          correct: true
+        - text: A rough description of the model, less important than the model and tokenizer files
+          why: It is arguably as important as the model files; if it is incomplete or missing, the model is much less useful to others.
+        - text: A Python script that you run to print information about the model's architecture
+          why: A model card is a Markdown file, the repository's README.md, not code.
+        - text: The JSON config file that the library reads to rebuild the model's architecture
+          why: That is config.json. The model card is documentation written for people.
+  chapter4/6#q5:
+    fix:
+      question: Which of these objects can be uploaded to the Hub directly by calling their own `push_to_hub()` method?
+      options:
+        - text: A tokenizer
+          correct: true
+        - text: A model configuration
+          correct: true
+        - text: A model
+          correct: true
+        - text: A `Trainer`
+          correct: true
+        - text: A data collator such as `DataCollatorWithPadding`
+          why: A data collator only pads examples into batches; it has no files to share and no `push_to_hub()` method.
+  chapter4/6#q6:
+    fix:
+      question: Before you can upload with `push_to_hub()` or the `hf` command-line tool, what must you do first on your machine?
+      options:
+        - text: Log in on the huggingface.co website in your browser
+          why: A browser session does not give your local Python process or terminal a token.
+        - text: Run `hf auth login` in a terminal
+          correct: true
+        - text: Run `notebook_login()` in a notebook
+          correct: true
+        - text: Run `git lfs install` in the model folder
+          why: That only prepares git for large files; it does not authenticate you.
+  chapter5/8#q1:
+    fix:
+      question: The `load_dataset()` function in 🤗 Datasets can load a dataset from which of these locations?
+      options:
+        - text: Local files, e.g. CSV or JSON files on your laptop
+          correct: true
+        - text: The Hugging Face Hub, by dataset name
+          correct: true
+        - text: A remote server, by passing URLs as `data_files`
+          correct: true
+        - text: A Python list in memory, passed as the first argument
+          why: The first argument is a dataset name or a path (a string). Data already in memory is wrapped with `Dataset.from_list()` or `Dataset.from_dict()` instead.
+  chapter5/8#q2:
+    fix:
+      options:
+        - text: '`dataset.sample(50)`'
+          why: There is no `Dataset.sample()` method.
+        - text: '`dataset.shuffle().select(range(50))`'
+          correct: true
+        - text: '`dataset.select(range(50)).shuffle()`'
+          why: The code runs, but it only shuffles the first 50 elements of the dataset, so the sample is not random.
+        - text: '`dataset.shuffle(50)`'
+          why: The first parameter of `shuffle()` is the random seed, so this returns the whole dataset in a new order.
+  chapter5/8#q3:
+    fix:
+      options:
+        - text: "`pets_dataset.filter(lambda x: x['name'].startswith('L'))`"
+          correct: true
+        - text: "`pets_dataset.filter(lambda x['name'].startswith('L'))`"
+          why: 'This is a syntax error: a lambda has the form `lambda <arguments> : <expression>`, so it needs an argument before the colon.'
+        - text: "Define `def filter_names(x): return x['name'].startswith('L')` and run `pets_dataset.filter(filter_names)`"
+          correct: true
+        - text: "`pets_dataset.select(lambda x: x['name'].startswith('L'))`"
+          why: '`select()` expects an iterable of row indices, not a function; keeping rows that satisfy a condition is the job of `filter()`.'
+  chapter5/8#q4:
+    fix:
+      question: 🤗 Datasets treats each dataset as a memory-mapped file. What is memory mapping?
+      options:
+        - text: A mapping between CPU RAM and GPU memory
+          why: Memory mapping is about RAM and files on disk, not about moving data to the GPU.
+        - text: A mapping between RAM and filesystem storage
+          correct: true
+        - text: A mapping between two files in the 🤗 Datasets cache
+          why: It maps a file on disk into memory, not one file onto another.
+        - text: A mapping from each token to its ID in the vocabulary
+          why: That is the tokenizer's vocabulary, which has nothing to do with how the dataset is stored.
+  chapter5/8#q5:
+    fix:
+      question: What are the main benefits of the memory mapping used by 🤗 Datasets?
+      options:
+        - text: Several processes can share one memory-mapped file, so `Dataset.map()` can run in parallel without copying the data
+          correct: true
+        - text: Programs can access parts of an extremely large file without first reading the whole file into RAM
+          correct: true
+        - text: The whole dataset is read into RAM once, so that later accesses never touch the disk
+          why: It is the opposite. Memory mapping avoids loading the whole dataset into RAM.
+        - text: The dataset is compressed, so that it takes up much less space on disk
+          why: Memory mapping changes how a file is accessed, not how big it is on disk.
+  chapter5/8#q6:
+    fix:
+      question: |
+        With `streaming=True`, `load_dataset()` does not download the whole dataset first:
+
+        ```py
+        from datasets import load_dataset
+
+        dataset = load_dataset("allocine", streaming=True, split="train")
+        ```
+
+        Why can't you get the first review with `dataset[0]`, as you could without streaming?
+      options:
+        - text: It is too large to fit in RAM, so streaming refuses to return single elements
+          why: Streamed datasets are decompressed on the fly, so you can process terabyte-sized datasets with very little RAM.
+        - text: Streaming returns an `IterableDataset`, which has no random access by index
+          correct: true
+        - text: The `allocine` dataset has no `train` split
+          why: It has train, validation and test splits; the problem is the type of object that streaming returns.
+        - text: Streamed examples arrive as token IDs and must be decoded before they can be read
+          why: Streamed examples are ordinary dicts of raw fields, as in a regular dataset; tokenizing is a separate `map()` step.
+  chapter5/8#q7:
+    fix:
+      question: Which of the following are the main benefits of writing a dataset card for a dataset you share on the Hub?
+      options:
+        - text: It tells others the intended use and supported tasks, so they can decide whether the dataset suits them
+          correct: true
+        - text: It draws attention to the biases present in the corpus
+          correct: true
+        - text: It makes it more likely that others in the community will use the dataset
+          correct: true
+        - text: It removes the biases in the corpus by documenting them
+          why: Documenting a bias helps users evaluate the risks, but it does not change the data.
+  chapter5/8#q8:
+    topic: text-representation
+    fix:
+      type: single
+      options:
+        - text: Finding documents that contain the exact words of the query
+          why: That is lexical (keyword) search, what traditional search engines do.
+        - text: Finding documents by meaning, comparing embeddings of the query and documents
+          correct: true
+        - text: Ranking documents by how many of the query's keywords they contain
+          why: Counting shared keywords is still lexical matching; a document that uses synonyms would score zero.
+        - text: Translating the query into several languages and keyword-searching each one
+          why: The matching would still be on exact words; translation does not add an understanding of meaning.
+  chapter5/8#q9:
+    topic: text-representation
+    fix:
+      question: In *asymmetric* semantic search, what do the query and the matching documents usually look like?
+      options:
+        - text: A short query and a longer paragraph that answers it
+          correct: true
+        - text: A query and documents of about the same length
+          why: That is symmetric semantic search, e.g. finding questions similar to a given question.
+        - text: A long query and a shorter paragraph that answers it
+          why: It is the other way round; the query is usually short, like a question or a few keywords.
+        - text: A query in one language and documents in another
+          why: That is cross-lingual search. Asymmetric refers to the different length and content of query and documents.
+  chapter5/8#q10:
+    fix:
+      type: true_false
+      question: 🤗 Datasets can only load text data, so audio or computer-vision datasets need a different library.
+      options:
+        - text: 'True'
+          why: 🤗 Datasets also loads and processes audio, image and tabular data.
+        - text: 'False'
+          correct: true
+  chapter8/7#q4:
+    topic: training
+    fix:
+      question: |
+        `trainer.train()` (🤗 Transformers `Trainer`) fails with a cryptic error that doesn't say where
+        it comes from. The `Trainer` turns datasets into dataloaders, feeds batches to the model,
+        computes gradients, updates the weights and evaluates. Where should you look first?
+      options:
+        - text: The optimization step, where gradients are computed and the weights updated
+          why: Bugs can hide there, but it comes several steps into the pipeline, so check the earlier stages first.
+        - text: The evaluation step, where the metrics are computed
+          why: Evaluation usually runs after a full epoch of training, so check something earlier in the pipeline first.
+        - text: The training dataset itself, by inspecting and decoding a few examples
+          correct: true
+        - text: The dataloader that collates examples into batches
+          why: Very close, but the dataloader is built from the dataset; if the data is corrupted it cannot form batches, so check the dataset first.
+  chapter8/7#q5:
+    topic: pytorch
+    fix:
+      question: Your PyTorch training code fails on the GPU with a CUDA error that is **not** an out-of-memory error. What is usually the best way to debug it?
+      options:
+        - text: Post the error message on the forums or on GitHub
+          why: CUDA error messages are usually very uninformative, so others can do little with them either.
+        - text: Run the same code on the CPU to get an informative error
+          correct: true
+        - text: Read the traceback to find the line that caused the error
+          why: GPU operations are asynchronous, so the error is raised at a later synchronization point, far from the operation that caused it.
+        - text: Reduce the batch size
+          why: That is the usual fix for CUDA out-of-memory errors, not for other CUDA errors.
+        - text: Restart the Jupyter kernel and run the code again
+          why: A CUDA error does break the kernel, so you must restart it, but running the same code again gives the same error.
+  chapter8/7#q7:
+    topic: training
+    fix:
+      question: When a model doesn't seem to train properly, why is overfitting a single batch a good debugging test?
+      options:
+        - text: It isn't; overfitting is always bad and should be avoided
+          why: On the full dataset overfitting is a sign of poor generalization, but in this test you train on one batch on purpose.
+        - text: 'It checks that the model can learn at all: the loss on that batch should drop to near zero'
+          correct: true
+        - text: It checks that the tensor shapes of the inputs and labels match what the model expects
+          why: With misaligned shapes you could not train even on one batch; the test assumes training already runs.
+        - text: It gives a quick estimate of the validation accuracy the full model will reach
+          why: A model that memorizes one batch tells you nothing about how well it generalizes.
+  chapter4/6#q3:
+    drop: off-scope
+    comment: 'web-portal clicks: which buttons the Hub website offers (create a repo, edit and upload files, view diffs, no fork); not ML knowledge'
+  chapter4/6#q7:
+    drop: duplicate
+    comment: "'call push_to_hub() on the model and the tokenizer' is the same fact as chapter4/6#q5 (kept: which objects have push_to_hub())"
+  chapter4/6#q8:
+    drop: tool-specific
+    comment: git operations of the huggingface_hub `Repository` class, which was deprecated and is no longer in huggingface_hub (absent in v2.2); outdated API
+  chapter8/7#q1:
+    drop: off-scope
+    comment: reading a Python traceback bottom-up is general Python, not ML
+  chapter8/7#q2:
+    drop: off-scope
+    comment: what a minimal reproducible example is (asking for help on forums and issues)
+  chapter8/7#q3:
+    drop: off-scope
+    comment: choosing a forum topic title (forum etiquette)
+  chapter8/7#q6:
+    drop: off-scope
+    comment: how to get a GitHub issue fixed (issue etiquette)
+  chapter8/7#q8:
+    drop: off-scope
+    comment: why to paste `transformers-cli env` output into a GitHub issue (bug-report etiquette); every option is correct
+  chapter9/9#q1:
+    drop: tool-specific
+    comment: what the Gradio demo library is for (demo, share, debug, not train)
+  chapter9/9#q2:
+    drop: tool-specific
+    comment: which ML frameworks Gradio supports
+  chapter9/9#q3:
+    drop: tool-specific
+    comment: where a Gradio demo can be launched (IDE, Colab, Jupyter)
+  chapter9/9#q4:
+    drop: tool-specific
+    comment: which data types Gradio supports
+  chapter9/9#q5:
+    drop: tool-specific
+    comment: Gradio feature list (state, authentication, analytics, Hub loading)
+  chapter9/9#q6:
+    drop: tool-specific
+    comment: path prefixes accepted by gr.Interface.load()
+  chapter9/9#q7:
+    drop: tool-specific
+    comment: steps to add state to a Gradio Interface
+  chapter9/9#q8:
+    drop: tool-specific
+    comment: names of Gradio UI components
+  chapter9/9#q9:
+    drop: tool-specific
+    comment: features of Gradio Blocks layouts
+  chapter9/9#q10:
+    drop: tool-specific
+    comment: sharing and hosting options of Gradio Blocks demos
+  chapter10/7#q1:
+    drop: tool-specific
+    comment: what the Argilla annotation tool can be used for
+  chapter10/7#q2:
+    drop: tool-specific
+    comment: where Argilla can be deployed
+  chapter10/7#q3:
+    drop: tool-specific
+    comment: when the Argilla Python SDK needs a Hugging Face token
+  chapter10/7#q4:
+    drop: tool-specific
+    comment: Argilla 'fields' vs metadata in its dataset settings
+  chapter10/7#q5:
+    drop: tool-specific
+    comment: Argilla question types (SpanQuestion, LabelQuestion, TextQuestion)
+  chapter10/7#q6:
+    drop: tool-specific
+    comment: the Argilla UI 'Save as draft' button
+  chapter10/7#q7:
+    drop: tool-specific
+    comment: whether Argilla suggests labels automatically
+  chapter10/7#q8:
+    drop: tool-specific
+    comment: Argilla SDK calls to export a dataset to the Hub

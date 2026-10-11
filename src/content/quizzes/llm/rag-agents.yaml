@@ -399,3 +399,239 @@ questions:
       ref: unit2/smolagents/quiz2#q2
       url: https://huggingface.co/learn/agents-course/unit2/smolagents/quiz2
     status: draft
+  - id: rag-agents-017
+    type: single
+    difficulty: medium
+    question: |
+      When designing an LLM application you trade **control** (predictable behaviour, guardrails)
+      against **freedom** (letting the LLM decide what to do next). Where do graph-based workflow
+      frameworks such as LangGraph sit on this spectrum?
+    options:
+      - text: Toward control. The developer fixes the steps and allowed transitions, and the LLM decides only at the branch points
+        correct: true
+      - text: Toward freedom. The LLM plans every step itself and may even write new tools at run time, so behaviour is hard to predict
+        why: That describes code agents (for example in smolagents), which sit at the free end of the spectrum.
+      - text: Outside the trade-off. A graph gives the LLM complete freedom and still makes its behaviour fully predictable
+        why: The trade-off cannot be escaped. A graph buys predictability by restricting what the LLM may decide.
+      - text: Outside the trade-off. A graph workflow contains no LLM calls at all, only deterministic Python functions
+        why: Nodes can call an LLM, call tools or ask a human; a graph combines deterministic logic with LLM decisions.
+    explanation: |
+      Freedom gives the LLM room to be creative and handle unexpected problems, while control ensures
+      predictable behaviour and maintains guardrails [^1]. Code agents sit at the free end: they can
+      call several tools in one step or create their own tools, which makes them less predictable
+      [^1]. LangGraph sits at the control end: the developer designs the flow of steps and the
+      decision made at each junction, and the LLM works inside that structure [^1]. Its nodes can
+      still contain LLM calls, tool calls, conditional logic or human input [^2].
+    references:
+      - source: hf-agents-course
+        url: https://huggingface.co/learn/agents-course/unit2/langgraph/when_to_use_langgraph#control-vs-freedom
+        locator: Unit 2.3, What is LangGraph?, sec. Control vs freedom
+      - source: hf-agents-course
+        url: https://huggingface.co/learn/agents-course/unit2/langgraph/building_blocks
+        locator: Unit 2.3, Building Blocks of LangGraph, sec. 2. Nodes
+    source:
+      id: hf-agents-course
+      ref: unit2/langgraph/quiz1#q2
+      url: https://huggingface.co/learn/agents-course/unit2/langgraph/quiz1
+    status: draft
+  - id: rag-agents-018
+    type: single
+    difficulty: easy
+    question: |
+      In a graph-based agent workflow, such as one built with LangGraph, the application is a set of
+      **nodes** (steps) connected by **edges**. What is the **state** of such a graph?
+    options:
+      - text: Data you define yourself that flows through the application; nodes read it and return updates to it
+        correct: true
+      - text: The hidden activations of the LLM's transformer layers, carried over from one call to the next
+        why: The state is ordinary application data that you define (for example a TypedDict); the LLM's internal activations are not kept between calls.
+      - text: The latest text the LLM generated, which replaces the previous output each time a node runs
+        why: The developer defines the state's fields. An LLM output may be stored in one of them, but the state is not just the last generation.
+      - text: A log of past runs that is only read after execution, for debugging and tracing
+        why: That describes traces or logs. The state is used during execution, passed between nodes and consulted to choose the next node.
+    explanation: |
+      State is the central concept of LangGraph: it represents all the information that flows through
+      the application, and it is user-defined, so its fields must hold everything needed for the
+      decisions [^1]. Each node takes the state as input, performs an operation and returns updates
+      to the state [^1], and when the graph decides which node runs next, it looks at the current
+      state [^2]. It is application data, not the LLM's internal activations, the last LLM output or
+      an after-the-fact log.
+    references:
+      - source: hf-agents-course
+        url: https://huggingface.co/learn/agents-course/unit2/langgraph/building_blocks
+        locator: Unit 2.3, Building Blocks of LangGraph, secs. 1. State and 2. Nodes
+      - source: hf-agents-course
+        url: https://huggingface.co/learn/agents-course/unit2/langgraph/when_to_use_langgraph#how-does-langgraph-work
+        locator: Unit 2.3, What is LangGraph?, sec. How does LangGraph work?
+    source:
+      id: hf-agents-course
+      ref: unit2/langgraph/quiz1#q3
+      url: https://huggingface.co/learn/agents-course/unit2/langgraph/quiz1
+    status: draft
+  - id: rag-agents-019
+    type: single
+    difficulty: easy
+    question: |
+      In a graph-based agent workflow (for example in LangGraph), the steps are **nodes** and the
+      possible transitions between them are **edges**. What is a **conditional edge**?
+    options:
+      - text: An edge that picks which node runs next by evaluating a function of the current state
+        correct: true
+      - text: An edge that always leads from one node to the same next node, whatever the state
+        why: That is a direct (normal) edge. A conditional edge chooses among several possible next nodes.
+      - text: An edge that pauses the whole graph until a human approves the next step
+        why: Human input is a kind of node (a step). What makes an edge conditional is that it routes programmatically on the state.
+      - text: An edge that the LLM adds to the graph at run time when it needs an extra step
+        why: The possible edges are declared when the graph is built; only the choice among them is made at run time.
+    explanation: |
+      Edges connect nodes and define the possible paths through the graph [^1]. A direct edge always
+      goes from node A to node B, while a conditional edge chooses the next node based on the current
+      state: in code, a routing function reads the state and returns the name of the node to visit
+      next [^1]. The routing can be deterministic or depend on an LLM's output [^2]. Human input is
+      modelled as a node, and the possible edges are declared when the graph is built [^1].
+    references:
+      - source: hf-agents-course
+        url: https://huggingface.co/learn/agents-course/unit2/langgraph/building_blocks
+        locator: Unit 2.3, Building Blocks of LangGraph, secs. 2. Nodes, 3. Edges and 4. StateGraph
+      - source: hf-agents-course
+        url: https://huggingface.co/learn/agents-course/unit2/langgraph/when_to_use_langgraph#control-vs-freedom
+        locator: Unit 2.3, What is LangGraph?, sec. When should I use LangGraph? (Control vs freedom)
+    source:
+      id: hf-agents-course
+      ref: unit2/langgraph/quiz1#q4
+      url: https://huggingface.co/learn/agents-course/unit2/langgraph/quiz1
+    status: draft
+  - id: rag-agents-020
+    type: single
+    difficulty: easy
+    question: |
+      Graph-based workflow frameworks such as LangGraph structure an LLM application as explicit
+      steps with branches between them. How can such a structure help with LLM hallucinations?
+    options:
+      - text: It can add steps that check the LLM's output and route failures to a retry or fallback path
+        correct: true
+      - text: It removes hallucinations entirely, because the LLM may only answer inside fixed nodes
+        why: No framework can eliminate hallucinations; the LLM inside a node can still produce wrong content.
+      - text: It has no effect, because hallucinations come from the model's weights, which a workflow cannot change
+        why: The weights are unchanged, but validation steps and guardrails in the workflow can catch many wrong outputs before they are used.
+      - text: It fine-tunes the LLM on the graph's past runs, so the model learns to stop hallucinating
+        why: A workflow framework orchestrates calls to the model; it does not train or update it.
+    explanation: |
+      Choosing structure over freedom lets you ensure predictable behaviour and maintain guardrails
+      [^1]. Because nodes can hold conditional logic and edges can route on the current state, a
+      workflow can include a step that checks the LLM's output and send failures down another path,
+      such as a retry or a human review [^2]. This reduces the impact of hallucinations but cannot
+      remove them: the model inside each node is unchanged and can still be wrong.
+    references:
+      - source: hf-agents-course
+        url: https://huggingface.co/learn/agents-course/unit2/langgraph/when_to_use_langgraph#control-vs-freedom
+        locator: Unit 2.3, What is LangGraph?, sec. Control vs freedom
+      - source: hf-agents-course
+        url: https://huggingface.co/learn/agents-course/unit2/langgraph/building_blocks
+        locator: Unit 2.3, Building Blocks of LangGraph, secs. 2. Nodes and 3. Edges
+    source:
+      id: hf-agents-course
+      ref: unit2/langgraph/quiz1#q5
+      url: https://huggingface.co/learn/agents-course/unit2/langgraph/quiz1
+    status: draft
+  - id: rag-agents-021
+    type: single
+    difficulty: easy
+    question: |
+      LlamaIndex packages retrieval-augmented generation (RAG) as a `QueryEngine` that an agent can
+      use as a tool. What does such a component do when a question comes in?
+    options:
+      - text: It retrieves the chunks of your own data most relevant to the question and gives them to an LLM to answer
+        correct: true
+      - text: It fine-tunes the LLM on your documents before each question, so the answer is in the weights
+        why: RAG does not change the model's weights; it supplies relevant data to the LLM at query time.
+      - text: It returns the best-matching chunks with their similarity scores, with no LLM involved
+        why: That is a plain retriever. A query engine also passes the retrieved chunks to an LLM, which writes the response.
+      - text: It only stores the embeddings of your documents, while the LLM answers from its training data
+        why: Storing embeddings is the indexing and storing stage. A query engine also searches the index and uses the results to answer.
+    explanation: |
+      LLMs learn general knowledge from their training data but may not have seen data that is
+      relevant or up to date; RAG solves this by retrieving relevant information from your data and
+      giving it to the LLM [^1]. Documents are split into chunks and embedded during indexing, and at
+      query time the question is embedded into the same vector space to find the closest chunks [^1].
+      A retriever stops there and returns the chunks with similarity scores, while a query engine
+      also passes them to an LLM that writes the answer [^1]. The model itself is not retrained.
+    references:
+      - source: hf-agents-course
+        url: https://huggingface.co/learn/agents-course/unit2/llama-index/components
+        locator: Unit 2.2, What are components in LlamaIndex?, introduction and secs. Storing and indexing documents, Querying a VectorStoreIndex with prompts and LLMs
+    source:
+      id: hf-agents-course
+      ref: unit2/llama-index/quiz1#q1
+      url: https://huggingface.co/learn/agents-course/unit2/llama-index/quiz1
+    status: draft
+  - id: rag-agents-022
+    type: single
+    difficulty: medium
+    question: |
+      Agent frameworks can turn a plain Python function into a tool, for example with a `@tool`
+      decorator or LlamaIndex's `FunctionTool.from_defaults(fn)`. If you give only the function,
+      where does the tool description that the LLM reads come from?
+    options:
+      - text: From the function itself, i.e. its name, its type-hinted arguments and return type, and its docstring
+        correct: true
+      - text: From the function's full source code, which the framework pastes into the system prompt
+        why: The implementation does not matter to the LLM, only the name, what the tool does, its inputs and its output; introspection extracts just those.
+      - text: Nowhere; the LLM gets no description and learns what each tool does by calling it at random
+        why: Tool descriptions are given to the LLM in the system prompt; without them it could not choose tools sensibly.
+      - text: From a JSON schema you must always write by hand, because the function alone is not enough
+        why: Frameworks build the description automatically by introspecting the function; a hand-written name and description are optional overrides.
+    explanation: |
+      The LLM only sees a textual description of each tool in its system prompt: a name, what the tool
+      does, the inputs it expects and the output it returns [^1]. Frameworks build this text
+      automatically with Python introspection, so the function name, type hints and docstring become
+      the tool's name, argument types and description [^1]. LlamaIndex's `FunctionTool` works the same
+      way: its `name` and `description` arguments are optional, though good ones help the agent decide
+      when and how to use the tool [^2].
+    references:
+      - source: hf-agents-course
+        url: https://huggingface.co/learn/agents-course/unit1/tools#auto-formatting-tool-sections
+        locator: Unit 1, What are Tools?, secs. How do we give tools to an LLM? and Auto-formatting Tool sections
+      - source: hf-agents-course
+        url: https://huggingface.co/learn/agents-course/unit2/llama-index/tools#creating-a-functiontool
+        locator: Unit 2.2, Using Tools in LlamaIndex, sec. Creating a FunctionTool
+    source:
+      id: hf-agents-course
+      ref: unit2/llama-index/quiz1#q4
+      url: https://huggingface.co/learn/agents-course/unit2/llama-index/quiz1
+    status: draft
+  - id: rag-agents-023
+    type: single
+    difficulty: medium
+    question: |
+      Some agents, such as smolagents' `CodeAgent`, write each action as a Python snippet that is
+      executed, instead of a JSON object naming one tool and its arguments. What is a main
+      advantage of code actions?
+    options:
+      - text: One action can combine several tool calls with variables, loops and conditionals, and pass objects between them
+        correct: true
+      - text: Generated code cannot have side effects, so code actions need no sandbox or other safeguards
+        why: Executing LLM-generated code carries security risks, from prompt injection to harmful code, so it needs safeguards such as a sandbox.
+      - text: The LLM no longer needs descriptions of the available tools in its prompt
+        why: The model still has to know which tools exist and how to call them; code only changes how the call is written.
+      - text: JSON cannot carry arguments, so code is the only way to call a tool with inputs
+        why: 'JSON actions do carry arguments, for example `{"action": "get_weather", "action_input": {"location": "New York"}}`.'
+    explanation: |
+      A JSON action names one tool and its arguments as text that the framework must parse before it
+      can run the tool [^1]. Code is more expressive: it naturally represents loops, conditionals and
+      nested functions, can reuse functions across actions, and works directly with complex objects
+      such as images [^1] [^2]. It is also natural for LLMs, because high-quality code is already in
+      their training data [^2]. The price is security: executing LLM-generated code is risky, so it
+      needs safeguards [^1].
+    references:
+      - source: hf-agents-course
+        url: https://huggingface.co/learn/agents-course/unit1/actions#code-agents
+        locator: Unit 1, Actions, secs. The Stop and Parse Approach and Code Agents
+      - source: hf-agents-course
+        url: https://huggingface.co/learn/agents-course/unit2/smolagents/code_agents#why-code-agents
+        locator: Unit 2.1, Building Agents That Use Code, sec. Why Code Agents?
+    source:
+      id: hf-agents-course
+      ref: unit2/smolagents/quiz1#q1
+      url: https://huggingface.co/learn/agents-course/unit2/smolagents/quiz1
+    status: draft

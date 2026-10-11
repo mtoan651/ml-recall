@@ -1,7 +1,8 @@
 # Curation for hf-agents-course (see docs/content-pipeline.md#curation).
 # Refs: <unit page>#q<n>. Unlisted items are kept with the default topic `rag-agents`.
 # Framework units (smolagents, LlamaIndex, LangGraph) are mostly API trivia; only conceptual items stay.
-# Reviewed 2026-10-10 — 19 of 39 kept.
+# Reviewed 2026-10-10 — 19 of 39 kept; re-reviewed 2026-10-11 — 26 kept (framework items that hide a
+# general agent/RAG idea are rewritten around it; pure API trivia stays dropped).
 exclude_prefixes:
   "unit2/langgraph/": tool-specific
 items:
@@ -14,21 +15,86 @@ items:
         2: A rule-based AI system that follows strict, hand-written predefined commands
   "unit1/quiz2#q4": {topic: llm-basics}
   "unit1/quiz2#q5": {topic: llm-basics}
-  "unit2/llama-index/quiz1#q1": {drop: tool-specific}
-  "unit2/llama-index/quiz1#q2": {drop: tool-specific}
-  "unit2/llama-index/quiz1#q3": {drop: tool-specific}
-  "unit2/llama-index/quiz1#q4": {drop: tool-specific}
-  "unit2/llama-index/quiz2#q1": {drop: tool-specific}
-  "unit2/llama-index/quiz2#q2": {drop: tool-specific}
-  "unit2/llama-index/quiz2#q3": {drop: tool-specific}
-  "unit2/smolagents/quiz1#q1": {drop: tool-specific}
-  "unit2/smolagents/quiz1#q2": {drop: tool-specific}
-  "unit2/smolagents/quiz1#q3": {drop: tool-specific}
-  "unit2/smolagents/quiz1#q5": {drop: tool-specific}
-  "unit2/smolagents/quiz2#q1": {drop: tool-specific}
-  "unit2/smolagents/quiz2#q3": {drop: tool-specific}
-  "unit2/smolagents/quiz2#q4": {drop: duplicate}   # same idea as smolagents/quiz1#q4 (code vs JSON actions)
-  "unit2/smolagents/quiz2#q5": {drop: tool-specific}
+  "unit2/llama-index/quiz1#q1":
+    fix:
+      question: |
+        LlamaIndex packages retrieval-augmented generation (RAG) as a `QueryEngine` that an agent can
+        use as a tool. What does such a component do when a question comes in?
+      options:
+        - text: It retrieves the chunks of your own data most relevant to the question and gives them to an LLM to answer
+          correct: true
+        - text: It fine-tunes the LLM on your documents before each question, so the answer is in the weights
+          why: RAG does not change the model's weights; it supplies relevant data to the LLM at query time.
+        - text: It returns the best-matching chunks with their similarity scores, with no LLM involved
+          why: That is a plain retriever. A query engine also passes the retrieved chunks to an LLM, which writes the response.
+        - text: It only stores the embeddings of your documents, while the LLM answers from its training data
+          why: Storing embeddings is the indexing and storing stage. A query engine also searches the index and uses the results to answer.
+  "unit2/llama-index/quiz1#q2":
+    drop: duplicate
+    comment: "'turn a Python function into a tool an agent can use' is rag-agents-012 (what a tool is) plus unit2/llama-index/quiz1#q4 (kept: how a tool is built from a function)"
+  "unit2/llama-index/quiz1#q3":
+    drop: tool-specific
+    comment: LlamaIndex Toolspecs (community tool bundles on LlamaHub); a product feature with no concept to generalize
+  "unit2/llama-index/quiz1#q4":
+    fix:
+      question: |
+        Agent frameworks can turn a plain Python function into a tool, for example with a `@tool`
+        decorator or LlamaIndex's `FunctionTool.from_defaults(fn)`. If you give only the function,
+        where does the tool description that the LLM reads come from?
+      options:
+        - text: From the function itself, i.e. its name, its type-hinted arguments and return type, and its docstring
+          correct: true
+        - text: From the function's full source code, which the framework pastes into the system prompt
+          why: The implementation does not matter to the LLM, only the name, what the tool does, its inputs and its output; introspection extracts just those.
+        - text: Nowhere; the LLM gets no description and learns what each tool does by calling it at random
+          why: Tool descriptions are given to the LLM in the system prompt; without them it could not choose tools sensibly.
+        - text: From a JSON schema you must always write by hand, because the function alone is not enough
+          why: Frameworks build the description automatically by introspecting the function; a hand-written name and description are optional overrides.
+  "unit2/llama-index/quiz2#q1":
+    drop: tool-specific
+    comment: purpose of LlamaIndex's AgentWorkflow class
+  "unit2/llama-index/quiz2#q2":
+    drop: tool-specific
+    comment: name of the LlamaIndex object that holds workflow state (Context)
+  "unit2/llama-index/quiz2#q3":
+    drop: tool-specific
+    comment: LlamaIndex method signature run(query_str, ctx=ctx) for keeping chat memory
+  "unit2/smolagents/quiz1#q1":
+    fix:
+      question: |
+        Some agents, such as smolagents' `CodeAgent`, write each action as a Python snippet that is
+        executed, instead of a JSON object naming one tool and its arguments. What is a main
+        advantage of code actions?
+      options:
+        - text: One action can combine several tool calls with variables, loops and conditionals, and pass objects between them
+          correct: true
+        - text: Generated code cannot have side effects, so code actions need no sandbox or other safeguards
+          why: Executing LLM-generated code carries security risks, from prompt injection to harmful code, so it needs safeguards such as a sandbox.
+        - text: The LLM no longer needs descriptions of the available tools in its prompt
+          why: The model still has to know which tools exist and how to call them; code only changes how the call is written.
+        - text: JSON cannot carry arguments, so code is the only way to call a tool with inputs
+          why: 'JSON actions do carry arguments, for example `{"action": "get_weather", "action_input": {"location": "New York"}}`.'
+  "unit2/smolagents/quiz1#q2":
+    drop: tool-specific
+    comment: when to choose the smolagents framework (product positioning); the distractors are strawmen
+  "unit2/smolagents/quiz1#q3":
+    drop: tool-specific
+    comment: names of smolagents model wrapper classes (TransformersModel, InferenceClientModel, LiteLLMModel)
+  "unit2/smolagents/quiz1#q5":
+    drop: trivial
+    comment: joke distractors (Hub upgrades licences, disables local inference, forbids updates); the key is a product feature
+  "unit2/smolagents/quiz2#q1":
+    drop: tool-specific
+    comment: "smolagents API: @tool decorator vs Tool subclass; the general 'tool from a function' idea is kept in unit2/llama-index/quiz1#q4"
+  "unit2/smolagents/quiz2#q3":
+    drop: trivial
+    comment: joke distractors (sharing makes a tool vision-capable, restricts which agents may call it); the key is a product feature
+  "unit2/smolagents/quiz2#q4":                     # same idea as smolagents/quiz1#q4 (code vs JSON actions)
+    drop: duplicate
+    comment: 'ToolCallingAgent writes JSON tool calls: same idea as rag-agents-015 (unit2/smolagents/quiz1#q4)'
+  "unit2/smolagents/quiz2#q5":
+    drop: tool-specific
+    comment: contents of the smolagents default toolbox
   unit1/quiz1#q3:
     fix:
       options:
@@ -73,3 +139,63 @@ items:
     fix:
       options:
         2: It repeats a cycle of thinking, writing Python code, running it and logging the result until it reaches a final answer
+  unit2/langgraph/quiz1#q2:
+    fix:
+      question: |
+        When designing an LLM application you trade **control** (predictable behaviour, guardrails)
+        against **freedom** (letting the LLM decide what to do next). Where do graph-based workflow
+        frameworks such as LangGraph sit on this spectrum?
+      options:
+        - text: Toward control. The developer fixes the steps and allowed transitions, and the LLM decides only at the branch points
+          correct: true
+        - text: Toward freedom. The LLM plans every step itself and may even write new tools at run time, so behaviour is hard to predict
+          why: That describes code agents (for example in smolagents), which sit at the free end of the spectrum.
+        - text: Outside the trade-off. A graph gives the LLM complete freedom and still makes its behaviour fully predictable
+          why: The trade-off cannot be escaped. A graph buys predictability by restricting what the LLM may decide.
+        - text: Outside the trade-off. A graph workflow contains no LLM calls at all, only deterministic Python functions
+          why: Nodes can call an LLM, call tools or ask a human; a graph combines deterministic logic with LLM decisions.
+  unit2/langgraph/quiz1#q3:
+    fix:
+      question: |
+        In a graph-based agent workflow, such as one built with LangGraph, the application is a set of
+        **nodes** (steps) connected by **edges**. What is the **state** of such a graph?
+      options:
+        - text: Data you define yourself that flows through the application; nodes read it and return updates to it
+          correct: true
+        - text: The hidden activations of the LLM's transformer layers, carried over from one call to the next
+          why: The state is ordinary application data that you define (for example a TypedDict); the LLM's internal activations are not kept between calls.
+        - text: The latest text the LLM generated, which replaces the previous output each time a node runs
+          why: The developer defines the state's fields. An LLM output may be stored in one of them, but the state is not just the last generation.
+        - text: A log of past runs that is only read after execution, for debugging and tracing
+          why: That describes traces or logs. The state is used during execution, passed between nodes and consulted to choose the next node.
+  unit2/langgraph/quiz1#q4:
+    fix:
+      question: |
+        In a graph-based agent workflow (for example in LangGraph), the steps are **nodes** and the
+        possible transitions between them are **edges**. What is a **conditional edge**?
+      options:
+        - text: An edge that picks which node runs next by evaluating a function of the current state
+          correct: true
+        - text: An edge that always leads from one node to the same next node, whatever the state
+          why: That is a direct (normal) edge. A conditional edge chooses among several possible next nodes.
+        - text: An edge that pauses the whole graph until a human approves the next step
+          why: Human input is a kind of node (a step). What makes an edge conditional is that it routes programmatically on the state.
+        - text: An edge that the LLM adds to the graph at run time when it needs an extra step
+          why: The possible edges are declared when the graph is built; only the choice among them is made at run time.
+  unit2/langgraph/quiz1#q5:
+    fix:
+      question: |
+        Graph-based workflow frameworks such as LangGraph structure an LLM application as explicit
+        steps with branches between them. How can such a structure help with LLM hallucinations?
+      options:
+        - text: It can add steps that check the LLM's output and route failures to a retry or fallback path
+          correct: true
+        - text: It removes hallucinations entirely, because the LLM may only answer inside fixed nodes
+          why: No framework can eliminate hallucinations; the LLM inside a node can still produce wrong content.
+        - text: It has no effect, because hallucinations come from the model's weights, which a workflow cannot change
+          why: The weights are unchanged, but validation steps and guardrails in the workflow can catch many wrong outputs before they are used.
+        - text: It fine-tunes the LLM on the graph's past runs, so the model learns to stop hallucinating
+          why: A workflow framework orchestrates calls to the model; it does not train or update it.
+  unit2/langgraph/quiz1#q1:
+    drop: tool-specific
+    comment: asks what the LangGraph product is for and how it differs from LangChain (product identity); the control-flow idea itself is kept in unit2/langgraph/quiz1#q2

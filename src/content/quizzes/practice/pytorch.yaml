@@ -128,3 +128,37 @@ questions:
       id: original
       ref: pytorch-005
     status: draft
+  - id: pytorch-006
+    type: single
+    difficulty: medium
+    question: Your PyTorch training code fails on the GPU with a CUDA error that is **not** an out-of-memory error. What is usually the best way to debug it?
+    options:
+      - text: Post the error message on the forums or on GitHub
+        why: CUDA error messages are usually very uninformative, so others can do little with them either.
+      - text: Run the same code on the CPU to get an informative error
+        correct: true
+      - text: Read the traceback to find the line that caused the error
+        why: GPU operations are asynchronous, so the error is raised at a later synchronization point, far from the operation that caused it.
+      - text: Reduce the batch size
+        why: That is the usual fix for CUDA out-of-memory errors, not for other CUDA errors.
+      - text: Restart the Jupyter kernel and run the code again
+        why: A CUDA error does break the kernel, so you must restart it, but running the same code again gives the same error.
+    explanation: |
+      GPU operations run asynchronously: when one fails, the error only surfaces at a later
+      synchronization, so the traceback points somewhere unrelated, e.g. at the backward pass for a
+      bug in the forward pass [^1] [^2]. Unless it is an out-of-memory error, the course's advice is to
+      go back to the CPU, where the same bug gives a precise error message [^1]. PyTorch can also
+      force synchronous execution with `CUDA_LAUNCH_BLOCKING=1`, so that the stack trace shows where
+      the error happened [^2].
+    references:
+      - source: hf-llm-course
+        url: https://huggingface.co/learn/llm-course/chapter8/4#going-through-the-model
+        locator: 'Chapter 8.4: Debugging the training pipeline, sec. Going through the model'
+      - title: CUDA semantics (PyTorch documentation)
+        url: https://docs.pytorch.org/docs/2.14/notes/cuda.html#asynchronous-execution
+        locator: Asynchronous execution
+    source:
+      id: hf-llm-course
+      ref: chapter8/7#q5
+      url: https://huggingface.co/learn/llm-course/chapter8/7
+    status: draft

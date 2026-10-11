@@ -815,3 +815,63 @@ questions:
       ref: linear-regression/hyperparameters#q3
       url: https://developers.google.com/machine-learning/crash-course/linear-regression/hyperparameters
     status: draft
+  - id: training-032
+    type: single
+    difficulty: easy
+    question: |
+      `trainer.train()` (🤗 Transformers `Trainer`) fails with a cryptic error that doesn't say where
+      it comes from. The `Trainer` turns datasets into dataloaders, feeds batches to the model,
+      computes gradients, updates the weights and evaluates. Where should you look first?
+    options:
+      - text: The optimization step, where gradients are computed and the weights updated
+        why: Bugs can hide there, but it comes several steps into the pipeline, so check the earlier stages first.
+      - text: The evaluation step, where the metrics are computed
+        why: Evaluation usually runs after a full epoch of training, so check something earlier in the pipeline first.
+      - text: The training dataset itself, by inspecting and decoding a few examples
+        correct: true
+      - text: The dataloader that collates examples into batches
+        why: Very close, but the dataloader is built from the dataset; if the data is corrupted it cannot form batches, so check the dataset first.
+    explanation: |
+      An error in `trainer.train()` can come from the dataset, the batching, the model, the optimizer
+      or the metric, so the best approach is to walk through the pipeline in order [^1]. The first
+      stop is the data: if it is corrupted, the `Trainer` cannot even form batches, so look inside
+      `trainer.train_dataset` and decode a few inputs and labels [^1]. Only then move on to the
+      dataloader, the model's forward pass, the optimization step and finally evaluation [^1].
+    references:
+      - source: hf-llm-course
+        url: https://huggingface.co/learn/llm-course/chapter8/4#check-your-data
+        locator: 'Chapter 8.4: Debugging the training pipeline, secs. Debugging the training pipeline and Check your data'
+    source:
+      id: hf-llm-course
+      ref: chapter8/7#q4
+      url: https://huggingface.co/learn/llm-course/chapter8/7
+    status: draft
+  - id: training-033
+    type: single
+    difficulty: medium
+    question: When a model doesn't seem to train properly, why is overfitting a single batch a good debugging test?
+    options:
+      - text: It isn't; overfitting is always bad and should be avoided
+        why: On the full dataset overfitting is a sign of poor generalization, but in this test you train on one batch on purpose.
+      - text: 'It checks that the model can learn at all: the loss on that batch should drop to near zero'
+        correct: true
+      - text: It checks that the tensor shapes of the inputs and labels match what the model expects
+        why: With misaligned shapes you could not train even on one batch; the test assumes training already runs.
+      - text: It gives a quick estimate of the validation accuracy the full model will reach
+        why: A model that memorizes one batch tells you nothing about how well it generalizes.
+    explanation: |
+      Training again and again on one batch tests whether the problem, as you framed it, can be solved
+      by the model you are training, and it also shows whether the initial learning rate is too high
+      [^1]. A working setup reaches near-perfect results on that batch (e.g. 100% accuracy); if it
+      can't, something is wrong with how the problem or the data is framed, and only after passing the
+      test can you be sure the model can learn [^1]. The memorized batch says nothing about
+      generalization, and shape errors would stop training before this test.
+    references:
+      - source: hf-llm-course
+        url: https://huggingface.co/learn/llm-course/chapter8/4#overfit-your-model-on-one-batch
+        locator: 'Chapter 8.4: Debugging the training pipeline, sec. Overfit your model on one batch'
+    source:
+      id: hf-llm-course
+      ref: chapter8/7#q7
+      url: https://huggingface.co/learn/llm-course/chapter8/7
+    status: draft
