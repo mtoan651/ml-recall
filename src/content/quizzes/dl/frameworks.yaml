@@ -174,3 +174,267 @@ questions:
       ref: quiz-17/q1
       url: https://github.com/microsoft/ML-For-Beginners/blob/de2d4e12236445198213a0711855e348e7253cd4/quiz-app/src/assets/translations/en.json
     status: draft
+  - id: frameworks-007
+    type: single
+    difficulty: medium
+    tags:
+      - gpu
+      - asynchronous-execution
+      - device-transfer
+      - code-reading
+    question: |
+      Two loops run 1000 products of $100 \times 100$ matrices on a GPU and record the Frobenius norm
+      of each result:
+
+      ```python
+      # A
+      log = []
+      for _ in range(1000):
+          Y = X @ W
+          log.append(torch.linalg.norm(Y).item())
+
+      # B
+      norms = torch.empty(1000, device="cuda")
+      for i in range(1000):
+          Y = X @ W
+          norms[i] = torch.linalg.norm(Y)
+      log = norms.cpu()
+      ```
+
+      Why is B usually much faster?
+    options:
+      - text: B computes the norms with fewer floating-point operations than A does
+        why: Both loops run the same products and norms on the GPU; only the transfers to the CPU differ.
+      - text: Preallocating `norms` avoids Python list appends, which dominate the running time of A
+        why: Appending a Python float takes nanoseconds; the cost of A comes from synchronizing with the GPU 1000 times.
+      - text: '`.item()` copies a value to the CPU every step and waits for the GPU; B copies once'
+        correct: true
+      - text: '`.item()` moves the whole matrix `Y` to the CPU, which then computes the next product itself'
+        why: '`.item()` copies a single number; `X`, `W` and the products stay on the GPU.'
+    explanation: |
+      By default PyTorch runs GPU operations asynchronously: Python queues the work and returns, while
+      the backend executes it, and Python waits only when it needs a result, for example to print it [^1].
+      `.item()` needs the value on the CPU, so each step of A waits for the queued kernels to finish and
+      then makes a tiny device-to-host copy. d2l warns that transfers between devices are slow, that many
+      small operations are much worse than one big one, and that converting tensors to host values adds
+      overhead [^2]. B keeps the GPU queue full and transfers all 1000 norms in one copy.
+    references:
+      - source: d2l
+        locator: Sec. 13.2.1 Asynchrony via Backend
+        url: https://d2l.ai/chapter_computational-performance/async-computation.html#asynchrony-via-backend
+      - source: d2l
+        locator: Sec. 6.7.2.3 Side Notes
+        url: https://d2l.ai/chapter_builders-guide/use-gpu.html#side-notes
+      - source: d2l
+        locator: Sec. 6.7.5 Exercises, Exercise 3
+        url: https://d2l.ai/chapter_builders-guide/use-gpu.html#exercises
+    source:
+      id: d2l
+      ref: chapter_builders-guide/use-gpu#ex3
+      url: https://d2l.ai/chapter_builders-guide/use-gpu.html#exercises
+    status: draft
+  - id: frameworks-008
+    type: single
+    difficulty: medium
+    tags:
+      - hardware
+      - low-precision
+      - quantization
+      - multiplier
+    question: |
+      Going from 8-bit to 16-bit integer arithmetic takes roughly four times as much silicon for the
+      multipliers, not twice as much. Why?
+    options:
+      - text: Twice the bits double the circuit, and the wider registers that feed it double it once more
+        why: Registers and adders grow linearly with the bit width; the quadratic growth comes from the array of partial products.
+      - text: Wider numbers need a four times higher clock rate to finish a multiplication in one cycle
+        why: Clock rate is a separate design choice; it does not explain the extra silicon area.
+      - text: An $n$-bit multiplier forms $n \times n$ one-bit products, so its area grows like $n^2$
+        correct: true
+      - text: 16-bit numbers need floating-point exponent logic that plain 8-bit integers can do entirely without
+        why: The comparison is between integer formats, which have no exponent.
+    explanation: |
+      Binary long multiplication forms one partial product (a bit of one operand ANDed with the other
+      operand) for each bit, and then adds these $n$ rows of $n$ bits, so the array has $n^2$ bit
+      products [^1]. Equivalently, one $16 \times 16$-bit product can be assembled from four
+      $8 \times 8$-bit products [^1]. The same scaling makes low precision cheap: an INT4 multiplier is
+      about a quarter the size of an INT8 one, so a chip fits more of them. Inference does not need very
+      precise arithmetic (FP16 or INT8 usually suffice), which is why inference GPUs such as NVIDIA's T4
+      add INT8 and INT4 operations [^2].
+    references:
+      - title: 'Wikipedia: Binary multiplier'
+        locator: A concrete view; Building on top of smaller blocks
+        url: https://en.wikipedia.org/wiki/Binary_multiplier
+      - source: d2l
+        locator: Sec. 13.4.5 GPUs and other Accelerators
+        url: https://d2l.ai/chapter_computational-performance/hardware.html#gpus-and-other-accelerators
+      - source: d2l
+        locator: Sec. 13.4.9 Exercises, Exercise 7
+        url: https://d2l.ai/chapter_computational-performance/hardware.html#exercises
+    source:
+      id: d2l
+      ref: chapter_computational-performance/hardware#ex7
+      url: https://d2l.ai/chapter_computational-performance/hardware.html#exercises
+    status: draft
+  - id: frameworks-009
+    type: single
+    difficulty: easy
+    tags:
+      - hardware
+      - dma
+      - data-loading
+    question: |
+      Direct memory access (DMA) lets a device such as a GPU, a network card or an SSD read and write
+      main memory without the CPU copying each word. Why is this useful when training a model?
+    options:
+      - text: The CPU is free for other work, such as preparing the next batch, while the transfer runs
+        correct: true
+      - text: The data travels over a private link instead of PCIe, so transfers beat the bus bandwidth
+        why: DMA transfers still use the same bus; DMA changes who drives the copy, not how fast the link is.
+      - text: Transfers become synchronous, so the CPU knows exactly when each copy has finished
+        why: DMA makes transfers asynchronous; the device signals completion, typically with an interrupt, while the CPU does other work [^1].
+      - text: The device compresses the data while copying it, so datasets take up less memory
+        why: DMA copies bytes as they are; it does not compress anything.
+    explanation: |
+      Without DMA the CPU has to move every word itself and is busy for the whole transfer. With DMA
+      the CPU only starts the transfer, does other work, and is notified when the device has finished [^1].
+      Training needs data to flow from storage and memory to the processors while they compute, and d2l
+      recommends interleaving communication and computation so that no component becomes the
+      bottleneck [^2]. PyTorch exploits this with pinned host memory, which lets host-to-GPU copies run
+      asynchronously (`non_blocking=True`) [^3].
+    references:
+      - title: 'Wikipedia: Direct memory access'
+        locator: Introduction and Principles
+        url: https://en.wikipedia.org/wiki/Direct_memory_access
+      - source: d2l
+        locator: Sec. 13.4.1 Computers
+        url: https://d2l.ai/chapter_computational-performance/hardware.html#computers
+      - title: CUDA semantics (PyTorch documentation)
+        locator: Use pinned memory buffers
+        url: https://docs.pytorch.org/docs/stable/notes/cuda.html#use-pinned-memory-buffers
+      - source: d2l
+        locator: Sec. 13.4.9 Exercises, Exercise 11
+        url: https://d2l.ai/chapter_computational-performance/hardware.html#exercises
+    source:
+      id: d2l
+      ref: chapter_computational-performance/hardware#ex11
+      url: https://d2l.ai/chapter_computational-performance/hardware.html#exercises
+    status: draft
+  - id: frameworks-010
+    type: short_answer
+    difficulty: medium
+    tags:
+      - multi-gpu
+      - allreduce
+      - communication
+    question: |
+      Four GPUs each hold a 160 MB gradient. Every GPU has its own 16 GB/s link to a PCIe switch, all
+      links run at full speed at the same time, and sending 160 MB over one link takes 10 ms. Summing
+      everything on GPU 0 and sending the result back takes $3 \times 10 + 3 \times 10 = 60$ ms, because
+      GPU 0's link carries all the traffic. If you instead split the gradient into four 40 MB parts and
+      let each GPU aggregate and redistribute one part, how many milliseconds does the synchronization
+      take?
+    answer:
+      numeric: 15
+      tolerance: 0.1
+      hint: a number of milliseconds
+      model: Each GPU receives $3 \times 40$ MB (7.5 ms) and then sends $3 \times 40$ MB (7.5 ms), all links in parallel, so 15 ms.
+    explanation: |
+      d2l works through this example: aggregating everything on one GPU takes 60 ms, but splitting the
+      gradient into four parts and aggregating each part on a different GPU at the same time takes
+      7.5 ms plus 7.5 ms, so 15 ms [^1]. Every link now carries a quarter of the data in each phase,
+      so no single link is the bottleneck. This is why an `allreduce` that copies everything to one
+      device, as d2l's first multi-GPU implementation does, is inefficient [^2]. Ring synchronization
+      goes further, keeping the time roughly constant as GPUs are added [^1].
+    references:
+      - source: d2l
+        locator: Sec. 13.7.1 Data-Parallel Training and Sec. 13.7.2 Ring Synchronization
+        url: https://d2l.ai/chapter_computational-performance/parameterserver.html#data-parallel-training
+      - source: d2l
+        locator: Sec. 13.5.4 Data Synchronization
+        url: https://d2l.ai/chapter_computational-performance/multiple-gpus.html#data-synchronization
+      - source: d2l
+        locator: Sec. 13.5.8 Exercises, Exercise 3
+        url: https://d2l.ai/chapter_computational-performance/multiple-gpus.html#exercises
+    source:
+      id: d2l
+      ref: chapter_computational-performance/multiple-gpus#ex3
+      url: https://d2l.ai/chapter_computational-performance/multiple-gpus.html#exercises
+    status: draft
+  - id: frameworks-011
+    type: single
+    difficulty: hard
+    tags:
+      - multi-gpu
+      - ring-allreduce
+      - communication
+    question: |
+      In ring synchronization each GPU sends gradient chunks to its neighbour, always in the same
+      direction around the ring. The links (for example NVLink) are full duplex: they carry the same
+      bandwidth in both directions at once. How can you make the synchronization faster?
+    options:
+      - text: Let only half of the GPUs send in each step of the ring, so fewer links compete for bandwidth
+        why: In a ring each link already has a single sender; idling half the GPUs just leaves links unused.
+      - text: Nothing can be gained, because ring synchronization already uses every link at full capacity
+        why: A one-directional ring uses only the forward half of each full-duplex link; the backward half sits idle.
+      - text: Send every chunk in both directions, so that each GPU receives its data twice as early
+        why: Sending duplicates doubles the traffic; the second copy carries no new information.
+      - text: Split the data in two and run one ring each way, roughly halving the time
+        correct: true
+    explanation: |
+      In the ring scheme the gradient is cut into $n$ chunks that travel around the ring in parallel, so
+      the time is proportional to $(n - 1)/n$ of the gradient size divided by the link bandwidth, and does
+      not grow with the number of GPUs [^1]. NVLink offers its bandwidth per link *per direction* [^1], so
+      a ring that sends in one direction leaves half of every link idle. Two rings in opposite
+      directions, each carrying half of the data, use both directions at once and need about half the
+      time. d2l's 8-GPU example already decomposes the NVLink network into two rings [^1].
+    references:
+      - source: d2l
+        locator: Sec. 13.7.2 Ring Synchronization
+        url: https://d2l.ai/chapter_computational-performance/parameterserver.html#ring-synchronization
+      - source: d2l
+        locator: Sec. 13.7.6 Exercises, Exercise 1
+        url: https://d2l.ai/chapter_computational-performance/parameterserver.html#exercises
+    source:
+      id: d2l
+      ref: chapter_computational-performance/parameterserver#ex1
+      url: https://d2l.ai/chapter_computational-performance/parameterserver.html#exercises
+    status: draft
+  - id: frameworks-012
+    type: true_false
+    difficulty: medium
+    tags:
+      - multi-gpu
+      - communication
+      - backpropagation
+      - distributed-training
+    shuffle: false
+    question: |
+      True or false: in data-parallel training, synchronizing the gradients across GPUs can only start
+      after backpropagation has computed the gradients of every layer.
+    options:
+      - text: 'True'
+        why: Backpropagation produces gradients from the last layer to the first. The gradients of the top layers are final while the lower layers are still being processed, so their synchronization can start right away [^1][^2].
+      - text: 'False'
+        correct: true
+    explanation: |
+      d2l points out that we can begin synchronizing the gradients of some parameter groups while still
+      computing those of others, as Horovod does [^1]. PyTorch's DistributedDataParallel groups gradients
+      into buckets and launches the all-reduce of a bucket as soon as all its gradients are ready, so
+      communication overlaps with the rest of the backward pass [^2]. In synchronous training only the
+      optimizer step has to wait until every gradient has been synchronized.
+    references:
+      - source: d2l
+        locator: Sec. 13.7.1 Data-Parallel Training
+        url: https://d2l.ai/chapter_computational-performance/parameterserver.html#data-parallel-training
+      - title: Distributed Data Parallel (PyTorch documentation)
+        locator: Internal Design, Backward Pass
+        url: https://docs.pytorch.org/docs/stable/notes/ddp.html#internal-design
+      - source: d2l
+        locator: Sec. 13.7.6 Exercises, Exercise 2
+        url: https://d2l.ai/chapter_computational-performance/parameterserver.html#exercises
+    source:
+      id: d2l
+      ref: chapter_computational-performance/parameterserver#ex2
+      url: https://d2l.ai/chapter_computational-performance/parameterserver.html#exercises
+    status: draft

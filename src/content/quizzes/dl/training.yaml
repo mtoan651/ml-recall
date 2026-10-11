@@ -905,3 +905,251 @@ questions:
       ref: quiz-208/q3
       url: https://github.com/microsoft/AI-For-Beginners/blob/392d0df1b2647cbee104942390551f1ed9e072c8/etc/quiz-app/src/assets/translations/en/lesson-8.json
     status: draft
+  - id: training-035
+    type: short_answer
+    difficulty: medium
+    tags:
+      - batch-normalization
+      - bias
+      - parameter-count
+    question: |
+      A model contains `nn.Conv2d(3, 64, kernel_size=3)` followed directly by `nn.BatchNorm2d(64)`.
+      How many of the convolution's parameters can you remove (by passing `bias=False`) without
+      changing which functions the model can represent?
+    answer:
+      numeric: 64
+      tolerance: 0
+      hint: a whole number
+      model: The 64 convolution biases. Batch normalization subtracts each channel's mean, which cancels any constant added to that channel, and its own shift $\beta$ takes over the bias's role.
+    explanation: |
+      For convolutional layers, batch normalization standardizes each channel over all examples and
+      positions of the minibatch, and each channel has its own scale and shift [^1]. A convolution bias
+      adds the same constant $b_c$ to every value of channel $c$, so it raises the channel mean by
+      exactly $b_c$ and the mean subtraction removes it; the original paper notes that the bias can be
+      dropped because the learned shift $\beta$ subsumes it [^2]. That makes all 64 biases redundant,
+      which is why d2l's DCGAN blocks use `bias=False` in front of batch normalization [^3].
+    references:
+      - source: d2l
+        locator: Sec. 8.5.2.2 Convolutional Layers
+        url: https://d2l.ai/chapter_convolutional-modern/batch-norm.html#convolutional-layers
+      - title: 'Batch Normalization: Accelerating Deep Network Training by Reducing Internal Covariate Shift (Ioffe & Szegedy, 2015)'
+        locator: Sec. 3.2 Batch-Normalized Convolutional Networks
+        url: https://arxiv.org/abs/1502.03167
+      - source: d2l
+        locator: Sec. 20.2.2 The Generator (G_block with bias=False)
+        url: https://d2l.ai/chapter_generative-adversarial-networks/dcgan.html#the-generator
+      - source: d2l
+        locator: Sec. 8.5.7 Exercises, Exercise 1
+        url: https://d2l.ai/chapter_convolutional-modern/batch-norm.html#exercises
+    source:
+      id: d2l
+      ref: chapter_convolutional-modern/batch-norm#ex1
+      url: https://d2l.ai/chapter_convolutional-modern/batch-norm.html#exercises
+    status: draft
+  - id: training-036
+    type: single
+    difficulty: medium
+    tags:
+      - learning-rate
+      - batch-size
+      - data-parallelism
+      - multi-gpu
+    question: |
+      On one GPU you trained with minibatch size 256 and learning rate 0.2. You switch to data-parallel
+      training on 8 GPUs with 256 examples per GPU, so each update now uses 2048 examples. What is the
+      usual starting point for the new learning rate?
+    options:
+      - text: Still 0.2 per GPU, which adds up to an effective rate of 1.6 without changing any code
+        why: The GPUs do not each take their own step; their gradients are aggregated and one update with the configured learning rate is applied to the shared parameters [^1].
+      - text: About 1.6, scaled up 8× along with the minibatch, often with a short warm-up
+        correct: true
+      - text: About 0.025, scaled down 8× because each update now averages many more gradients
+        why: Averaging over more examples makes the gradient less noisy, which allows larger steps, not smaller ones; scaling down would make each epoch's progress far smaller [^2].
+      - text: Still 0.2, since the gradient is an average and so does not depend on the batch size
+        why: The expected gradient is the same, but an epoch now has 8 times fewer updates, so with the same step size training covers much less ground per epoch [^2].
+    explanation: |
+      With $k$ GPUs the minibatch grows $k$-fold so that each GPU has as much work as before, and d2l
+      notes that the learning rate may have to be increased accordingly [^1]. The linear scaling rule
+      of Goyal et al. says: when the minibatch size is multiplied by $k$, multiply the learning rate by
+      $k$; with a gradual warm-up over the first epochs, they trained ResNet-50 with minibatches of
+      8192 [^2]. The intuition is that one large step should cover about as much ground as the $k$ small
+      steps it replaces. The rule breaks down for very large minibatches [^2].
+    references:
+      - source: d2l
+        locator: Sec. 13.5.2 Data Parallelism
+        url: https://d2l.ai/chapter_computational-performance/multiple-gpus.html#data-parallelism
+      - title: 'Accurate, Large Minibatch SGD: Training ImageNet in 1 Hour (Goyal et al., 2017)'
+        locator: Sec. 2.1 Learning Rates for Large Minibatches and Sec. 2.2 Warmup
+        url: https://arxiv.org/abs/1706.02677
+      - source: d2l
+        locator: Sec. 13.5.8 Exercises, Exercise 2
+        url: https://d2l.ai/chapter_computational-performance/multiple-gpus.html#exercises
+    source:
+      id: d2l
+      ref: chapter_computational-performance/multiple-gpus#ex2
+      url: https://d2l.ai/chapter_computational-performance/multiple-gpus.html#exercises
+    status: draft
+  - id: training-037
+    type: single
+    difficulty: easy
+    tags:
+      - hyperparameter-optimization
+      - validation-set
+      - test-set
+    question: |
+      A hyperparameter search trains on FashionMNIST's 60,000 training images, picks the learning rate
+      with the lowest error on the 10,000 *test* images, and reports that test error. Which protocol
+      fixes the problem?
+    options:
+      - text: Tune on the test images, then rerun the search with another random seed to confirm the choice
+        why: The test set is still used for the selection; repeating the search does not remove the optimistic bias.
+      - text: Hold out part of the training images for validation, tune on it, and use the test set once at the end
+        correct: true
+      - text: Keep tuning on the test images, but report the training error, which the search cannot influence
+        why: Training error is measured on the data the model was fitted to, so it underestimates the error on new data [^1].
+      - text: Merge the training and test images and pick the learning rate with the lowest error on the merged set
+        why: That evaluates the model on data it was trained on and leaves no held-out data at all.
+    explanation: |
+      Picking the configuration with the lowest test error turns the test set into part of the
+      selection, so the model can overfit the test data and the reported test error is optimistically
+      biased [^1]. d2l's rule is that the test set must not be used for model selection;
+      hyperparameters are chosen on validation data split off from the training data (or by
+      cross-validation), and the test set is touched once, for the final estimate [^1]. After choosing
+      the hyperparameters you may retrain on all 60,000 training images [^2].
+    references:
+      - source: d2l
+        locator: Sec. 3.6.3 Model Selection
+        url: https://d2l.ai/chapter_linear-regression/generalization.html#model-selection
+      - source: d2l
+        locator: Sec. 19.1.4 Exercises, Exercise 1
+        url: https://d2l.ai/chapter_hyperparameter-optimization/hyperopt-intro.html#exercises
+    source:
+      id: d2l
+      ref: chapter_hyperparameter-optimization/hyperopt-intro#ex1
+      url: https://d2l.ai/chapter_hyperparameter-optimization/hyperopt-intro.html#exercises
+    status: draft
+  - id: training-038
+    type: single
+    difficulty: medium
+    tags:
+      - hyperparameter-optimization
+      - hypergradient
+      - cross-entropy
+    question: |
+      You want to tune the learning rate by gradient descent on a validation metric measured after one
+      epoch of training. Why should the metric not be the validation *error*, the fraction of
+      misclassified examples?
+    options:
+      - text: It is always higher than the training error, so its gradient points in the wrong direction
+        why: Being higher than the training error says nothing about the direction of its gradient; the problem is that the error is piecewise constant.
+      - text: It can only be measured after training, while gradients must be computed during training
+        why: The validation cross-entropy is also measured after the epoch; what matters is whether the metric is differentiable.
+      - text: It does not depend on the learning rate at all, because the architecture alone fixes the error
+        why: The error does depend on the learning rate, but only in jumps, when some prediction flips.
+      - text: Its gradient in the learning rate is zero almost everywhere; use the validation cross-entropy
+        correct: true
+    explanation: |
+      The error counts argmax mistakes. A tiny change of the learning rate changes the trained weights
+      a little, which usually flips no prediction, so the error is piecewise constant: its derivative is
+      0 wherever it exists [^1]. The validation cross-entropy changes smoothly with the predicted
+      probabilities and so gives a usable gradient. Even then the gradient has to be propagated through
+      the entire training run, which is why d2l calls gradient-based HPO hard [^2].
+    references:
+      - source: d2l
+        locator: Sec. 4.3.2 Accuracy (accuracy is not differentiable)
+        url: https://d2l.ai/chapter_linear-classification/classification.html#accuracy
+      - source: d2l
+        locator: Sec. 19.1.1.1 The Objective Function
+        url: https://d2l.ai/chapter_hyperparameter-optimization/hyperopt-intro.html#the-objective-function
+      - source: d2l
+        locator: Sec. 19.1.4 Exercises, Exercise 2
+        url: https://d2l.ai/chapter_hyperparameter-optimization/hyperopt-intro.html#exercises
+    source:
+      id: d2l
+      ref: chapter_hyperparameter-optimization/hyperopt-intro#ex2
+      url: https://d2l.ai/chapter_hyperparameter-optimization/hyperopt-intro.html#exercises
+    status: draft
+  - id: training-039
+    type: single
+    difficulty: hard
+    tags:
+      - hyperparameter-optimization
+      - hypergradient
+      - exploding-gradients
+    question: |
+      Gradient-based hyperparameter optimization differentiates a validation loss through every SGD step
+      of training, for example the 235 steps of one FashionMNIST epoch with minibatch size 256. Apart
+      from the compute and memory needed to keep all those steps, what problem does this create?
+    options:
+      - text: The gradient passes through hundreds of chained steps, so it can vanish or explode as in a very deep network
+        correct: true
+      - text: The gradient is always exactly zero, because the training loss sits at a minimum after one epoch
+        why: One epoch rarely reaches a minimum, and the validation loss can still change with the learning rate even then.
+      - text: The learning rate only enters the last SGD step, so the earlier steps contribute nothing to its gradient
+        why: The learning rate enters every update $\mathbf{w}_{t+1} = \mathbf{w}_t - \eta \nabla L(\mathbf{w}_t)$.
+      - text: The chain rule does not apply to SGD steps, because the minibatches are drawn at random
+        why: Given its minibatch, each update is a differentiable function of the previous weights, so the chain rule applies.
+    explanation: |
+      The weights after $T$ steps are a $T$-fold composition of updates
+      $\mathbf{w}_{t+1} = \mathbf{w}_t - \eta \nabla L(\mathbf{w}_t)$, so the derivative with respect to
+      $\eta$ is a sum of products of up to $T$ Jacobians, just like backpropagation through a network
+      with $T$ layers [^3]. Products of many matrices tend to shrink or blow up, the vanishing and
+      exploding gradient problem of deep networks [^1]. Exact hypergradients are possible, for example
+      by running the training dynamics backwards [^2], but d2l notes that such approaches are not yet
+      competitive [^3].
+    references:
+      - source: d2l
+        locator: Sec. 5.4.1 Vanishing and Exploding Gradients
+        url: https://d2l.ai/chapter_multilayer-perceptrons/numerical-stability-and-init.html#vanishing-and-exploding-gradients
+      - title: Gradient-based Hyperparameter Optimization through Reversible Learning (Maclaurin et al., 2015)
+        locator: Abstract
+        url: https://arxiv.org/abs/1502.03492
+      - source: d2l
+        locator: Sec. 19.1.1.1 The Objective Function
+        url: https://d2l.ai/chapter_hyperparameter-optimization/hyperopt-intro.html#the-objective-function
+      - source: d2l
+        locator: Sec. 19.1.4 Exercises, Exercise 2
+        url: https://d2l.ai/chapter_hyperparameter-optimization/hyperopt-intro.html#exercises
+    source:
+      id: d2l
+      ref: chapter_hyperparameter-optimization/hyperopt-intro#ex2-b
+      url: https://d2l.ai/chapter_hyperparameter-optimization/hyperopt-intro.html#exercises
+    status: draft
+  - id: training-040
+    type: short_answer
+    difficulty: easy
+    tags:
+      - hyperparameter-optimization
+      - grid-search
+      - random-search
+    question: |
+      You tune two hyperparameters with a budget of 25 training runs, either as a $5 \times 5$ grid or
+      as 25 random configurations. The validation error depends strongly on the learning rate and hardly
+      at all on the other hyperparameter. How many distinct learning-rate values does the grid search
+      evaluate?
+    answer:
+      numeric: 5
+      tolerance: 0
+      hint: a whole number
+      model: 5, each repeated for the 5 values of the unimportant hyperparameter; random search tries 25 different learning rates.
+    explanation: |
+      Grid search evaluates the Cartesian product of one grid per hyperparameter [^1], so 25 runs test
+      only 5 learning rates, each 5 times with values of a hyperparameter that barely matters. Random
+      search samples every configuration independently [^2], so all 25 runs use different learning
+      rates. That is why random search can be far more efficient when the criterion depends mostly on a
+      few hyperparameters [^2], the argument of Bergstra and Bengio [^3].
+    references:
+      - source: d2l
+        locator: Sec. 19.1.4 Exercises, Exercise 3 (grid search)
+        url: https://d2l.ai/chapter_hyperparameter-optimization/hyperopt-intro.html#exercises
+      - source: d2l
+        locator: Sec. 19.1.2 Random Search and Sec. 19.1.3 Summary
+        url: https://d2l.ai/chapter_hyperparameter-optimization/hyperopt-intro.html#random-search
+      - title: Random Search for Hyper-Parameter Optimization (Bergstra & Bengio, JMLR 2012)
+        locator: Sec. 1 Introduction, Figure 1
+        url: https://www.jmlr.org/papers/v13/bergstra12a.html
+    source:
+      id: d2l
+      ref: chapter_hyperparameter-optimization/hyperopt-intro#ex3
+      url: https://d2l.ai/chapter_hyperparameter-optimization/hyperopt-intro.html#exercises
+    status: draft
