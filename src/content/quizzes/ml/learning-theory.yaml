@@ -128,3 +128,749 @@ questions:
       ref: machine_learning/67
       url: https://huggingface.co/datasets/edinburgh-dawg/mmlu-redux-2.0/viewer/machine_learning/test?row=67
     status: draft
+  - id: learning-theory-004
+    type: short_answer
+    difficulty: easy
+    tags:
+      - polynomial-regression
+      - interpolation
+      - model-complexity
+    question: |
+      You fit the polynomial model $\hat{y} = \sum_{i=0}^{d} w_i x^i$ by least squares to 10
+      training examples whose $x$ values are all different. What is the smallest degree $d$ that
+      guarantees zero training error, whatever the labels $y$ are?
+    answer:
+      numeric: 9
+      hint: an integer degree
+      model: $d = n - 1 = 9$, which gives 10 weights for 10 points
+    explanation: |
+      A degree-$d$ polynomial is a linear model on the features $1, x, \dots, x^d$, so it has
+      $d + 1$ weights, with $w_0$ acting as the bias [^1]. For $n$ points with distinct $x$ values
+      there is always a unique polynomial of degree at most $n - 1$ through all of them, because
+      the Vandermonde system is invertible [^2]. With $n = 10$, degree 9 (10 weights) fits any
+      labels exactly, while degree 8 has only 9 weights and cannot match every set of 10 targets.
+      d2l says a degree equal to the number of examples fits perfectly, which is true but one more
+      than needed; either way, zero training error alone says nothing about generalization [^1].
+    references:
+      - source: d2l
+        url: https://d2l.ai/chapter_linear-regression/generalization.html#polynomial-curve-fitting
+        locator: Sec. 3.6.2.1 Polynomial Curve Fitting, eq. (3.6.3)
+      - title: Wikipedia, Polynomial interpolation
+        url: https://en.wikipedia.org/wiki/Polynomial_interpolation#Interpolation_theorem
+        locator: Interpolation theorem (existence and uniqueness; second proof via the Vandermonde matrix)
+    source:
+      id: d2l
+      ref: chapter_linear-regression/generalization#ex1
+      url: https://d2l.ai/chapter_linear-regression/generalization.html
+    status: draft
+  - id: learning-theory-005
+    type: multiple
+    difficulty: medium
+    tags:
+      - iid-assumption
+      - data-splitting
+      - generalization
+    question: |
+      Generalization guarantees assume that training and test examples are drawn IID from the
+      same distribution. In which of these datasets are the examples dependent, so that a plain
+      random train/test split would give a misleading test error? Select all that apply.
+    options:
+      - text: Several MRI scans per patient, split at random scan by scan
+        correct: true
+      - text: Hourly temperature readings of one city, shuffled before splitting
+        correct: true
+      - text: Survey answers from people sampled independently at random
+        why: Independent random sampling from one population is the textbook IID case.
+      - text: Successive rolls of a fair die, recorded in the order they happened
+        why: Being recorded one after another does not make the rolls dependent; each roll is independent of the earlier ones.
+    explanation: |
+      d2l stresses that its whole discussion of generalization rests on the IID assumption, and
+      that without it nothing can be said unless some other assumption replaces it [^1].
+      Several samples from the same patient form a group of dependent samples, so to measure how
+      well the model handles unseen patients the split must keep each patient on one side [^2]. Readings close in time are autocorrelated, and shuffling them puts near-copies
+      into both sets; time series should be evaluated on later observations [^3]. Independent
+      survey respondents and die rolls are IID, even though the rolls come in a sequence.
+    references:
+      - source: d2l
+        url: https://d2l.ai/chapter_linear-regression/generalization.html#training-error-and-generalization-error
+        locator: Sec. 3.6.1 Training Error and Generalization Error; Sec. 3.6.4 Summary (rule 5)
+      - title: scikit-learn User Guide
+        url: https://scikit-learn.org/stable/modules/cross_validation.html#cross-validation-iterators-for-grouped-data
+        locator: Sec. 3.1.2.4 Cross-validation iterators for grouped data
+        quote: The i.i.d. assumption is broken if the underlying generative process yields groups of dependent samples.
+      - title: scikit-learn User Guide
+        url: https://scikit-learn.org/stable/modules/cross_validation.html#cross-validation-of-time-series-data
+        locator: Sec. 3.1.2.6 Cross validation of time series data
+    source:
+      id: d2l
+      ref: chapter_linear-regression/generalization#ex2
+      url: https://d2l.ai/chapter_linear-regression/generalization.html
+    status: draft
+  - id: learning-theory-006
+    type: single
+    difficulty: medium
+    tags:
+      - generalization-error
+      - bayes-error
+      - label-noise
+    question: |
+      A classifier reaches zero training error. Under which condition can its generalization
+      (population) error also be zero?
+    options:
+      - text: Labels are a noise-free function of the input, and the model learned that function
+        correct: true
+      - text: The training set is very large, whatever the amount of label noise in it
+        why: With noisy labels even the best possible classifier makes mistakes, so no amount of data drives the error to zero.
+      - text: The model class is flexible enough to fit every labelling of the training set
+        why: A class that can fit arbitrary labels is exactly the case where zero training error certifies nothing about the population.
+      - text: The training error is zero, and a zero training error already implies zero test error
+        why: The model was fit to the training sample, so its training error is a biased, usually optimistic, estimate of the true error.
+    explanation: |
+      Zero training error is easy to get: a model that can fit arbitrary labels, such as a
+      high-degree polynomial or 1-nearest neighbour on distinct inputs, interpolates the training
+      set [^1][^2]. The generalization error, however, is an expectation over the whole
+      distribution $p(\mathbf{x}, y)$ [^1], and it can never fall below the Bayes error rate, the
+      lowest error any classifier can reach [^3]. That floor is zero only when each input has one
+      correct label, with no label noise or intrinsic randomness (d2l's realizable case) [^4], and
+      the model must then match that labelling everywhere, not just on the training points.
+    references:
+      - source: d2l
+        url: https://d2l.ai/chapter_linear-regression/generalization.html#training-error-and-generalization-error
+        locator: Sec. 3.6.1 Training Error and Generalization Error, eq. (3.6.2); Sec. 3.6.1.1 Model Complexity
+      - source: d2l
+        url: https://d2l.ai/chapter_multilayer-perceptrons/generalization-deep.html#inspiration-from-nonparametrics
+        locator: Sec. 5.5.2 Inspiration from Nonparametrics
+      - title: Wikipedia, Bayes error rate
+        url: https://en.wikipedia.org/wiki/Bayes_error_rate
+        locator: Introduction and Definition
+        quote: Bayes error rate is the lowest possible error rate for any classifier of a random outcome
+      - source: d2l
+        url: https://d2l.ai/chapter_multilayer-perceptrons/generalization-deep.html#early-stopping
+        locator: Sec. 5.5.3 Early Stopping (realizable data vs. label noise)
+    source:
+      id: d2l
+      ref: chapter_linear-regression/generalization#ex3
+      url: https://d2l.ai/chapter_linear-regression/generalization.html
+    status: draft
+  - id: learning-theory-007
+    type: single
+    difficulty: hard
+    tags:
+      - cross-validation
+      - bias
+      - model-selection
+    question: |
+      $K$-fold cross-validation is used only to estimate the error of a model that will finally be
+      trained on all $n$ examples (no model is chosen with it). In which direction is the
+      cross-validation estimate typically biased?
+    options:
+      - text: Upward, since each fold's model learns from only $(K-1)n/K$ examples
+        correct: true
+      - text: Downward, since each validation fold is also in that round's training data
+        why: The folds do not overlap; the fold held out in a round is never used for training in that round.
+      - text: Not at all, since every example is used for validation exactly once
+        why: Each example is validated once, but by a model trained on fewer than $n$ examples, so the estimate fits a smaller training set.
+      - text: Downward, since averaging the $K$ scores cancels out their errors
+        why: Averaging over folds reduces the variance of the estimate, not its bias.
+    explanation: |
+      In $K$-fold cross-validation the data are split into $K$ non-overlapping folds, and each
+      round trains on $K-1$ folds and validates on the remaining one [^1]. Each of these models
+      therefore sees only $(K-1)n/K$ examples, fewer than the final model trained on all $n$ [^2].
+      Because error usually still falls as data grows, the fold models are slightly worse, and
+      scikit-learn warns that 5- or 10-fold cross-validation can overestimate the generalization
+      error when the learning curve is steep at that size [^2]. If the same scores are also used to
+      pick the best of many models, the winner's score becomes optimistic instead, much like
+      test-set reuse [^3].
+    references:
+      - source: d2l
+        url: https://d2l.ai/chapter_linear-regression/generalization.html#cross-validation
+        locator: Sec. 3.6.3.1 Cross-Validation
+      - title: scikit-learn User Guide
+        url: https://scikit-learn.org/stable/modules/cross_validation.html#leave-one-out-loo
+        locator: Sec. 3.1.2.1.3 Leave One Out (LOO)
+        quote: if the learning curve is steep for the training size in question, then 5 or 10-fold cross validation can overestimate the generalization error.
+      - source: d2l
+        url: https://d2l.ai/chapter_linear-classification/generalization-classification.html#test-set-reuse
+        locator: Sec. 4.6.2 Test Set Reuse
+    source:
+      id: d2l
+      ref: chapter_linear-regression/generalization#ex5
+      url: https://d2l.ai/chapter_linear-regression/generalization.html
+    status: draft
+  - id: learning-theory-008
+    type: single
+    difficulty: hard
+    tags:
+      - vc-dimension
+      - model-complexity
+      - weight-decay
+    question: |
+      The VC dimension of a class is the largest number of points that its functions can label in
+      every possible way with $\pm 1$. Thinking about the *magnitude* of the functions, why can it be
+      a poor measure of how complex a class is?
+    options:
+      - text: It only sees the sign of each function, not how large its values or weights are
+        correct: true
+      - text: It always equals the number of parameters, so it adds nothing beyond counting weights
+        why: The one-parameter classifier $\operatorname{sign}(\sin(\theta x))$ already has infinite VC dimension, so it is not a parameter count.
+      - text: It changes with the data distribution, so it differs from one dataset to another
+        why: VC dimension is a property of the function class alone; the resulting bounds hold for any data distribution.
+      - text: It is defined only for linear classifiers, so other model classes have no VC dimension
+        why: It is defined for any class of binary classifiers, e.g. intervals, rectangles or sine thresholds.
+    explanation: |
+      VC dimension counts the largest set of points on which the class can realize every binary
+      labelling [^1], so it depends only on the sign of each function. It cannot tell a labelling
+      produced with a large margin from one that barely flips sign, and it cannot see a limit on the
+      size of the weights. d2l argues that a useful notion of complexity is the range of values the
+      parameters may take, which is what weight decay restricts, and notes that kernel methods have
+      infinitely many parameters yet control their complexity by other means [^2]. Conversely, the
+      one-parameter classifier $\operatorname{sign}(\sin(\theta x))$ has infinite VC dimension [^1].
+    references:
+      - title: Wikipedia, Vapnik–Chervonenkis dimension
+        url: https://en.wikipedia.org/wiki/Vapnik%E2%80%93Chervonenkis_dimension
+        locator: Definitions; Examples (single-parametric sine classifier)
+      - source: d2l
+        url: https://d2l.ai/chapter_linear-regression/generalization.html#model-complexity
+        locator: Sec. 3.6.1.1 Model Complexity
+        quote: One notion of complexity that often proves useful is the range of values that the parameters can take.
+    source:
+      id: d2l
+      ref: chapter_linear-regression/generalization#ex6
+      url: https://d2l.ai/chapter_linear-regression/generalization.html
+    status: draft
+  - id: learning-theory-009
+    type: single
+    difficulty: medium
+    tags:
+      - learning-curve
+      - dataset-size
+      - generalization
+    question: |
+      You cannot collect more data, but you want evidence that more training data would lower your
+      model's error. Which experiment gives that evidence?
+    options:
+      - text: Retrain on growing subsets and see if validation error still falls at full size
+        correct: true
+      - text: Train longer on the full data and check whether the training error keeps going down
+        why: Training error measures how well the same examples are fit; it says nothing about the value of new examples.
+      - text: Duplicate every training example to double the dataset, then compare validation errors
+        why: Copies add no new information about the distribution; they only reweight the existing examples.
+      - text: Switch to a model with more parameters and check whether the training error drops further
+        why: This probes whether the model is too simple, not whether more examples would help.
+    explanation: |
+      For a fixed model, the fewer training examples there are, the more likely and severe
+      overfitting is, and generalization error typically falls as the training set grows [^1].
+      You can measure this trend with data you already have by *decreasing* it: retrain on growing
+      fractions of the training set and plot validation error against training-set size, a
+      learning curve [^2]. If validation error is still dropping clearly at 100% of the data, more
+      data will probably help; if it has levelled off, it probably will not [^2].
+    references:
+      - source: d2l
+        url: https://d2l.ai/chapter_linear-regression/generalization.html#dataset-size
+        locator: Sec. 3.6.2.2 Dataset Size
+      - title: scikit-learn User Guide
+        url: https://scikit-learn.org/stable/modules/learning_curve.html#learning-curve
+        locator: Sec. 3.5.2 Learning curve
+        quote: It is a tool to find out how much we benefit from adding more training data
+    source:
+      id: d2l
+      ref: chapter_linear-regression/generalization#ex7
+      url: https://d2l.ai/chapter_linear-regression/generalization.html
+    status: draft
+  - id: learning-theory-010
+    type: short_answer
+    difficulty: hard
+    tags:
+      - hoeffding-inequality
+      - test-set-size
+      - sample-complexity
+    question: |
+      d2l bounds the test error of a fixed classifier $f$ on $n$ fresh examples with Hoeffding's
+      inequality, $P(\epsilon_\mathcal{D}(f) - \epsilon(f) \geq t) < \exp(-2nt^2)$, and gets its
+      "roughly 15,000 examples" for $t = 0.01$ at 95% confidence by setting the right-hand side
+      equal to $0.05$. Using the same recipe, how many test examples are needed to estimate the
+      error to within $t = 0.0001$ with probability 99.9%?
+    answer:
+      numeric: 345.4
+      tolerance: 0.5
+      hint: in millions, 1 decimal (e.g. 12.3)
+      model: $n = \ln(1000) / (2 \times 10^{-8}) \approx 3.454 \times 10^{8}$, about 345.4 million
+    explanation: |
+      Setting $\exp(-2nt^2) = \delta$ and solving gives $n = \ln(1/\delta) / (2t^2)$ [^1]. The d2l
+      figure checks out: $\ln 20 / (2 \cdot 10^{-4}) \approx 14{,}979$ [^1]. Here $\delta = 0.001$
+      and $t = 10^{-4}$, so $n = \ln 1000 / (2 \cdot 10^{-8}) \approx 3.45 \times 10^{8}$, about
+      345 million examples. The cost is quadratic in the precision (a 100 times smaller $t$ needs
+      10,000 times more data) but only logarithmic in the confidence [^2]. The two-sided version
+      of the bound, with a factor 2 inside the logarithm, gives about 380 million [^2].
+    references:
+      - source: d2l
+        url: https://d2l.ai/chapter_linear-classification/generalization-classification.html#the-test-set
+        locator: Sec. 4.6.1 The Test Set, eq. (4.6.3)
+      - title: Wikipedia, Hoeffding's inequality
+        url: https://en.wikipedia.org/wiki/Hoeffding%27s_inequality#Confidence_intervals
+        locator: Usage, Confidence intervals
+        quote: the cost of acquiring the confidence interval is sublinear in terms of confidence level and quadratic in terms of precision.
+    source:
+      id: d2l
+      ref: chapter_linear-classification/generalization-classification#ex1
+      url: https://d2l.ai/chapter_linear-classification/generalization-classification.html
+    status: draft
+  - id: learning-theory-011
+    type: single
+    difficulty: medium
+    tags:
+      - test-set-reuse
+      - adaptive-overfitting
+      - data-leakage
+    question: |
+      Someone holds a test set of $n$ inputs with binary labels and shows you only the inputs. You
+      may run any model on them, but all you learn is its error rate on the whole test set. If you
+      change one prediction at a time, about how many evaluations do you need before you know
+      every label and can score zero test error?
+    options:
+      - text: About $n$, a baseline and then one model per point with its prediction flipped
+        correct: true
+      - text: About $\log_2 n$, by a binary search that halves the set of test points each time
+        why: Flipping one prediction reveals one label, so this strategy needs one evaluation per point; a binary search would only locate a single point.
+      - text: About $2^n$, because every labelling must be tried until one of them scores zero
+        why: Trying whole labellings blindly is wasteful; flipping one prediction at a time pins down one label per evaluation.
+      - text: None, because an error rate over all points says nothing about single labels
+        why: Flipping one prediction moves the error rate by exactly $1/n$, up or down depending on that point's label.
+    explanation: |
+      Start with a baseline that predicts class 0 everywhere; its error rate is the fraction of
+      points labelled 1. Then, for each point $i$, submit a model that flips only its prediction on
+      $\mathbf{x}^{(i)}$: the error falls by $1/n$ if $y^{(i)} = 1$ and rises by $1/n$ if
+      $y^{(i)} = 0$. After about $n + 1$ evaluations every label is known, and a model that simply
+      outputs them scores zero test error whatever its true error. This is the extreme case of
+      what d2l calls adaptive overfitting: once information from the test set has leaked to the
+      modeler, it is no longer a true test set [^1].
+    references:
+      - source: d2l
+        url: https://d2l.ai/chapter_linear-classification/generalization-classification.html#test-set-reuse
+        locator: Sec. 4.6.2 Test Set Reuse
+        quote: Once information from the test set has leaked to the modeler, it can never be a true test set again in the strictest sense.
+    source:
+      id: d2l
+      ref: chapter_linear-classification/generalization-classification#ex2
+      url: https://d2l.ai/chapter_linear-classification/generalization-classification.html
+    status: draft
+  - id: learning-theory-012
+    type: short_answer
+    difficulty: medium
+    tags:
+      - vc-dimension
+      - polynomial-features
+      - shattering
+    question: |
+      A classifier on a single real input $x$ predicts $\operatorname{sign}(p(x))$, where $p$ can be
+      any polynomial of degree at most 5 (a fifth-order polynomial). What is the VC dimension of
+      this class of classifiers?
+    answer:
+      numeric: 6
+      hint: an integer
+      model: 6, one more than the degree (the number of coefficients)
+    explanation: |
+      The class is a linear classifier with a bias on the 5 features $x, x^2, \dots, x^5$, and
+      linear models on $d$-dimensional inputs have VC dimension $d + 1$, so it is at most 6 [^1].
+      Six distinct points can be shattered: sorted along the line, any labelling changes sign at
+      most 5 times, so place a root of $p$ between each pair of neighbours with different labels
+      and pick the overall sign. Seven points with alternating labels would need 6 sign changes,
+      but a nonzero polynomial of degree at most 5 has at most 5 roots [^2]. The largest shattered
+      set therefore has 6 points, which is the VC dimension by definition [^3].
+    references:
+      - source: d2l
+        url: https://d2l.ai/chapter_linear-classification/generalization-classification.html#statistical-learning-theory
+        locator: Sec. 4.6.3 Statistical Learning Theory
+        quote: linear models on d-dimensional inputs have VC dimension d+1.
+      - title: Wikipedia, Polynomial interpolation
+        url: https://en.wikipedia.org/wiki/Polynomial_interpolation#Interpolation_theorem
+        locator: Interpolation theorem, first proof (a nonzero polynomial of degree at most n has at most n zeros)
+      - title: Wikipedia, Vapnik–Chervonenkis dimension
+        url: https://en.wikipedia.org/wiki/Vapnik%E2%80%93Chervonenkis_dimension#Definitions
+        locator: Definitions, VC dimension of a set-family
+    source:
+      id: d2l
+      ref: chapter_linear-classification/generalization-classification#ex3
+      url: https://d2l.ai/chapter_linear-classification/generalization-classification.html
+    status: draft
+  - id: learning-theory-013
+    type: short_answer
+    difficulty: medium
+    tags:
+      - vc-dimension
+      - shattering
+    question: |
+      A classifier labels a point of the plane positive if it lies inside a given axis-aligned
+      rectangle (sides parallel to the axes) and negative otherwise. The rectangle can be any such
+      rectangle. What is the VC dimension of this class?
+    answer:
+      numeric: 4
+      hint: an integer
+    explanation: |
+      One shattered set is enough for the lower bound: four points placed as a diamond (top,
+      bottom, left, right) can be cut out in all $2^4 = 16$ ways by a suitable rectangle [^1]. No
+      set of five points can be shattered. Take their smallest enclosing rectangle: at most four of
+      the points (the leftmost, rightmost, highest and lowest) fix its sides, and labelling those
+      positive and the remaining point negative is impossible, because any axis-aligned rectangle
+      containing the extreme points contains the whole box [^1]. The largest shattered set has 4
+      points, so the VC dimension is 4 [^2].
+    references:
+      - title: Hopcroft and Kannan, Cornell CS4850 course notes, Ch. 6 Learning and VC-dimension (2010 draft)
+        url: https://www.cs.cornell.edu/courses/cs4850/2010sp/Course%20Notes/Chap%206%20Learning-march_9_2010.pdf
+        locator: 'Examples of Set Systems and Their VC-Dimension: Rectangles with horizontal and vertical edges (p. 16)'
+      - title: Wikipedia, Vapnik–Chervonenkis dimension
+        url: https://en.wikipedia.org/wiki/Vapnik%E2%80%93Chervonenkis_dimension#Definitions
+        locator: Definitions, VC dimension of a set-family
+    source:
+      id: d2l
+      ref: chapter_linear-classification/generalization-classification#ex4
+      url: https://d2l.ai/chapter_linear-classification/generalization-classification.html
+    status: draft
+  - id: learning-theory-014
+    type: short_answer
+    difficulty: medium
+    tags:
+      - test-set-size
+      - central-limit-theorem
+      - bernoulli
+    question: |
+      A fixed classifier has true error rate $\epsilon(f) = 0.1$. By the central limit theorem, its
+      error on $n$ fresh test examples has standard deviation about $\sqrt{\epsilon(f)(1 - \epsilon(f))/n}$.
+      How many test examples make this standard deviation equal to $0.01$?
+    answer:
+      numeric: 900
+      tolerance: 1
+      hint: a whole number of examples
+      model: $0.1 \cdot 0.9 / 0.01^2 = 900$
+    explanation: |
+      Each test example contributes a Bernoulli variable $\mathbf{1}(f(\mathbf{x}) \neq y)$ with
+      variance $\epsilon(f)(1 - \epsilon(f))$, and the average of $n$ of them has standard deviation
+      $\sigma/\sqrt{n}$ [^1]. Solving $\sqrt{0.1 \cdot 0.9 / n} = 0.01$ gives $n = 0.09 / 10^{-4} = 900$.
+      d2l's figure of about 2,500 examples is the worst case $\epsilon(f) = 0.5$, where the variance
+      peaks at $0.25$ [^1]. Error rates near 0 or 1 therefore need smaller test sets for the same
+      precision.
+    references:
+      - source: d2l
+        url: https://d2l.ai/chapter_linear-classification/generalization-classification.html#the-test-set
+        locator: Sec. 4.6.1 The Test Set
+    source:
+      id: original
+      ref: learning-theory-014
+    status: draft
+  - id: learning-theory-015
+    type: true_false
+    difficulty: medium
+    tags:
+      - hoeffding-inequality
+      - central-limit-theorem
+      - test-set-size
+    shuffle: false
+    question: |
+      To be 95% sure that a fixed classifier's test error is within $\pm 0.01$ of its true error,
+      the finite-sample Hoeffding bound asks for fewer test examples than the asymptotic central
+      limit theorem estimate does.
+    options:
+      - text: 'True'
+        why: It is the other way round; the finite-sample guarantee needs about 15,000 examples against about 10,000.
+      - text: 'False'
+        correct: true
+    explanation: |
+      The central limit theorem estimate, with the worst-case standard deviation $\sqrt{0.25/n}$
+      and two standard deviations for 95% confidence, asks for about 10,000 examples [^1].
+      Hoeffding's inequality gives a guarantee that holds for every finite $n$, and solving it for
+      the same confidence and precision asks for about 15,000 examples [^1]. Guarantees that hold
+      in finite samples are typically somewhat more conservative than asymptotic approximations,
+      although the two figures here are of the same order [^1].
+    references:
+      - source: d2l
+        url: https://d2l.ai/chapter_linear-classification/generalization-classification.html#the-test-set
+        locator: Sec. 4.6.1 The Test Set, eq. (4.6.3)
+        quote: Guarantees that hold even in finite samples are typically slightly more conservative.
+    source:
+      id: original
+      ref: learning-theory-015
+    status: draft
+  - id: learning-theory-016
+    type: short_answer
+    difficulty: easy
+    tags:
+      - test-set-reuse
+      - adaptive-overfitting
+      - multiple-testing
+    question: |
+      You evaluate model $f_1$ on the test set, then design $f_2$ using what you saw and evaluate
+      it on the same test set. Because $f_2$ was chosen after information from the test set reached
+      you, the set is no longer a true test set; this problem is called {{1}} overfitting.
+      Evaluating many models on one test set also raises the problem of multiple hypothesis
+      testing, that is, of false {{2}}.
+    answer:
+      blanks:
+        - accept:
+            - adaptive
+          hint: one word
+        - accept:
+            - discovery
+            - discoveries
+          hint: one word
+      model: Adaptive overfitting; false discovery.
+    explanation: |
+      The error bound for a test set assumes the classifier was chosen without any contact with
+      that set. Once $f_2$ is designed after seeing $f_1$'s test score, information has leaked and
+      d2l calls the result adaptive overfitting [^1]. Separately, the more classifiers are scored
+      on one test set, the harder it is to guarantee that none of them received a misleading score,
+      the false discovery problem of multiple hypothesis testing [^1]. d2l's advice is to consult
+      real test sets as rarely as possible and to demote an old test set to a validation set after
+      each round of a benchmark [^1].
+    references:
+      - source: d2l
+        url: https://d2l.ai/chapter_linear-classification/generalization-classification.html#test-set-reuse
+        locator: Sec. 4.6.2 Test Set Reuse
+    source:
+      id: original
+      ref: learning-theory-016
+    status: draft
+  - id: learning-theory-017
+    type: short_answer
+    difficulty: medium
+    tags:
+      - multiple-testing
+      - test-set-reuse
+      - false-discovery
+    question: |
+      For a single classifier you are 95% sure that its test error is within $\pm 0.01$ of its true
+      error. You now evaluate 20 classifiers on the same test set and, for simplicity, treat their
+      20 results as independent. What is the probability that at least one of them gets a
+      misleading score (outside its $\pm 0.01$ interval)?
+    answer:
+      numeric: 0.64
+      tolerance: 0.01
+      hint: a probability between 0 and 1, 2 decimals
+      model: $1 - 0.95^{20} \approx 0.64$
+    explanation: |
+      Each score is misleading with probability 0.05, so under independence all 20 are fine with
+      probability $0.95^{20} \approx 0.358$, and at least one is misleading with probability
+      $1 - 0.358 \approx 0.64$ [^2]. This is why d2l warns that with 20 classifiers you may have no
+      power at all to rule out a misleading result, an instance of multiple hypothesis testing [^1].
+      Real scores on a shared test set are correlated, but a Bonferroni correction, which tests each
+      of $m$ comparisons at level $\alpha/m$, controls the family-wise error without assuming
+      independence [^2].
+    references:
+      - source: d2l
+        url: https://d2l.ai/chapter_linear-classification/generalization-classification.html#test-set-reuse
+        locator: Sec. 4.6.2 Test Set Reuse
+      - title: Wikipedia, Multiple comparisons problem
+        url: https://en.wikipedia.org/wiki/Multiple_comparisons_problem#Multiple_testing_correction
+        locator: Controlling procedures, Multiple testing correction (family-wise error rate; Bonferroni correction)
+    source:
+      id: original
+      ref: learning-theory-017
+    status: draft
+  - id: learning-theory-018
+    type: single
+    difficulty: medium
+    tags:
+      - vc-dimension
+      - deep-learning
+      - generalization
+    question: |
+      In what sense do classical complexity-based bounds, such as those based on the VC dimension or
+      Rademacher complexity, fail to explain why deep neural networks generalize?
+    options:
+      - text: Nets can fit random labels, so the bounds are vacuous, yet nets generalize well
+        correct: true
+      - text: The bounds say deep nets should generalize well, but in practice they overfit badly
+        why: It is the reverse; the bounds are pessimistic, while deep networks generalize well in practice.
+      - text: The bounds cover only regression with a squared loss and say nothing about classification
+        why: The VC bound is stated for classification error; the trouble is that its value is useless for large networks.
+      - text: Deep nets have too few parameters relative to the data for the bounds to apply at all
+        why: Deep networks usually have more parameters than training examples; they are over-parametrized.
+    explanation: |
+      Deep networks are expressive enough to fit every training example, even when the labels of a
+      large dataset are assigned at random [^1]. A class that can fit arbitrary labels has an
+      enormous VC dimension or Rademacher complexity, so bounds built on these quantities guarantee
+      nothing useful [^1]. Yet such networks generalize well in practice, and often better when they
+      are larger and deeper, despite a higher VC dimension [^2]. The bounds are not wrong; applied
+      directly, they are far too loose to explain what is observed [^2].
+    references:
+      - source: d2l
+        url: https://d2l.ai/chapter_multilayer-perceptrons/generalization-deep.html#revisiting-overfitting-and-regularization
+        locator: Sec. 5.5.1 Revisiting Overfitting and Regularization
+      - source: d2l
+        url: https://d2l.ai/chapter_linear-classification/generalization-classification.html#summary
+        locator: Sec. 4.6.4 Summary
+        quote: they often generalize better, when they are larger and deeper, despite incurring higher VC dimensions.
+    source:
+      id: d2l
+      ref: chapter_multilayer-perceptrons/generalization-deep#ex1
+      url: https://d2l.ai/chapter_multilayer-perceptrons/generalization-deep.html
+    status: draft
+  - id: learning-theory-019
+    type: short_answer
+    difficulty: easy
+    tags:
+      - early-stopping
+      - regularization
+    question: |
+      Weight decay regularizes by directly constraining the values of the weights. Early stopping
+      instead constrains the number of training {{1}}, cutting training off once the error on the
+      {{2}} set stops improving.
+    answer:
+      blanks:
+        - accept:
+            - epochs
+            - epoch
+            - iterations
+            - iteration
+            - steps
+            - updates
+          hint: one word
+        - accept:
+            - validation
+            - holdout
+            - held-out
+            - dev
+          hint: one word
+      model: epochs; validation
+    explanation: |
+      Rather than limiting the size of the weights, early stopping limits how many epochs the
+      network is trained, monitoring validation error and stopping when it stops improving [^1].
+      Deep networks can eventually fit even randomly assigned labels, but this ability only emerges
+      over many iterations; with label noise they tend to fit the clean examples first and the
+      mislabelled ones later [^1]. Stopping early therefore keeps the model from interpolating the
+      noise, which is why it acts as a regularizer, whereas weight decay adds a penalty on the
+      weight norm to the loss [^2].
+    references:
+      - source: d2l
+        url: https://d2l.ai/chapter_multilayer-perceptrons/generalization-deep.html#early-stopping
+        locator: Sec. 5.5.3 Early Stopping
+      - source: d2l
+        url: https://d2l.ai/chapter_multilayer-perceptrons/generalization-deep.html#classical-regularization-methods-for-deep-networks
+        locator: Sec. 5.5.4 Classical Regularization Methods for Deep Networks
+    source:
+      id: d2l
+      ref: chapter_multilayer-perceptrons/generalization-deep#ex2
+      url: https://d2l.ai/chapter_multilayer-perceptrons/generalization-deep.html
+    status: draft
+  - id: learning-theory-020
+    type: short_answer
+    difficulty: medium
+    tags:
+      - early-stopping
+      - patience
+      - code-reading
+    question: |
+      This loop implements early stopping with a patience criterion:
+
+      ```python
+      val_losses = [0.90, 0.70, 0.62, 0.60, 0.61, 0.598, 0.605, 0.603, 0.601, 0.59]
+      patience, min_delta = 3, 0.005
+      best, wait = float("inf"), 0
+      for epoch, loss in enumerate(val_losses, start=1):
+          if loss < best - min_delta:
+              best, wait = loss, 0
+          else:
+              wait += 1
+              if wait >= patience:
+                  break
+      print(epoch, best)
+      ```
+
+      Training stops after epoch {{1}}, and `best` then holds the value {{2}}.
+    answer:
+      blanks:
+        - numeric: 7
+          hint: an epoch number
+        - numeric: 0.6
+          tolerance: 0.0001
+          hint: a loss value
+      model: 'It prints `7 0.6`: at epoch 6, 0.598 beats 0.60 by less than `min_delta`, so it does not count as an improvement.'
+    explanation: |
+      The loss improves at epochs 1 to 4, ending at `best = 0.60` with the counter reset. Epoch 5
+      (0.61) sets the counter to 1. At epoch 6, 0.598 is lower than 0.60 but not below
+      $0.60 - 0.005 = 0.595$, so the counter goes to 2 and `best` stays 0.60. Epoch 7 (0.605)
+      brings the counter to 3, the patience, and the loop breaks. This is d2l's patience criterion:
+      stop once the validation error has not decreased by more than a small $\epsilon$ for some
+      number of epochs, which also saves training time [^1].
+    references:
+      - source: d2l
+        url: https://d2l.ai/chapter_multilayer-perceptrons/generalization-deep.html#early-stopping
+        locator: Sec. 5.5.3 Early Stopping (patience criterion)
+    source:
+      id: d2l
+      ref: chapter_multilayer-perceptrons/generalization-deep#ex3
+      url: https://d2l.ai/chapter_multilayer-perceptrons/generalization-deep.html
+    status: draft
+  - id: learning-theory-021
+    type: true_false
+    difficulty: medium
+    tags:
+      - early-stopping
+      - label-noise
+      - realizable
+    shuffle: false
+    question: |
+      On a realizable dataset with clean labels (for example, telling cats from dogs with no
+      labelling mistakes), early stopping usually brings large improvements in generalization.
+    options:
+      - text: 'True'
+        why: The big gains come with label noise or intrinsic variability in the labels, not on clean, separable data.
+      - text: 'False'
+        correct: true
+    explanation: |
+      When there is no label noise and the classes are truly separable, early stopping tends not to
+      improve generalization much [^1]. What makes the difference is noise in the labels, or
+      intrinsic variability such as predicting patient mortality; then early stopping is crucial,
+      because networks fit the clean examples first and only later interpolate the mislabelled ones
+      [^1]. Even where it does not help accuracy, it still saves training time once the patience
+      criterion is met [^1].
+    references:
+      - source: d2l
+        url: https://d2l.ai/chapter_multilayer-perceptrons/generalization-deep.html#early-stopping
+        locator: Sec. 5.5.3 Early Stopping
+        quote: early stopping tends not to lead to significant improvements in generalization.
+    source:
+      id: d2l
+      ref: chapter_multilayer-perceptrons/generalization-deep#ex4
+      url: https://d2l.ai/chapter_multilayer-perceptrons/generalization-deep.html
+    status: draft
+  - id: learning-theory-022
+    type: single
+    difficulty: medium
+    tags:
+      - double-descent
+      - overparameterization
+      - model-complexity
+    question: |
+      In the "double descent" pattern reported for deep networks, how does test error change as
+      model complexity (for example, network width) keeps growing?
+    options:
+      - text: It falls, peaks when the model can just fit the training data, then falls again
+        correct: true
+      - text: It falls and then rises steadily, the classical U-shaped curve, with no second drop
+        why: That is the classical picture; double descent adds a second decrease beyond the interpolation threshold.
+      - text: It decreases monotonically, because each parameter added lowers the test error a little
+        why: There is a bump; near the interpolation threshold extra complexity first hurts before it helps.
+      - text: It stays flat, while it is the training error that goes down twice instead
+        why: Double descent is about test error; training error simply reaches zero once the model can interpolate.
+    explanation: |
+      Classically, test error is U-shaped in model complexity: it falls while the model underfits
+      and rises once it overfits [^1]. For deep networks the relation can be non-monotonic in a
+      different way, with greater complexity first hurting and then helping again, the so-called
+      double descent [^2]. The peak sits near the interpolation threshold, where the model is just
+      large enough to fit the training data; beyond it, in the over-parametrized regime, test error
+      falls again [^3]. This is one reason why enlarging a network that already fits its training
+      set can still improve generalization [^2].
+    references:
+      - source: d2l
+        url: https://d2l.ai/chapter_linear-regression/generalization.html#polynomial-curve-fitting
+        locator: Sec. 3.6.2.1 Polynomial Curve Fitting, Fig. 3.6.1
+      - source: d2l
+        url: https://d2l.ai/chapter_multilayer-perceptrons/generalization-deep.html#revisiting-overfitting-and-regularization
+        locator: Sec. 5.5.1 Revisiting Overfitting and Regularization
+      - title: Wikipedia, Double descent
+        url: https://en.wikipedia.org/wiki/Double_descent
+        locator: Introduction (interpolation threshold)
+    source:
+      id: original
+      ref: learning-theory-022
+    status: draft
