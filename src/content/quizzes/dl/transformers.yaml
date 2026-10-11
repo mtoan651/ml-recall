@@ -1062,3 +1062,173 @@ questions:
       ref: chapter_attention-mechanisms-and-transformers/vision-transformer#ex2
       url: https://d2l.ai/chapter_attention-mechanisms-and-transformers/vision-transformer.html#exercises
     status: draft
+  - id: transformers-034
+    type: multiple
+    difficulty: medium
+    tags:
+      - self-attention
+      - query-key-value
+      - complexity
+    question: |
+      Self-attention builds a new representation of each token from the tokens of its sequence.
+      Which statements about this mechanism are true? Select all that apply.
+    options:
+      - text: Unlike RNNs, self-attention lets a model process all tokens of a sequence at once, without recurrent connections
+        correct: true
+      - text: In self-attention without a causal mask (as in an encoder), every token can influence the representation of every other token through learned attention weights
+        correct: true
+      - text: Self-attention computes a weighted sum of value vectors, with weights based on the similarity between query and key vectors
+        correct: true
+      - text: The cost of self-attention grows quadratically with the sequence length, because it scores every pair of tokens
+        correct: true
+      - text: A self-attention layer outputs a single scalar for each token
+        why: Each output $y_i$ is a weighted sum of value vectors, so it is a vector (100-dimensional in the course's example), not a scalar [^2].
+    explanation: |
+      Transformers eliminate recurrence and process all tokens simultaneously, which makes them easy
+      to parallelize [^1]. Each token is projected into a query, a key and a value; the scores
+      $QK^\top / \sqrt{d_k}$ compare every query with every key, a softmax turns them into weights, and
+      each output is the weighted sum of the value vectors [^2]. The score matrix is $N \times N$
+      for $N$ tokens, hence the quadratic cost [^2]. A decoder masks future tokens so that a token
+      only attends to earlier ones; without the mask, attention runs in both directions [^3].
+    references:
+      - source: ubc-dsci575
+        locator: 'Lecture 6: Introduction to self-attention and transformers — 1.3 The Big Picture: Transformers'
+        url: https://github.com/UBC-MDS/DSCI_575_adv-mach-learn/blob/af9d47c5fdaa26aa9a50e0f50cd991cf325f1972/lectures/notes/06_intro-to-transformers.ipynb
+      - source: ubc-dsci575
+        locator: 'Lecture 6: Introduction to self-attention and transformers — 2.2 The key operations in self-attention; 2.3 Query, Key, and Value Roles; 2.4 Efficient attention weight computation'
+        url: https://github.com/UBC-MDS/DSCI_575_adv-mach-learn/blob/af9d47c5fdaa26aa9a50e0f50cd991cf325f1972/lectures/notes/06_intro-to-transformers.ipynb
+      - source: ubc-dsci575
+        locator: 'Lecture 7: More transformers — 1. Decoder-only architecture (causal masking); 2. Encoder-only architecture'
+        url: https://github.com/UBC-MDS/DSCI_575_adv-mach-learn/blob/af9d47c5fdaa26aa9a50e0f50cd991cf325f1972/lectures/notes/07_more-transformers.ipynb
+    source:
+      id: ubc-dsci575
+      ref: lectures/notes/07_more-transformers.ipynb#ex7.1
+      url: https://github.com/UBC-MDS/DSCI_575_adv-mach-learn/blob/af9d47c5fdaa26aa9a50e0f50cd991cf325f1972/lectures/notes/07_more-transformers.ipynb
+    status: draft
+  - id: transformers-035
+    type: multiple
+    difficulty: medium
+    tags:
+      - self-attention
+      - positional-embeddings
+      - multi-head-attention
+      - long-range-dependencies
+    question: |
+      Transformers have replaced RNNs in most language models. Which statements about the design
+      choices behind them are true? Select all that apply.
+    options:
+      - text: Self-attention can model long-range dependencies better than RNNs, because information does not have to flow step by step through the sequence
+        correct: true
+      - text: Transformers add positional embeddings because self-attention alone does not encode the order of the tokens
+        correct: true
+      - text: Multi-head self-attention lets the model attend to different kinds of relations, with a separate set of projections in each head
+        correct: true
+      - text: Self-attention relates the parts of the input by computing weighted combinations of all tokens, with weights from learned similarity scores
+        correct: true
+      - text: All heads of a multi-head attention layer share the same query, key and value weights, so they learn the same relations
+        why: Each head has its own parameters, which is what lets different heads learn different aspects of the relations between tokens [^3].
+    explanation: |
+      In an RNN, information from an early token reaches a late one only through every intermediate
+      hidden state, whereas self-attention connects any two tokens directly, which helps with
+      long-range dependencies [^1]. Without extra information, self-attention treats its input like
+      a bag of words: the attention weights depend on the tokens' contents, not on where they
+      stand, so positional embeddings are added to the token embeddings to inject order [^2]. A multi-head layer runs several attention heads in parallel,
+      each with its own query, key and value projections, and concatenates their outputs [^3].
+    references:
+      - source: ubc-dsci575
+        locator: 'Lecture 6: Introduction to self-attention and transformers — 1.2 Problems with RNNs; 2.1 Intuition'
+        url: https://github.com/UBC-MDS/DSCI_575_adv-mach-learn/blob/af9d47c5fdaa26aa9a50e0f50cd991cf325f1972/lectures/notes/06_intro-to-transformers.ipynb
+      - source: ubc-dsci575
+        locator: 'Lecture 6: Introduction to self-attention and transformers — 3. Positional embeddings'
+        url: https://github.com/UBC-MDS/DSCI_575_adv-mach-learn/blob/af9d47c5fdaa26aa9a50e0f50cd991cf325f1972/lectures/notes/06_intro-to-transformers.ipynb
+      - source: ubc-dsci575
+        locator: 'Lecture 6: Introduction to self-attention and transformers — 4. Multi-head attention'
+        url: https://github.com/UBC-MDS/DSCI_575_adv-mach-learn/blob/af9d47c5fdaa26aa9a50e0f50cd991cf325f1972/lectures/notes/06_intro-to-transformers.ipynb
+    source:
+      id: ubc-dsci575
+      ref: lectures/notes/07_more-transformers.ipynb#ex7.2
+      url: https://github.com/UBC-MDS/DSCI_575_adv-mach-learn/blob/af9d47c5fdaa26aa9a50e0f50cd991cf325f1972/lectures/notes/07_more-transformers.ipynb
+    status: draft
+  - id: transformers-036
+    type: multiple
+    difficulty: easy
+    tags:
+      - transformer-block
+      - residual-connections
+      - layer-normalization
+    question: Which of these are typical components of a transformer block? Select all that apply.
+    options:
+      - text: A multi-head self-attention layer
+        correct: true
+      - text: A feedforward layer applied to each token separately
+        correct: true
+      - text: Residual connections and layer normalization
+        correct: true
+      - text: A recurrent connection that passes a hidden state from one token to the next
+        why: Transformers eliminate recurrence; tokens interact only through attention, which is what lets them be processed in parallel [^1].
+      - text: A pooling layer that halves the sequence length after each block
+        why: A block keeps one output vector per input token, so blocks can be stacked and every token keeps its own contextual representation [^1].
+    explanation: |
+      A transformer block combines a multi-head self-attention layer, which learns relationships
+      between tokens, a feedforward layer applied independently to each token, residual connections
+      that preserve information and improve gradient flow, and layer normalization that stabilizes
+      training [^1]. Stacking many such blocks refines one contextual representation per token [^1].
+      The same ingredients appear in the library layers for encoders and decoders, decoders adding
+      masking and, in encoder-decoder models, cross-attention [^2].
+    references:
+      - source: ubc-dsci575
+        locator: 'Lecture 6: Introduction to self-attention and transformers — 1.3 The Big Picture: Transformers (Zooming in: the transformer block); 5. Transformer blocks'
+        url: https://github.com/UBC-MDS/DSCI_575_adv-mach-learn/blob/af9d47c5fdaa26aa9a50e0f50cd991cf325f1972/lectures/notes/06_intro-to-transformers.ipynb
+      - source: ubc-dsci575
+        locator: 'Lecture 7: More transformers — Implementing transformer blocks with PyTorch'
+        url: https://github.com/UBC-MDS/DSCI_575_adv-mach-learn/blob/af9d47c5fdaa26aa9a50e0f50cd991cf325f1972/lectures/notes/07_more-transformers.ipynb
+    source:
+      id: ubc-dsci575
+      ref: lectures/notes/07_more-transformers.ipynb#ex7.3
+      url: https://github.com/UBC-MDS/DSCI_575_adv-mach-learn/blob/af9d47c5fdaa26aa9a50e0f50cd991cf325f1972/lectures/notes/07_more-transformers.ipynb
+    status: draft
+  - id: transformers-037
+    type: multiple
+    difficulty: medium
+    tags:
+      - decoder-only
+      - encoder-only
+      - encoder-decoder
+      - masked-language-modeling
+    question: |
+      Which statements about the three families of transformer language models are true? Select all
+      that apply.
+    options:
+      - text: Decoder-only models such as GPT are designed for text generation
+        correct: true
+      - text: Decoder-only models are trained with masked language modeling
+        why: Masked language modeling, predicting hidden tokens from both sides, is how encoder-only models such as BERT are trained; decoder-only models predict the next token [^2].
+      - text: Encoder-only models such as BERT are used for understanding tasks such as classification and named-entity recognition
+        correct: true
+      - text: Decoder-only models are trained to predict the next token
+        correct: true
+      - text: In an encoder-decoder model, the decoder generates each token from the previously generated tokens and the encoder's outputs
+        correct: true
+    explanation: |
+      Decoder-only models (GPT) use causal masking, so each position sees only earlier tokens; they
+      are trained with a cross-entropy loss on the next token and generate text autoregressively [^1].
+      Encoder-only models (BERT, RoBERTa) use bidirectional attention and are trained by masked
+      language modeling, which makes them good at analysing text, for example for classification or
+      named-entity recognition [^2]. Encoder-decoder models (T5, BART) add cross-attention, so the
+      decoder attends to the encoder's outputs while generating, which suits translation and
+      summarization [^3].
+    references:
+      - source: ubc-dsci575
+        locator: 'Lecture 7: More transformers — 1. Decoder-only architecture'
+        url: https://github.com/UBC-MDS/DSCI_575_adv-mach-learn/blob/af9d47c5fdaa26aa9a50e0f50cd991cf325f1972/lectures/notes/07_more-transformers.ipynb
+      - source: ubc-dsci575
+        locator: 'Lecture 7: More transformers — 2. Encoder-only architecture'
+        url: https://github.com/UBC-MDS/DSCI_575_adv-mach-learn/blob/af9d47c5fdaa26aa9a50e0f50cd991cf325f1972/lectures/notes/07_more-transformers.ipynb
+      - source: ubc-dsci575
+        locator: 'Lecture 7: More transformers — 3. Encoder-decoder architecture (high-level)'
+        url: https://github.com/UBC-MDS/DSCI_575_adv-mach-learn/blob/af9d47c5fdaa26aa9a50e0f50cd991cf325f1972/lectures/notes/07_more-transformers.ipynb
+    source:
+      id: ubc-dsci575
+      ref: lectures/notes/08_llms-applications.ipynb#ex7.3
+      url: https://github.com/UBC-MDS/DSCI_575_adv-mach-learn/blob/af9d47c5fdaa26aa9a50e0f50cd991cf325f1972/lectures/notes/08_llms-applications.ipynb
+    status: draft

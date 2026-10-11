@@ -672,3 +672,167 @@ questions:
       ref: chapter_natural-language-processing-pretraining/similarity-analogy#ex2
       url: https://d2l.ai/chapter_natural-language-processing-pretraining/similarity-analogy.html#exercises
     status: draft
+  - id: nonparametric-018
+    type: single
+    difficulty: easy
+    tags:
+      - knn
+      - prediction-cost
+      - lazy-learning
+    question: What is a key limitation of the $k$-nearest-neighbours ($k$-NN) classifier?
+    options:
+      - text: Predictions get slow when the training set is large
+        correct: true
+      - text: It cannot be used for regression, only classification
+        why: $k$-NN regression predicts the average target of the $k$ nearest neighbours [^1].
+      - text: It cannot work with numerical features, only categories
+        why: Numerical features are its natural input, since it compares examples with Euclidean distances [^2].
+      - text: It needs labeled training data to make predictions
+        why: Every supervised learner needs labeled examples, so this does not set $k$-NN apart [^1].
+    explanation: |
+      $k$-NN is a lazy learner: `fit` only stores the training set, and all the work happens at
+      prediction time, when the query is compared with the stored examples to find its nearest
+      neighbours. The course therefore lists "can be VERY slow during prediction time, especially
+      when the training set is very large" as its main con [^1]. Brute-force neighbour search costs
+      time proportional to the number of training examples times the number of features [^3].
+    references:
+      - source: ubc-cpsc330
+        locator: 'Lecture 4: k-Nearest Neighbours and SVM RBFs — Pros and Cons of k-NNs for supervised learning'
+        url: https://github.com/UBC-CS/cpsc330-2025W1/blob/a89d6131a0e2ae5f7ab36f207a3809a5b7137aef/lectures/notes/04_kNNs-SVM-RBF.ipynb
+      - source: ubc-cpsc330
+        locator: 'Lecture 4: k-Nearest Neighbours and SVM RBFs — Distance between feature vectors'
+        url: https://github.com/UBC-CS/cpsc330-2025W1/blob/a89d6131a0e2ae5f7ab36f207a3809a5b7137aef/lectures/notes/04_kNNs-SVM-RBF.ipynb
+      - title: 'scikit-learn User Guide: Nearest Neighbors'
+        locator: Sec. 1.6.4 Nearest Neighbor Algorithms — Choice of Nearest Neighbors Algorithm
+        url: https://scikit-learn.org/stable/modules/neighbors.html#choice-of-nearest-neighbors-algorithm
+    source:
+      id: ubc-cpsc330
+      ref: lectures/tutorials/solutions/midterm_prep.pdf#q6
+      url: https://github.com/UBC-CS/cpsc330-2025W1/blob/a89d6131a0e2ae5f7ab36f207a3809a5b7137aef/lectures/tutorials/solutions/midterm_prep.pdf
+    status: draft
+  - id: nonparametric-019
+    type: single
+    difficulty: medium
+    tags:
+      - knn
+      - prediction-cost
+      - complexity
+    question: |
+      A $k$-NN classifier finds neighbours by brute force: it computes the distance from the query
+      to every training example. Each change below makes its predictions slower. Which one has the
+      smallest effect on prediction time?
+    options:
+      - text: Using more features
+        why: Every one of the $n$ distances gets more expensive, so the cost grows with the number of features [^1].
+      - text: Using more training examples
+        why: Brute force computes one distance per training example, so the cost grows linearly with $n$ [^1].
+      - text: Using a larger value of $k$
+        correct: true
+      - text: Using a costlier distance, such as Mahalanobis instead of Euclidean
+        why: The distance is computed $n$ times per query, so a metric that costs $O(d^2)$ instead of $O(d)$ slows every one of them [^2].
+    explanation: |
+      For each query, brute-force $k$-NN computes $n$ distances in $d$ dimensions, which costs about
+      $O(dn)$, and then picks the $k$ smallest. More examples, more features or a costlier distance
+      all scale the dominant distance computation [^1][^2]. Choosing the $k$ smallest of $n$ numbers
+      is cheap in comparison, and scikit-learn notes that brute-force query time is "largely
+      unaffected by the value of $k$" [^1]. The course's own warning is the same: $k$-NN gets slow
+      at prediction time when the training set is large [^2].
+    references:
+      - title: 'scikit-learn User Guide: Nearest Neighbors'
+        locator: Sec. 1.6.4 Nearest Neighbor Algorithms — Choice of Nearest Neighbors Algorithm
+        url: https://scikit-learn.org/stable/modules/neighbors.html#choice-of-nearest-neighbors-algorithm
+        quote: Brute force query time is largely unaffected by the value of k
+      - source: ubc-cpsc330
+        locator: 'Lecture 4: k-Nearest Neighbours and SVM RBFs — Cons of k-NNs for supervised learning'
+        url: https://github.com/UBC-CS/cpsc330-2025W1/blob/a89d6131a0e2ae5f7ab36f207a3809a5b7137aef/lectures/notes/04_kNNs-SVM-RBF.ipynb
+    source:
+      id: ubc-cpsc330
+      ref: lectures/tutorials/solutions/midterm_prep.pdf#q7
+      url: https://github.com/UBC-CS/cpsc330-2025W1/blob/a89d6131a0e2ae5f7ab36f207a3809a5b7137aef/lectures/tutorials/solutions/midterm_prep.pdf
+    status: draft
+  - id: nonparametric-020
+    type: single
+    difficulty: easy
+    tags:
+      - knn
+      - decision-boundary
+      - hyperparameters
+    question: |
+      The figure shows the decision regions of three $k$-NN classifiers trained on the same data
+      with different values of $k$. Which panel comes from the classifier with the largest $k$?
+    figure:
+      src: ./nonparametric/nonparametric-020.svg
+      alt: Three panels A, B and C with the same blue circles and orange triangles on two features. Panel A has a fairly smooth wavy boundary with a few small islands, panel B has one very smooth gently curved boundary, and panel C has a jagged boundary with many small islands around single points.
+    options:
+      - text: Panel A
+        why: Panel A still has small islands around a few points, so its $k$ is moderate; a larger $k$ smooths these away [^1].
+      - text: Panel B
+        correct: true
+      - text: Panel C
+        why: Islands around single training points are the signature of $k = 1$, the smallest $k$, where each point decides its own neighbourhood [^1].
+    explanation: |
+      With $k = 1$ every training point labels its own small neighbourhood, so the decision
+      boundary wraps around individual (even mislabeled) points and is very jagged. As $k$ grows,
+      each prediction is a vote over more neighbours, so single points lose their influence and the
+      boundary becomes smoother and simpler [^1]. $k$ thus controls the fundamental trade-off: small
+      $k$ overfits, large $k$ underfits [^2]. The smoothest boundary, in panel B, belongs to the
+      largest $k$.
+    references:
+      - source: ubc-cpsc330
+        locator: 'Lecture 4: k-Nearest Neighbours and SVM RBFs — Choosing n_neighbors'
+        url: https://github.com/UBC-CS/cpsc330-2025W1/blob/a89d6131a0e2ae5f7ab36f207a3809a5b7137aef/lectures/notes/04_kNNs-SVM-RBF.ipynb
+      - source: ubc-cpsc330
+        locator: 'Lecture 4: k-Nearest Neighbours and SVM RBFs — Pros of k-NNs for supervised learning'
+        url: https://github.com/UBC-CS/cpsc330-2025W1/blob/a89d6131a0e2ae5f7ab36f207a3809a5b7137aef/lectures/notes/04_kNNs-SVM-RBF.ipynb
+    source:
+      id: ubc-cpsc330
+      ref: lectures/tutorials/solutions/midterm_prep.pdf#q8
+      url: https://github.com/UBC-CS/cpsc330-2025W1/blob/a89d6131a0e2ae5f7ab36f207a3809a5b7137aef/lectures/tutorials/solutions/midterm_prep.pdf
+    status: draft
+  - id: nonparametric-021
+    type: multiple
+    difficulty: medium
+    tags:
+      - knn
+      - euclidean-distance
+      - hyperparameters
+    question: Which statements about $k$-nearest neighbours ($k$-NN) are true? Select all that apply.
+    options:
+      - text: Analogy-based models find the examples in the test set that are most similar to the query
+        why: The neighbours come from the *training* set; the query is the example being predicted [^1].
+      - text: The Euclidean distance between two feature vectors is never negative
+        correct: true
+      - text: With $k$-NN, larger values of $k$ typically reduce the training error
+        why: A larger $k$ averages over more neighbours, which gives a simpler model and usually a *higher* training error; $k = 1$ fits the training set best [^3].
+      - text: Like decision trees, $k$-NN selects a small set of useful features
+        why: $k$-NN uses all features in its distances, each with equal weight; it does not select features [^4].
+      - text: With $k > 1$, the nearest neighbour always contributes the most to the prediction
+        why: By default the $k$ neighbours vote with equal weight; only distance weighting gives closer neighbours more say [^5].
+    explanation: |
+      $k$-NN is analogy-based: to predict a query it finds the most similar *training* examples
+      and lets them vote [^1]. Similarity is usually the Euclidean distance, a square root of a sum
+      of squares, so it is never negative [^2]. $k$ controls the fundamental trade-off: small $k$
+      gives complex, overfit-prone models with low training error, larger $k$ simpler ones [^3].
+      Unlike decision trees, $k$-NN treats all features as equally important [^4], and every one of
+      the $k$ neighbours has one vote unless you ask for distance weighting [^5].
+    references:
+      - source: ubc-cpsc330
+        locator: 'Lecture 4: k-Nearest Neighbours and SVM RBFs — Analogy-based models'
+        url: https://github.com/UBC-CS/cpsc330-2025W1/blob/a89d6131a0e2ae5f7ab36f207a3809a5b7137aef/lectures/notes/04_kNNs-SVM-RBF.ipynb
+      - source: ubc-cpsc330
+        locator: 'Lecture 4: k-Nearest Neighbours and SVM RBFs — Distance between feature vectors (Euclidean distance)'
+        url: https://github.com/UBC-CS/cpsc330-2025W1/blob/a89d6131a0e2ae5f7ab36f207a3809a5b7137aef/lectures/notes/04_kNNs-SVM-RBF.ipynb
+      - source: ubc-cpsc330
+        locator: 'Lecture 4: k-Nearest Neighbours and SVM RBFs — Choosing n_neighbors'
+        url: https://github.com/UBC-CS/cpsc330-2025W1/blob/a89d6131a0e2ae5f7ab36f207a3809a5b7137aef/lectures/notes/04_kNNs-SVM-RBF.ipynb
+      - source: ubc-cpsc330
+        locator: 'Lecture 4: k-Nearest Neighbours and SVM RBFs — Summary'
+        url: https://github.com/UBC-CS/cpsc330-2025W1/blob/a89d6131a0e2ae5f7ab36f207a3809a5b7137aef/lectures/notes/04_kNNs-SVM-RBF.ipynb
+      - source: ubc-cpsc330
+        locator: 'Lecture 4: k-Nearest Neighbours and SVM RBFs — Other useful arguments of KNeighborsClassifier (weights)'
+        url: https://github.com/UBC-CS/cpsc330-2025W1/blob/a89d6131a0e2ae5f7ab36f207a3809a5b7137aef/lectures/notes/04_kNNs-SVM-RBF.ipynb
+    source:
+      id: ubc-cpsc330
+      ref: lectures/notes/04_kNNs-SVM-RBF.ipynb#ex4.1
+      url: https://github.com/UBC-CS/cpsc330-2025W1/blob/a89d6131a0e2ae5f7ab36f207a3809a5b7137aef/lectures/notes/04_kNNs-SVM-RBF.ipynb
+    status: draft
