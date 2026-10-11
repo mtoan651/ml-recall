@@ -9,7 +9,7 @@ versioning: [SemVer](https://semver.org) as defined in [docs/conventions.md](doc
 
 - Practice and timed tests share one question bank: tests now draw from every question of the
   topic or tag, open short answers included (e.g. NumPy: 1 → 64 questions to draw from,
-  Q-learning: 8 → 15). Open answers are typed during the test and self-graded on the results screen
+  Q-learning: 8 → 20). Open answers are typed during the test and self-graded on the results screen
   (**I got it** / **I missed it**), which rescores the test and its history entry.
 - `openstax-intro-stats` is now `reference` and not used: OpenStax moved to CC BY-NC-SA 4.0 and
   forbids ingestion into LLMs/generative AI (July 2026). CLAUDE.md and docs/sources.md say not to
