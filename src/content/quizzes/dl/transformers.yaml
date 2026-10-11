@@ -1605,3 +1605,226 @@ questions:
       ref: extras/solutions/08_pytorch_paper_replicating_exercise_solutions.ipynb#ex1-b
       url: https://github.com/mrdbourke/pytorch-deep-learning/blob/a16552001d963d078390d5bbdfc321e7e7c94bd1/extras/solutions/08_pytorch_paper_replicating_exercise_solutions.ipynb
     status: draft
+  - id: transformers-048
+    type: multiple
+    difficulty: medium
+    tags:
+      - self-attention
+      - rnn
+      - complexity
+      - parallelism
+    question: |
+      A sequence has length $T$. Compare one RNN layer with one self-attention layer, counting only how
+      the cost grows with $T$. Select all statements that are true.
+    options:
+      - text: The RNN's forward pass needs $O(T)$ operations
+        correct: true
+      - text: The self-attention forward pass needs $O(T^2)$ operations, one score per pair of positions
+        correct: true
+      - text: The RNN can process all $T$ positions in parallel, because its weights are shared across time
+        why: Each $h_t$ needs $h_{t-1}$, so the RNN takes $T$ sequential steps; sharing weights does not remove that dependency [^1].
+      - text: Self-attention needs $O(T)$ sequential steps, one per query
+        why: All queries use the same keys and values and do not depend on each other, so they are computed at once; only $O(1)$ sequential steps are needed [^1].
+    explanation: |
+      An RNN does a constant amount of work per step but has to take the $T$ steps one after another
+      [^1]. Self-attention compares every query with every key, $O(T^2)$ work, yet all of it can run in
+      parallel, so with enough parallel hardware a transformer's forward pass is faster [^1][^2]. For
+      very long sequences the quadratic time and memory of attention become the bottleneck, while an
+      RNN keeps a fixed-size state.
+    references:
+      - source: d2l
+        locator: Sec. 11.6.2 Comparing CNNs, RNNs, and Self-Attention
+        url: https://d2l.ai/chapter_attention-mechanisms-and-transformers/self-attention-and-positional-encoding.html#comparing-cnns-rnns-and-self-attention
+      - source: mit-ocw-67960
+        locator: Homework 3, Problem 1(e)–(f)
+        url: https://ocw.mit.edu/courses/6-7960-deep-learning-fall-2024/resources/mit6_7960_f24_hw3_pdf/
+    source:
+      id: mit-ocw-67960
+      ref: mit6_7960_f24_hw3#q1e
+      url: https://ocw.mit.edu/courses/6-7960-deep-learning-fall-2024/resources/mit6_7960_f24_hw3_pdf/
+    status: draft
+  - id: transformers-049
+    type: single
+    difficulty: easy
+    tags:
+      - attention-mask
+      - softmax
+    question: |
+      In self-attention, $A = \mathrm{softmax}(QK^\top / \sqrt{d_k})$ row by row, and token $i$ must not
+      attend to token $j$. What do you do to the score in row $i$, column $j$ so that $A_{ij} = 0$ and
+      every row of $A$ still sums to 1?
+    options:
+      - text: Set it to $-\infty$ before the softmax
+        correct: true
+      - text: Set it to $0$ before the softmax
+        why: A score of 0 still gets the weight $e^0 / \sum_k e^{s_k} > 0$, so token $j$ keeps influencing token $i$.
+      - text: Set $A_{ij}$ to 0 after the softmax
+        why: The row then sums to less than 1 unless it is renormalized, which is what the $-\infty$ score does automatically.
+      - text: Set the value vector of token $j$ to zero instead
+        why: The weight $A_{ij}$ stays positive and its mass is wasted, and the value of token $j$ is still needed by the tokens allowed to see it.
+    explanation: |
+      The softmax maps a score of $-\infty$ (in practice a very large negative number) to zero weight, and the other weights in the row
+      are renormalized among themselves, so they still sum to 1 [^1]. Implementations use a large
+      negative constant such as $-10^6$, whose exponential underflows to 0 [^1]. The same trick builds
+      the causal mask of a decoder and hides padding tokens [^2].
+    references:
+      - source: d2l
+        locator: Sec. 11.3.2.1 Masked Softmax Operation
+        url: https://d2l.ai/chapter_attention-mechanisms-and-transformers/attention-scoring-functions.html#masked-softmax-operation
+      - source: mit-ocw-67960
+        locator: Homework 3, Problem 2(a)
+        url: https://ocw.mit.edu/courses/6-7960-deep-learning-fall-2024/resources/mit6_7960_f24_hw3_pdf/
+    source:
+      id: mit-ocw-67960
+      ref: mit6_7960_f24_hw3#q2a
+      url: https://ocw.mit.edu/courses/6-7960-deep-learning-fall-2024/resources/mit6_7960_f24_hw3_pdf/
+    status: draft
+  - id: transformers-050
+    type: short_answer
+    difficulty: easy
+    tags:
+      - multi-head-attention
+      - parameter-count
+    question: |
+      Multi-head attention concatenates the outputs of $n = 8$ heads, each of dimension $d_k = 64$,
+      and projects the result back to the model dimension $d = 512$:
+      $\mathrm{MultiHead}(x) = \mathrm{Concat}(\mathrm{head}_1, \ldots, \mathrm{head}_8)\, W_O$.
+      How many weights does $W_O$ have (no bias)?
+    answer:
+      numeric: 262144
+      tolerance: 0
+      hint: a whole number
+      model: $W_O \in \mathbb{R}^{(8 \cdot 64) \times 512} = \mathbb{R}^{512 \times 512}$, so $262{,}144$ weights
+    explanation: |
+      The concatenation has $n d_k = 8 \times 64 = 512$ entries per token, and $W_O$ maps them to the
+      model dimension, so it is $512 \times 512$ [^1]. Choosing $d_k = d / n$ is the usual design: the
+      total cost of all heads is then about that of one full-width head, and $W_O$ is square [^2]. Its
+      job is to mix the information the separate heads gathered.
+    references:
+      - source: d2l
+        locator: Sec. 11.5.1 Model
+        url: https://d2l.ai/chapter_attention-mechanisms-and-transformers/multihead-attention.html#model
+      - title: Vaswani et al. (2017), Attention Is All You Need, arXiv:1706.03762
+        locator: Sec. 3.2.2 Multi-Head Attention
+        url: https://arxiv.org/abs/1706.03762
+      - source: mit-ocw-67960
+        locator: Homework 3, Problem 2(b)
+        url: https://ocw.mit.edu/courses/6-7960-deep-learning-fall-2024/resources/mit6_7960_f24_hw3_pdf/
+    source:
+      id: mit-ocw-67960
+      ref: mit6_7960_f24_hw3#q2b
+      url: https://ocw.mit.edu/courses/6-7960-deep-learning-fall-2024/resources/mit6_7960_f24_hw3_pdf/
+    status: draft
+  - id: transformers-051
+    type: single
+    difficulty: medium
+    tags:
+      - vision-transformer
+      - patch-embedding
+      - conv2d
+    question: |
+      A vision transformer turns a $3 \times 32 \times 32$ image into non-overlapping $4 \times 4$
+      patches, flattens each patch and projects it linearly to 128 dimensions. Which single PyTorch
+      layer computes exactly these patch embeddings?
+    options:
+      - text: '`nn.Conv2d(3, 128, kernel_size=4, stride=4)`'
+        correct: true
+      - text: '`nn.Conv2d(3, 128, kernel_size=4, stride=1)`'
+        why: Stride 1 makes the windows overlap and gives a $29 \times 29$ grid, not the $8 \times 8$ grid of separate patches.
+      - text: '`nn.Conv2d(3, 128, kernel_size=8, stride=4)`'
+        why: An $8 \times 8$ kernel with stride 4 reads overlapping $8 \times 8$ windows, not $4 \times 4$ patches.
+      - text: '`nn.Conv2d(48, 128, kernel_size=1)`'
+        why: The image has 3 input channels; a $1 \times 1$ convolution over 48 channels would need the patches cut out and stacked first.
+    explanation: |
+      A convolution whose kernel size and stride both equal the patch size visits each $4 \times 4$
+      patch exactly once and applies the same linear map to its $3 \cdot 4 \cdot 4 = 48$ values [^1].
+      The output is a $128 \times 8 \times 8$ map, i.e. 64 patch tokens of dimension 128, using
+      $48 \times 128 + 128 = 6{,}272$ parameters. Flattening the $8 \times 8$ grid gives the token
+      sequence the transformer reads [^2].
+    references:
+      - source: d2l
+        locator: Sec. 11.8.2 Patch Embedding
+        url: https://d2l.ai/chapter_attention-mechanisms-and-transformers/vision-transformer.html#patch-embedding
+      - source: mit-ocw-67960
+        locator: Homework 3, Problem 3(a)
+        url: https://ocw.mit.edu/courses/6-7960-deep-learning-fall-2024/resources/mit6_7960_f24_hw3_pdf/
+    source:
+      id: mit-ocw-67960
+      ref: mit6_7960_f24_hw3#q3a
+      url: https://ocw.mit.edu/courses/6-7960-deep-learning-fall-2024/resources/mit6_7960_f24_hw3_pdf/
+    status: draft
+  - id: transformers-052
+    type: single
+    difficulty: hard
+    tags:
+      - vision-transformer
+      - positional-embedding
+      - resolution
+    question: |
+      A ViT was pretrained on $224 \times 224$ images with $16 \times 16$ patches and learned position
+      embeddings for its $14 \times 14$ patch grid. You fine-tune it on $384 \times 384$ images with the
+      same patch size, which gives a $24 \times 24$ grid. What do you do with the position embeddings?
+    options:
+      - text: Interpolate them in 2D to the new $24 \times 24$ grid
+        correct: true
+      - text: Keep them unchanged, since attention works for any number of tokens
+        why: Attention does accept more tokens, but there are only 196 learned embeddings and the new grid has 576 positions.
+      - text: Use $27 \times 27$ patches so that the grid stays $14 \times 14$
+        why: The patch-embedding layer was trained on $16 \times 16$ patches; a different patch size changes its input size and its weights no longer fit.
+      - text: Center-crop the images to $224 \times 224$
+        why: This keeps the shapes valid but throws away the extra resolution that was the reason for larger images.
+    explanation: |
+      Learned position embeddings form a grid of vectors tied to patch locations, so a larger grid has
+      positions that were never trained [^1]. The ViT authors resize them by 2D interpolation according
+      to their location in the image; together with the patch extraction, this is the only place where
+      the 2D structure of images is put in by hand [^1]. A CNN needs no such step: its kernels slide over any image size and global pooling
+      removes the dependence on the grid [^2].
+    references:
+      - title: Dosovitskiy et al. (2021), An Image is Worth 16x16 Words, arXiv:2010.11929
+        locator: Sec. 3.2 Fine-tuning and Higher Resolution
+        url: https://arxiv.org/abs/2010.11929
+      - source: mit-ocw-67960
+        locator: Homework 3, Problem 3(e)
+        url: https://ocw.mit.edu/courses/6-7960-deep-learning-fall-2024/resources/mit6_7960_f24_hw3_pdf/
+    source:
+      id: mit-ocw-67960
+      ref: mit6_7960_f24_hw3#q3e-resolution
+      url: https://ocw.mit.edu/courses/6-7960-deep-learning-fall-2024/resources/mit6_7960_f24_hw3_pdf/
+    status: draft
+  - id: transformers-053
+    type: single
+    difficulty: medium
+    tags:
+      - kv-cache
+      - inference
+      - autoregressive-generation
+    question: |
+      A decoder-only transformer generates text one token at a time and uses a KV cache. What does the
+      cache store?
+    options:
+      - text: Keys and values of earlier tokens, for every attention layer
+        correct: true
+      - text: The queries of all earlier tokens, so attention need not recompute them
+        why: An earlier token's query was only needed to compute that token's own output; the new token's output needs only the new query [^1].
+      - text: The attention weight matrices of the earlier steps
+        why: The new token's attention row is new at every step, and the old rows are never needed again.
+      - text: The output logits of the earlier steps
+        why: Old logits were used to pick old tokens and play no further role in later steps.
+    explanation: |
+      With causal attention the keys and values of past tokens never change, so they can be computed
+      once and appended to at each step [^1]. A new step then computes the query, key and value of the
+      new token only, and attends with its query to the cached keys and values, per layer [^1]. This
+      makes the attention cost per generated token linear instead of quadratic in the sequence length,
+      at the price of memory that grows with the context [^1][^2].
+    references:
+      - title: 'Hugging Face Transformers documentation: How caching works'
+        locator: Attention matrices; Cache storage implementation
+        url: https://huggingface.co/docs/transformers/en/cache_explanation
+      - source: mit-ocw-67960
+        locator: Homework 3, Problem 4(i)
+        url: https://ocw.mit.edu/courses/6-7960-deep-learning-fall-2024/resources/mit6_7960_f24_hw3_pdf/
+    source:
+      id: mit-ocw-67960
+      ref: mit6_7960_f24_hw3#q4i
+      url: https://ocw.mit.edu/courses/6-7960-deep-learning-fall-2024/resources/mit6_7960_f24_hw3_pdf/
+    status: draft

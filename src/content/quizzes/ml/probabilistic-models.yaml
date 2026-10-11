@@ -3940,3 +3940,367 @@ questions:
       ref: W3D3_HiddenDynamics/W3D3_Tutorial1#ex1.1
       url: https://github.com/NeuromatchAcademy/course-content/blob/44634e960df7a14cd0bf7398187f2d209d26b0e8/tutorials/W3D3_HiddenDynamics/instructor/W3D3_Tutorial1.ipynb
     status: draft
+  - id: probabilistic-models-100
+    type: short_answer
+    difficulty: easy
+    tags:
+      - bayesian-network
+      - joint-probability
+      - factorization
+    question: |
+      A Bayes net has binary variables M (magic spell), V (viral outbreak), H (hippogriff seen),
+      Z (zombie seen), R (time travelers seen) and edges M → H, M → Z, V → Z, V → R, with
+
+      | $P(M{=}T)$ | $P(V{=}T)$ | $P(H{=}T \mid M{=}F)$ | $P(H{=}T \mid M{=}T)$ | $P(R{=}T \mid V{=}F)$ | $P(R{=}T \mid V{=}T)$ |
+      |---|---|---|---|---|---|
+      | 0.1 | 0.2 | 0.7 | 0.8 | 0.1 | 0.3 |
+
+      | $(M, V)$ | (F, F) | (F, T) | (T, F) | (T, T) |
+      |---|---|---|---|---|
+      | $P(Z{=}T \mid M, V)$ | 0.01 | 0.4 | 0.5 | 0.6 |
+
+      What is $P(M{=}T, H{=}T, Z{=}T, V{=}T, R{=}T)$?
+    answer:
+      numeric: 0.00288
+      tolerance: 0.00001
+      hint: a decimal, 5 decimal places
+      model: $P(M)P(V)P(H \mid M)P(Z \mid M, V)P(R \mid V) = 0.1 \cdot 0.2 \cdot 0.8 \cdot 0.6 \cdot 0.3 = 0.00288$
+    explanation: |
+      A Bayes net factorizes the joint distribution into one conditional probability per node given
+      its parents [^1]. Here $P = P(M)\,P(V)\,P(H \mid M)\,P(Z \mid M, V)\,P(R \mid V)
+      = 0.1 \cdot 0.2 \cdot 0.8 \cdot 0.6 \cdot 0.3 = 0.00288$, read directly off the tables [^2].
+    references:
+      - title: 'Wikipedia: Bayesian network'
+        url: https://en.wikipedia.org/wiki/Bayesian_network#Factorization_definition
+        locator: Factorization definition
+      - source: mit-ocw-6034
+        locator: Quiz 4 (2009), Problem 1 Bayesian Inference, Part A2
+        url: https://ocw.mit.edu/courses/6-034-artificial-intelligence-fall-2010/resources/mit6_034f10_quiz4_2009/
+    source:
+      id: mit-ocw-6034
+      ref: mit6_034f10_quiz4_2009#q1a2
+      url: https://ocw.mit.edu/courses/6-034-artificial-intelligence-fall-2010/resources/mit6_034f10_quiz4_2009/
+    status: draft
+  - id: probabilistic-models-101
+    type: short_answer
+    difficulty: medium
+    tags:
+      - bayesian-network
+      - marginalization
+    question: |
+      In the Bayes net with edges M → H, M → Z, V → Z, V → R, the parameters are $P(M{=}T) = 0.1$,
+      $P(V{=}T) = 0.2$ and
+
+      | $(M, V)$ | (F, F) | (F, T) | (T, F) | (T, T) |
+      |---|---|---|---|---|
+      | $P(Z{=}T \mid M, V)$ | 0.01 | 0.4 | 0.5 | 0.6 |
+
+      What is $P(Z{=}T)$?
+    answer:
+      numeric: 0.1312
+      tolerance: 0.0001
+      hint: a decimal, 4 decimal places
+      model: $0.9 \cdot 0.8 \cdot 0.01 + 0.9 \cdot 0.2 \cdot 0.4 + 0.1 \cdot 0.8 \cdot 0.5 + 0.1 \cdot 0.2 \cdot 0.6 = 0.1312$
+    explanation: |
+      Sum the joint over Z's parents; H and R are not ancestors of Z and sum out to 1 [^1]. Since M and
+      V are independent roots, $P(Z{=}T) = \sum_{m,v} P(m)P(v)P(Z{=}T \mid m, v) = 0.0072 + 0.072 +
+      0.04 + 0.012 = 0.1312$ [^2].
+    references:
+      - title: 'Wikipedia: Bayesian network'
+        url: https://en.wikipedia.org/wiki/Bayesian_network#Inference_and_learning
+        locator: Inference and learning (marginalization)
+      - source: mit-ocw-6034
+        locator: Quiz 4 (2009), Problem 1 Bayesian Inference, Part A4
+        url: https://ocw.mit.edu/courses/6-034-artificial-intelligence-fall-2010/resources/mit6_034f10_quiz4_2009/
+    source:
+      id: mit-ocw-6034
+      ref: mit6_034f10_quiz4_2009#q1a4
+      url: https://ocw.mit.edu/courses/6-034-artificial-intelligence-fall-2010/resources/mit6_034f10_quiz4_2009/
+    status: draft
+  - id: probabilistic-models-102
+    type: short_answer
+    difficulty: medium
+    tags:
+      - bayesian-network
+      - bayes-rule
+      - diagnostic-inference
+    question: |
+      Same net (M → Z ← V, with $P(M{=}T) = 0.1$, $P(V{=}T) = 0.2$ and $P(Z{=}T \mid M, V) = 0.01,
+      0.4, 0.5, 0.6$ for $(M, V) = $ (F, F), (F, T), (T, F), (T, T)). You see a zombie. What is
+      $P(V{=}T \mid Z{=}T)$? Round to 2 decimals.
+    answer:
+      numeric: 0.64
+      tolerance: 0.005
+      hint: a decimal, 2 decimal places
+      model: $P(V, Z) = 0.9 \cdot 0.2 \cdot 0.4 + 0.1 \cdot 0.2 \cdot 0.6 = 0.084$; $0.084 / 0.1312 \approx 0.640$
+    explanation: |
+      By Bayes' rule $P(V \mid Z) = P(V, Z)/P(Z)$ [^1]. $P(V{=}T, Z{=}T)$ sums over M:
+      $0.9 \cdot 0.2 \cdot 0.4 + 0.1 \cdot 0.2 \cdot 0.6 = 0.084$, and $P(Z{=}T) = 0.1312$, so the
+      posterior is $0.084 / 0.1312 \approx 0.64$, up from the prior 0.2 [^2].
+    references:
+      - title: 'Wikipedia: Bayesian network'
+        url: https://en.wikipedia.org/wiki/Bayesian_network#Example
+        locator: Example (computing a posterior by summing out)
+      - source: mit-ocw-6034
+        locator: Quiz 4 (2009), Problem 1 Bayesian Inference, Part A5
+        url: https://ocw.mit.edu/courses/6-034-artificial-intelligence-fall-2010/resources/mit6_034f10_quiz4_2009/
+    source:
+      id: mit-ocw-6034
+      ref: mit6_034f10_quiz4_2009#q1a5
+      url: https://ocw.mit.edu/courses/6-034-artificial-intelligence-fall-2010/resources/mit6_034f10_quiz4_2009/
+    status: draft
+  - id: probabilistic-models-103
+    type: single
+    difficulty: hard
+    tags:
+      - bayesian-network
+      - explaining-away
+      - conditional-independence
+    question: |
+      In the net M → Z ← V ($P(M{=}T) = 0.1$, $P(V{=}T) = 0.2$, $P(Z{=}T \mid M, V) = 0.01, 0.4, 0.5,
+      0.6$ for $(M, V) = $ (F, F), (F, T), (T, F), (T, T)), which ordering is correct?
+    options:
+      - text: $P(V \mid Z) = P(V \mid Z, M{=}T) = P(V \mid Z, M{=}F)$
+        why: M and V are independent a priori, but they become dependent once their common effect Z is observed.
+      - text: $P(V \mid Z, M{=}F) < P(V \mid Z) < P(V \mid Z, M{=}T)$
+        why: Learning that the other cause (magic) is present makes the virus a less needed explanation, not a more likely one.
+      - text: $P(V \mid Z, M{=}T) < P(V \mid Z, M{=}F) < P(V \mid Z)$
+        why: $P(V \mid Z)$ is a weighted average of the two conditional values, so it must lie between them.
+      - text: $P(V \mid Z, M{=}T) < P(V \mid Z) < P(V \mid Z, M{=}F)$
+        correct: true
+    explanation: |
+      With all values for Z = T: $P(V \mid Z, M{=}F) = 0.072/0.0792 \approx 0.91$,
+      $P(V \mid Z) \approx 0.64$ and $P(V \mid Z, M{=}T) = 0.012/0.052 \approx 0.23$. Observing the
+      common effect couples its causes: if magic already explains the zombie, the virus is less
+      likely, and if magic is ruled out, the virus is almost certain [^1][^2]. This is explaining
+      away.
+    references:
+      - title: "Wikipedia: Berkson's paradox"
+        url: https://en.wikipedia.org/wiki/Berkson%27s_paradox
+        locator: Introduction (explaining away)
+      - source: mit-ocw-6034
+        locator: Quiz 4 (2009), Problem 1 Bayesian Inference, Part A6
+        url: https://ocw.mit.edu/courses/6-034-artificial-intelligence-fall-2010/resources/mit6_034f10_quiz4_2009/
+    source:
+      id: mit-ocw-6034
+      ref: mit6_034f10_quiz4_2009#q1a6
+      url: https://ocw.mit.edu/courses/6-034-artificial-intelligence-fall-2010/resources/mit6_034f10_quiz4_2009/
+    status: draft
+  - id: probabilistic-models-104
+    type: short_answer
+    difficulty: medium
+    tags:
+      - naive-bayes
+      - classification
+      - posterior
+    question: |
+      A naive Bayes classifier is trained on a survey of 10 zombies and 20 healthy students (class
+      priors from these counts). Counts of "yes" answers:
+
+      | | W: tattered clothes | S: little sleep | N: out at night | B: eats brains | surveyed |
+      |---|---|---|---|---|---|
+      | Zombie | 6 | 8 | 9 | 9 | 10 |
+      | Healthy | 10 | 15 | 12 | 1 | 20 |
+
+      Eric answers W = yes, S = yes, N = yes, B = no. Using maximum-likelihood estimates (no
+      smoothing), what is $P(\text{zombie} \mid \text{Eric})$? Round to 2 decimals.
+    answer:
+      numeric: 0.09
+      tolerance: 0.005
+      hint: a decimal, 2 decimal places
+      model: Zombie $\tfrac{1}{3} \cdot 0.6 \cdot 0.8 \cdot 0.9 \cdot 0.1 = 0.0144$; healthy $\tfrac{2}{3} \cdot 0.5 \cdot 0.75 \cdot 0.6 \cdot 0.95 = 0.1425$; $0.0144 / 0.1569 \approx 0.09$
+    explanation: |
+      Naive Bayes multiplies the prior by one likelihood per feature, assuming the features are
+      conditionally independent given the class [^1]. "Never eats brains" is decisive: only 1 of 10
+      zombies answers no, against 19 of 20 healthy students. The unnormalized scores are 0.0144 and
+      0.1425, so Eric is classified healthy with $P(\text{zombie}) \approx 0.09$ [^2].
+    references:
+      - title: 'Wikipedia: Naive Bayes classifier'
+        url: https://en.wikipedia.org/wiki/Naive_Bayes_classifier#Constructing_a_classifier_from_the_probability_model
+        locator: Constructing a classifier from the probability model
+      - source: mit-ocw-6034
+        locator: Quiz 4 (2009), Problem 1 Part B Naïve Bayes
+        url: https://ocw.mit.edu/courses/6-034-artificial-intelligence-fall-2010/resources/mit6_034f10_quiz4_2009/
+    source:
+      id: mit-ocw-6034
+      ref: mit6_034f10_quiz4_2009#q1b2
+      url: https://ocw.mit.edu/courses/6-034-artificial-intelligence-fall-2010/resources/mit6_034f10_quiz4_2009/
+    status: draft
+  - id: probabilistic-models-105
+    type: short_answer
+    difficulty: easy
+    tags:
+      - naive-bayes
+      - laplace-smoothing
+    question: |
+      A naive Bayes classifier with binary features has seen 6 training examples of class $y = 0$, of
+      which 2 have $x_3 = 1$. With the Laplace correction (add 1 to each count, 2 to the total), what
+      is the estimate of $P(x_3 = 0 \mid y = 0)$?
+    answer:
+      numeric: 0.625
+      tolerance: 0.001
+      hint: a decimal, 3 decimal places
+      model: $1 - \frac{2 + 1}{6 + 2} = \frac{5}{8} = 0.625$
+    explanation: |
+      Laplace (add-one) smoothing estimates $P(x = 1 \mid y) = (n_1 + 1)/(n + 2)$ for a binary
+      feature, so no probability is ever exactly 0 or 1 [^1][^2]. Here $P(x_3 = 1 \mid y = 0) =
+      3/8$ and $P(x_3 = 0 \mid y = 0) = 5/8 = 0.625$; the raw estimate would have been $4/6$.
+    references:
+      - title: 'Wikipedia: Additive smoothing'
+        url: https://en.wikipedia.org/wiki/Additive_smoothing
+        locator: Introduction (Laplace / add-one smoothing)
+      - source: mit-ocw-6034-s05
+        locator: Quiz 2 (Spring 2005), Problem 5 Naive Bayes
+        url: https://ocw.mit.edu/courses/6-034-artificial-intelligence-spring-2005/resources/q2_soln/
+    source:
+      id: mit-ocw-6034-s05
+      ref: q2_soln#q5
+      url: https://ocw.mit.edu/courses/6-034-artificial-intelligence-spring-2005/resources/q2_soln/
+    status: draft
+  - id: probabilistic-models-106
+    type: single
+    difficulty: hard
+    tags:
+      - bayesian-network
+      - marginalization
+      - variable-elimination
+    question: |
+      Two telescopes measure the number of stars N: measurement $M_1$ depends on N and on whether
+      telescope 1 is out of focus ($F_1$), and likewise $M_2$ on N and $F_2$. The Bayes net has edges
+      N → $M_1$, $F_1$ → $M_1$, N → $M_2$, $F_2$ → $M_2$. Which expression equals $P(M_1, F_1)$ with
+      the sums pushed in as far as possible?
+    options:
+      - text: $\sum_N P(M_1 \mid F_1, N)$
+        why: This drops both priors $P(F_1)$ and $P(N)$ and is not even a probability in general.
+      - text: $P(F_1) \sum_N P(N)\, P(M_1 \mid F_1, N)$
+        correct: true
+      - text: $P(F_1) \sum_N P(N)\, P(M_1 \mid F_1, N) \sum_{F_2} P(F_2) \sum_{M_2} P(M_2 \mid F_2, N) \cdot P(M_2)$
+        why: The inner sums over $M_2$ and $F_2$ equal 1 and drop out; the extra factor $P(M_2)$ is not part of the factorization.
+      - text: $P(F_1)\, P(M_1 \mid F_1)$
+        why: $P(M_1 \mid F_1)$ is not a table of this net; it must be computed by summing over N.
+    explanation: |
+      The joint factorizes as $P(N)P(F_1)P(F_2)P(M_1 \mid F_1, N)P(M_2 \mid F_2, N)$ [^1]. Summing out
+      $M_2$ first gives 1, then $F_2$ gives 1, leaving $P(F_1)\sum_N P(N)P(M_1 \mid F_1, N)$: barren
+      nodes that are not ancestors of the query can simply be removed [^1][^2].
+    references:
+      - title: 'Wikipedia: Bayesian network'
+        url: https://en.wikipedia.org/wiki/Bayesian_network#Inference_and_learning
+        locator: Inference and learning (variable elimination)
+      - source: mit-ocw-16410
+        locator: Final Exam solutions, Problem 5 Probabilistic Inference, Parts 5.B–5.C (model i)
+        url: https://ocw.mit.edu/courses/16-410-principles-of-autonomy-and-decision-making-fall-2010/resources/mit16_410f10_final_sol/
+    source:
+      id: mit-ocw-16410
+      ref: mit16_410f10_final_sol#q5c
+      url: https://ocw.mit.edu/courses/16-410-principles-of-autonomy-and-decision-making-fall-2010/resources/mit16_410f10_final_sol/
+    status: draft
+  - id: probabilistic-models-107
+    type: short_answer
+    difficulty: easy
+    tags:
+      - bayesian-network
+      - parameters
+      - cpt
+    question: |
+      A Bayes net has five binary variables: H and A have no parents, U has parent H, S has parents H
+      and A, and B has parent A. How many independent parameters (CPT entries, not counting the
+      complementary $P(\cdot = F \mid \ldots) = 1 - P(\cdot = T \mid \ldots)$ values) does it need?
+    answer:
+      numeric: 10
+      tolerance: 0
+      hint: a whole number
+      model: $1 + 1 + 2 + 4 + 2 = 10$ (a full joint table would need $2^5 - 1 = 31$)
+    explanation: |
+      A binary node with $k$ binary parents needs one number per parent configuration, $2^k$ in all
+      [^1]. H and A need 1 each, U and B need 2 each, and S needs 4, so the net has 10 parameters
+      instead of the 31 of a full joint table; this saving is the point of the factorization [^2].
+    references:
+      - source: mit-ocw-6034
+        locator: Tutorial 6 notes, Bayes nets — A Matter of Parameters
+        url: https://ocw.mit.edu/courses/6-034-artificial-intelligence-fall-2010/resources/mit6_034f10_tutor06/
+      - title: 'Wikipedia: Bayesian network'
+        url: https://en.wikipedia.org/wiki/Bayesian_network#Factorization_definition
+        locator: Factorization definition
+    source:
+      id: mit-ocw-6034
+      ref: mit6_034f10_tutor06#parameters
+      url: https://ocw.mit.edu/courses/6-034-artificial-intelligence-fall-2010/resources/mit6_034f10_tutor06/
+    status: draft
+  - id: probabilistic-models-108
+    type: single
+    difficulty: medium
+    tags:
+      - naive-bayes
+      - algorithm-choice
+      - online-learning
+    question: |
+      You predict whether customer X will like a book from one million binary features: whether each
+      other customer liked it. Training data keep arriving, and the model must be updated often and
+      cheaply. Which learner fits best?
+    options:
+      - text: k-nearest neighbors
+        why: With a million mostly irrelevant dimensions, distances say little, and every prediction scans the whole training set.
+      - text: An SVM
+        why: A standard SVM has to be retrained from scratch when the data change, which is costly at this scale.
+      - text: Naive Bayes
+        correct: true
+      - text: A decision tree
+        why: Each update may change the best splits, so the tree has to be regrown; deep trees on a million features also overfit easily.
+    explanation: |
+      Naive Bayes only stores per-class counts for each feature, so training is one pass over the data
+      and a new example just increments counts [^1][^2]. It copes well with very many features, the
+      same reason it is popular for text classification, while the alternatives are either slow to
+      update or weak in such high dimension [^1].
+    references:
+      - title: 'Wikipedia: Naive Bayes classifier'
+        url: https://en.wikipedia.org/wiki/Naive_Bayes_classifier
+        locator: Introduction (scalability, linear-time training)
+      - source: mit-ocw-6034-s05
+        locator: Quiz 2 (Spring 2005) solutions, Problem 6 Learning algorithms, part 3
+        url: https://ocw.mit.edu/courses/6-034-artificial-intelligence-spring-2005/resources/q2_soln/
+    source:
+      id: mit-ocw-6034-s05
+      ref: q2_soln#q6.3
+      url: https://ocw.mit.edu/courses/6-034-artificial-intelligence-spring-2005/resources/q2_soln/
+    status: draft
+  - id: probabilistic-models-109
+    type: single
+    difficulty: hard
+    tags:
+      - hmm
+      - forward-backward
+      - posterior
+    question: |
+      An HMM has transitions $a_{p,q}$ and emissions $b_q(o)$. Its forward and backward terms are
+      $\alpha_j(p) = P(x_1, \ldots, x_j, y_j = p)$ and $\beta_j(p) = P(x_{j+1}, \ldots, x_n \mid y_j = p)$.
+      Which expression equals $P(y_2 = 1, y_3 = 2, y_4 = 1 \mid x)$?
+    options:
+      - text: $\alpha_2(1)\,a_{1,2}\,b_2(x_3)\,a_{2,1}\,b_1(x_4)\,\beta_4(1) \,/\, P(x)$
+        correct: true
+      - text: $\alpha_2(1)\,a_{1,2}\,b_2(x_3)\,a_{2,1}\,b_1(x_4)\,\beta_4(1)$
+        why: This is the joint probability $P(x, y_2 = 1, y_3 = 2, y_4 = 1)$; conditioning on $x$ divides by $P(x) = \sum_p \alpha_n(p)$.
+      - text: $\alpha_2(1)\,a_{1,2}\,a_{2,1}\,\beta_4(1) \,/\, P(x)$
+        why: The emissions of $x_3$ and $x_4$ are missing; $\alpha_2$ covers only $x_1, x_2$ and $\beta_4$ only $x_5, \ldots, x_n$.
+      - text: $\alpha_2(1)\,\alpha_3(2)\,\alpha_4(1) \,/\, P(x)$
+        why: Each forward term includes all earlier observations, so this counts $x_1, x_2$ three times and ignores the transitions.
+    explanation: |
+      Split the sequence into three parts: $\alpha_2(1)$ covers $x_1, x_2$ ending in state 1; the middle
+      path contributes the transitions $a_{1,2}, a_{2,1}$ and the emissions $b_2(x_3), b_1(x_4)$; and
+      $\beta_4(1)$ covers $x_5, \ldots, x_n$ from state 1 [^1]. Their product is the joint probability with
+      $x$, and dividing by $P(x) = \sum_p \alpha_n(p)$ gives the posterior [^1]. The two-state case of the
+      same formula gives the pair posteriors that the Baum–Welch E-step uses [^2].
+    references:
+      - title: 'Wikipedia: Forward–backward algorithm'
+        locator: Overview; Forward probabilities; Backward probabilities
+        url: https://en.wikipedia.org/wiki/Forward%E2%80%93backward_algorithm
+      - title: 'Wikipedia: Baum–Welch algorithm'
+        locator: Description — Update (the quantities γ and ξ)
+        url: https://en.wikipedia.org/wiki/Baum%E2%80%93Welch_algorithm
+      - source: mit-ocw-6864
+        locator: Problem Set 2, Question 5(a)
+        url: https://ocw.mit.edu/courses/6-864-advanced-natural-language-processing-fall-2005/resources/hw2/
+    source:
+      id: mit-ocw-6864
+      ref: hw2#q5a
+      url: https://ocw.mit.edu/courses/6-864-advanced-natural-language-processing-fall-2005/resources/hw2/
+    status: draft

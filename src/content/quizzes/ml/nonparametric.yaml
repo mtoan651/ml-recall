@@ -979,3 +979,215 @@ questions:
       ref: classification_machinelearning#q3
       url: https://github.com/galaxyproject/training-material/blob/917e68d1d61c2915c7a970d75468b8494be90c0d/topics/statistics/tutorials/classification_machinelearning/tutorial.md
     status: draft
+  - id: nonparametric-026
+    type: single
+    difficulty: easy
+    tags:
+      - knn
+      - classification
+    question: |
+      Training data: negatives $(-1, 0)$, $(2, 1)$, $(2, -2)$; positives $(0, 0)$, $(1, 0)$. With
+      Euclidean distance, how do 1-NN and 3-NN classify the new point $(1, -1.01)$?
+    options:
+      - text: 1-NN negative, 3-NN positive
+        why: The single nearest point is $(1, 0)$ at distance 1.01, which is positive.
+      - text: 1-NN negative, 3-NN negative
+        why: Both the nearest neighbor and the majority of the three nearest are positive.
+      - text: 1-NN positive, 3-NN positive
+        correct: true
+      - text: 1-NN positive, 3-NN negative
+        why: The three nearest are $(1, 0)$+, $(2, -2)$− and $(0, 0)$+, so the vote is 2 to 1 for positive.
+    explanation: |
+      The distances are 1.01 to $(1, 0)$, about 1.41 to $(2, -2)$ and about 1.42 to $(0, 0)$, with the
+      other two points farther away [^1]. 1-NN copies the label of $(1, 0)$; 3-NN takes a majority
+      vote of $\{+, -, +\}$. Both say positive, although the second neighbor alone is negative [^2].
+    references:
+      - title: 'Wikipedia: k-nearest neighbors algorithm'
+        url: https://en.wikipedia.org/wiki/K-nearest_neighbors_algorithm#Algorithm
+        locator: Algorithm
+      - source: mit-ocw-6034-s05
+        locator: Quiz 2 (Spring 2005) solutions, Problem 2 Nearest Neighbors
+        url: https://ocw.mit.edu/courses/6-034-artificial-intelligence-spring-2005/resources/q2_soln/
+    source:
+      id: mit-ocw-6034-s05
+      ref: q2_soln#q2
+      url: https://ocw.mit.edu/courses/6-034-artificial-intelligence-spring-2005/resources/q2_soln/
+    status: draft
+  - id: nonparametric-027
+    type: short_answer
+    difficulty: medium
+    tags:
+      - knn
+      - cross-validation
+      - leave-one-out
+    question: |
+      One-dimensional data: class O at $f = 1, 2, 7, 10, 11$ and class X at $f = 3, 6, 6$ (two X
+      points share $f = 6$). Run 8-fold (leave-one-out) cross-validation of 1-NN, breaking distance
+      ties in favor of the point on the left. What accuracy is predicted? Give a fraction between 0
+      and 1.
+    answer:
+      numeric: 0.75
+      tolerance: 0.001
+      hint: a decimal between 0 and 1
+      model: 'Wrong only for 3 (nearest 2 is O) and 7 (nearest 6 is X): 6 of 8 = 0.75'
+    explanation: |
+      Each point is classified by its nearest other point [^1]. 1 → 2 (O, right), 2 → 1 (tie with 3,
+      left wins; O, right), 3 → 2 (O, wrong), each 6 → the other 6 (X, right), 7 → 6 (X, wrong),
+      10 ↔ 11 (O, right). That is 6 correct out of 8, an estimated accuracy of 75% [^2].
+    references:
+      - title: 'Wikipedia: Cross-validation (statistics)'
+        url: https://en.wikipedia.org/wiki/Cross-validation_(statistics)#Leave-one-out_cross-validation
+        locator: Leave-one-out cross-validation
+      - source: mit-ocw-6034-s05
+        locator: Quiz 2 review solutions, Problem 1 Classification, Part A3
+        url: https://ocw.mit.edu/courses/6-034-artificial-intelligence-spring-2005/resources/quiz2_review_sol/
+    source:
+      id: mit-ocw-6034-s05
+      ref: quiz2_review_sol#q1a3
+      url: https://ocw.mit.edu/courses/6-034-artificial-intelligence-spring-2005/resources/quiz2_review_sol/
+    status: draft
+  - id: nonparametric-028
+    type: single
+    difficulty: hard
+    tags:
+      - knn
+      - voronoi
+      - condensed-nearest-neighbor
+    question: |
+      To speed up a two-class 1-nearest-neighbor classifier you remove "redundant" training points,
+      whose removal changes the prediction for no possible query. Which condition makes a point
+      redundant?
+    options:
+      - text: Its Voronoi cell borders only cells of its own class
+        correct: true
+      - text: It is farther than average from the training points of the other class
+        why: Distance on average says nothing about whether its cell touches the decision boundary somewhere.
+      - text: Its own nearest neighbor has the same class
+        why: Its cell can still border a cell of the other class elsewhere, and removing it would move that part of the boundary.
+      - text: It lies inside the convex hull of its own class
+        why: Points of the other class can lie inside that hull too, so the cell may still touch them.
+    explanation: |
+      1-NN partitions the plane into Voronoi cells, and the decision boundary consists of the cell
+      walls between points of different classes [^1]. If every neighboring cell has the same class,
+      deleting the point only redistributes its cell among same-class neighbors, so no prediction
+      changes; this is the idea behind condensed nearest neighbor editing [^2].
+    references:
+      - title: 'Wikipedia: k-nearest neighbors algorithm'
+        url: https://en.wikipedia.org/wiki/K-nearest_neighbors_algorithm#Decision_boundary
+        locator: Decision boundary
+      - source: mit-ocw-6034-s05
+        locator: Quiz 2 review solutions, Problem 4 Learning, Part A
+        url: https://ocw.mit.edu/courses/6-034-artificial-intelligence-spring-2005/resources/quiz2_review_sol/
+    source:
+      id: mit-ocw-6034-s05
+      ref: quiz2_review_sol#q4a-learning
+      url: https://ocw.mit.edu/courses/6-034-artificial-intelligence-spring-2005/resources/quiz2_review_sol/
+    status: draft
+  - id: nonparametric-029
+    type: single
+    difficulty: medium
+    tags:
+      - knn
+      - algorithm-choice
+      - scalability
+    question: |
+      You have about one million labeled examples in a 6-dimensional feature space and expect to
+      classify only about 100 new points. Which learner is the most sensible default?
+    options:
+      - text: Naive Bayes
+        why: It is cheap, but its independence assumption usually makes it less accurate than kNN in a dense, low-dimensional space.
+      - text: An SVM with an RBF kernel
+        why: Kernel SVM training scales badly with a million examples, and the cost is not repaid by only 100 predictions.
+      - text: A neural network trained by backpropagation
+        why: Many passes over a million examples are expensive; training cost dominates for so few queries.
+      - text: k-nearest neighbors
+        correct: true
+    explanation: |
+      kNN has essentially no training cost and works well when the dimension is low and data are
+      plentiful [^1]. Its weakness, slow prediction, hardly matters for 100 queries, and in 6
+      dimensions a k-d tree can speed up the search further [^2].
+    references:
+      - source: mit-ocw-6034-s05
+        locator: Quiz 2 (Spring 2005) solutions, Problem 6 Learning algorithms, part 1
+        url: https://ocw.mit.edu/courses/6-034-artificial-intelligence-spring-2005/resources/q2_soln/
+      - title: 'Wikipedia: k-nearest neighbors algorithm'
+        url: https://en.wikipedia.org/wiki/K-nearest_neighbors_algorithm#Algorithm
+        locator: Algorithm (lazy learning; search structures)
+    source:
+      id: mit-ocw-6034-s05
+      ref: q2_soln#q6.1
+      url: https://ocw.mit.edu/courses/6-034-artificial-intelligence-spring-2005/resources/q2_soln/
+    status: draft
+  - id: nonparametric-030
+    type: single
+    difficulty: medium
+    tags:
+      - knn
+      - curse-of-dimensionality
+      - feature-selection
+    question: |
+      A spam filter represents each email as a vector of word counts over the whole vocabulary (tens
+      of thousands of features, most irrelevant). Why is a decision tree likely to beat 1-nearest
+      neighbor here?
+    options:
+      - text: Decision trees cannot overfit, while nearest neighbor always overfits
+        why: Unpruned trees overfit easily too; the issue is which features drive the decision.
+      - text: Nearest neighbor cannot handle count-valued features, only binary ones
+        why: Distances work on counts just fine; the problem is that thousands of irrelevant counts swamp them.
+      - text: The tree needs no training data, while nearest neighbor stores all of it
+        why: Trees are learned from the training data; storing the data is NN's prediction-time cost, not its accuracy problem.
+      - text: Trees pick informative words; NN distance is swamped by irrelevant words
+        correct: true
+    explanation: |
+      In high dimension with many irrelevant features, Euclidean distance is mostly noise, so the
+      "nearest" email need not be similar in the words that matter [^1][^2]. A decision tree chooses
+      the words with the best splits and ignores the rest, and it also predicts far faster than
+      comparing against every stored email; naive Bayes is a strong third option for text [^2].
+    references:
+      - title: 'Wikipedia: Curse of dimensionality'
+        url: https://en.wikipedia.org/wiki/Curse_of_dimensionality#Distance_function
+        locator: Distance function
+      - source: mit-ocw-6034-s05
+        locator: Quiz 2 review solutions, Problem 3 Spaminator, Part A
+        url: https://ocw.mit.edu/courses/6-034-artificial-intelligence-spring-2005/resources/quiz2_review_sol/
+    source:
+      id: mit-ocw-6034-s05
+      ref: quiz2_review_sol#q3a-spam
+      url: https://ocw.mit.edu/courses/6-034-artificial-intelligence-spring-2005/resources/quiz2_review_sol/
+    status: draft
+  - id: nonparametric-031
+    type: single
+    difficulty: easy
+    tags:
+      - knn
+      - choice-of-k
+      - underfitting
+    question: |
+      A kNN classifier with plain majority voting is trained on $N$ labeled points. What happens if
+      you set $k = N$?
+    options:
+      - text: The decision boundary becomes the Voronoi diagram of the training points
+        why: The Voronoi boundary belongs to 1-NN; with $k = N$ there is no boundary at all.
+      - text: The prediction becomes undefined because of ties
+        why: Ties only arise if the classes are exactly balanced; otherwise the majority class wins everywhere.
+      - text: Every query gets the majority class of the training set
+        correct: true
+      - text: The classifier memorizes the training set exactly, as with $k = 1$
+        why: That is the $k = 1$ extreme; with $k = N$ every point votes on every query.
+    explanation: |
+      Small $k$ follows every noisy point (overfitting), while large $k$ averages over more and more
+      distant points [^1]. At $k = N$ all training points vote for every query, so the classifier
+      ignores the input and always predicts the majority class, the extreme of underfitting; $k$ is
+      usually chosen by cross-validation in between [^1][^2].
+    references:
+      - title: 'Wikipedia: k-nearest neighbors algorithm'
+        url: https://en.wikipedia.org/wiki/K-nearest_neighbors_algorithm#Parameter_selection
+        locator: Parameter selection
+      - source: mit-ocw-6034
+        locator: Quiz 3 (2010), Problem 1 Learning, Part A2 More KNN
+        url: https://ocw.mit.edu/courses/6-034-artificial-intelligence-fall-2010/resources/mit6_034f10_quiz3_2010/
+    source:
+      id: mit-ocw-6034
+      ref: mit6_034f10_quiz3_2010#q1a2
+      url: https://ocw.mit.edu/courses/6-034-artificial-intelligence-fall-2010/resources/mit6_034f10_quiz3_2010/
+    status: draft

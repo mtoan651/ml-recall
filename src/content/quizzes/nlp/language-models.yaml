@@ -1194,3 +1194,258 @@ questions:
       ref: genomic-llm-sequence-generation#q2
       url: https://github.com/galaxyproject/training-material/blob/917e68d1d61c2915c7a970d75468b8494be90c0d/topics/statistics/tutorials/genomic-llm-sequence-generation/tutorial.md
     status: draft
+  - id: language-models-034
+    type: single
+    difficulty: easy
+    tags:
+      - autoregressive-generation
+      - inference
+      - teacher-forcing
+    question: |
+      Training a GPT-style model on a sequence of $T$ tokens takes one forward pass, but greedily
+      generating $T$ new tokens takes much longer. Why?
+    options:
+      - text: Tokens are produced one at a time, each needing its own forward pass
+        correct: true
+      - text: Generation also computes gradients, which doubles the work per token
+        why: Generation is inference only; no gradients are computed.
+      - text: The causal mask is switched off during generation, so attention costs more
+        why: Generation uses the same causal attention; the mask is not the issue.
+      - text: Greedy decoding scores every possible sequence of $T$ tokens before choosing
+        why: That would be exhaustive search; greedy decoding picks the single most likely token at each step.
+    explanation: |
+      During training the whole target text is known, so the causal mask lets one forward pass produce
+      all $T$ next-token predictions in parallel [^1]. During generation the token at step $t$ does not
+      exist until step $t - 1$ has been decoded, so the model must run $T$ sequential passes [^2]. Key–value
+      caching makes each pass cheaper but cannot remove this sequential dependency.
+    references:
+      - source: d2l
+        locator: Sec. 11.9.3 Decoder-Only
+        url: https://d2l.ai/chapter_attention-mechanisms-and-transformers/large-pretraining-transformers.html#decoder-only
+      - source: d2l
+        locator: Sec. 9.5.5 Decoding
+        url: https://d2l.ai/chapter_recurrent-neural-networks/rnn-scratch.html#decoding
+      - source: mit-ocw-67960
+        locator: Homework 3, Problem 4(e)
+        url: https://ocw.mit.edu/courses/6-7960-deep-learning-fall-2024/resources/mit6_7960_f24_hw3_pdf/
+    source:
+      id: mit-ocw-67960
+      ref: mit6_7960_f24_hw3#q4e
+      url: https://ocw.mit.edu/courses/6-7960-deep-learning-fall-2024/resources/mit6_7960_f24_hw3_pdf/
+    status: draft
+  - id: language-models-035
+    type: short_answer
+    difficulty: medium
+    tags:
+      - nucleus-sampling
+      - top-p
+      - decoding
+    question: |
+      A language model gives the next-token probabilities $(0.5, 0.2, 0.15, 0.1, 0.05)$. Nucleus
+      (top-$p$) sampling with $p = 0.8$ keeps the smallest set of most likely tokens whose probabilities
+      add up to at least $p$, renormalizes, and samples. With what probability is the most likely token
+      chosen?
+    answer:
+      numeric: 0.588
+      tolerance: 0.002
+      hint: a probability, 3 decimals
+      model: The nucleus is the top three tokens ($0.5 + 0.2 + 0.15 = 0.85 \ge 0.8$), so $0.5 / 0.85 \approx 0.588$
+    explanation: |
+      The cumulative sums are 0.5, 0.7 and 0.85, so the first three tokens form the nucleus and the
+      remaining 0.15 of probability mass is cut off [^1]. Renormalizing gives $0.5 / 0.85 \approx 0.588$
+      for the top token. Unlike greedy decoding it can still pick less likely words, which avoids
+      repetitive text, and unlike plain sampling it never picks words from the unreliable tail [^1].
+      The nucleus grows when the model is unsure and shrinks when it is confident [^2].
+    references:
+      - title: Holtzman et al. (2020), The Curious Case of Neural Text Degeneration, arXiv:1904.09751
+        locator: Sec. 3.1 Nucleus Sampling
+        url: https://arxiv.org/abs/1904.09751
+      - source: mit-ocw-67960
+        locator: Homework 3, Problem 4(h)
+        url: https://ocw.mit.edu/courses/6-7960-deep-learning-fall-2024/resources/mit6_7960_f24_hw3_pdf/
+    source:
+      id: mit-ocw-67960
+      ref: mit6_7960_f24_hw3#q4h
+      url: https://ocw.mit.edu/courses/6-7960-deep-learning-fall-2024/resources/mit6_7960_f24_hw3_pdf/
+    status: draft
+  - id: language-models-036
+    type: short_answer
+    difficulty: medium
+    tags:
+      - smoothing
+      - absolute-discounting
+      - n-gram
+    question: |
+      After a context $w$, a corpus shows $N = 10$ following tokens of three word types, with counts
+      5, 3 and 2. The vocabulary has $V = 10$ words, so 7 types never followed $w$. Absolute discounting
+      with $\delta = 0.5$ subtracts $\delta$ from every non-zero count, gives seen words
+      $(r - \delta)/N$, and shares the freed probability mass equally among the unseen types. What is the
+      probability of each unseen word?
+    answer:
+      numeric: 0.0214
+      tolerance: 0.0005
+      hint: a probability, 3 significant digits
+      model: Freed mass $3 \times 0.5 / 10 = 0.15$, shared by 7 unseen words, $0.15 / 7 \approx 0.0214$
+    explanation: |
+      The seen words get $4.5/10$, $2.5/10$ and $1.5/10$, which sum to 0.85, so the three discounts
+      freed $3 \times 0.5 / 10 = 0.15$ [^1]. Split over the $N_0 = 7$ unseen types that is about 0.0214 each,
+      and the distribution sums to 1 again. Kneser–Ney smoothing builds on the same absolute discount
+      but shares the freed mass in proportion to a lower-order distribution instead of equally [^2].
+    references:
+      - source: mit-ocw-6864
+        locator: Problem Set 2, Question 1 (absolute discounting)
+        url: https://ocw.mit.edu/courses/6-864-advanced-natural-language-processing-fall-2005/resources/hw2/
+      - title: 'Wikipedia: Kneser–Ney smoothing'
+        locator: Introduction; Method (absolute-discounting interpolation)
+        url: https://en.wikipedia.org/wiki/Kneser%E2%80%93Ney_smoothing
+    source:
+      id: mit-ocw-6864
+      ref: hw2#q1a
+      url: https://ocw.mit.edu/courses/6-864-advanced-natural-language-processing-fall-2005/resources/hw2/
+    status: draft
+  - id: language-models-037
+    type: single
+    difficulty: medium
+    tags:
+      - smoothing
+      - linear-discounting
+      - absolute-discounting
+    question: |
+      Two smoothing methods take probability mass from seen words: absolute discounting subtracts a
+      constant $\delta$ from every non-zero count, and linear discounting multiplies every seen word's
+      probability by $1 - \alpha$. How much probability does a word seen $r$ times (out of $N$) lose?
+    options:
+      - text: $\delta / N$ under absolute and $\alpha r / N$ under linear discounting
+        correct: true
+      - text: $\alpha r / N$ under absolute and $\delta / N$ under linear discounting
+        why: The roles are swapped; subtracting a constant count removes the same $\delta/N$ from every seen word.
+      - text: The same amount $\delta / N$ under both methods
+        why: Linear discounting removes a fixed fraction, so frequent words give up more probability than rare ones.
+      - text: Nothing; both only add probability to unseen words
+        why: The total must stay 1, so the mass given to unseen words has to come from the seen ones.
+    explanation: |
+      Under absolute discounting $P = (r - \delta)/N$, so each seen word gives up $\delta/N$ whatever its
+      count [^1]. Under linear discounting $P = (1 - \alpha)r/N$, a loss of $\alpha r/N$ that grows with
+      $r$, so frequent and reliable estimates are discounted most [^1]. Absolute discounting matches
+      observed count statistics better and is the basis of Kneser–Ney smoothing [^2].
+    references:
+      - source: mit-ocw-6864
+        locator: Problem Set 2, Question 1
+        url: https://ocw.mit.edu/courses/6-864-advanced-natural-language-processing-fall-2005/resources/hw2/
+      - title: 'Wikipedia: Kneser–Ney smoothing'
+        locator: Introduction; Method
+        url: https://en.wikipedia.org/wiki/Kneser%E2%80%93Ney_smoothing
+    source:
+      id: mit-ocw-6864
+      ref: hw2#q1b
+      url: https://ocw.mit.edu/courses/6-864-advanced-natural-language-processing-fall-2005/resources/hw2/
+    status: draft
+  - id: language-models-038
+    type: short_answer
+    difficulty: medium
+    tags:
+      - smoothing
+      - good-turing
+      - unseen-words
+    question: |
+      A sample of $n = 20$ word tokens contains $N_1 = 6$ word types seen exactly once, and $N_0 = 30$
+      vocabulary words do not occur at all. Good–Turing estimation gives the unseen words the total
+      probability $N_1 / n$, shared equally among them. What probability does each unseen word get?
+    answer:
+      numeric: 0.01
+      tolerance: 0.0005
+      hint: a probability
+      model: $N_1 / (n N_0) = 6 / (20 \times 30) = 0.01$
+    explanation: |
+      Good–Turing estimates the chance that the next token is a new word by the fraction of tokens
+      that were singletons, $N_1 / n = 0.3$ [^1]. Shared among the 30 unseen words, each gets $0.01$. The
+      adjusted counts $r^* = (r + 1)N_{r+1}/N_r$ of the seen words are what make the probabilities sum to
+      1 together with this unseen mass [^1][^2].
+    references:
+      - title: 'Wikipedia: Good–Turing frequency estimation'
+        locator: The method — Calculation
+        url: https://en.wikipedia.org/wiki/Good%E2%80%93Turing_frequency_estimation
+      - source: mit-ocw-6864
+        locator: Problem Set 2, Question 2
+        url: https://ocw.mit.edu/courses/6-864-advanced-natural-language-processing-fall-2005/resources/hw2/
+    source:
+      id: mit-ocw-6864
+      ref: hw2#q2b
+      url: https://ocw.mit.edu/courses/6-864-advanced-natural-language-processing-fall-2005/resources/hw2/
+    status: draft
+  - id: language-models-039
+    type: single
+    difficulty: medium
+    tags:
+      - smoothing
+      - good-turing
+    question: |
+      Good–Turing replaces the count $r$ of a word by $r^* = (r + 1)N_{r+1}/N_r$, where $N_r$ is the number
+      of word types seen exactly $r$ times. What goes wrong if this is applied to the most frequent
+      word of a corpus?
+    options:
+      - text: Its adjusted count is 0, because $N_{r+1} = 0$
+        correct: true
+      - text: Its probability exceeds 1, because $r + 1 > r$
+        why: The factor $N_{r+1}/N_r$ is usually below 1; the real problem is that it can be 0.
+      - text: The formula needs $N_0$, which is unknown for frequent words
+        why: $N_0$ only matters for sharing the unseen mass; the frequent word's estimate uses $N_r$ and $N_{r+1}$.
+      - text: Nothing; Good–Turing is most accurate for frequent words
+        why: For large $r$ the counts $N_r$ are tiny and noisy, so Good–Turing is least reliable there.
+    explanation: |
+      The most frequent word has some count $r$ that no other word exceeds, so $N_{r+1} = 0$ and
+      $r^* = 0$, even though this is the word we know best [^1]. Large counts are reliable as they are,
+      so practical schemes leave them alone or first smooth the $N_r$ values, for example by reading
+      them off a regression line fitted to $\log N_r$ against $\log r$ [^1][^2].
+    references:
+      - title: 'Wikipedia: Good–Turing frequency estimation'
+        locator: The method — Calculation; Smoothing
+        url: https://en.wikipedia.org/wiki/Good%E2%80%93Turing_frequency_estimation
+      - source: mit-ocw-6864
+        locator: Problem Set 2, Question 2.1
+        url: https://ocw.mit.edu/courses/6-864-advanced-natural-language-processing-fall-2005/resources/hw2/
+    source:
+      id: mit-ocw-6864
+      ref: hw2#q2a
+      url: https://ocw.mit.edu/courses/6-864-advanced-natural-language-processing-fall-2005/resources/hw2/
+    status: draft
+  - id: language-models-040
+    type: single
+    difficulty: hard
+    tags:
+      - log-linear-model
+      - bigram
+      - maximum-likelihood
+    question: |
+      A bigram language model $P(w_2 \mid w_1) \propto \exp(\theta \cdot \phi(w_1, w_2))$ has one indicator
+      feature for every word pair $(u, v)$, which is 1 exactly when $w_1 = u$ and $w_2 = v$. It is trained by
+      maximum likelihood without regularization on a corpus in which every possible bigram occurs.
+      What does the trained model predict?
+    options:
+      - text: $P(w_2 \mid w_1) = \mathrm{Count}(w_1, w_2) / \mathrm{Count}(w_1)$, the relative frequency
+        correct: true
+      - text: The add-one smoothed estimate $(\mathrm{Count}(w_1, w_2) + 1)/(\mathrm{Count}(w_1) + \lvert V \rvert)$
+        why: Without a regularizer or prior nothing adds pseudo-counts; the optimum matches the data exactly.
+      - text: The unigram frequency of $w_2$, whatever $w_1$ is
+        why: The features are specific to each pair, so the model can and does condition on $w_1$.
+      - text: A uniform distribution over the vocabulary, because all features have the same form
+        why: The weights are learned from the counts, so frequent bigrams get larger weights.
+    explanation: |
+      The gradient of the log-likelihood is observed feature counts minus expected feature counts [^1].
+      For the feature of pair $(u, v)$ this is $\mathrm{Count}(u, v) - \mathrm{Count}(u)\,P(v \mid u)$, so at
+      the optimum $P(v \mid u) = \mathrm{Count}(u, v)/\mathrm{Count}(u)$ [^2]. With one free weight per pair
+      the log-linear model can represent any conditional distribution, so it reproduces the
+      maximum-likelihood bigram estimate. If some bigram had count 0, its weight would be pushed to
+      $-\infty$, which is why such models need regularization.
+    references:
+      - source: d2l
+        locator: Sec. 4.1.2.2 Softmax and Cross-Entropy Loss, Eq. (4.1.10)
+        url: https://d2l.ai/chapter_linear-classification/softmax-regression.html#softmax-and-cross-entropy-loss
+      - source: mit-ocw-6864
+        locator: Problem Set 3, Question 2
+        url: https://ocw.mit.edu/courses/6-864-advanced-natural-language-processing-fall-2005/resources/hw3/
+    source:
+      id: mit-ocw-6864
+      ref: hw3#q2
+      url: https://ocw.mit.edu/courses/6-864-advanced-natural-language-processing-fall-2005/resources/hw3/
+    status: draft

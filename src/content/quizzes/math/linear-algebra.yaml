@@ -1267,3 +1267,178 @@ questions:
       ref: W1D2_LinearDeepLearning/W1D2_Tutorial3#ex3
       url: https://github.com/NeuromatchAcademy/course-content-dl/blob/caba36c513fb8139ac3c9e7503f7a769dadde25e/tutorials/W1D2_LinearDeepLearning/instructor/W1D2_Tutorial3.ipynb
     status: draft
+  - id: linear-algebra-043
+    type: short_answer
+    difficulty: medium
+    tags:
+      - spectral-norm
+      - random-matrices
+      - initialization
+    question: |
+      You sample a $10{,}000 \times 10{,}000$ matrix whose entries are independent standard normal
+      numbers. Its spectral norm (largest singular value) is approximately $\alpha\, d^{\beta}$ with
+      $d = 10{,}000$. What is its approximate value?
+    answer:
+      numeric: 200
+      tolerance: 10
+      hint: a number, rounded to the nearest 10
+      model: $\approx 2\sqrt{d} = 2 \times 100 = 200$ ($\alpha = 2$, $\beta = 1/2$)
+    explanation: |
+      For an $N \times n$ Gaussian matrix the expected largest singular value is at most
+      $\sqrt{N} + \sqrt{n}$, and for large square matrices it is close to that bound, $2\sqrt{d}$ [^1].
+      Simulations give about 19.6, 40.4 and 80.1 for $d = 100, 400, 1600$, close to $2\sqrt{d}$ [^2]. So
+      although each entry has size about 1, the matrix can stretch a vector by $2\sqrt{d}$. Scaling
+      initial weights by $1/\sqrt{d}$ keeps the spectral norm near 2 whatever the width.
+    references:
+      - title: Vershynin (2010), Introduction to the non-asymptotic analysis of random matrices, arXiv:1011.3027
+        locator: Theorem 5.32 (Gordon's theorem for Gaussian matrices)
+        url: https://arxiv.org/abs/1011.3027
+      - source: mit-ocw-67960
+        locator: Homework 2, Hyperparameter transfer, Problem 6
+        url: https://ocw.mit.edu/courses/6-7960-deep-learning-fall-2024/resources/mit6_7960_f24_hw2_pdf/
+    source:
+      id: mit-ocw-67960
+      ref: mit6_7960_f24_hw2#q6
+      url: https://ocw.mit.edu/courses/6-7960-deep-learning-fall-2024/resources/mit6_7960_f24_hw2_pdf/
+    status: draft
+  - id: linear-algebra-044
+    type: single
+    difficulty: medium
+    tags:
+      - power-iteration
+      - spectral-norm
+      - eigenvalues
+    question: |
+      To estimate the spectral norm of $A$, you run power iteration on $AA^\top$: draw a random $v$,
+      compute $u = (AA^\top)^{10} v$, and report $\sqrt{\lVert AA^\top u \rVert_2 / \lVert u \rVert_2}$.
+      How does this estimate compare with the true spectral norm $\sigma_{\max}(A)$?
+    options:
+      - text: It is never larger than $\sigma_{\max}(A)$
+        correct: true
+      - text: It is never smaller than $\sigma_{\max}(A)$
+        why: For any vector $u$, $\lVert AA^\top u \rVert_2 \le \lambda_{\max}(AA^\top)\lVert u \rVert_2$, so the ratio cannot exceed the top eigenvalue.
+      - text: It can be either larger or smaller, depending on the random start
+        why: The start only changes how close the estimate gets; the ratio is bounded above by $\lambda_{\max}(AA^\top)$ for every $u$.
+      - text: It equals $\sigma_{\max}(A)$ exactly after 10 steps
+        why: Other eigencomponents shrink only geometrically, by the ratio of eigenvalues per step, so after 10 steps some remain.
+    explanation: |
+      $AA^\top$ is symmetric positive semidefinite with largest eigenvalue $\sigma_{\max}(A)^2$, and for
+      any $u$, $\lVert AA^\top u \rVert_2 \le \sigma_{\max}^2 \lVert u \rVert_2$ [^1]. The estimate
+      therefore approaches the true value from below as the top eigenvector dominates $u$ [^2]. For a
+      random $300 \times 300$ Gaussian matrix, 10 steps give about 32.8 against a true 34.1. Each
+      step costs only matrix–vector products, much cheaper than a full SVD.
+    references:
+      - title: 'Wikipedia: Power iteration'
+        locator: The method; Analysis
+        url: https://en.wikipedia.org/wiki/Power_iteration
+      - source: mit-ocw-67960
+        locator: Homework 2, Hyperparameter transfer, Problem 8
+        url: https://ocw.mit.edu/courses/6-7960-deep-learning-fall-2024/resources/mit6_7960_f24_hw2_pdf/
+    source:
+      id: mit-ocw-67960
+      ref: mit6_7960_f24_hw2#q8
+      url: https://ocw.mit.edu/courses/6-7960-deep-learning-fall-2024/resources/mit6_7960_f24_hw2_pdf/
+    status: draft
+  - id: linear-algebra-045
+    type: short_answer
+    difficulty: easy
+    tags:
+      - cosine-similarity
+      - unit-sphere
+      - euclidean-distance
+    question: |
+      Two unit vectors $u, v$ have cosine similarity $u^\top v = 0.68$. What is their Euclidean distance
+      $\lVert u - v \rVert_2$?
+    answer:
+      numeric: 0.8
+      tolerance: 0.001
+      hint: a number
+      model: $\lVert u - v \rVert_2^2 = 2 - 2u^\top v = 0.64$, so the distance is $0.8$
+    explanation: |
+      $\lVert u - v \rVert_2^2 = \lVert u \rVert^2 - 2u^\top v + \lVert v \rVert^2$, which is
+      $2 - 2u^\top v$ for unit vectors [^1]. Here that is $2 - 1.36 = 0.64$, so the distance is 0.8. On
+      the sphere, ranking by cosine similarity and ranking by distance are therefore the same, which
+      is why contrastive losses on normalized features can be read as pulling positives close and
+      pushing negatives far [^2].
+    references:
+      - title: 'Wikipedia: Cosine similarity'
+        locator: Properties (relation to Euclidean distance)
+        url: https://en.wikipedia.org/wiki/Cosine_similarity
+      - source: mit-ocw-67960
+        locator: Homework 4, Problem 3
+        url: https://ocw.mit.edu/courses/6-7960-deep-learning-fall-2024/resources/mit6_7960_f24_hw4_pdf/
+    source:
+      id: mit-ocw-67960
+      ref: mit6_7960_f24_hw4#q3
+      url: https://ocw.mit.edu/courses/6-7960-deep-learning-fall-2024/resources/mit6_7960_f24_hw4_pdf/
+    status: draft
+  - id: linear-algebra-046
+    type: short_answer
+    difficulty: medium
+    tags:
+      - svd
+      - singular-values
+    question: What is the largest singular value $\sigma_1$ of $A = \begin{bmatrix} 3 & 4 \\ 0 & 5 \end{bmatrix}$?
+    answer:
+      numeric: 6.708
+      tolerance: 0.002
+      hint: a number, 3 decimals
+      model: $A^\top A = \begin{bmatrix} 9 & 12 \\ 12 & 41 \end{bmatrix}$ has eigenvalues 45 and 5, so $\sigma_1 = \sqrt{45} = 3\sqrt5 \approx 6.708$
+    explanation: |
+      The singular values of $A$ are the square roots of the eigenvalues of $A^\top A$ [^1]. Here
+      $A^\top A$ has trace 50 and determinant 225, so its eigenvalues are 45 and 5, and
+      $\sigma_1 = 3\sqrt5 \approx 6.708$, $\sigma_2 = \sqrt5 \approx 2.236$. A quick check: $\sigma_1\sigma_2 = 15 = \lvert\det A\rvert$.
+      Note that $\sigma_1$ is larger than both eigenvalues of $A$ (3 and 5): for a non-symmetric matrix
+      the eigenvalues do not give the stretching factors [^2].
+    references:
+      - title: 'Wikipedia: Singular value decomposition'
+        locator: SVD and spectral decomposition — Relation to eigenvalue decomposition
+        url: https://en.wikipedia.org/wiki/Singular_value_decomposition
+      - source: mit-ocw-18065
+        locator: Problems for Lecture 6 (textbook Section I.8), Problem 6
+        url: https://ocw.mit.edu/courses/18-065-matrix-methods-in-data-analysis-signal-processing-and-machine-learning-spring-2018/resources/18065-all-problem-sets-in-one-file/
+    source:
+      id: mit-ocw-18065
+      ref: MIT18_065S18PSets#lec6-q6
+      url: https://ocw.mit.edu/courses/18-065-matrix-methods-in-data-analysis-signal-processing-and-machine-learning-spring-2018/resources/18065-all-problem-sets-in-one-file/
+    status: draft
+  - id: linear-algebra-047
+    type: single
+    difficulty: medium
+    tags:
+      - matrix-multiplication
+      - computational-cost
+      - associativity
+    question: |
+      $A$ is a $1000 \times 10$ matrix. You need $A A^\top A$ and can compute it as $A(A^\top A)$ or as
+      $(AA^\top)A$. Counting scalar multiplications, which is cheaper?
+    options:
+      - text: $A(A^\top A)$, about $2 \cdot 10^5$ against $2 \cdot 10^7$ multiplications
+        correct: true
+      - text: $(AA^\top)A$, about $2 \cdot 10^5$ against $2 \cdot 10^7$ multiplications
+        why: $AA^\top$ is $1000 \times 1000$; forming it alone takes $10^7$ multiplications.
+      - text: Both cost the same, since matrix multiplication is associative
+        why: Associativity guarantees the same result, not the same cost; the size of the intermediate matrix decides the cost.
+      - text: $A(A^\top A)$, but only because $A^\top A$ is symmetric
+        why: Symmetry could save at most half of one product; the big saving is the $10 \times 10$ instead of $1000 \times 1000$ intermediate.
+    explanation: |
+      For $A$ of size $m \times n$ with $m = 1000 > n = 10$, $A^\top A$ costs $mn^2 = 10^5$ multiplications and
+      $A(A^\top A)$ another $mn^2$, while $AA^\top$ and $(AA^\top)A$ cost $m^2 n = 10^7$ each [^1]. Choosing
+      the order of a matrix chain by the sizes of the intermediates is the matrix-chain problem [^2].
+      Backpropagation applies the same idea to a chain of Jacobians: for a scalar loss, multiplying from
+      the output side keeps every intermediate a vector [^3].
+    references:
+      - source: mit-ocw-18065
+        locator: Problems for Lecture 27 (textbook Section VII.2), Problem 2
+        url: https://ocw.mit.edu/courses/18-065-matrix-methods-in-data-analysis-signal-processing-and-machine-learning-spring-2018/resources/18065-all-problem-sets-in-one-file/
+      - title: 'Wikipedia: Matrix chain multiplication'
+        locator: Introduction
+        url: https://en.wikipedia.org/wiki/Matrix_chain_multiplication
+      - title: 'Wikipedia: Automatic differentiation'
+        locator: Forward and reverse accumulation — Reverse accumulation
+        url: https://en.wikipedia.org/wiki/Automatic_differentiation
+    source:
+      id: mit-ocw-18065
+      ref: MIT18_065S18PSets#lec27-q2
+      url: https://ocw.mit.edu/courses/18-065-matrix-methods-in-data-analysis-signal-processing-and-machine-learning-spring-2018/resources/18065-all-problem-sets-in-one-file/
+    status: draft

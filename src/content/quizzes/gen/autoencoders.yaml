@@ -679,3 +679,116 @@ questions:
       ref: W3D3_UnsupervisedAndSelfSupervisedLearning/W3D3_Tutorial1#think4.1.2
       url: https://github.com/NeuromatchAcademy/course-content-dl/blob/caba36c513fb8139ac3c9e7503f7a769dadde25e/tutorials/W3D3_UnsupervisedAndSelfSupervisedLearning/instructor/W3D3_Tutorial1.ipynb
     status: draft
+  - id: autoencoders-021
+    type: multiple
+    difficulty: hard
+    tags:
+      - autoencoder
+      - representation-learning
+      - generalization
+    question: |
+      An encoder $f^\ast$ and decoder $g^\ast$ reconstruct every image of a finite training set of
+      distinct images of coloured shapes perfectly: $g^\ast(f^\ast(x_i)) = x_i$. Nothing else is known
+      about them. Which statements are guaranteed? Select all that apply.
+    options:
+      - text: The index $i$ of a training image can be recovered from its code $f^\ast(x_i)$
+        correct: true
+      - text: The colour of a training image can be recovered from its code $f^\ast(x_i)$
+        correct: true
+      - text: Two red training images have closer codes than a red and a blue training image
+        why: Reconstruction only needs distinct codes; nothing ties distances in code space to colour.
+      - text: The colour of a new image $x$ from the same distribution can be recovered from $f^\ast(x)$
+        why: The objective constrains $f^\ast$ only on the training images; on new images it can map anything anywhere.
+    explanation: |
+      Perfect reconstruction makes $f^\ast$ injective on the training set: decoding the code gives back
+      $x_i$, from which both its index and its colour can be read off [^1]. The objective says nothing
+      about the geometry of the code space, so similar images need not get nearby codes, and it says
+      nothing about images outside the training set [^1]. Any grouping seen in practice comes from the
+      inductive biases of the architecture and optimizer, or from added regularizers such as the
+      variational autoencoder's prior [^2].
+    references:
+      - source: mit-ocw-67960
+        locator: Homework 4, Problem 7(a) and 7(d)
+        url: https://ocw.mit.edu/courses/6-7960-deep-learning-fall-2024/resources/mit6_7960_f24_hw4_pdf/
+      - title: Kingma & Welling (2019), An Introduction to Variational Autoencoders, arXiv:1906.02691
+        locator: Sec. 2 Variational Autoencoders
+        url: https://arxiv.org/abs/1906.02691
+    source:
+      id: mit-ocw-67960
+      ref: mit6_7960_f24_hw4#q7a
+      url: https://ocw.mit.edu/courses/6-7960-deep-learning-fall-2024/resources/mit6_7960_f24_hw4_pdf/
+    status: draft
+  - id: autoencoders-022
+    type: multiple
+    difficulty: hard
+    tags:
+      - vae
+      - aggregate-posterior
+      - latent-space
+    question: |
+      A VAE with encoder $q_\phi(z \mid x) = \mathcal{N}(\mu(x), \sigma^2(x) I)$ is trained perfectly:
+      the aggregate posterior $q_\phi(z) = \mathbb{E}_{x \sim p_{\text{data}}}[q_\phi(z \mid x)]$ equals the
+      prior $\mathcal{N}(0, I)$, and the model's marginal $p_\theta(x)$ equals $p_{\text{data}}$. Which
+      statements follow? Select all that apply.
+    options:
+      - text: Decoding samples $z \sim \mathcal{N}(0, I)$ gives samples from $p_{\text{data}}$
+        correct: true
+      - text: The encoder means $\mu(x)$, for $x \sim p_{\text{data}}$, are distributed as $\mathcal{N}(0, I)$
+        why: Only the mixture of the Gaussians $\mathcal{N}(\mu(x), \sigma^2(x)I)$ is $\mathcal{N}(0, I)$; the means alone can follow a non-Gaussian distribution [^1].
+      - text: Decoding only the means $\mu(x)$ of the data reproduces $p_{\text{data}}$
+        why: The means alone need not cover the latent space; the variances fill the rest, so dropping them misses part of the distribution [^1].
+      - text: Every individual posterior $q_\phi(z \mid x)$ equals $\mathcal{N}(0, I)$
+        why: Then $z$ would carry no information about $x$ (posterior collapse); only their average over the data has to match the prior.
+    explanation: |
+      $p_\theta(x) = \int p(z)\,p_\theta(x \mid z)\,dz$ with $p(z) = \mathcal{N}(0, I)$, so if it equals
+      $p_{\text{data}}$, decoding prior samples generates data [^2]. The prior constrains only the
+      mixture of the encoder's Gaussians [^1]. For example, if half the data have
+      $\sigma^2 = 0.5$ with means spread as $\mathcal{N}(0, 0.5)$ and the other half $\sigma^2 = 0.9$
+      with means spread as $\mathcal{N}(0, 0.1)$, each half gives $z \sim \mathcal{N}(0, 1)$, yet the means
+      follow a mixture of two different Gaussians, which is not Gaussian.
+    references:
+      - source: mit-ocw-67960
+        locator: Homework 5 solutions, Problem 2(a)–(b)
+        url: https://ocw.mit.edu/courses/6-7960-deep-learning-fall-2024/resources/mit6_7960_f24_hw5_sol_pdf/
+      - title: Kingma & Welling (2019), An Introduction to Variational Autoencoders, arXiv:1906.02691
+        locator: Sec. 2.2 Evidence Lower Bound (ELBO)
+        url: https://arxiv.org/abs/1906.02691
+    source:
+      id: mit-ocw-67960
+      ref: mit6_7960_f24_hw5_sol#q2
+      url: https://ocw.mit.edu/courses/6-7960-deep-learning-fall-2024/resources/mit6_7960_f24_hw5_sol_pdf/
+    status: draft
+  - id: autoencoders-023
+    type: true_false
+    difficulty: medium
+    tags:
+      - autoencoder
+      - generative-model
+      - latent-space
+    shuffle: false
+    question: |
+      A deterministic autoencoder reconstructs its data perfectly, $g(f(x)) = x$. True or false:
+      decoding random codes $z \sim \mathcal{N}(0, I)$ with $g$ then produces samples from the data
+      distribution.
+    options:
+      - text: 'True'
+        why: Nothing in the reconstruction loss makes the codes $f(x)$ follow $\mathcal{N}(0, I)$, so most Gaussian samples land where $g$ was never trained [^1].
+      - text: 'False'
+        correct: true
+    explanation: |
+      A plain autoencoder only learns to invert its own codes; the codes of the training data can sit
+      in any region and in any shape [^1]. Gaussian samples usually fall into gaps between them, and
+      the decoder's output there is arbitrary. A VAE adds the KL term toward the prior
+      $\mathcal{N}(0, I)$, which shapes the codes so that sampling the prior is meaningful [^2].
+    references:
+      - source: mit-ocw-67960
+        locator: Homework 5 solutions, Problem 3
+        url: https://ocw.mit.edu/courses/6-7960-deep-learning-fall-2024/resources/mit6_7960_f24_hw5_sol_pdf/
+      - title: Kingma & Welling (2019), An Introduction to Variational Autoencoders, arXiv:1906.02691
+        locator: Sec. 2.2 Evidence Lower Bound (ELBO)
+        url: https://arxiv.org/abs/1906.02691
+    source:
+      id: mit-ocw-67960
+      ref: mit6_7960_f24_hw5_sol#q3
+      url: https://ocw.mit.edu/courses/6-7960-deep-learning-fall-2024/resources/mit6_7960_f24_hw5_sol_pdf/
+    status: draft

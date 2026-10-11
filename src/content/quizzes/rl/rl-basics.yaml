@@ -1072,3 +1072,152 @@ questions:
       ref: docs/spinningup/rl_intro2.rst#q2
       url: https://github.com/openai/spinningup/blob/038665d62d569055401d91856abb287263096178/docs/spinningup/rl_intro2.rst
     status: draft
+  - id: rl-basics-032
+    type: single
+    difficulty: easy
+    tags:
+      - policy-network
+      - action-space
+      - chess
+    question: |
+      A policy network for Connect Four takes the board as input and has 7 output nodes, one
+      probability per column the agent could play. You build the same kind of network for chess. How
+      many output nodes should it have?
+    options:
+      - text: 4672, one for each move in a fixed list of possible moves
+        correct: true
+      - text: 2, one for each of the two players in a game
+        why: The network chooses the agent's action, so it needs one output per possible move, not per player [^1].
+      - text: 16, one for each of the pieces a player starts the game with
+        why: Choosing a piece is only half a move; the outputs must also say where it goes [^2].
+      - text: 64, one for each square of the chess board
+        why: A square alone does not identify a move; moves need both a from-square and a kind of move [^2].
+    explanation: |
+      The network outputs a probability for each possible move, and the agent samples its move from
+      them [^1]. In Connect Four a move is a column, hence 7 outputs; in chess the exercise's key is
+      4672, the number of possible moves [^3]. This is the action encoding of AlphaZero, which
+      represents its chess policy as an $8 \times 8 \times 73$ stack of planes: a starting square times
+      73 kinds of move, $64 \times 73 = 4672$ [^2]. Illegal moves in a position are masked out.
+    references:
+      - source: kaggle-learn
+        locator: Intro to Game AI and RL, Lesson 4 Deep Reinforcement Learning — tutorial, Neural Networks
+        url: https://github.com/Kaggle/learntools/blob/e9ba66dc899d3e17b80d3a1b9a5d29f430d310cb/notebooks/game_ai/raw/tut4.ipynb
+      - title: Silver et al. (2017), Mastering Chess and Shogi by Self-Play with a General Reinforcement Learning Algorithm
+        url: https://arxiv.org/abs/1712.01815
+        locator: Representation; Table S2 (8 × 8 × 73 planes, 4,672 possible moves)
+      - source: kaggle-learn
+        locator: Intro to Game AI and RL, Lesson 4 exercise, Question 1 Set the architecture
+        url: https://github.com/Kaggle/learntools/blob/e9ba66dc899d3e17b80d3a1b9a5d29f430d310cb/notebooks/game_ai/raw/ex4.ipynb
+    source:
+      id: kaggle-learn
+      ref: game_ai/ex4#q1
+      url: https://github.com/Kaggle/learntools/blob/e9ba66dc899d3e17b80d3a1b9a5d29f430d310cb/notebooks/game_ai/raw/ex4.ipynb
+    status: draft
+  - id: rl-basics-033
+    type: single
+    difficulty: medium
+    tags:
+      - reward-design
+      - reward-shaping
+    question: |
+      You train an agent to play Minesweeper. Each move ends in one of four ways: the agent wins
+      (it cleared the last safe square), it makes an invalid move (uncovering a square already
+      uncovered, which ends the game as a loss), it detonates a mine (a loss), or it clears a safe
+      square and the game goes on. Which rewards (win / invalid / mine / safe square) make maximizing
+      the cumulative reward the same as trying to win?
+    options:
+      - text: +1 / −10 / −1 / +0.01
+        correct: true
+      - text: +1 / −10 / −1 / −0.01
+        why: The step penalties pay the agent to end the game early; on a board with more than 201 safe squares even a win totals less than −1, so stepping on a mine at once earns more.
+      - text: +1 / +0.01 / −1 / +0.01
+        why: An invalid move must be punished; here it earns as much as clearing a safe square, so nothing teaches the agent to avoid it [^1].
+    explanation: |
+      The solution's checklist: the rewards for an invalid move and for a mine must be negative, the
+      reward for winning positive, and the reward for clearing a safe square zero or slightly
+      positive [^1]. A small positive reward per safe square gives the agent feedback before the end of
+      the game, much like the $1/42$ bonus per move in the Connect Four tutorial [^2]. A negative step
+      reward instead turns losing early into the better deal once the board is large enough: winning
+      on a board with $n$ safe squares would be worth $1 - 0.01(n - 1)$, below −1 for $n > 201$.
+    references:
+      - source: kaggle-learn
+        locator: Intro to Game AI and RL, Lesson 4 exercise, Question 2 Decide reward (solution)
+        url: https://github.com/Kaggle/learntools/blob/e9ba66dc899d3e17b80d3a1b9a5d29f430d310cb/learntools/game_ai/ex4.py
+      - source: kaggle-learn
+        locator: Intro to Game AI and RL, Lesson 4 Deep Reinforcement Learning — tutorial, Setup and Reinforcement Learning
+        url: https://github.com/Kaggle/learntools/blob/e9ba66dc899d3e17b80d3a1b9a5d29f430d310cb/notebooks/game_ai/raw/tut4.ipynb
+    source:
+      id: kaggle-learn
+      ref: game_ai/ex4#q2
+      url: https://github.com/Kaggle/learntools/blob/e9ba66dc899d3e17b80d3a1b9a5d29f430d310cb/notebooks/game_ai/raw/ex4.ipynb
+    status: draft
+  - id: rl-basics-034
+    type: short_answer
+    difficulty: easy
+    tags:
+      - cumulative-reward
+      - return
+      - reward-design
+    question: |
+      A Connect Four agent gets a reward after each of its moves: +1 if the move wins, −10 if the move
+      is invalid (which ends the game), −1 if the opponent wins on its next move, and $1/42$
+      otherwise. In one game the agent moves first, plays 7 times and wins with its 7th move. What is
+      its cumulative reward? Round to 3 decimals.
+    answer:
+      numeric: 1.143
+      tolerance: 0.002
+      hint: a number, 3 decimals
+      model: $6 \times \frac{1}{42} + 1 = \frac{8}{7} \approx 1.143$
+    explanation: |
+      The cumulative reward is the sum of the rewards the agent collects over the game [^1]. Its first
+      six moves neither win nor lose, so each earns $1/42$, and the seventh wins, earning +1:
+      $6/42 + 1 \approx 1.143$. The tutorial works the same sum for other games: a win after 8 moves in
+      total gives $3/42 + 1$, and a loss when the opponent wins with the 11th move gives
+      $4/42 - 1$ [^1]. A draw fills the 42 cells, so the agent plays 21 moves and collects
+      $21/42 = 0.5$ [^1].
+    references:
+      - source: kaggle-learn
+        locator: Intro to Game AI and RL, Lesson 4 Deep Reinforcement Learning — tutorial, Setup
+        url: https://github.com/Kaggle/learntools/blob/e9ba66dc899d3e17b80d3a1b9a5d29f430d310cb/notebooks/game_ai/raw/tut4.ipynb
+    source:
+      id: kaggle-learn
+      ref: game_ai/tut4#setup
+      url: https://github.com/Kaggle/learntools/blob/e9ba66dc899d3e17b80d3a1b9a5d29f430d310cb/notebooks/game_ai/raw/tut4.ipynb
+    status: draft
+  - id: rl-basics-035
+    type: single
+    difficulty: medium
+    tags:
+      - reward-shaping
+      - credit-assignment
+    question: |
+      To help training converge, a Connect Four agent receives $+1/42$ for every move that neither wins
+      nor loses, on top of +1 for a win and −1 for a loss. What side effect does this bonus have on
+      the behaviour that maximizes the cumulative reward?
+    options:
+      - text: Longer games pay more, so it may delay a win it could take now
+        correct: true
+      - text: Fast wins pay more, so the agent takes risks to finish the game early
+        why: Every extra move adds $1/42$, so of two sure wins, the later one has the larger total [^1].
+      - text: None, because $1/42$ is too small to change which moves are best
+        why: When a win is secure either way, delaying it strictly increases the total by $1/42$ per move, so the ranking of moves does change [^1].
+      - text: Draws become worth more than wins, so the agent stops trying to win
+        why: A draw is worth $21/42 = 0.5$ at most, while a win is worth +1 plus the bonuses collected before it [^1].
+    explanation: |
+      The agent maximizes the sum of its rewards, so a per-move bonus rewards making the game last as
+      long as possible [^1]. The tutorial notes that this can make the agent inefficient: it may take
+      longer to play an obvious winning move [^1]. The bonus is there because it helps the algorithms
+      converge; the trade-off falls under the temporal credit assignment problem and reward
+      shaping [^1][^2].
+    references:
+      - source: kaggle-learn
+        locator: Intro to Game AI and RL, Lesson 4 Deep Reinforcement Learning — tutorial, Setup and Reinforcement Learning
+        url: https://github.com/Kaggle/learntools/blob/e9ba66dc899d3e17b80d3a1b9a5d29f430d310cb/notebooks/game_ai/raw/tut4.ipynb
+      - title: Ng, Harada & Russell (1999), Policy invariance under reward transformations
+        url: https://people.eecs.berkeley.edu/~russell/papers/icml99-shaping.pdf
+        locator: Introduction (shaping rewards can change the optimal policy)
+    source:
+      id: kaggle-learn
+      ref: game_ai/tut4#reward-shaping
+      url: https://github.com/Kaggle/learntools/blob/e9ba66dc899d3e17b80d3a1b9a5d29f430d310cb/notebooks/game_ai/raw/tut4.ipynb
+    status: draft

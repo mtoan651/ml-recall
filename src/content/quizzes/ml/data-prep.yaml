@@ -2370,3 +2370,347 @@ questions:
       ref: theory.md#q38
       url: https://github.com/alexeygrigorev/data-science-interviews/blob/919f44547ef5ffc2bd59674fd301940529f4c1a8/theory.md#classification
     status: draft
+  - id: data-prep-077
+    type: single
+    difficulty: medium
+    tags:
+      - mutual-information
+      - feature-selection
+    question: |
+      You rank three features of a house-price dataset by their mutual information (MI) with
+      `SalePrice`:
+
+      - `YearBuilt`: newer houses tend to sell for more, and knowing the year narrows the likely price range.
+      - `MoSold` (month of sale): the price distribution looks the same in every month.
+      - `ScreenPorch` (porch area): 0 for almost every house; the few houses with a porch sell for somewhat more.
+
+      Which ranking, from highest to lowest MI, is most plausible?
+    options:
+      - text: '`YearBuilt` > `ScreenPorch` > `MoSold`'
+        correct: true
+      - text: '`YearBuilt` > `MoSold` > `ScreenPorch`'
+        why: If the price distribution is the same in every month, knowing the month tells you nothing, so `MoSold` has MI near 0; `ScreenPorch` at least helps for the few houses with a porch [^2].
+      - text: '`ScreenPorch` > `YearBuilt` > `MoSold`'
+        why: MI averages the reduction in uncertainty over the feature's values, weighted by how often they occur; for most houses `ScreenPorch` is 0 and says little [^1].
+      - text: '`MoSold` > `YearBuilt` > `ScreenPorch`'
+        why: A feature whose values all give the same price distribution is independent of the price, which is MI of 0 [^1].
+    explanation: |
+      Mutual information measures how much knowing a feature reduces uncertainty about the target,
+      averaged over the feature's values and weighted by their frequency; it is 0 when the two are
+      independent [^1]. `YearBuilt` constrains `SalePrice` to a smaller range, so it scores highest;
+      `ScreenPorch` is usually just one value, so on average it tells little, though more than
+      `MoSold`, which tells nothing [^2].
+    references:
+      - source: kaggle-learn
+        locator: Feature Engineering, Lesson 2 Mutual Information — tutorial, Mutual Information and What it Measures; Interpreting Mutual Information Scores
+        url: https://github.com/Kaggle/learntools/blob/e9ba66dc899d3e17b80d3a1b9a5d29f430d310cb/notebooks/feature_engineering_new/raw/tut2.ipynb
+      - source: kaggle-learn
+        locator: Feature Engineering, Lesson 2 exercise, Question 1 (solution)
+        url: https://github.com/Kaggle/learntools/blob/e9ba66dc899d3e17b80d3a1b9a5d29f430d310cb/learntools/feature_engineering_new/ex2.py
+    source:
+      id: kaggle-learn
+      ref: feature_engineering_new/ex2#q1
+      url: https://github.com/Kaggle/learntools/blob/e9ba66dc899d3e17b80d3a1b9a5d29f430d310cb/notebooks/feature_engineering_new/raw/ex2.ipynb
+    status: draft
+  - id: data-prep-078
+    type: single
+    difficulty: medium
+    tags:
+      - mutual-information
+      - interaction-features
+    question: |
+      The building type `BldgType` has a low mutual-information score with `SalePrice`. But when you
+      plot `SalePrice` against living area separately for each building type, the trend lines have
+      very different slopes. What should you conclude?
+    options:
+      - text: It interacts with living area, so keep it, e.g. as type × area features
+        correct: true
+      - text: The low score shows `BldgType` carries no information, so it can be dropped
+        why: MI scores a feature on its own; it cannot detect that a feature changes how another one relates to the target [^1].
+      - text: The differing slopes show living area is unreliable and should be replaced by `BldgType`
+        why: Living area still drives the price within each type; the type changes how strongly, which calls for using both [^2].
+      - text: The MI score must be miscomputed, because a useful feature always has a high score
+        why: A feature can be very informative together with others but not alone; a low univariate score is expected here [^1].
+    explanation: |
+      MI is a univariate metric: it cannot detect interactions, so a feature may be informative in
+      combination with others while scoring low alone [^1]. Clearly different trend lines within each
+      category of `BldgType` show such an interaction, so the solution suggests keeping it [^2]. A
+      follow-up exercise builds the interaction directly: one-hot encode `BldgType` and multiply the
+      indicator columns by `GrLivArea` [^3].
+    references:
+      - source: kaggle-learn
+        locator: Feature Engineering, Lesson 2 Mutual Information — tutorial, Interpreting Mutual Information Scores; Example (fuel_type)
+        url: https://github.com/Kaggle/learntools/blob/e9ba66dc899d3e17b80d3a1b9a5d29f430d310cb/notebooks/feature_engineering_new/raw/tut2.ipynb
+      - source: kaggle-learn
+        locator: Feature Engineering, Lesson 2 exercise, Question 3 (solution)
+        url: https://github.com/Kaggle/learntools/blob/e9ba66dc899d3e17b80d3a1b9a5d29f430d310cb/learntools/feature_engineering_new/ex2.py
+      - source: kaggle-learn
+        locator: Feature Engineering, Lesson 3 exercise, Question 2 (interaction features, solution)
+        url: https://github.com/Kaggle/learntools/blob/e9ba66dc899d3e17b80d3a1b9a5d29f430d310cb/learntools/feature_engineering_new/ex3.py
+    source:
+      id: kaggle-learn
+      ref: feature_engineering_new/ex2#q3
+      url: https://github.com/Kaggle/learntools/blob/e9ba66dc899d3e17b80d3a1b9a5d29f430d310cb/notebooks/feature_engineering_new/raw/ex2.ipynb
+    status: draft
+  - id: data-prep-079
+    type: short_answer
+    difficulty: medium
+    tags:
+      - target-encoding
+      - m-estimate
+      - smoothing
+    question: |
+      You target-encode the neighborhood of each house with an m-estimate, smoothing parameter
+      $m = 5$. A rare neighborhood occurs in 3 houses of the encoding split, with a mean price of 200
+      (thousand dollars); the overall mean price is 180. What is the neighborhood's encoded value?
+    answer:
+      numeric: 187.5
+      tolerance: 0.05
+      hint: thousand dollars, 1 decimal
+      model: weight $= \frac{3}{3 + 5} = 0.375$; $0.375 \times 200 + 0.625 \times 180 = 187.5$
+    explanation: |
+      Smoothing blends the in-category average with the overall average:
+      `encoding = weight * in_category + (1 - weight) * overall`, with the m-estimate
+      $\text{weight} = n / (n + m)$, where $n$ counts the category's occurrences [^1]. Here
+      $3/8 = 0.375$, so the code is $0.375 \cdot 200 + 0.625 \cdot 180 = 187.5$, pulled more than
+      halfway to the overall mean because three houses give an unreliable average [^1]. Larger $m$
+      puts more weight on the overall estimate, which suits noisy categories; the exercise applies an
+      m-estimate encoder to nominal features with many rare categories, such as `Neighborhood` [^2].
+    references:
+      - source: kaggle-learn
+        locator: Feature Engineering, Lesson 6 Target Encoding — tutorial, Smoothing
+        url: https://github.com/Kaggle/learntools/blob/e9ba66dc899d3e17b80d3a1b9a5d29f430d310cb/notebooks/feature_engineering_new/raw/tut6.ipynb
+      - source: kaggle-learn
+        locator: Feature Engineering, Lesson 6 exercise, Questions 1–2 Choose Features / Apply M-Estimate Encoding
+        url: https://github.com/Kaggle/learntools/blob/e9ba66dc899d3e17b80d3a1b9a5d29f430d310cb/notebooks/feature_engineering_new/raw/ex6.ipynb
+    source:
+      id: kaggle-learn
+      ref: feature_engineering_new/ex6#q2
+      url: https://github.com/Kaggle/learntools/blob/e9ba66dc899d3e17b80d3a1b9a5d29f430d310cb/notebooks/feature_engineering_new/raw/ex6.ipynb
+    status: draft
+  - id: data-prep-080
+    type: single
+    difficulty: medium
+    tags:
+      - target-encoding
+      - overfitting
+      - data-leakage
+    question: |
+      You add a feature `Count` with the values 0, 1, 2, … (a different value in every row, unrelated
+      to price), mean-encode it with the target, and train XGBoost on the same rows used to fit the
+      encoder. The training score is almost perfect. Why?
+    options:
+      - text: Each value occurs once, so its encoding equals that row's own target
+        correct: true
+      - text: The rows happen to be sorted by price, so the count was already informative
+        why: The count is unrelated to the price; the raw count would not give a near-perfect fit, its encoding does [^1].
+      - text: XGBoost can memorize any feature, so the encoding makes no difference
+        why: Without the target-derived encoding the meaningless count gives XGBoost nothing to fit; the encoding is what leaks the target [^1].
+      - text: Mean encoding smooths the target's noise away, which makes the model more accurate
+        why: Nothing is smoothed here; with one row per value the "mean" is just the row's own target [^1].
+    explanation: |
+      A mean encoding replaces a category by the average target of its rows. Since `Count` never
+      repeats, every row's code equals its own `SalePrice`, turning a meaningless feature into a
+      perfect one [^1]. This works only because the encoder and the model were fit on the same rows; on
+      held-out data the "fake" relationship vanishes. So target encoders must be trained on a separate
+      encoding split, as the tutorial does with 25% of its data [^1][^2].
+    references:
+      - source: kaggle-learn
+        locator: Feature Engineering, Lesson 6 exercise, Question 3 Overfitting with Target Encoders (hint and solution)
+        url: https://github.com/Kaggle/learntools/blob/e9ba66dc899d3e17b80d3a1b9a5d29f430d310cb/learntools/feature_engineering_new/ex6.py
+      - source: kaggle-learn
+        locator: Feature Engineering, Lesson 6 Target Encoding — tutorial, Smoothing; Example - MovieLens1M
+        url: https://github.com/Kaggle/learntools/blob/e9ba66dc899d3e17b80d3a1b9a5d29f430d310cb/notebooks/feature_engineering_new/raw/tut6.ipynb
+    source:
+      id: kaggle-learn
+      ref: feature_engineering_new/ex6#q3
+      url: https://github.com/Kaggle/learntools/blob/e9ba66dc899d3e17b80d3a1b9a5d29f430d310cb/notebooks/feature_engineering_new/raw/ex6.ipynb
+    status: draft
+  - id: data-prep-081
+    type: short_answer
+    difficulty: easy
+    tags:
+      - one-hot-encoding
+      - cardinality
+    question: |
+      A dataset has 10,000 rows and one categorical column with 100 distinct values. If you replace
+      that column by its one-hot encoding, how many entries (cells) are added to the dataset?
+    answer:
+      numeric: 990000
+      tolerance: 0
+      hint: a whole number
+      model: $10{,}000 \times 100 - 10{,}000 = 990{,}000$
+    explanation: |
+      One-hot encoding creates one column per category, so the encoding fills
+      $10{,}000 \times 100 = 1{,}000{,}000$ cells, replacing the original 10,000: 990,000 added
+      [^1]. An ordinal encoding would add none, since it replaces each category by one integer in the
+      same column [^1]. This blow-up is why one-hot encoding is usually reserved for low-cardinality
+      columns, with high-cardinality ones dropped or ordinal-encoded [^1][^2].
+    references:
+      - source: kaggle-learn
+        locator: Intermediate Machine Learning, Lesson 3 exercise, Step 3 Investigating cardinality, Part B (solution)
+        url: https://github.com/Kaggle/learntools/blob/e9ba66dc899d3e17b80d3a1b9a5d29f430d310cb/learntools/ml_intermediate/ex3.py
+      - source: kaggle-learn
+        locator: Intermediate Machine Learning, Lesson 3 Categorical Variables — tutorial, One-Hot Encoding
+        url: https://github.com/Kaggle/learntools/blob/e9ba66dc899d3e17b80d3a1b9a5d29f430d310cb/notebooks/ml_intermediate/raw/tut3.ipynb
+    source:
+      id: kaggle-learn
+      ref: ml_intermediate/ex3#q3
+      url: https://github.com/Kaggle/learntools/blob/e9ba66dc899d3e17b80d3a1b9a5d29f430d310cb/notebooks/ml_intermediate/raw/ex3.ipynb
+    status: draft
+  - id: data-prep-082
+    type: single
+    difficulty: easy
+    tags:
+      - ordinal-encoding
+      - unseen-categories
+      - scikit-learn
+    question: |
+      You fit scikit-learn's `OrdinalEncoder` on the categorical columns of the training data and then
+      call `transform` on the validation data, which raises an error. What is the most likely cause?
+    options:
+      - text: The validation data has categories never seen in training
+        correct: true
+      - text: The validation data has fewer rows than the training data had
+        why: The encoder maps each value independently, so the number of rows does not matter [^1].
+      - text: The categories have no natural order, which ordinal encoding requires
+        why: The encoder assigns integers to any categories, ordered or not; it simply assumes an order [^2].
+      - text: The encoder has to be fit on the validation data as well, separately
+        why: Fitting a second encoder would map the same category to different integers in the two sets; preprocessing should be fit on training data only [^3].
+    explanation: |
+      Fitting an ordinal encoder assigns an integer to each unique value that appears in the training
+      data; a validation value that never appeared has no integer, so `transform` fails [^1]. In the
+      exercise, `'Condition2'` has values in the validation data that are absent from training [^1].
+      Simple fixes are dropping such columns or a custom encoder; `OneHotEncoder` offers
+      `handle_unknown='ignore'` for the same problem [^2].
+    references:
+      - source: kaggle-learn
+        locator: Intermediate Machine Learning, Lesson 3 exercise, Step 2 Ordinal encoding, Part A (solution)
+        url: https://github.com/Kaggle/learntools/blob/e9ba66dc899d3e17b80d3a1b9a5d29f430d310cb/learntools/ml_intermediate/ex3.py
+      - source: kaggle-learn
+        locator: Intermediate Machine Learning, Lesson 3 Categorical Variables — tutorial, Ordinal Encoding; Score from Approach 3
+        url: https://github.com/Kaggle/learntools/blob/e9ba66dc899d3e17b80d3a1b9a5d29f430d310cb/notebooks/ml_intermediate/raw/tut3.ipynb
+      - source: kaggle-learn
+        locator: Intermediate Machine Learning, Lesson 7 Data Leakage — tutorial, Train-Test Contamination
+        url: https://github.com/Kaggle/learntools/blob/e9ba66dc899d3e17b80d3a1b9a5d29f430d310cb/notebooks/ml_intermediate/raw/tut7.ipynb
+    source:
+      id: kaggle-learn
+      ref: ml_intermediate/ex3#q2
+      url: https://github.com/Kaggle/learntools/blob/e9ba66dc899d3e17b80d3a1b9a5d29f430d310cb/notebooks/ml_intermediate/raw/ex3.ipynb
+    status: draft
+  - id: data-prep-083
+    type: single
+    difficulty: medium
+    tags:
+      - data-leakage
+      - target-leakage
+    question: |
+      A model predicts how many shoelaces a shoe company will need each month. Its features are the
+      month, last month's advertising spending, economic indicators at the start of the month, and the
+      amount of leather used during the month. With the leather feature it is almost perfectly
+      accurate. When is that feature a source of target leakage?
+    options:
+      - text: When the leather amount is only known after the prediction is made
+        correct: true
+      - text: Always, because leather and shoelaces both follow from the number of shoes produced
+        why: A strong correlation with the target is not leakage by itself; the question is whether the value is available at prediction time [^2].
+      - text: Never, because leather is a different material from shoelaces
+        why: Leakage is about timing, not about what the feature measures; a value fixed only after the month cannot be used in advance [^2].
+      - text: Only if the model is validated with cross-validation instead of a hold-out set
+        why: Leaky features fool any validation that draws from the same data, cross-validation included [^2].
+    explanation: |
+      It depends on how the data is collected [^1]. If the amount of leather for the month is decided at
+      its beginning, the feature is available when you predict and is fine. If it is determined during
+      the month, or a guess made at the start is later revised, the actual amount used cannot be a
+      feature, because it is not available at prediction time [^1]. Target leakage is defined by this
+      chronology: predictors must not include data that will not be available when predictions are
+      made [^2].
+    references:
+      - source: kaggle-learn
+        locator: Intermediate Machine Learning, Lesson 7 exercise, Step 1 The Data Science of Shoelaces (solution)
+        url: https://github.com/Kaggle/learntools/blob/e9ba66dc899d3e17b80d3a1b9a5d29f430d310cb/learntools/ml_intermediate/ex7.py
+      - source: kaggle-learn
+        locator: Intermediate Machine Learning, Lesson 7 Data Leakage — tutorial, Target leakage
+        url: https://github.com/Kaggle/learntools/blob/e9ba66dc899d3e17b80d3a1b9a5d29f430d310cb/notebooks/ml_intermediate/raw/tut7.ipynb
+    source:
+      id: kaggle-learn
+      ref: ml_intermediate/ex7#q1
+      url: https://github.com/Kaggle/learntools/blob/e9ba66dc899d3e17b80d3a1b9a5d29f430d310cb/notebooks/ml_intermediate/raw/ex7.ipynb
+    status: draft
+  - id: data-prep-084
+    type: single
+    difficulty: hard
+    tags:
+      - data-leakage
+      - target-leakage
+      - train-test-contamination
+    question: |
+      To predict which patients get an infection after a rare surgery, you compute each surgeon's
+      infection rate over all of their surgeries in the dataset, and use it as a feature for each
+      patient. Which problems does this create?
+    options:
+      - text: Both target leakage and train-test contamination
+        correct: true
+      - text: Only train-test contamination
+        why: Each patient's own outcome is part of the surgeon's rate, so the feature contains the target, which is target leakage [^1].
+      - text: Only target leakage
+        why: The rates also use the surgeries in the test set, so test data shapes the training features, which is train-test contamination [^1].
+      - text: Neither, since the surgeon is known before the operation
+        why: The surgeon is known in advance, but the rate is computed from outcomes, including this patient's and the test patients' [^1].
+    explanation: |
+      Target leakage arises because a patient's outcome contributes to their surgeon's infection rate,
+      which is then fed back into the prediction for that patient; computing the rate only from
+      surgeries before the one being predicted avoids it [^1]. Train-test contamination arises if the
+      rate uses all surgeries, including the test set: the model then looks accurate on the test set
+      without generalizing to new patients, defeating the purpose of a test set [^1][^2].
+    references:
+      - source: kaggle-learn
+        locator: Intermediate Machine Learning, Lesson 7 exercise, Step 4 Preventing Infections (solution)
+        url: https://github.com/Kaggle/learntools/blob/e9ba66dc899d3e17b80d3a1b9a5d29f430d310cb/learntools/ml_intermediate/ex7.py
+      - source: kaggle-learn
+        locator: Intermediate Machine Learning, Lesson 7 Data Leakage — tutorial, Target leakage; Train-Test Contamination
+        url: https://github.com/Kaggle/learntools/blob/e9ba66dc899d3e17b80d3a1b9a5d29f430d310cb/notebooks/ml_intermediate/raw/tut7.ipynb
+    source:
+      id: kaggle-learn
+      ref: ml_intermediate/ex7#q4
+      url: https://github.com/Kaggle/learntools/blob/e9ba66dc899d3e17b80d3a1b9a5d29f430d310cb/notebooks/ml_intermediate/raw/ex7.ipynb
+    status: draft
+  - id: data-prep-085
+    type: single
+    difficulty: medium
+    tags:
+      - data-leakage
+      - target-leakage
+      - house-prices
+    question: |
+      A model runs on a listings website and predicts the price of each new house as soon as its
+      description is added. It is trained on historical sales. Which candidate feature is most likely
+      to be a source of leakage?
+    options:
+      - text: The average sale price of homes in the same neighborhood
+        correct: true
+      - text: The size of the house in square meters, as listed
+        why: Size is known when the listing appears and is rarely changed after a sale, so it is safe [^1].
+      - text: The latitude and longitude of the house's location on a map
+        why: Location never changes and is known when the listing appears [^1].
+      - text: Whether or not the house has a basement
+        why: This does not change and is available at prediction time [^1].
+    explanation: |
+      If the neighborhood average is updated after a house is sold, and that sale is included in it,
+      the feature contains the target: at the extreme, with only one sale in a neighborhood, the
+      average is exactly the price being predicted [^1]. The model then does very well in training,
+      especially for neighborhoods with few sales, but a new listing has not been sold yet, so in
+      production the feature behaves differently [^1]. Any variable updated after the target is
+      realized should be excluded [^2].
+    references:
+      - source: kaggle-learn
+        locator: Intermediate Machine Learning, Lesson 7 exercise, Step 5 Housing Prices (solution)
+        url: https://github.com/Kaggle/learntools/blob/e9ba66dc899d3e17b80d3a1b9a5d29f430d310cb/learntools/ml_intermediate/ex7.py
+      - source: kaggle-learn
+        locator: Intermediate Machine Learning, Lesson 7 Data Leakage — tutorial, Target leakage
+        url: https://github.com/Kaggle/learntools/blob/e9ba66dc899d3e17b80d3a1b9a5d29f430d310cb/notebooks/ml_intermediate/raw/tut7.ipynb
+    source:
+      id: kaggle-learn
+      ref: ml_intermediate/ex7#q5
+      url: https://github.com/Kaggle/learntools/blob/e9ba66dc899d3e17b80d3a1b9a5d29f430d310cb/notebooks/ml_intermediate/raw/ex7.ipynb
+    status: draft

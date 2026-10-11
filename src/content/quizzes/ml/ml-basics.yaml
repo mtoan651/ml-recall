@@ -3456,3 +3456,384 @@ questions:
       ref: lectures/08_model-transparency-conclusion.ipynb#shap-additivity
       url: https://github.com/UBC-MDS/DSCI_573_feat-model-select/blob/741d72d4f4dd495a86352d4d6ee990dea41914ac/lectures/08_model-transparency-conclusion.ipynb
     status: draft
+  - id: ml-basics-116
+    type: single
+    difficulty: medium
+    tags:
+      - evaluation
+      - forecasting
+      - choice-of-target
+    question: |
+      A model predicts a cryptocurrency's price one day ahead from the current price, the price change
+      over the last 24 hours and the last hour, the volume traded in 24 hours, and the number of
+      recent tweets. Over the past year the price moved by more than \$100, yet the model's average
+      error is under \$1. What is the main problem with buying whenever it predicts a rise?
+    options:
+      - text: Tomorrow's price is close to today's, so a small error proves little
+        correct: true
+      - text: Target leakage, because the current price is not known when the prediction is made
+        why: The current price is known at prediction time, and none of the features change after the target is set, so there is no leakage [^1].
+      - text: Train-test contamination, because the tweet counts mix training and test periods
+        why: The tweet counts cover the 24 hours before each prediction, which are available at that moment [^1].
+      - text: An error that small cannot be real, so the price data must be corrupted
+        why: A small error is expected when the price moves gradually; it comes from predicting roughly today's price [^1].
+    explanation: |
+      There is no leakage: every feature is available when the prediction is made [^1]. But if the
+      price moves gradually, predicting today's price for tomorrow already gives a small error, while
+      saying nothing about whether the price is going up or down [^1]. A better target is the change in
+      price over the next day; if a model predicts that change reliably, it may be useful for
+      investing [^1].
+    references:
+      - source: kaggle-learn
+        locator: Intermediate Machine Learning, Lesson 7 exercise, Step 3 Getting Rich With Cryptocurrencies? (solution)
+        url: https://github.com/Kaggle/learntools/blob/e9ba66dc899d3e17b80d3a1b9a5d29f430d310cb/learntools/ml_intermediate/ex7.py
+    source:
+      id: kaggle-learn
+      ref: ml_intermediate/ex7#q3
+      url: https://github.com/Kaggle/learntools/blob/e9ba66dc899d3e17b80d3a1b9a5d29f430d310cb/notebooks/ml_intermediate/raw/ex7.ipynb
+    status: draft
+  - id: ml-basics-117
+    type: single
+    difficulty: medium
+    tags:
+      - permutation-importance
+      - feature-scaling
+      - random-forest
+    question: |
+      A random forest predicts taxi fares. You multiply one feature, the absolute change in latitude,
+      by 1000 (as if changing its unit), retrain, and recompute permutation importance on the
+      validation data. What happens to that feature's permutation importance?
+    options:
+      - text: It stays about the same; tree splits depend on order, not scale
+        correct: true
+      - text: It grows about 1000-fold, because the feature's values are 1000 times larger
+        why: Permutation importance measures how much the model's loss suffers when the column is shuffled, not the size of the values [^2].
+      - text: It shrinks, because shuffling large values disturbs the predictions less
+        why: Shuffling breaks the link between the column and the target whatever its scale; for a tree the rescaled column carries the same information [^1].
+      - text: It cannot be computed until the feature is standardized again
+        why: Permutation importance works on any trained model and any feature values; it only shuffles a column and re-scores [^2].
+    explanation: |
+      The scale of a feature does not affect permutation importance by itself; rescaling matters only
+      indirectly, if it helps or hurts the learning method's use of the feature, which does not happen
+      with tree-based models like a random forest [^1]. A tree compares values with thresholds, so
+      multiplying a column by 1000 only moves the thresholds. Permutation importance then shuffles the
+      column in the validation data and measures how much the loss deteriorates [^2]. A model whose
+      penalty depends on the size of its weights, such as ridge regression, could be affected [^1].
+    references:
+      - source: kaggle-learn
+        locator: Machine Learning Explainability, Lesson 2 exercise, Question 5 (solution)
+        url: https://github.com/Kaggle/learntools/blob/e9ba66dc899d3e17b80d3a1b9a5d29f430d310cb/learntools/ml_explainability/ex2.py
+      - source: kaggle-learn
+        locator: Machine Learning Explainability, Lesson 2 Permutation Importance — tutorial, How It Works
+        url: https://github.com/Kaggle/learntools/blob/e9ba66dc899d3e17b80d3a1b9a5d29f430d310cb/notebooks/ml_explainability/raw/tut2_perm_importance.ipynb
+    source:
+      id: kaggle-learn
+      ref: ml_explainability/ex2#q5
+      url: https://github.com/Kaggle/learntools/blob/e9ba66dc899d3e17b80d3a1b9a5d29f430d310cb/notebooks/ml_explainability/raw/ex2_perm_importance.ipynb
+    status: draft
+  - id: ml-basics-118
+    type: single
+    difficulty: medium
+    tags:
+      - permutation-importance
+      - interpretation
+    question: |
+      In a taxi-fare model, the absolute change in latitude has a clearly higher permutation importance
+      than the absolute change in longitude. What can you conclude from this alone?
+    options:
+      - text: Only that the model relies more on it; latitude changes may just be larger
+        correct: true
+      - text: That travelling a fixed distance north–south costs more than the same distance east–west
+        why: Permutation importance does not give the effect per unit of a feature; a larger spread of latitude changes alone could explain the result [^1].
+      - text: That longitude change has no effect on the fare in this model
+        why: A lower importance is still an importance; it only ranks below latitude change [^2].
+      - text: That the model is biased and should be retrained without the latitude feature
+        why: High importance for a sensible feature is not a sign of bias; trip distance is the main driver of fares [^1].
+    explanation: |
+      Permutation importance tells you how much a model depends on a feature, not how the feature
+      affects predictions [^2]. The latitude features may be more important because latitudinal
+      distances in the data tend to be larger, because a fixed latitudinal distance costs more, or
+      both; the importances cannot tell these apart [^1]. To see the effect of travelling a given
+      distance, you need tools such as partial dependence plots [^3].
+    references:
+      - source: kaggle-learn
+        locator: Machine Learning Explainability, Lesson 2 exercise, Question 6 (solution)
+        url: https://github.com/Kaggle/learntools/blob/e9ba66dc899d3e17b80d3a1b9a5d29f430d310cb/learntools/ml_explainability/ex2.py
+      - source: kaggle-learn
+        locator: Machine Learning Explainability, Lesson 2 Permutation Importance — tutorial, Interpreting Permutation Importances
+        url: https://github.com/Kaggle/learntools/blob/e9ba66dc899d3e17b80d3a1b9a5d29f430d310cb/notebooks/ml_explainability/raw/tut2_perm_importance.ipynb
+      - source: kaggle-learn
+        locator: Machine Learning Explainability, Lesson 3 Partial Plots — tutorial, Partial Dependence Plots
+        url: https://github.com/Kaggle/learntools/blob/e9ba66dc899d3e17b80d3a1b9a5d29f430d310cb/notebooks/ml_explainability/raw/tut3_partial_plots.ipynb
+    source:
+      id: kaggle-learn
+      ref: ml_explainability/ex2#q6
+      url: https://github.com/Kaggle/learntools/blob/e9ba66dc899d3e17b80d3a1b9a5d29f430d310cb/notebooks/ml_explainability/raw/ex2_perm_importance.ipynb
+    status: draft
+  - id: ml-basics-119
+    type: true_false
+    difficulty: medium
+    tags:
+      - partial-dependence
+      - permutation-importance
+    question: |
+      True or false: if the partial dependence plot of `feat_a` is much steeper than that of `feat_b`,
+      then `feat_a` must have the higher permutation importance.
+    options:
+      - text: 'True'
+        why: The PDP shows the effect of changing a feature's value; permutation importance also depends on how often the feature's value actually varies in the data [^1].
+      - text: 'False'
+        correct: true
+    explanation: |
+      Suppose `feat_a` has a big effect when it varies, but has a single value in 99% of the rows.
+      Shuffling it then leaves most rows unchanged, so the loss hardly suffers and the permutation
+      importance is low, despite the steep partial dependence plot [^1]. Permutation importance
+      measures the drop in performance when a column is shuffled in the validation data [^2], while a
+      partial dependence plot traces the average prediction as one feature is varied over its range,
+      regardless of how rare those values are [^3].
+    references:
+      - source: kaggle-learn
+        locator: Machine Learning Explainability, Lesson 3 exercise, Question 5 (solution)
+        url: https://github.com/Kaggle/learntools/blob/e9ba66dc899d3e17b80d3a1b9a5d29f430d310cb/learntools/ml_explainability/ex3.py
+      - source: kaggle-learn
+        locator: Machine Learning Explainability, Lesson 2 Permutation Importance — tutorial, How It Works
+        url: https://github.com/Kaggle/learntools/blob/e9ba66dc899d3e17b80d3a1b9a5d29f430d310cb/notebooks/ml_explainability/raw/tut2_perm_importance.ipynb
+      - source: kaggle-learn
+        locator: Machine Learning Explainability, Lesson 3 Partial Plots — tutorial, How it Works
+        url: https://github.com/Kaggle/learntools/blob/e9ba66dc899d3e17b80d3a1b9a5d29f430d310cb/notebooks/ml_explainability/raw/tut3_partial_plots.ipynb
+    source:
+      id: kaggle-learn
+      ref: ml_explainability/ex3#q5
+      url: https://github.com/Kaggle/learntools/blob/e9ba66dc899d3e17b80d3a1b9a5d29f430d310cb/notebooks/ml_explainability/raw/ex3_partial_plots.ipynb
+    status: draft
+  - id: ml-basics-120
+    type: single
+    difficulty: hard
+    tags:
+      - partial-dependence
+      - permutation-importance
+      - interactions
+    question: |
+      Two independent features $X_1$ and $X_2$ are uniform on $[-2, 2]$, and the target is
+      $y = X_1 X_2$. A model learns this function almost exactly. What do the partial dependence plot
+      (PDP) and the permutation importance of $X_1$ show?
+    options:
+      - text: A flat PDP, but a high permutation importance
+        correct: true
+      - text: A steep PDP and a high permutation importance
+        why: The PDP averages $x_1 X_2$ over the rows, which is $x_1$ times the mean of $X_2$, about 0, for every $x_1$ [^2].
+      - text: A flat PDP and a permutation importance near zero
+        why: Shuffling $X_1$ destroys the product, so the error grows to about twice the target's variance [^3].
+      - text: A U-shaped PDP and a permutation importance near zero
+        why: A product of independent zero-mean features has no average effect in either direction, and shuffling still ruins the predictions [^3].
+    explanation: |
+      The exercise asks for exactly this: a feature with high permutation importance but a flat
+      partial dependence plot, and its solution uses $y = X_1 X_2$ [^1]. The PDP fixes $X_1 = x_1$ in
+      every row and averages the predictions, giving $x_1 \cdot \overline{X_2} \approx 0$, so the
+      positive and negative effects cancel [^2]. Shuffling $X_1$ breaks the product: the squared error
+      becomes $E[X_2^2]\,E[(X_1 - X_1')^2] = \frac{4}{3} \cdot \frac{8}{3} \approx 3.6$, about twice the
+      target's variance of $16/9$ [^3]. Effects that depend on another feature are invisible to an
+      averaged PDP.
+    references:
+      - source: kaggle-learn
+        locator: Machine Learning Explainability, Lesson 3 exercise, Question 7 flat PDP with high importance (hint and solution)
+        url: https://github.com/Kaggle/learntools/blob/e9ba66dc899d3e17b80d3a1b9a5d29f430d310cb/learntools/ml_explainability/ex3.py
+      - source: kaggle-learn
+        locator: Machine Learning Explainability, Lesson 3 Partial Plots — tutorial, How it Works
+        url: https://github.com/Kaggle/learntools/blob/e9ba66dc899d3e17b80d3a1b9a5d29f430d310cb/notebooks/ml_explainability/raw/tut3_partial_plots.ipynb
+      - source: kaggle-learn
+        locator: Machine Learning Explainability, Lesson 2 Permutation Importance — tutorial, How It Works
+        url: https://github.com/Kaggle/learntools/blob/e9ba66dc899d3e17b80d3a1b9a5d29f430d310cb/notebooks/ml_explainability/raw/tut2_perm_importance.ipynb
+    source:
+      id: kaggle-learn
+      ref: ml_explainability/ex3#q7
+      url: https://github.com/Kaggle/learntools/blob/e9ba66dc899d3e17b80d3a1b9a5d29f430d310cb/notebooks/ml_explainability/raw/ex3_partial_plots.ipynb
+    status: draft
+  - id: ml-basics-121
+    type: single
+    difficulty: medium
+    tags:
+      - partial-dependence
+      - confounding
+    question: |
+      In a hospital readmission model, the partial dependence plot of `time_in_hospital` is nearly
+      flat, yet the raw readmission rate grouped by `time_in_hospital` rises clearly with longer stays.
+      How can both be right?
+    options:
+      - text: Raw rates mix in other features of long stays; the PDP holds them fixed
+        correct: true
+      - text: The PDP must be wrong, because it should reproduce the raw readmission rates
+        why: A PDP shows the model's prediction as one feature changes with the others held at their observed values, which is not a raw group average [^1].
+      - text: The raw rates come from training data, so they are overfit and can be ignored
+        why: A group average is a plain description of the data, not a fitted model; it is not overfit [^2].
+      - text: The model ignores numeric features, so their PDPs are always flat
+        why: Tree models use numeric features all the time; a flat PDP means the model attributes little effect to this one [^1].
+    explanation: |
+      A partial dependence plot repeatedly changes one feature's value in real rows and averages the
+      model's predictions, which answers "controlling for all other features, what is the effect of
+      this one?" [^1]. The exercise compares it with a raw `groupby` average of readmissions per
+      `time_in_hospital` and finds the two very different: the model gives time in hospital a much
+      smaller effect [^2]. Patients with long stays differ in other ways too, such as diagnoses or the
+      number of procedures, and the raw rate mixes those effects in.
+    references:
+      - source: kaggle-learn
+        locator: Machine Learning Explainability, Lesson 3 Partial Plots — tutorial, Partial Dependence Plots; How it Works
+        url: https://github.com/Kaggle/learntools/blob/e9ba66dc899d3e17b80d3a1b9a5d29f430d310cb/notebooks/ml_explainability/raw/tut3_partial_plots.ipynb
+      - source: kaggle-learn
+        locator: Machine Learning Explainability, Lesson 4 exercise, Questions 3–4 (solutions)
+        url: https://github.com/Kaggle/learntools/blob/e9ba66dc899d3e17b80d3a1b9a5d29f430d310cb/learntools/ml_explainability/ex4.py
+    source:
+      id: kaggle-learn
+      ref: ml_explainability/ex4#q4
+      url: https://github.com/Kaggle/learntools/blob/e9ba66dc899d3e17b80d3a1b9a5d29f430d310cb/notebooks/ml_explainability/raw/ex4_shap_basic.ipynb
+    status: draft
+  - id: ml-basics-122
+    type: single
+    difficulty: easy
+    tags:
+      - shap
+      - local-explanations
+    question: |
+      Doctors want to see, for each patient, which features raise or lower the model's predicted
+      readmission risk, and by how much. Which tool fits this need?
+    options:
+      - text: SHAP values for that patient's prediction
+        correct: true
+      - text: Permutation importance on the validation set
+        why: Permutation importance gives one number per feature for the whole model, not a breakdown of one patient's prediction [^2].
+      - text: A partial dependence plot for each feature
+        why: A PDP shows the average effect of a feature over many rows, not its contribution to a particular patient [^3].
+      - text: The model's accuracy on the patient's age group
+        why: Accuracy describes how often the model is right, not why it made a given prediction [^1].
+    explanation: |
+      SHAP values break down a single prediction to show the impact of each feature, for instance to
+      identify what drives each patient's risk so it can be addressed [^1]. The exercise's solution
+      builds a per-patient function around `shap.TreeExplainer` and a force plot [^4].
+      Permutation importance and partial dependence plots give global summaries of what the model has
+      learned [^2][^3].
+    references:
+      - source: kaggle-learn
+        locator: Machine Learning Explainability, Lesson 4 SHAP Values — tutorial, Introduction; How They Work
+        url: https://github.com/Kaggle/learntools/blob/e9ba66dc899d3e17b80d3a1b9a5d29f430d310cb/notebooks/ml_explainability/raw/tut4_shap_basic.ipynb
+      - source: kaggle-learn
+        locator: Machine Learning Explainability, Lesson 2 Permutation Importance — tutorial, Introduction
+        url: https://github.com/Kaggle/learntools/blob/e9ba66dc899d3e17b80d3a1b9a5d29f430d310cb/notebooks/ml_explainability/raw/tut2_perm_importance.ipynb
+      - source: kaggle-learn
+        locator: Machine Learning Explainability, Lesson 3 Partial Plots — tutorial, How it Works
+        url: https://github.com/Kaggle/learntools/blob/e9ba66dc899d3e17b80d3a1b9a5d29f430d310cb/notebooks/ml_explainability/raw/tut3_partial_plots.ipynb
+      - source: kaggle-learn
+        locator: Machine Learning Explainability, Lesson 4 exercise, Question 5 (solution)
+        url: https://github.com/Kaggle/learntools/blob/e9ba66dc899d3e17b80d3a1b9a5d29f430d310cb/learntools/ml_explainability/ex4.py
+    source:
+      id: kaggle-learn
+      ref: ml_explainability/ex4#q5
+      url: https://github.com/Kaggle/learntools/blob/e9ba66dc899d3e17b80d3a1b9a5d29f430d310cb/notebooks/ml_explainability/raw/ex4_shap_basic.ipynb
+    status: draft
+  - id: ml-basics-123
+    type: short_answer
+    difficulty: easy
+    tags:
+      - shap
+      - additivity
+    question: |
+      A model's base value (its prediction for the baseline feature values) is 0.4979, and for one
+      soccer team it predicts 0.70. Three of the team's features have SHAP values +0.25 (goals
+      scored), −0.08 (ball possession) and +0.05 (distance covered); every other feature has a SHAP
+      value of 0 except `Fouls Committed`. What is the SHAP value of `Fouls Committed`? Round to 4
+      decimals.
+    answer:
+      numeric: -0.0179
+      tolerance: 0.0002
+      hint: a number, 4 decimals (may be negative)
+      model: $0.70 - 0.4979 - (0.25 - 0.08 + 0.05) = -0.0179$
+    explanation: |
+      SHAP values are additive: the SHAP values of all features sum to the prediction minus the
+      prediction for the baseline values [^1]. Here they must sum to $0.70 - 0.4979 = 0.2021$, and the
+      three known values sum to $0.22$, leaving $-0.0179$ for the fouls. In a force plot, the pink bars
+      (pushing the prediction up) minus the blue bars (pushing it down) equal the distance from the
+      base value to the output [^1].
+    references:
+      - source: kaggle-learn
+        locator: Machine Learning Explainability, Lesson 4 SHAP Values — tutorial, How They Work
+        url: https://github.com/Kaggle/learntools/blob/e9ba66dc899d3e17b80d3a1b9a5d29f430d310cb/notebooks/ml_explainability/raw/tut4_shap_basic.ipynb
+    source:
+      id: kaggle-learn
+      ref: ml_explainability/tut4#how-they-work
+      url: https://github.com/Kaggle/learntools/blob/e9ba66dc899d3e17b80d3a1b9a5d29f430d310cb/notebooks/ml_explainability/raw/tut4_shap_basic.ipynb
+    status: draft
+  - id: ml-basics-124
+    type: single
+    difficulty: medium
+    tags:
+      - shap
+      - summary-plot
+      - permutation-importance
+    question: |
+      In a SHAP summary plot, feature A's SHAP values span a much wider range than feature B's, mainly
+      because of a few extreme points; most of A's values sit near zero. Is A therefore the more
+      important feature in the sense of permutation importance?
+    options:
+      - text: Not necessarily; a few outliers can set the range of SHAP values
+        correct: true
+      - text: Yes; the width of a feature's range of SHAP values approximates its permutation importance
+        why: The range can be set by a handful of rows, so it maps poorly to any overall notion of importance [^1].
+      - text: Yes, as long as the extreme points have high feature values (pink dots)
+        why: The colour tells which feature values caused the effect, not how important the feature is across the data [^2].
+      - text: No, because SHAP values and permutation importance always rank features differently
+        why: The two often agree; widely spread SHAP values across all rows do indicate a high permutation importance [^1].
+    explanation: |
+      The width of the effects range is not a reasonable stand-in for permutation importance, because
+      a few outliers can determine it [^1]. A medium permutation importance could mean a large effect for
+      a few predictions or a medium effect for all of them, which is the detail a SHAP summary plot
+      adds [^2]. Only if the dots are widely spread over all rows does the plot indicate high
+      permutation importance [^1].
+    references:
+      - source: kaggle-learn
+        locator: Machine Learning Explainability, Lesson 5 exercise, Question 2 (solution)
+        url: https://github.com/Kaggle/learntools/blob/e9ba66dc899d3e17b80d3a1b9a5d29f430d310cb/learntools/ml_explainability/ex5.py
+      - source: kaggle-learn
+        locator: Machine Learning Explainability, Lesson 5 Advanced Uses of SHAP Values — tutorial, Summary Plots
+        url: https://github.com/Kaggle/learntools/blob/e9ba66dc899d3e17b80d3a1b9a5d29f430d310cb/notebooks/ml_explainability/raw/tut5_shap_advanced.ipynb
+    source:
+      id: kaggle-learn
+      ref: ml_explainability/ex5#q2
+      url: https://github.com/Kaggle/learntools/blob/e9ba66dc899d3e17b80d3a1b9a5d29f430d310cb/notebooks/ml_explainability/raw/ex5_shap_advanced.ipynb
+    status: draft
+  - id: ml-basics-125
+    type: single
+    difficulty: medium
+    tags:
+      - shap
+      - interactions
+      - dependence-plot
+    question: |
+      In a SHAP summary plot of a readmission model, both high and low values of `num_lab_procedures`
+      appear on both sides of zero: for some patients they raise the prediction, for others they lower
+      it. What is the most likely explanation?
+    options:
+      - text: It interacts with other features of the model
+        correct: true
+      - text: The feature has no effect on the model's predictions
+        why: A feature without effect would have SHAP values clustered at zero, not spread to both sides [^1].
+      - text: The SHAP values were estimated from too few samples to be trusted
+        why: Jumbling is a pattern in the model's behaviour, not sampling noise; it shows the effect varies between rows [^1].
+      - text: The feature was encoded with the wrong sign before training
+        why: A sign error would flip the whole pattern, not mix positive and negative effects for the same values [^1].
+    explanation: |
+      When both high and low values of a feature can have both positive and negative effects, the most
+      likely explanation is an interaction: for some diagnoses many lab procedures may be good, for
+      others a sign of risk [^1]. SHAP dependence contribution plots, coloured by another feature,
+      help find the partner; a model without interactions, such as a linear regression, would show a
+      perfect line without this spread [^2].
+    references:
+      - source: kaggle-learn
+        locator: Machine Learning Explainability, Lesson 5 exercise, Question 4 (solution)
+        url: https://github.com/Kaggle/learntools/blob/e9ba66dc899d3e17b80d3a1b9a5d29f430d310cb/learntools/ml_explainability/ex5.py
+      - source: kaggle-learn
+        locator: Machine Learning Explainability, Lesson 5 Advanced Uses of SHAP Values — tutorial, SHAP Dependence Contribution Plots
+        url: https://github.com/Kaggle/learntools/blob/e9ba66dc899d3e17b80d3a1b9a5d29f430d310cb/notebooks/ml_explainability/raw/tut5_shap_advanced.ipynb
+    source:
+      id: kaggle-learn
+      ref: ml_explainability/ex5#q4
+      url: https://github.com/Kaggle/learntools/blob/e9ba66dc899d3e17b80d3a1b9a5d29f430d310cb/notebooks/ml_explainability/raw/ex5_shap_advanced.ipynb
+    status: draft

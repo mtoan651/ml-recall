@@ -467,3 +467,201 @@ questions:
       ref: theory.md#q122
       url: https://github.com/alexeygrigorev/data-science-interviews/blob/919f44547ef5ffc2bd59674fd301940529f4c1a8/theory.md#text-classification
     status: draft
+  - id: nlp-basics-016
+    type: single
+    difficulty: medium
+    tags:
+      - pcfg
+      - chomsky-normal-form
+      - parsing
+    question: |
+      A PCFG has the rule $\mathrm{NP} \to \mathrm{DT}\ \mathrm{NN}\ \mathrm{NN}$ with probability 0.3. The CKY
+      parser needs binary rules (Chomsky normal form). Using a new non-terminal $Z$ that appears
+      nowhere else, which replacement keeps the probability of every parse tree unchanged?
+    options:
+      - text: $\mathrm{NP} \to \mathrm{DT}\ Z$ with 0.3, and $Z \to \mathrm{NN}\ \mathrm{NN}$ with 1.0
+        correct: true
+      - text: $\mathrm{NP} \to \mathrm{DT}\ Z$ with $\sqrt{0.3}$, and $Z \to \mathrm{NN}\ \mathrm{NN}$ with $\sqrt{0.3}$
+        why: The product is still 0.3, but $Z$'s only rule must have probability 1, and the NP rules would no longer sum to 1.
+      - text: $\mathrm{NP} \to \mathrm{DT}\ \mathrm{NN}$ with 0.3, and $\mathrm{NP} \to \mathrm{NN}\ \mathrm{NN}$ with 0.3
+        why: These rules build two-word noun phrases, so the grammar derives different strings and trees.
+      - text: $\mathrm{NP} \to \mathrm{DT}\ Z$ with 0.3, and $Z \to \mathrm{NN}\ \mathrm{NN}$ with 0.3
+        why: Each tree that used the old rule would now get $0.3 \times 0.3 = 0.09$ instead of 0.3, and $Z$'s rules would not sum to 1.
+    explanation: |
+      Binarization splits a long right-hand side into a chain of binary rules through new
+      non-terminals [^1]. The first rule carries the original probability, and the new non-terminal
+      has a single rule with probability 1, so each old derivation maps to exactly one new derivation
+      with the same probability [^2]. CKY can then parse with the binarized grammar, and the original
+      tree is recovered by removing the $Z$ nodes.
+    references:
+      - title: 'Wikipedia: Chomsky normal form'
+        locator: 'Converting a grammar to Chomsky normal form — BIN: Eliminate right-hand sides with more than 2 nonterminals'
+        url: https://en.wikipedia.org/wiki/Chomsky_normal_form
+      - source: mit-ocw-6864
+        locator: Problem Set 1, Question 1
+        url: https://ocw.mit.edu/courses/6-864-advanced-natural-language-processing-fall-2005/resources/hw1/
+    source:
+      id: mit-ocw-6864
+      ref: hw1#q1a
+      url: https://ocw.mit.edu/courses/6-864-advanced-natural-language-processing-fall-2005/resources/hw1/
+    status: draft
+  - id: nlp-basics-017
+    type: single
+    difficulty: hard
+    tags:
+      - pcfg
+      - treebank
+      - attachment-ambiguity
+      - independence-assumptions
+    question: |
+      A PCFG is estimated by maximum likelihood from a treebank of three trees:
+
+      - `(S (NP John) (VP (V1 said) (SBAR (COMP that) (S (NP Sally) (VP (VP (V2 snored)) (ADVP loudly))))))`
+      - `(S (NP Sally) (VP (V1 declared) (SBAR (COMP that) (S (NP Bill) (VP (VP (V2 ran)) (ADVP quickly))))))`
+      - `(S (NP Fred) (VP (V1 pronounced) (SBAR (COMP that) (S (NP Jeff) (VP (VP (V2 swam)) (ADVP elegantly))))))`
+
+      The sentence "Jeff pronounced that Fred snored loudly" has two parses: *loudly* modifies the
+      lower verb (*snored*) or the higher verb (*pronounced*). How do their probabilities compare?
+    options:
+      - text: They are equal, because both parses use exactly the same rules
+        correct: true
+      - text: The low attachment is more likely, because every ADVP in the treebank is attached low
+        why: The PCFG keeps only rule counts, not where a rule was used; $\mathrm{VP} \to \mathrm{VP}\ \mathrm{ADVP}$ is equally available at both levels.
+      - text: The high attachment has probability 0, because it never occurs in the treebank
+        why: Every rule it uses, including $\mathrm{VP} \to \mathrm{VP}\ \mathrm{ADVP}$, occurs in the treebank, so its probability is positive.
+      - text: The high attachment is more likely, because it uses fewer rules
+        why: Both parses use the same 12 rules; only where $\mathrm{VP} \to \mathrm{VP}\ \mathrm{ADVP}$ applies differs.
+    explanation: |
+      Maximum likelihood gives $P(\mathrm{VP} \to \mathrm{V1}\ \mathrm{SBAR}) = P(\mathrm{VP} \to \mathrm{VP}\ \mathrm{ADVP}) = P(\mathrm{VP} \to \mathrm{V2}) = 1/3$,
+      $P(\mathrm{NP} \to \textit{Jeff}) = P(\mathrm{NP} \to \textit{Fred}) = 1/6$, $1/3$ for each verb and
+      adverb, and 1 for the other rules [^1]. Both parses multiply the same 12 rule probabilities,
+      $(1/6)^2 (1/3)^6 = 1/26{,}244$. Because a PCFG's rule choices are independent of their context, it
+      cannot learn that adverbs attach low [^1]. Refining the labels, for example splitting VPs by
+      the verb type they contain or annotating each node with its parent, makes the high attachment
+      impossible or rare [^2].
+    references:
+      - title: 'Wikipedia: Probabilistic context-free grammar'
+        locator: Definitions; Formal definition
+        url: https://en.wikipedia.org/wiki/Probabilistic_context-free_grammar
+      - source: mit-ocw-6864
+        locator: Problem Set 1, Question 2(a)–(c)
+        url: https://ocw.mit.edu/courses/6-864-advanced-natural-language-processing-fall-2005/resources/hw1/
+    source:
+      id: mit-ocw-6864
+      ref: hw1#q2b
+      url: https://ocw.mit.edu/courses/6-864-advanced-natural-language-processing-fall-2005/resources/hw1/
+    status: draft
+  - id: nlp-basics-018
+    type: single
+    difficulty: hard
+    tags:
+      - lexicalized-pcfg
+      - parsing
+      - dynamic-programming
+      - complexity
+    question: |
+      A lexicalized PCFG in Chomsky normal form has rules such as
+      $\mathrm{S}(\textit{saw}) \to \mathrm{NP}(\textit{man})\ \mathrm{VP}(\textit{saw})$, where every
+      symbol carries a head word. A CKY-style dynamic program fills a table $\pi[i, j, k, X]$: the best
+      probability of a subtree rooted in $X(w_k)$ spanning words $i \ldots j$. For a sentence of $n$
+      words and $\lvert N \rvert$ non-terminals, how does its running time grow?
+    options:
+      - text: $O(n^5 \lvert N \rvert^3)$
+        correct: true
+      - text: $O(n^3 \lvert N \rvert^3)$
+        why: That is plain CKY; tracking the head word adds an index to every entry and a second head to every combination.
+      - text: $O(n^4 \lvert N \rvert^3)$
+        why: The straightforward algorithm also loops over the other child's head; $O(n^4)$ needs the cleverer bilexical algorithms [^2].
+      - text: $O(n^3 \lvert N \rvert^3 \lvert V \rvert^2)$, with $\lvert V \rvert$ the vocabulary size
+        why: Heads are always words of the sentence, so they are indexed by positions, never by the whole vocabulary.
+    explanation: |
+      The table has $O(n^3 \lvert N \rvert)$ entries: start $i$, end $j$, head position $k$ and label $X$ [^1].
+      Each entry maximizes over a split point $s$, the head position of the non-head child, and the two
+      child labels, $O(n^2 \lvert N \rvert^2)$ choices, for $O(n^5 \lvert N \rvert^3)$ in total. Eisner and
+      Satta later reduced bilexical parsing to $O(n^4)$, and to $O(n^3)$ for a common special case [^2].
+    references:
+      - source: mit-ocw-6864
+        locator: Problem Set 1, Question 4
+        url: https://ocw.mit.edu/courses/6-864-advanced-natural-language-processing-fall-2005/resources/hw1/
+      - title: Eisner & Satta (1999), Efficient Parsing for Bilexical Context-Free Grammars and Head Automaton Grammars, ACL
+        locator: Abstract
+        url: https://aclanthology.org/P99-1059/
+    source:
+      id: mit-ocw-6864
+      ref: hw1#q4b
+      url: https://ocw.mit.edu/courses/6-864-advanced-natural-language-processing-fall-2005/resources/hw1/
+    status: draft
+  - id: nlp-basics-019
+    type: single
+    difficulty: hard
+    tags:
+      - pos-tagging
+      - viterbi
+      - trigram-hmm
+      - complexity
+    question: |
+      A trigram HMM tagger scores $P(t_i \mid t_{i-2}, t_{i-1})\,P(w_i \mid t_i)$. A tag dictionary lists for
+      each word the tags it can take, at most $K$ per word, out of a full tag set $T$. How fast can the
+      Viterbi algorithm find the best tag sequence for an $n$-word sentence?
+    options:
+      - text: $O(nK^3)$
+        correct: true
+      - text: $O(nK^2)$
+        why: That is the cost of a bigram tagger; a trigram tagger's state is a pair of tags, extended by a third.
+      - text: $O(n\lvert T \rvert^3)$, because the dictionary does not change the dynamic program
+        why: The dictionary limits each position to at most $K$ candidate tags, so only those enter the loops.
+      - text: $O(K^n)$, because every tag sequence must be scored
+        why: Dynamic programming avoids enumerating sequences; it reuses the best score of each state pair.
+    explanation: |
+      The Viterbi state at position $i$ is the tag pair $(t_{i-1}, t_i)$, at most $K^2$ pairs when only
+      dictionary tags are allowed [^1]. Each pair maximizes over at most $K$ choices of $t_{i-2}$, so a
+      position costs $O(K^3)$ and the sentence $O(nK^3)$ [^1]. Without the dictionary this would be
+      $O(n\lvert T \rvert^3)$, and with about 45 Penn Treebank tags but only a few per word the saving is
+      large [^2].
+    references:
+      - title: 'Wikipedia: Viterbi algorithm'
+        locator: Pseudocode (time complexity)
+        url: https://en.wikipedia.org/wiki/Viterbi_algorithm
+      - source: mit-ocw-6864
+        locator: Problem Set 4, Questions 3 and 5
+        url: https://ocw.mit.edu/courses/6-864-advanced-natural-language-processing-fall-2005/resources/hw4/
+    source:
+      id: mit-ocw-6864
+      ref: hw4#q3
+      url: https://ocw.mit.edu/courses/6-864-advanced-natural-language-processing-fall-2005/resources/hw4/
+    status: draft
+  - id: nlp-basics-020
+    type: short_answer
+    difficulty: medium
+    tags:
+      - pos-tagging
+      - interpolation
+      - smoothing
+    question: |
+      A trigram tagger estimates tag probabilities by interpolation: if the context pair
+      $(t_{i-2}, t_{i-1})$ was seen, it returns $\tfrac13 P_{ML}(t_i \mid t_{i-2}, t_{i-1}) + \tfrac13 P_{ML}(t_i \mid t_{i-1}) + \tfrac13 P_{ML}(t_i)$;
+      else, if $t_{i-1}$ was seen, $\tfrac12 P_{ML}(t_i \mid t_{i-1}) + \tfrac12 P_{ML}(t_i)$; else $P_{ML}(t_i)$.
+      The pair (VB, DT) never occurs in the training data, while $P_{ML}(\mathrm{NN} \mid \mathrm{DT}) = 0.6$
+      and $P_{ML}(\mathrm{NN}) = 0.14$. What is the estimate of $P(\mathrm{NN} \mid \mathrm{VB}, \mathrm{DT})$?
+    answer:
+      numeric: 0.37
+      tolerance: 0.001
+      hint: a probability, 2 decimals
+      model: The context pair is unseen, so $\tfrac12(0.6) + \tfrac12(0.14) = 0.37$
+    explanation: |
+      $P_{ML}(\mathrm{NN} \mid \mathrm{VB}, \mathrm{DT})$ would divide by the count of the pair (VB, DT), which is
+      zero, so the estimator drops to the bigram–unigram mixture: $0.3 + 0.07 = 0.37$ [^1]. Interpolating
+      with lower-order estimates gives a reasonable value for contexts never seen in training, and it
+      keeps every tag's probability above zero as long as the tag occurs at all [^2].
+    references:
+      - source: mit-ocw-6864
+        locator: Problem Set 4, Question 5, Part 2
+        url: https://ocw.mit.edu/courses/6-864-advanced-natural-language-processing-fall-2005/resources/hw4/
+      - title: Jurafsky & Martin, Speech and Language Processing (3rd ed. draft), Ch. 3 N-gram Language Models
+        locator: Smoothing, Interpolation, and Backoff (language model interpolation)
+        url: https://web.stanford.edu/~jurafsky/slp3/3.pdf
+    source:
+      id: mit-ocw-6864
+      ref: hw4#q5
+      url: https://ocw.mit.edu/courses/6-864-advanced-natural-language-processing-fall-2005/resources/hw4/
+    status: draft

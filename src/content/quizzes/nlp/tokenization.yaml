@@ -858,3 +858,85 @@ questions:
       ref: genomic-llm-pretraining#q3
       url: https://github.com/galaxyproject/training-material/blob/917e68d1d61c2915c7a970d75468b8494be90c0d/topics/statistics/tutorials/genomic-llm-pretraining/tutorial.md
     status: draft
+  - id: tokenization-024
+    type: short_answer
+    difficulty: easy
+    tags:
+      - vocabulary
+      - unknown-token
+      - special-tokens
+    question: |
+      A word-level tokenizer has this vocabulary and `encode` method; `word_tokenize` splits words and
+      punctuation into separate tokens.
+      ```python
+      vocab = {"<start>": 0, "<pad>": 1, "<unk>": 2, "to": 3, "be": 4,
+               "or": 5, "not": 6, ".": 7}
+
+      def encode(text):
+          ids = [vocab["<start>"]]
+          for tok in word_tokenize(text):
+              ids.append(vocab.get(tok, vocab["<unk>"]))
+          return ids
+      ```
+      What does `encode("to be or never.")` return?
+    answer:
+      accept:
+        - '[0, 3, 4, 5, 2, 7]'
+      pattern: \[?\s*0\s*,\s*3\s*,\s*4\s*,\s*5\s*,\s*2\s*,\s*7\s*\]?
+      hint: a list of ids, e.g. [0, 1, 2]
+      model: '`[0, 3, 4, 5, 2, 7]`: the start token, three known words, `<unk>` for "never", then "."'
+    explanation: |
+      Every encoded sequence begins with the `<start>` id 0, which later gives the language model a
+      first input to predict from [^1]. The tokens are `to`, `be`, `or`, `never` and `.`; "never" is not
+      in the vocabulary, so it maps to the unknown token `<unk>` (2) [^2]. The `<pad>` token is not
+      added here: it only fills shorter sequences up to the batch length.
+    references:
+      - source: mit-ocw-67960
+        locator: Homework 3, Problem 4(a)–(b)
+        url: https://ocw.mit.edu/courses/6-7960-deep-learning-fall-2024/resources/mit6_7960_f24_hw3_pdf/
+      - source: d2l
+        locator: Sec. 9.2.3 Vocabulary
+        url: https://d2l.ai/chapter_recurrent-neural-networks/text-sequence.html#vocabulary
+    source:
+      id: mit-ocw-67960
+      ref: mit6_7960_f24_hw3#q4a
+      url: https://ocw.mit.edu/courses/6-7960-deep-learning-fall-2024/resources/mit6_7960_f24_hw3_pdf/
+    status: draft
+  - id: tokenization-025
+    type: single
+    difficulty: medium
+    tags:
+      - continuous-inputs
+      - patches
+      - audio
+      - embeddings
+    question: |
+      A transformer for text looks up each discrete token in an embedding table. How is it usually
+      adapted to continuous inputs such as images or audio waveforms?
+    options:
+      - text: Cut it into patches or frames and project each one linearly to a vector
+        correct: true
+      - text: Round every pixel or audio sample to an integer and look it up in an embedding table
+        why: Each value would become its own token, giving huge sequences and treating nearby values as unrelated symbols.
+      - text: Feed the whole image or recording as a single token
+        why: With one token, self-attention has nothing to relate; the model could not capture structure inside the input.
+      - text: Sort the samples by value so that similar values become neighbouring tokens
+        why: Sorting destroys the spatial or temporal order that the model needs to learn from.
+    explanation: |
+      Patches (for images) or short frames (for audio) play the role of tokens: each is flattened and
+      projected linearly to the model dimension, replacing the embedding lookup [^1]. Position
+      embeddings are added so the model knows where each patch or frame came from, and self-attention
+      then relates nearby and distant parts alike [^1][^2]. Audio models often use spectrogram frames or
+      a small convolutional front end for the same purpose.
+    references:
+      - source: d2l
+        locator: Sec. 11.8.1 Model; 11.8.2 Patch Embedding
+        url: https://d2l.ai/chapter_attention-mechanisms-and-transformers/vision-transformer.html#patch-embedding
+      - source: mit-ocw-67960
+        locator: Homework 3, Problem 2(d)
+        url: https://ocw.mit.edu/courses/6-7960-deep-learning-fall-2024/resources/mit6_7960_f24_hw3_pdf/
+    source:
+      id: mit-ocw-67960
+      ref: mit6_7960_f24_hw3#q2d
+      url: https://ocw.mit.edu/courses/6-7960-deep-learning-fall-2024/resources/mit6_7960_f24_hw3_pdf/
+    status: draft

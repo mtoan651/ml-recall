@@ -1671,3 +1671,275 @@ questions:
       ref: theory.md#q111
       url: https://github.com/alexeygrigorev/data-science-interviews/blob/919f44547ef5ffc2bd59674fd301940529f4c1a8/theory.md#neural-networks-for-computer-vision
     status: draft
+  - id: cnn-047
+    type: short_answer
+    difficulty: medium
+    tags:
+      - convolution
+      - relu
+      - edge-detection
+      - feature-map
+    question: |
+      This $6 \times 6$ image has a long vertical line in column 1 and a short horizontal line in
+      row 4 (rows and columns numbered from 0):
+
+      ```text
+      0 1 0 0 0 0
+      0 1 0 0 0 0
+      0 1 0 0 0 0
+      0 1 0 0 0 0
+      0 1 0 1 1 1
+      0 1 0 0 0 0
+      ```
+
+      It is filtered with the $2 \times 2$ kernel `[[1, -1], [1, -1]]` (stride 1, no padding, kernel
+      slid over the image without flipping, as convolution layers do), and the result goes through
+      ReLU. What is the sum of all entries of the resulting $5 \times 5$ feature map?
+    answer:
+      numeric: 10
+      tolerance: 0
+      hint: a whole number
+      model: Five windows over the line's right edge give $1 + 1 - 0 - 0 = 2$ each; all other entries are $\le 0$ and become 0, so $5 \times 2 = 10$.
+    explanation: |
+      Each output entry is the sum of the window's left column minus its right column, so the kernel
+      responds to vertical edges that are bright on the left [^1]. Windows over columns 1–2 cover the
+      right edge of the vertical line and give $2$ in all five rows; windows over columns 0–1 give
+      $-2$, and the windows touching the left end of the horizontal line give $-1$; inside the
+      horizontal line the columns cancel to 0. ReLU sets the negative entries to zero, so only the
+      five 2s remain, summing to 10 [^2]. The vertical line survives as a feature and the horizontal
+      line disappears, as the exercise's solution predicts from the kernel's vertical columns [^3].
+    references:
+      - source: d2l
+        locator: Sec. 7.2.1 The Cross-Correlation Operation
+        url: https://d2l.ai/chapter_convolutional-neural-networks/conv-layer.html#the-cross-correlation-operation
+      - source: kaggle-learn
+        locator: Computer Vision, Lesson 2 Convolution and ReLU — tutorial, Filter with Convolution; Detect with ReLU
+        url: https://github.com/Kaggle/learntools/blob/e9ba66dc899d3e17b80d3a1b9a5d29f430d310cb/notebooks/computer_vision/raw/tut2.ipynb
+      - source: kaggle-learn
+        locator: Computer Vision, Lesson 2 exercise, Question 4 Observe Convolution on a Numerical Matrix (solution)
+        url: https://github.com/Kaggle/learntools/blob/e9ba66dc899d3e17b80d3a1b9a5d29f430d310cb/learntools/computer_vision/ex2.py
+    source:
+      id: kaggle-learn
+      ref: computer_vision/ex2#q4
+      url: https://github.com/Kaggle/learntools/blob/e9ba66dc899d3e17b80d3a1b9a5d29f430d310cb/notebooks/computer_vision/raw/ex2.ipynb
+    status: draft
+  - id: cnn-048
+    type: short_answer
+    difficulty: easy
+    tags:
+      - convolution
+      - max-pooling
+      - output-shape
+      - padding
+      - stride
+    question: |
+      A $400 \times 400$ grayscale image goes through a $3 \times 3$ convolution with stride 1 and
+      `'valid'` padding, then ReLU, then $2 \times 2$ max pooling with stride 2 and `'same'` padding.
+      What is the height of the pooled feature map?
+    answer:
+      numeric: 199
+      tolerance: 0
+      hint: a whole number of pixels
+      model: $400 - 3 + 1 = 398$ after the convolution, $398 / 2 = 199$ after pooling
+    explanation: |
+      With `'valid'` padding the window stays inside the input, so the output shrinks by the kernel
+      size minus one: $400 - 3 + 1 = 398$ [^1]. ReLU keeps the size. A stride-2 pooling window then
+      moves 2 pixels per step, and since 398 is even, $2 \times 2$ windows tile the map exactly and no
+      padding is added: $398 / 2 = 199$ [^2]. The exercise's checker expects a $199 \times 199$
+      condensed image for exactly this pipeline [^3].
+    references:
+      - source: kaggle-learn
+        locator: Computer Vision, Lesson 4 The Sliding Window — tutorial, Stride; Padding
+        url: https://github.com/Kaggle/learntools/blob/e9ba66dc899d3e17b80d3a1b9a5d29f430d310cb/notebooks/computer_vision/raw/tut4.ipynb
+      - source: d2l
+        locator: Sec. 7.3.2 Stride, Eq. (7.3.2)
+        url: https://d2l.ai/chapter_convolutional-neural-networks/padding-and-strides.html#stride
+      - source: kaggle-learn
+        locator: Computer Vision, Lesson 3 exercise, Question 1 Apply Pooling to Condense (checker)
+        url: https://github.com/Kaggle/learntools/blob/e9ba66dc899d3e17b80d3a1b9a5d29f430d310cb/learntools/computer_vision/ex3.py
+    source:
+      id: kaggle-learn
+      ref: computer_vision/ex3#q1
+      url: https://github.com/Kaggle/learntools/blob/e9ba66dc899d3e17b80d3a1b9a5d29f430d310cb/notebooks/computer_vision/raw/ex3.ipynb
+    status: draft
+  - id: cnn-049
+    type: single
+    difficulty: medium
+    tags:
+      - max-pooling
+      - translation-invariance
+    question: |
+      A feature map contains a small circle. You shift the circle by one or two pixels and then apply
+      $2 \times 2$ max pooling (stride 2) several times in a row, to both the original and the
+      shifted map. How do the two final maps compare?
+    options:
+      - text: They come out the same, because repeated pooling discards small shifts
+        correct: true
+      - text: They keep the shift, just at a lower resolution
+        why: Pooling removes some positional information, so after several rounds a shift of a pixel or two no longer shows [^1].
+      - text: They would come out the same for a shift of any size
+        why: Pooling gives invariance only over small distances; features that start far apart stay distinct [^1].
+      - text: The shifted circle vanishes, since only the original pixels can be maxima
+        why: Max pooling keeps the largest activation in each window wherever it lies, so a shifted feature is kept, not lost [^1].
+    explanation: |
+      The zero pixels around a feature carry positional information, and max pooling throws some of
+      it away; repeated pooling makes features at slightly different positions indistinguishable [^1].
+      This is translation invariance over small distances, and the exercise's solution notes that the
+      final image is the same each time a small random shift is applied [^2]. Building this invariance
+      into the network means it does not have to learn from data to ignore small shifts in framing [^1].
+    references:
+      - source: kaggle-learn
+        locator: Computer Vision, Lesson 3 Maximum Pooling — tutorial, Translation Invariance
+        url: https://github.com/Kaggle/learntools/blob/e9ba66dc899d3e17b80d3a1b9a5d29f430d310cb/notebooks/computer_vision/raw/tut3.ipynb
+      - source: kaggle-learn
+        locator: Computer Vision, Lesson 3 exercise, Question 2 Explore Invariance (solution)
+        url: https://github.com/Kaggle/learntools/blob/e9ba66dc899d3e17b80d3a1b9a5d29f430d310cb/learntools/computer_vision/ex3.py
+    source:
+      id: kaggle-learn
+      ref: computer_vision/ex3#q2
+      url: https://github.com/Kaggle/learntools/blob/e9ba66dc899d3e17b80d3a1b9a5d29f430d310cb/notebooks/computer_vision/raw/ex3.ipynb
+    status: draft
+  - id: cnn-050
+    type: short_answer
+    difficulty: medium
+    tags:
+      - global-average-pooling
+      - parameter-count
+      - classifier-head
+    question: |
+      A convolutional base outputs 512 feature maps of size $5 \times 5$ per image, and the head is a
+      single `Dense(1, activation='sigmoid')` unit. That unit has {{1}} trainable parameters if the
+      maps are flattened first, and {{2}} if they first go through global average pooling.
+    answer:
+      blanks:
+        - numeric: 12801
+          tolerance: 0
+          hint: with Flatten
+        - numeric: 513
+          tolerance: 0
+          hint: with global average pooling
+      model: Flatten gives $5 \cdot 5 \cdot 512 + 1 = 12801$; global average pooling gives $512 + 1 = 513$.
+    explanation: |
+      `Flatten` unstacks every activation, giving $5 \times 5 \times 512 = 12800$ inputs plus a bias.
+      `GlobalAvgPool2D` instead replaces each feature map by its average value, giving 512 inputs plus
+      a bias, 25 times fewer weights [^1]. Each pooled value acts as a score for one high-level
+      feature, large if it is present and small if not, and the head only has to map these scores to
+      the classes [^2].
+    references:
+      - source: kaggle-learn
+        locator: Computer Vision, Lesson 3 exercise, Global Average Pooling (text before Question 3)
+        url: https://github.com/Kaggle/learntools/blob/e9ba66dc899d3e17b80d3a1b9a5d29f430d310cb/notebooks/computer_vision/raw/ex3.ipynb
+      - source: kaggle-learn
+        locator: Computer Vision, Lesson 3 exercise, Question 3 Understand the Pooled Features (solution)
+        url: https://github.com/Kaggle/learntools/blob/e9ba66dc899d3e17b80d3a1b9a5d29f430d310cb/learntools/computer_vision/ex3.py
+    source:
+      id: kaggle-learn
+      ref: computer_vision/ex3#q3
+      url: https://github.com/Kaggle/learntools/blob/e9ba66dc899d3e17b80d3a1b9a5d29f430d310cb/notebooks/computer_vision/raw/ex3.ipynb
+    status: draft
+  - id: cnn-051
+    type: short_answer
+    difficulty: easy
+    tags:
+      - receptive-field
+      - stacked-convolutions
+    question: |
+      Three convolutional layers with $3 \times 3$ kernels and stride 1 are stacked directly on an
+      image. A neuron in the third layer receives information from a square patch of input pixels.
+      What is the side length of that patch?
+    answer:
+      numeric: 7
+      tolerance: 0
+      hint: a whole number of pixels
+      model: $3 \to 5 \to 7$, one more pixel on each side per layer
+    explanation: |
+      The receptive field of a neuron is the set of input pixels it is connected to [^1]. One
+      $3 \times 3$ layer sees a $3 \times 3$ patch; a second layer sees a $3 \times 3$ patch of the
+      first, whose fields overlap in a $5 \times 5$ patch, and a third layer adds one more pixel on
+      each side: $7 \times 7$ [^2]. Three stacked $3 \times 3$ kernels have $27$ weights per channel
+      pair, against $49$ for a single $7 \times 7$ kernel with the same receptive field, which is how
+      convnets grow large receptive fields cheaply [^1].
+    references:
+      - source: kaggle-learn
+        locator: Computer Vision, Lesson 4 exercise, The Receptive Field
+        url: https://github.com/Kaggle/learntools/blob/e9ba66dc899d3e17b80d3a1b9a5d29f430d310cb/notebooks/computer_vision/raw/ex4.ipynb
+      - source: kaggle-learn
+        locator: Computer Vision, Lesson 4 exercise, Question 1 Growing the Receptive Field (hint and solution)
+        url: https://github.com/Kaggle/learntools/blob/e9ba66dc899d3e17b80d3a1b9a5d29f430d310cb/learntools/computer_vision/ex4.py
+    source:
+      id: kaggle-learn
+      ref: computer_vision/ex4#q1
+      url: https://github.com/Kaggle/learntools/blob/e9ba66dc899d3e17b80d3a1b9a5d29f430d310cb/notebooks/computer_vision/raw/ex4.ipynb
+    status: draft
+  - id: cnn-052
+    type: short_answer
+    difficulty: medium
+    tags:
+      - cyclic-convolution
+      - convolution
+      - circulant
+    question: |
+      Compute the cyclic (circular) convolution of $c = (2, 1, 3)$ and $d = (3, 1, 2)$, both of length 3:
+      $(c \circledast d)_k = \sum_{j} c_j\, d_{(k - j) \bmod 3}$ for $k = 0, 1, 2$.
+    answer:
+      accept:
+        - (11, 11, 14)
+      pattern: \(?\s*11\s*,\s*11\s*,\s*14\s*\)?
+      hint: three numbers, e.g. (1, 2, 3)
+      model: Linear convolution $(6, 5, 14, 5, 6)$; wrapping entries 3 and 4 onto 0 and 1 gives $(11, 11, 14)$
+    explanation: |
+      The ordinary convolution has length 5: $(6,\ 2{+}3,\ 4{+}1{+}9,\ 1{\cdot}2{+}3{\cdot}1,\ 6) = (6, 5, 14, 5, 6)$ [^1].
+      The cyclic version wraps indices modulo 3, so the last two entries are added onto the first two,
+      giving $(11, 11, 14)$ [^1]. Both versions satisfy the check
+      $(\sum c)(\sum d) = 6 \times 6 = 36 = 11 + 11 + 14$. Cyclic convolution is multiplication by a circulant
+      matrix, and a CNN with circular padding computes exactly this [^2].
+    references:
+      - title: 'Wikipedia: Circular convolution'
+        locator: Definitions; Discrete sequences
+        url: https://en.wikipedia.org/wiki/Circular_convolution
+      - source: mit-ocw-18065
+        locator: Problems for Lecture 30 (textbook Section IV.2), Problem 1; Lecture 31, Problem 3
+        url: https://ocw.mit.edu/courses/18-065-matrix-methods-in-data-analysis-signal-processing-and-machine-learning-spring-2018/resources/18065-all-problem-sets-in-one-file/
+    source:
+      id: mit-ocw-18065
+      ref: MIT18_065S18PSets#lec30-q1
+      url: https://ocw.mit.edu/courses/18-065-matrix-methods-in-data-analysis-signal-processing-and-machine-learning-spring-2018/resources/18065-all-problem-sets-in-one-file/
+    status: draft
+  - id: cnn-053
+    type: single
+    difficulty: hard
+    tags:
+      - circulant
+      - fourier
+      - convolution-theorem
+    question: |
+      Every $n \times n$ circulant matrix is a polynomial $C = c_0 I + c_1 P + \dots + c_{n-1}P^{n-1}$ in the
+      cyclic shift $P$, so it performs a cyclic convolution. What are the eigenvectors of circulant
+      matrices, and what follows for the product $CD$ of two circulants?
+    options:
+      - text: The Fourier modes; the eigenvalues of $CD$ are the products of those of $C$ and $D$
+        correct: true
+      - text: The standard basis vectors; the eigenvalues of $CD$ are the products of those of $C$ and $D$
+        why: $P$ moves each standard basis vector to the next one, so they are not eigenvectors of $P$ or of its polynomials.
+      - text: The Fourier modes; the eigenvalues of $CD$ are the sums of those of $C$ and $D$
+        why: Sums of eigenvalues belong to $C + D$; for a product with shared eigenvectors they multiply.
+      - text: They depend on the coefficients $c_k$, so two circulants share eigenvectors only if $CD = DC$
+        why: All circulants are polynomials in the same $P$, so they all share $P$'s eigenvectors and always commute.
+    explanation: |
+      The eigenvectors of the shift $P$ are the Fourier modes, and every polynomial in $P$ has the same
+      eigenvectors; its eigenvalues are the discrete Fourier transform of its first column [^1]. Since
+      all circulants are diagonalized by the same basis, they commute and the eigenvalues of $CD$
+      multiply [^1]. In signal terms this is the convolution theorem: cyclic convolution becomes
+      elementwise multiplication of DFTs, which is how FFT-based convolution works [^2].
+    references:
+      - title: 'Wikipedia: Circulant matrix'
+        locator: Properties — Eigenvectors and eigenvalues; Other properties
+        url: https://en.wikipedia.org/wiki/Circulant_matrix
+      - source: mit-ocw-18065
+        locator: Problems for Lectures 31–32 (textbook Section IV.2), Problems 4–5
+        url: https://ocw.mit.edu/courses/18-065-matrix-methods-in-data-analysis-signal-processing-and-machine-learning-spring-2018/resources/18065-all-problem-sets-in-one-file/
+    source:
+      id: mit-ocw-18065
+      ref: MIT18_065S18PSets#lec32-q4
+      url: https://ocw.mit.edu/courses/18-065-matrix-methods-in-data-analysis-signal-processing-and-machine-learning-spring-2018/resources/18065-all-problem-sets-in-one-file/
+    status: draft

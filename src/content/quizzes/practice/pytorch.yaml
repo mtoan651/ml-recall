@@ -2467,3 +2467,122 @@ questions:
       ref: docs/spinningup/exercises.rst#q5
       url: https://github.com/openai/spinningup/blob/038665d62d569055401d91856abb287263096178/docs/spinningup/exercises.rst
     status: draft
+  - id: pytorch-062
+    type: single
+    difficulty: easy
+    tags:
+      - causal-mask
+      - attention-mask
+      - torch-tril
+    question: |
+      In an attention module, `attn_mask[i, j] = 1` means token `i` may attend to token `j`, and 0 means
+      it may not. Which line builds the mask that a GPT-style language model needs for a sequence of
+      length `T`?
+    options:
+      - text: '`attn_mask = torch.tril(torch.ones(T, T))`'
+        correct: true
+      - text: '`attn_mask = torch.triu(torch.ones(T, T))`'
+        why: The upper triangle lets each token see itself and all later tokens, exactly the future it must predict.
+      - text: '`attn_mask = torch.eye(T)`'
+        why: Each token would see only itself and none of the earlier context.
+      - text: '`attn_mask = torch.ones(T, T)`'
+        why: A full mask is bidirectional attention, as in a BERT-style encoder; the model could read the next token directly.
+    explanation: |
+      A causal language model predicts token $i + 1$ from tokens $1, \ldots, i$, so row $i$ of the mask
+      must allow columns $j \le i$: the lower triangle including the diagonal [^1]. `torch.tril` keeps
+      exactly that part of a matrix of ones [^2]. The same lower-triangular mask is what lets training
+      compute all next-token predictions of a sequence in one forward pass [^1].
+    references:
+      - source: d2l
+        locator: Sec. 11.9.3 Decoder-Only
+        url: https://d2l.ai/chapter_attention-mechanisms-and-transformers/large-pretraining-transformers.html#decoder-only
+      - title: 'PyTorch documentation: torch.tril'
+        locator: torch.tril
+        url: https://docs.pytorch.org/docs/stable/generated/torch.tril.html
+      - source: mit-ocw-67960
+        locator: Homework 3, Problem 4(c)
+        url: https://ocw.mit.edu/courses/6-7960-deep-learning-fall-2024/resources/mit6_7960_f24_hw3_pdf/
+    source:
+      id: mit-ocw-67960
+      ref: mit6_7960_f24_hw3#q4c
+      url: https://ocw.mit.edu/courses/6-7960-deep-learning-fall-2024/resources/mit6_7960_f24_hw3_pdf/
+    status: draft
+  - id: pytorch-063
+    type: single
+    difficulty: medium
+    tags:
+      - language-modeling
+      - cross-entropy
+      - label-shift
+    question: |
+      A GPT-style model returns `logits` of shape `(B, T, V)` for `input_ids` of shape `(B, T)`, and
+      every row of `input_ids` starts with a `<start>` token. The logits at position `i` must predict
+      the token at position `i + 1`. Which pair do you pass to `F.cross_entropy` (after flattening)?
+    options:
+      - text: '`logits[:, :-1]` with targets `input_ids[:, 1:]`'
+        correct: true
+      - text: '`logits[:, 1:]` with targets `input_ids[:, :-1]`'
+        why: This asks each position to predict the previous token, which it can already see.
+      - text: '`logits` with targets `input_ids`'
+        why: Each position would predict its own input token, which the model can simply copy.
+      - text: '`logits[:, :-1]` with targets `input_ids[:, :-1]`'
+        why: The targets are not shifted, so again each position is asked for the token it was given.
+    explanation: |
+      A sequence of $T$ tokens yields $T - 1$ next-token classification problems: the logits at
+      positions $0, \ldots, T - 2$ are scored against the tokens at $1, \ldots, T - 1$ [^1]. The start
+      token is never a target and the last logit has no target. Padding targets are dropped by
+      multiplying the per-token losses with the shifted mask `input_mask[:, 1:]` before averaging [^2].
+    references:
+      - source: mit-ocw-67960
+        locator: Homework 3, Problem 4(d)
+        url: https://ocw.mit.edu/courses/6-7960-deep-learning-fall-2024/resources/mit6_7960_f24_hw3_pdf/
+      - source: d2l
+        locator: Sec. 11.9.3 Decoder-Only
+        url: https://d2l.ai/chapter_attention-mechanisms-and-transformers/large-pretraining-transformers.html#decoder-only
+    source:
+      id: mit-ocw-67960
+      ref: mit6_7960_f24_hw3#q4d
+      url: https://ocw.mit.edu/courses/6-7960-deep-learning-fall-2024/resources/mit6_7960_f24_hw3_pdf/
+    status: draft
+  - id: pytorch-064
+    type: short_answer
+    difficulty: medium
+    tags:
+      - contrastive-learning
+      - cross-entropy
+      - in-batch-negatives
+    question: |
+      A batch holds $b$ images `x` and their augmented copies `x_pos`. For row `i`, `x_pos[i]` is the
+      positive and the other $b - 1$ rows of `x_pos` are its negatives:
+      ```python
+      z1 = F.normalize(f(x), dim=1)        # (b, d)
+      z2 = F.normalize(f(x_pos), dim=1)    # (b, d)
+      logits = z1 @ z2.T / tau             # (b, b)
+      ```
+      Complete the loss: `loss = F.cross_entropy(logits, torch.`{{1}}`(b))`
+    answer:
+      blanks:
+        - accept:
+            - arange
+          hint: a torch function name
+      model: '`torch.arange(b)`: the positive for row `i` sits in column `i`'
+    explanation: |
+      Row $i$ of `logits` holds the similarities of anchor $i$ to all $b$ copies, and its positive is the
+      diagonal entry, so the target class of row $i$ is $i$ [^1]. One matrix product thus gives every
+      anchor $b - 1$ in-batch negatives for free [^2]. `F.cross_entropy` expects integer class indices,
+      which `torch.arange(b)` provides [^3].
+    references:
+      - source: mit-ocw-67960
+        locator: Homework 4, Problem 8(a) (implementation notes)
+        url: https://ocw.mit.edu/courses/6-7960-deep-learning-fall-2024/resources/mit6_7960_f24_hw4_pdf/
+      - title: Chen et al. (2020), A Simple Framework for Contrastive Learning of Visual Representations, arXiv:2002.05709
+        locator: Sec. 2.1 The Contrastive Learning Framework
+        url: https://arxiv.org/abs/2002.05709
+      - title: 'PyTorch documentation: torch.nn.functional.cross_entropy'
+        locator: torch.nn.functional.cross_entropy
+        url: https://docs.pytorch.org/docs/stable/generated/torch.nn.functional.cross_entropy.html
+    source:
+      id: mit-ocw-67960
+      ref: mit6_7960_f24_hw4#q8a
+      url: https://ocw.mit.edu/courses/6-7960-deep-learning-fall-2024/resources/mit6_7960_f24_hw4_pdf/
+    status: draft

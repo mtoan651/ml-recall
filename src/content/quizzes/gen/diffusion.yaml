@@ -405,3 +405,231 @@ questions:
       ref: W2D4_DiffusionGenerativeModels/W2D4_Tutorial2#think1-q4
       url: https://github.com/NeuromatchAcademy/course-content-dl/blob/caba36c513fb8139ac3c9e7503f7a769dadde25e/tutorials/W2D4_DiffusionGenerativeModels/instructor/W2D4_Tutorial2.ipynb
     status: draft
+  - id: diffusion-012
+    type: short_answer
+    difficulty: medium
+    tags:
+      - ddpm
+      - forward-process
+      - noise-schedule
+    question: |
+      A DDPM forward process adds noise with $q(x_t \mid x_{t-1}) = \mathcal{N}(\sqrt{\alpha_t}\,x_{t-1}, \beta_t I)$,
+      where $\alpha_t = 1 - \beta_t$. For a scalar $x_0 = 2$ and the schedule
+      $\beta_1, \beta_2, \beta_3 = 0.1, 0.2, 0.3$, what is the mean of $x_3$ given $x_0$?
+    answer:
+      numeric: 1.42
+      tolerance: 0.002
+      hint: a number, 2 decimals
+      model: $\bar\alpha_3 = 0.9 \cdot 0.8 \cdot 0.7 = 0.504$, mean $\sqrt{0.504} \times 2 \approx 1.42$ (variance $1 - 0.504 = 0.496$)
+    explanation: |
+      Unrolling $x_t = \sqrt{\alpha_t}\,x_{t-1} + \sqrt{\beta_t}\,z_t$ and adding the independent Gaussian
+      noises gives the closed form $q(x_t \mid x_0) = \mathcal{N}(\sqrt{\bar\alpha_t}\,x_0, (1 - \bar\alpha_t) I)$
+      with $\bar\alpha_t = \prod_{s \le t}\alpha_s$ [^1][^2]. Here $\bar\alpha_3 = 0.504$, so the mean is
+      $\sqrt{0.504} \cdot 2 \approx 1.42$ and the variance $0.496$; a simulation with two million samples
+      agrees. The closed form lets training jump to any step $t$ without simulating the steps before it.
+    references:
+      - title: Ho, Jain & Abbeel (2020), Denoising Diffusion Probabilistic Models, arXiv:2006.11239
+        locator: Sec. 2 Background, Eq. (4)
+        url: https://arxiv.org/abs/2006.11239
+      - source: mit-ocw-67960
+        locator: Homework 5 solutions, Problem 7
+        url: https://ocw.mit.edu/courses/6-7960-deep-learning-fall-2024/resources/mit6_7960_f24_hw5_sol_pdf/
+    source:
+      id: mit-ocw-67960
+      ref: mit6_7960_f24_hw5_sol#q7
+      url: https://ocw.mit.edu/courses/6-7960-deep-learning-fall-2024/resources/mit6_7960_f24_hw5_sol_pdf/
+    status: draft
+  - id: diffusion-013
+    type: short_answer
+    difficulty: medium
+    tags:
+      - ddpm
+      - kl-divergence
+      - forward-process
+    question: |
+      After $T$ noising steps, $q(x_T \mid x_0) = \mathcal{N}(\sqrt{\bar\alpha_T}\,x_0, (1 - \bar\alpha_T) I)$.
+      For $d$-dimensional Gaussians,
+      $D_{\mathrm{KL}}\big(\mathcal{N}(a, \Sigma) \,\|\, \mathcal{N}(0, I)\big) = \tfrac12\big(\lVert a \rVert^2 + \operatorname{tr}\Sigma - \log\det\Sigma - d\big)$.
+      For $d = 1$, $x_0 = 1$ and $\bar\alpha_T = 0.1$, what is the KL divergence from
+      $q(x_T \mid x_0)$ to $\mathcal{N}(0, 1)$, in nats?
+    answer:
+      numeric: 0.0527
+      tolerance: 0.001
+      hint: a number, 3 decimals
+      model: $\tfrac12\big(0.1 + 0.9 - \ln 0.9 - 1\big) = \tfrac12 \times 0.105 \approx 0.053$
+    explanation: |
+      Plugging in $a = \sqrt{\bar\alpha_T}\,x_0$ and $\Sigma = (1 - \bar\alpha_T) I$ gives
+      $\tfrac12\big(\bar\alpha_T\lVert x_0 \rVert^2 + d(1 - \bar\alpha_T) - d\log(1 - \bar\alpha_T) - d\big)$ [^1].
+      With the numbers, $\tfrac12(0.1 + 0.9 + 0.1054 - 1) \approx 0.053$ nats. As $T$ grows,
+      $\bar\alpha_T \to 0$ and every term vanishes, so $x_T$ becomes indistinguishable from pure
+      noise [^1]. This is why sampling can start from $\mathcal{N}(0, I)$, and why the prior-matching term
+      $L_T$ of the DDPM loss has no trainable parameters [^2].
+    references:
+      - source: mit-ocw-67960
+        locator: Homework 5 solutions, Problem 8
+        url: https://ocw.mit.edu/courses/6-7960-deep-learning-fall-2024/resources/mit6_7960_f24_hw5_sol_pdf/
+      - title: Ho, Jain & Abbeel (2020), Denoising Diffusion Probabilistic Models, arXiv:2006.11239
+        locator: Sec. 3.1 Forward process and L_T
+        url: https://arxiv.org/abs/2006.11239
+    source:
+      id: mit-ocw-67960
+      ref: mit6_7960_f24_hw5_sol#q8
+      url: https://ocw.mit.edu/courses/6-7960-deep-learning-fall-2024/resources/mit6_7960_f24_hw5_sol_pdf/
+    status: draft
+  - id: diffusion-014
+    type: single
+    difficulty: hard
+    tags:
+      - ddpm
+      - reverse-process
+      - posterior-mean
+      - epsilon-parameterization
+    question: |
+      In DDPM, $x_t = \sqrt{\bar\alpha_t}\,x_0 + \sqrt{1 - \bar\alpha_t}\,\epsilon$ with
+      $\epsilon \sim \mathcal{N}(0, I)$, and the forward-process posterior $q(x_{t-1} \mid x_t, x_0)$ has the mean
+      $\tilde\mu = \frac{\sqrt{\alpha_t}(1 - \bar\alpha_{t-1})}{1 - \bar\alpha_t}x_t + \frac{\sqrt{\bar\alpha_{t-1}}\,\beta_t}{1 - \bar\alpha_t}x_0$.
+      Written in terms of $x_t$ and the noise $\epsilon$ instead of $x_0$, what is $\tilde\mu$?
+    options:
+      - text: $\frac{1}{\sqrt{\alpha_t}}\Big(x_t - \frac{\beta_t}{\sqrt{1 - \bar\alpha_t}}\,\epsilon\Big)$
+        correct: true
+      - text: $\frac{1}{\sqrt{\bar\alpha_t}}\Big(x_t - \sqrt{1 - \bar\alpha_t}\,\epsilon\Big)$
+        why: That is $x_0$ itself, solved from $x_t = \sqrt{\bar\alpha_t}\,x_0 + \sqrt{1 - \bar\alpha_t}\,\epsilon$, not the mean of the one-step-back $x_{t-1}$.
+      - text: $\frac{1}{\sqrt{\alpha_t}}\Big(x_t - \sqrt{\beta_t}\,\epsilon\Big)$
+        why: This would undo one step if $\epsilon$ were the noise of that single step; here $\epsilon$ is the total noise added since $x_0$.
+      - text: $\sqrt{\alpha_t}\,x_t - \frac{\beta_t}{\sqrt{1 - \bar\alpha_t}}\,\epsilon$
+        why: Going backwards divides by $\sqrt{\alpha_t}$ instead of multiplying, since the forward step shrank $x_{t-1}$ by $\sqrt{\alpha_t}$.
+    explanation: |
+      Solve the noising equation for $x_0 = (x_t - \sqrt{1 - \bar\alpha_t}\,\epsilon)/\sqrt{\bar\alpha_t}$ and
+      substitute it into $\tilde\mu$; the $x_t$ terms combine to $x_t/\sqrt{\alpha_t}$ and the noise term
+      to $-\beta_t\,\epsilon / (\sqrt{\alpha_t}\sqrt{1 - \bar\alpha_t})$ [^1][^2]. DDPM therefore lets the
+      network predict $\epsilon$ and plugs its guess into this formula to get the mean of the next,
+      less noisy sample [^2]. A numerical check with $\beta = (0.1, 0.2, 0.3)$ gives the same value
+      for both forms.
+    references:
+      - source: mit-ocw-67960
+        locator: Homework 5 solutions, Problem 9
+        url: https://ocw.mit.edu/courses/6-7960-deep-learning-fall-2024/resources/mit6_7960_f24_hw5_sol_pdf/
+      - title: Ho, Jain & Abbeel (2020), Denoising Diffusion Probabilistic Models, arXiv:2006.11239
+        locator: Sec. 2 Background, Eqs. (6)–(7); Sec. 3.2 Reverse process and L_{1:T-1}, Eq. (11)
+        url: https://arxiv.org/abs/2006.11239
+    source:
+      id: mit-ocw-67960
+      ref: mit6_7960_f24_hw5_sol#q9a
+      url: https://ocw.mit.edu/courses/6-7960-deep-learning-fall-2024/resources/mit6_7960_f24_hw5_sol_pdf/
+    status: draft
+  - id: diffusion-015
+    type: short_answer
+    difficulty: hard
+    tags:
+      - ddpm
+      - posterior-variance
+      - gaussian-conditioning
+    question: |
+      A scalar diffusion has two steps: $x_1 = \sqrt{0.9}\,x_0 + \sqrt{0.1}\,z_1$ and
+      $x_2 = \sqrt{0.8}\,x_1 + \sqrt{0.2}\,z_2$, with independent $z_1, z_2 \sim \mathcal{N}(0, 1)$
+      (so $\beta_1 = 0.1$, $\beta_2 = 0.2$). What is the variance of $x_1$ given both $x_2$ and $x_0$?
+    answer:
+      numeric: 0.0714
+      tolerance: 0.001
+      hint: a number, 3 decimals
+      model: $\tilde\beta_2 = \frac{1 - \bar\alpha_1}{1 - \bar\alpha_2}\beta_2 = \frac{0.1}{0.28} \times 0.2 = \frac{1}{14} \approx 0.0714$
+    explanation: |
+      DDPM's posterior variance is $\tilde\beta_t = \frac{1 - \bar\alpha_{t-1}}{1 - \bar\alpha_t}\beta_t$ [^1];
+      with $\bar\alpha_1 = 0.9$ and $\bar\alpha_2 = 0.72$ that is $\frac{0.1}{0.28} \cdot 0.2 = 1/14$.
+      The same number comes from combining two Gaussian clues about $x_1$: given $x_0$ it has variance
+      0.1, and $x_2$ measures $\sqrt{0.8}\,x_1$ with noise variance 0.2, so the precisions add,
+      $1/0.1 + 0.8/0.2 = 14$ [^2]. The posterior is narrower than either clue alone, and it is the
+      target variance the reverse process tries to match.
+    references:
+      - title: Ho, Jain & Abbeel (2020), Denoising Diffusion Probabilistic Models, arXiv:2006.11239
+        locator: Sec. 2 Background, Eqs. (6)–(7)
+        url: https://arxiv.org/abs/2006.11239
+      - source: mit-ocw-67960
+        locator: Homework 5 solutions, Problem 9 (Eqs. 4–5 of the handout)
+        url: https://ocw.mit.edu/courses/6-7960-deep-learning-fall-2024/resources/mit6_7960_f24_hw5_sol_pdf/
+    source:
+      id: mit-ocw-67960
+      ref: mit6_7960_f24_hw5_sol#q9b
+      url: https://ocw.mit.edu/courses/6-7960-deep-learning-fall-2024/resources/mit6_7960_f24_hw5_sol_pdf/
+    status: draft
+  - id: diffusion-016
+    type: single
+    difficulty: medium
+    tags:
+      - ddpm
+      - training-objective
+      - epsilon-prediction
+    question: |
+      DDPM trains a network $\epsilon_\theta(x_t, t)$ with the simplified loss
+      $\lVert \epsilon - \epsilon_\theta(x_t, t) \rVert_2^2$. What is the network asked to output?
+    options:
+      - text: The noise $\epsilon$ that was added to $x_0$ to make $x_t$
+        correct: true
+      - text: The clean image $x_0$, from which $\epsilon$ is computed afterwards
+        why: Predicting $x_0$ is a possible alternative parameterization, but this loss compares the output directly with the noise.
+      - text: A fresh sample of $x_{t-1}$ drawn from the forward process
+        why: The network outputs a deterministic prediction; randomness enters the reverse step through added noise, not through the network's target.
+      - text: The variance $\beta_t$ of the forward step at time $t$
+        why: The $\beta_t$ form a fixed schedule; they are not learned or predicted.
+    explanation: |
+      Training picks $x_0$, a step $t$ and noise $\epsilon$, forms $x_t = \sqrt{\bar\alpha_t}\,x_0 + \sqrt{1 - \bar\alpha_t}\,\epsilon$,
+      and regresses $\epsilon$ from $(x_t, t)$ [^1]. With the reverse variances fixed to
+      $\tilde\beta_t$, the KL term between the true and the model posterior is a positive weight times
+      $\lVert \epsilon - \epsilon_\theta \rVert^2$ plus a constant, so both have the same minimizer [^2].
+      The weightless version is the "simple" loss that worked best in practice [^1].
+    references:
+      - title: Ho, Jain & Abbeel (2020), Denoising Diffusion Probabilistic Models, arXiv:2006.11239
+        locator: Sec. 3.2 Reverse process and L_{1:T-1}, Eqs. (11)–(12); Eq. (14); Algorithm 1
+        url: https://arxiv.org/abs/2006.11239
+      - source: mit-ocw-67960
+        locator: Homework 5 solutions, Problems 10–11
+        url: https://ocw.mit.edu/courses/6-7960-deep-learning-fall-2024/resources/mit6_7960_f24_hw5_sol_pdf/
+    source:
+      id: mit-ocw-67960
+      ref: mit6_7960_f24_hw5_sol#q11
+      url: https://ocw.mit.edu/courses/6-7960-deep-learning-fall-2024/resources/mit6_7960_f24_hw5_sol_pdf/
+    status: draft
+  - id: diffusion-017
+    type: multiple
+    difficulty: medium
+    tags:
+      - ddpm
+      - vae
+      - latent-variable-models
+      - sampling
+    question: |
+      A diffusion model can be compared with a VAE: the noising process plays the encoder, $x_T$ the
+      latent and the learned denoiser the decoder. Which statements about this comparison are true?
+      Select all that apply.
+    options:
+      - text: The diffusion "encoder" has no learned parameters
+        correct: true
+      - text: The diffusion latent $x_T$ has the same dimension as the data
+        correct: true
+      - text: Generating one sample takes one denoiser evaluation per step, run in sequence from $t = T$ down to 1
+        correct: true
+      - text: Like a VAE encoder, the noising process is trained to make $x_T$ Gaussian
+        why: The noise schedule $\beta_t$ is fixed, and $x_T$ is close to Gaussian because of it, not because of training [^1].
+      - text: The decoder maps $x_T$ to $x_0$ in a single network evaluation, like a VAE decoder
+        why: The reverse process removes noise one step at a time, so it needs $T$ evaluations [^2].
+    explanation: |
+      In a VAE both encoder and decoder are learned and the latent is usually much smaller than the
+      input [^3]. In DDPM the encoder is the fixed chain $\prod_t q(x_t \mid x_{t-1})$ and only the
+      reverse chain $\prod_t p_\theta(x_{t-1} \mid x_t)$ is learned [^1]. The latent keeps the data's
+      shape, and sampling runs the learned reverse step $T$ times, which is why diffusion sampling is
+      slow compared with a VAE's single decoder pass [^2].
+    references:
+      - source: mit-ocw-67960
+        locator: Homework 5 solutions, Problems 13–14
+        url: https://ocw.mit.edu/courses/6-7960-deep-learning-fall-2024/resources/mit6_7960_f24_hw5_sol_pdf/
+      - title: Ho, Jain & Abbeel (2020), Denoising Diffusion Probabilistic Models, arXiv:2006.11239
+        locator: Sec. 2 Background; Algorithm 2 (Sampling)
+        url: https://arxiv.org/abs/2006.11239
+      - title: Kingma & Welling (2019), An Introduction to Variational Autoencoders, arXiv:1906.02691
+        locator: Sec. 2 Variational Autoencoders
+        url: https://arxiv.org/abs/1906.02691
+    source:
+      id: mit-ocw-67960
+      ref: mit6_7960_f24_hw5_sol#q14
+      url: https://ocw.mit.edu/courses/6-7960-deep-learning-fall-2024/resources/mit6_7960_f24_hw5_sol_pdf/
+    status: draft

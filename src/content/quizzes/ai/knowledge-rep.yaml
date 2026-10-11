@@ -1774,3 +1774,656 @@ questions:
       ref: college_computer_science/64
       url: https://huggingface.co/datasets/edinburgh-dawg/mmlu-redux-2.0/viewer/college_computer_science/test?row=64
     status: draft
+  - id: knowledge-rep-049
+    type: single
+    difficulty: hard
+    tags:
+      - backward-chaining
+      - rule-based-systems
+      - goal-tree
+    question: |
+      A rule system has these rules (`?x`, `?y` are variables) and assertions:
+
+      ```text
+      P0: IF (?x is a noob) OR (?x is disenchanted)        THEN ?x visits The Oracle
+      P1: IF ?x visits The Oracle                          THEN ?x picks The One
+      P2: IF ?x is a noob AND ?x visits The Oracle         THEN The Oracle says ?x is not The One,
+                                                                ?x is disenchanted
+      P3: IF (?x is disenchanted OR ?x is a noob)
+             AND The Oracle says ?x is not The One         THEN ?x practices Kung Fu
+      P4: IF ?x is disenchanted AND ?x loves ?y            THEN ?x proclaims love for ?y
+      P5: IF The Oracle says ?x is not The One
+             AND ?y proclaims love for ?x
+             AND ?y picks The One                          THEN ?x is The One
+
+      A0: Neo is a noob            A1: Trinity is disenchanted
+      A2: Trinity loves Neo        A3: Trinity proclaims love for Neo
+      ```
+
+      A backward chainer checks the assertions first, then tries rules whose consequent matches, in
+      order, and evaluates antecedents in order with short-circuiting. What happens with the
+      hypothesis "Neo is The One"?
+    options:
+      - text: It fails, because Trinity is not a noob, so P0 cannot show that she visits The Oracle
+        why: P0's antecedent is an OR; "Trinity is disenchanted" (A1) satisfies it.
+      - text: It succeeds via P5 with ?y = Trinity, who picks The One since she is disenchanted
+        correct: true
+      - text: It succeeds directly, because assertion A3 matches the hypothesis
+        why: A3 says Trinity proclaims love for Neo; it matches only P5's second antecedent, not the hypothesis.
+      - text: It fails, because nothing establishes that Neo picks The One
+        why: P5 needs ?y, the one who proclaims love, to pick The One, and ?y is Trinity, not Neo.
+    explanation: |
+      The goal matches P5 with ?x = Neo [^1][^2]. Its first antecedent comes from P2 (Neo is a noob,
+      and P0 shows he visits The Oracle); the second, "?y proclaims love for Neo", matches A3 and binds
+      ?y = Trinity; the third, "Trinity picks The One", follows from P1 and P0, because Trinity is
+      disenchanted. All three antecedents hold, so the hypothesis is proven.
+    references:
+      - title: 'Wikipedia: Backward chaining'
+        url: https://en.wikipedia.org/wiki/Backward_chaining
+        locator: Introduction (goal-driven inference)
+      - source: mit-ocw-6034
+        locator: Quiz 1 (2010), Problem 1 Rule Systems, Part A Backward Chaining
+        url: https://ocw.mit.edu/courses/6-034-artificial-intelligence-fall-2010/resources/mit6_034f10_quiz1_2010/
+    source:
+      id: mit-ocw-6034
+      ref: mit6_034f10_quiz1_2010#q1a
+      url: https://ocw.mit.edu/courses/6-034-artificial-intelligence-fall-2010/resources/mit6_034f10_quiz1_2010/
+    status: draft
+  - id: knowledge-rep-050
+    type: true_false
+    difficulty: medium
+    tags:
+      - forward-chaining
+      - rule-based-systems
+    shuffle: false
+    question: |
+      Same rules as before:
+
+      ```text
+      P0: IF (?x is a noob) OR (?x is disenchanted)        THEN ?x visits The Oracle
+      P1: IF ?x visits The Oracle                          THEN ?x picks The One
+      P2: IF ?x is a noob AND ?x visits The Oracle         THEN The Oracle says ?x is not The One,
+                                                                ?x is disenchanted
+      P3: IF (?x is disenchanted OR ?x is a noob)
+             AND The Oracle says ?x is not The One         THEN ?x practices Kung Fu
+      P4: IF ?x is disenchanted AND ?x loves ?y            THEN ?x proclaims love for ?y
+      P5: IF The Oracle says ?x is not The One
+             AND ?y proclaims love for ?x
+             AND ?y picks The One                          THEN ?x is The One
+      ```
+
+      Assertions: Neo is a noob; Trinity is disenchanted; Trinity loves Neo; Trinity proclaims love
+      for Neo. True or false: forward chaining eventually adds "Trinity practices Kung Fu".
+    options:
+      - text: 'True'
+        why: P3 also needs "The Oracle says Trinity is not The One", which only P2 can add, and P2 requires Trinity to be a noob.
+      - text: 'False'
+        correct: true
+    explanation: |
+      Forward chaining fires rules until nothing new can be added [^1]. Trinity gets "visits The
+      Oracle" (P0) and "picks The One" (P1), but P2 never matches her because she is not a noob, so
+      the second antecedent of P3 never appears. Neo, on the other hand, does end up practicing Kung
+      Fu and being The One [^2].
+    references:
+      - title: 'Wikipedia: Forward chaining'
+        url: https://en.wikipedia.org/wiki/Forward_chaining
+        locator: Example
+      - source: mit-ocw-6034
+        locator: Quiz 1 (2010), Problem 1 Rule Systems, Part B1 Forward Chaining
+        url: https://ocw.mit.edu/courses/6-034-artificial-intelligence-fall-2010/resources/mit6_034f10_quiz1_2010/
+    source:
+      id: mit-ocw-6034
+      ref: mit6_034f10_quiz1_2010#q1b1
+      url: https://ocw.mit.edu/courses/6-034-artificial-intelligence-fall-2010/resources/mit6_034f10_quiz1_2010/
+    status: draft
+  - id: knowledge-rep-051
+    type: single
+    difficulty: hard
+    tags:
+      - forward-chaining
+      - rule-based-systems
+      - variable-binding
+    question: |
+      Rules:
+
+      ```text
+      P0: IF (?x is a noob) OR (?x is disenchanted)        THEN ?x visits The Oracle
+      P1: IF ?x visits The Oracle                          THEN ?x picks The One
+      P2: IF ?x is a noob AND ?x visits The Oracle         THEN The Oracle says ?x is not The One,
+                                                                ?x is disenchanted
+      P4: IF ?x is disenchanted AND ?x loves ?y            THEN ?x proclaims love for ?y
+      P5: IF The Oracle says ?x is not The One
+             AND ?y proclaims love for ?x
+             AND ?y picks The One                          THEN ?x is The One
+      ```
+
+      The assertions are now: Trinity is a noob; Trinity loves Neo; Neo is a noob. Forward chaining
+      concludes "Neo is The One" but not "Trinity is The One". Which single extra assertion makes it
+      conclude "Trinity is The One" as well?
+    options:
+      - text: Neo is disenchanted
+        why: P2 already derives this for Neo; what is missing is someone who proclaims love for Trinity.
+      - text: Neo visits The Oracle
+        why: P0 already derives this, and with P1 "Neo picks The One"; the missing antecedent is a proclamation of love for Trinity.
+      - text: Neo loves Trinity
+        correct: true
+      - text: Trinity is disenchanted
+        why: P2 already derives this for Trinity; it lets her proclaim love for Neo, not the reverse.
+    explanation: |
+      P5 with ?x = Trinity needs "The Oracle says Trinity is not The One" (P2 gives it, since she is a
+      noob who visits The Oracle), some ?y who proclaims love for Trinity, and that ?y picking The One
+      [^1]. Neo picks The One (P0, P1) and is disenchanted (P2), so P4 makes him proclaim love for
+      Trinity as soon as "Neo loves Trinity" is asserted [^2].
+    references:
+      - title: 'Wikipedia: Forward chaining'
+        url: https://en.wikipedia.org/wiki/Forward_chaining
+        locator: Example
+      - source: mit-ocw-6034
+        locator: Quiz 1 (2010), Problem 1 Rule Systems, Parts B2–B3
+        url: https://ocw.mit.edu/courses/6-034-artificial-intelligence-fall-2010/resources/mit6_034f10_quiz1_2010/
+    source:
+      id: mit-ocw-6034
+      ref: mit6_034f10_quiz1_2010#q1b3
+      url: https://ocw.mit.edu/courses/6-034-artificial-intelligence-fall-2010/resources/mit6_034f10_quiz1_2010/
+    status: draft
+  - id: knowledge-rep-052
+    type: single
+    difficulty: medium
+    tags:
+      - backward-chaining
+      - goal-tree
+      - rule-based-systems
+    question: |
+      Rules and assertions:
+
+      ```text
+      P0: IF ?x is ambitious AND ?x is a squib              THEN ?x has a bad term
+      P1: IF ?x lives in Gryffindor Tower                   THEN ?x is a protagonist
+      P2: IF ?x lives in Slytherin dungeon                  THEN ?x is a villain, ?x is ambitious
+      P3: IF (?x is a protagonist OR ?x is a villain)
+             AND ?x is ambitious                            THEN ?x studies a lot
+      P4: IF ?x studies a lot AND ?x is a protagonist       THEN ?x becomes Hermione's friend
+      P5: IF ?x snogs ?y AND ?x lives in Gryffindor Tower
+             AND ?y lives in Slytherin dungeon              THEN ?x has a bad term
+
+      A0: Millicent lives in Slytherin dungeon      A1: Millicent is ambitious
+      A2: Seamus lives in Gryffindor Tower          A3: Seamus snogs Millicent
+      ```
+
+      You want "Millicent becomes Hermione's friend" to be provable. What is the smallest set of new
+      assertions, none of which may match the consequent of a rule?
+    options:
+      - text: '{Millicent snogs Seamus}'
+        why: Snogging only matters for P5 (a bad term); P4 needs her to be a protagonist.
+      - text: '{Millicent is a protagonist}'
+        why: That matches the consequent of P1, which the task rules out; the underlying fact is where she lives.
+      - text: '{Millicent lives in Gryffindor Tower, Millicent studies a lot}'
+        why: P3 already derives "studies a lot" (she is a villain and ambitious), and it is a rule consequent anyway.
+      - text: '{Millicent lives in Gryffindor Tower}'
+        correct: true
+    explanation: |
+      The goal tree for P4 needs "Millicent studies a lot", which P3 already proves through P2
+      (villain) and A1 (ambitious), and "Millicent is a protagonist", which only P1 can give [^1][^2].
+      So one assertion suffices: Millicent lives in Gryffindor Tower. It creates an odd world in which
+      she lives in both houses and is both a villain and a protagonist; the rules happily allow it,
+      because nothing says the houses exclude each other.
+    references:
+      - title: 'Wikipedia: Backward chaining'
+        url: https://en.wikipedia.org/wiki/Backward_chaining
+        locator: Introduction (goal-driven inference)
+      - source: mit-ocw-6034
+        locator: Quiz 1 (2009), Problem 1 Rule Systems, Parts A1–A3
+        url: https://ocw.mit.edu/courses/6-034-artificial-intelligence-fall-2010/resources/mit6_034f10_quiz1_2009/
+    source:
+      id: mit-ocw-6034
+      ref: mit6_034f10_quiz1_2009#q1a2
+      url: https://ocw.mit.edu/courses/6-034-artificial-intelligence-fall-2010/resources/mit6_034f10_quiz1_2009/
+    status: draft
+  - id: knowledge-rep-053
+    type: single
+    difficulty: hard
+    tags:
+      - backward-chaining
+      - variable-binding
+      - rule-based-systems
+    question: |
+      With the same rules and assertions —
+
+      ```text
+      P0: IF ?x is ambitious AND ?x is a squib              THEN ?x has a bad term
+      P5: IF ?x snogs ?y AND ?x lives in Gryffindor Tower
+             AND ?y lives in Slytherin dungeon              THEN ?x has a bad term
+      (P1–P4 as before; no other rule concludes "has a bad term")
+
+      A0: Millicent lives in Slytherin dungeon      A1: Millicent is ambitious
+      A2: Seamus lives in Gryffindor Tower          A3: Seamus snogs Millicent
+      ```
+
+      — what does backward chaining conclude for the hypothesis "Millicent has a bad term"?
+    options:
+      - text: It fails, because backward chaining cannot use P2 to show that she is ambitious
+        why: Ambition is asserted directly (A1); the failure is in the squib and snogging antecedents.
+      - text: It succeeds through P5, with ?y bound to Seamus via A3
+        why: Matching the consequent binds ?x = Millicent, so the antecedent is "Millicent snogs ?y"; A3 has the roles the other way round.
+      - text: It succeeds through P0, because A1 says Millicent is ambitious
+        why: P0 is an AND; "Millicent is a squib" is neither asserted nor concluded by any rule.
+      - text: It fails; P0 needs a squib, and P5 needs "Millicent snogs ?y"
+        correct: true
+    explanation: |
+      Backward chaining binds variables by matching the hypothesis against a rule's consequent, and
+      those bindings carry into the antecedents [^1]. For P5 that gives "Millicent snogs ?y", which no
+      assertion matches; A3 would only help prove "Seamus has a bad term". P0 fails on "Millicent is a
+      squib", so the hypothesis cannot be shown [^2]. Forward chaining, in contrast, does derive
+      "Seamus has a bad term" from P5.
+    references:
+      - title: 'Wikipedia: Backward chaining'
+        url: https://en.wikipedia.org/wiki/Backward_chaining
+        locator: Introduction (goal-driven inference)
+      - source: mit-ocw-6034
+        locator: Quiz 1 (2009), Problem 1 Rule Systems, Part B More Backward Chaining
+        url: https://ocw.mit.edu/courses/6-034-artificial-intelligence-fall-2010/resources/mit6_034f10_quiz1_2009/
+    source:
+      id: mit-ocw-6034
+      ref: mit6_034f10_quiz1_2009#q1b
+      url: https://ocw.mit.edu/courses/6-034-artificial-intelligence-fall-2010/resources/mit6_034f10_quiz1_2009/
+    status: draft
+  - id: knowledge-rep-054
+    type: multiple
+    difficulty: medium
+    tags:
+      - forward-chaining
+      - rule-based-systems
+    question: |
+      Run forward chaining (fire rules until nothing new can be added) on these rules and
+      assertions:
+
+      ```text
+      P0: IF ?x is ambitious AND ?x is a squib              THEN ?x has a bad term
+      P1: IF ?x lives in Gryffindor Tower                   THEN ?x is a protagonist
+      P2: IF ?x lives in Slytherin dungeon                  THEN ?x is a villain, ?x is ambitious
+      P3: IF (?x is a protagonist OR ?x is a villain)
+             AND ?x is ambitious                            THEN ?x studies a lot
+      P4: IF ?x studies a lot AND ?x is a protagonist       THEN ?x becomes Hermione's friend
+      P5: IF ?x snogs ?y AND ?x lives in Gryffindor Tower
+             AND ?y lives in Slytherin dungeon              THEN ?x has a bad term
+
+      A0: Millicent lives in Slytherin dungeon      A1: Millicent is ambitious
+      A2: Seamus lives in Gryffindor Tower          A3: Seamus snogs Millicent
+      ```
+
+      Which assertions are added? Select all that apply.
+    options:
+      - text: Seamus studies a lot
+        why: Seamus is a protagonist (P1) but nothing makes him ambitious, which P3 requires.
+      - text: Millicent studies a lot
+        correct: true
+      - text: Millicent becomes Hermione's friend
+        why: P4 also needs "Millicent is a protagonist", and only P1 (living in Gryffindor Tower) could add it.
+      - text: Millicent is a villain
+        correct: true
+      - text: Seamus has a bad term
+        correct: true
+    explanation: |
+      Forward chaining starts from the facts and fires every rule whose antecedents are satisfied
+      [^1]. P1 adds "Seamus is a protagonist", P2 adds "Millicent is a villain" ("ambitious" is
+      already there), P3 then adds "Millicent studies a lot", and P5 matches with ?x = Seamus,
+      ?y = Millicent and adds "Seamus has a bad term" [^2]. After that no rule can add anything new.
+    references:
+      - title: 'Wikipedia: Forward chaining'
+        url: https://en.wikipedia.org/wiki/Forward_chaining
+        locator: Example
+      - source: mit-ocw-6034
+        locator: Quiz 1 (2009), Problem 1 Rule Systems, Part C Forward Chaining
+        url: https://ocw.mit.edu/courses/6-034-artificial-intelligence-fall-2010/resources/mit6_034f10_quiz1_2009/
+    source:
+      id: mit-ocw-6034
+      ref: mit6_034f10_quiz1_2009#q1c
+      url: https://ocw.mit.edu/courses/6-034-artificial-intelligence-fall-2010/resources/mit6_034f10_quiz1_2009/
+    status: draft
+  - id: knowledge-rep-055
+    type: single
+    difficulty: hard
+    tags:
+      - forward-chaining
+      - negation-as-failure
+      - conflict-resolution
+    question: |
+      Forward chaining with rule-ordering conflict resolution (each step fires the first rule, in list
+      order, that can add something new):
+
+      ```text
+      P0: IF ?x has sharp teeth                              THEN ?x is a carnivore
+      P1: IF ?x has three horns                              THEN ?x is a Triceratops
+      P2: IF ?x is a carnivore AND ?x has big arms           THEN ?x is a Deinonychus
+      P3: IF ?x is a carnivore AND ?x hunts ?y               THEN ?x is a TRex
+      P4: IF ?x has sharp teeth AND NOT(?x is a Deinonychus)
+             AND ?y is a Triceratops                         THEN ?x hunts ?y
+
+      Assertions: Spike has three horns; Fido has sharp teeth; Fido has big arms;
+                  Rover has sharp teeth; Spike has flat teeth
+      ```
+
+      NOT matches only if no matching assertion is present at that moment. With this order the run
+      ends with Fido a Deinonychus and Rover a TRex that hunts Spike. What changes if P4 is moved to
+      the front of the list?
+    options:
+      - text: Rover no longer hunts Spike, because P4 fires before Spike is a Triceratops
+        why: P4 cannot match until P1 has added "Spike is a Triceratops"; after that it matches Rover as before.
+      - text: Fido hunts Spike before becoming a Deinonychus, so he also becomes a TRex
+        correct: true
+      - text: Fido is never concluded to be a Deinonychus
+        why: P2 still fires for Fido later; the difference is that "Fido hunts Spike" has already been added by then.
+      - text: Nothing; forward chaining reaches the same conclusions in any rule order
+        why: That holds for monotonic rules, but NOT is checked against the current assertions, so the order of firing matters.
+    explanation: |
+      In the original order P2 makes Fido a Deinonychus before P4 is ever tried, so the NOT blocks
+      Fido and only Rover hunts Spike [^1]. With P4 first, as soon as Spike is a Triceratops, P4 fires
+      for Fido (not yet a Deinonychus) and for Rover; P2 then makes Fido a Deinonychus, but the
+      assertion "Fido hunts Spike" stays, and P3 makes both carnivores TRexes. Negation as failure
+      makes forward chaining non-monotonic, so conflict resolution changes the result [^2].
+    references:
+      - source: mit-ocw-6034
+        locator: Quiz 1 (2008), Problem 1 Rule Systems, Parts A1–A2
+        url: https://ocw.mit.edu/courses/6-034-artificial-intelligence-fall-2010/resources/mit6_034f10_quiz1_2008/
+      - title: 'Wikipedia: Negation as failure'
+        url: https://en.wikipedia.org/wiki/Negation_as_failure
+        locator: Introduction (non-monotonic reasoning)
+    source:
+      id: mit-ocw-6034
+      ref: mit6_034f10_quiz1_2008#q1a2
+      url: https://ocw.mit.edu/courses/6-034-artificial-intelligence-fall-2010/resources/mit6_034f10_quiz1_2008/
+    status: draft
+  - id: knowledge-rep-056
+    type: single
+    difficulty: medium
+    tags:
+      - backward-chaining
+      - rule-based-systems
+    question: |
+      Rules and assertions:
+
+      ```text
+      P0: IF ?x has sharp teeth                              THEN ?x is a carnivore
+      P1: IF ?x has three horns                              THEN ?x is a Triceratops
+      P2: IF ?x is a carnivore AND ?x has big arms           THEN ?x is a Deinonychus
+      P5: IF ?x has three horns OR ?x is a Deinonychus       THEN ?x is dangerous
+
+      Assertions: Spike has three horns; Fido has sharp teeth; Fido has big arms;
+                  Rover has sharp teeth; Spike has flat teeth
+      ```
+
+      What does backward chaining conclude for "Rover is dangerous", first with these rules and then
+      after adding `P6: IF ?x has sharp teeth THEN ?x is a Deinonychus`?
+    options:
+      - text: Provable before, because P0 shows that Rover is a carnivore
+        why: Being a carnivore is not enough; P2 also needs "Rover has big arms", which is missing.
+      - text: Not provable before; provable after adding P6
+        correct: true
+      - text: Not provable either way, because Rover has no big arms
+        why: P6 gives a second way to be a Deinonychus that needs only sharp teeth.
+      - text: Provable before, but no longer after adding P6
+        why: Adding a rule only adds ways to prove things; these rules have no NOT, so nothing can be lost.
+    explanation: |
+      P5 needs Rover to have three horns or be a Deinonychus [^1]. Without P6 the only route is P2,
+      which needs "Rover has big arms" and fails, so the hypothesis is false. With P6 the chainer
+      tries P2, fails, then tries P6: "Rover has sharp teeth" is an assertion, so Rover is a
+      Deinonychus and therefore dangerous [^2].
+    references:
+      - title: 'Wikipedia: Backward chaining'
+        url: https://en.wikipedia.org/wiki/Backward_chaining
+        locator: Introduction (goal-driven inference)
+      - source: mit-ocw-6034
+        locator: Quiz 1 (2008), Problem 1 Rule Systems, Parts B2–B3
+        url: https://ocw.mit.edu/courses/6-034-artificial-intelligence-fall-2010/resources/mit6_034f10_quiz1_2008/
+    source:
+      id: mit-ocw-6034
+      ref: mit6_034f10_quiz1_2008#q1b3
+      url: https://ocw.mit.edu/courses/6-034-artificial-intelligence-fall-2010/resources/mit6_034f10_quiz1_2008/
+    status: draft
+  - id: knowledge-rep-057
+    type: single
+    difficulty: medium
+    tags:
+      - forward-chaining
+      - consistency
+      - rule-based-systems
+    question: |
+      A detective's rule base:
+
+      ```text
+      P1: IF ?x is a businessman                        THEN ?x makes millions
+      P2: IF ?x is in the mob                           THEN ?x has low taxes
+      P3: IF ?x has low taxes AND ?x makes millions     THEN ?x embezzles money
+      P4: IF ?x embezzles money                         THEN ?x is a criminal
+      P5: IF ?x knows ?y AND ?x makes millions
+             AND ?y is in the mob                       THEN ?x has low taxes, ?x gets out of jail
+      P6: IF ?x gets out of jail                        THEN ?x is not a criminal
+
+      Facts: Gotti is in the mob; Cagoni is a businessman; Cagoni knows Gotti
+      ```
+
+      Run forward chaining to completion. What problem shows up?
+    options:
+      - text: It wrongly concludes that Gotti is a criminal
+        why: Gotti has low taxes (P2) but nothing says he makes millions, so P3 never fires for him.
+      - text: It adds both "Cagoni is a criminal" and "Cagoni is not a criminal"
+        correct: true
+      - text: P6 never fires, because P4 has already decided that Cagoni is a criminal
+        why: Forward chaining does not let one conclusion block another rule; P6 fires as soon as "Cagoni gets out of jail" is present.
+      - text: It loops forever, because P5 and P3 keep re-firing each other
+        why: A rule fires only when it adds a new assertion; after six additions nothing new can be added and the run stops.
+    explanation: |
+      Cagoni makes millions (P1); with "Cagoni knows Gotti" and Gotti in the mob, P5 adds his low
+      taxes and his release; P3 and P4 make him a criminal, and P6 adds "Cagoni is not a criminal"
+      [^1]. The rule system treats the two statements as unrelated strings, so it records a
+      contradiction without noticing it; detecting it needs an explicit consistency check or rules
+      that retract assertions [^2].
+    references:
+      - source: mit-ocw-6034
+        locator: Quiz 1 (2007), Question 1, Section 1.2 Forward Chaining
+        url: https://ocw.mit.edu/courses/6-034-artificial-intelligence-fall-2010/resources/mit6_034f10_quiz1_2007/
+      - title: 'Wikipedia: Forward chaining'
+        url: https://en.wikipedia.org/wiki/Forward_chaining
+        locator: Example
+    source:
+      id: mit-ocw-6034
+      ref: mit6_034f10_quiz1_2007#q1.2
+      url: https://ocw.mit.edu/courses/6-034-artificial-intelligence-fall-2010/resources/mit6_034f10_quiz1_2007/
+    status: draft
+  - id: knowledge-rep-058
+    type: single
+    difficulty: medium
+    tags:
+      - backward-chaining
+      - goal-tree
+      - rule-based-systems
+    question: |
+      With the same rule base —
+
+      ```text
+      P1: IF ?x is a businessman                        THEN ?x makes millions
+      P2: IF ?x is in the mob                           THEN ?x has low taxes
+      P3: IF ?x has low taxes AND ?x makes millions     THEN ?x embezzles money
+      P4: IF ?x embezzles money                         THEN ?x is a criminal
+      P5: IF ?x knows ?y AND ?x makes millions
+             AND ?y is in the mob                       THEN ?x has low taxes, ?x gets out of jail
+
+      Facts: Gotti is in the mob; Cagoni is a businessman; Cagoni knows Gotti
+      ```
+
+      — backward chaining cannot prove "Gotti is a criminal". Which single extra fact makes the proof
+      go through?
+    options:
+      - text: Gotti knows Cagoni
+        why: That only opens P5 for Gotti, which itself needs "Gotti makes millions" and Cagoni in the mob.
+      - text: Gotti is a businessman
+        correct: true
+      - text: Cagoni is also in the mob
+        why: That concerns Cagoni; nothing connects it to Gotti making millions.
+      - text: Gotti has low taxes
+        why: P2 already proves this from "Gotti is in the mob"; the missing branch is "Gotti makes millions".
+    explanation: |
+      The goal tree is: criminal ← embezzles money (P4) ← low taxes AND makes millions (P3) [^1].
+      Low taxes holds through P2, but "Gotti makes millions" has only one route, P1, which needs
+      "Gotti is a businessman" [^2]. Adding that fact completes the AND node, and the proof succeeds.
+    references:
+      - title: 'Wikipedia: Backward chaining'
+        url: https://en.wikipedia.org/wiki/Backward_chaining
+        locator: Introduction (goal-driven inference)
+      - source: mit-ocw-6034
+        locator: Quiz 1 (2007), Question 1, Section 1.1 Backward Chaining
+        url: https://ocw.mit.edu/courses/6-034-artificial-intelligence-fall-2010/resources/mit6_034f10_quiz1_2007/
+    source:
+      id: mit-ocw-6034
+      ref: mit6_034f10_quiz1_2007#q1.1
+      url: https://ocw.mit.edu/courses/6-034-artificial-intelligence-fall-2010/resources/mit6_034f10_quiz1_2007/
+    status: draft
+  - id: knowledge-rep-059
+    type: single
+    difficulty: medium
+    tags:
+      - arch-learning
+      - near-miss
+      - concept-learning
+    question: |
+      In Winston-style arch learning, the current model of TABLE LAMP is: incandescent bulb, height
+      between 11" and 24", flat base, electricity, shade. The teacher now shows a positive example
+      (a hit): incandescent bulb, height 11.5", flat base, electricity, and no shade. Which heuristic
+      applies?
+    options:
+      - text: Forbid link — a table lamp must not have a shade
+        why: Forbid link is learned from a near miss (a negative example) that has an extra feature; here the example is positive.
+      - text: Close interval — the height range is widened
+        why: 11.5" already lies inside the range from 11" to 24".
+      - text: Drop link — the shade is not essential
+        correct: true
+      - text: Require link — the shade becomes mandatory
+        why: A lamp without a shade was just accepted as a table lamp, so the shade cannot be required.
+    explanation: |
+      Hits generalize the model and near misses specialize it [^1][^2]. A hit that lacks a feature
+      the model has shows that the feature is optional, so its link is dropped; the height 11.5" is
+      already covered by the interval, so nothing else changes. Require link and forbid link come
+      from near misses: an example that differs from the model in one feature and is labeled
+      negative [^1].
+    references:
+      - source: mit-ocw-6034
+        locator: Lecture 15, Learning — Near Misses, Felicity Conditions (video)
+        url: https://ocw.mit.edu/courses/6-034-artificial-intelligence-fall-2010/resources/lecture-15-learning-near-misses-felicity-conditions/
+      - source: mit-ocw-6034
+        locator: Final exam (2007), Quiz 5 Question 1 Near-Miss, Part A (Example 2)
+        url: https://ocw.mit.edu/courses/6-034-artificial-intelligence-fall-2010/resources/mit6_034f10_final_2007/
+    source:
+      id: mit-ocw-6034
+      ref: mit6_034f10_final_2007#q5.1a-ex2
+      url: https://ocw.mit.edu/courses/6-034-artificial-intelligence-fall-2010/resources/mit6_034f10_final_2007/
+    status: draft
+  - id: knowledge-rep-060
+    type: single
+    difficulty: medium
+    tags:
+      - arch-learning
+      - climb-tree
+      - class-hierarchy
+    question: |
+      A class hierarchy for supports is: support → {base-support, wire-support}; base-support →
+      {flat, clamp, legs}; legs → {flat-bottomed legs, wheeled legs}. The model of TABLE LAMP has a
+      flat base. A new positive example is identical except that its base is wheeled legs. Using the
+      climb-tree heuristic, what does the model's base become?
+    options:
+      - text: base-support
+        correct: true
+      - text: legs
+        why: Flat bases are not a kind of legs, so legs does not cover the old value.
+      - text: wheeled legs
+        why: That would forget that flat bases are fine too; a hit can only generalize the model.
+      - text: support
+        why: Climb tree stops at the lowest class that covers both values; support also admits wire supports, which no example has shown.
+    explanation: |
+      Climb tree replaces a value by the most specific class in the hierarchy that covers both the
+      model's value and the new example's value [^1]. Flat and wheeled legs meet first at
+      base-support, so the model now accepts any base support (flat, clamp or legs) but still not a
+      wire support [^1][^2].
+    references:
+      - source: mit-ocw-6034
+        locator: Lecture 15, Learning — Near Misses, Felicity Conditions (video)
+        url: https://ocw.mit.edu/courses/6-034-artificial-intelligence-fall-2010/resources/lecture-15-learning-near-misses-felicity-conditions/
+      - source: mit-ocw-6034
+        locator: Final exam (2007), Quiz 5 Question 1 Near-Miss, Part A (Example 5)
+        url: https://ocw.mit.edu/courses/6-034-artificial-intelligence-fall-2010/resources/mit6_034f10_final_2007/
+    source:
+      id: mit-ocw-6034
+      ref: mit6_034f10_final_2007#q5.1a-ex5
+      url: https://ocw.mit.edu/courses/6-034-artificial-intelligence-fall-2010/resources/mit6_034f10_final_2007/
+    status: draft
+  - id: knowledge-rep-061
+    type: single
+    difficulty: easy
+    tags:
+      - arch-learning
+      - near-miss
+      - forbid-link
+    question: |
+      An arch learner's model of a GOOD DOG is: male, Bouvier, intelligent, no exceptional quality.
+      The teacher then shows a near miss, labeled bad: male, Bouvier, intelligent, and nasty. What is
+      learned?
+    options:
+      - text: Require link — a good dog must be intelligent
+        why: Intelligence is the same in the model and the near miss, so this example says nothing about it.
+      - text: Nothing, because negative examples never change the model
+        why: Near misses are exactly the negative examples that specialize the model.
+      - text: Drop link — the breed does not matter
+        why: The breed did not change; only the extra feature "nasty" did.
+      - text: Forbid link — a good dog must not be nasty
+        correct: true
+    explanation: |
+      A near miss differs from the model in exactly one respect and is labeled negative, so that
+      difference must be what spoils it [^1]. Here the near miss has an extra feature (nasty) that the
+      model lacks, so the learner adds a must-not link, forbidding it; a near miss that lacked a
+      feature of the model would instead require that feature [^1][^2].
+    references:
+      - source: mit-ocw-6034
+        locator: Lecture 15, Learning — Near Misses, Felicity Conditions (video)
+        url: https://ocw.mit.edu/courses/6-034-artificial-intelligence-fall-2010/resources/lecture-15-learning-near-misses-felicity-conditions/
+      - source: mit-ocw-6034
+        locator: Final exam (2009), Quiz 5 Problem 1, Part A (third example)
+        url: https://ocw.mit.edu/courses/6-034-artificial-intelligence-fall-2010/resources/mit6_034f10_final_2009/
+    source:
+      id: mit-ocw-6034
+      ref: mit6_034f10_final_2009#q5.1a
+      url: https://ocw.mit.edu/courses/6-034-artificial-intelligence-fall-2010/resources/mit6_034f10_final_2009/
+    status: draft
+  - id: knowledge-rep-062
+    type: single
+    difficulty: medium
+    tags:
+      - arch-learning
+      - near-miss
+      - require-link
+    question: |
+      The model of TABLE LAMP includes "flat base". You want the arch learner to conclude that a
+      table lamp *requires* a base. Which example should you show?
+    options:
+      - text: A positive example with a clamp instead of a flat base
+        why: That generalizes the kind of base (climb tree), it does not make the base mandatory.
+      - text: A positive example identical to the model except that it has no base
+        why: 'A hit without a base teaches the opposite: the base link would be dropped as inessential.'
+      - text: A near miss identical to the model except that it has no base
+        correct: true
+      - text: A near miss with no base that is also 60" tall
+        why: With two differences the learner cannot tell which one made it a non-lamp, so it learns nothing reliable.
+    explanation: |
+      Require link is learned from a near miss that lacks a feature the model has: since that single
+      missing feature turned a lamp into a non-lamp, it must be essential [^1]. The teacher's job is to
+      choose near misses that differ in exactly one feature, so the learner knows what to blame [^1][^2].
+    references:
+      - source: mit-ocw-6034
+        locator: Lecture 15, Learning — Near Misses, Felicity Conditions (video)
+        url: https://ocw.mit.edu/courses/6-034-artificial-intelligence-fall-2010/resources/lecture-15-learning-near-misses-felicity-conditions/
+      - source: mit-ocw-6034
+        locator: Final exam (2007), Quiz 5 Question 1 Near-Miss, Part B
+        url: https://ocw.mit.edu/courses/6-034-artificial-intelligence-fall-2010/resources/mit6_034f10_final_2007/
+    source:
+      id: mit-ocw-6034
+      ref: mit6_034f10_final_2007#q5.1b
+      url: https://ocw.mit.edu/courses/6-034-artificial-intelligence-fall-2010/resources/mit6_034f10_final_2007/
+    status: draft

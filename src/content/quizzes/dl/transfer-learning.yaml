@@ -649,3 +649,274 @@ questions:
       ref: theory.md#q116
       url: https://github.com/alexeygrigorev/data-science-interviews/blob/919f44547ef5ffc2bd59674fd301940529f4c1a8/theory.md#neural-networks-for-computer-vision
     status: draft
+  - id: transfer-learning-018
+    type: single
+    difficulty: medium
+    tags:
+      - feature-extraction
+      - frozen-base
+      - fine-tuning
+    question: |
+      You attach a new, randomly initialized dense head to a convolutional base pretrained on
+      ImageNet, to classify cars and trucks. Why set `pretrained_base.trainable = False` before
+      training?
+    options:
+      - text: The random head's large gradients would wreck the pretrained features
+        correct: true
+      - text: A pretrained base cannot be trained any further once its weights have been loaded
+        why: The base can be trained further with fine-tuning; it is just risky to do it with a random head attached [^1].
+      - text: Freezing the base makes it learn new features suited to the cars and trucks
+        why: A frozen base learns nothing new; it keeps extracting the features it learned during pretraining [^2].
+      - text: The sigmoid output needs frozen layers below it to produce valid probabilities
+        why: The sigmoid turns any real output into a probability; freezing has nothing to do with it [^3].
+    explanation: |
+      When doing transfer learning, retraining the whole base is generally not a good idea at first:
+      the random weights of the head create large gradient updates that propagate back into the base
+      and destroy much of the pretraining [^1]. So the base is frozen, it keeps doing the feature
+      extraction it learned on ImageNet, and only the head learns which class goes with which
+      features [^2]. Because the head is small, accurate classifiers can be trained from relatively
+      little data. Training the base further, fine-tuning, is possible later but needs care [^1].
+    references:
+      - source: kaggle-learn
+        locator: Computer Vision, Lesson 1 exercise, Question 1 Define Pretrained Base (correct-answer message)
+        url: https://github.com/Kaggle/learntools/blob/e9ba66dc899d3e17b80d3a1b9a5d29f430d310cb/learntools/computer_vision/ex1.py
+      - source: kaggle-learn
+        locator: Computer Vision, Lesson 1 The Convolutional Classifier — tutorial, Training the Classifier
+        url: https://github.com/Kaggle/learntools/blob/e9ba66dc899d3e17b80d3a1b9a5d29f430d310cb/notebooks/computer_vision/raw/tut1.ipynb
+      - source: kaggle-learn
+        locator: Intro to Deep Learning, Lesson 6 Binary Classification — tutorial, Making Probabilities with the Sigmoid Function
+        url: https://github.com/Kaggle/learntools/blob/e9ba66dc899d3e17b80d3a1b9a5d29f430d310cb/notebooks/deep_learning_intro/raw/tut6.ipynb
+    source:
+      id: kaggle-learn
+      ref: computer_vision/ex1#q1
+      url: https://github.com/Kaggle/learntools/blob/e9ba66dc899d3e17b80d3a1b9a5d29f430d310cb/notebooks/computer_vision/raw/ex1.ipynb
+    status: draft
+  - id: transfer-learning-019
+    type: short_answer
+    difficulty: medium
+    tags:
+      - contrastive-learning
+      - self-supervised
+      - infonce
+    question: |
+      A contrastive loss for an anchor $x$ with one positive $y^+$ and one negative $y^-$ is
+      $$-\log \frac{e^{f(x)^\top f(y^+)}}{e^{f(x)^\top f(y^+)} + e^{f(x)^\top f(y^-)}},$$
+      where the encoder $f$ outputs unit vectors and there is no temperature. What is the smallest value
+      this loss can take?
+    answer:
+      numeric: 0.127
+      tolerance: 0.001
+      hint: a number, 3 decimals
+      model: Best case $f(x)^\top f(y^+) = 1$, $f(x)^\top f(y^-) = -1$, giving $\log(1 + e^{-2}) \approx 0.127$
+    explanation: |
+      The loss is a cross-entropy over two "classes", with the dot products as logits [^1]. For unit
+      vectors the logits lie in $[-1, 1]$, so the best case is a perfectly aligned positive and an
+      antipodal negative: $-\log \frac{e}{e + e^{-1}} = \log(1 + e^{-2}) \approx 0.127$. Even a perfect
+      encoder cannot reach zero loss, which is why practical contrastive losses divide the logits by a
+      small temperature [^2].
+    references:
+      - source: mit-ocw-67960
+        locator: Homework 4, Problems 2 and 5
+        url: https://ocw.mit.edu/courses/6-7960-deep-learning-fall-2024/resources/mit6_7960_f24_hw4_pdf/
+      - title: Chen et al. (2020), A Simple Framework for Contrastive Learning of Visual Representations, arXiv:2002.05709
+        locator: Sec. 2.1 The Contrastive Learning Framework (NT-Xent loss)
+        url: https://arxiv.org/abs/2002.05709
+    source:
+      id: mit-ocw-67960
+      ref: mit6_7960_f24_hw4#q2
+      url: https://ocw.mit.edu/courses/6-7960-deep-learning-fall-2024/resources/mit6_7960_f24_hw4_pdf/
+    status: draft
+  - id: transfer-learning-020
+    type: single
+    difficulty: medium
+    tags:
+      - contrastive-learning
+      - temperature
+      - self-supervised
+    question: |
+      Contrastive losses such as SimCLR's divide the dot products of unit-length features by a
+      temperature, for example $\tau = 0.07$, before the softmax. Why is this scaling needed?
+    options:
+      - text: Unit-vector logits lie in $[-1, 1]$, too narrow for a confident softmax
+        correct: true
+      - text: Dividing by $\tau$ is the step that normalizes the features to unit length
+        why: Normalization is a separate step before the dot product; $\tau$ only rescales the resulting logits.
+      - text: It makes the contrastive loss convex in the encoder's weights
+        why: The loss of a deep encoder is non-convex whatever the temperature.
+      - text: It reduces how many negatives each anchor is compared with
+        why: The set of negatives is fixed by the batch; $\tau$ changes how strongly each one counts, not how many there are.
+    explanation: |
+      With logits confined to $[-1, 1]$, the positive's softmax probability is at most
+      $e / (e + (N - 1)e^{-1})$, so the loss stays bounded away from zero even for a perfect encoder [^1].
+      Dividing by $\tau < 1$ widens the range to $[-1/\tau, 1/\tau]$ and sharpens the softmax [^2].
+      Dropping the normalization instead would let the encoder scale its outputs up to shrink the loss,
+      but the logits could then grow without bound and overflow [^1].
+    references:
+      - source: mit-ocw-67960
+        locator: Homework 4, Problem 5 (normalization in contrastive learning)
+        url: https://ocw.mit.edu/courses/6-7960-deep-learning-fall-2024/resources/mit6_7960_f24_hw4_pdf/
+      - title: Chen et al. (2020), A Simple Framework for Contrastive Learning of Visual Representations, arXiv:2002.05709
+        locator: Sec. 2.1 The Contrastive Learning Framework; Sec. 5.1 Normalized cross entropy loss with adjustable temperature
+        url: https://arxiv.org/abs/2002.05709
+    source:
+      id: mit-ocw-67960
+      ref: mit6_7960_f24_hw4#q5
+      url: https://ocw.mit.edu/courses/6-7960-deep-learning-fall-2024/resources/mit6_7960_f24_hw4_pdf/
+    status: draft
+  - id: transfer-learning-021
+    type: single
+    difficulty: hard
+    tags:
+      - contrastive-learning
+      - representation-geometry
+      - margin
+    question: |
+      An encoder $f$ maps data from $N$ groups to unit vectors; group $i$ lives on a finite set $S_i$.
+      Define $\mathrm{diameter}_i = \max_{s, t \in S_i}\lVert f(s) - f(t) \rVert$ and
+      $\mathrm{margin}_{i \to j} = \min_{s \in S_i,\, t \in S_j}\lVert f(s) - f(t) \rVert$. A contrastive
+      "classification" draws an anchor and a positive from group $i$ and one negative from every other
+      group, and is correct if the positive has the largest dot product with the anchor. Which
+      condition guarantees that every such classification is correct?
+    options:
+      - text: For every group $i$ and every other group $j$, $\mathrm{diameter}_i < \mathrm{margin}_{i \to j}$
+        correct: true
+      - text: For every group $i$ there is some other group $j$ with $\mathrm{diameter}_i < \mathrm{margin}_{i \to j}$
+        why: A negative drawn from a group that is closer than the diameter can still beat the positive.
+      - text: Some group $i^\star$ has a diameter smaller than every margin between groups
+        why: This constrains only one group; anchors from the other, wider groups can still be misclassified.
+      - text: The margins between all pairs of groups are equal
+        why: Equal margins say nothing about how spread out each group is; wide groups still fail.
+    explanation: |
+      For unit vectors $\lVert a - b \rVert^2 = 2 - 2a^\top b$, so the positive wins exactly when it is
+      closer to the anchor than every negative [^1]. The anchor–positive distance is at most
+      $\mathrm{diameter}_i$ and the distance to a negative from group $j$ is at least
+      $\mathrm{margin}_{i \to j}$, so the condition for all $i$ and all $j \ne i$ guarantees a correct answer.
+      Contrastive training therefore favours small diameters (alignment) and large margins [^2].
+    references:
+      - source: mit-ocw-67960
+        locator: Homework 4, Problem 4(a)–(c)
+        url: https://ocw.mit.edu/courses/6-7960-deep-learning-fall-2024/resources/mit6_7960_f24_hw4_pdf/
+      - title: Wang & Isola (2020), Understanding Contrastive Representation Learning through Alignment and Uniformity on the Hypersphere, arXiv:2005.10242
+        locator: Sec. 4 Feature distribution on the hypersphere (alignment and uniformity)
+        url: https://arxiv.org/abs/2005.10242
+    source:
+      id: mit-ocw-67960
+      ref: mit6_7960_f24_hw4#q4c
+      url: https://ocw.mit.edu/courses/6-7960-deep-learning-fall-2024/resources/mit6_7960_f24_hw4_pdf/
+    status: draft
+  - id: transfer-learning-022
+    type: single
+    difficulty: medium
+    tags:
+      - contrastive-learning
+      - alignment
+      - uniformity
+    question: |
+      Positive pairs come from groups with disjoint supports (for example, augmentations of the same
+      image). For unit-vector features, which geometry does contrastive learning favour?
+    options:
+      - text: Tight clusters per group, spread out over the sphere
+        correct: true
+      - text: Features spread uniformly over the sphere, ignoring the groups
+        why: The positive-pair term pulls members of the same group together, so groups form clusters rather than spreading out individually.
+      - text: All features collapse to a single point
+        why: Then negatives are as close as positives and the loss stays high; the negative term pushes different groups apart.
+      - text: Tight clusters per group, packed close together on one side
+        why: Small gaps between clusters make negatives almost as similar as positives; the loss rewards large margins.
+    explanation: |
+      Small group diameters (alignment) make the encoder invariant to the variations inside each
+      positive-pair distribution [^1]. Large margins between groups push the clusters apart, and on a
+      sphere the max-margin placement of $N$ points (Tammes' problem) is roughly uniform [^1]. Wang and
+      Isola show that the contrastive loss asymptotically optimizes exactly these two properties,
+      alignment and uniformity [^2].
+    references:
+      - source: mit-ocw-67960
+        locator: Homework 4, Problem 4(e) and the remark after it
+        url: https://ocw.mit.edu/courses/6-7960-deep-learning-fall-2024/resources/mit6_7960_f24_hw4_pdf/
+      - title: Wang & Isola (2020), Understanding Contrastive Representation Learning through Alignment and Uniformity on the Hypersphere, arXiv:2005.10242
+        locator: Sec. 4 Feature distribution on the hypersphere
+        url: https://arxiv.org/abs/2005.10242
+    source:
+      id: mit-ocw-67960
+      ref: mit6_7960_f24_hw4#q4e
+      url: https://ocw.mit.edu/courses/6-7960-deep-learning-fall-2024/resources/mit6_7960_f24_hw4_pdf/
+    status: draft
+  - id: transfer-learning-023
+    type: single
+    difficulty: medium
+    tags:
+      - contrastive-learning
+      - dual-encoder
+      - cross-entropy
+      - clip
+    question: |
+      A classifier computes the logits $g(x) = W^\top [g_{\text{feat}}(x); 1]$ for $C$ classes and is
+      trained with cross-entropy. Read it as dual-encoder (CLIP-style) contrastive learning between
+      inputs and class labels, with input encoder $f_1(x) = [g_{\text{feat}}(x); 1]$ and logits
+      $f_1(x)^\top f_2(c)$. What is the label encoder $f_2(c)$?
+    options:
+      - text: The $c$-th column of $W$, a learned embedding of class $c$
+        correct: true
+      - text: The one-hot vector of class $c$
+        why: A one-hot vector is fixed and has $C$ entries, while $f_2(c)$ must live in the feature space and is learned.
+      - text: The average feature vector of the training inputs of class $c$
+        why: That is a prototype (nearest-class-mean) classifier; cross-entropy training learns the class vectors as free parameters.
+      - text: The softmax probability that $x$ belongs to class $c$
+        why: That is a scalar output of the model, not an embedding of the class.
+    explanation: |
+      The logit for class $c$ is $[g_{\text{feat}}(x); 1]^\top W_{:,c}$: a dot product between an input
+      embedding and a class embedding, with the bias as an extra coordinate [^1]. The cross-entropy
+      over the $C$ classes is then a contrastive loss whose positive is the true class and whose
+      negatives are the other $C - 1$ class vectors [^1]. CLIP trains both encoders the same way on
+      image–text pairs, which lets it use free-text class names as the label side [^2].
+    references:
+      - source: mit-ocw-67960
+        locator: Homework 4, Problem 6
+        url: https://ocw.mit.edu/courses/6-7960-deep-learning-fall-2024/resources/mit6_7960_f24_hw4_pdf/
+      - title: Radford et al. (2021), Learning Transferable Visual Models From Natural Language Supervision, arXiv:2103.00020
+        locator: Sec. 2.3 Selecting an Efficient Pre-Training Method (Figure 3)
+        url: https://arxiv.org/abs/2103.00020
+    source:
+      id: mit-ocw-67960
+      ref: mit6_7960_f24_hw4#q6
+      url: https://ocw.mit.edu/courses/6-7960-deep-learning-fall-2024/resources/mit6_7960_f24_hw4_pdf/
+    status: draft
+  - id: transfer-learning-024
+    type: single
+    difficulty: medium
+    tags:
+      - contrastive-learning
+      - data-augmentation
+      - invariance
+    question: |
+      Images show one coloured shape each. For contrastive learning, a positive pair is two augmented
+      copies of the same image; the augmentation moves the shape to a random location and gives it a
+      random colour, but never changes the shape. Negatives are augmented copies of other images. What
+      should the learned representation be?
+    options:
+      - text: Invariant to location and colour, sensitive to shape
+        correct: true
+      - text: Invariant to shape, sensitive to location and colour
+        why: This reverses the roles; the factors that vary inside a positive pair are the ones the encoder learns to ignore.
+      - text: Invariant to location, colour and shape
+        why: Then every image would get the same code and could not be told apart from its negatives.
+      - text: Sensitive to location, colour and shape
+        why: Location and colour differ between the two copies of a positive pair, and the alignment term pulls such copies together.
+    explanation: |
+      The positive pairs define what the encoder should ignore: whatever changes between two views of
+      the same image is pulled to the same code [^1]. Everything else, here the shape, is what separates
+      an image from its negatives, so the encoder stays sensitive to it [^1]. Choosing the
+      augmentations is therefore choosing the invariances, which is why the augmentation recipe
+      matters so much in SimCLR [^2].
+    references:
+      - source: mit-ocw-67960
+        locator: Homework 4, Problem 8(b)
+        url: https://ocw.mit.edu/courses/6-7960-deep-learning-fall-2024/resources/mit6_7960_f24_hw4_pdf/
+      - title: Chen et al. (2020), A Simple Framework for Contrastive Learning of Visual Representations, arXiv:2002.05709
+        locator: Sec. 3 Data Augmentation for Contrastive Representation Learning
+        url: https://arxiv.org/abs/2002.05709
+    source:
+      id: mit-ocw-67960
+      ref: mit6_7960_f24_hw4#q8b
+      url: https://ocw.mit.edu/courses/6-7960-deep-learning-fall-2024/resources/mit6_7960_f24_hw4_pdf/
+    status: draft

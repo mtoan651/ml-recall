@@ -427,3 +427,290 @@ questions:
       ref: lectures/notes/04_kNNs-SVM-RBF.ipynb#ex4.2
       url: https://github.com/UBC-CS/cpsc330-2025W1/blob/a89d6131a0e2ae5f7ab36f207a3809a5b7137aef/lectures/notes/04_kNNs-SVM-RBF.ipynb
     status: draft
+  - id: svm-014
+    type: single
+    difficulty: hard
+    tags:
+      - svm
+      - margin
+      - support-vectors
+      - canonical-form
+    question: |
+      Training data: negatives $(-1, 0)$ and $(2, -2)$, positive $(1, 0)$ (labels $-1$ and $+1$).
+      A linear SVM is written as $h(\mathbf{x}) = \mathbf{w} \cdot \mathbf{x} + b$ in canonical form:
+      $y_i\,h(\mathbf{x}_i) \ge 1$ for all points, with equality for the support vectors, and
+      $\lVert \mathbf{w} \rVert$ as small as possible. Which $(\mathbf{w}, b)$ is the SVM solution?
+    options:
+      - text: $\mathbf{w} = (1, 2)$, $b = 0$
+        why: It separates the data, but $\lVert \mathbf{w} \rVert^2 = 5 > 3.25$, so its margin $2/\lVert \mathbf{w} \rVert$ is smaller.
+      - text: $\mathbf{w} = (1, 1.5)$, $b = 0$
+        correct: true
+      - text: $\mathbf{w} = (1, 1)$, $b = 0$
+        why: The point $(2, -2)$ gives $h = 0$; it lies on the boundary instead of on its gutter.
+      - text: $\mathbf{w} = (2, 3)$, $b = 0$
+        why: Same boundary line, but every $y_i h(\mathbf{x}_i)$ equals 2; dividing by 2 gives a smaller $\lVert \mathbf{w} \rVert$, so this is not the canonical solution.
+    explanation: |
+      With $\mathbf{w} = (1, 1.5)$, $b = 0$ all three points satisfy $y_i h(\mathbf{x}_i) = 1$, so all
+      are support vectors, and the multipliers solving $\mathbf{w} = \sum_i \alpha_i y_i
+      \mathbf{x}_i$, $\sum_i \alpha_i y_i = 0$ are $\alpha = (0.875, 0.75, 1.625)$, all positive, which
+      confirms optimality [^1][^2]. Scaling $(\mathbf{w}, b)$ keeps the boundary but breaks the
+      canonical condition, and $(1, 2)$ has a narrower street.
+    references:
+      - title: 'Wikipedia: Support vector machine'
+        url: https://en.wikipedia.org/wiki/Support_vector_machine#Hard-margin
+        locator: Hard-margin
+      - source: mit-ocw-6034-s05
+        locator: Quiz 2 (Spring 2005) solutions, Problem 9 SVM, part 1
+        url: https://ocw.mit.edu/courses/6-034-artificial-intelligence-spring-2005/resources/q2_soln/
+    source:
+      id: mit-ocw-6034-s05
+      ref: q2_soln#q9.1
+      url: https://ocw.mit.edu/courses/6-034-artificial-intelligence-spring-2005/resources/q2_soln/
+    status: draft
+  - id: svm-015
+    type: short_answer
+    difficulty: medium
+    tags:
+      - svm
+      - polynomial-kernel
+      - dual-form
+    question: |
+      An SVM uses the kernel $K(\mathbf{u}, \mathbf{v}) = (1 + \mathbf{u} \cdot \mathbf{v})^2$. Its
+      support vectors are $(-1, 2)$ with label $+1$ and $(1, 2)$ with label $-1$, both with
+      $\alpha = 0.05$, and $b = 0$. What does $h(\mathbf{x}) = \sum_i \alpha_i y_i K(\mathbf{x}_i,
+      \mathbf{x}) + b$ output for $\mathbf{x} = (1, 3)$?
+    answer:
+      numeric: -1.4
+      tolerance: 0.001
+      hint: a decimal, e.g. 0.75
+      model: $0.05(1 + 5)^2 - 0.05(1 + 7)^2 = 1.8 - 3.2 = -1.4$
+    explanation: |
+      In the dual form the classifier is a weighted sum of kernel values with the support vectors
+      [^1]. $(-1, 2) \cdot (1, 3) = 5$ and $(1, 2) \cdot (1, 3) = 7$, so $h = 0.05 \cdot 36 - 0.05
+      \cdot 64 = -1.4$: class $-1$, outside the street. The same formula gives exactly $+1$ and $-1$
+      at the two support vectors, which is why $b = 0$ [^2].
+    references:
+      - title: 'Wikipedia: Support vector machine'
+        url: https://en.wikipedia.org/wiki/Support_vector_machine#Kernel_trick
+        locator: Kernel trick
+      - source: mit-ocw-6034-s05
+        locator: Quiz 2 review solutions, Problem 7 SVMs
+        url: https://ocw.mit.edu/courses/6-034-artificial-intelligence-spring-2005/resources/quiz2_review_sol/
+    source:
+      id: mit-ocw-6034-s05
+      ref: quiz2_review_sol#q7
+      url: https://ocw.mit.edu/courses/6-034-artificial-intelligence-spring-2005/resources/quiz2_review_sol/
+    status: draft
+  - id: svm-016
+    type: short_answer
+    difficulty: medium
+    tags:
+      - svm
+      - lagrange-multipliers
+      - dual-form
+    question: |
+      A linear SVM is trained on two one-dimensional points: $x_1 = 0$ with label $+1$ and $x_2 = 4$
+      with label $-1$. What is the Lagrange multiplier $\alpha_1$ (equal to $\alpha_2$) of the
+      maximum-margin solution?
+    answer:
+      numeric: 0.125
+      tolerance: 0.001
+      hint: a decimal, e.g. 0.5
+      model: $w = -0.5$, $b = 1$; $w = \sum_i \alpha_i y_i x_i = -4\alpha_2$ gives $\alpha_1 = \alpha_2 = 1/8$
+    explanation: |
+      The boundary lies halfway, at $x = 2$, with gutters at the two points: $w \cdot 0 + b = 1$ and
+      $4w + b = -1$ give $b = 1$, $w = -0.5$ [^1]. The dual conditions $\sum_i \alpha_i y_i = 0$ and
+      $w = \sum_i \alpha_i y_i x_i = \alpha_1 \cdot 0 - 4\alpha_2$ then give $\alpha_1 = \alpha_2 =
+      1/8$ [^2].
+    references:
+      - title: 'Wikipedia: Support vector machine'
+        url: https://en.wikipedia.org/wiki/Support_vector_machine#Dual
+        locator: Dual
+      - source: mit-ocw-6034-s05
+        locator: Quiz 2 review solutions, Problem 4.4 SVM
+        url: https://ocw.mit.edu/courses/6-034-artificial-intelligence-spring-2005/resources/quiz2_review_sol/
+    source:
+      id: mit-ocw-6034-s05
+      ref: quiz2_review_sol#q4.4
+      url: https://ocw.mit.edu/courses/6-034-artificial-intelligence-spring-2005/resources/quiz2_review_sol/
+    status: draft
+  - id: svm-017
+    type: short_answer
+    difficulty: hard
+    tags:
+      - svm
+      - margin
+      - support-vectors
+    question: |
+      Negative points: $(1, 2)$, $(3, 5)$, $(3, 3)$. Positive points: $(5, 1)$, $(7, 2)$. What is the
+      width of the street (the distance between the two gutters) of the hard-margin linear SVM? Round
+      to 2 decimals.
+    answer:
+      numeric: 2.83
+      tolerance: 0.01
+      hint: a decimal, 2 decimal places
+      model: Support vectors $(3, 3)$ and $(5, 1)$; $\mathbf{w} = (0.5, -0.5)$, $b = -1$; width $2/\lVert \mathbf{w} \rVert = 2\sqrt{2} \approx 2.83$
+    explanation: |
+      The closest opposite pair is $(3, 3)$ and $(5, 1)$, and the perpendicular bisector of that
+      segment, $x - y = 2$, separates all points with room to spare: every other point is farther
+      from it [^1]. In canonical form $\mathbf{w} = (0.5, -0.5)$, $b = -1$ puts both support vectors
+      on the gutters, and the width is $2/\lVert \mathbf{w} \rVert = 2\sqrt{2} \approx 2.83$, the
+      distance between the two support vectors [^2].
+    references:
+      - title: 'Wikipedia: Support vector machine'
+        url: https://en.wikipedia.org/wiki/Support_vector_machine#Hard-margin
+        locator: Hard-margin
+      - source: mit-ocw-6034
+        locator: Quiz 4 (2010), Problem 1 SVMs, Part A1–A2
+        url: https://ocw.mit.edu/courses/6-034-artificial-intelligence-fall-2010/resources/mit6_034f10_quiz4_2010/
+    source:
+      id: mit-ocw-6034
+      ref: mit6_034f10_quiz4_2010#q1a1
+      url: https://ocw.mit.edu/courses/6-034-artificial-intelligence-fall-2010/resources/mit6_034f10_quiz4_2010/
+    status: draft
+  - id: svm-018
+    type: short_answer
+    difficulty: hard
+    tags:
+      - svm
+      - lagrange-multipliers
+      - support-vectors
+    question: |
+      For the hard-margin linear SVM on negatives $(1, 2)$, $(3, 5)$, $(3, 3)$ and positives
+      $(5, 1)$, $(7, 2)$, the solution is $\mathbf{w} = (0.5, -0.5)$, $b = -1$. What is the Lagrange
+      multiplier $\alpha$ of the support vector $(5, 1)$?
+    answer:
+      numeric: 0.25
+      tolerance: 0.001
+      hint: a decimal, e.g. 0.5
+      model: $\mathbf{w} = \alpha(5, 1) - \alpha(3, 3) = \alpha(2, -2) = (0.5, -0.5)$, so $\alpha = 0.25$; all other points have $\alpha = 0$.
+    explanation: |
+      Only the support vectors $(3, 3)$ and $(5, 1)$ have nonzero $\alpha$, and $\sum_i \alpha_i y_i
+      = 0$ forces their multipliers to be equal [^1]. Then $\mathbf{w} = \alpha \cdot (5, 1) - \alpha
+      \cdot (3, 3) = (2\alpha, -2\alpha)$, which matches $(0.5, -0.5)$ for $\alpha = 0.25$. A new
+      negative point far from the street, such as $(0, 6)$, would get $\alpha = 0$ and change nothing
+      [^2].
+    references:
+      - title: 'Wikipedia: Support vector machine'
+        url: https://en.wikipedia.org/wiki/Support_vector_machine#Dual
+        locator: Dual
+      - source: mit-ocw-6034
+        locator: Quiz 4 (2010), Problem 1 SVMs, Parts A2–A3
+        url: https://ocw.mit.edu/courses/6-034-artificial-intelligence-fall-2010/resources/mit6_034f10_quiz4_2010/
+    source:
+      id: mit-ocw-6034
+      ref: mit6_034f10_quiz4_2010#q1a2
+      url: https://ocw.mit.edu/courses/6-034-artificial-intelligence-fall-2010/resources/mit6_034f10_quiz4_2010/
+    status: draft
+  - id: svm-019
+    type: single
+    difficulty: medium
+    tags:
+      - svm
+      - rbf-kernel
+      - overfitting
+      - cross-validation
+    question: |
+      An SVM with a Gaussian (RBF) kernel of width $\sigma$ fits its training set perfectly but does
+      poorly on new data. Which change is most likely to help?
+    options:
+      - text: Raise the bound $C$ on the multipliers so no training point can be misclassified
+        why: Allowing larger multipliers lets the classifier chase every training point, which increases overfitting.
+      - text: Choose a larger $\sigma$ (and the bound on the multipliers) by cross-validation
+        correct: true
+      - text: Choose a smaller $\sigma$ so that each training point is fit more precisely
+        why: A narrower Gaussian around each point makes the boundary even more wiggly; small $\sigma$ is the overfitting direction.
+      - text: Switch to a polynomial kernel of much higher degree
+        why: High-degree polynomial kernels are another way to overfit, not a cure for it.
+    explanation: |
+      A small $\sigma$ gives each support vector a narrow bump, so the decision boundary can wrap
+      tightly around individual training points; large multipliers have a similar effect [^1][^2].
+      Picking $\sigma$ and the multiplier bound by cross-validation trades training fit for
+      smoothness and usually improves accuracy on new data [^1].
+    references:
+      - source: mit-ocw-6034-s05
+        locator: Quiz 2 review solutions, Problem 2 Overfitting, Part D SVM
+        url: https://ocw.mit.edu/courses/6-034-artificial-intelligence-spring-2005/resources/quiz2_review_sol/
+      - title: 'Wikipedia: Radial basis function kernel'
+        url: https://en.wikipedia.org/wiki/Radial_basis_function_kernel
+        locator: Introduction (definition and the role of σ)
+    source:
+      id: mit-ocw-6034-s05
+      ref: quiz2_review_sol#q2d-sp-overfit
+      url: https://ocw.mit.edu/courses/6-034-artificial-intelligence-spring-2005/resources/quiz2_review_sol/
+    status: draft
+  - id: svm-020
+    type: single
+    difficulty: hard
+    tags:
+      - kernel-trick
+      - feature-map
+      - svm
+    question: |
+      One-dimensional data alternates between clusters of + and − points along the $x$ axis, so it is
+      not linearly separable. A student separates it with an SVM using the kernel
+      $$K(x_1, x_2) = \cos\tfrac{\pi x_1}{4} \cos\tfrac{\pi x_2}{4} + \sin\tfrac{\pi x_1}{4}
+      \sin\tfrac{\pi x_2}{4}.$$
+      Which feature map $\Phi$ satisfies $K(x_1, x_2) = \Phi(x_1) \cdot \Phi(x_2)$?
+    options:
+      - text: $\Phi(x) = \left(\cos^2\frac{\pi x}{4},\ \sin^2\frac{\pi x}{4}\right)$
+        why: This gives $\cos^2 \cos^2 + \sin^2 \sin^2$, squares that do not appear in $K$.
+      - text: $\Phi(x) = \left(x,\ \cos\frac{\pi x}{4}\right)$
+        why: The product would contain $x_1 x_2$, which $K$ does not have.
+      - text: $\Phi(x) = \left(\cos\frac{\pi x}{4} + \sin\frac{\pi x}{4}\right)$
+        why: Its square would add cross terms $\cos\frac{\pi x_1}{4} \sin\frac{\pi x_2}{4}$ that are not in $K$.
+      - text: $\Phi(x) = \left(\cos\frac{\pi x}{4},\ \sin\frac{\pi x}{4}\right)$
+        correct: true
+    explanation: |
+      $K$ is literally a dot product of the two-component vectors $(\cos\frac{\pi x}{4},
+      \sin\frac{\pi x}{4})$, and it simplifies to $\cos\frac{\pi (x_1 - x_2)}{4}$ [^1]. $\Phi$ wraps
+      the line onto the unit circle with period 8, so points 4 apart land on opposite sides; clusters
+      that alternate along the line can then be cut by a straight line in the plane [^1][^2].
+    references:
+      - title: 'Wikipedia: Kernel method'
+        url: https://en.wikipedia.org/wiki/Kernel_method#Mathematics:_the_kernel_trick
+        locator: 'Mathematics: the kernel trick'
+      - source: mit-ocw-6034
+        locator: Quiz 4 (2008), Problem 1 Support Vectors, Part B
+        url: https://ocw.mit.edu/courses/6-034-artificial-intelligence-fall-2010/resources/mit6_034f10_quiz4_2008/
+    source:
+      id: mit-ocw-6034
+      ref: mit6_034f10_quiz4_2008#q1b
+      url: https://ocw.mit.edu/courses/6-034-artificial-intelligence-fall-2010/resources/mit6_034f10_quiz4_2008/
+    status: draft
+  - id: svm-021
+    type: single
+    difficulty: medium
+    tags:
+      - polynomial-kernel
+      - feature-map
+      - svm
+    question: |
+      One-dimensional data: positives at $x = -1, 1$ and negatives at $x = -3, -2, 2, 3$. A linear SVM
+      cannot separate them, but an SVM with $K(x, z) = (1 + xz)^2$ can. Why?
+    options:
+      - text: The kernel doubles every coordinate, which spreads the classes apart on the line
+        why: Scaling the line does not change the order of the points, so they would still alternate.
+      - text: In the feature space $(1, \sqrt{2}\,x, x^2)$ the classes split by $x^2$, e.g. at $x^2 = 2.5$
+        correct: true
+      - text: Any kernel can separate any data, so the degree does not matter
+        why: A degree-1 polynomial kernel is just a linear SVM, which fails here.
+      - text: The kernel ignores the sign of $x$, so it maps the data to $|x|$ on a line
+        why: The feature map keeps the sign in the $\sqrt{2}\,x$ coordinate; it is the $x^2$ coordinate that separates.
+    explanation: |
+      Expanding $(1 + xz)^2 = 1 + 2xz + x^2 z^2$ shows that $K(x, z) = \Phi(x) \cdot \Phi(z)$ with
+      $\Phi(x) = (1, \sqrt{2}\,x, x^2)$ [^1]. The positives have $x^2 = 1$ and the negatives $x^2 \ge 4$,
+      so a line in feature space that ignores the middle coordinate, $x^2 = 2.5$, separates them with
+      the widest margin [^1][^2].
+    references:
+      - title: 'Wikipedia: Polynomial kernel'
+        url: https://en.wikipedia.org/wiki/Polynomial_kernel#Definition
+        locator: Definition (explicit feature map for degree 2)
+      - source: mit-ocw-6034-s05
+        locator: Quiz 2 review solutions, Problem 1 Classification, Part D (polynomial kernel, d = 2)
+        url: https://ocw.mit.edu/courses/6-034-artificial-intelligence-spring-2005/resources/quiz2_review_sol/
+    source:
+      id: mit-ocw-6034-s05
+      ref: quiz2_review_sol#q1d
+      url: https://ocw.mit.edu/courses/6-034-artificial-intelligence-spring-2005/resources/quiz2_review_sol/
+    status: draft

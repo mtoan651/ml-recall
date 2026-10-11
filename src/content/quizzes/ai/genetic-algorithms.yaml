@@ -154,3 +154,144 @@ questions:
       ref: quiz-221/q3
       url: https://github.com/microsoft/AI-For-Beginners/blob/392d0df1b2647cbee104942390551f1ed9e072c8/etc/quiz-app/src/assets/translations/en/lesson-21.json
     status: draft
+  - id: genetic-algorithms-007
+    type: single
+    difficulty: medium
+    tags:
+      - mutation
+      - hill-climbing
+      - search
+    question: |
+      A genetic algorithm keeps a population, mutates individuals at random and selects the fitter
+      ones, but never applies crossover. Which description fits it best?
+    options:
+      - text: A parallel form of hill climbing on the fitness landscape
+        correct: true
+      - text: Gradient ascent on the fitness function
+        why: It needs no gradient; it only compares fitness values of random variants.
+      - text: Means–ends analysis, reducing the difference to a goal state
+        why: There is no explicit goal state or difference measure, only a fitness score.
+      - text: An exhaustive search that eventually tries every possible genome
+        why: Selection keeps only the fitter variants; nothing systematically enumerates the space.
+    explanation: |
+      Each mutation is a small random step from a current individual, and selection keeps the steps
+      that improve fitness, which is local hill climbing run in parallel over the population [^1].
+      Without crossover, nothing combines information from different individuals, so the population
+      can get stuck on local optima just as a single hill climber does [^2].
+    references:
+      - source: mit-ocw-6034
+        locator: Final exam (2009), Quiz 5 Problem 4 (genetic algorithms without crossover)
+        url: https://ocw.mit.edu/courses/6-034-artificial-intelligence-fall-2010/resources/mit6_034f10_final_2009/
+      - title: 'Wikipedia: Genetic algorithm'
+        url: https://en.wikipedia.org/wiki/Genetic_algorithm#Problem_domains
+        locator: Problem domains (mutation and crossover vs. hill climbing)
+    source:
+      id: mit-ocw-6034
+      ref: mit6_034f10_final_2009#q5.4a
+      url: https://ocw.mit.edu/courses/6-034-artificial-intelligence-fall-2010/resources/mit6_034f10_final_2009/
+    status: draft
+  - id: genetic-algorithms-008
+    type: single
+    difficulty: medium
+    tags:
+      - crossover
+      - local-optima
+    question: What is crossover mainly good for in a genetic algorithm?
+    options:
+      - text: Making a small random change to one individual so that the search keeps exploring
+        why: That describes mutation, which acts on a single individual.
+      - text: Combining parts of different parents, which can escape a local maximum
+        correct: true
+      - text: Copying the fittest individual unchanged into the next generation
+        why: That is elitism, a selection policy; it creates nothing new.
+      - text: Turning raw fitness into selection probabilities, for example by rank
+        why: That is the selection scheme (fitness-proportional or rank-based), not crossover.
+    explanation: |
+      Crossover builds a child from pieces of two parents, so features that evolved separately can be
+      combined in one step [^1]. Together with mutation this lets the population jump to regions that
+      a single hill climber would not reach, which is why crossover is described as a way to escape
+      local maxima [^1][^2]. It only helps when the encoding keeps useful pieces together.
+    references:
+      - title: 'Wikipedia: Genetic algorithm'
+        url: https://en.wikipedia.org/wiki/Genetic_algorithm#Problem_domains
+        locator: Problem domains (mutation and crossover vs. hill climbing)
+      - source: mit-ocw-6034
+        locator: Final exam (2009), Quiz 5 Problem 4 (crossover)
+        url: https://ocw.mit.edu/courses/6-034-artificial-intelligence-fall-2010/resources/mit6_034f10_final_2009/
+    source:
+      id: mit-ocw-6034
+      ref: mit6_034f10_final_2009#q5.4b
+      url: https://ocw.mit.edu/courses/6-034-artificial-intelligence-fall-2010/resources/mit6_034f10_final_2009/
+    status: draft
+  - id: genetic-algorithms-009
+    type: single
+    difficulty: medium
+    tags:
+      - fitness-function
+      - plateau
+    question: |
+      A genetic algorithm evolves randomly initialized neural networks that should recognize a secret
+      knock pattern, given as a 0/1 sequence $k_1 \ldots k_n$. Which fitness function would leave the
+      algorithm stuck on a fitness plateau from the very first generation?
+    options:
+      - text: The number of positions $k_i$ that are classified correctly
+        why: Almost every change in behavior changes this count, so it gives selection a gradient to follow.
+      - text: The number of correctly classified subsequences $k_i \ldots k_j$
+        why: This also rewards partial success and varies smoothly across the population.
+      - text: 1 if the whole pattern is classified correctly, 0 otherwise
+        correct: true
+      - text: The length of the prefix $k_1 \ldots k_t$ that is classified correctly
+        why: Partial progress raises this score, so selection can tell slightly better networks from worse ones.
+    explanation: |
+      Selection can only prefer individuals whose fitness differs [^1]. Random networks essentially
+      never get the whole pattern right, so an all-or-nothing score gives every individual 0, and the
+      search becomes blind random sampling. Scores that reward partial correctness give a slope to
+      climb [^1][^2].
+    references:
+      - title: 'Wikipedia: Genetic algorithm'
+        url: https://en.wikipedia.org/wiki/Genetic_algorithm#Limitations
+        locator: Limitations (fitness functions that give only pass/fail)
+      - source: mit-ocw-6034
+        locator: Quiz 3 (2009), Question 2 Part C, item 3
+        url: https://ocw.mit.edu/courses/6-034-artificial-intelligence-fall-2010/resources/mit6_034f10_quiz3_2009/
+    source:
+      id: mit-ocw-6034
+      ref: mit6_034f10_quiz3_2009#q2c3
+      url: https://ocw.mit.edu/courses/6-034-artificial-intelligence-fall-2010/resources/mit6_034f10_quiz3_2009/
+    status: draft
+  - id: genetic-algorithms-010
+    type: single
+    difficulty: easy
+    tags:
+      - fitness-function
+      - training-data
+      - negative-examples
+    question: |
+      A friend uses a genetic algorithm to train a door-unlocking network on the secret knock
+      sequence. It reliably says "open" for the secret knock, but once installed the door also opens
+      when someone simply runs past. What was missing from the training data?
+    options:
+      - text: More repeated examples of the secret knock
+        why: More copies of the same positive example still never penalize a network that opens for everything.
+      - text: A higher mutation rate in the GA
+        why: The search found exactly what the fitness rewarded; the problem is what the fitness measured.
+      - text: Many more generations of evolution
+        why: Longer evolution only optimizes the same flawed objective further.
+      - text: Negative (non-knock) sequences
+        correct: true
+    explanation: |
+      If fitness is measured only on the secret knock, a network that outputs "open" for every input
+      gets a perfect score, so evolution finds it [^1]. The fitness function must also reward
+      rejecting other sequences; a GA optimizes exactly the fitness it is given, no more [^2].
+    references:
+      - source: mit-ocw-6034
+        locator: Quiz 3 (2009), Question 2 Part C, item 5
+        url: https://ocw.mit.edu/courses/6-034-artificial-intelligence-fall-2010/resources/mit6_034f10_quiz3_2009/
+      - title: 'Wikipedia: Genetic algorithm'
+        url: https://en.wikipedia.org/wiki/Genetic_algorithm#Optimization_problems
+        locator: Optimization problems (the fitness function defines what is optimized)
+    source:
+      id: mit-ocw-6034
+      ref: mit6_034f10_quiz3_2009#q2c5
+      url: https://ocw.mit.edu/courses/6-034-artificial-intelligence-fall-2010/resources/mit6_034f10_quiz3_2009/
+    status: draft

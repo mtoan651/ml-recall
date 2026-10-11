@@ -2084,3 +2084,358 @@ questions:
       ref: extras/solutions/04_pytorch_custom_datasets_exercise_solutions.ipynb#ex1
       url: https://github.com/mrdbourke/pytorch-deep-learning/blob/a16552001d963d078390d5bbdfc321e7e7c94bd1/extras/solutions/04_pytorch_custom_datasets_exercise_solutions.ipynb
     status: draft
+  - id: training-065
+    type: multiple
+    difficulty: medium
+    tags:
+      - sgd
+      - learning-rate
+      - batch-size
+    question: |
+      You train a linear model with minibatch SGD and vary the learning rate and the batch size.
+      Which statements are true? Select all that apply.
+    options:
+      - text: Smaller batches give noisier weight updates and noisier loss curves
+        correct: true
+      - text: With a smaller learning rate, the network needs more minibatches before its weights converge
+        correct: true
+      - text: Too large a learning rate can make the training fail completely
+        correct: true
+      - text: Larger batches give noisier loss curves, because each step uses more data
+        why: A larger batch is a larger sample of the data, so its gradient estimate is less noisy, not more [^2].
+      - text: A smaller learning rate makes each training step take longer to compute
+        why: The learning rate only scales the size of the update; a step costs the same, there are just more of them [^1].
+    explanation: |
+      Each minibatch is a random sample of the data, and smaller samples give noisier estimates, so
+      small batches make noisier updates and loss curves [^2]. The learning rate sets how far the
+      weights move toward each batch's solution: a smaller rate needs more minibatches to converge
+      [^1], while a large one speeds training but does not settle into a minimum as well, and a rate
+      that is too large can make training fail [^2]. Adam adapts the learning rate itself, which is
+      why it works well without tuning [^1].
+    references:
+      - source: kaggle-learn
+        locator: Intro to Deep Learning, Lesson 3 Stochastic Gradient Descent — tutorial, Learning Rate and Batch Size
+        url: https://github.com/Kaggle/learntools/blob/e9ba66dc899d3e17b80d3a1b9a5d29f430d310cb/notebooks/deep_learning_intro/raw/tut3.ipynb
+      - source: kaggle-learn
+        locator: Intro to Deep Learning, Lesson 3 exercise, Question 4 Learning Rate and Batch Size (solution)
+        url: https://github.com/Kaggle/learntools/blob/e9ba66dc899d3e17b80d3a1b9a5d29f430d310cb/learntools/deep_learning_intro/ex3.py
+    source:
+      id: kaggle-learn
+      ref: deep_learning_intro/ex3#q4
+      url: https://github.com/Kaggle/learntools/blob/e9ba66dc899d3e17b80d3a1b9a5d29f430d310cb/notebooks/deep_learning_intro/raw/ex3.ipynb
+    status: draft
+  - id: training-066
+    type: single
+    difficulty: easy
+    tags:
+      - learning-curves
+      - underfitting
+      - capacity
+    question: |
+      A linear model predicting song popularity gives learning curves in which the training and
+      validation loss level off close to each other, the validation loss never rises, and both stay
+      well above the loss that larger networks reach. What should you try next?
+    options:
+      - text: It underfits, so add capacity with wider or deeper layers
+        correct: true
+      - text: It is overfitting, so add an early-stopping callback
+        why: Overfitting shows as a validation loss that rises while the training loss keeps falling; here it never rises [^1].
+      - text: It is overfitting, so remove units from the model
+        why: The small gap between the curves means the model has learned little noise; removing capacity would make it worse [^1].
+      - text: It fits well, because the two learning curves stay close together
+        why: A small gap only means little noise was learned; a loss that stays high means the model has not learned enough signal [^1].
+    explanation: |
+      The gap between the training and validation curves shows how much noise the model has learned,
+      and underfitting means the loss is not as low as it could be because the model has not learned
+      enough signal [^1]. Close curves, a validation loss that never increases and a high final loss
+      point to underfitting, which the exercise's solution diagnoses for the linear baseline [^2]. The
+      remedy is more capacity, by making the network wider or deeper [^1].
+    references:
+      - source: kaggle-learn
+        locator: Intro to Deep Learning, Lesson 4 Overfitting and Underfitting — tutorial, Interpreting the Learning Curves; Capacity
+        url: https://github.com/Kaggle/learntools/blob/e9ba66dc899d3e17b80d3a1b9a5d29f430d310cb/notebooks/deep_learning_intro/raw/tut4.ipynb
+      - source: kaggle-learn
+        locator: Intro to Deep Learning, Lesson 4 exercise, Question 1 Evaluate Baseline (solution)
+        url: https://github.com/Kaggle/learntools/blob/e9ba66dc899d3e17b80d3a1b9a5d29f430d310cb/learntools/deep_learning_intro/ex4.py
+    source:
+      id: kaggle-learn
+      ref: deep_learning_intro/ex4#q1
+      url: https://github.com/Kaggle/learntools/blob/e9ba66dc899d3e17b80d3a1b9a5d29f430d310cb/notebooks/deep_learning_intro/raw/ex4.ipynb
+    status: draft
+  - id: training-067
+    type: short_answer
+    difficulty: medium
+    tags:
+      - early-stopping
+      - patience
+      - keras
+    question: |
+      Keras's `EarlyStopping(min_delta=0.001, patience=5, restore_best_weights=True)` watches the
+      validation loss of this run:
+
+      | Epoch | 1 | 2 | 3 | 4 | 5 | 6 | 7 | 8 | 9 | 10 |
+      |---|---|---|---|---|---|---|---|---|---|---|
+      | Validation loss | 0.60 | 0.50 | 0.45 | 0.44 | 0.46 | 0.47 | 0.45 | 0.48 | 0.49 | 0.43 |
+
+      Training stops after epoch {{1}}, and the model keeps the weights from epoch {{2}}.
+    answer:
+      blanks:
+        - numeric: 9
+          tolerance: 0
+          hint: epoch number
+        - numeric: 4
+          tolerance: 0
+          hint: epoch number
+      model: The best loss, 0.44, is at epoch 4; epochs 5–9 are five epochs without an improvement of at least 0.001, so training stops after epoch 9 and restores epoch 4's weights.
+    explanation: |
+      The callback stops training when the validation loss has not improved by at least `min_delta`
+      for `patience` epochs, and with `restore_best_weights` it keeps the best model found [^1][^2].
+      The loss improves up to 0.44 at epoch 4; epochs 5 to 9 never get below $0.44 - 0.001$ (epoch 7's
+      0.45 is no improvement), so the fifth epoch without improvement, epoch 9, ends training. Its
+      weights are replaced by those of epoch 4, and the 0.43 that epoch 10 would have reached is never
+      seen: patience trades such late improvements for protection against overfitting [^1].
+    references:
+      - source: kaggle-learn
+        locator: Intro to Deep Learning, Lesson 4 Overfitting and Underfitting — tutorial, Early Stopping; Adding Early Stopping
+        url: https://github.com/Kaggle/learntools/blob/e9ba66dc899d3e17b80d3a1b9a5d29f430d310cb/notebooks/deep_learning_intro/raw/tut4.ipynb
+      - title: 'Keras documentation: EarlyStopping'
+        url: https://keras.io/api/callbacks/early_stopping/
+        locator: Arguments `min_delta`, `patience`, `restore_best_weights`
+    source:
+      id: kaggle-learn
+      ref: deep_learning_intro/ex4#q3
+      url: https://github.com/Kaggle/learntools/blob/e9ba66dc899d3e17b80d3a1b9a5d29f430d310cb/notebooks/deep_learning_intro/raw/ex4.ipynb
+    status: draft
+  - id: training-068
+    type: single
+    difficulty: medium
+    tags:
+      - batch-normalization
+      - feature-scaling
+    question: |
+      A dense network trained on raw, unstandardized data, whose features have very different
+      scales, usually fails to train or converges to a huge loss. Adding a `BatchNormalization` layer
+      before each `Dense` layer lets it train. Why does this help?
+    options:
+      - text: It standardizes each batch, then rescales it with two trainable parameters
+        correct: true
+      - text: Batchnorm randomly zeroes a fraction of its inputs, which keeps the activations small
+        why: Randomly dropping units is dropout, a regularizer against overfitting, not a fix for badly scaled inputs [^1].
+      - text: Batchnorm divides the learning rate by the size of each feature, so large features take small steps
+        why: Batchnorm does not touch the optimizer; it rescales the data flowing through the network [^1].
+      - text: Batchnorm clips every activation to the range from 0 to 1 before the next layer sees it
+        why: Batchnorm normalizes with the batch's mean and standard deviation and then applies a learned scale and shift; it does not clip [^1].
+    explanation: |
+      SGD shifts weights in proportion to the size of the activations, so features on very different
+      scales make training unstable [^1]. A batch normalization layer normalizes each incoming batch
+      with its own mean and standard deviation and then puts the data on a new scale with two
+      trainable rescaling parameters [^1]. As the first layer it acts as an adaptive preprocessor, like
+      `StandardScaler`, which is why the exercise's unstandardized *Concrete* model trains once
+      batchnorm is added [^1][^2].
+    references:
+      - source: kaggle-learn
+        locator: Intro to Deep Learning, Lesson 5 Dropout and Batch Normalization — tutorial, Dropout; Batch Normalization
+        url: https://github.com/Kaggle/learntools/blob/e9ba66dc899d3e17b80d3a1b9a5d29f430d310cb/notebooks/deep_learning_intro/raw/tut5.ipynb
+      - source: kaggle-learn
+        locator: Intro to Deep Learning, Lesson 5 exercise, Questions 3–4 Add / Evaluate Batch Normalization
+        url: https://github.com/Kaggle/learntools/blob/e9ba66dc899d3e17b80d3a1b9a5d29f430d310cb/notebooks/deep_learning_intro/raw/ex5.ipynb
+    source:
+      id: kaggle-learn
+      ref: deep_learning_intro/ex5#q4
+      url: https://github.com/Kaggle/learntools/blob/e9ba66dc899d3e17b80d3a1b9a5d29f430d310cb/notebooks/deep_learning_intro/raw/ex5.ipynb
+    status: draft
+  - id: training-069
+    type: single
+    difficulty: medium
+    tags:
+      - l2-regularization
+      - embeddings
+      - recommender-systems
+    question: |
+      A matrix-factorization recommender predicts $3.5 + \mathbf{u} \cdot \mathbf{m}$, where 3.5 is the
+      mean training rating. Trained without regularization, its top recommendations are obscure movies
+      rated by only a handful of users. Why does adding an L2 penalty on the embeddings fix this?
+    options:
+      - text: Obscure movies' embeddings shrink toward zero, so their predictions fall back to about 3.5
+        correct: true
+      - text: The penalty drops every movie with fewer than a set number of ratings from the training data
+        why: That is the other fix, a threshold on the number of ratings; L2 regularization keeps all movies and changes the loss instead [^1].
+      - text: The penalty pushes the predictions of obscure movies down to the lowest possible rating
+        why: A zero embedding gives a dot product of 0, which means the average rating of 3.5, not the minimum [^1].
+      - text: The penalty forces all movie embeddings to be equal, so every movie gets the same prediction
+        why: Popular movies are worth large weights because they improve many predictions, so their embeddings stay informative [^1].
+    explanation: |
+      L2 regularization adds a weight penalty to the loss, so the model must balance accurate
+      predictions against keeping embeddings small [^1]. Moving an obscure movie's embedding to fit its
+      one or two ratings improves the loss very little, so its weights end up close to 0 [^1]. A movie
+      whose embedding is all zeros gets output 0 for every user, which on the centered scale is the
+      training average of about 3.5 stars, a sensible guess for a movie we know little about [^2].
+      The regularized model also overfits less, which improves its validation error [^1].
+    references:
+      - source: kaggle-learn
+        locator: Embeddings exercise 2, Parts 3–6 (thresholding; A whirlwind introduction to L2 regularization; regularization)
+        url: https://github.com/Kaggle/learntools/blob/e9ba66dc899d3e17b80d3a1b9a5d29f430d310cb/notebooks/embeddings/raw/2-exercises.ipynb
+      - source: kaggle-learn
+        locator: Embeddings exercise 2, Part 5 (solution)
+        url: https://github.com/Kaggle/learntools/blob/e9ba66dc899d3e17b80d3a1b9a5d29f430d310cb/learntools/embeddings/ex2_factorization.py
+    source:
+      id: kaggle-learn
+      ref: embeddings/ex2#q5
+      url: https://github.com/Kaggle/learntools/blob/e9ba66dc899d3e17b80d3a1b9a5d29f430d310cb/notebooks/embeddings/raw/2-exercises.ipynb
+    status: draft
+  - id: training-070
+    type: single
+    difficulty: medium
+    tags:
+      - adam
+      - sign-descent
+      - steepest-descent
+      - norms
+    question: |
+      Switch off Adam's moving averages and its $\epsilon$ ($\beta_1 = \beta_2 = \epsilon = 0$). Each
+      weight then moves by $-\eta\, g_i / \sqrt{g_i^2} = -\eta\,\mathrm{sign}(g_i)$. This update direction
+      is steepest descent under which norm of the weight change?
+    options:
+      - text: The max norm $\ell_\infty$
+        correct: true
+      - text: The Euclidean $\ell_2$ norm
+        why: Steepest descent under $\ell_2$ moves along $-g$ itself, which is plain gradient descent [^1].
+      - text: The $\ell_1$ norm
+        why: Under $\ell_1$ the best unit step puts all of its length on the coordinate with the largest $\lvert g_i \rvert$, which is coordinate descent.
+      - text: The spectral norm
+        why: The spectral norm is a matrix norm; steepest descent under it orthogonalizes the gradient matrix to $UV^\top$ rather than taking elementwise signs [^2].
+    explanation: |
+      Steepest descent minimizes $g^\top \Delta w + \tfrac{\lambda}{2}\lVert \Delta w \rVert^2$; its
+      direction is the unit vector $t$ that minimizes $g^\top t$ [^1]. Under the max norm every
+      coordinate may move by up to 1, so the best $t$ is $-\mathrm{sign}(g)$, and the step length is the
+      dual norm $\lVert g \rVert_1$ divided by $\lambda$. With the moving averages off, Adam's
+      $\hat m_t / \sqrt{\hat v_t}$ is exactly $\mathrm{sign}(g)$ [^3], which is why Adam is described as
+      steepest descent under an $\ell_\infty$-type norm [^2].
+    references:
+      - source: mit-ocw-67960
+        locator: Homework 2, Steepest descent, Problems 1–3
+        url: https://ocw.mit.edu/courses/6-7960-deep-learning-fall-2024/resources/mit6_7960_f24_hw2_pdf/
+      - title: Bernstein & Newhouse (2024), Old Optimizer, New Norm — An Anthology, arXiv:2409.20325
+        locator: Story I, Adam as steepest descent under the max-of-max norm
+        url: https://arxiv.org/abs/2409.20325
+      - source: d2l
+        locator: Sec. 12.10.1 The Algorithm, Eqs. (12.10.1)–(12.10.3)
+        url: https://d2l.ai/chapter_optimization/adam.html#the-algorithm
+    source:
+      id: mit-ocw-67960
+      ref: mit6_7960_f24_hw2#q3c
+      url: https://ocw.mit.edu/courses/6-7960-deep-learning-fall-2024/resources/mit6_7960_f24_hw2_pdf/
+    status: draft
+  - id: training-071
+    type: single
+    difficulty: hard
+    tags:
+      - steepest-descent
+      - spectral-norm
+      - orthogonalized-updates
+      - svd
+    question: |
+      A layer's gradient matrix has the reduced SVD $G = U \Sigma V^\top$. Steepest descent under the
+      spectral norm $\lVert \cdot \rVert_*$ (the largest singular value) solves
+      $$\operatorname*{arg\,min}_{\Delta W}\Big[\operatorname{tr}(G^\top \Delta W) + \tfrac{\lambda}{2}\lVert \Delta W \rVert_*^2\Big].$$
+      Which update is the solution?
+    options:
+      - text: $-\frac{\operatorname{tr}\Sigma}{\lambda}\, U V^\top$
+        correct: true
+      - text: $-\frac{1}{\lambda}\, U \Sigma V^\top$
+        why: That is $-G/\lambda$, plain gradient descent, which is steepest descent under the Frobenius norm.
+      - text: $-\frac{\sigma_{\max}}{\lambda}\, U V^\top$
+        why: The direction is right, but the step length is the dual norm of $G$, the nuclear norm $\operatorname{tr}\Sigma$ (sum of singular values), not its largest singular value.
+      - text: $-\frac{\operatorname{tr}\Sigma}{\lambda}\, \mathrm{sign}(G)$
+        why: Elementwise signs are steepest descent under a max-of-entries norm; under the spectral norm the update sets all singular values equal instead [^2].
+    explanation: |
+      As for vectors, the solution is $-\frac{\lVert G \rVert^\dagger}{\lambda}$ times the unit-norm
+      matrix $T$ that maximizes $\operatorname{tr}(G^\top T)$ [^1]. Over matrices with spectral norm 1
+      the maximum is $\operatorname{tr}\Sigma$, reached at $T = UV^\top$, so the dual norm is the nuclear
+      norm and the step is $-\frac{\operatorname{tr}\Sigma}{\lambda} UV^\top$ [^1]. The update keeps the
+      gradient's singular vectors but sets every singular value to the same size; Shampoo without
+      accumulation takes exactly this direction [^2]. A numerical minimizer on a random $3 \times 2$
+      gradient agrees with the formula.
+    references:
+      - source: mit-ocw-67960
+        locator: Homework 2, Steepest descent, Problem 4
+        url: https://ocw.mit.edu/courses/6-7960-deep-learning-fall-2024/resources/mit6_7960_f24_hw2_pdf/
+      - title: Bernstein & Newhouse (2024), Old Optimizer, New Norm — An Anthology, arXiv:2409.20325
+        locator: Story II, Shampoo as steepest descent under the spectral norm (Eq. 16)
+        url: https://arxiv.org/abs/2409.20325
+    source:
+      id: mit-ocw-67960
+      ref: mit6_7960_f24_hw2#q4b
+      url: https://ocw.mit.edu/courses/6-7960-deep-learning-fall-2024/resources/mit6_7960_f24_hw2_pdf/
+    status: draft
+  - id: training-072
+    type: short_answer
+    difficulty: medium
+    tags:
+      - initialization
+      - spectral-norm
+      - hyperparameter-transfer
+    question: |
+      A layer maps $d_{\text{in}} = 1024$ inputs to $d_{\text{out}} = 256$ outputs. It is initialized as
+      $W = \sqrt{d_{\text{out}} / d_{\text{in}}}\; M$, where $M \in \mathbb{R}^{256 \times 1024}$ is a random
+      semi-orthogonal matrix (orthonormal rows). What is the spectral norm of $W$?
+    answer:
+      numeric: 0.5
+      tolerance: 0.001
+      hint: a number
+      model: All singular values of $M$ are 1, so $\lVert W \rVert_* = \sqrt{256/1024} = 0.5$
+    explanation: |
+      A semi-orthogonal matrix has all its singular values equal to 1, so $W$'s singular values are all
+      $\sqrt{256/1024} = 0.5$ [^1]. The factor is chosen so that an input whose entries have RMS size 1,
+      $\lVert x \rVert_2 = \sqrt{1024} = 32$, gives an output whose entries have RMS size at most 1,
+      $\lVert Wx \rVert_2 \le 0.5 \times 32 = 16 = \sqrt{256}$, with equality along the top singular
+      directions [^2]. Initializing and updating every layer at this scale is what lets a learning rate
+      tuned on a narrow network transfer to a wide one [^1][^2].
+    references:
+      - source: mit-ocw-67960
+        locator: Homework 2, Hyperparameter transfer, Problems 7 and 9
+        url: https://ocw.mit.edu/courses/6-7960-deep-learning-fall-2024/resources/mit6_7960_f24_hw2_pdf/
+      - title: Yang, Simon & Bernstein (2023), A Spectral Condition for Feature Learning, arXiv:2310.17813
+        locator: Abstract and Sec. 1 (spectral scaling condition)
+        url: https://arxiv.org/abs/2310.17813
+    source:
+      id: mit-ocw-67960
+      ref: mit6_7960_f24_hw2#q9
+      url: https://ocw.mit.edu/courses/6-7960-deep-learning-fall-2024/resources/mit6_7960_f24_hw2_pdf/
+    status: draft
+  - id: training-073
+    type: single
+    difficulty: easy
+    tags:
+      - weight-decay
+      - svd
+      - regularization
+    question: |
+      After every gradient step you apply weight decay $W \leftarrow 0.999\,W$. Write
+      $W = \sum_i \sigma_i u_i v_i^\top$ (its singular value decomposition). What does one decay step do?
+    options:
+      - text: Multiplies every $\sigma_i$ by 0.999 and leaves the singular vectors unchanged
+        correct: true
+      - text: Subtracts 0.001 from every $\sigma_i$ and leaves the singular vectors unchanged
+        why: Subtracting a constant is soft-thresholding; weight decay is a multiplication, so each $\sigma_i$ shrinks in proportion to its size.
+      - text: Shrinks the small $\sigma_i$ much faster than the large ones
+        why: All singular values are multiplied by the same factor, so their ratios stay the same.
+      - text: Shortens the singular vectors $u_i$ and $v_i$ by the factor 0.999
+        why: Singular vectors have unit length by definition; the scaling goes into the $\sigma_i$.
+    explanation: |
+      $0.999\,W = \sum_i (0.999\,\sigma_i)\,u_i v_i^\top$, and the $u_i$, $v_i$ remain unit-length and
+      orthonormal, so this is again an SVD [^1]. Weight decay therefore shrinks the whole matrix
+      uniformly toward zero without rotating it; it is the multiplicative form of an $L_2$ penalty on the
+      weights [^2]. Only the gradient steps change the directions.
+    references:
+      - source: mit-ocw-67960
+        locator: Homework 2, Hyperparameter transfer, Problem 11
+        url: https://ocw.mit.edu/courses/6-7960-deep-learning-fall-2024/resources/mit6_7960_f24_hw2_pdf/
+      - source: d2l
+        locator: Sec. 3.7.1 Norms and Weight Decay
+        url: https://d2l.ai/chapter_linear-regression/weight-decay.html#norms-and-weight-decay
+    source:
+      id: mit-ocw-67960
+      ref: mit6_7960_f24_hw2#q11
+      url: https://ocw.mit.edu/courses/6-7960-deep-learning-fall-2024/resources/mit6_7960_f24_hw2_pdf/
+    status: draft
