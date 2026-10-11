@@ -413,3 +413,55 @@ def _draw_graph(ax: plt.Axes, panel: dict, fontsize: int, radius: float) -> None
     ax.set_aspect("equal")
     ax.axis("off")
     ax.autoscale_view()
+
+
+def game_tree(
+    children: dict,
+    values: dict,
+    xs: dict,
+    levels: Sequence[str],
+    figsize: tuple[float, float],
+    radius: float = 0.3,
+    fontsize: int = 12,
+    labels: dict | None = None,
+) -> plt.Figure:
+    """A game tree for minimax / alpha-beta questions, drawn with `graph_figure`.
+
+    `children` maps a node to its children, `values` a leaf to its static value (printed under it),
+    `xs` a node to its x position; `levels` names the rows from the root down ("MAX", "MIN", …).
+    """
+    depth = {}
+    root = next(n for n in children if all(n not in k for k in children.values()))
+    stack = [(root, 0)]
+    while stack:
+        n, d = stack.pop()
+        depth[n] = d
+        stack += [(k, d + 1) for k in children.get(n, [])]
+    nodes = {n: (xs[n], -1.3 * d, (labels or {}).get(n, n)) for n, d in depth.items()}
+    edges = [(a, b, "u", 0.0) for a, ks in children.items() for b in ks]
+    fig = graph_figure(
+        [{"nodes": nodes, "edges": edges}],
+        figsize=figsize,
+        node_radius=radius,
+        fontsize=fontsize,
+        pad=0.6,
+    )
+    ax = fig.axes[0]
+    for n, v in values.items():
+        x, y, _ = nodes[n]
+        ax.text(
+            x,
+            y - radius - 0.22,
+            str(v),
+            ha="center",
+            va="center",
+            fontsize=fontsize,
+            color=INK,
+            fontweight="bold",
+        )
+    left = min(x for x, _, _ in nodes.values()) - 1.0
+    for d, name in enumerate(levels):
+        ax.text(left, -1.3 * d, name, ha="center", va="center", fontsize=fontsize - 2, color=MUTED)
+    ax.set_xlim(left - 0.5, max(x for x, _, _ in nodes.values()) + 0.6)
+    ax.set_ylim(-1.3 * (len(levels) - 1) - 0.9, 0.6)
+    return fig

@@ -10,7 +10,11 @@ from mlrecall.figstyle import graph_figure, save
 ring = {}
 for k in range(8):
     angle = math.pi / 2 + math.pi / 8 - k * math.pi / 4  # node 1 at upper left, clockwise
-    ring[str(k + 1)] = (round(1.6 * math.cos(angle), 3), round(1.6 * math.sin(angle), 3), str(k + 1))
+    ring[str(k + 1)] = (
+        round(1.6 * math.cos(angle), 3),
+        round(1.6 * math.sin(angle), 3),
+        str(k + 1),
+    )
 PANELS = [
     {
         "nodes": {**ring, "9": (0.25, -0.1, "9")},
