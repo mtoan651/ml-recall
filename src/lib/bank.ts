@@ -277,6 +277,7 @@ async function renderQuestion(
     id: q.id,
     type: q.type,
     status: q.status === "reviewed" ? "reviewed" : "draft",
+    ...(q.status === "reviewed" && q.reviewed_by ? { reviewedBy: q.reviewed_by } : {}),
     ...(q.difficulty ? { difficulty: q.difficulty } : {}),
     tags: q.tags,
     topic: { id: topic.id, title: topic.title, url: topic.url },

@@ -82,7 +82,7 @@ export function QuestionCard({
             unreviewed
           </span>
         )}
-        {q.status === "reviewed" && q.reviewed_by === "claude" && (
+        {q.reviewedBy === "claude" && (
           <span
             className="rounded-full bg-subtle px-2 py-0.5 text-muted"
             title="Checked by Claude (an AI model) at the owner's request: key re-derived, explanation cited. Not yet verified by a human."
