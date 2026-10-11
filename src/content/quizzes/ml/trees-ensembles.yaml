@@ -5,16 +5,27 @@ title: Decision Trees & Ensembles
 questions:
   - id: trees-ensembles-001
     type: single
+    difficulty: easy
     question: 'Adaboost is known for:'
     options:
       - text: focusing on the weights of incorrectly classified items
         correct: true
       - text: focusing on outliers
       - text: focusing on incorrect data
+    explanation: |
+      AdaBoost trains a sequence of weak learners on reweighted versions of the training data.
+      After each round, the examples the current model misclassified get larger weights and the
+      correctly classified ones get smaller weights, so the next learner concentrates on the
+      examples that earlier ones got wrong [^1][^2]. The defining idea is this reweighting of
+      misclassified items. AdaBoost does not single out outliers, and it does not look for
+      "incorrect" data [^2].
     references:
       - source: ms-ml-for-beginners
-        locator: 'Lesson: Classification 3'
-        url: https://github.com/microsoft/ML-For-Beginners/blob/de2d4e12236445198213a0711855e348e7253cd4/4-Classification/3-Classifiers-2/README.md
+        url: https://github.com/microsoft/ML-For-Beginners/blob/de2d4e12236445198213a0711855e348e7253cd4/4-Classification/3-Classifiers-2/README.md#ensemble-classifiers
+        locator: "Lesson: Classification 3, section 'Ensemble Classifiers'"
+      - title: 'scikit-learn User Guide: Ensembles'
+        url: https://scikit-learn.org/stable/modules/ensemble.html#adaboost
+        locator: Sec. 1.11.7 AdaBoost
     source:
       id: ms-ml-for-beginners
       ref: quiz-24/q3
@@ -22,6 +33,7 @@ questions:
     status: draft
   - id: trees-ensembles-002
     type: single
+    difficulty: easy
     question: Which one of the following is the main reason for pruning a Decision Tree?
     options:
       - text: To save computing time during testing
@@ -29,6 +41,20 @@ questions:
       - text: To make the training set error smaller
       - text: To avoid overfitting the training set
         correct: true
+    explanation: |
+      A fully grown tree can classify every training example correctly and still generalise
+      poorly, because its deepest branches fit noise. Pruning, along with limits on depth and leaf
+      size, is the standard remedy for this overfitting [^1][^2]. Pruning usually makes the
+      training error *larger*. A branch is typically removed when doing so improves accuracy on
+      validation data [^2]. A smaller tree is also cheaper to store and evaluate, but those are
+      side benefits, not the reason to prune.
+    references:
+      - title: 'scikit-learn User Guide: Decision Trees'
+        url: https://scikit-learn.org/stable/modules/tree.html#minimal-cost-complexity-pruning
+        locator: Sec. 1.10 (disadvantages); Sec. 1.10.9 Minimal Cost-Complexity Pruning
+      - title: 'Google Developers: Decision Forests course'
+        url: https://developers.google.com/machine-learning/decision-forests/overfitting-and-pruning#overfitting_and_pruning
+        locator: Overfitting and pruning
     source:
       id: mmlu-redux
       ref: machine_learning/5
@@ -36,6 +62,7 @@ questions:
     status: draft
   - id: trees-ensembles-003
     type: single
+    difficulty: medium
     question: |
       Evaluate both statements.
 
@@ -48,6 +75,21 @@ questions:
         correct: true
       - text: True, False
       - text: False, True
+    explanation: |
+      Statement 1 is false. Learning an optimal decision tree is NP-complete, so ID3 grows its tree
+      greedily: at each node it picks the attribute with the largest information gain. Greedy,
+      locally optimal choices cannot guarantee a globally optimal tree [^1]. Statement 2 is also
+      false. For a continuous random variable, $P(X = x) = 0$ for every single value $x$, and
+      probabilities come from areas under the density curve, $P(a < X < b)$ [^2]. $f(x)$ is only
+      the height of that curve, so $f(x) \ne P(X = x)$. A density can even exceed 1; for example,
+      $f(x) = 3x^2$ for $0 < x < 1$ gives $f(0.9) = 2.43$ [^2].
+    references:
+      - title: 'scikit-learn User Guide: Decision Trees'
+        url: https://scikit-learn.org/stable/modules/tree.html#tree-algorithms-id3-c4-5-c5-0-and-cart
+        locator: 'Sec. 1.10 (disadvantages); Sec. 1.10.6 Tree algorithms: ID3, C4.5, C5.0 and CART'
+      - title: 'Penn State STAT 414: Introduction to Probability Theory'
+        url: https://online.stat.psu.edu/stat414/Lesson14.html#probability-density-functions
+        locator: Lesson 14, Sec. 14.1 Probability Density Functions
     source:
       id: mmlu-redux
       ref: machine_learning/39
@@ -55,6 +97,7 @@ questions:
     status: draft
   - id: trees-ensembles-004
     type: single
+    difficulty: hard
     question: |
       Evaluate both statements.
 
@@ -67,6 +110,23 @@ questions:
       - text: False, False
       - text: True, False
       - text: False, True
+    explanation: |
+      Statement 1 is true. AdaBoost updates $D_{t+1}(i) \propto D_t(i)\exp(-\alpha_t y_i h_t(x_i))$,
+      so every misclassified example ($y_i h_t(x_i) = -1$) is multiplied by the same factor
+      $e^{\alpha_t}$ before normalisation [^1][^2]. Statement 2 is also true. Each update moves
+      weight onto the examples that earlier learners got wrong, so later learners face harder
+      weighted problems [^2]. In fact, right after the update the last weak learner has weighted
+      error exactly $\tfrac12$. With $\alpha_t = \tfrac12 \ln\frac{1-\epsilon_t}{\epsilon_t}$ [^1],
+      the misclassified mass $\epsilon_t e^{\alpha_t}$ and the correctly classified mass
+      $(1-\epsilon_t) e^{-\alpha_t}$ both equal $\sqrt{\epsilon_t(1-\epsilon_t)}$. So $\epsilon_t$
+      tends to creep up toward $\tfrac12$ over the rounds, though not strictly at every step.
+    references:
+      - title: Schapire, Explaining AdaBoost (2013)
+        url: http://rob.schapire.net/papers/explaining-adaboost.pdf
+        locator: Fig. 1 The boosting algorithm AdaBoost, p. 2
+      - title: Hastie, Tibshirani & Friedman, The Elements of Statistical Learning (2nd ed.)
+        url: https://hastie.su.domains/ElemStatLearn/
+        locator: Sec. 10.1 Boosting Methods, Algorithm 10.1 AdaBoost.M1, pp. 338-339
     source:
       id: mmlu-redux
       ref: machine_learning/49
@@ -74,6 +134,7 @@ questions:
     status: draft
   - id: trees-ensembles-005
     type: single
+    difficulty: easy
     shuffle: false
     question: You've just finished training a decision tree for spam classification, and it is getting abnormally bad performance on both your training and test sets. You know that your implementation has no bugs, so what could be causing the problem?
     options:
@@ -82,6 +143,20 @@ questions:
       - text: You need to increase the learning rate.
       - text: You are overfitting.
       - text: None of the above.
+    explanation: |
+      Poor results on both the training and the test set point to underfitting: the model does not
+      even fit the data it was trained on [^1]. For a decision tree, depth controls complexity. The
+      deeper the tree, the more complex its decision rules, so a tree that is too shallow cannot
+      capture the patterns [^2]. Overfitting would show excellent training accuracy with poor test
+      accuracy [^1]. A decision tree is grown by greedy splitting, not by gradient steps, so it has
+      no learning rate to raise [^2].
+    references:
+      - source: google-mlcc
+        url: https://developers.google.com/machine-learning/crash-course/overfitting/overfitting#fitting
+        locator: Overfitting, section 'Fitting, overfitting, and underfitting'
+      - title: 'scikit-learn User Guide: Decision Trees'
+        url: https://scikit-learn.org/stable/modules/tree.html#decision-trees
+        locator: Sec. 1.10 (introduction); Sec. 1.10.5 Tips on practical use; Sec. 1.10.7 Mathematical formulation
     source:
       id: mmlu-redux
       ref: machine_learning/59
@@ -103,6 +178,7 @@ questions:
     status: draft
   - id: trees-ensembles-007
     type: single
+    difficulty: easy
     question: Averaging the output of multiple decision trees helps _.
     options:
       - text: Increase bias
@@ -110,6 +186,17 @@ questions:
       - text: Increase variance
       - text: Decrease variance
         correct: true
+    explanation: |
+      Individual decision trees have high variance and tend to overfit. Averaging many trees whose
+      errors are partly independent lets some of those errors cancel, which reduces variance [^1].
+      Bagging relies on the same idea: it reduces the variance of a base estimator by averaging
+      models trained on random subsets of the data [^1]. Averaging does not lower bias. A random
+      forest may even accept a slight increase in bias in exchange for the large drop in
+      variance [^1].
+    references:
+      - title: 'scikit-learn User Guide: Ensembles'
+        url: https://scikit-learn.org/stable/modules/ensemble.html#random-forests
+        locator: Sec. 1.11.2.1 Random Forests; Sec. 1.11.3 Bagging meta-estimator
     source:
       id: mmlu-redux
       ref: machine_learning/77
@@ -117,6 +204,7 @@ questions:
     status: draft
   - id: trees-ensembles-008
     type: single
+    difficulty: medium
     question: |
       Evaluate both statements.
 
@@ -129,6 +217,20 @@ questions:
       - text: True, False
       - text: False, True
         correct: true
+    explanation: |
+      Statement 1 is false. The Gauss–Markov theorem says least squares has the smallest variance
+      among *linear* unbiased estimators, not among all unbiased estimators. Biased estimators such
+      as ridge regression can even achieve a lower mean squared error [^1]. Statement 2 is true.
+      AdaBoost sets $\alpha_t = \tfrac12 \ln\frac{1-\epsilon_t}{\epsilon_t}$. The weak learning
+      condition requires every weak learner to have weighted error $\epsilon_t < \tfrac12$, so
+      $\frac{1-\epsilon_t}{\epsilon_t} > 1$ and $\alpha_t > 0$ [^2].
+    references:
+      - title: Hastie, Tibshirani & Friedman, The Elements of Statistical Learning (2nd ed.)
+        url: https://hastie.su.domains/ElemStatLearn/
+        locator: Sec. 3.2.2 The Gauss–Markov Theorem, pp. 51-52
+      - title: Schapire, Explaining AdaBoost (2013)
+        url: http://rob.schapire.net/papers/explaining-adaboost.pdf
+        locator: Fig. 1, p. 2; Sec. 2 Direct Application of VC Theory, p. 3 (weak learning condition)
     source:
       id: mmlu-redux
       ref: machine_learning/78
@@ -136,6 +238,7 @@ questions:
     status: draft
   - id: trees-ensembles-009
     type: single
+    difficulty: medium
     question: |
       Evaluate both statements.
 
@@ -148,6 +251,22 @@ questions:
       - text: True, False
       - text: False, True
         correct: true
+    explanation: |
+      Statement 1 is false. The boosted classifier is
+      $H(x) = \operatorname{sign}\big(\sum_t \alpha_t h_t(x)\big)$, a weighted vote of many weak
+      learners [^1]. A weighted vote of several linear classifiers is generally not linear. The
+      complexity (VC dimension) of the combined classifier grows roughly linearly with the number
+      of rounds, so it is a richer model than any single weak learner [^1]. Statement 2 is true.
+      Boosting can overfit if it runs too long, so the number of rounds is a tuning parameter.
+      Choosing it on held-out data, by validation or cross-validation, works like early
+      stopping [^1][^2].
+    references:
+      - title: Schapire, Explaining AdaBoost (2013)
+        url: http://rob.schapire.net/papers/explaining-adaboost.pdf
+        locator: Fig. 1, p. 2; Sec. 2 Direct Application of VC Theory, p. 3
+      - title: Hastie, Tibshirani & Friedman, The Elements of Statistical Learning (2nd ed.)
+        url: https://hastie.su.domains/ElemStatLearn/
+        locator: Sec. 10.12 Regularization, p. 364
     source:
       id: mmlu-redux
       ref: machine_learning/85
@@ -155,6 +274,7 @@ questions:
     status: draft
   - id: trees-ensembles-010
     type: single
+    difficulty: easy
     question: High entropy means that the partitions in classification are
     options:
       - text: pure
@@ -162,6 +282,16 @@ questions:
         correct: true
       - text: useful
       - text: useless
+    explanation: |
+      Entropy measures how mixed the classes in a node are: $H = -\sum_k p_k \log p_k$, where $p_k$
+      is the share of class $k$ in the node [^1]. It is 0 when every sample belongs to one class (a
+      pure node) and largest when the classes are evenly mixed, so high entropy means the partition
+      is impure [^1]. That is why decision trees pick the splits that lower this impurity the
+      most [^1].
+    references:
+      - title: 'scikit-learn User Guide: Decision Trees'
+        url: https://scikit-learn.org/stable/modules/tree.html#classification-criteria
+        locator: Sec. 1.10.7 Mathematical formulation; Sec. 1.10.7.1 Classification criteria
     source:
       id: mmlu-redux
       ref: machine_learning/87

@@ -5,6 +5,7 @@ title: Probabilistic & Graphical Models
 questions:
   - id: probabilistic-models-001
     type: single
+    difficulty: medium
     question: |
       Evaluate both statements.
 
@@ -17,6 +18,25 @@ questions:
       - text: True, False
         correct: true
       - text: False, True
+    explanation: |
+      Statement 1 is true. Fit a density estimate $\hat f_j(x)$, for example a kernel density
+      estimate, separately for each class, combine it with the class priors, and apply Bayes'
+      theorem to get $P(G = j \mid x)$. That posterior is a classifier [^1]. Statement 2 is false.
+      Under the Gaussian Naive Bayes (GNB) assumptions, $P(y \mid x)$ takes the logistic form, with
+      weights $w_i = (\mu_{i0} - \mu_{i1})/\sigma_i^2$ computed from the GNB parameters [^2]. The map
+      only goes one way and is many-to-one. GNB has more parameters (two class means and a variance
+      per feature, plus the prior), so many GNB settings give the same logistic weights. Logistic
+      regression fitted directly can also reach weights that no GNB fit would produce [^2][^3].
+    references:
+      - title: Hastie, Tibshirani & Friedman, The Elements of Statistical Learning (2nd ed.)
+        url: https://hastie.su.domains/ElemStatLearn/
+        locator: Sec. 6.6.2 Kernel Density Classification, p. 210
+      - title: 'Mitchell, Generative and Discriminative Classifiers: Naive Bayes and Logistic Regression (draft chapter, 2017)'
+        url: http://www.cs.cmu.edu/~tom/mlbook/NBayesLogReg.pdf
+        locator: Sec. 3.1, pp. 8-10 (weights in terms of GNB parameters); Sec. 4, p. 14
+      - title: Stanford CS229 Lecture Notes (Ma & Ng)
+        url: https://cs229.stanford.edu/main_notes.pdf
+        locator: 'Sec. 4.1.3 Discussion: GDA and logistic regression, p. 41'
     source:
       id: mmlu-redux
       ref: machine_learning/6
@@ -24,6 +44,7 @@ questions:
     status: draft
   - id: probabilistic-models-002
     type: single
+    difficulty: medium
     shuffle: false
     question: 'Which of the following is the joint probability of H, U, P, and W described by the given Bayesian Network H -> U <- P <- W? [note: as the product of the conditional probabilities]'
     options:
@@ -32,6 +53,18 @@ questions:
       - text: P(H, U, P, W) = P(H) * P(W) * P(P | W) * P(U | H, P)
         correct: true
       - text: None of the above
+    explanation: |
+      A Bayesian network factorises the joint distribution into one conditional distribution per
+      node, each conditioned only on that node's parents: $p(x) = \prod_k p(x_k \mid \mathrm{pa}_k)$ [^1].
+      In H → U ← P ← W, the roots H and W have no parents, P has parent W, and U has parents H and P.
+      This gives $P(H,U,P,W) = P(H)\,P(W)\,P(P \mid W)\,P(U \mid H,P)$ [^1]. The product of four
+      marginals would make all four variables independent, so it ignores the arrows. The other
+      candidate contains $P(W \mid H, P)$ and no factor for U. It conditions W on variables that are
+      not its parents and leaves U out entirely [^1].
+    references:
+      - title: Bishop, Pattern Recognition and Machine Learning (2006)
+        url: https://www.microsoft.com/en-us/research/wp-content/uploads/2006/01/Bishop-Pattern-Recognition-and-Machine-Learning-2006.pdf
+        locator: Sec. 8.1 Bayesian Networks, eq. (8.5), p. 362
     source:
       id: mmlu-redux
       ref: machine_learning/26
@@ -39,6 +72,7 @@ questions:
     status: draft
   - id: probabilistic-models-003
     type: single
+    difficulty: medium
     question: |
       Evaluate both statements.
 
@@ -51,6 +85,21 @@ questions:
       - text: False, False
       - text: True, False
       - text: False, True
+    explanation: |
+      Statement 1 is true. The log-likelihood of a Gaussian mixture has no closed-form maximiser,
+      and gradient-based optimisation is a workable alternative to EM for maximising it [^1].
+      Statement 2 is also true. The maximum-likelihood estimates of a Gaussian class-conditional
+      model are averages over the training records: the class prior, the class means and the
+      covariance [^2]. For a fixed number of attributes $d$, they can be computed in one pass
+      through the data, so the cost grows linearly with the number of records $n$ (roughly
+      $O(n d^2)$, with $d$ held constant).
+    references:
+      - title: Bishop, Pattern Recognition and Machine Learning (2006)
+        url: https://www.microsoft.com/en-us/research/wp-content/uploads/2006/01/Bishop-Pattern-Recognition-and-Machine-Learning-2006.pdf
+        locator: Sec. 9.2.1 Maximum likelihood, p. 435
+      - title: Stanford CS229 Lecture Notes (Ma & Ng)
+        url: https://cs229.stanford.edu/main_notes.pdf
+        locator: Sec. 4.1.2 The Gaussian discriminant analysis model, p. 40
     source:
       id: mmlu-redux
       ref: machine_learning/27
@@ -58,6 +107,7 @@ questions:
     status: draft
   - id: probabilistic-models-004
     type: single
+    difficulty: hard
     question: 'For a Gaussian Bayes classifier, which one of these structural assumptions is the one that most affects the trade-off between underfitting and overfitting:'
     options:
       - text: Whether we learn the class centers by Maximum Likelihood or Gradient Descent
@@ -65,6 +115,32 @@ questions:
         correct: true
       - text: Whether we have equal class priors or priors estimated from the data
       - text: Whether we allow classes to have different mean vectors or we force them to share the same mean vector
+    explanation: |
+      The covariance assumption decides how many parameters each class has. A full covariance
+      matrix has $d(d+1)/2$ free entries, a number that grows quadratically with $d$. A diagonal
+      one has only $d$ entries and cannot represent correlations between features [^2]. With
+      diagonal class covariances the features are treated as independent within each class, which
+      turns the model into Gaussian Naive Bayes [^1]. That assumption adds bias but can save a lot
+      of variance [^3]. Shrinking a covariance estimate toward its diagonal is also a standard way
+      to generalise better when samples are few, and regularized discriminant analysis tunes a
+      continuum of covariance structures by cross-validation [^1][^4]. The other choices matter
+      much less. Maximum likelihood and gradient descent are two ways of optimising the same
+      objective. The class priors only add a $\log P(y=k)$ term that shifts the boundary [^1].
+      Forcing all classes to share one mean vector does not trade off complexity; it removes the
+      main information that separates the classes.
+    references:
+      - title: 'scikit-learn User Guide: Linear and Quadratic Discriminant Analysis'
+        url: https://scikit-learn.org/stable/modules/lda_qda.html#qda
+        locator: Sec. 1.2.2.1 QDA (note on Gaussian Naive Bayes); Sec. 1.2.4 Shrinkage and Covariance Estimator
+      - title: Bishop, Pattern Recognition and Machine Learning (2006)
+        url: https://www.microsoft.com/en-us/research/wp-content/uploads/2006/01/Bishop-Pattern-Recognition-and-Machine-Learning-2006.pdf
+        locator: Sec. 2.3 The Gaussian Distribution, pp. 83-84
+      - title: Hastie, Tibshirani & Friedman, The Elements of Statistical Learning (2nd ed.)
+        url: https://hastie.su.domains/ElemStatLearn/
+        locator: Sec. 6.6.3 The Naive Bayes Classifier, pp. 210-211
+      - title: Hastie, Tibshirani & Friedman, The Elements of Statistical Learning (2nd ed.)
+        url: https://hastie.su.domains/ElemStatLearn/
+        locator: Sec. 4.3.1 Regularized Discriminant Analysis, p. 112
     source:
       id: mmlu-redux
       ref: machine_learning/37
@@ -72,6 +148,7 @@ questions:
     status: draft
   - id: probabilistic-models-005
     type: single
+    difficulty: medium
     question: Suppose you are given an EM algorithm that finds maximum likelihood estimates for a model with latent variables. You are asked to modify the algorithm so that it finds MAP estimates instead. Which step or steps do you need to modify?
     options:
       - text: Expectation
@@ -79,6 +156,17 @@ questions:
         correct: true
       - text: No modification necessary
       - text: Both
+    explanation: |
+      For MAP estimation you maximise $\ln p(\theta \mid X)$, which equals the likelihood bound plus
+      the log prior $\ln p(\theta)$, up to a constant [^1]. The prior does not involve the latent
+      variables, so the E step (computing their posterior under the current parameters) stays
+      exactly the same. Only the M step changes: it now maximises $Q(\theta, \theta^{\text{old}}) + \ln p(\theta)$
+      instead of $Q$ alone [^1]. In practice this is usually a small change to the
+      maximum-likelihood M-step updates [^1].
+    references:
+      - title: Bishop, Pattern Recognition and Machine Learning (2006)
+        url: https://www.microsoft.com/en-us/research/wp-content/uploads/2006/01/Bishop-Pattern-Recognition-and-Machine-Learning-2006.pdf
+        locator: Sec. 9.3, p. 441; Sec. 9.4 The EM Algorithm in General, eq. (9.77), p. 454
     source:
       id: mmlu-redux
       ref: machine_learning/43
@@ -86,6 +174,7 @@ questions:
     status: draft
   - id: probabilistic-models-006
     type: single
+    difficulty: hard
     question: |
       Evaluate both statements.
 
@@ -98,6 +187,26 @@ questions:
       - text: True, False
         correct: true
       - text: False, True
+    explanation: |
+      Statement 1 is true. Variable elimination (VE) and the junction tree algorithm are both exact
+      inference methods [^1][^3]. Running VE in an order that follows the junction tree computes
+      exactly the junction-tree messages, so the resulting marginals are the same [^2]. The
+      junction tree simply caches those messages so that many queries can be answered without
+      starting over [^2]. Statement 2 is false because the implication only runs one way.
+      d-separation in the graph guarantees conditional independence, but a distribution that
+      factorises over the graph can have extra independences that the graph does not show. A fully
+      factorised distribution, for example, is compatible with any graph [^3]. So $X$ and $Y$ can
+      be conditionally independent given $Z$ even though the graph does not d-separate them.
+    references:
+      - title: 'Stanford CS228 Notes: Variable Elimination'
+        url: https://ermongroup.github.io/cs228-notes/inference/ve/
+        locator: Introduction
+      - title: 'Stanford CS228 Notes: Junction Tree Algorithm'
+        url: https://ermongroup.github.io/cs228-notes/inference/jt/#variable-elimination-over-a-junction-tree
+        locator: Introduction; section 'Variable elimination over a junction tree'
+      - title: Bishop, Pattern Recognition and Machine Learning (2006)
+        url: https://www.microsoft.com/en-us/research/wp-content/uploads/2006/01/Bishop-Pattern-Recognition-and-Machine-Learning-2006.pdf
+        locator: Sec. 8.2.2 D-separation, p. 382; Sec. 8.4.6 Exact inference in general graphs, p. 416
     source:
       id: mmlu-redux
       ref: machine_learning/48
@@ -105,6 +214,7 @@ questions:
     status: draft
   - id: probabilistic-models-007
     type: single
+    difficulty: medium
     question: |
       Evaluate both statements.
 
@@ -117,6 +227,23 @@ questions:
         correct: true
       - text: True, False
       - text: False, True
+    explanation: |
+      Statement 1 is false because of the word "always". EM guarantees that the log-likelihood
+      never decreases, $\ell(\theta^{(t)}) \le \ell(\theta^{(t+1)})$. Once it reaches a maximum,
+      though, the parameters stop changing and the likelihood stays where it is [^1][^2].
+      Statement 2 is also false. Q-learning is a model-free temporal-difference method: it learns
+      action values directly from experienced transitions and rewards, with no model of how
+      actions change the environment [^3].
+    references:
+      - title: Stanford CS229 Lecture Notes (Ma & Ng)
+        url: https://cs229.stanford.edu/main_notes.pdf
+        locator: Sec. 11.3 General EM algorithms, pp. 158-159
+      - title: Bishop, Pattern Recognition and Machine Learning (2006)
+        url: https://www.microsoft.com/en-us/research/wp-content/uploads/2006/01/Bishop-Pattern-Recognition-and-Machine-Learning-2006.pdf
+        locator: Sec. 9.4 The EM Algorithm in General, p. 454
+      - title: 'Sutton & Barto, Reinforcement Learning: An Introduction (2nd ed.)'
+        url: http://incompleteideas.net/book/the-book-2nd.html
+        locator: Ch. 6 introduction, p. 119; Sec. 6.5 Q-learning, p. 131; Sec. 6.9 Summary, p. 138
     source:
       id: mmlu-redux
       ref: machine_learning/64
@@ -124,6 +251,7 @@ questions:
     status: draft
   - id: probabilistic-models-008
     type: single
+    difficulty: medium
     question: Consider the Bayesian network given below. How many independent parameters are needed for this Bayesian Network H -> U <- P <- W?
     options:
       - text: '2'
@@ -131,6 +259,21 @@ questions:
       - text: '8'
         correct: true
       - text: '16'
+    explanation: |
+      Assume every variable is binary (the question does not say, but the expected answer relies
+      on it). A node with $K$ states needs $K - 1$ free parameters for each configuration of its
+      parents, so a binary node needs one parameter per parent configuration [^1]. In
+      H → U ← P ← W:
+      - H and W have no parents: 1 parameter each.
+      - P has one binary parent (W): $2^1 = 2$.
+      - U has two binary parents (H, P): $2^2 = 4$.
+
+      Total: $1 + 1 + 2 + 4 = 8$. An unrestricted joint over four binary variables would need
+      $2^4 - 1 = 15$ parameters; the missing links are what reduce the count [^1].
+    references:
+      - title: Bishop, Pattern Recognition and Machine Learning (2006)
+        url: https://www.microsoft.com/en-us/research/wp-content/uploads/2006/01/Bishop-Pattern-Recognition-and-Machine-Learning-2006.pdf
+        locator: Sec. 8.1.3 Discrete variables, pp. 366-367
     source:
       id: mmlu-redux
       ref: machine_learning/68
@@ -138,6 +281,7 @@ questions:
     status: draft
   - id: probabilistic-models-009
     type: single
+    difficulty: easy
     shuffle: false
     question: Which of the following best describes what discriminative approaches try to model? (w are the parameters in the model)
     options:
@@ -146,6 +290,22 @@ questions:
       - text: p(y, x)
       - text: p(w|x, y)
       - text: None of the above
+    explanation: |
+      Discriminative approaches model the conditional distribution of the label given the input,
+      $p(y \mid x; w)$, directly. Logistic regression is the standard example [^1][^2]. Modelling
+      $p(x \mid y)$ and $p(y)$, and hence the joint $p(x, y)$, is what generative models such as GDA
+      and naive Bayes do [^1][^2]. $p(w \mid x, y)$ is the Bayesian posterior over the parameters
+      after seeing the data, not the quantity a classifier is built to model [^3].
+    references:
+      - title: Stanford CS229 Lecture Notes (Ma & Ng)
+        url: https://cs229.stanford.edu/main_notes.pdf
+        locator: Ch. 4 Generative learning algorithms (introduction), p. 35
+      - title: 'Mitchell, Generative and Discriminative Classifiers: Naive Bayes and Logistic Regression (draft chapter, 2017)'
+        url: http://www.cs.cmu.edu/~tom/mlbook/NBayesLogReg.pdf
+        locator: Sec. 4 Relationship Between Naive Bayes Classifiers and Logistic Regression, p. 14
+      - title: Bishop, Pattern Recognition and Machine Learning (2006)
+        url: https://www.microsoft.com/en-us/research/wp-content/uploads/2006/01/Bishop-Pattern-Recognition-and-Machine-Learning-2006.pdf
+        locator: Sec. 1.2.3 Bayesian probabilities, eq. (1.43), p. 22
     source:
       id: mmlu-redux
       ref: machine_learning/80
@@ -153,6 +313,7 @@ questions:
     status: draft
   - id: probabilistic-models-010
     type: single
+    difficulty: medium
     question: |
       Evaluate both statements.
 
@@ -165,6 +326,25 @@ questions:
       - text: False, False
       - text: True, False
       - text: False, True
+    explanation: |
+      Statement 1 is true, read as "the likelihood never goes down". An HMM extends a mixture model:
+      at each time step the observation comes from the emission distribution of one hidden state [^1].
+      A model with more states can reproduce any model with fewer states, so its best achievable
+      training likelihood can only stay the same or rise. Mixture models behave the same way: the
+      maximum likelihood keeps rising with the number of components, which is why training
+      likelihood cannot be used to choose model size [^2]. Statement 2 is true. Collaborative
+      filtering recommends items using similarities between users and items learned from a
+      user–item feedback matrix, and movie recommendation is the textbook example [^3].
+    references:
+      - title: Bishop, Pattern Recognition and Machine Learning (2006)
+        url: https://www.microsoft.com/en-us/research/wp-content/uploads/2006/01/Bishop-Pattern-Recognition-and-Machine-Learning-2006.pdf
+        locator: Sec. 13.2 Hidden Markov Models, p. 610
+      - title: Bishop, Pattern Recognition and Machine Learning (2006)
+        url: https://www.microsoft.com/en-us/research/wp-content/uploads/2006/01/Bishop-Pattern-Recognition-and-Machine-Learning-2006.pdf
+        locator: Sec. 10.2.4 Determining the number of components, p. 484
+      - title: 'Google Developers: Recommendation Systems course'
+        url: https://developers.google.com/machine-learning/recommendation/collaborative/basics
+        locator: Collaborative filtering, 'Movie recommendation example'
     source:
       id: mmlu-redux
       ref: machine_learning/94
