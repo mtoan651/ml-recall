@@ -9,6 +9,7 @@
 import { getCollection } from "astro:content";
 import { posix } from "node:path";
 import { referenceAnchor } from "./citations";
+import { isExamEligible } from "./exam";
 import { renderMarkdown } from "./markdown";
 import type { Figure, Question, Source } from "./schema";
 import { shufflesOptions } from "./shuffle";
@@ -179,6 +180,11 @@ function figureUrl(filePath: string, src: string): string | undefined {
   return FIGURE_URLS[absolute];
 }
 
+/** The questions of `list` that can be in a timed test (auto-gradable). */
+export function examQuestions(list: readonly BankQuestion[]): BankQuestion[] {
+  return list.filter((bq) => isExamEligible(bq.question));
+}
+
 // Cache across pages in production builds only: in dev, content edits must show up on reload.
 let cached: Promise<Bank> | undefined;
 
@@ -282,6 +288,8 @@ async function renderQuestion(
             accept: q.answer.accept,
             ...(typeof q.answer.numeric === "number" ? { numeric: q.answer.numeric } : {}),
             tolerance: q.answer.tolerance,
+            ...(q.answer.pattern ? { pattern: q.answer.pattern } : {}),
+            ...(q.answer.hint ? { hint: q.answer.hint } : {}),
             modelHtml,
           },
         }

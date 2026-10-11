@@ -17,3 +17,52 @@ export function CrossIcon({ className = "size-4" }: { className?: string }) {
     </svg>
   );
 }
+
+export function MinusIcon({ className = "size-4" }: { className?: string }) {
+  return (
+    <svg aria-hidden="true" viewBox="0 0 20 20" fill="currentColor" className={className}>
+      <path d="M4.5 9h11a1 1 0 1 1 0 2h-11a1 1 0 1 1 0-2Z" />
+    </svg>
+  );
+}
+
+export function FlagIcon({
+  className = "size-4",
+  filled = false,
+}: {
+  className?: string;
+  filled?: boolean;
+}) {
+  return (
+    <svg
+      aria-hidden="true"
+      viewBox="0 0 20 20"
+      fill="none"
+      stroke="currentColor"
+      strokeWidth="1.6"
+      strokeLinecap="round"
+      strokeLinejoin="round"
+      className={className}
+    >
+      <path d="M4.5 17.5V3" />
+      <path d="M4.5 3.5h10.5l-2.5 3.75 2.5 3.75H4.5" fill={filled ? "currentColor" : "none"} />
+    </svg>
+  );
+}
+
+export function ClockIcon({ className = "size-4" }: { className?: string }) {
+  return (
+    <svg
+      aria-hidden="true"
+      viewBox="0 0 20 20"
+      fill="none"
+      stroke="currentColor"
+      strokeWidth="1.7"
+      strokeLinecap="round"
+      className={className}
+    >
+      <circle cx="10" cy="11" r="6.75" />
+      <path d="M10 7.5V11l2.5 1.5M8 2.25h4" />
+    </svg>
+  );
+}

@@ -90,16 +90,24 @@ function updateCurrent(session: Session, update: (answer: Answer) => Answer | nu
   return next ? { ...session, answers: { ...session.answers, [item.id]: next } } : session;
 }
 
+/**
+ * The selection after picking `option` (an original index): replaces it for single choice,
+ * toggles it for "select all that apply". The result is sorted.
+ */
+export function toggleOption(selected: readonly number[], option: number, multiple: boolean) {
+  if (!multiple) return [option];
+  return selected.includes(option)
+    ? selected.filter((o) => o !== option)
+    : [...selected, option].sort((x, y) => x - y);
+}
+
 export function sessionReducer(session: Session, action: SessionAction): Session {
   switch (action.type) {
     case "select":
-      return updateCurrent(session, (a) => {
-        if (!action.multiple) return { ...a, selected: [action.option] };
-        const selected = a.selected.includes(action.option)
-          ? a.selected.filter((o) => o !== action.option)
-          : [...a.selected, action.option].sort((x, y) => x - y);
-        return { ...a, selected };
-      });
+      return updateCurrent(session, (a) => ({
+        ...a,
+        selected: toggleOption(a.selected, action.option, action.multiple),
+      }));
     case "type":
       return updateCurrent(session, (a) => ({ ...a, text: action.text }));
     case "reveal":

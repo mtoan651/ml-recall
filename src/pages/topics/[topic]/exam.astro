@@ -1,0 +1,50 @@
+---
+import Exam from "../../../components/Exam";
+import Base from "../../../layouts/Base.astro";
+import { examQuestions, getBank, toQuizQuestions } from "../../../lib/bank";
+import { planExam } from "../../../lib/exam";
+import { url } from "../../../lib/url";
+
+// One test page per topic with at least one auto-gradable question.
+export async function getStaticPaths() {
+  const bank = await getBank();
+  return [...bank.topics.values()]
+    .filter((t) => examQuestions(bank.questions.filter((q) => q.topic.id === t.id)).length > 0)
+    .map((t) => ({ params: { topic: t.id } }));
+}
+
+const bank = await getBank();
+const topic = bank.topics.get(Astro.params.topic);
+if (!topic) throw new Error(`Unknown topic ${Astro.params.topic}`);
+const topicQuestions = bank.questions.filter((q) => q.topic.id === topic.id);
+const eligible = examQuestions(topicQuestions);
+// Only the questions a test can draw from are embedded in the page.
+const questions = await toQuizQuestions(eligible, bank);
+const { count } = planExam(questions.length);
+---
+
+<Base
+  title={`Test: ${topic.title}`}
+  description={`Timed test on ${topic.title}: ${count} random ${count === 1 ? "question" : "questions"} in ${count} ${count === 1 ? "minute" : "minutes"}, scored and explained at the end.`}
+>
+  <nav aria-label="Breadcrumb" class="text-sm text-muted">
+    <a href={url()} class="hover:text-ink">Topics</a>
+    <span aria-hidden="true" class="mx-1.5">/</span>
+    <span>{topic.domainTitle}</span>
+    <span aria-hidden="true" class="mx-1.5">/</span>
+    <a href={topic.url} class="hover:text-ink">{topic.title}</a>
+  </nav>
+  <h1 class="mt-2 text-2xl font-semibold tracking-tight sm:text-3xl">Test: {topic.title}</h1>
+  <noscript>
+    <p class="mt-4 text-muted">The timed test needs JavaScript.</p>
+  </noscript>
+
+  <div class="mt-6">
+    <Exam
+      client:load
+      questions={questions}
+      scope={{ kind: "topic", id: topic.id, title: topic.title, practiceUrl: topic.url }}
+      excluded={topicQuestions.length - eligible.length}
+    />
+  </div>
+</Base>

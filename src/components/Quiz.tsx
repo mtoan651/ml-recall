@@ -56,7 +56,7 @@ export default function Quiz({ questions, scope, showTopic = false }: QuizProps)
   const [session, dispatch] = useReducer(sessionReducer, undefined, () =>
     createSession(questions.map(toInput), { shuffleQuestions: false, shuffleOptions: false }),
   );
-  const [hint, setHint] = useState<string | null>(null);
+  const [inputError, setInputError] = useState<string | null>(null);
   const [announcement, setAnnouncement] = useState("");
   const focusRef = useRef<HTMLElement>(null);
   const moved = useRef(false);
@@ -68,7 +68,7 @@ export default function Quiz({ questions, scope, showTopic = false }: QuizProps)
         shuffleOptions: true,
       });
       dispatch({ type: "restart", session: fresh });
-      setHint(null);
+      setInputError(null);
       setAnnouncement("");
     },
     [questions],
@@ -122,14 +122,13 @@ export default function Quiz({ questions, scope, showTopic = false }: QuizProps)
     }
     const result = gradeShortAnswer(answer.text, question.answer);
     if (result.kind === "graded") grade(question.id, result.correct ? "correct" : "incorrect");
-    else if (result.kind === "not-a-number")
-      setHint("Enter a number, e.g. 42, -0.5, 1/3 or 2.5e-3.");
-    else if (result.kind === "empty") setHint("Type an answer first.");
+    else if (result.kind === "not-a-number") setInputError("That is not a number.");
+    else if (result.kind === "empty") setInputError("Type an answer first.");
   }, [question, answer, grade]);
 
   const next = useCallback(() => {
     moved.current = true;
-    setHint(null);
+    setInputError(null);
     setAnnouncement("");
     dispatch({ type: "next" });
   }, []);
@@ -285,10 +284,10 @@ export default function Quiz({ questions, scope, showTopic = false }: QuizProps)
                 answer={answer}
                 number={score.current}
                 showTopic={showTopic}
-                hint={hint}
+                inputError={inputError}
                 onSelect={select}
                 onText={(text) => {
-                  setHint(null);
+                  setInputError(null);
                   dispatch({ type: "type", text });
                 }}
                 onSubmitText={primary}

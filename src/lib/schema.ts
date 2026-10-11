@@ -6,6 +6,7 @@
  */
 import { z } from "astro/zod";
 import { citationMarkers } from "./citations";
+import { compilePattern, matchesPattern } from "./grading";
 
 const SLUG_RE = /^[a-z0-9]+(?:-[a-z0-9]+)*$/;
 const QUESTION_ID_RE = /^[a-z0-9]+(?:-[a-z0-9]+)*-\d{3}$/;
@@ -51,12 +52,42 @@ export const provenanceSchema = z.strictObject({
   url: httpUrl.nullish(),
 });
 
-export const shortAnswerSchema = z.strictObject({
-  accept: z.array(text).default([]),
-  numeric: z.number().nullish(),
-  tolerance: z.number().min(0).default(0),
-  model: text,
-});
+/** Python-only regex syntax that JavaScript rejects or reads differently (`ShortAnswer` in schema.py). */
+const NON_JS_REGEX_TOKENS = ["(?P", "\\A", "\\Z", "(?#", "(?i", "(?x", "(?s", "(?m"];
+
+export const shortAnswerSchema = z
+  .strictObject({
+    accept: z.array(text).default([]),
+    numeric: z.number().nullish(),
+    tolerance: z.number().min(0).default(0),
+    pattern: text.nullish(),
+    hint: text.nullish(),
+    model: text,
+  })
+  .superRefine((answer, ctx) => {
+    const { pattern } = answer;
+    if (!pattern) return;
+    const token = NON_JS_REGEX_TOKENS.find((t) => pattern.includes(t));
+    if (token) {
+      ctx.addIssue({
+        code: "custom",
+        path: ["pattern"],
+        message: `'${token}' is not valid JavaScript regex syntax`,
+      });
+    } else if (!compilePattern(pattern)) {
+      ctx.addIssue({ code: "custom", path: ["pattern"], message: "pattern does not compile" });
+    } else {
+      // Also checked by `mlr check`: the canonical answers must pass the pattern.
+      const misses = answer.accept.filter((a) => !matchesPattern(a, pattern));
+      if (misses.length > 0) {
+        ctx.addIssue({
+          code: "custom",
+          path: ["accept"],
+          message: `accepted answers don't match \`pattern\`: ${misses.join(" | ")}`,
+        });
+      }
+    }
+  });
 
 export const QUESTION_TYPES = ["single", "multiple", "true_false", "short_answer"] as const;
 export const CHOICE_TYPES = ["single", "multiple", "true_false"] as const;

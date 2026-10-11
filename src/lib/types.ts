@@ -24,6 +24,10 @@ export interface AnswerKeyView {
   accept: string[];
   numeric?: number;
   tolerance: number;
+  /** Regex source, matched in full and case-insensitively (src/lib/grading.ts). */
+  pattern?: string;
+  /** Format guidance under the input (plain text). */
+  hint?: string;
   modelHtml: string;
 }
 
@@ -70,4 +74,15 @@ export interface QuizQuestion {
   explanationFigure?: FigureView;
   references: ReferenceView[];
   provenance: ProvenanceView;
+}
+
+/** The topic or tag a timed test is about. */
+export interface ExamScopeView {
+  kind: "topic" | "tag";
+  /** Topic id or tag. */
+  id: string;
+  /** For headings: the topic title or `#tag`. */
+  title: string;
+  /** Practice page of the same topic or tag. */
+  practiceUrl: string;
 }

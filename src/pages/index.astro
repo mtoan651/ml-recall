@@ -1,12 +1,20 @@
 ---
 import Base from "../layouts/Base.astro";
-import { getBank } from "../lib/bank";
-import { url } from "../lib/url";
+import { examQuestions, getBank } from "../lib/bank";
+import { planExam } from "../lib/exam";
+import { topicExamUrl, url } from "../lib/url";
 
 const bank = await getBank();
 const totalQuestions = bank.questions.length;
 const totalReviewed = bank.questions.filter((q) => q.question.status === "reviewed").length;
 const activeTopics = [...bank.topics.values()].filter((t) => t.questionIds.length > 0).length;
+/** Topic id → questions in its timed test (0: no test page). */
+const testSize = new Map(
+  [...bank.topics.keys()].map((id) => [
+    id,
+    planExam(examQuestions(bank.questions.filter((q) => q.topic.id === id)).length).count,
+  ]),
+);
 ---
 
 <Base wide>
@@ -14,8 +22,8 @@ const activeTopics = [...bank.topics.values()].filter((t) => t.questionIds.lengt
     <h1 class="text-3xl font-semibold tracking-tight sm:text-4xl">Practice AI, ML and deep learning by recalling, not rereading.</h1>
     <p class="mt-4 text-lg leading-relaxed text-muted">
       Exam-style questions with instant feedback, worked explanations and cited sources. Pick a
-      topic and answer one question at a time — your last result per question stays in this
-      browser.
+      topic and answer one question at a time, or take a timed test — your last result per
+      question stays in this browser.
     </p>
     <p class="mt-4 text-sm text-muted">
       {totalQuestions} questions · {activeTopics} topics · {totalReviewed} reviewed ·
@@ -41,27 +49,39 @@ const activeTopics = [...bank.topics.values()].filter((t) => t.questionIds.lengt
                   </li>
                 );
               }
+              const test = testSize.get(topic.id) ?? 0;
+              // The whole card links to the topic (stretched ::after); the test link sits above it.
               return (
-                <li>
+                <li class="group relative h-full rounded-xl border border-line bg-surface px-4 py-3 shadow-xs transition-colors hover:border-line-strong hover:bg-subtle has-[.card-link:focus-visible]:outline-2 has-[.card-link:focus-visible]:outline-offset-2 has-[.card-link:focus-visible]:outline-accent">
                   <a
                     href={topic.url}
-                    class="group block h-full rounded-xl border border-line bg-surface px-4 py-3 shadow-xs transition-colors hover:border-line-strong hover:bg-subtle"
+                    class="card-link block font-medium text-ink group-hover:text-accent after:absolute after:inset-0 after:rounded-xl focus-visible:outline-none"
                   >
-                    <span class="block font-medium text-ink group-hover:text-accent">{topic.title}</span>
-                    <span class="mt-1 block text-sm text-muted">
+                    {topic.title}
+                  </a>
+                  <span class="mt-1 flex flex-wrap items-baseline justify-between gap-x-3 gap-y-1 text-sm text-muted">
+                    <span>
                       {total} {total === 1 ? "question" : "questions"} · {topic.reviewed} reviewed
                     </span>
-                    <span
-                      class="mt-2 hidden items-center gap-2 text-xs text-muted"
-                      data-topic-progress
-                      data-ids={topic.questionIds.join(" ")}
-                    >
-                      <span class="h-1.5 flex-1 overflow-hidden rounded-full bg-subtle">
-                        <span class="block h-full rounded-full bg-accent" data-bar style="width: 0%"></span>
-                      </span>
-                      <span class="tabular-nums" data-label></span>
+                    {test > 0 && (
+                      <a
+                        href={topicExamUrl(topic.id)}
+                        class="relative z-10 -my-1 rounded-md px-1.5 py-1 font-medium text-accent underline-offset-2 hover:underline"
+                      >
+                        Test · {test} min<span class="sr-only"> on {topic.title}</span>
+                      </a>
+                    )}
+                  </span>
+                  <span
+                    class="mt-2 hidden items-center gap-2 text-xs text-muted"
+                    data-topic-progress
+                    data-ids={topic.questionIds.join(" ")}
+                  >
+                    <span class="h-1.5 flex-1 overflow-hidden rounded-full bg-subtle">
+                      <span class="block h-full rounded-full bg-accent" data-bar style="width: 0%"></span>
                     </span>
-                  </a>
+                    <span class="tabular-nums" data-label></span>
+                  </span>
                 </li>
               );
             })}

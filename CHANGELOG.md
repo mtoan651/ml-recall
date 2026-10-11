@@ -7,6 +7,13 @@ versioning: [SemVer](https://semver.org) as defined in [docs/conventions.md](doc
 
 ### Added
 
+- Timed tests for every topic and tag (`/topics/<topic>/exam/`, `/tags/<tag>/exam/`): up to 20
+  random auto-graded questions, 1 minute each, one question per screen or all on one page. The
+  clock runs from the start time, a reload resumes the test, it is submitted at 00:00, and the
+  results page explains every question. Best score and history per topic/tag.
+- Regex-graded short answers: `pattern` (full match, case-insensitive, NFKC, ASCII semantics,
+  checked in Python and JavaScript) and `hint` (format guidance under the input).
+- "No explanation yet" notice for questions without any explanation.
 - 178 draft questions from four new importers (pinned upstream revisions, per-item curation):
   Hugging Face Deep RL Course (36, incl. self-graded open questions), Hugging Face AI Agents Course
   (19), Microsoft Data Science for Beginners (15) and MMLU-Redux `high_school_statistics` (75, 2
