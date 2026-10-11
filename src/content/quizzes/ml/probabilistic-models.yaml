@@ -14,10 +14,13 @@ questions:
       **Statement 2.** The correspondence between logistic regression and Gaussian Naive Bayes (with identity class covariances) means that there is a one-to-one correspondence between the parameters of the two classifiers.
     options:
       - text: True, True
+        why: Statement 2 is false; the map from Gaussian naive Bayes parameters to logistic weights is many-to-one, so there is no one-to-one correspondence [^2].
       - text: False, False
+        why: Statement 1 is true; per-class density estimates combined with the priors give class posteriors through Bayes' theorem [^1].
       - text: True, False
         correct: true
       - text: False, True
+        why: Both verdicts are reversed; kernel density estimates can classify through Bayes' theorem [^1], and the correspondence is not one-to-one [^2].
     explanation: |
       Statement 1 is true. Fit a density estimate $\hat f_j(x)$, for example a kernel density
       estimate, separately for each class, combine it with the class priors, and apply Bayes'
@@ -41,17 +44,21 @@ questions:
       id: mmlu-redux
       ref: machine_learning/6
       url: https://huggingface.co/datasets/edinburgh-dawg/mmlu-redux-2.0/viewer/machine_learning/test?row=6
-    status: draft
+    status: reviewed
+    reviewed_by: claude
   - id: probabilistic-models-002
     type: single
     difficulty: medium
     question: 'Which of the following is the joint probability of $H$, $U$, $P$ and $W$ in the Bayesian network $H \to U \leftarrow P \leftarrow W$, written as a product of conditional probabilities?'
     options:
       - text: $P(H, U, P, W) = P(H)\,P(W)\,P(P)\,P(U)$
+        why: A product of four marginals makes all four variables independent; it ignores the arrows $W \to P$, $H \to U$ and $P \to U$ [^1].
       - text: $P(H, U, P, W) = P(H)\,P(W)\,P(P \mid W)\,P(W \mid H, P)$
+        why: The root $W$ already has its factor $P(W)$; this conditions $W$ on nodes that are not its parents and leaves $U$ without a factor [^1].
       - text: $P(H, U, P, W) = P(H)\,P(W)\,P(P \mid W)\,P(U \mid H, P)$
         correct: true
       - text: $P(H, U, P, W) = P(H)\,P(W)\,P(P \mid W)\,P(U \mid H)\,P(U \mid P)$
+        why: Each node gets exactly one factor, conditioned on all its parents together; $P(U \mid H)\,P(U \mid P)$ is not $P(U \mid H, P)$ and counts $U$ twice [^1].
     explanation: |
       A Bayesian network factorises the joint distribution into one conditional distribution per
       node, each conditioned only on that node's parents: $p(x) = \prod_k p(x_k \mid \mathrm{pa}_k)$ [^1].
@@ -70,7 +77,8 @@ questions:
       id: mmlu-redux
       ref: machine_learning/26
       url: https://huggingface.co/datasets/edinburgh-dawg/mmlu-redux-2.0/viewer/machine_learning/test?row=26
-    status: draft
+    status: reviewed
+    reviewed_by: claude
   - id: probabilistic-models-003
     type: single
     difficulty: medium
@@ -84,8 +92,11 @@ questions:
       - text: True, True
         correct: true
       - text: False, False
+        why: Both statements are true; gradient-based optimisation is an alternative to EM for the mixture likelihood [^1], and the Gaussian class-conditional estimates are averages computed in one pass [^2].
       - text: True, False
+        why: Statement 2 is also true; the class priors, means and covariance are sample averages, so for fixed $d$ one linear pass over the records suffices [^2].
       - text: False, True
+        why: Statement 1 is also true; the mixture log-likelihood can be maximised by gradient-based optimisation instead of EM [^1].
     explanation: |
       Statement 1 is true. The log-likelihood of a Gaussian mixture has no closed-form maximiser,
       and gradient-based optimisation is a workable alternative to EM for maximising it [^1].
@@ -105,17 +116,21 @@ questions:
       id: mmlu-redux
       ref: machine_learning/27
       url: https://huggingface.co/datasets/edinburgh-dawg/mmlu-redux-2.0/viewer/machine_learning/test?row=27
-    status: draft
+    status: reviewed
+    reviewed_by: claude
   - id: probabilistic-models-004
     type: single
     difficulty: hard
     question: 'For a Gaussian Bayes classifier, which one of these structural assumptions is the one that most affects the trade-off between underfitting and overfitting:'
     options:
       - text: Whether we learn the class centers by Maximum Likelihood or Gradient Descent
+        why: Both optimise the same objective for the same model, so the choice of optimiser does not change the model's capacity.
       - text: Whether we assume full class covariance matrices or diagonal class covariance matrices
         correct: true
       - text: Whether we have equal class priors or priors estimated from the data
+        why: The priors only add a constant $\log P(y = k)$ per class, which shifts the boundary without changing its flexibility [^1].
       - text: Whether we allow classes to have different mean vectors or we force them to share the same mean vector
+        why: Sharing one mean removes the main information that separates the classes; it cripples the model rather than tuning its complexity, and it saves far fewer parameters than the covariance choice.
     explanation: |
       The covariance assumption decides how many parameters each class has. A full covariance
       matrix has $d(d+1)/2$ free entries, a number that grows quadratically with $d$. A diagonal
@@ -146,17 +161,21 @@ questions:
       id: mmlu-redux
       ref: machine_learning/37
       url: https://huggingface.co/datasets/edinburgh-dawg/mmlu-redux-2.0/viewer/machine_learning/test?row=37
-    status: draft
+    status: reviewed
+    reviewed_by: claude
   - id: probabilistic-models-005
     type: single
     difficulty: medium
     question: Suppose you are given an EM algorithm that finds maximum likelihood estimates for a model with latent variables. You are asked to modify the algorithm so that it finds MAP estimates instead. Which step or steps do you need to modify?
     options:
       - text: Expectation
+        why: The E step computes the posterior of the latent variables under the current parameters; the parameter prior does not enter it [^1].
       - text: Maximization
         correct: true
       - text: No modification necessary
+        why: The MAP objective adds the log prior $\ln p(\theta)$, which the M step has to include [^1].
       - text: Both
+        why: Only the M step changes; the E step stays exactly as for maximum likelihood [^1].
     explanation: |
       For MAP estimation you maximise $\ln p(\theta \mid X)$, which equals the likelihood bound plus
       the log prior $\ln p(\theta)$, up to a constant [^1]. The prior does not involve the latent
@@ -172,7 +191,8 @@ questions:
       id: mmlu-redux
       ref: machine_learning/43
       url: https://huggingface.co/datasets/edinburgh-dawg/mmlu-redux-2.0/viewer/machine_learning/test?row=43
-    status: draft
+    status: reviewed
+    reviewed_by: claude
   - id: probabilistic-models-006
     type: single
     difficulty: hard
@@ -184,10 +204,13 @@ questions:
       **Statement 2.** If two random variables $X$ and $Y$ are conditionally independent given another random variable $Z$, then in the corresponding Bayesian network, the nodes for $X$ and $Y$ are d-separated given $Z$.
     options:
       - text: True, True
+        why: Statement 2 is false; a distribution can have independencies that the graph does not show, so conditional independence does not imply d-separation [^3].
       - text: False, False
+        why: Statement 1 is true; junction tree and variable elimination are both exact, so their marginals agree [^1][^2].
       - text: True, False
         correct: true
       - text: False, True
+        why: Both verdicts are reversed; the two exact algorithms give the same results [^2], and d-separation implies independence only in one direction [^3].
     explanation: |
       Statement 1 is true. Variable elimination (VE) and the junction tree algorithm are both exact
       inference methods [^1][^3]. Running VE in an order that follows the junction tree computes
@@ -212,7 +235,8 @@ questions:
       id: mmlu-redux
       ref: machine_learning/48
       url: https://huggingface.co/datasets/edinburgh-dawg/mmlu-redux-2.0/viewer/machine_learning/test?row=48
-    status: draft
+    status: reviewed
+    reviewed_by: claude
   - id: probabilistic-models-007
     type: single
     difficulty: medium
@@ -224,10 +248,13 @@ questions:
       **Statement 2.** One disadvantage of Q-learning is that it can only be used when the learner has prior knowledge of how its actions affect its environment.
     options:
       - text: True, True
+        why: Neither statement holds; EM never decreases the log-likelihood but stops increasing at a fixed point [^1], and Q-learning is model-free [^3].
       - text: False, False
         correct: true
       - text: True, False
+        why: Statement 1 is false; once EM has converged, the log-likelihood stays constant instead of increasing [^1][^2].
       - text: False, True
+        why: Statement 2 is false; Q-learning learns from experienced transitions and needs no model of how actions affect the environment [^3].
     explanation: |
       Statement 1 is false because of the word "always". EM guarantees that the log-likelihood
       never decreases, $\ell(\theta^{(t)}) \le \ell(\theta^{(t+1)})$. Once it reaches a maximum,
@@ -249,17 +276,21 @@ questions:
       id: mmlu-redux
       ref: machine_learning/64
       url: https://huggingface.co/datasets/edinburgh-dawg/mmlu-redux-2.0/viewer/machine_learning/test?row=64
-    status: draft
+    status: reviewed
+    reviewed_by: claude
   - id: probabilistic-models-008
     type: single
     difficulty: medium
     question: Consider the Bayesian network $H \to U \leftarrow P \leftarrow W$, in which all four variables are binary. How many independent parameters are needed to specify it?
     options:
       - text: '2'
+        why: $U$ alone needs one parameter per configuration of its two binary parents, i.e. 4 [^1].
       - text: '4'
+        why: That is only the table of $U$; $H$, $W$ and $P$ add $1 + 1 + 2$ more [^1].
       - text: '8'
         correct: true
       - text: '16'
+        why: Even an unrestricted joint of four binary variables needs only $2^4 - 1 = 15$; the missing links reduce the count further [^1].
     explanation: |
       A node with $K$ states needs $K - 1$ free parameters for each configuration of its parents, so a
       binary node needs one parameter per parent configuration [^1]. In $H \to U \leftarrow P \leftarrow W$:
@@ -277,7 +308,8 @@ questions:
       id: mmlu-redux
       ref: machine_learning/68
       url: https://huggingface.co/datasets/edinburgh-dawg/mmlu-redux-2.0/viewer/machine_learning/test?row=68
-    status: draft
+    status: reviewed
+    reviewed_by: claude
   - id: probabilistic-models-009
     type: single
     difficulty: easy
@@ -286,8 +318,11 @@ questions:
       - text: $p(y \mid x, w)$
         correct: true
       - text: $p(y, x)$
+        why: The joint distribution is what generative models such as GDA and naive Bayes model [^1][^2].
       - text: $p(w \mid x, y)$
+        why: This is the posterior over the parameters given the data, not the quantity a classifier is built to model [^3].
       - text: $p(x \mid y, w)$
+        why: This class-conditional density is the generative part of a model; discriminative approaches skip it and model $y$ given $x$ directly [^1].
     explanation: |
       Discriminative approaches model the conditional distribution of the label given the input,
       $p(y \mid x; w)$, directly. Logistic regression is the standard example [^1][^2]. Modelling
@@ -308,7 +343,8 @@ questions:
       id: mmlu-redux
       ref: machine_learning/80
       url: https://huggingface.co/datasets/edinburgh-dawg/mmlu-redux-2.0/viewer/machine_learning/test?row=80
-    status: draft
+    status: reviewed
+    reviewed_by: claude
   - id: probabilistic-models-010
     type: single
     difficulty: medium
@@ -322,8 +358,11 @@ questions:
       - text: True, True
         correct: true
       - text: False, False
+        why: Both statements are true; more hidden states can never lower the best training likelihood [^1][^2], and movie recommendation is the textbook use of collaborative filtering [^3].
       - text: True, False
+        why: Statement 2 is also true; collaborative filtering is the standard approach to modelling users' movie preferences [^3].
       - text: False, True
+        why: Statement 1 is also true; a model with more states contains every model with fewer, so its best training likelihood cannot drop [^2].
     explanation: |
       Statement 1 is true, read as "the likelihood never goes down". An HMM extends a mixture model:
       at each time step the observation comes from the emission distribution of one hidden state [^1].
@@ -347,7 +386,8 @@ questions:
       id: mmlu-redux
       ref: machine_learning/94
       url: https://huggingface.co/datasets/edinburgh-dawg/mmlu-redux-2.0/viewer/machine_learning/test?row=94
-    status: draft
+    status: reviewed
+    reviewed_by: claude
   - id: probabilistic-models-011
     type: single
     difficulty: easy
@@ -389,7 +429,8 @@ questions:
       id: d2l
       ref: chapter_gaussian-processes/gp-intro#ex1
       url: https://d2l.ai/chapter_gaussian-processes/gp-intro.html#exercises
-    status: draft
+    status: reviewed
+    reviewed_by: claude
   - id: probabilistic-models-012
     type: multiple
     difficulty: medium
@@ -439,7 +480,8 @@ questions:
       id: d2l
       ref: chapter_gaussian-processes/gp-intro#ex4
       url: https://d2l.ai/chapter_gaussian-processes/gp-intro.html#exercises
-    status: draft
+    status: reviewed
+    reviewed_by: claude
   - id: probabilistic-models-013
     type: single
     difficulty: medium
@@ -485,7 +527,8 @@ questions:
       id: d2l
       ref: chapter_gaussian-processes/gp-intro#ex5
       url: https://d2l.ai/chapter_gaussian-processes/gp-intro.html#exercises
-    status: draft
+    status: reviewed
+    reviewed_by: claude
   - id: probabilistic-models-014
     type: single
     difficulty: medium
@@ -531,7 +574,8 @@ questions:
       id: d2l
       ref: chapter_gaussian-processes/gp-intro#ex6
       url: https://d2l.ai/chapter_gaussian-processes/gp-intro.html#exercises
-    status: draft
+    status: reviewed
+    reviewed_by: claude
   - id: probabilistic-models-015
     type: short_answer
     difficulty: medium
@@ -572,7 +616,8 @@ questions:
       id: d2l
       ref: chapter_gaussian-processes/gp-intro#ex7
       url: https://d2l.ai/chapter_gaussian-processes/gp-intro.html#exercises
-    status: draft
+    status: reviewed
+    reviewed_by: claude
   - id: probabilistic-models-016
     type: true_false
     difficulty: medium
@@ -610,7 +655,8 @@ questions:
       id: d2l
       ref: chapter_gaussian-processes/gp-priors#ex5
       url: https://d2l.ai/chapter_gaussian-processes/gp-priors.html#exercises
-    status: draft
+    status: reviewed
+    reviewed_by: claude
   - id: probabilistic-models-017
     type: single
     difficulty: medium
@@ -650,7 +696,8 @@ questions:
       id: d2l
       ref: chapter_gaussian-processes/gp-inference#ex2
       url: https://d2l.ai/chapter_gaussian-processes/gp-inference.html#exercises
-    status: draft
+    status: reviewed
+    reviewed_by: claude
   - id: probabilistic-models-018
     type: single
     difficulty: medium
@@ -672,15 +719,15 @@ questions:
       - text: Both bands keep the width they have inside $[0, 5]$, because the noise level is the same at every input
         why: Only the aleatoric band has constant width; the epistemic band grows away from the data [^1].
       - text: The epistemic band grows without limit there, and the noise-only band also covers the true function
-        why: The epistemic band levels off at the prior, $\pm 2a = \pm 2$, and a $\pm 0.5$ band around 0 cannot cover values of $f$ up to about 1.4 [^1].
+        why: The epistemic band levels off at the prior standard deviation 1, a band of $\pm 2$, and a $\pm 0.5$ band around 0 cannot cover values of $f$ up to about 1.4 [^1].
     explanation: |
       Away from the data the kernel values $k(x, x_i)$ vanish, so the posterior mean returns to the
-      prior mean 0 and the epistemic variance to the prior variance $a^2 = 1$, a band of about
-      $\pm 2$ [^1][^2]. That band still covers the true function, whose values stay within about
-      $\pm 1.4$ there. The aleatoric uncertainty is the noise variance, the same everywhere [^1]; a
-      band of $\pm 2\sigma \approx \pm 0.5$ around a mean of 0 would look confident while missing
-      the true curve over about half of $[6, 10]$. Representing epistemic uncertainty is what tells
-      us that we know little there [^1].
+      prior mean 0 and the epistemic variance to the prior variance, the squared amplitude $1$, a
+      band of about $\pm 2$ [^1][^2]. That band still covers the true function, whose values stay
+      within about $\pm 1.4$ there. The aleatoric uncertainty is the noise variance, the same
+      everywhere [^1]; a band of $\pm 2\sigma \approx \pm 0.5$ around a mean of 0 would look confident
+      while missing the true curve over about half of $[6, 10]$. Representing epistemic uncertainty is
+      what tells us that we know little there [^1].
     references:
       - source: d2l
         locator: Sec. 18.3.4 Worked Example from Scratch (epistemic versus aleatoric uncertainty, credible sets)
@@ -695,7 +742,8 @@ questions:
       id: d2l
       ref: chapter_gaussian-processes/gp-inference#ex3
       url: https://d2l.ai/chapter_gaussian-processes/gp-inference.html#exercises
-    status: draft
+    status: reviewed
+    reviewed_by: claude
   - id: probabilistic-models-019
     type: short_answer
     difficulty: medium
@@ -735,7 +783,8 @@ questions:
       id: d2l
       ref: chapter_gaussian-processes/gp-inference#ex6
       url: https://d2l.ai/chapter_gaussian-processes/gp-inference.html#exercises
-    status: draft
+    status: reviewed
+    reviewed_by: claude
   - id: probabilistic-models-020
     type: single
     difficulty: medium
@@ -773,7 +822,8 @@ questions:
       id: d2l
       ref: chapter_appendix-mathematics-for-deep-learning/naive-bayes#ex3
       url: https://d2l.ai/chapter_appendix-mathematics-for-deep-learning/naive-bayes.html#exercises
-    status: draft
+    status: reviewed
+    reviewed_by: claude
   - id: probabilistic-models-021
     type: short_answer
     difficulty: medium
@@ -811,7 +861,8 @@ questions:
       id: d2l
       ref: chapter_preliminaries/probability#ex6
       url: https://d2l.ai/chapter_preliminaries/probability.html#exercises
-    status: draft
+    status: reviewed
+    reviewed_by: claude
   - id: probabilistic-models-022
     type: short_answer
     difficulty: easy
@@ -858,7 +909,8 @@ questions:
       id: ubc-dsci575
       ref: lectures/notes/01_Markov-models.ipynb#ex1.1-revision
       url: https://github.com/UBC-MDS/DSCI_575_adv-mach-learn/blob/af9d47c5fdaa26aa9a50e0f50cd991cf325f1972/lectures/notes/01_Markov-models.ipynb
-    status: draft
+    status: reviewed
+    reviewed_by: claude
   - id: probabilistic-models-023
     type: multiple
     difficulty: medium
@@ -871,8 +923,8 @@ questions:
       a transition matrix $T$ whose entry $a_{ij}$ is the probability of moving from $s_i$ to $s_j$.
       Which statements are true? Select all that apply.
     options:
-      - text: Under the Markov assumption, the next state $s_{t+1}$ is independent of the earlier states $s_1, \dots, s_{t-1}$ even when the current state $s_t$ is unknown
-        why: 'The Markov assumption is a *conditional* independence: the future is independent of the past *given the present*. Without $s_t$, earlier states still carry information about $s_{t+1}$ [^1].'
+      - text: Under the Markov assumption, the state at time $t+1$ is independent of the states before time $t$ even when the state at time $t$ is unknown
+        why: 'The Markov assumption is a *conditional* independence: the future is independent of the past *given the present*. Without the current state, earlier states still carry information about the next one [^1].'
       - text: The probabilities of moving from a given state to every state, itself included, sum to 1
         correct: true
       - text: The self-loop probabilities of all the states sum to 1
@@ -880,11 +932,11 @@ questions:
       - text: The distribution over states at time step $k$ is $\pi_0 T^k$
         correct: true
     explanation: |
-      The Markov assumption says the future is conditionally independent of the past given the
-      present, $P(s_{t+1} \mid s_0, \dots, s_t) \approx P(s_{t+1} \mid s_t)$ [^1]. Row $i$ of $T$ is
-      the distribution of the next state given $s_i$, so $\sum_j a_{ij} = 1$ for every $i$ [^2].
-      Multiplying a state distribution by $T$ advances it one step, $\pi_t = \pi_{t-1}T$, so after
-      $k$ steps $\pi_k = \pi_0 T^k$ [^3].
+      Writing $q_t$ for the state at time $t$, the Markov assumption says the future is
+      conditionally independent of the past given the present, $P(q_{t+1} \mid q_0, \dots, q_t) =
+      P(q_{t+1} \mid q_t)$ [^1]. Row $i$ of $T$ is the distribution of the next state given $s_i$, so
+      $\sum_j a_{ij} = 1$ for every $i$ [^2]. Multiplying a state distribution by $T$ advances it one
+      step, $\pi_t = \pi_{t-1}T$, so after $k$ steps $\pi_k = \pi_0 T^k$ [^3].
     references:
       - source: ubc-dsci575
         locator: 'Lecture 1: Markov Models — 2.3 Markov assumption'
@@ -899,7 +951,8 @@ questions:
       id: ubc-dsci575
       ref: lectures/notes/01_Markov-models.ipynb#ex1.1
       url: https://github.com/UBC-MDS/DSCI_575_adv-mach-learn/blob/af9d47c5fdaa26aa9a50e0f50cd991cf325f1972/lectures/notes/01_Markov-models.ipynb
-    status: draft
+    status: reviewed
+    reviewed_by: claude
   - id: probabilistic-models-024
     type: multiple
     difficulty: medium
@@ -937,7 +990,8 @@ questions:
       id: ubc-dsci575
       ref: lectures/notes/01_Markov-models.ipynb#ex1.2
       url: https://github.com/UBC-MDS/DSCI_575_adv-mach-learn/blob/af9d47c5fdaa26aa9a50e0f50cd991cf325f1972/lectures/notes/01_Markov-models.ipynb
-    status: draft
+    status: reviewed
+    reviewed_by: claude
   - id: probabilistic-models-025
     type: short_answer
     difficulty: medium
@@ -945,8 +999,9 @@ questions:
       - markov-chains
       - stationary-distribution
     question: |
-      In 1913 Markov modelled the letters of a novel as a two-state chain over {vowel, consonant},
-      with transition probabilities (rows = current letter, columns = next letter):
+      Markov modelled the 100,000 letters of S. T. Aksakov's novel *The Childhood of Bagrov, the
+      Grandson* as a two-state chain over {vowel, consonant}, with transition probabilities (rows =
+      current letter, columns = next letter):
 
       | | vowel | consonant |
       | --- | ---: | ---: |
@@ -977,7 +1032,8 @@ questions:
       id: ubc-dsci575
       ref: lectures/notes/02_LMs-text-preprocessing.ipynb#ex2.3b
       url: https://github.com/UBC-MDS/DSCI_575_adv-mach-learn/blob/af9d47c5fdaa26aa9a50e0f50cd991cf325f1972/lectures/notes/02_LMs-text-preprocessing.ipynb
-    status: draft
+    status: reviewed
+    reviewed_by: claude
   - id: probabilistic-models-026
     type: multiple
     difficulty: medium
@@ -1014,7 +1070,8 @@ questions:
       id: ubc-dsci575
       ref: lectures/notes/03_HMMs-intro.ipynb#ex3.1
       url: https://github.com/UBC-MDS/DSCI_575_adv-mach-learn/blob/af9d47c5fdaa26aa9a50e0f50cd991cf325f1972/lectures/notes/03_HMMs-intro.ipynb
-    status: draft
+    status: reviewed
+    reviewed_by: claude
   - id: probabilistic-models-027
     type: short_answer
     difficulty: medium
@@ -1058,7 +1115,8 @@ questions:
       id: ubc-dsci575
       ref: lectures/notes/03_HMMs-intro.ipynb#ex3.2-discussion
       url: https://github.com/UBC-MDS/DSCI_575_adv-mach-learn/blob/af9d47c5fdaa26aa9a50e0f50cd991cf325f1972/lectures/notes/03_HMMs-intro.ipynb
-    status: draft
+    status: reviewed
+    reviewed_by: claude
   - id: probabilistic-models-028
     type: multiple
     difficulty: medium
@@ -1098,7 +1156,8 @@ questions:
       id: ubc-dsci575
       ref: lectures/notes/03_HMMs-intro.ipynb#ex3.2
       url: https://github.com/UBC-MDS/DSCI_575_adv-mach-learn/blob/af9d47c5fdaa26aa9a50e0f50cd991cf325f1972/lectures/notes/03_HMMs-intro.ipynb
-    status: draft
+    status: reviewed
+    reviewed_by: claude
   - id: probabilistic-models-029
     type: single
     difficulty: medium
@@ -1135,7 +1194,8 @@ questions:
       id: ubc-dsci575
       ref: lectures/notes/03_HMMs-intro.ipynb#ex3.3
       url: https://github.com/UBC-MDS/DSCI_575_adv-mach-learn/blob/af9d47c5fdaa26aa9a50e0f50cd991cf325f1972/lectures/notes/03_HMMs-intro.ipynb
-    status: draft
+    status: reviewed
+    reviewed_by: claude
   - id: probabilistic-models-030
     type: multiple
     difficulty: hard
@@ -1173,7 +1233,8 @@ questions:
       id: ubc-dsci575
       ref: lectures/notes/04_More-HMMs.ipynb#ex4.1
       url: https://github.com/UBC-MDS/DSCI_575_adv-mach-learn/blob/af9d47c5fdaa26aa9a50e0f50cd991cf325f1972/lectures/notes/04_More-HMMs.ipynb
-    status: draft
+    status: reviewed
+    reviewed_by: claude
   - id: probabilistic-models-031
     type: short_answer
     difficulty: medium
@@ -1205,10 +1266,11 @@ questions:
       blanks:
         - numeric: 9765625
           tolerance: 0
-          pattern: 9,?765,?625|5\s*\^\s*10|5\s*\*\*\s*10
+          pattern: 9[,\s]?765[,\s]?625|5\s*\^\s*10|5\s*\*\*\s*10
           accept:
             - '9765625'
             - 9,765,625
+            - 9 765 625
             - 5^10
           hint: an integer or a power, e.g. 3^4
         - numeric: 128
@@ -1236,7 +1298,8 @@ questions:
       id: ubc-dsci575
       ref: lectures/notes/04_More-HMMs.ipynb#ex4.2
       url: https://github.com/UBC-MDS/DSCI_575_adv-mach-learn/blob/af9d47c5fdaa26aa9a50e0f50cd991cf325f1972/lectures/notes/04_More-HMMs.ipynb
-    status: draft
+    status: reviewed
+    reviewed_by: claude
   - id: probabilistic-models-032
     type: single
     difficulty: medium
@@ -1275,7 +1338,8 @@ questions:
       id: ubc-dsci575
       ref: lectures/notes/04_More-HMMs.ipynb#ex4.2b
       url: https://github.com/UBC-MDS/DSCI_575_adv-mach-learn/blob/af9d47c5fdaa26aa9a50e0f50cd991cf325f1972/lectures/notes/04_More-HMMs.ipynb
-    status: draft
+    status: reviewed
+    reviewed_by: claude
   - id: probabilistic-models-033
     type: multiple
     difficulty: easy
@@ -1317,7 +1381,8 @@ questions:
       id: gutmann-pen-paper
       ref: directed-graphical-models#directed-graph-concepts-e
       url: https://github.com/michaelgutmann/ml-pen-and-paper-exercises/blob/571295dfe49b37d16884b2c5397e62e154ce5f88/topics/directed-graphical-models.tex
-    status: draft
+    status: reviewed
+    reviewed_by: claude
   - id: probabilistic-models-034
     type: single
     difficulty: easy
@@ -1358,7 +1423,8 @@ questions:
       id: gutmann-pen-paper
       ref: directed-graphical-models#directed-graph-concepts-b
       url: https://github.com/michaelgutmann/ml-pen-and-paper-exercises/blob/571295dfe49b37d16884b2c5397e62e154ce5f88/topics/directed-graphical-models.tex
-    status: draft
+    status: reviewed
+    reviewed_by: claude
   - id: probabilistic-models-035
     type: multiple
     difficulty: medium
@@ -1400,7 +1466,8 @@ questions:
       id: gutmann-pen-paper
       ref: directed-graphical-models#canonical-connections-a
       url: https://github.com/michaelgutmann/ml-pen-and-paper-exercises/blob/571295dfe49b37d16884b2c5397e62e154ce5f88/topics/directed-graphical-models.tex
-    status: draft
+    status: reviewed
+    reviewed_by: claude
   - id: probabilistic-models-036
     type: short_answer
     difficulty: medium
@@ -1436,7 +1503,8 @@ questions:
       id: gutmann-pen-paper
       ref: directed-graphical-models#canonical-connections-b
       url: https://github.com/michaelgutmann/ml-pen-and-paper-exercises/blob/571295dfe49b37d16884b2c5397e62e154ce5f88/topics/directed-graphical-models.tex
-    status: draft
+    status: reviewed
+    reviewed_by: claude
   - id: probabilistic-models-037
     type: multiple
     difficulty: medium
@@ -1482,7 +1550,8 @@ questions:
       id: gutmann-pen-paper
       ref: directed-graphical-models#ordered-local-d-sep-independencies01-a
       url: https://github.com/michaelgutmann/ml-pen-and-paper-exercises/blob/571295dfe49b37d16884b2c5397e62e154ce5f88/topics/directed-graphical-models.tex
-    status: draft
+    status: reviewed
+    reviewed_by: claude
   - id: probabilistic-models-038
     type: single
     difficulty: medium
@@ -1521,7 +1590,8 @@ questions:
       id: gutmann-pen-paper
       ref: directed-graphical-models#ordered-local-d-sep-independencies01-d
       url: https://github.com/michaelgutmann/ml-pen-and-paper-exercises/blob/571295dfe49b37d16884b2c5397e62e154ce5f88/topics/directed-graphical-models.tex
-    status: draft
+    status: reviewed
+    reviewed_by: claude
   - id: probabilistic-models-039
     type: short_answer
     difficulty: easy
@@ -1558,7 +1628,8 @@ questions:
       id: gutmann-pen-paper
       ref: directed-graphical-models#ordered-local-d-sep-independencies01-e
       url: https://github.com/michaelgutmann/ml-pen-and-paper-exercises/blob/571295dfe49b37d16884b2c5397e62e154ce5f88/topics/directed-graphical-models.tex
-    status: draft
+    status: reviewed
+    reviewed_by: claude
   - id: probabilistic-models-040
     type: single
     difficulty: easy
@@ -1596,7 +1667,8 @@ questions:
       id: gutmann-pen-paper
       ref: directed-graphical-models#more-on-ordered-and-local-markov-properties-d-separation-c
       url: https://github.com/michaelgutmann/ml-pen-and-paper-exercises/blob/571295dfe49b37d16884b2c5397e62e154ce5f88/topics/directed-graphical-models.tex
-    status: draft
+    status: reviewed
+    reviewed_by: claude
   - id: probabilistic-models-041
     type: multiple
     difficulty: medium
@@ -1639,7 +1711,8 @@ questions:
       id: gutmann-pen-paper
       ref: directed-graphical-models#hmm-d
       url: https://github.com/michaelgutmann/ml-pen-and-paper-exercises/blob/571295dfe49b37d16884b2c5397e62e154ce5f88/topics/directed-graphical-models.tex
-    status: draft
+    status: reviewed
+    reviewed_by: claude
   - id: probabilistic-models-042
     type: single
     difficulty: medium
@@ -1674,7 +1747,8 @@ questions:
       id: gutmann-pen-paper
       ref: directed-graphical-models#independencies1
       url: https://github.com/michaelgutmann/ml-pen-and-paper-exercises/blob/571295dfe49b37d16884b2c5397e62e154ce5f88/topics/directed-graphical-models.tex
-    status: draft
+    status: reviewed
+    reviewed_by: claude
   - id: probabilistic-models-043
     type: single
     difficulty: medium
@@ -1711,7 +1785,8 @@ questions:
       id: gutmann-pen-paper
       ref: directed-graphical-models#independencies2-b
       url: https://github.com/michaelgutmann/ml-pen-and-paper-exercises/blob/571295dfe49b37d16884b2c5397e62e154ce5f88/topics/directed-graphical-models.tex
-    status: draft
+    status: reviewed
+    reviewed_by: claude
   - id: probabilistic-models-044
     type: true_false
     difficulty: medium
@@ -1748,7 +1823,8 @@ questions:
       id: gutmann-pen-paper
       ref: directed-graphical-models#independencies-in-directed-graphical-models-b
       url: https://github.com/michaelgutmann/ml-pen-and-paper-exercises/blob/571295dfe49b37d16884b2c5397e62e154ce5f88/topics/directed-graphical-models.tex
-    status: draft
+    status: reviewed
+    reviewed_by: claude
   - id: probabilistic-models-045
     type: single
     difficulty: hard
@@ -1790,7 +1866,8 @@ questions:
       id: gutmann-pen-paper
       ref: directed-graphical-models#independencies-in-directed-graphical-models-c
       url: https://github.com/michaelgutmann/ml-pen-and-paper-exercises/blob/571295dfe49b37d16884b2c5397e62e154ce5f88/topics/directed-graphical-models.tex
-    status: draft
+    status: reviewed
+    reviewed_by: claude
   - id: probabilistic-models-046
     type: single
     difficulty: hard
@@ -1800,7 +1877,7 @@ questions:
       - collider
     question: |
       In the DAG below, $x_2 \perp x_9 \mid \{x_6, x_8\}$ does **not** hold for all distributions
-      that factorise over the graph. Which active trail is responsible?
+      that factorise over the graph. Which of the following trails is active given $\{x_6, x_8\}$?
     figure:
       src: ./probabilistic-models/probabilistic-models-046.svg
       alt: DAG over x1 to x9 with arrows x1 to x2, x2 to x3, x1 to x4, x4 to x5, x5 to x6, x7 to x4, x7 to x8, x3 to x6, x8 to x6 and x7 to x9.
@@ -1817,8 +1894,10 @@ questions:
       On the trail $x_2 \leftarrow x_1 \to x_4 \leftarrow x_7 \to x_9$, node $x_1$ is tail-to-tail
       and unobserved (open), $x_7$ is tail-to-tail and unobserved (open), and $x_4$ is a collider
       [^1]. A collider is opened when it *or a descendant* is observed; $x_6$ is a descendant via
-      $x_4 \to x_5 \to x_6$. Hence the trail is active and the independency fails [^1][^2]. Without
-      $x_6$ in the conditioning set, $x_2 \perp x_9 \mid x_8$ would hold.
+      $x_4 \to x_5 \to x_6$. Hence the trail is active and the independency fails [^1][^2]. A second
+      active trail, not among the options, is $x_2 \to x_3 \to x_6 \leftarrow x_5 \leftarrow x_4
+      \leftarrow x_7 \to x_9$, where the observed $x_6$ opens itself as a collider. Without $x_6$ in
+      the conditioning set, $x_2 \perp x_9 \mid x_8$ would hold.
     references:
       - source: gutmann-pen-paper
         locator: Ch. 3 Directed Graphical Models, Ex. 3.10 (d) Independencies in directed graphical models
@@ -1830,7 +1909,8 @@ questions:
       id: gutmann-pen-paper
       ref: directed-graphical-models#independencies-in-directed-graphical-models-d
       url: https://github.com/michaelgutmann/ml-pen-and-paper-exercises/blob/571295dfe49b37d16884b2c5397e62e154ce5f88/topics/directed-graphical-models.tex
-    status: draft
+    status: reviewed
+    reviewed_by: claude
   - id: probabilistic-models-047
     type: single
     difficulty: medium
@@ -1867,7 +1947,8 @@ questions:
       id: gutmann-pen-paper
       ref: directed-graphical-models#independencies-in-directed-graphical-models-e
       url: https://github.com/michaelgutmann/ml-pen-and-paper-exercises/blob/571295dfe49b37d16884b2c5397e62e154ce5f88/topics/directed-graphical-models.tex
-    status: draft
+    status: reviewed
+    reviewed_by: claude
   - id: probabilistic-models-048
     type: multiple
     difficulty: hard
@@ -1910,7 +1991,8 @@ questions:
       id: gutmann-pen-paper
       ref: directed-graphical-models#independencies-in-directed-graphical-models-2-a
       url: https://github.com/michaelgutmann/ml-pen-and-paper-exercises/blob/571295dfe49b37d16884b2c5397e62e154ce5f88/topics/directed-graphical-models.tex
-    status: draft
+    status: reviewed
+    reviewed_by: claude
   - id: probabilistic-models-049
     type: multiple
     difficulty: medium
@@ -1953,7 +2035,8 @@ questions:
       id: gutmann-pen-paper
       ref: undirected-graphical-models#visualising-gibbs-distributions-d
       url: https://github.com/michaelgutmann/ml-pen-and-paper-exercises/blob/571295dfe49b37d16884b2c5397e62e154ce5f88/topics/undirected-graphical-models.tex
-    status: draft
+    status: reviewed
+    reviewed_by: claude
   - id: probabilistic-models-050
     type: single
     difficulty: medium
@@ -1989,7 +2072,8 @@ questions:
       id: gutmann-pen-paper
       ref: undirected-graphical-models#visualising-gibbs-distributions-e
       url: https://github.com/michaelgutmann/ml-pen-and-paper-exercises/blob/571295dfe49b37d16884b2c5397e62e154ce5f88/topics/undirected-graphical-models.tex
-    status: draft
+    status: reviewed
+    reviewed_by: claude
   - id: probabilistic-models-051
     type: single
     difficulty: medium
@@ -2029,7 +2113,8 @@ questions:
       id: gutmann-pen-paper
       ref: undirected-graphical-models#factorisation-independencies-undirected-graphical-model-a
       url: https://github.com/michaelgutmann/ml-pen-and-paper-exercises/blob/571295dfe49b37d16884b2c5397e62e154ce5f88/topics/undirected-graphical-models.tex
-    status: draft
+    status: reviewed
+    reviewed_by: claude
   - id: probabilistic-models-052
     type: multiple
     difficulty: medium
@@ -2071,7 +2156,8 @@ questions:
       id: gutmann-pen-paper
       ref: undirected-graphical-models#factorisation-independencies-undirected-graphical-model-b
       url: https://github.com/michaelgutmann/ml-pen-and-paper-exercises/blob/571295dfe49b37d16884b2c5397e62e154ce5f88/topics/undirected-graphical-models.tex
-    status: draft
+    status: reviewed
+    reviewed_by: claude
   - id: probabilistic-models-053
     type: single
     difficulty: hard
@@ -2110,7 +2196,8 @@ questions:
       id: gutmann-pen-paper
       ref: undirected-graphical-models#factorisation-independencies-undirected-graphical-model-d
       url: https://github.com/michaelgutmann/ml-pen-and-paper-exercises/blob/571295dfe49b37d16884b2c5397e62e154ce5f88/topics/undirected-graphical-models.tex
-    status: draft
+    status: reviewed
+    reviewed_by: claude
   - id: probabilistic-models-054
     type: multiple
     difficulty: medium
@@ -2149,7 +2236,8 @@ questions:
       id: gutmann-pen-paper
       ref: undirected-graphical-models#factorisation-independencies-diamond-b
       url: https://github.com/michaelgutmann/ml-pen-and-paper-exercises/blob/571295dfe49b37d16884b2c5397e62e154ce5f88/topics/undirected-graphical-models.tex
-    status: draft
+    status: reviewed
+    reviewed_by: claude
   - id: probabilistic-models-055
     type: single
     difficulty: medium
@@ -2190,7 +2278,8 @@ questions:
       id: gutmann-pen-paper
       ref: undirected-graphical-models#factorisation-from-the-markov-blankets-i
       url: https://github.com/michaelgutmann/ml-pen-and-paper-exercises/blob/571295dfe49b37d16884b2c5397e62e154ce5f88/topics/undirected-graphical-models.tex
-    status: draft
+    status: reviewed
+    reviewed_by: claude
   - id: probabilistic-models-056
     type: single
     difficulty: hard
@@ -2205,7 +2294,7 @@ questions:
       independencies beyond those implied by these blankets, how does the pmf factorise?
     options:
       - text: $\frac{1}{Z}\prod_{i=1}^{3} m_i(x_i, x_{i+1}) \prod_{i=1}^{4} g_i(x_i, y_i)$
-        why: This graph has no edges between the $y$'s and thus asserts e.g. $y_1 \perp y_4$ given all other variables, which nothing in the data supports [^1].
+        why: This graph has no edges between the $y$'s and thus asserts e.g. $y_1 \perp y_4$ given all other variables, which the given blankets do not imply [^1].
       - text: $\frac{1}{Z}\, g(y_1, \ldots, y_4) \prod_{i=1}^{3} m_i(x_i, x_{i+1}) \prod_{i=1}^{4} g_i(x_i, y_i)$
         correct: true
       - text: $\frac{1}{Z}\prod_{i=1}^{3} m_i(x_i, x_{i+1}) \prod_{i=1}^{4} g_i(x_i, y_i) \prod_{i=1}^{3} h_i(y_i, y_{i+1})$
@@ -2229,7 +2318,8 @@ questions:
       id: gutmann-pen-paper
       ref: undirected-graphical-models#factorisation-from-the-markov-blankets-ii
       url: https://github.com/michaelgutmann/ml-pen-and-paper-exercises/blob/571295dfe49b37d16884b2c5397e62e154ce5f88/topics/undirected-graphical-models.tex
-    status: draft
+    status: reviewed
+    reviewed_by: claude
   - id: probabilistic-models-057
     type: single
     difficulty: medium
@@ -2268,7 +2358,8 @@ questions:
       id: gutmann-pen-paper
       ref: undirected-graphical-models#undirected-graphical-model-with-pairwise-potentials-a
       url: https://github.com/michaelgutmann/ml-pen-and-paper-exercises/blob/571295dfe49b37d16884b2c5397e62e154ce5f88/topics/undirected-graphical-models.tex
-    status: draft
+    status: reviewed
+    reviewed_by: claude
   - id: probabilistic-models-058
     type: single
     difficulty: medium
@@ -2307,7 +2398,8 @@ questions:
       id: gutmann-pen-paper
       ref: undirected-graphical-models#undirected-graphical-model-with-pairwise-potentials-b
       url: https://github.com/michaelgutmann/ml-pen-and-paper-exercises/blob/571295dfe49b37d16884b2c5397e62e154ce5f88/topics/undirected-graphical-models.tex
-    status: draft
+    status: reviewed
+    reviewed_by: claude
   - id: probabilistic-models-059
     type: single
     difficulty: hard
@@ -2348,7 +2440,8 @@ questions:
       id: gutmann-pen-paper
       ref: undirected-graphical-models#hidden-markov-models-and-change-of-measure-e
       url: https://github.com/michaelgutmann/ml-pen-and-paper-exercises/blob/571295dfe49b37d16884b2c5397e62e154ce5f88/topics/undirected-graphical-models.tex
-    status: draft
+    status: reviewed
+    reviewed_by: claude
   - id: probabilistic-models-060
     type: single
     difficulty: medium
@@ -2386,7 +2479,8 @@ questions:
       id: gutmann-pen-paper
       ref: expressive-power-of-graphical-models#i-equiv-a
       url: https://github.com/michaelgutmann/ml-pen-and-paper-exercises/blob/571295dfe49b37d16884b2c5397e62e154ce5f88/topics/expressive-power-of-graphical-models.tex
-    status: draft
+    status: reviewed
+    reviewed_by: claude
   - id: probabilistic-models-061
     type: single
     difficulty: hard
@@ -2424,7 +2518,8 @@ questions:
       id: gutmann-pen-paper
       ref: expressive-power-of-graphical-models#i-equiv-b
       url: https://github.com/michaelgutmann/ml-pen-and-paper-exercises/blob/571295dfe49b37d16884b2c5397e62e154ce5f88/topics/expressive-power-of-graphical-models.tex
-    status: draft
+    status: reviewed
+    reviewed_by: claude
   - id: probabilistic-models-062
     type: single
     difficulty: hard
@@ -2466,7 +2561,8 @@ questions:
       id: gutmann-pen-paper
       ref: expressive-power-of-graphical-models#i-equiv-c
       url: https://github.com/michaelgutmann/ml-pen-and-paper-exercises/blob/571295dfe49b37d16884b2c5397e62e154ce5f88/topics/expressive-power-of-graphical-models.tex
-    status: draft
+    status: reviewed
+    reviewed_by: claude
   - id: probabilistic-models-063
     type: short_answer
     difficulty: hard
@@ -2506,7 +2602,8 @@ questions:
       id: gutmann-pen-paper
       ref: expressive-power-of-graphical-models#minimal-i-maps-1-a
       url: https://github.com/michaelgutmann/ml-pen-and-paper-exercises/blob/571295dfe49b37d16884b2c5397e62e154ce5f88/topics/expressive-power-of-graphical-models.tex
-    status: draft
+    status: reviewed
+    reviewed_by: claude
   - id: probabilistic-models-064
     type: single
     difficulty: hard
@@ -2547,7 +2644,8 @@ questions:
       id: gutmann-pen-paper
       ref: expressive-power-of-graphical-models#minimal-i-maps-1-b
       url: https://github.com/michaelgutmann/ml-pen-and-paper-exercises/blob/571295dfe49b37d16884b2c5397e62e154ce5f88/topics/expressive-power-of-graphical-models.tex
-    status: draft
+    status: reviewed
+    reviewed_by: claude
   - id: probabilistic-models-065
     type: single
     difficulty: medium
@@ -2586,7 +2684,8 @@ questions:
       id: gutmann-pen-paper
       ref: expressive-power-of-graphical-models#i-equivalence-between-directed-and-undirected-graphs-a
       url: https://github.com/michaelgutmann/ml-pen-and-paper-exercises/blob/571295dfe49b37d16884b2c5397e62e154ce5f88/topics/expressive-power-of-graphical-models.tex
-    status: draft
+    status: reviewed
+    reviewed_by: claude
   - id: probabilistic-models-066
     type: single
     difficulty: medium
@@ -2625,7 +2724,8 @@ questions:
       id: gutmann-pen-paper
       ref: expressive-power-of-graphical-models#i-equivalence-between-directed-and-undirected-graphs-c
       url: https://github.com/michaelgutmann/ml-pen-and-paper-exercises/blob/571295dfe49b37d16884b2c5397e62e154ce5f88/topics/expressive-power-of-graphical-models.tex
-    status: draft
+    status: reviewed
+    reviewed_by: claude
   - id: probabilistic-models-067
     type: short_answer
     difficulty: medium
@@ -2659,7 +2759,8 @@ questions:
       id: gutmann-pen-paper
       ref: expressive-power-of-graphical-models#moralisation
       url: https://github.com/michaelgutmann/ml-pen-and-paper-exercises/blob/571295dfe49b37d16884b2c5397e62e154ce5f88/topics/expressive-power-of-graphical-models.tex
-    status: draft
+    status: reviewed
+    reviewed_by: claude
   - id: probabilistic-models-068
     type: single
     difficulty: medium
@@ -2699,7 +2800,8 @@ questions:
       id: gutmann-pen-paper
       ref: expressive-power-of-graphical-models#moralisation-2
       url: https://github.com/michaelgutmann/ml-pen-and-paper-exercises/blob/571295dfe49b37d16884b2c5397e62e154ce5f88/topics/expressive-power-of-graphical-models.tex
-    status: draft
+    status: reviewed
+    reviewed_by: claude
   - id: probabilistic-models-069
     type: single
     difficulty: hard
@@ -2741,7 +2843,8 @@ questions:
       id: gutmann-pen-paper
       ref: expressive-power-of-graphical-models#undirected-to-dag-a
       url: https://github.com/michaelgutmann/ml-pen-and-paper-exercises/blob/571295dfe49b37d16884b2c5397e62e154ce5f88/topics/expressive-power-of-graphical-models.tex
-    status: draft
+    status: reviewed
+    reviewed_by: claude
   - id: probabilistic-models-070
     type: single
     difficulty: hard
@@ -2768,8 +2871,9 @@ questions:
       A DAG built from an ordering is consistent with it, so its edges reveal the order [^1]: $x_1$
       is the root, $x_2$ must precede $x_4$ ($x_2 \to x_4$), $x_4$ must precede $x_3$ ($x_4 \to
       x_3$), and $x_5$ comes last. Only $(x_1, x_2, x_4, x_3, x_5)$ fits. Different orderings give
-      different minimal I-maps, and they are generally not I-equivalent; here the chord $x_1 - x_4$
-      replaces the chords $x_2 - x_3$, $x_3 - x_4$ of the natural ordering [^1][^2].
+      different minimal I-maps, and they are generally not I-equivalent: this ordering adds the chords
+      $x_1 - x_4$ and $x_3 - x_4$, whereas the ordering $(x_1, x_2, x_3, x_4, x_5)$ adds $x_2 - x_3$
+      and $x_3 - x_4$ [^1][^2].
     references:
       - source: gutmann-pen-paper
         locator: Ch. 5 Expressive Power of Graphical Models, Ex. 5.7 (b) Triangulation
@@ -2781,7 +2885,8 @@ questions:
       id: gutmann-pen-paper
       ref: expressive-power-of-graphical-models#undirected-to-dag-b
       url: https://github.com/michaelgutmann/ml-pen-and-paper-exercises/blob/571295dfe49b37d16884b2c5397e62e154ce5f88/topics/expressive-power-of-graphical-models.tex
-    status: draft
+    status: reviewed
+    reviewed_by: claude
   - id: probabilistic-models-071
     type: single
     difficulty: hard
@@ -2822,7 +2927,8 @@ questions:
       id: gutmann-pen-paper
       ref: expressive-power-of-graphical-models#i-maps-minimal-i-maps-and-i-equivalency
       url: https://github.com/michaelgutmann/ml-pen-and-paper-exercises/blob/571295dfe49b37d16884b2c5397e62e154ce5f88/topics/expressive-power-of-graphical-models.tex
-    status: draft
+    status: reviewed
+    reviewed_by: claude
   - id: probabilistic-models-072
     type: single
     difficulty: hard
@@ -2864,7 +2970,8 @@ questions:
       id: gutmann-pen-paper
       ref: expressive-power-of-graphical-models#limits-of-directed-and-undirected-graphical-models-b
       url: https://github.com/michaelgutmann/ml-pen-and-paper-exercises/blob/571295dfe49b37d16884b2c5397e62e154ce5f88/topics/expressive-power-of-graphical-models.tex
-    status: draft
+    status: reviewed
+    reviewed_by: claude
   - id: probabilistic-models-073
     type: single
     difficulty: medium
@@ -2902,7 +3009,8 @@ questions:
       id: gutmann-pen-paper
       ref: factor-graphs-and-message-passing#dgm-vs-ugm-c
       url: https://github.com/michaelgutmann/ml-pen-and-paper-exercises/blob/571295dfe49b37d16884b2c5397e62e154ce5f88/topics/factor-graphs-and-message-passing.tex
-    status: draft
+    status: reviewed
+    reviewed_by: claude
   - id: probabilistic-models-074
     type: short_answer
     difficulty: medium
@@ -2954,7 +3062,8 @@ questions:
       id: gutmann-pen-paper
       ref: factor-graphs-and-message-passing#sum-product-message-passing-b
       url: https://github.com/michaelgutmann/ml-pen-and-paper-exercises/blob/571295dfe49b37d16884b2c5397e62e154ce5f88/topics/factor-graphs-and-message-passing.tex
-    status: draft
+    status: reviewed
+    reviewed_by: claude
   - id: probabilistic-models-075
     type: short_answer
     difficulty: hard
@@ -3004,7 +3113,8 @@ questions:
       id: gutmann-pen-paper
       ref: factor-graphs-and-message-passing#sum-product-message-passing-c
       url: https://github.com/michaelgutmann/ml-pen-and-paper-exercises/blob/571295dfe49b37d16884b2c5397e62e154ce5f88/topics/factor-graphs-and-message-passing.tex
-    status: draft
+    status: reviewed
+    reviewed_by: claude
   - id: probabilistic-models-076
     type: short_answer
     difficulty: medium
@@ -3047,7 +3157,8 @@ questions:
       id: gutmann-pen-paper
       ref: factor-graphs-and-message-passing#sum-product-message-passing-2-d
       url: https://github.com/michaelgutmann/ml-pen-and-paper-exercises/blob/571295dfe49b37d16884b2c5397e62e154ce5f88/topics/factor-graphs-and-message-passing.tex
-    status: draft
+    status: reviewed
+    reviewed_by: claude
   - id: probabilistic-models-077
     type: single
     difficulty: easy
@@ -3084,7 +3195,8 @@ questions:
       id: gutmann-pen-paper
       ref: factor-graphs-and-message-passing#sum-product-message-passing-2-a
       url: https://github.com/michaelgutmann/ml-pen-and-paper-exercises/blob/571295dfe49b37d16884b2c5397e62e154ce5f88/topics/factor-graphs-and-message-passing.tex
-    status: draft
+    status: reviewed
+    reviewed_by: claude
   - id: probabilistic-models-078
     type: single
     difficulty: easy
@@ -3098,7 +3210,7 @@ questions:
       $Z$?
     options:
       - text: Yes; the max-sum messages are only valid for normalised factors
-        why: Each factor may be rescaled by its own positive constant without changing the model's arg max; the book even rescales factors to simplify hand computations [^1].
+        why: Each factor may be rescaled by its own positive constant without changing the model's arg max; Gutmann's worked solution even rescales the factors to simplify the hand computation [^1].
       - text: Yes; it is needed to turn the log messages into probabilities
         why: Only the *value* $\max_{\mathbf{x}} p(\mathbf{x})$ needs $Z$; the arg max is read off from unnormalised quantities [^1].
       - text: No; scaling $p$ by a constant changes neither the arg max nor the backtracking
@@ -3116,13 +3228,14 @@ questions:
         locator: Ch. 6 Factor Graphs and Message Passing, Ex. 6.4 (a) Max-sum message passing
         url: https://arxiv.org/abs/2206.13446
       - title: 'Wikipedia: Belief propagation'
-        url: https://en.wikipedia.org/wiki/Belief_propagation
-        locator: Approximate algorithm for general graphs / max-product variant
+        url: https://en.wikipedia.org/wiki/Belief_propagation#Related_algorithm_and_complexity_issues
+        locator: Related algorithm and complexity issues (max-product / min-sum for the most probable explanation)
     source:
       id: gutmann-pen-paper
       ref: factor-graphs-and-message-passing#max-sum-message-passing-a
       url: https://github.com/michaelgutmann/ml-pen-and-paper-exercises/blob/571295dfe49b37d16884b2c5397e62e154ce5f88/topics/factor-graphs-and-message-passing.tex
-    status: draft
+    status: reviewed
+    reviewed_by: claude
   - id: probabilistic-models-079
     type: short_answer
     difficulty: hard
@@ -3174,7 +3287,8 @@ questions:
       id: gutmann-pen-paper
       ref: factor-graphs-and-message-passing#max-sum-message-passing-c
       url: https://github.com/michaelgutmann/ml-pen-and-paper-exercises/blob/571295dfe49b37d16884b2c5397e62e154ce5f88/topics/factor-graphs-and-message-passing.tex
-    status: draft
+    status: reviewed
+    reviewed_by: claude
   - id: probabilistic-models-080
     type: single
     difficulty: medium
@@ -3213,7 +3327,8 @@ questions:
       id: gutmann-pen-paper
       ref: factor-graphs-and-message-passing#choice-of-elimination-order-in-factor-graphs-d
       url: https://github.com/michaelgutmann/ml-pen-and-paper-exercises/blob/571295dfe49b37d16884b2c5397e62e154ce5f88/topics/factor-graphs-and-message-passing.tex
-    status: draft
+    status: reviewed
+    reviewed_by: claude
   - id: probabilistic-models-081
     type: short_answer
     difficulty: hard
@@ -3260,7 +3375,8 @@ questions:
       id: gutmann-pen-paper
       ref: factor-graphs-and-message-passing#choice-of-elimination-order-in-factor-graphs-c
       url: https://github.com/michaelgutmann/ml-pen-and-paper-exercises/blob/571295dfe49b37d16884b2c5397e62e154ce5f88/topics/factor-graphs-and-message-passing.tex
-    status: draft
+    status: reviewed
+    reviewed_by: claude
   - id: probabilistic-models-082
     type: single
     difficulty: medium
@@ -3299,7 +3415,8 @@ questions:
       id: gutmann-pen-paper
       ref: factor-graphs-and-message-passing#choice-of-elimination-order-in-factor-graphs-2-a
       url: https://github.com/michaelgutmann/ml-pen-and-paper-exercises/blob/571295dfe49b37d16884b2c5397e62e154ce5f88/topics/factor-graphs-and-message-passing.tex
-    status: draft
+    status: reviewed
+    reviewed_by: claude
   - id: probabilistic-models-083
     type: single
     difficulty: medium
@@ -3311,7 +3428,8 @@ questions:
     question: |
       For an HMM $p(h_{1:d}, v_{1:d}) = p(h_1)p(v_1 \mid h_1)\prod_{i=2}^d p(h_i \mid h_{i-1})p(v_i
       \mid h_i)$ you observe only $v_{1:u}$ with $u < d$. After filtering up to time $u$, how do you
-      continue to obtain $\alpha(h_s) \propto p(h_s \mid v_{1:u})$ for $s = u+1, \ldots, t$?
+      continue to obtain $\alpha(h_s) \propto p(h_s \mid v_{1:u})$ for $s = u+1, \ldots, t$, for some
+      $t \le d$?
     options:
       - text: $\alpha(h_s) = p(v_s \mid h_s) \sum_{h_{s-1}} p(h_s \mid h_{s-1})\, \alpha(h_{s-1})$
         why: $v_s$ is not observed for $s > u$; summing $p(v_s \mid h_s)$ over $v_s$ gives 1, so the emission term drops out [^1].
@@ -3340,7 +3458,8 @@ questions:
       id: gutmann-pen-paper
       ref: inference-for-hidden-markov-models#predictive-distributions-for-hidden-markov-models-a
       url: https://github.com/michaelgutmann/ml-pen-and-paper-exercises/blob/571295dfe49b37d16884b2c5397e62e154ce5f88/topics/inference-for-hidden-markov-models.tex
-    status: draft
+    status: reviewed
+    reviewed_by: claude
   - id: probabilistic-models-084
     type: single
     difficulty: medium
@@ -3380,7 +3499,8 @@ questions:
       id: gutmann-pen-paper
       ref: inference-for-hidden-markov-models#viterbi-algorithm
       url: https://github.com/michaelgutmann/ml-pen-and-paper-exercises/blob/571295dfe49b37d16884b2c5397e62e154ce5f88/topics/inference-for-hidden-markov-models.tex
-    status: draft
+    status: reviewed
+    reviewed_by: claude
   - id: probabilistic-models-085
     type: single
     difficulty: hard
@@ -3421,7 +3541,8 @@ questions:
       id: gutmann-pen-paper
       ref: inference-for-hidden-markov-models#ffbs-c
       url: https://github.com/michaelgutmann/ml-pen-and-paper-exercises/blob/571295dfe49b37d16884b2c5397e62e154ce5f88/topics/inference-for-hidden-markov-models.tex
-    status: draft
+    status: reviewed
+    reviewed_by: claude
   - id: probabilistic-models-086
     type: short_answer
     difficulty: medium
@@ -3457,7 +3578,8 @@ questions:
       id: gutmann-pen-paper
       ref: inference-for-hidden-markov-models#prediction-exercise-e
       url: https://github.com/michaelgutmann/ml-pen-and-paper-exercises/blob/571295dfe49b37d16884b2c5397e62e154ce5f88/topics/inference-for-hidden-markov-models.tex
-    status: draft
+    status: reviewed
+    reviewed_by: claude
   - id: probabilistic-models-087
     type: single
     difficulty: medium
@@ -3481,10 +3603,11 @@ questions:
         why: Each conditional is estimated only from the records with that parent configuration, not from all records [^1].
     explanation: |
       For fully observed DAGs the log-likelihood splits into one Bernoulli term per variable and parent
-      configuration, so $\hat\theta = \#(c = 1, \text{parents} = s) / \#(\text{parents} = s)$ [^1][^2].
-      Here $\hat\theta_c^{00} = 0/2$, $\hat\theta_c^{10} = 1/1$, $\hat\theta_c^{01} = 1/2$, and
-      $\hat\theta_c^{11} = 0/0$ is undefined. The example shows two weaknesses of maximum likelihood
-      with small data: extreme estimates (0 or 1) and undefined ones; a Beta prior fixes both [^1].
+      configuration, so for each configuration $\pi$ of the parents $\hat\theta = \#(c = 1,
+      \text{parents} = \pi) / \#(\text{parents} = \pi)$ [^1][^2]. Here $\hat\theta_c^{00} = 0/2$,
+      $\hat\theta_c^{10} = 1/1$, $\hat\theta_c^{01} = 1/2$, and $\hat\theta_c^{11} = 0/0$ is undefined.
+      The example shows two weaknesses of maximum likelihood with small data: extreme estimates (0 or
+      1) and undefined ones; a Beta prior fixes both [^1].
     references:
       - source: gutmann-pen-paper
         locator: Ch. 8 Model-Based Learning, Ex. 8.3 (e) and Ex. 8.4 (b) Cancer-asbestos-smoking example, MLE
@@ -3496,7 +3619,8 @@ questions:
       id: gutmann-pen-paper
       ref: model-based-learning#cancer-smoking-asbestos-mle-b
       url: https://github.com/michaelgutmann/ml-pen-and-paper-exercises/blob/571295dfe49b37d16884b2c5397e62e154ce5f88/topics/model-based-learning.tex
-    status: draft
+    status: reviewed
+    reviewed_by: claude
   - id: probabilistic-models-088
     type: short_answer
     difficulty: medium
@@ -3531,7 +3655,8 @@ questions:
       id: gutmann-pen-paper
       ref: model-based-learning#learning-parameters-of-a-directed-graphical-model-b
       url: https://github.com/michaelgutmann/ml-pen-and-paper-exercises/blob/571295dfe49b37d16884b2c5397e62e154ce5f88/topics/model-based-learning.tex
-    status: draft
+    status: reviewed
+    reviewed_by: claude
   - id: probabilistic-models-089
     type: true_false
     difficulty: medium
@@ -3565,7 +3690,8 @@ questions:
       id: gutmann-pen-paper
       ref: model-based-learning#parameter-estimation-for-unnormalised-models-c
       url: https://github.com/michaelgutmann/ml-pen-and-paper-exercises/blob/571295dfe49b37d16884b2c5397e62e154ce5f88/topics/model-based-learning.tex
-    status: draft
+    status: reviewed
+    reviewed_by: claude
   - id: probabilistic-models-090
     type: single
     difficulty: medium
@@ -3604,7 +3730,8 @@ questions:
       id: gutmann-pen-paper
       ref: model-based-learning#parameter-estimation-for-unnormalised-models-a
       url: https://github.com/michaelgutmann/ml-pen-and-paper-exercises/blob/571295dfe49b37d16884b2c5397e62e154ce5f88/topics/model-based-learning.tex
-    status: draft
+    status: reviewed
+    reviewed_by: claude
   - id: probabilistic-models-091
     type: single
     difficulty: medium
@@ -3644,7 +3771,8 @@ questions:
       id: gutmann-pen-paper
       ref: sampling-and-monte-carlo-integration#sampling-from-a-restricted-boltzmann-machine
       url: https://github.com/michaelgutmann/ml-pen-and-paper-exercises/blob/571295dfe49b37d16884b2c5397e62e154ce5f88/topics/sampling-and-monte-carlo-integration.tex
-    status: draft
+    status: reviewed
+    reviewed_by: claude
   - id: probabilistic-models-092
     type: single
     difficulty: hard
@@ -3685,7 +3813,8 @@ questions:
       id: gutmann-pen-paper
       ref: variational-inference#mfvi-i-c
       url: https://github.com/michaelgutmann/ml-pen-and-paper-exercises/blob/571295dfe49b37d16884b2c5397e62e154ce5f88/topics/variational-inference.tex
-    status: draft
+    status: reviewed
+    reviewed_by: claude
   - id: probabilistic-models-093
     type: short_answer
     difficulty: hard
@@ -3723,7 +3852,8 @@ questions:
       id: gutmann-pen-paper
       ref: variational-inference#mean-field-variational-inference-ii-b
       url: https://github.com/michaelgutmann/ml-pen-and-paper-exercises/blob/571295dfe49b37d16884b2c5397e62e154ce5f88/topics/variational-inference.tex
-    status: draft
+    status: reviewed
+    reviewed_by: claude
   - id: probabilistic-models-094
     type: single
     difficulty: medium
@@ -3762,7 +3892,8 @@ questions:
       id: gutmann-pen-paper
       ref: variational-inference#mean-field-variational-inference-ii-b-2
       url: https://github.com/michaelgutmann/ml-pen-and-paper-exercises/blob/571295dfe49b37d16884b2c5397e62e154ce5f88/topics/variational-inference.tex
-    status: draft
+    status: reviewed
+    reviewed_by: claude
   - id: probabilistic-models-095
     type: short_answer
     difficulty: easy
@@ -3795,7 +3926,8 @@ questions:
       id: neuromatch-cn
       ref: W3D2_BayesianDecisions/W3D2_Tutorial1#ex5
       url: https://github.com/NeuromatchAcademy/course-content/blob/44634e960df7a14cd0bf7398187f2d209d26b0e8/tutorials/W3D2_BayesianDecisions/instructor/W3D2_Tutorial1.ipynb
-    status: draft
+    status: reviewed
+    reviewed_by: claude
   - id: probabilistic-models-096
     type: short_answer
     difficulty: medium
@@ -3834,10 +3966,11 @@ questions:
       id: neuromatch-cn
       ref: W3D2_BayesianDecisions/W3D2_Tutorial1#demo2
       url: https://github.com/NeuromatchAcademy/course-content/blob/44634e960df7a14cd0bf7398187f2d209d26b0e8/tutorials/W3D2_BayesianDecisions/instructor/W3D2_Tutorial1.ipynb
-    status: draft
+    status: reviewed
+    reviewed_by: claude
   - id: probabilistic-models-097
     type: single
-    difficulty: hard
+    difficulty: medium
     tags:
       - bayes-estimator
       - loss-functions
@@ -3872,7 +4005,8 @@ questions:
       id: neuromatch-cn
       ref: W3D2_BayesianDecisions/W3D2_Tutorial2#demo3
       url: https://github.com/NeuromatchAcademy/course-content/blob/44634e960df7a14cd0bf7398187f2d209d26b0e8/tutorials/W3D2_BayesianDecisions/instructor/W3D2_Tutorial2.ipynb
-    status: draft
+    status: reviewed
+    reviewed_by: claude
   - id: probabilistic-models-098
     type: short_answer
     difficulty: medium
@@ -3905,7 +4039,8 @@ questions:
       id: neuromatch-cn
       ref: W3D2_BayesianDecisions/W3D2_Tutorial2#demo5.1
       url: https://github.com/NeuromatchAcademy/course-content/blob/44634e960df7a14cd0bf7398187f2d209d26b0e8/tutorials/W3D2_BayesianDecisions/instructor/W3D2_Tutorial2.ipynb
-    status: draft
+    status: reviewed
+    reviewed_by: claude
   - id: probabilistic-models-099
     type: short_answer
     difficulty: medium
@@ -3939,7 +4074,8 @@ questions:
       id: neuromatch-cn
       ref: W3D3_HiddenDynamics/W3D3_Tutorial1#ex1.1
       url: https://github.com/NeuromatchAcademy/course-content/blob/44634e960df7a14cd0bf7398187f2d209d26b0e8/tutorials/W3D3_HiddenDynamics/instructor/W3D3_Tutorial1.ipynb
-    status: draft
+    status: reviewed
+    reviewed_by: claude
   - id: probabilistic-models-100
     type: short_answer
     difficulty: easy
@@ -3980,7 +4116,8 @@ questions:
       id: mit-ocw-6034
       ref: mit6_034f10_quiz4_2009#q1a2
       url: https://ocw.mit.edu/courses/6-034-artificial-intelligence-fall-2010/resources/mit6_034f10_quiz4_2009/
-    status: draft
+    status: reviewed
+    reviewed_by: claude
   - id: probabilistic-models-101
     type: short_answer
     difficulty: medium
@@ -4016,7 +4153,8 @@ questions:
       id: mit-ocw-6034
       ref: mit6_034f10_quiz4_2009#q1a4
       url: https://ocw.mit.edu/courses/6-034-artificial-intelligence-fall-2010/resources/mit6_034f10_quiz4_2009/
-    status: draft
+    status: reviewed
+    reviewed_by: claude
   - id: probabilistic-models-102
     type: short_answer
     difficulty: medium
@@ -4048,7 +4186,8 @@ questions:
       id: mit-ocw-6034
       ref: mit6_034f10_quiz4_2009#q1a5
       url: https://ocw.mit.edu/courses/6-034-artificial-intelligence-fall-2010/resources/mit6_034f10_quiz4_2009/
-    status: draft
+    status: reviewed
+    reviewed_by: claude
   - id: probabilistic-models-103
     type: single
     difficulty: hard
@@ -4085,7 +4224,8 @@ questions:
       id: mit-ocw-6034
       ref: mit6_034f10_quiz4_2009#q1a6
       url: https://ocw.mit.edu/courses/6-034-artificial-intelligence-fall-2010/resources/mit6_034f10_quiz4_2009/
-    status: draft
+    status: reviewed
+    reviewed_by: claude
   - id: probabilistic-models-104
     type: short_answer
     difficulty: medium
@@ -4125,7 +4265,8 @@ questions:
       id: mit-ocw-6034
       ref: mit6_034f10_quiz4_2009#q1b2
       url: https://ocw.mit.edu/courses/6-034-artificial-intelligence-fall-2010/resources/mit6_034f10_quiz4_2009/
-    status: draft
+    status: reviewed
+    reviewed_by: claude
   - id: probabilistic-models-105
     type: short_answer
     difficulty: easy
@@ -4156,7 +4297,8 @@ questions:
       id: mit-ocw-6034-s05
       ref: q2_soln#q5
       url: https://ocw.mit.edu/courses/6-034-artificial-intelligence-spring-2005/resources/q2_soln/
-    status: draft
+    status: reviewed
+    reviewed_by: claude
   - id: probabilistic-models-106
     type: single
     difficulty: hard
@@ -4193,7 +4335,8 @@ questions:
       id: mit-ocw-16410
       ref: mit16_410f10_final_sol#q5c
       url: https://ocw.mit.edu/courses/16-410-principles-of-autonomy-and-decision-making-fall-2010/resources/mit16_410f10_final_sol/
-    status: draft
+    status: reviewed
+    reviewed_by: claude
   - id: probabilistic-models-107
     type: short_answer
     difficulty: easy
@@ -4225,7 +4368,8 @@ questions:
       id: mit-ocw-6034
       ref: mit6_034f10_tutor06#parameters
       url: https://ocw.mit.edu/courses/6-034-artificial-intelligence-fall-2010/resources/mit6_034f10_tutor06/
-    status: draft
+    status: reviewed
+    reviewed_by: claude
   - id: probabilistic-models-108
     type: single
     difficulty: medium
@@ -4262,7 +4406,8 @@ questions:
       id: mit-ocw-6034-s05
       ref: q2_soln#q6.3
       url: https://ocw.mit.edu/courses/6-034-artificial-intelligence-spring-2005/resources/q2_soln/
-    status: draft
+    status: reviewed
+    reviewed_by: claude
   - id: probabilistic-models-109
     type: single
     difficulty: hard
@@ -4303,7 +4448,8 @@ questions:
       id: mit-ocw-6864
       ref: hw2#q5a
       url: https://ocw.mit.edu/courses/6-864-advanced-natural-language-processing-fall-2005/resources/hw2/
-    status: draft
+    status: reviewed
+    reviewed_by: claude
   - id: probabilistic-models-110
     type: single
     difficulty: hard
@@ -4339,12 +4485,13 @@ questions:
         url: https://ocw.mit.edu/courses/6-867-machine-learning-fall-2006/resources/final_f01soln/
       - title: 'Wikipedia: Bayesian network'
         locator: Definitions and concepts — d-separation (chains, forks and colliders)
-        url: https://en.wikipedia.org/wiki/Bayesian_network#Markov_blanket
+        url: https://en.wikipedia.org/wiki/Bayesian_network#d-separation
     source:
       id: mit-ocw-6867
       ref: final_f01soln#q5.1
       url: https://ocw.mit.edu/courses/6-867-machine-learning-fall-2006/resources/final_f01soln/
-    status: draft
+    status: reviewed
+    reviewed_by: claude
   - id: probabilistic-models-111
     type: multiple
     difficulty: medium
@@ -4382,12 +4529,13 @@ questions:
         url: https://ocw.mit.edu/courses/6-867-machine-learning-fall-2006/resources/final_f04soln/
       - title: 'Wikipedia: Bayesian network'
         locator: Definitions and concepts — d-separation (chains, forks and colliders)
-        url: https://en.wikipedia.org/wiki/Bayesian_network#Markov_blanket
+        url: https://en.wikipedia.org/wiki/Bayesian_network#d-separation
     source:
       id: mit-ocw-6867
       ref: final_f04soln#q6.1
       url: https://ocw.mit.edu/courses/6-867-machine-learning-fall-2006/resources/final_f04soln/
-    status: draft
+    status: reviewed
+    reviewed_by: claude
   - id: probabilistic-models-112
     type: single
     difficulty: medium
@@ -4419,12 +4567,13 @@ questions:
         url: https://ocw.mit.edu/courses/6-867-machine-learning-fall-2006/resources/final_f02soln/
       - title: 'Wikipedia: Bayesian network'
         locator: Definitions and concepts — d-separation (chains, forks and colliders)
-        url: https://en.wikipedia.org/wiki/Bayesian_network#Markov_blanket
+        url: https://en.wikipedia.org/wiki/Bayesian_network#d-separation
     source:
       id: mit-ocw-6867
       ref: final_f02soln#q3.2
       url: https://ocw.mit.edu/courses/6-867-machine-learning-fall-2006/resources/final_f02soln/
-    status: draft
+    status: reviewed
+    reviewed_by: claude
   - id: probabilistic-models-113
     type: short_answer
     difficulty: easy
@@ -4459,7 +4608,8 @@ questions:
       id: mit-ocw-6867
       ref: final_f02soln#q3.4
       url: https://ocw.mit.edu/courses/6-867-machine-learning-fall-2006/resources/final_f02soln/
-    status: draft
+    status: reviewed
+    reviewed_by: claude
   - id: probabilistic-models-114
     type: single
     difficulty: medium
@@ -4501,7 +4651,8 @@ questions:
       id: mit-ocw-6867
       ref: final_f03soln#q5.4
       url: https://ocw.mit.edu/courses/6-867-machine-learning-fall-2006/resources/final_f03soln/
-    status: draft
+    status: reviewed
+    reviewed_by: claude
   - id: probabilistic-models-115
     type: single
     difficulty: medium
@@ -4540,7 +4691,8 @@ questions:
       id: mit-ocw-6867
       ref: final_f04soln#q4.1
       url: https://ocw.mit.edu/courses/6-867-machine-learning-fall-2006/resources/final_f04soln/
-    status: draft
+    status: reviewed
+    reviewed_by: claude
   - id: probabilistic-models-116
     type: single
     difficulty: medium
@@ -4578,7 +4730,8 @@ questions:
       id: mit-ocw-6867
       ref: final_f02soln#q5.3
       url: https://ocw.mit.edu/courses/6-867-machine-learning-fall-2006/resources/final_f02soln/
-    status: draft
+    status: reviewed
+    reviewed_by: claude
   - id: probabilistic-models-117
     type: short_answer
     difficulty: hard
@@ -4615,7 +4768,8 @@ questions:
       id: mit-ocw-6438
       ref: mit6_438f14_q14_1#q2e
       url: https://ocw.mit.edu/courses/6-438-algorithms-for-inference-fall-2014/resources/mit6_438f14_q14_1/
-    status: draft
+    status: reviewed
+    reviewed_by: claude
   - id: probabilistic-models-118
     type: short_answer
     difficulty: hard
@@ -4652,7 +4806,8 @@ questions:
       id: mit-ocw-6438
       ref: mit6_438f14_q14_1#q2f
       url: https://ocw.mit.edu/courses/6-438-algorithms-for-inference-fall-2014/resources/mit6_438f14_q14_1/
-    status: draft
+    status: reviewed
+    reviewed_by: claude
   - id: probabilistic-models-119
     type: multiple
     difficulty: hard
@@ -4695,7 +4850,8 @@ questions:
       id: mit-ocw-6438
       ref: mit6_438f14_q14_1#q2b
       url: https://ocw.mit.edu/courses/6-438-algorithms-for-inference-fall-2014/resources/mit6_438f14_q14_1/
-    status: draft
+    status: reviewed
+    reviewed_by: claude
   - id: probabilistic-models-120
     type: short_answer
     difficulty: hard
@@ -4732,7 +4888,8 @@ questions:
       id: mit-ocw-6438
       ref: mit6_438f14_q14_1#q1f
       url: https://ocw.mit.edu/courses/6-438-algorithms-for-inference-fall-2014/resources/mit6_438f14_q14_1/
-    status: draft
+    status: reviewed
+    reviewed_by: claude
   - id: probabilistic-models-121
     type: short_answer
     difficulty: hard
@@ -4768,7 +4925,8 @@ questions:
       id: mit-ocw-6438
       ref: mit6_438f14_q14_1#q1d
       url: https://ocw.mit.edu/courses/6-438-algorithms-for-inference-fall-2014/resources/mit6_438f14_q14_1/
-    status: draft
+    status: reviewed
+    reviewed_by: claude
   - id: probabilistic-models-122
     type: single
     difficulty: medium
@@ -4805,7 +4963,8 @@ questions:
       id: mit-ocw-6438
       ref: mit6_438f14_q14_1#q1e
       url: https://ocw.mit.edu/courses/6-438-algorithms-for-inference-fall-2014/resources/mit6_438f14_q14_1/
-    status: draft
+    status: reviewed
+    reviewed_by: claude
   - id: probabilistic-models-123
     type: single
     difficulty: hard
@@ -4844,7 +5003,8 @@ questions:
       id: mit-ocw-6438
       ref: mit6_438f14_q11_2#q2b
       url: https://ocw.mit.edu/courses/6-438-algorithms-for-inference-fall-2014/resources/mit6_438f14_q11_2/
-    status: draft
+    status: reviewed
+    reviewed_by: claude
   - id: probabilistic-models-124
     type: single
     difficulty: medium
@@ -4882,7 +5042,8 @@ questions:
       id: mit-ocw-6438
       ref: mit6_438f14_q11_1#q3a
       url: https://ocw.mit.edu/courses/6-438-algorithms-for-inference-fall-2014/resources/mit6_438f14_q11_1/
-    status: draft
+    status: reviewed
+    reviewed_by: claude
   - id: probabilistic-models-125
     type: true_false
     difficulty: medium
@@ -4919,7 +5080,8 @@ questions:
       id: mit-ocw-6867
       ref: final_f01soln#q3.5
       url: https://ocw.mit.edu/courses/6-867-machine-learning-fall-2006/resources/final_f01soln/
-    status: draft
+    status: reviewed
+    reviewed_by: claude
   - id: probabilistic-models-126
     type: short_answer
     difficulty: medium
@@ -4953,7 +5115,8 @@ questions:
       id: dl-interviews
       ref: ch3#prb56
       url: https://arxiv.org/abs/2201.00650v2
-    status: draft
+    status: reviewed
+    reviewed_by: claude
   - id: probabilistic-models-127
     type: short_answer
     difficulty: medium
@@ -4987,7 +5150,8 @@ questions:
       id: dl-interviews
       ref: ch3#prb57
       url: https://arxiv.org/abs/2201.00650v2
-    status: draft
+    status: reviewed
+    reviewed_by: claude
   - id: probabilistic-models-128
     type: short_answer
     difficulty: medium
@@ -5022,7 +5186,8 @@ questions:
       id: dl-interviews
       ref: ch3#prb60
       url: https://arxiv.org/abs/2201.00650v2
-    status: draft
+    status: reviewed
+    reviewed_by: claude
   - id: probabilistic-models-129
     type: short_answer
     difficulty: medium
@@ -5055,7 +5220,8 @@ questions:
       id: dl-interviews
       ref: ch3#prb60-2
       url: https://arxiv.org/abs/2201.00650v2
-    status: draft
+    status: reviewed
+    reviewed_by: claude
   - id: probabilistic-models-130
     type: short_answer
     difficulty: medium
@@ -5087,7 +5253,8 @@ questions:
       id: dl-interviews
       ref: ch5#prb134
       url: https://arxiv.org/abs/2201.00650v2
-    status: draft
+    status: reviewed
+    reviewed_by: claude
   - id: probabilistic-models-131
     type: short_answer
     difficulty: easy
@@ -5120,7 +5287,8 @@ questions:
       id: dl-interviews
       ref: ch3#prb65
       url: https://arxiv.org/abs/2201.00650v2
-    status: draft
+    status: reviewed
+    reviewed_by: claude
   - id: probabilistic-models-132
     type: short_answer
     difficulty: medium
@@ -5151,7 +5319,8 @@ questions:
       id: dl-interviews
       ref: ch3#prb63
       url: https://arxiv.org/abs/2201.00650v2
-    status: draft
+    status: reviewed
+    reviewed_by: claude
   - id: probabilistic-models-133
     type: true_false
     difficulty: medium
@@ -5183,9 +5352,11 @@ questions:
         locator: Sec. 5 Takeaways and Recommendations
         url: https://arxiv.org/abs/1906.02530
       - title: Gal & Ghahramani (2016), Dropout as a Bayesian Approximation
+        locator: Sec. 3 Dropout as a Bayesian Approximation; Sec. 4 Obtaining Model Uncertainty (MC dropout)
         url: https://arxiv.org/abs/1506.02142
     source:
       id: dl-interviews
       ref: ch6#prb146
       url: https://arxiv.org/abs/2201.00650v2
-    status: draft
+    status: reviewed
+    reviewed_by: claude

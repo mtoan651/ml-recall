@@ -71,6 +71,8 @@ export interface QuizQuestion {
   id: string;
   type: QuestionType;
   status: "draft" | "reviewed";
+  /** Set on reviewed questions: the owner, or Claude at the owner's request. */
+  reviewedBy?: "owner" | "claude";
   difficulty?: Difficulty;
   tags: string[];
   topic: TopicRef;

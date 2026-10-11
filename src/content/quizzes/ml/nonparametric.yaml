@@ -9,15 +9,18 @@ questions:
     question: |
       Evaluate both statements.
 
-      **Statement 1.** The kernel density estimator is equivalent to performing kernel regression with the value $Y_i = 1/n$ at each point $X_i$ in the original data set.
+      **Statement 1.** The kernel density estimator is equivalent to performing (Nadaraya–Watson) kernel regression with the value $Y_i = 1/n$ at each point $X_i$ in the original data set.
 
       **Statement 2.** The depth of a learned decision tree can be larger than the number of training examples used to create the tree.
     options:
       - text: True, True
+        why: Both statements are false; kernel regression with constant targets $1/n$ predicts the constant $1/n$, and a tree path cannot have more splits than there are training examples.
       - text: False, False
         correct: true
       - text: True, False
+        why: Statement 1 is false; Nadaraya–Watson divides by the total kernel weight, so constant targets give a constant prediction, not a density.
       - text: False, True
+        why: Statement 2 is false; each split sends at least one training example to each child, so a path has at most $n - 1$ splits.
     explanation: |
       Statement 1 is false. Kernel (Nadaraya–Watson) regression predicts a weighted average of the
       training targets, $f(x) = \sum_i y_i K(x - x_i) / \sum_j K(x - x_j)$ [^1]. If every $y_i = 1/n$,
@@ -41,17 +44,21 @@ questions:
       id: mmlu-redux
       ref: machine_learning/12
       url: https://huggingface.co/datasets/edinburgh-dawg/mmlu-redux-2.0/viewer/machine_learning/test?row=12
-    status: draft
+    status: reviewed
+    reviewed_by: claude
   - id: nonparametric-002
     type: single
     difficulty: medium
     question: 'For Kernel Regression, which one of these structural assumptions is the one that most affects the trade-off between underfitting and overfitting:'
     options:
       - text: Whether kernel function is Gaussian versus triangular versus box-shaped
+        why: The kernel's shape changes the estimate only slightly; Gaussian, triangular and box kernels of the same width give similar fits.
       - text: Whether we use Euclidean versus $L_1$ versus $L_\infty$ metrics
+        why: The metric changes the shape of each neighbourhood, but how far the averaging reaches, and so how smooth the fit is, is set by the width.
       - text: The kernel width
         correct: true
       - text: The maximum height of the kernel function
+        why: The kernel's height cancels out, because the weights are normalized by their sum.
     explanation: |
       The kernel width (bandwidth) sets how far each training point's influence reaches, so it is the
       smoothing parameter. A narrow kernel follows local variation and gives a wiggly, high-variance
@@ -72,7 +79,8 @@ questions:
       id: mmlu-redux
       ref: machine_learning/28
       url: https://huggingface.co/datasets/edinburgh-dawg/mmlu-redux-2.0/viewer/machine_learning/test?row=28
-    status: draft
+    status: reviewed
+    reviewed_by: claude
   - id: nonparametric-003
     type: single
     difficulty: medium
@@ -84,10 +92,13 @@ questions:
       **Statement 2.** As the number of data points grows to infinity, the MAP estimate approaches the MLE estimate for all possible priors. In other words, given enough data, the choice of prior is irrelevant.
     options:
       - text: True, True
+        why: Statement 2 is false; a prior that gives zero probability to the MLE keeps the MAP estimate away from it however much data arrives.
       - text: False, False
+        why: Statement 1 is true; each training point is its own nearest neighbour, so 1-NN reproduces every training label (barring identical inputs with different labels).
       - text: True, False
         correct: true
       - text: False, True
+        why: Both are the wrong way round; 1-NN has zero training error, and the prior washes out only if it is positive around the MLE.
     explanation: |
       Statement 1 is true. 1-NN memorizes the training set, and each training point is its own
       nearest neighbor, so the classifier always reaches zero training error, as long as no two
@@ -110,17 +121,21 @@ questions:
       id: mmlu-redux
       ref: machine_learning/45
       url: https://huggingface.co/datasets/edinburgh-dawg/mmlu-redux-2.0/viewer/machine_learning/test?row=45
-    status: draft
+    status: reviewed
+    reviewed_by: claude
   - id: nonparametric-004
     type: single
-    difficulty: medium
+    difficulty: easy
     question: If $N$ is the number of instances in the training dataset, nearest neighbors has a classification run time of
     options:
       - text: $O(1)$
+        why: A query has to be compared with the stored examples; it cannot be answered without looking at the data.
       - text: $O(N)$
         correct: true
       - text: $O(\log N)$
+        why: Logarithmic query time needs an extra index such as a k-d tree, and only in low dimensions; plain nearest neighbors scans all $N$ points.
       - text: $O(N^2)$
+        why: One query needs $N$ distances, not $N^2$; $N^2$ is the cost of comparing all pairs of training points.
     explanation: |
       A basic nearest-neighbor classifier does no real training. At prediction time it compares the
       query with every one of the $N$ stored examples, so brute-force query time grows as $O(DN)$,
@@ -139,7 +154,8 @@ questions:
       id: mmlu-redux
       ref: machine_learning/99
       url: https://huggingface.co/datasets/edinburgh-dawg/mmlu-redux-2.0/viewer/machine_learning/test?row=99
-    status: draft
+    status: reviewed
+    reviewed_by: claude
   - id: nonparametric-005
     type: single
     difficulty: easy
@@ -148,14 +164,17 @@ questions:
       - text: supervised learning
         correct: true
       - text: unsupervised learning
+        why: The classifier votes with the labels of the neighbours, so it needs labeled data; only plain nearest-neighbor search, which uses no labels, is unsupervised.
       - text: reinforcement learning
+        why: There are no actions, states or rewards; the classifier just takes a vote among labeled neighbours.
     explanation: |
       The k-NN classifier predicts the class of a new point by a majority vote among the labels of
-      its nearest training points, so it needs labeled examples: it is supervised [^1]. The lesson's
-      remark that the "neighbors" family serves both supervised and unsupervised learning is about
-      the whole family: scikit-learn also offers unsupervised nearest-neighbor search, which finds
-      neighbors without using any labels [^1][^2]. The classifier itself involves no actions or
-      rewards, so it is not reinforcement learning either.
+      its nearest training points, so it needs labeled examples: it is supervised [^1]. Microsoft's
+      ML-for-Beginners lesson remarks that the "neighbors" family serves both supervised and
+      unsupervised learning, but that is about the whole family: scikit-learn also offers
+      unsupervised nearest-neighbor search, which finds neighbors without using any labels [^1][^2].
+      The classifier itself involves no actions or rewards, so it is not reinforcement learning
+      either.
     references:
       - title: 'scikit-learn User Guide: Nearest Neighbors'
         url: https://scikit-learn.org/stable/modules/neighbors.html#nearest-neighbors-classification
@@ -167,7 +186,8 @@ questions:
       id: ms-ml-for-beginners
       ref: quiz-23/q3
       url: https://github.com/microsoft/ML-For-Beginners/blob/de2d4e12236445198213a0711855e348e7253cd4/quiz-app/src/assets/translations/en.json
-    status: draft
+    status: reviewed
+    reviewed_by: claude
   - id: nonparametric-006
     type: single
     difficulty: medium
@@ -213,7 +233,8 @@ questions:
       id: d2l
       ref: chapter_gaussian-processes/gp-intro#ex3
       url: https://d2l.ai/chapter_gaussian-processes/gp-intro.html#exercises
-    status: draft
+    status: reviewed
+    reviewed_by: claude
   - id: nonparametric-007
     type: single
     difficulty: medium
@@ -256,7 +277,8 @@ questions:
       id: d2l
       ref: chapter_gaussian-processes/gp-priors#ex1
       url: https://d2l.ai/chapter_gaussian-processes/gp-priors.html#exercises
-    status: draft
+    status: reviewed
+    reviewed_by: claude
   - id: nonparametric-008
     type: single
     difficulty: easy
@@ -299,7 +321,8 @@ questions:
       id: d2l
       ref: chapter_gaussian-processes/gp-priors#ex2
       url: https://d2l.ai/chapter_gaussian-processes/gp-priors.html#exercises
-    status: draft
+    status: reviewed
+    reviewed_by: claude
   - id: nonparametric-009
     type: single
     difficulty: medium
@@ -341,7 +364,8 @@ questions:
       id: d2l
       ref: chapter_gaussian-processes/gp-priors#ex3
       url: https://d2l.ai/chapter_gaussian-processes/gp-priors.html#exercises
-    status: draft
+    status: reviewed
+    reviewed_by: claude
   - id: nonparametric-010
     type: single
     difficulty: medium
@@ -380,7 +404,8 @@ questions:
       id: d2l
       ref: chapter_gaussian-processes/gp-priors#ex4
       url: https://d2l.ai/chapter_gaussian-processes/gp-priors.html#exercises
-    status: draft
+    status: reviewed
+    reviewed_by: claude
   - id: nonparametric-011
     type: multiple
     difficulty: medium
@@ -425,7 +450,8 @@ questions:
       id: d2l
       ref: chapter_gaussian-processes/gp-inference#ex1
       url: https://d2l.ai/chapter_gaussian-processes/gp-inference.html#exercises
-    status: draft
+    status: reviewed
+    reviewed_by: claude
   - id: nonparametric-012
     type: short_answer
     difficulty: easy
@@ -459,7 +485,8 @@ questions:
       id: d2l
       ref: chapter_gaussian-processes/gp-inference#ex4
       url: https://d2l.ai/chapter_gaussian-processes/gp-inference.html#exercises
-    status: draft
+    status: reviewed
+    reviewed_by: claude
   - id: nonparametric-013
     type: single
     difficulty: medium
@@ -502,7 +529,8 @@ questions:
       id: d2l
       ref: chapter_gaussian-processes/gp-inference#ex4-b
       url: https://d2l.ai/chapter_gaussian-processes/gp-inference.html#exercises
-    status: draft
+    status: reviewed
+    reviewed_by: claude
   - id: nonparametric-014
     type: single
     difficulty: medium
@@ -545,7 +573,8 @@ questions:
       id: d2l
       ref: chapter_attention-mechanisms-and-transformers/attention-pooling#ex1
       url: https://d2l.ai/chapter_attention-mechanisms-and-transformers/attention-pooling.html#exercises
-    status: draft
+    status: reviewed
+    reviewed_by: claude
   - id: nonparametric-015
     type: single
     difficulty: medium
@@ -570,9 +599,9 @@ questions:
     explanation: |
       The narrower the kernel, the less smooth the estimate and the more it follows local variation
       [^1]. As σ → 0 the term $k(\mathbf{x}_i, \mathbf{x}_i) = 1$ swamps all others, so
-      $f(\mathbf{x}_i) = y_i$ and the training error is zero: a useless, overfitted model. The fix
-      in the exercise's second part is to leave $(\mathbf{x}_i, y_i)$ out when predicting at
-      $\mathbf{x}_i$, i.e. leave-one-out cross-validation [^2].
+      $f(\mathbf{x}_i) = y_i$ and the training error is zero: a useless, overfitted model. The fix,
+      which d2l's exercise asks for next, is to leave $(\mathbf{x}_i, y_i)$ out when predicting at
+      $\mathbf{x}_i$, i.e. leave-one-out cross-validation [^2][^3].
     references:
       - source: d2l
         locator: Sec. 11.2.3 Adapting Attention Pooling
@@ -587,7 +616,8 @@ questions:
       id: d2l
       ref: chapter_attention-mechanisms-and-transformers/attention-pooling#ex2
       url: https://d2l.ai/chapter_attention-mechanisms-and-transformers/attention-pooling.html#exercises
-    status: draft
+    status: reviewed
+    reviewed_by: claude
   - id: nonparametric-016
     type: single
     difficulty: hard
@@ -629,7 +659,8 @@ questions:
       id: d2l
       ref: chapter_attention-mechanisms-and-transformers/attention-pooling#ex4
       url: https://d2l.ai/chapter_attention-mechanisms-and-transformers/attention-pooling.html#exercises
-    status: draft
+    status: reviewed
+    reviewed_by: claude
   - id: nonparametric-017
     type: single
     difficulty: medium
@@ -671,7 +702,8 @@ questions:
       id: d2l
       ref: chapter_natural-language-processing-pretraining/similarity-analogy#ex2
       url: https://d2l.ai/chapter_natural-language-processing-pretraining/similarity-analogy.html#exercises
-    status: draft
+    status: reviewed
+    reviewed_by: claude
   - id: nonparametric-018
     type: single
     difficulty: easy
@@ -709,7 +741,8 @@ questions:
       id: ubc-cpsc330
       ref: lectures/tutorials/solutions/midterm_prep.pdf#q6
       url: https://github.com/UBC-CS/cpsc330-2025W1/blob/a89d6131a0e2ae5f7ab36f207a3809a5b7137aef/lectures/tutorials/solutions/midterm_prep.pdf
-    status: draft
+    status: reviewed
+    reviewed_by: claude
   - id: nonparametric-019
     type: single
     difficulty: medium
@@ -749,7 +782,8 @@ questions:
       id: ubc-cpsc330
       ref: lectures/tutorials/solutions/midterm_prep.pdf#q7
       url: https://github.com/UBC-CS/cpsc330-2025W1/blob/a89d6131a0e2ae5f7ab36f207a3809a5b7137aef/lectures/tutorials/solutions/midterm_prep.pdf
-    status: draft
+    status: reviewed
+    reviewed_by: claude
   - id: nonparametric-020
     type: single
     difficulty: easy
@@ -788,7 +822,8 @@ questions:
       id: ubc-cpsc330
       ref: lectures/tutorials/solutions/midterm_prep.pdf#q8
       url: https://github.com/UBC-CS/cpsc330-2025W1/blob/a89d6131a0e2ae5f7ab36f207a3809a5b7137aef/lectures/tutorials/solutions/midterm_prep.pdf
-    status: draft
+    status: reviewed
+    reviewed_by: claude
   - id: nonparametric-021
     type: multiple
     difficulty: medium
@@ -835,7 +870,8 @@ questions:
       id: ubc-cpsc330
       ref: lectures/notes/04_kNNs-SVM-RBF.ipynb#ex4.1
       url: https://github.com/UBC-CS/cpsc330-2025W1/blob/a89d6131a0e2ae5f7ab36f207a3809a5b7137aef/lectures/notes/04_kNNs-SVM-RBF.ipynb
-    status: draft
+    status: reviewed
+    reviewed_by: claude
   - id: nonparametric-022
     type: short_answer
     difficulty: easy
@@ -869,7 +905,8 @@ questions:
       id: ubc-dsci571
       ref: lectures/notes/07_naive-Bayes.ipynb#ex7.1.2
       url: https://github.com/UBC-MDS/DSCI_571_sup-learn-1/blob/70be2d76ec40e11fe7ddcff2a8c9e602a2698129/lectures/notes/07_naive-Bayes.ipynb
-    status: draft
+    status: reviewed
+    reviewed_by: claude
   - id: nonparametric-023
     type: short_answer
     difficulty: medium
@@ -906,7 +943,8 @@ questions:
       id: ds-interviews
       ref: theory.md#q39
       url: https://github.com/alexeygrigorev/data-science-interviews/blob/919f44547ef5ffc2bd59674fd301940529f4c1a8/theory.md#classification
-    status: draft
+    status: reviewed
+    reviewed_by: claude
   - id: nonparametric-024
     type: short_answer
     difficulty: medium
@@ -939,7 +977,8 @@ questions:
       id: ds-interviews
       ref: theory.md#q156
       url: https://github.com/alexeygrigorev/data-science-interviews/blob/919f44547ef5ffc2bd59674fd301940529f4c1a8/theory.md#recommender-systems
-    status: draft
+    status: reviewed
+    reviewed_by: claude
   - id: nonparametric-025
     type: multiple
     difficulty: easy
@@ -978,7 +1017,8 @@ questions:
       id: galaxy-training
       ref: classification_machinelearning#q3
       url: https://github.com/galaxyproject/training-material/blob/917e68d1d61c2915c7a970d75468b8494be90c0d/topics/statistics/tutorials/classification_machinelearning/tutorial.md
-    status: draft
+    status: reviewed
+    reviewed_by: claude
   - id: nonparametric-026
     type: single
     difficulty: easy
@@ -1012,7 +1052,8 @@ questions:
       id: mit-ocw-6034-s05
       ref: q2_soln#q2
       url: https://ocw.mit.edu/courses/6-034-artificial-intelligence-spring-2005/resources/q2_soln/
-    status: draft
+    status: reviewed
+    reviewed_by: claude
   - id: nonparametric-027
     type: short_answer
     difficulty: medium
@@ -1045,7 +1086,8 @@ questions:
       id: mit-ocw-6034-s05
       ref: quiz2_review_sol#q1a3
       url: https://ocw.mit.edu/courses/6-034-artificial-intelligence-spring-2005/resources/quiz2_review_sol/
-    status: draft
+    status: reviewed
+    reviewed_by: claude
   - id: nonparametric-028
     type: single
     difficulty: hard
@@ -1082,7 +1124,8 @@ questions:
       id: mit-ocw-6034-s05
       ref: quiz2_review_sol#q4a-learning
       url: https://ocw.mit.edu/courses/6-034-artificial-intelligence-spring-2005/resources/quiz2_review_sol/
-    status: draft
+    status: reviewed
+    reviewed_by: claude
   - id: nonparametric-029
     type: single
     difficulty: medium
@@ -1117,7 +1160,8 @@ questions:
       id: mit-ocw-6034-s05
       ref: q2_soln#q6.1
       url: https://ocw.mit.edu/courses/6-034-artificial-intelligence-spring-2005/resources/q2_soln/
-    status: draft
+    status: reviewed
+    reviewed_by: claude
   - id: nonparametric-030
     type: single
     difficulty: medium
@@ -1154,7 +1198,8 @@ questions:
       id: mit-ocw-6034-s05
       ref: quiz2_review_sol#q3a-spam
       url: https://ocw.mit.edu/courses/6-034-artificial-intelligence-spring-2005/resources/quiz2_review_sol/
-    status: draft
+    status: reviewed
+    reviewed_by: claude
   - id: nonparametric-031
     type: single
     difficulty: easy
@@ -1190,7 +1235,8 @@ questions:
       id: mit-ocw-6034
       ref: mit6_034f10_quiz3_2010#q1a2
       url: https://ocw.mit.edu/courses/6-034-artificial-intelligence-fall-2010/resources/mit6_034f10_quiz3_2010/
-    status: draft
+    status: reviewed
+    reviewed_by: claude
   - id: nonparametric-032
     type: single
     difficulty: medium
@@ -1230,7 +1276,8 @@ questions:
       id: mit-ocw-6867
       ref: hw2_soln#q2
       url: https://ocw.mit.edu/courses/6-867-machine-learning-fall-2006/resources/hw2_soln/
-    status: draft
+    status: reviewed
+    reviewed_by: claude
   - id: nonparametric-033
     type: single
     difficulty: medium
@@ -1252,23 +1299,24 @@ questions:
         why: $K(x_i, x_i)$ is fixed by the kernel; the coefficients change during training.
     explanation: |
       $\theta$ is always a sum of the vectors $y_t\phi(x_t)$ added at the mistakes, so
-      $\theta = \sum_i w_i y_i \phi(x_i)$ with $w_i$ the number of updates made on example $i$ [^1].
+      $\theta = \sum_i w_i y_i \phi(x_i)$ with $w_i$ the number of updates made on example $i$ [^1][^2].
       Then $\theta^\top\phi(x) = \sum_i w_i y_i K(x_i, x)$, and a mistake on $x_t$ simply increments
-      $w_t$, i.e. $f(x) \leftarrow f(x) + y_t K(x_t, x)$ [^1]. Most $w_i$ stay 0. With an RBF kernel
-      the data are always separable in feature space, so the algorithm stops after finitely many
-      updates [^2].
+      $w_t$, i.e. $f(x) \leftarrow f(x) + y_t K(x_t, x)$ [^1]. Examples that never cause a mistake
+      keep $w_i = 0$. With an RBF kernel the training data are always separable in feature space, so
+      the algorithm stops after finitely many updates [^1].
     references:
       - source: mit-ocw-6867
-        locator: Problem set 2 solutions, Problem 3 (a)–(c)
+        locator: Problem set 2 solutions, Problem 3 (a)–(b)
         url: https://ocw.mit.edu/courses/6-867-machine-learning-fall-2006/resources/hw2_soln/
       - title: 'Wikipedia: Kernel perceptron'
-        locator: Algorithm
+        locator: Algorithm (the dual perceptron keeps a "mistake counter" vector)
         url: https://en.wikipedia.org/wiki/Kernel_perceptron#Algorithm
     source:
       id: mit-ocw-6867
       ref: hw2_soln#q3
       url: https://ocw.mit.edu/courses/6-867-machine-learning-fall-2006/resources/hw2_soln/
-    status: draft
+    status: reviewed
+    reviewed_by: claude
   - id: nonparametric-034
     type: short_answer
     difficulty: hard
@@ -1302,7 +1350,8 @@ questions:
       id: mit-ocw-9520
       ref: second_set#q2.1
       url: https://ocw.mit.edu/courses/9-520-statistical-learning-theory-and-applications-spring-2003/resources/second_set/
-    status: draft
+    status: reviewed
+    reviewed_by: claude
   - id: nonparametric-035
     type: multiple
     difficulty: medium
@@ -1342,7 +1391,8 @@ questions:
       id: mit-ocw-18657
       ref: assignment-3#q1
       url: https://ocw.mit.edu/courses/18-657-mathematics-of-machine-learning-fall-2015/resources/assignment-3-solution/
-    status: draft
+    status: reviewed
+    reviewed_by: claude
   - id: nonparametric-036
     type: single
     difficulty: medium
@@ -1381,7 +1431,8 @@ questions:
       id: mit-ocw-6867
       ref: hw5_soln#q2e
       url: https://ocw.mit.edu/courses/6-867-machine-learning-fall-2006/resources/hw5_soln/
-    status: draft
+    status: reviewed
+    reviewed_by: claude
   - id: nonparametric-037
     type: short_answer
     difficulty: medium
@@ -1414,7 +1465,8 @@ questions:
       id: dl-interviews
       ref: ch8#prb203
       url: https://arxiv.org/abs/2201.00650v2
-    status: draft
+    status: reviewed
+    reviewed_by: claude
   - id: nonparametric-038
     type: single
     difficulty: easy
@@ -1450,4 +1502,5 @@ questions:
       id: dl-interviews
       ref: ch8#prb205
       url: https://arxiv.org/abs/2201.00650v2
-    status: draft
+    status: reviewed
+    reviewed_by: claude

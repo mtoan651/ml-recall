@@ -7,6 +7,8 @@ versioning: [SemVer](https://semver.org) as defined in [docs/conventions.md](doc
 
 ### Changed
 
+- Citation checks (Python and Zod) find `[^n]` after inline math that wraps onto a second line
+  or after an escaped `\$`; before, such markers could be hidden.
 - Licence policy: the project is non-commercial (study and research), so NonCommercial sources
   without ND (CC BY-NC-SA) may be adapted; those questions keep their licence
   (`LICENSE-CONTENT.md`, `THIRD_PARTY_NOTICES.md`). MMLU subsets are imported selectively.
@@ -39,6 +41,18 @@ versioning: [SemVer](https://semver.org) as defined in [docs/conventions.md](doc
 
 ### Added
 
+- **Every draft reviewed** (2578 questions, 20 reviewers working in parallel): each key
+  re-derived by script, simulator or brute force (search and game trees, d-separation, message
+  passing, value iteration, NumPy/PyTorch snippets run); explanations made self-contained and
+  cited; a `why` on every wrong option; difficulty everywhere. No answer key was wrong; about
+  1,000 questions were improved (stems that pointed at another question or "the lesson",
+  missing feedback, wrong locators, a few factual slips in explanations, graders that rejected
+  natural answer variants). 2567 questions are now `reviewed` with `reviewed_by: claude`
+  ("AI-checked" in the quiz); 11 stay drafts for the owner (9 Hugging Face API-trivia items, the
+  disputed MLCC bucketing key in data-prep-018, a smolagents trivia item).
+- `reviewed_by` (`owner` | `claude`) on reviewed questions, with an "AI-checked" badge.
+- `mlr sync-curation [--check]`: records bank edits of imported questions as curation fixes; the
+  ~900 imported questions whose explanations lived only in the bank are now reproducible.
 - 114 questions from *Deep Learning Interviews* (Kashani & Ivry), arXiv v2 only, under the CC BY
   4.0 licence arXiv lists for it (the book's copyright page conflicts; the owner chose the arXiv
   licence for this non-commercial study project). Every key re-derived by script: ~22 printed

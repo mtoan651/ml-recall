@@ -146,6 +146,8 @@ const questionObject = z.strictObject({
   references: z.array(referenceSchema).default([]),
   source: provenanceSchema,
   status: z.enum(["draft", "reviewed", "retired"]),
+  /** Who reviewed it: the repository owner, or Claude at the owner's request. */
+  reviewed_by: z.enum(["owner", "claude"]).nullish(),
 });
 
 export const questionSchema = questionObject.superRefine((q, ctx) => {
@@ -194,7 +196,7 @@ function questionProblems(q: QuestionShape): string[] {
   }
 
   if (q.status === "reviewed") {
-    const missing = (["explanation", "difficulty"] as const).filter((f) => !q[f]);
+    const missing = (["explanation", "difficulty", "reviewed_by"] as const).filter((f) => !q[f]);
     if (missing.length > 0) problems.push(`reviewed questions need: ${missing.join(", ")}`);
     else if (citationMarkers(q.explanation).length === 0) {
       problems.push("reviewed questions need a cited explanation ([^n] marker)");

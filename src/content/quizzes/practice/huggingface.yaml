@@ -31,7 +31,8 @@ questions:
       id: hf-llm-course
       ref: chapter1/7#q1
       url: https://huggingface.co/learn/llm-course/chapter1/7
-    status: draft
+    status: reviewed
+    reviewed_by: claude
   - id: huggingface-002
     type: single
     difficulty: easy
@@ -46,9 +47,9 @@ questions:
       ```
     options:
       - text: It will return classification scores for this sentence, with labels "positive" or "negative".
-        why: This is incorrect — this would be a `sentiment-analysis` pipeline.
+        why: That output would come from a `sentiment-analysis` pipeline; NER labels spans inside the text, not the sentence as a whole.
       - text: It will return a generated text completing this sentence.
-        why: This is incorrect — it would be a `text-generation` pipeline.
+        why: Completing a sentence is what a `text-generation` pipeline does; NER only labels spans that are already in the text.
       - text: It will return the words representing persons, organizations or locations.
         correct: true
     explanation: |
@@ -67,7 +68,8 @@ questions:
       id: hf-llm-course
       ref: chapter1/7#q2
       url: https://huggingface.co/learn/llm-course/chapter1/7
-    status: draft
+    status: reviewed
+    reviewed_by: claude
   - id: huggingface-003
     type: single
     difficulty: easy
@@ -82,18 +84,18 @@ questions:
       ```
     options:
       - text: This \<mask> has been waiting for you.
-        why: This is incorrect. Check out the `bert-base-cased` model card and try to spot your mistake.
+        why: "`<mask>` is the mask token of other checkpoints, such as the pipeline's default one; BERT's tokenizer reads it as ordinary characters, so the input contains no `[MASK]` to fill."
       - text: This [MASK] has been waiting for you.
         correct: true
       - text: This man has been waiting for you.
-        why: This is incorrect. This pipeline fills in masked words, so it needs a mask token somewhere.
+        why: This pipeline fills in masked words, so the input needs a mask token somewhere.
     explanation: |
       A fill-mask pipeline predicts the word hidden behind the model's mask token, so the input must
       contain that model's exact mask token, and different checkpoints use different ones [^1].
       BERT's is `[MASK]`, as in the `bert-base-cased` model card example
-      `unmasker("Hello I'm a [MASK] model.")` [^2]. `<mask>` is the token used in the course's
-      example with the pipeline's default checkpoint [^1]; BERT's tokenizer just splits it into
-      `<`, `mask` and `>`, so the pipeline finds no mask to fill, and a sentence without any mask
+      `unmasker("Hello I'm a [MASK] model.")` [^2]. `<mask>` is the mask token of the pipeline's
+      default checkpoint, used in the HF LLM Course's example [^1]; BERT's tokenizer just splits it
+      into `<`, `mask` and `>`, so the pipeline finds no mask to fill, and a sentence without any mask
       token has nothing to predict.
     references:
       - source: hf-llm-course
@@ -106,7 +108,8 @@ questions:
       id: hf-llm-course
       ref: chapter1/7#q3
       url: https://huggingface.co/learn/llm-course/chapter1/7
-    status: draft
+    status: reviewed
+    reviewed_by: claude
   - id: huggingface-004
     type: single
     difficulty: easy
@@ -123,19 +126,19 @@ questions:
       - text: This pipeline requires that labels be given to classify this text.
         correct: true
       - text: This pipeline requires several sentences, not just one.
-        why: This is incorrect, though when properly used, this pipeline can take a list of sentences to process (like all other pipelines).
+        why: A single sentence is fine; like every pipeline it also accepts a list of sentences, but it does not need one.
       - text: This pipeline needs a `model=` argument, because the task has no default checkpoint.
         why: Without `model=`, the pipeline falls back to a default checkpoint for the task and only prints a warning.
       - text: This pipeline requires longer inputs; this one is too short.
-        why: This is incorrect. Note that a very long text will be truncated when processed by this pipeline.
+        why: Short inputs are fine; length only matters at the other end, where a very long text is truncated.
     explanation: |
       The `zero-shot-classification` pipeline classifies a text with labels you choose at call time
       instead of the labels the model was trained with, so the call has to say which labels to choose
-      from: the course passes `candidate_labels=["education", "politics", "business"]` and gets a score
-      for each [^1]. That argument is the set of possible labels for each sequence [^2]; without it there
-      is nothing to score the text against, and the call fails. The same course example creates the
-      pipeline without `model=`, in which case the task's default checkpoint is loaded [^3], and it
-      classifies a single short sentence [^1].
+      from: the HF LLM Course passes `candidate_labels=["education", "politics", "business"]` and gets
+      a score for each [^1]. That argument is the set of possible labels for each sequence [^2];
+      without it there is nothing to score the text against, and the call fails. The same example
+      creates the pipeline without `model=`, in which case the task's default checkpoint is loaded
+      [^3], and it classifies a single short sentence [^1].
     references:
       - source: hf-llm-course
         url: https://huggingface.co/learn/llm-course/chapter1/3#zero-shot-classification
@@ -152,7 +155,8 @@ questions:
       id: hf-llm-course
       ref: chapter1/7#q4
       url: https://huggingface.co/learn/llm-course/chapter1/7
-    status: draft
+    status: reviewed
+    reviewed_by: claude
   - id: huggingface-005
     type: single
     difficulty: easy
@@ -184,7 +188,8 @@ questions:
       id: hf-llm-course
       ref: chapter2/9#q1
       url: https://huggingface.co/learn/llm-course/chapter2/9
-    status: draft
+    status: reviewed
+    reviewed_by: claude
   - id: huggingface-006
     type: single
     difficulty: easy
@@ -211,9 +216,11 @@ questions:
       id: hf-llm-course
       ref: chapter2/9#q5
       url: https://huggingface.co/learn/llm-course/chapter2/9
-    status: draft
+    status: reviewed
+    reviewed_by: claude
   - id: huggingface-007
     type: single
+    difficulty: easy
     question: What method is most of the tokenizer API centered around?
     options:
       - text: '`encode`, as it can encode text into IDs and IDs into predictions'
@@ -254,7 +261,7 @@ questions:
       - text: A list of strings, each string being a token
         correct: true
       - text: A list of IDs
-        why: Incorrect; that's what the `__call__` or `convert_tokens_to_ids` method is for!
+        why: Mapping tokens to IDs is a separate step, done by `convert_tokens_to_ids()` or by calling the tokenizer directly.
       - text: A string containing all of the tokens
         why: This would be suboptimal, as the goal is to split the string into multiple tokens.
     explanation: |
@@ -273,9 +280,11 @@ questions:
       id: hf-llm-course
       ref: chapter2/9#q9
       url: https://huggingface.co/learn/llm-course/chapter2/9
-    status: draft
+    status: reviewed
+    reviewed_by: claude
   - id: huggingface-009
     type: single
+    difficulty: easy
     question: |
       Is there something wrong with the following code?
 
@@ -308,7 +317,8 @@ questions:
       id: hf-llm-course
       ref: chapter2/9#q10
       url: https://huggingface.co/learn/llm-course/chapter2/9
-    status: draft
+    status: reviewed
+    reviewed_by: claude
   - id: huggingface-010
     type: single
     difficulty: easy
@@ -343,9 +353,11 @@ questions:
       id: hf-llm-course
       ref: chapter3/2#q1
       url: https://huggingface.co/learn/llm-course/chapter3/2
-    status: draft
+    status: reviewed
+    reviewed_by: claude
   - id: huggingface-011
     type: single
+    difficulty: easy
     question: When loading a dataset with `load_dataset('glue', 'mrpc')`, what does the second argument specify?
     options:
       - text: The version of the dataset to load.
@@ -403,7 +415,8 @@ questions:
       id: hf-llm-course
       ref: chapter3/2#q5
       url: https://huggingface.co/learn/llm-course/chapter3/2
-    status: draft
+    status: reviewed
+    reviewed_by: claude
   - id: huggingface-013
     type: single
     difficulty: easy
@@ -439,6 +452,7 @@ questions:
     status: draft
   - id: huggingface-014
     type: single
+    difficulty: easy
     question: Which TrainingArguments parameter controls how often evaluation occurs during training?
     options:
       - text: '`eval_frequency`'
@@ -466,28 +480,39 @@ questions:
     status: draft
   - id: huggingface-015
     type: single
+    difficulty: easy
     question: What is the role of the `compute_metrics` function in the Trainer?
     options:
       - text: It calculates the loss that is backpropagated during training.
-        why: Loss calculation is handled automatically by the model, not by compute_metrics.
+        why: The loss is computed by the model itself whenever the batch contains `labels`; `compute_metrics` only reports evaluation metrics.
       - text: It computes metrics like accuracy and F1 from the model's predictions.
         correct: true
       - text: It determines which optimizer and learning rate to use.
-        why: Optimizer selection is not handled by compute_metrics.
+        why: The optimizer and learning rate come from `TrainingArguments` (or an optimizer you pass in), not from `compute_metrics`.
       - text: It preprocesses and tokenizes the training data.
         why: Data preprocessing is done before training, not by compute_metrics during evaluation.
-    explanation: compute_metrics takes predictions and labels, then returns metrics for evaluation. [^1]
+    explanation: |
+      During evaluation the `Trainer` calls `compute_metrics` with an `EvalPrediction`, a named tuple
+      holding the model's `predictions` (e.g. logits) and the `label_ids`, and the function returns a
+      dictionary mapping metric names to numbers, such as accuracy and F1 [^1]. Without it the
+      evaluation would only report the loss, which is not a very intuitive number [^1]. The training
+      loss itself is computed by the model, which returns it whenever the batch contains `labels` [^2].
     references:
       - source: hf-llm-course
-        locator: 'Chapter 3: Fine-tuning a pretrained model'
-        url: https://huggingface.co/learn/llm-course/chapter3/1
+        locator: Chapter 3.3 Fine-tuning a model with the Trainer API, sec. Evaluation
+        url: https://huggingface.co/learn/llm-course/chapter3/3#evaluation
+      - source: hf-llm-course
+        locator: Chapter 3.4 A full training loop, sec. Prepare for training
+        url: https://huggingface.co/learn/llm-course/chapter3/4#prepare-for-training
     source:
       id: hf-llm-course
       ref: chapter3/3#q4
       url: https://huggingface.co/learn/llm-course/chapter3/3
-    status: draft
+    status: reviewed
+    reviewed_by: claude
   - id: huggingface-016
     type: single
+    difficulty: medium
     question: What happens when you don't provide an `eval_dataset` to the `Trainer` and keep the default `eval_strategy="no"`?
     options:
       - text: Training will fail with an error.
@@ -550,9 +575,11 @@ questions:
       id: hf-llm-course
       ref: chapter3/4#q3
       url: https://huggingface.co/learn/llm-course/chapter3/4
-    status: draft
+    status: reviewed
+    reviewed_by: claude
   - id: huggingface-018
     type: single
+    difficulty: easy
     question: What changes when you use 🤗 Accelerate in your training loop?
     options:
       - text: You must rewrite your entire training loop from scratch.
@@ -604,9 +631,11 @@ questions:
       id: hf-llm-course
       ref: chapter6/10#q2
       url: https://huggingface.co/learn/llm-course/chapter6/10
-    status: draft
+    status: reviewed
+    reviewed_by: claude
   - id: huggingface-020
     type: multiple
+    difficulty: medium
     question: What are the advantages of using a "fast" tokenizer?
     options:
       - text: It can process inputs faster than a slow tokenizer when you batch lots of inputs together.
@@ -630,9 +659,11 @@ questions:
       id: hf-llm-course
       ref: chapter6/10#q3
       url: https://huggingface.co/learn/llm-course/chapter6/10
-    status: draft
+    status: reviewed
+    reviewed_by: claude
   - id: huggingface-021
     type: single
+    difficulty: medium
     question: What is the proper way to preprocess the data for a sequence-to-sequence problem with a 🤗 Transformers tokenizer?
     options:
       - text: Pass the inputs as usual and the targets through the tokenizer's `text_target` argument.
@@ -693,7 +724,8 @@ questions:
       id: hf-llm-course
       ref: chapter7/9#q8
       url: https://huggingface.co/learn/llm-course/chapter7/9
-    status: draft
+    status: reviewed
+    reviewed_by: claude
   - id: huggingface-023
     type: single
     difficulty: easy
@@ -728,7 +760,8 @@ questions:
       id: hf-llm-course
       ref: chapter11/3#q1
       url: https://huggingface.co/learn/llm-course/chapter11/3
-    status: draft
+    status: reviewed
+    reviewed_by: claude
   - id: huggingface-024
     type: single
     difficulty: easy
@@ -738,7 +771,7 @@ questions:
         why: Models from the 🤗 Transformers library are supported on the Hub, but they are not the only ones.
       - text: Only models whose interface matches the 🤗 Transformers API
         why: There is no interface requirement for uploading a model to the Hub.
-      - text: Models from many libraries and fields, e.g. timm for vision or pyannote for speech
+      - text: Models from many libraries, e.g. timm (vision) or pyannote (speech)
         correct: true
       - text: Only models for natural language processing (NLP) tasks
         why: There is no requirement on the field of application; the Hub also hosts vision and speech models.
@@ -755,7 +788,8 @@ questions:
       id: hf-llm-course
       ref: chapter4/6#q1
       url: https://huggingface.co/learn/llm-course/chapter4/6
-    status: draft
+    status: reviewed
+    reviewed_by: claude
   - id: huggingface-025
     type: single
     difficulty: easy
@@ -789,7 +823,8 @@ questions:
       id: hf-llm-course
       ref: chapter4/6#q2
       url: https://huggingface.co/learn/llm-course/chapter4/6
-    status: draft
+    status: reviewed
+    reviewed_by: claude
   - id: huggingface-026
     type: single
     difficulty: easy
@@ -804,12 +839,12 @@ questions:
       - text: The JSON config file that the library reads to rebuild the model's architecture
         why: That is config.json. The model card is documentation written for people.
     explanation: |
-      The model card is the repository's README.md, a Markdown file, and the course calls it arguably
-      as important as the model and tokenizer files [^1]. It describes the model, its intended uses
-      and limitations, how to use it, its biases, its training data and procedure, and its evaluation
-      results [^1]. The idea comes from "Model Cards for Model Reporting", which proposes short
-      documents that report a model's evaluation and intended use so that it is not used where it is
-      not suited [^2].
+      The model card is the repository's README.md, a Markdown file, and the HF LLM Course calls it
+      arguably as important as the model and tokenizer files [^1]. It describes the model, its
+      intended uses and limitations, how to use it, its biases, its training data and procedure, and
+      its evaluation results [^1]. The idea comes from "Model Cards for Model Reporting", which
+      proposes short documents that report a model's evaluation and intended use so that it is not
+      used where it is not suited [^2].
     references:
       - source: hf-llm-course
         url: https://huggingface.co/learn/llm-course/chapter4/4
@@ -821,7 +856,8 @@ questions:
       id: hf-llm-course
       ref: chapter4/6#q4
       url: https://huggingface.co/learn/llm-course/chapter4/6
-    status: draft
+    status: reviewed
+    reviewed_by: claude
   - id: huggingface-027
     type: multiple
     difficulty: medium
@@ -915,7 +951,8 @@ questions:
       id: hf-llm-course
       ref: chapter5/8#q1
       url: https://huggingface.co/learn/llm-course/chapter5/8
-    status: draft
+    status: reviewed
+    reviewed_by: claude
   - id: huggingface-030
     type: single
     difficulty: easy
@@ -954,7 +991,8 @@ questions:
       id: hf-llm-course
       ref: chapter5/8#q2
       url: https://huggingface.co/learn/llm-course/chapter5/8
-    status: draft
+    status: reviewed
+    reviewed_by: claude
   - id: huggingface-031
     type: multiple
     difficulty: easy
@@ -982,7 +1020,8 @@ questions:
       id: hf-llm-course
       ref: chapter5/8#q3
       url: https://huggingface.co/learn/llm-course/chapter5/8
-    status: draft
+    status: reviewed
+    reviewed_by: claude
   - id: huggingface-032
     type: single
     difficulty: easy
@@ -1009,7 +1048,8 @@ questions:
       id: hf-llm-course
       ref: chapter5/8#q4
       url: https://huggingface.co/learn/llm-course/chapter5/8
-    status: draft
+    status: reviewed
+    reviewed_by: claude
   - id: huggingface-033
     type: multiple
     difficulty: medium
@@ -1028,7 +1068,7 @@ questions:
       [^1]. Memory-mapped files can also be shared across processes, so methods like `Dataset.map()`
       can be parallelized without moving or copying the dataset [^1]. Memory mapping neither loads
       everything into RAM up front nor compresses the data; for corpora too large even for the disk,
-      the course turns to streaming [^1].
+      the HF LLM Course turns to streaming [^1].
     references:
       - source: hf-llm-course
         url: https://huggingface.co/learn/llm-course/chapter5/4#the-magic-of-memory-mapping
@@ -1037,7 +1077,8 @@ questions:
       id: hf-llm-course
       ref: chapter5/8#q5
       url: https://huggingface.co/learn/llm-course/chapter5/8
-    status: draft
+    status: reviewed
+    reviewed_by: claude
   - id: huggingface-034
     type: single
     difficulty: easy
@@ -1073,7 +1114,8 @@ questions:
       id: hf-llm-course
       ref: chapter5/8#q6
       url: https://huggingface.co/learn/llm-course/chapter5/8
-    status: draft
+    status: reviewed
+    reviewed_by: claude
   - id: huggingface-035
     type: multiple
     difficulty: easy
@@ -1100,7 +1142,8 @@ questions:
       id: hf-llm-course
       ref: chapter5/8#q7
       url: https://huggingface.co/learn/llm-course/chapter5/8
-    status: draft
+    status: reviewed
+    reviewed_by: claude
   - id: huggingface-036
     type: true_false
     difficulty: easy
@@ -1122,7 +1165,8 @@ questions:
       id: hf-llm-course
       ref: chapter5/8#q10
       url: https://huggingface.co/learn/llm-course/chapter5/8
-    status: draft
+    status: reviewed
+    reviewed_by: claude
   - id: huggingface-037
     type: single
     difficulty: easy
@@ -1161,4 +1205,5 @@ questions:
       id: hf-llm-course
       ref: chapter7/9#q9
       url: https://huggingface.co/learn/llm-course/chapter7/9
-    status: draft
+    status: reviewed
+    reviewed_by: claude

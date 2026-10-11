@@ -7,7 +7,7 @@ exclude_prefixes:
   "unit5/": tool-specific   # Unity ML-Agents specifics
 items:
   "unit1/quiz#q2":                        # RL-loop picture is decorative; the text is self-contained
-    keep: true
+    difficulty: easy
     fix:
       question: |
         Complete the RL loop. At every step:
@@ -18,6 +18,13 @@ items:
         - The Environment gives a ______ to the Agent
 
         Which list fills the five blanks, in order?
+      explanation: |
+        The loop starts with the environment giving the agent a state $S_0$, for example the first
+        frame of the game. From that state the agent picks an action $A_0$ (move right). The
+        environment then moves to a new state $S_1$ and gives the agent a reward $R_1$ [^1].
+        Repeating this produces the trajectory $S_0, A_0, R_1, S_1, A_1, R_2, \dots$ [^2]. The
+        other options go wrong because the agent receives a state, not an action, and the
+        environment returns a reward; actions only ever come from the agent.
       options:
         0: an action $A_0$, action $A_0$, state $S_0$, state $S_1$, reward $R_1$
         1: state $S_0$, state $S_0$, action $A_0$, new state $S_1$, reward $R_1$
@@ -25,14 +32,27 @@ items:
       why:
         0: The environment hands the agent a state, not an action. The agent receives $S_0$ and then chooses the action $A_0$ itself.
         2: The last thing the environment gives the agent is a reward $R_1$. Actions such as $A_1$ only ever come from the agent.
+      references:
+        - source: hf-deep-rl-course
+          url: https://huggingface.co/learn/deep-rl-course/unit1/rl-framework#the-rl-process
+          locator: Unit 1, "The Reinforcement Learning Framework", section "The RL Process"
+        - title: 'Sutton & Barto (2018), Reinforcement Learning: An Introduction, 2nd ed.'
+          url: http://incompleteideas.net/book/RLbook2020.pdf
+          locator: Sec. 3.1 The Agent–Environment Interface, Fig. 3.1 and Eq. (3.1), pp. 47–48
+      references_replace: true
   "unit1/quiz#q5":
-    keep: true
+    difficulty: easy
     fix:
-      type: short_answer
       question: |
         What is the exploration/exploitation trade-off? Complete the description. An RL agent must
         balance {{1}}, trying random actions to find more information about the environment, against
         {{2}}, using what it already knows to maximize the reward.
+      explanation: |
+        Neither side works alone: an agent that only exploits can settle on a small nearby reward and
+        never find a much larger one further away, like the mouse in the Hugging Face course's cheese maze [^2].
+        Learning to act well means trying many actions and gradually favoring the ones that look best,
+        and on a stochastic task each action has to be tried many times before its estimated reward is
+        reliable [^1].
       answer:
         blanks:
           - accept:
@@ -46,15 +66,28 @@ items:
               - exploit
             hint: one word
         model:
+      references:
+        - title: 'Sutton & Barto (2018), Reinforcement Learning: An Introduction, 2nd ed.'
+          url: http://incompleteideas.net/book/RLbook2020.pdf
+          locator: Sec. 1.1 Reinforcement Learning, p. 3
+        - source: hf-deep-rl-course
+          url: https://huggingface.co/learn/deep-rl-course/unit1/exp-exp-tradeoff
+          locator: Unit 1, "The Exploration/Exploitation trade-off"
+      references_replace: true
   "unit1/quiz#q6":
-    keep: true
+    difficulty: easy
     fix:
-      type: short_answer
       question: |
         What is a policy? Complete the description. The policy $\pi$ is the agent's brain: the
         function that, given the {{1}} the agent is in, tells it which {{2}} to take. A {{3}} policy
         always returns the same action for a given state, while a {{4}} policy outputs a probability
         distribution over actions, $\pi(a \mid s)$.
+      explanation: |
+        The policy defines how the agent behaves at a given time, and training aims to find the
+        optimal policy $\pi^*$, the one that maximizes expected return [^1]. Sutton & Barto define a
+        policy formally as a mapping from states to probabilities of selecting each action, so
+        $\pi(a \mid s)$ is the probability of taking $a$ in $s$; a deterministic policy is the special
+        case that puts all probability on one action [^2][^1].
       answer:
         blanks:
           - accept:
@@ -72,7 +105,16 @@ items:
               - probabilistic
             hint: one word
         model:
+      references:
+        - source: hf-deep-rl-course
+          url: https://huggingface.co/learn/deep-rl-course/unit1/two-methods#policy
+          locator: "Unit 1, \"Two main approaches for solving RL problems\", sections \"The Policy π: the agent's brain\" and \"Policy-Based Methods\""
+        - title: 'Sutton & Barto (2018), Reinforcement Learning: An Introduction, 2nd ed.'
+          url: http://incompleteideas.net/book/RLbook2020.pdf
+          locator: Sec. 3.5 Policies and Value Functions, p. 58
+      references_replace: true
   "unit2/mid-way-quiz#q3":
+    difficulty: easy
     fix:
       question: |
         The figure below shows the Bellman equation with four numbered parts. Complete their
@@ -80,6 +122,15 @@ items:
         is the expected immediate {{2}}, where the subscript $\pi$ means the agent uses its {{3}} to
         choose actions at every time step. Part 3, $\gamma V_\pi(S_{t+1})$, adds the {{4}} value of the
         next state. Part 4, $S_t = s$, says the agent starts in state $s$.
+      explanation: |
+        The return from $s$ splits into the next reward plus the discounted return from the next
+        state, and the expectation of that later return is $v_\pi(S_{t+1})$, which gives the equation
+        in the figure [^1]. Subscripting the expectation with $\pi$ means it is taken while the agent
+        follows $\pi$, and conditioning on $S_t = s$ fixes the starting state [^1]. The Hugging Face course labels the four parts the same way: value of state $s$, expected immediate reward, discounted value of
+        the next state, and "if the agent starts at state $s$" [^2].
+      figure:
+        src: ./q-learning/q-learning-016.svg
+        alt: 'The Bellman equation V_π(s) = E_π[R_{t+1} + γ V_π(S_{t+1}) | S_t = s] with four underlined, numbered parts: 1 is V_π(s), 2 is E_π[R_{t+1}, 3 is γ V_π(S_{t+1}) and 4 is S_t = s.'
       answer:
         blanks:
           - accept:
@@ -101,11 +152,16 @@ items:
               - discounted
             hint: one word
         model: The value of a state is the expected immediate reward plus the discounted value of the next state, when the agent starts in $s$ and follows $\pi$.
-      figure:
-        src: ./q-learning/q-learning-016.svg
-        alt: 'The Bellman equation V_π(s) = E_π[R_{t+1} + γ V_π(S_{t+1}) | S_t = s] with four underlined, numbered parts: 1 is V_π(s), 2 is E_π[R_{t+1}, 3 is γ V_π(S_{t+1}) and 4 is S_t = s.'
-      type: short_answer
+      references:
+        - title: 'Sutton & Barto (2018), Reinforcement Learning: An Introduction, 2nd ed.'
+          url: http://incompleteideas.net/book/RLbook2020.pdf
+          locator: Sec. 4.1 Policy Evaluation (Prediction), Eq. (4.3), p. 74
+        - source: hf-deep-rl-course
+          url: https://huggingface.co/learn/deep-rl-course/unit2/bellman-equation
+          locator: 'Unit 2, "The Bellman Equation: simplify our value estimation" (labelled equation figure)'
+      references_replace: true
   "unit2/mid-way-quiz#q5":
+    difficulty: medium
     fix:
       question: |
         The figure below shows the Temporal Difference (TD) learning update with five numbered parts.
@@ -113,6 +169,15 @@ items:
         part 2 (both occurrences) is the former estimate. Part 3, $\alpha$, is the {{2}}. Part 4,
         $R_{t+1}$, is the {{3}} received after leaving $S_t$, and part 5, $\gamma V(S_{t+1})$, is the
         discounted value estimate of the next state. Parts 4 and 5 together form the TD {{4}}.
+      explanation: |
+        TD(0) updates after a single step: it moves the old estimate a fraction $\alpha$ of the way
+        toward the target $R_{t+1} + \gamma V(S_{t+1})$ [^1][^2]. Because that target uses the current
+        estimate of the next state's value instead of the full return, TD bootstraps and does not have
+        to wait for the end of the episode [^1][^2]. The bracket, target minus old estimate, is called
+        the TD error [^2].
+      figure:
+        src: ./q-learning/q-learning-017.svg
+        alt: 'The TD update V(S_t) ← V(S_t) + α[R_{t+1} + γ V(S_{t+1}) − V(S_t)] with numbered parts: 1 is the V(S_t) on the left, 2 is V(S_t) on the right (both occurrences), 3 is α, 4 is R_{t+1} and 5 is γ V(S_{t+1}).'
       answer:
         blanks:
           - accept:
@@ -134,17 +199,32 @@ items:
               - target
             hint: one word
         model: The TD target is $R_{t+1} + \gamma V(S_{t+1})$; the whole bracket is the TD error.
-      figure:
-        src: ./q-learning/q-learning-017.svg
-        alt: 'The TD update V(S_t) ← V(S_t) + α[R_{t+1} + γ V(S_{t+1}) − V(S_t)] with numbered parts: 1 is the V(S_t) on the left, 2 is V(S_t) on the right (both occurrences), 3 is α, 4 is R_{t+1} and 5 is γ V(S_{t+1}).'
-      type: short_answer
+      references:
+        - source: hf-deep-rl-course
+          url: https://huggingface.co/learn/deep-rl-course/unit2/mc-vs-td#td-learning
+          locator: 'Unit 2, "Monte Carlo vs Temporal Difference Learning", section "Temporal Difference Learning: learning at each step" (labelled TD update figure)'
+        - title: 'Sutton & Barto (2018), Reinforcement Learning: An Introduction, 2nd ed.'
+          url: http://incompleteideas.net/book/RLbook2020.pdf
+          locator: Sec. 6.1 TD Prediction, Eqs. (6.2) and (6.5), pp. 120–121
+      references_replace: true
   "unit2/mid-way-quiz#q6":
+    difficulty: easy
     fix:
       question: |
         The figure below shows the Monte Carlo learning update with four numbered parts. Complete
         their definitions. Part 1 is the new estimate of the value of state $S_t$, and part 2 (both
         occurrences) is the {{1}} estimate. Part 3, $\alpha$, is the {{2}}. Part 4, $G_t$, is the
         {{3}} actually observed from time step $t$, which is only known at the end of the {{4}}.
+      explanation: |
+        Monte Carlo waits until the episode ends, computes the actual return $G_t$ and moves the old
+        estimate, which stands for the expected return from that state, a fraction $\alpha$ of the way
+        toward it [^1][^2]. Its target is a real sample of the return, whereas TD's target
+        $R_{t+1} + \gamma V(S_{t+1})$ is built from another estimate, so TD can update after every step
+        [^2]. Sutton & Barto call this rule constant-$\alpha$ MC, with $\alpha$ a constant step-size
+        parameter [^2].
+      figure:
+        src: ./q-learning/q-learning-018.svg
+        alt: 'The Monte Carlo update V(S_t) ← V(S_t) + α[G_t − V(S_t)] with numbered parts: 1 is the V(S_t) on the left, 2 is V(S_t) on the right (both occurrences), 3 is α and 4 is G_t.'
       answer:
         blanks:
           - accept:
@@ -169,20 +249,28 @@ items:
           - accept:
               - episode
             hint: one word
-        model:
-      figure:
-        src: ./q-learning/q-learning-018.svg
-        alt: 'The Monte Carlo update V(S_t) ← V(S_t) + α[G_t − V(S_t)] with numbered parts: 1 is the V(S_t) on the left, 2 is V(S_t) on the right (both occurrences), 3 is α and 4 is G_t.'
-      type: short_answer
+      references:
+        - source: hf-deep-rl-course
+          url: https://huggingface.co/learn/deep-rl-course/unit2/mc-vs-td#monte-carlo
+          locator: 'Unit 2, "Monte Carlo vs Temporal Difference Learning", section "Monte Carlo: learning at the end of the episode" (labelled MC update figure)'
+        - title: 'Sutton & Barto (2018), Reinforcement Learning: An Introduction, 2nd ed.'
+          url: http://incompleteideas.net/book/RLbook2020.pdf
+          locator: Sec. 6.1 TD Prediction, Eqs. (6.1) and (6.2), pp. 119–120
+      references_replace: true
   "unit2/quiz2#q3":
-    keep: true
+    difficulty: medium
     fix:
-      type: short_answer
       question: |
         Why does an optimal Q-function $Q^*$ give us an optimal policy? Complete the reasoning.
         $Q^*$ gives the value of every action in every state, so in each state we know the best action:
         the one with the {{1}} $Q^*$ value. Acting {{2}} with respect to $Q^*$,
         $\pi^*(s) = \arg\max_a Q^*(s,a)$, is therefore an optimal policy.
+      explanation: |
+        The optimal policy picks $a^*(s) = \arg\max_a Q^*(s,a)$ in every state [^1]. This works
+        because $Q^*$ already includes the long-term consequences of each action, like a cache of
+        every one-step lookahead, so choosing optimally needs no model of the environment's dynamics;
+        knowing only $V^*$ would not be enough [^2]. That is also why value-based methods can put a
+        simple greedy rule on top of the learned values instead of training a policy [^3].
       answer:
         blanks:
           - accept:
@@ -199,16 +287,31 @@ items:
               - greedy
             hint: one word
         model:
+      references:
+        - title: 'OpenAI Spinning Up, Part 1: Key Concepts in RL'
+          url: https://spinningup.openai.com/en/latest/spinningup/rl_intro.html#the-optimal-q-function-and-the-optimal-action
+          locator: Section "The Optimal Q-Function and the Optimal Action"
+        - title: 'Sutton & Barto (2018), Reinforcement Learning: An Introduction, 2nd ed.'
+          url: http://incompleteideas.net/book/RLbook2020.pdf
+          locator: Sec. 3.6 Optimal Policies and Optimal Value Functions, p. 65
+        - source: hf-deep-rl-course
+          url: https://huggingface.co/learn/deep-rl-course/unit2/two-types-value-based-methods
+          locator: Unit 2, "Two types of value-based methods" (link between value function and policy)
+      references_replace: true
   "unit2/quiz2#q4":
-    keep: true
+    difficulty: easy
     fix:
-      type: short_answer
       question: |
         Complete the description of the epsilon-greedy strategy, which handles the
         exploration/exploitation trade-off. With probability $\epsilon$ the agent {{1}}: it tries a
         random action. With probability $1 - \epsilon$ it {{2}}: it takes the action with the highest
         Q-value. $\epsilon$ starts high (e.g. 1.0) and is {{3}} during training as the Q-table
         improves.
+      explanation: |
+        Starting with a high $\epsilon$ makes early training mostly random exploration. As the
+        Q-table's estimates get better, $\epsilon$ is lowered step by step so the agent exploits more
+        [^1]. The theoretical appeal is that every action keeps being tried, so in the limit all
+        action-value estimates converge to their true values [^2].
       answer:
         blanks:
           - accept:
@@ -233,7 +336,16 @@ items:
               - decays
             hint: one word
         model:
+      references:
+        - source: hf-deep-rl-course
+          url: https://huggingface.co/learn/deep-rl-course/unit2/q-learning#step2
+          locator: 'Unit 2, "Introducing Q-Learning", section "Step 2: Choose an action using the epsilon-greedy strategy"'
+        - title: 'Sutton & Barto (2018), Reinforcement Learning: An Introduction, 2nd ed.'
+          url: http://incompleteideas.net/book/RLbook2020.pdf
+          locator: Sec. 2.2 Action-value Methods, pp. 27–28
+      references_replace: true
   "unit2/quiz2#q5":
+    difficulty: medium
     fix:
       question: |
         How do we update the Q-value of a state–action pair? The figure below shows the Q-learning
@@ -242,6 +354,16 @@ items:
         the {{1}}. Part 4, $R_{t+1}$, is the immediate {{2}}. Part 5, $\gamma \max_a Q(S_{t+1}, a)$, is
         the discounted estimate of the {{3}} Q-value of the next state. Parts 4 and 5 form the TD
         target, and the whole bracket, target minus former estimate, is the TD {{4}}.
+      explanation: |
+        To update $Q(S_t, A_t)$ the agent needs $S_t$, $A_t$, $R_{t+1}$ and $S_{t+1}$: the reward and
+        the next state form the TD target, and the old estimate moves a fraction $\alpha$ toward it
+        [^1]. The next state's value is taken greedily with $\max_a$ even though the agent acts
+        $\epsilon$-greedily, which is what makes Q-learning off-policy [^1]. With this target the
+        learned $Q$ approximates the optimal action-value function $q_*$ directly, whatever policy
+        generates the experience [^2].
+      figure:
+        src: ./q-learning/q-learning-019.svg
+        alt: 'The Q-learning update Q(S_t, A_t) ← Q(S_t, A_t) + α[R_{t+1} + γ max_a Q(S_{t+1}, a) − Q(S_t, A_t)] with numbered parts: 1 is the Q(S_t, A_t) on the left, 2 is Q(S_t, A_t) on the right (both occurrences), 3 is α, 4 is R_{t+1} and 5 is γ max_a Q(S_{t+1}, a).'
       answer:
         blanks:
           - accept:
@@ -266,13 +388,30 @@ items:
           - accept:
               - error
             hint: one word
-        model:
-      figure:
-        src: ./q-learning/q-learning-019.svg
-        alt: 'The Q-learning update Q(S_t, A_t) ← Q(S_t, A_t) + α[R_{t+1} + γ max_a Q(S_{t+1}, a) − Q(S_t, A_t)] with numbered parts: 1 is the Q(S_t, A_t) on the left, 2 is Q(S_t, A_t) on the right (both occurrences), 3 is α, 4 is R_{t+1} and 5 is γ max_a Q(S_{t+1}, a).'
-      type: short_answer
+      references:
+        - source: hf-deep-rl-course
+          url: https://huggingface.co/learn/deep-rl-course/unit2/q-learning#step4
+          locator: 'Unit 2, "Introducing Q-Learning", section "Step 4: Update Q(St, At)" (labelled update figure)'
+        - title: 'Sutton & Barto (2018), Reinforcement Learning: An Introduction, 2nd ed.'
+          url: http://incompleteideas.net/book/RLbook2020.pdf
+          locator: 'Sec. 6.5 Q-learning: Off-policy TD Control, Eq. (6.8), p. 131'
+      references_replace: true
   "unit2/quiz2#q6":
+    difficulty: medium
     fix:
+      question: |
+        What's the difference between on-policy and off-policy methods? Complete the description. An
+        {{1}}-policy method uses one policy for acting and a different one for updating: Q-learning
+        acts $\epsilon$-greedily, but its update uses the {{2}} action value $\max_a Q(S_{t+1}, a)$.
+        An {{3}}-policy method uses the same policy for both: {{4}} picks $A_{t+1}$
+        $\epsilon$-greedily and updates with $\gamma Q(S_{t+1}, A_{t+1})$ for that same action.
+      explanation: |
+        The Hugging Face Deep RL Course defines off-policy learning as using different policies for acting (inference) and
+        for updating (training), and on-policy learning as using the same policy for both [^1]. In
+        Sutton & Barto's terms, an on-policy method evaluates or improves the policy that generates
+        the data, while an off-policy method evaluates or improves a different one [^2]. Q-learning's
+        greedy max lets it learn about the greedy policy while behaving $\epsilon$-greedily, whereas
+        Sarsa's target uses the action its $\epsilon$-greedy policy actually takes next [^1][^2].
       answer:
         blanks:
           - accept:
@@ -294,24 +433,32 @@ items:
               - Sarsa
               - SARSA
             hint: name of an algorithm
-        model:
-      type: short_answer
-      question: |
-        What's the difference between on-policy and off-policy methods? Complete the description. An
-        {{1}}-policy method uses one policy for acting and a different one for updating: Q-learning
-        acts $\epsilon$-greedily, but its update uses the {{2}} action value $\max_a Q(S_{t+1}, a)$.
-        An {{3}}-policy method uses the same policy for both: {{4}} picks $A_{t+1}$
-        $\epsilon$-greedily and updates with $\gamma Q(S_{t+1}, A_{t+1})$ for that same action.
+      references:
+        - source: hf-deep-rl-course
+          url: https://huggingface.co/learn/deep-rl-course/unit2/q-learning#off-vs-on
+          locator: Unit 2, "Introducing Q-Learning", section "Off-policy vs On-policy"
+        - title: 'Sutton & Barto (2018), Reinforcement Learning: An Introduction, 2nd ed.'
+          url: http://incompleteideas.net/book/RLbook2020.pdf
+          locator: Sec. 5.4 Monte Carlo Control without Exploring Starts, p. 100; Secs. 6.4–6.5 Sarsa and Q-learning, pp. 129–131
+      references_replace: true
   "unit3/quiz#q3":
-    keep: true
+    difficulty: medium
     fix:
-      type: short_answer
       question: |
         Why do we stack four frames together when we use frames as input in Deep Q-Learning? Complete
         the reasoning. A single frame shows where objects are but not how they move: in Pong you cannot
         tell from one frame which way the ball is going. On its own, a frame therefore lacks the {{1}}
         property: it does not hold everything needed to decide what to do next without looking at the
         history. Stacking the four most recent frames supplies the missing {{2}} information.
+      explanation: |
+        One frame shows positions but not velocities, which is why a single Pong frame cannot tell you
+        where the ball is heading; the Hugging Face course calls this the problem of temporal limitation [^2]. The
+        Markov property means the current state alone is enough to choose an action, with no need for
+        the history of earlier states [^3]. A single frame fails this test, because the full state of
+        many Atari games cannot be observed from one image [^1]. DQN (Mnih et al.) therefore stacked
+        the four most recent preprocessed $84 \times 84$ frames into an $84 \times 84 \times 4$ input;
+        this did not remove partial observability in every game, but it made many of them more
+        Markovian [^1].
       answer:
         blanks:
           - accept:
@@ -328,10 +475,20 @@ items:
               - speed
             hint: one word
         model:
+      references:
+        - title: 'Sutton & Barto (2018), Reinforcement Learning: An Introduction, 2nd ed.'
+          url: http://incompleteideas.net/book/RLbook2020.pdf
+          locator: Sec. 16.5 Human-level Video Game Play, pp. 438–439
+        - source: hf-deep-rl-course
+          url: https://huggingface.co/learn/deep-rl-course/unit3/deep-q-network#preprocessing
+          locator: Unit 3, "The Deep Q-Network (DQN)", section "Preprocessing the input and temporal limitation"
+        - source: hf-deep-rl-course
+          url: https://huggingface.co/learn/deep-rl-course/unit1/rl-framework#markov-property
+          locator: Unit 1, "The Reinforcement Learning Framework", section "Markov Property"
+      references_replace: true
   "unit4/quiz#q2":
-    keep: true
+    difficulty: medium
     fix:
-      type: short_answer
       question: |
         Complete the statement of what the Policy Gradient Theorem gives us. It rewrites the gradient
         of the objective in a form that does not involve the derivative of the {{1}} distribution:
@@ -339,6 +496,14 @@ items:
         As a result the gradient can be estimated from sampled {{2}}, using only
         $\nabla_\theta \log \pi_\theta(a_t \mid s_t)$ and the observed returns, with no model of the
         environment.
+      explanation: |
+        Changing $\theta$ changes the actions and therefore which states the agent visits, but how that
+        shifts the state distribution depends on the environment's dynamics, which are usually unknown
+        [^1]. The theorem sidesteps this: the gradient becomes a sum over states weighted by $\mu(s)$
+        in which only the policy is differentiated [^1]. In the trajectory form used by REINFORCE, the
+        initial-state and transition probabilities do not depend on $\theta$, so their derivatives
+        vanish and only $\sum_t \nabla_\theta \log \pi_\theta(a_t \mid s_t)$ remains, which is averaged
+        over sampled trajectories [^2].
       answer:
         blanks:
           - accept:
@@ -357,22 +522,52 @@ items:
               - rollout
             hint: one word (plural)
         model:
+      references:
+        - title: 'Sutton & Barto (2018), Reinforcement Learning: An Introduction, 2nd ed.'
+          url: http://incompleteideas.net/book/RLbook2020.pdf
+          locator: Sec. 13.2 The Policy Gradient Theorem, Eq. (13.5), pp. 324–326
+        - source: hf-deep-rl-course
+          url: https://huggingface.co/learn/deep-rl-course/unit4/pg-theorem
+          locator: Unit 4, "(Optional) the Policy Gradient Theorem"
+      references_replace: true
   "unit6/quiz#q3":
+    difficulty: medium
     fix:
+      explanation: |
+        Monte Carlo estimation works from samples. It runs episodes and averages the returns it
+        actually observes, rather than accounting for every possible state and trajectory [^1][^2].
+        That makes it sensitive to randomness, not resistant: stochastic transitions and a
+        stochastic policy can give very different returns from the same start [^1]. The usual
+        remedy is to collect many trajectories and average them, so that each one's noise has less
+        influence. The price is lower sample efficiency [^1].
       options:
         2: To reduce the impact of stochastic elements in Monte Carlo, we sample $n$ trajectories and average them, reducing their individual impact
       why:
         1: Monte Carlo estimates from a fresh random sample of trajectories every time, and even the same trajectory can give different rewards if it contains stochastic elements. That makes it sensitive to randomness, not resistant to it.
+      references:
+        - source: hf-deep-rl-course
+          url: https://huggingface.co/learn/deep-rl-course/unit6/variance-problem
+          locator: Unit 6, "The Problem of Variance in Reinforce"
+        - title: 'Sutton & Barto (2018), Reinforcement Learning: An Introduction, 2nd ed.'
+          url: http://incompleteideas.net/book/RLbook2020.pdf
+          locator: Sec. 3.5 Policies and Value Functions, pp. 58–59 (Monte Carlo methods average sample returns)
+      references_replace: true
   "unit6/quiz#q4":
-    keep: true
+    difficulty: easy
     fix:
-      type: short_answer
       question: |
         Complete the description of the Actor-Critic method (A2C). It learns two function
         approximations. The actor is a {{1}} $\pi_\theta(a \mid s)$ that controls how the agent acts.
         The critic is a {{2}} function that measures how good the action taken was and guides the
         actor's update. Judging actions with the critic instead of full Monte Carlo returns, as
         REINFORCE does, reduces the {{3}} of the gradient estimate.
+      explanation: |
+        REINFORCE weights each action by a full Monte Carlo return, a very noisy signal, so
+        actor-critic methods let a learned critic assess each action instead [^1]. In Sutton & Barto's
+        one-step version the critic's estimate $R_{t+1} + \gamma \hat v(S_{t+1}, \mathbf{w})$ replaces
+        the return; it has lower variance but introduces some bias [^2]. Both parts keep learning: the
+        actor updates its policy parameters from the critic's feedback, and the critic updates its
+        value parameters [^1].
       answer:
         blanks:
           - accept:
@@ -393,16 +588,30 @@ items:
               - variance
             hint: a statistical property
         model:
+      references:
+        - source: hf-deep-rl-course
+          url: https://huggingface.co/learn/deep-rl-course/unit6/advantage-actor-critic#reducing-variance-with-actor-critic-methods
+          locator: Unit 6, "Advantage Actor-Critic (A2C)", sections "Reducing variance with Actor-Critic methods" and "The Actor-Critic Process"
+        - title: 'Sutton & Barto (2018), Reinforcement Learning: An Introduction, 2nd ed.'
+          url: http://incompleteideas.net/book/RLbook2020.pdf
+          locator: Sec. 13.5 Actor–Critic Methods, Eqs. (13.12)–(13.14), p. 331
+      references_replace: true
   "unit6/quiz#q6":
-    keep: true
+    difficulty: medium
     fix:
-      type: short_answer
       question: |
         Complete the description of the advantage in A2C. The advantage $A(s,a) = Q(s,a) - V(s)$
         measures how much better taking action $a$ in state $s$ is than the {{1}} value of that state.
         If $A(s,a) > 0$, the update {{2}} the probability of taking $a$ in $s$. Learning both $Q$ and
         $V$ would need two value functions, so A2C estimates the advantage with the {{3}} error
         $r + \gamma V(s') - V(s)$.
+      explanation: |
+        Subtracting $V(s)$ turns the action value into a relative score: the extra return the action
+        earns compared with what the policy gets from that state on average [^1][^2]. A positive
+        advantage moves the policy toward that action and a negative one moves it away [^1]. Because
+        estimating both $Q$ and $V$ would need two networks, A2C uses the TD error
+        $r + \gamma V(s') - V(s)$, which needs only a state-value critic, as its estimate of the
+        advantage [^1].
       answer:
         blanks:
           - accept:
@@ -424,29 +633,60 @@ items:
               - temporal-difference
             hint: an abbreviation or two words
         model:
+      references:
+        - source: hf-deep-rl-course
+          url: https://huggingface.co/learn/deep-rl-course/unit6/advantage-actor-critic#adding-advantage-in-actor-critic-a2c
+          locator: Unit 6, "Advantage Actor-Critic (A2C)", section "Adding Advantage in Actor-Critic (A2C)"
+        - title: 'OpenAI Spinning Up, Part 1: Key Concepts in RL'
+          url: https://spinningup.openai.com/en/latest/spinningup/rl_intro.html#advantage-functions
+          locator: Section "Advantage Functions"
+      references_replace: true
   "unit7/quiz#q5":                        # ML-Agents self-play parameter names
+    difficulty: medium
     fix:
       question: |
         In self-play, the agent trains against a pool of saved snapshots of its own past policy.
         Implementations such as Unity ML-Agents let you tune how many snapshots the pool keeps, how
         often a new snapshot is saved and how often the opponent is swapped. What trade-off do these
         settings control?
+      explanation: |
+        The self-play settings trade the skill level and generality of the final policy against the
+        stability of learning [^1]. Training against slowly changing or unchanging opponents with low
+        diversity is more stable, but if they change too slowly the agent overfits to them [^1]. A
+        larger pool keeps policies from earlier in training, so it holds a wider diversity of
+        behaviours, and saving snapshots further apart gives opponents that cover a wider range of
+        skill levels [^1]. The pool only decides who the agent plays: it is not the agent's own
+        exploration, and it does not change the reward function.
       options:
-        - text: 'Stability versus generality: a small, slowly changing pool trains more stably, but the agent may overfit to those few opponents'
-          correct: true
-        - text: 'Speed versus memory: a larger pool only costs more storage, while the learned policy stays exactly the same'
-          why: The pool decides which opponents the agent faces, so it changes what the policy learns, not just how much is stored.
-        - text: 'Exploration versus exploitation: a larger pool makes the agent itself take more random actions in each game'
-          why: Opponent diversity is not the agent's own action randomness; exploration comes from the agent's policy, not from the opponent pool.
-        - text: 'Reward versus penalty: swapping the opponent more often raises the reward the agent receives for each win'
-          why: The reward function is set by the environment. Swapping opponents changes who the agent plays, not what a win is worth.
+        0: 'Stability versus generality: a small, slowly changing pool trains more stably, but the agent may overfit to those few opponents'
+        1: 'Speed versus memory: a larger pool only costs more storage, while the learned policy stays exactly the same'
+        2: 'Exploration versus exploitation: a larger pool makes the agent itself take more random actions in each game'
+        3: 'Reward versus penalty: swapping the opponent more often raises the reward the agent receives for each win'
+      why:
+        1: The pool decides which opponents the agent faces, so it changes what the policy learns, not just how much is stored.
+        2: Opponent diversity is not the agent's own action randomness; exploration comes from the agent's policy, not from the opponent pool.
+        3: The reward function is set by the environment. Swapping opponents changes who the agent plays, not what a win is worth.
+      correct:
+        - 0
+      references:
+        - source: hf-deep-rl-course
+          url: https://huggingface.co/learn/deep-rl-course/unit7/self-play#self-play-in-mlagents
+          locator: Unit 7, Self-Play, sec. Self-Play in MLAgents
+      references_replace: true
   unit7/quiz#q4:
+    difficulty: easy
     fix:
-      type: short_answer
       question: |
         Complete the definition. In {{1}}, an agent in an adversarial game trains against former
         copies of its own {{2}} as opponents. The opponent is therefore always at about the agent's
         level, and it is replaced by a more recent copy as the agent improves.
+      explanation: |
+        An opponent that is far stronger teaches the agent nothing, and one that is far weaker teaches
+        it habits that fail against better players, so the ideal opponent is at the agent's own level
+        [^1]. Self-play gets this by starting from a copy of the agent and periodically swapping in a
+        newer copy of the training policy as the agent gets better [^1]. The idea goes back to Arthur
+        Samuel's checkers program and Tesauro's TD-Gammon, and ML-Agents exposes hyperparameters that
+        trade training stability against overfitting to a narrow pool of opponents [^1].
       answer:
         blanks:
           - accept:
@@ -458,13 +698,26 @@ items:
               - model
             hint: one word
         model:
+      references:
+        - source: hf-deep-rl-course
+          url: https://huggingface.co/learn/deep-rl-course/unit7/self-play#what-is-self-play
+          locator: Unit 7, Self-Play, secs. What is Self-Play? and Self-Play in MLAgents
+          quote: In self-play, the agent uses former copies of itself (of its policy) as an opponent.
+      references_replace: true
   unit2/mid-way-quiz#q2:
+    difficulty: easy
     fix:
-      type: short_answer
       question: |
         Complete the description of the Bellman equation. It is a {{1}} equation: instead of adding
         up the whole return from each state, we write the value of a state as the immediate {{2}} plus
         the {{3}} value of the state that follows.
+      explanation: |
+        Defining the value of a state through the value of its successor means you no longer have to
+        sum a long future return for every state [^2]. In full the equation is an expectation over the
+        policy and the dynamics,
+        $v_\pi(s) = \sum_a \pi(a \mid s) \sum_{s', r} p(s', r \mid s, a)\,[r + \gamma v_\pi(s')]$:
+        the reward expected along the way plus the discounted value of the next state [^1]. TD learning
+        uses exactly this one-step form, $R_{t+1} + \gamma V(S_{t+1})$, as its update target [^3].
       answer:
         blanks:
           - accept:
@@ -480,14 +733,31 @@ items:
               - discounted
             hint: one word (what the factor γ does to it)
         model: $V(S_t) = R_{t+1} + \gamma V(S_{t+1})$
+      references:
+        - title: 'Sutton & Barto (2018), Reinforcement Learning: An Introduction, 2nd ed.'
+          url: http://incompleteideas.net/book/RLbook2020.pdf
+          locator: Sec. 3.5 Policies and Value Functions, Eq. (3.14), p. 59
+        - source: hf-deep-rl-course
+          url: https://huggingface.co/learn/deep-rl-course/unit2/bellman-equation
+          locator: 'Unit 2, "The Bellman Equation: simplify our value estimation"'
+        - source: hf-deep-rl-course
+          url: https://huggingface.co/learn/deep-rl-course/unit2/mc-vs-td#td-learning
+          locator: 'Unit 2, "Monte Carlo vs Temporal Difference Learning", section "Temporal Difference Learning: learning at each step"'
+      references_replace: true
   unit3/quiz#q1:
+    difficulty: easy
     fix:
-      type: short_answer
       question: |
         Complete the description of tabular methods. They apply when the state and action spaces are
         {{1}} enough for the value function to be stored exactly as arrays or tables. Q-learning is a
         tabular method because it keeps a {{2}} with one cell per state–action pair. For FrozenLake
         4×4, with 16 states and 4 actions, that table has {{3}} cells.
+      explanation: |
+        Sutton & Barto call the case where the state (or state–action) space is small enough to give
+        every element its own table entry the tabular case, and its methods tabular methods [^2]. The Hugging Face course's FrozenLake 4×4 has 16 states and 4 actions (left, down, right, up), so its Q-table has
+        $16 \times 4 = 64$ entries [^3]. The catch is scale: an Atari frame of $210 \times 160 \times 3$
+        values in 0–255 gives $256^{100800}$ possible observations, far too many for a table, so Deep
+        Q-learning approximates the Q-values with a neural network instead [^1].
       answer:
         blanks:
           - accept:
@@ -504,15 +774,34 @@ items:
           - numeric: 64
             hint: a number
         model:
+      references:
+        - source: hf-deep-rl-course
+          url: https://huggingface.co/learn/deep-rl-course/unit3/from-q-to-dqn
+          locator: Unit 3, "From Q-Learning to Deep Q-Learning"
+        - title: 'Sutton & Barto (2018), Reinforcement Learning: An Introduction, 2nd ed.'
+          url: http://incompleteideas.net/book/RLbook2020.pdf
+          locator: Sec. 3.7 Optimality and Approximation, p. 67; Part I introduction, p. 23
+        - source: hf-deep-rl-course
+          url: https://huggingface.co/learn/deep-rl-course/unit2/hands-on#part-1-frozen-lake--non-slippery-version
+          locator: Unit 2, Hands-on, Part 1 Frozen Lake (observation and action spaces, Q-table)
+      references_replace: true
   unit3/quiz#q5:
+    difficulty: medium
     fix:
-      type: short_answer
       question: |
         Why do we create a replay memory in Deep Q-Learning? Complete the two reasons. First, the
         buffer stores experience tuples so that each one can be {{1}} in several updates instead of
         being thrown away after one, which uses experience more efficiently. Second, sampling random
         mini-batches from it reduces the {{2}} between consecutive experiences and stops the network
         from overwriting what it learned from older experiences, a problem called catastrophic {{3}}.
+      explanation: |
+        Without a buffer, online RL learns from each transition once and discards it; storing
+        transitions lets the agent learn from the same experience many times [^2]. Feeding consecutive
+        transitions makes the network forget earlier situations, e.g. how to play level 1 after moving
+        on to a different level 2 [^2]. Uniformly sampled mini-batches are much less correlated than
+        consecutive steps, which lowers the variance of the updates and removes one source of
+        instability; sampling disconnected transitions is allowed because Q-learning is off-policy
+        [^1].
       answer:
         blanks:
           - accept:
@@ -534,15 +823,29 @@ items:
               - interference
             hint: one word
         model:
+      references:
+        - title: 'Sutton & Barto (2018), Reinforcement Learning: An Introduction, 2nd ed.'
+          url: http://incompleteideas.net/book/RLbook2020.pdf
+          locator: Sec. 16.5 Human-level Video Game Play (experience replay), p. 440
+        - source: hf-deep-rl-course
+          url: https://huggingface.co/learn/deep-rl-course/unit3/deep-q-algorithm#exp-replay
+          locator: Unit 3, "The Deep Q-Learning Algorithm", section "Experience Replay to make more efficient use of experiences"
+      references_replace: true
   unit3/quiz#q6:
+    difficulty: medium
     fix:
-      type: short_answer
       question: |
         How do we use Double Deep Q-Learning? Complete the description. When computing the Q-target,
         Double DQN uses the {{1}} network to select the best action for the next state, and the {{2}}
         network to calculate the Q-value of taking that action in the next state. Decoupling action
         selection from evaluation reduces the {{3}} of Q-values caused by taking a max over noisy
         estimates.
+      explanation: |
+        The max over noisy Q-estimates is on average larger than the true best value, so standard
+        (Deep) Q-learning tends to overestimate; Sutton & Barto call this maximization bias [^1][^2].
+        If one estimate chooses the argmax and a second, independent estimate scores it, the value of
+        the chosen action is no longer biased upward [^1]. Double DQN applies this double-learning idea
+        with the two networks it already has, the online DQN network and the target network [^2].
       answer:
         blanks:
           - accept:
@@ -565,14 +868,29 @@ items:
               - maximization bias
             hint: one word
         model:
+      references:
+        - title: 'Sutton & Barto (2018), Reinforcement Learning: An Introduction, 2nd ed.'
+          url: http://incompleteideas.net/book/RLbook2020.pdf
+          locator: Sec. 6.7 Maximization Bias and Double Learning, pp. 134–136
+        - source: hf-deep-rl-course
+          url: https://huggingface.co/learn/deep-rl-course/unit3/deep-q-algorithm#double-dqn
+          locator: Unit 3, "The Deep Q-Learning Algorithm", section "Double DQN"
+      references_replace: true
   unit1/quiz#q1:
+    difficulty: easy
     fix:
-      type: short_answer
       question: |
         What is Reinforcement Learning? Complete the definition. Reinforcement learning is a framework
         for solving control tasks (decision problems) by building {{1}} that learn from the
         environment by interacting with it through {{2}} and receiving {{3}} (positive or negative) as
         their only feedback.
+      explanation: |
+        RL differs from supervised learning, because the learner is never shown labeled examples of
+        the correct action, and from unsupervised learning, because it maximizes a reward signal rather
+        than looking for hidden structure. That makes it a third paradigm, whose two most distinctive
+        features are trial-and-error search and delayed reward [^1]. The Hugging Face course's picture is a child
+        handed a game they have never played, who improves with no supervision just by noticing which
+        actions earn points and which lose them [^2].
       answer:
         blanks:
           - accept:
@@ -588,15 +906,29 @@ items:
               - reward
             hint: one word
         model:
+      references:
+        - title: 'Sutton & Barto (2018), Reinforcement Learning: An Introduction, 2nd ed.'
+          url: http://incompleteideas.net/book/RLbook2020.pdf
+          locator: Sec. 1.1 Reinforcement Learning, pp. 1–2
+        - source: hf-deep-rl-course
+          url: https://huggingface.co/learn/deep-rl-course/unit1/what-is-rl#the-big-picture
+          locator: Unit 1, "What is Reinforcement Learning?", sections "The big picture" and "A formal definition"
+      references_replace: true
   unit1/quiz#q7:
+    difficulty: easy
     fix:
-      type: short_answer
       question: |
         What are value-based methods? Complete the description. Instead of training a policy,
         value-based methods train a {{1}} function that outputs, for each state, the expected {{2}}
         if the agent starts in that state and then follows the policy. The policy itself is not
         trained: it is a simple pre-specified rule, such as {{3}} action selection, that picks actions
         from the learned values.
+      explanation: |
+        The value of a state is the expected discounted return from starting there and then following
+        the policy [^2]. In value-based methods the policy is a fixed rule, such as greedy or
+        epsilon-greedy, that picks actions from the learned values, so finding the optimal value
+        function gives the optimal policy [^1]. The value function can be defined over states ($V$)
+        or over state–action pairs ($Q$) [^1].
       answer:
         blanks:
           - accept:
@@ -618,14 +950,28 @@ items:
               - e-greedy
             hint: one word
         model:
+      references:
+        - source: hf-deep-rl-course
+          url: https://huggingface.co/learn/deep-rl-course/unit2/two-types-value-based-methods
+          locator: Unit 2, "Two types of value-based methods"
+        - title: 'Sutton & Barto (2018), Reinforcement Learning: An Introduction, 2nd ed.'
+          url: http://incompleteideas.net/book/RLbook2020.pdf
+          locator: Sec. 3.5 Policies and Value Functions, Eq. (3.12), p. 58
+      references_replace: true
   unit1/quiz#q8:
+    difficulty: easy
     fix:
-      type: short_answer
       question: |
         What are policy-based methods? Complete the description. Policy-based methods learn the {{1}}
         function directly, with no value function needed to choose actions. It maps each state to the
         best action, or to a {{2}} distribution over the possible actions. Its parameters $\theta$ are
         tuned by gradient {{3}} to maximize the expected return $J(\theta)$.
+      explanation: |
+        Usually the policy is parameterized, for example as a neural network $\pi_\theta(a \mid s)$
+        that outputs a probability distribution over actions, and $\theta$ is tuned by gradient ascent
+        on the expected return $J(\theta)$ [^1]. It is ascent rather than descent because the objective
+        is a return to maximize, not a loss to minimize [^1]. A value function can still help learn
+        $\theta$, but it is not needed to select actions [^2].
       answer:
         blanks:
           - accept:
@@ -638,8 +984,23 @@ items:
               - ascent
             hint: one word
         model:
+      references:
+        - source: hf-deep-rl-course
+          url: https://huggingface.co/learn/deep-rl-course/unit4/what-are-policy-based-methods#value-based-policy-based-and-actor-critic-methods
+          locator: Unit 4, "What are the policy-based methods?", section "Value-based, Policy-based, and Actor-critic methods"
+        - title: 'Sutton & Barto (2018), Reinforcement Learning: An Introduction, 2nd ed.'
+          url: http://incompleteideas.net/book/RLbook2020.pdf
+          locator: Ch. 13 introduction, p. 321
+      references_replace: true
   unit1/quiz#q3:
+    difficulty: easy
     fix:
+      explanation: |
+        A state is a complete description of the world, with no hidden information. An observation is
+        a partial description that may leave some information out [^1][^2]. In chess the whole board
+        is visible, so the environment is fully observed and the agent receives a state. In Super Mario
+        Bros only the part of the level near the player is on screen, so the environment is partially
+        observed and the agent receives an observation [^1].
       options:
         4: We receive a state when we play in a chess environment
         5: We receive an observation when we play in a chess environment
@@ -650,19 +1011,67 @@ items:
         2: That is the definition of a state. An observation can leave information out.
         5: The whole chessboard is visible, so the environment is fully observed and we receive a state.
         6: We only see the part of the level close to the player, so we receive an observation.
+      references:
+        - source: hf-deep-rl-course
+          url: https://huggingface.co/learn/deep-rl-course/unit1/rl-framework#obs-space
+          locator: Unit 1, "The Reinforcement Learning Framework", section "Observations/States Space"
+        - title: 'OpenAI Spinning Up, Part 1: Key Concepts in RL'
+          url: https://spinningup.openai.com/en/latest/spinningup/rl_intro.html#states-and-observations
+          locator: Section "States and Observations"
+      references_replace: true
   unit2/quiz2#q1:
+    difficulty: easy
     fix:
+      explanation: |
+        Q-learning is an off-policy, value-based TD algorithm. Its job is to train the Q-function,
+        the action-value function [^1]. Its update moves $Q$ towards the optimal action-value
+        function $q_*$ [^2]. The other options describe what it produces, not what it is. The
+        Q-function is the action-value function that gives the value of a state–action pair. The
+        Q-table is the data structure that stores those values in the tabular case [^1].
       why:
         1: Q-learning is not a function but the algorithm that trains one. The function it trains is the Q-function, an action-value function that gives the value of taking a specific action in a particular state.
         3: Q-learning is not a Q-table. The Q-table stores the Q-function's values, and Q-learning is the algorithm that fills it in.
+      references:
+        - source: hf-deep-rl-course
+          url: https://huggingface.co/learn/deep-rl-course/unit2/q-learning#what-is-q-learning
+          locator: Unit 2, "Introducing Q-Learning", section "What is Q-Learning?"
+        - title: 'Sutton & Barto (2018), Reinforcement Learning: An Introduction, 2nd ed.'
+          url: http://incompleteideas.net/book/RLbook2020.pdf
+          locator: 'Sec. 6.5 Q-learning: Off-policy TD Control, Eq. (6.8), p. 131'
+      references_replace: true
   unit2/quiz2#q2:
+    difficulty: easy
     fix:
+      explanation: |
+        The Q-table is where the Q-function keeps its values, its memory or "cheat sheet". There is
+        one cell per state–action pair, and a lookup returns the value of taking that action in
+        that state [^1]. Storing one entry per state or state–action pair in an array is what
+        makes a method tabular [^2]. It is not an algorithm: Q-learning is the algorithm that fills
+        the table [^1]. And its cells hold state–action values, not plain state values [^1].
       options:
         2: In Q-table each cell corresponds to a state value
       why:
+        0: The Q-table is a data structure, the agent's memory; Q-learning is the algorithm that fills it in [^1].
         2: Each cell holds the value of a state–action pair, not the value of a state alone.
+      references:
+        - source: hf-deep-rl-course
+          url: https://huggingface.co/learn/deep-rl-course/unit2/q-learning#what-is-q-learning
+          locator: Unit 2, "Introducing Q-Learning", section "What is Q-Learning?"
+        - title: 'Sutton & Barto (2018), Reinforcement Learning: An Introduction, 2nd ed.'
+          url: http://incompleteideas.net/book/RLbook2020.pdf
+          locator: Sec. 3.7 Optimality and Approximation, p. 67
+      references_replace: true
   unit3/quiz#q2:
+    difficulty: easy
     fix:
+      explanation: |
+        Classical Q-learning needs one table entry per state–action pair. An Atari observation is a
+        $210 \times 160 \times 3$ image with values from 0 to 255, so there are about
+        $256^{100800}$ possible observations. Creating and updating such a Q-table is hopeless [^1].
+        Memory is only part of the problem: almost every state would be new, so the agent has to
+        generalize from similar states, which needs function approximation [^2]. The Hugging Face course puts the problem down to the size of the observation space, not to how fast the game runs [^1].
+        The actions are not the issue either, since Atari's action space is discrete [^3]. And
+        Q-learning is model-free, which is one reason DQN was built on it [^4].
       options:
         - text: Atari environments are too fast for Q-Learning
           why: Speed is not the obstacle. The problem is the size of the observation space.
@@ -672,44 +1081,172 @@ items:
           why: Atari games have a discrete action space with only a handful of joystick moves, so the actions fit easily in a table [^3].
         - text: Classical Q-learning needs the environment's transition probabilities, which Atari games do not provide
           why: Q-learning is model-free. It learns from sampled transitions and never needs the environment's transition probabilities [^4].
+      references:
+        - source: hf-deep-rl-course
+          url: https://huggingface.co/learn/deep-rl-course/unit3/from-q-to-dqn
+          locator: Unit 3, "From Q-Learning to Deep Q-Learning"
+        - title: 'Sutton & Barto (2018), Reinforcement Learning: An Introduction, 2nd ed.'
+          url: http://incompleteideas.net/book/RLbook2020.pdf
+          locator: Part II introduction (Approximate Solution Methods), p. 195
+        - title: 'OpenAI Spinning Up, Part 1: Key Concepts in RL'
+          url: https://spinningup.openai.com/en/latest/spinningup/rl_intro.html#action-spaces
+          locator: Section "Action Spaces"
+        - title: 'Sutton & Barto (2018), Reinforcement Learning: An Introduction, 2nd ed.'
+          url: http://incompleteideas.net/book/RLbook2020.pdf
+          locator: Sec. 16.5 Human-level Video Game Play, p. 438
+      references_replace: true
   unit4/quiz#q3:
+    difficulty: medium
     fix:
+      explanation: |
+        Policy-gradient methods are a subclass of policy-based methods, not the other way round
+        [^1]. Both search directly for a policy. They differ in how they optimize $\theta$.
+        General policy-based methods may improve $\theta$ indirectly, for example by hill climbing,
+        simulated annealing or evolution strategies on a local approximation of the objective.
+        Policy-gradient methods compute (an estimate of) $\nabla_\theta J(\theta)$ and do gradient
+        ascent on it [^1]. Sutton & Barto define policy-gradient methods by exactly this
+        gradient-ascent update on a performance measure $J(\theta)$ [^2].
       options:
         2: In Policy-based methods, we can optimize the parameter $\theta$ **indirectly** by maximizing the local approximation of the objective function with techniques like hill climbing, simulated annealing, or evolution strategies.
         3: In Policy-gradient methods, we optimize the parameter $\theta$ **directly** by performing the gradient ascent on the performance of the objective function.
+      why:
+        0: 'It is the other way round: policy-gradient methods are the subset of policy-based methods that optimize $\theta$ by gradient ascent [^1].'
+      references:
+        - source: hf-deep-rl-course
+          url: https://huggingface.co/learn/deep-rl-course/unit4/what-are-policy-based-methods#the-difference-between-policy-based-and-policy-gradient-methods
+          locator: Unit 4, "What are the policy-based methods?", section "The difference between policy-based and policy-gradient methods"
+        - title: 'Sutton & Barto (2018), Reinforcement Learning: An Introduction, 2nd ed.'
+          url: http://incompleteideas.net/book/RLbook2020.pdf
+          locator: Ch. 13 introduction, Eq. (13.1), p. 321
+      references_replace: true
   unit4/quiz#q4:
+    difficulty: easy
     fix:
       question: Why do we use gradient ascent instead of gradient descent to optimize $J(\theta)$?
+      explanation: |
+        $J(\theta)$ is the expected return of the policy, which is something we want to make as
+        large as possible [^1]. The gradient points in the direction of steepest increase, so we
+        step along it: $\theta \leftarrow \theta + \alpha \nabla_\theta J(\theta)$ [^1][^2].
+        Gradient descent is the right tool when the objective is a loss to minimize. Saying we
+        want to minimize $J$ contradicts using the direction that increases it.
       options:
         0: We want to minimize $J(\theta)$ and gradient ascent gives us the direction of the steepest increase of $J(\theta)$
         1: We want to maximize $J(\theta)$ and gradient ascent gives us the direction of the steepest increase of $J(\theta)$
+      why:
+        0: $J(\theta)$ is the expected return, which we want to maximize; to minimize a function you would step against the gradient (gradient descent), not along the direction of steepest increase [^1].
+      references:
+        - source: hf-deep-rl-course
+          url: https://huggingface.co/learn/deep-rl-course/unit4/policy-gradient#gradient-ascent-and-the-policy-gradient-theorem
+          locator: Unit 4, "Diving deeper into policy-gradient methods", sections "The objective function" and "Gradient Ascent and the Policy-gradient Theorem"
+        - title: 'Sutton & Barto (2018), Reinforcement Learning: An Introduction, 2nd ed.'
+          url: http://incompleteideas.net/book/RLbook2020.pdf
+          locator: Ch. 13 introduction, Eq. (13.1), p. 321
+      references_replace: true
   unit6/quiz#q1:
+    difficulty: medium
     fix:
+      explanation: |
+        An RL agent has no labeled examples of the correct action; it learns only from a reward
+        signal [^1]. In RL, bias and variance describe the estimate of return used as the learning
+        signal. REINFORCE uses the actual Monte Carlo return, which is unbiased but varies a lot
+        between episodes [^2]. Actor-critic methods replace it with a bootstrapped one-step return,
+        which has lower variance but introduces bias [^3]. The tradeoff is therefore about how
+        faithfully the reinforcement signal tracks the true expected return. Generalizing from
+        labeled training data is the supervised-learning reading of bias and variance.
       options:
         1: The bias-variance tradeoff reflects how well the reinforcement signal reflects the true reward the agent should get from the environment
+      references:
+        - title: 'Sutton & Barto (2018), Reinforcement Learning: An Introduction, 2nd ed.'
+          url: http://incompleteideas.net/book/RLbook2020.pdf
+          locator: Sec. 1.1 Reinforcement Learning, pp. 1–2
+        - source: hf-deep-rl-course
+          url: https://huggingface.co/learn/deep-rl-course/unit6/variance-problem
+          locator: Unit 6, "The Problem of Variance in Reinforce"
+        - title: 'Sutton & Barto (2018), Reinforcement Learning: An Introduction, 2nd ed.'
+          url: http://incompleteideas.net/book/RLbook2020.pdf
+          locator: Sec. 13.5 Actor–Critic Methods, p. 331
+      references_replace: true
   unit6/quiz#q2:
+    difficulty: medium
     fix:
+      explanation: |
+        "Unbiased" means the signal matches the true expected return on average. The Monte Carlo
+        return in REINFORCE is unbiased because it is the return actually obtained, not an
+        estimate [^1]. "High variance" means noisy: randomness in the environment and in the
+        policy can give very different returns from the same starting state [^1]. The two wrong
+        options swap the terms. A biased signal is one that systematically differs from the true
+        return; bootstrapping on a critic's estimate is the classic source of such bias [^2].
+        A low-variance signal is the one that stays stable despite the noise.
       why:
         3: If a reward signal has low variance, then it's less affected by the noise of the environment and produces similar values regardless of the random elements in the environment
+      references:
+        - source: hf-deep-rl-course
+          url: https://huggingface.co/learn/deep-rl-course/unit6/variance-problem
+          locator: Unit 6, "The Problem of Variance in Reinforce"
+        - title: 'Sutton & Barto (2018), Reinforcement Learning: An Introduction, 2nd ed.'
+          url: http://incompleteideas.net/book/RLbook2020.pdf
+          locator: Sec. 13.5 Actor–Critic Methods, p. 331
+      references_replace: true
   unit7/quiz#q1:
+    difficulty: easy
     fix:
       question: |
         Choose the option that fits best when comparing different types of multi-agent environments.
 
         - Your agents aim to maximize common benefits in ____ environments
         - Your agents aim to maximize common benefits while minimizing the opponent's in ____ environments
+      explanation: |
+        In cooperative environments agents must maximise a common benefit, like warehouse robots
+        working together to load and unload packages as fast as possible [^1]. In competitive
+        (adversarial) environments each agent maximises its own benefit by minimising the opponent's,
+        as in tennis [^1]. Environments can also mix both, as in 2-vs-2 soccer, where teammates
+        cooperate to beat the other team [^1].
+      why:
+        0: It is the other way round. Agents maximize a shared benefit in cooperative environments; in competitive ones they also try to lower the opponent's benefit.
+      references:
+        - source: hf-deep-rl-course
+          url: https://huggingface.co/learn/deep-rl-course/unit7/introduction-to-marl#different-types-of-multi-agent-environments
+          locator: Unit 7, An introduction to Multi-Agents Reinforcement Learning (MARL), sec. Different types of multi-agent environments
+      references_replace: true
   unit7/quiz#q6:
+    difficulty: medium
     fix:
-      question: What are the main motivations to use an Elo rating score?
+      question: What are the main motivations to use an Elo rating score? Select all that apply.
+      explanation: |
+        Elo measures relative skill. The expected score $E_A = 1/\left(1+10^{(R_B-R_A)/400}\right)$
+        depends on the rating gap, and the update $R_A + K(S_A - E_A)$ means a favourite who wins gains
+        only a few points while an upset transfers many [^1]. It is also zero-sum: the winner takes
+        points from the loser, so more points move after an unexpected result but the total stays the
+        same [^1]. Keeping a high rating is in fact hard (rating deflation), and in team games Elo uses
+        the team average without measuring each player's contribution [^1].
       options:
         0: The score takes into account the difference in skill between you and your opponent
+        1: More points change hands after an upset than after an expected result, but the sum of the ratings stays the same
+        2: It is easy for an agent to keep a high rating
+        3: It measures the individual contribution of each player in a team
+      why:
+        2: 'Keeping a high rating is hard: with rating deflation, a good rating needs sustained skill just to stay where it is [^1].'
+        3: For team games Elo uses each team's average rating; it does not measure what each player contributes [^1].
+      references:
+        - source: hf-deep-rl-course
+          url: https://huggingface.co/learn/deep-rl-course/unit7/self-play#the-elo-score-to-evaluate-our-agent
+          locator: Unit 7, Self-Play, secs. The ELO Score to evaluate our agent, Example, The Advantages, The Disadvantages
+      references_replace: true
   unit5/quiz#q5:
-    topic: rl-basics
+    difficulty: easy
     fix:
       question: |
         RL environments built in a game engine (for example with Unity ML-Agents) can give the agent
         its observation in two ways: as rendered **frames** or as **raycasts**. What is the
         difference?
+      explanation: |
+        A frame-based observation is the rendered image, so the agent perceives the environment
+        through the pixels of the screen [^1]. A raycast is instead a line projected from the agent,
+        best thought of as a laser, that detects whether it passes through an object: the
+        SnowballTarget agent observes the world through several sets of raycasts (plus a "can I
+        shoot" flag) rather than through vision [^1], and the Pyramids agent uses 148 raycasts that
+        detect the switch, bricks, the golden brick and walls [^2]. Raycasts therefore do not sample
+        or downscale pixels, and the reversed pairing mixes up which observation is which.
       options:
         - text: Frames give the agent the pixels of the rendered screen; raycasts are lines cast from the agent that report which objects they hit
           correct: true
@@ -719,6 +1256,14 @@ items:
           why: It is the other way round. Frames are the screen pixels; raycasts are the lines that detect collisions.
         - text: Both give the agent pixels; raycasts simply render the same screen at a much lower resolution
           why: A raycast observation contains no image at all, only what each ray collided with.
+      references:
+        - source: hf-deep-rl-course
+          url: https://huggingface.co/learn/deep-rl-course/unit5/snowball-target#the-observation-space
+          locator: Unit 5, The SnowballTarget environment, sec. The observation space
+        - source: hf-deep-rl-course
+          url: https://huggingface.co/learn/deep-rl-course/unit5/pyramids#the-observation-space
+          locator: Unit 5, The Pyramids environment, sec. The observation space
+      references_replace: true
   unit5/quiz#q1:
     drop: off-scope
     comment: which game engines and IDEs are made for video game development (Unity, Unreal, Godot vs Rider, CLion, VS Code); no ML knowledge
@@ -734,3 +1279,164 @@ items:
   unit5/quiz#q6:
     drop: tool-specific
     comment: asks which observation inputs two particular ML-Agents environments (SnowballTarget, Pyramids) use; environment specs with no concept beyond unit5/quiz#q5
+  unit1/quiz#q4:
+    difficulty: easy
+    fix:
+      explanation: |
+        An episodic task has a starting point and a terminal state, so the interaction breaks into
+        episodes, each a list of states, actions, rewards and new states. In Super Mario Bros an
+        episode starts when a level is launched and ends when Mario is killed or reaches the end of the
+        level [^1]. A continuing task has no terminal state and runs until we stop it, like an agent
+        that trades stocks automatically [^1]. Sutton & Barto draw the same line between episodic and
+        continuing tasks [^2]. "Recursive" and "adversarial" are not task types in this
+        classification.
+      why:
+        1: 'Not a task type: tasks are classified by whether they end in a terminal state (episodic) or go on without end (continuing) [^1][^2].'
+        2: An opponent can appear in either kind of task; the two types differ only in whether there is a terminal state [^1].
+      references:
+        - source: hf-deep-rl-course
+          url: https://huggingface.co/learn/deep-rl-course/unit1/tasks
+          locator: Unit 1, "Type of tasks" (Episodic task; Continuing tasks)
+        - title: 'Sutton & Barto (2018), Reinforcement Learning: An Introduction, 2nd ed.'
+          url: http://incompleteideas.net/book/RLbook2020.pdf
+          locator: Sec. 3.3 Returns and Episodes, p. 54
+      references_replace: true
+  unit2/mid-way-quiz#q1:
+    difficulty: easy
+    fix:
+      explanation: |
+        Both approaches look for the optimal policy $\pi^*$. Policy-based methods learn it directly:
+        the agent is trained to output which action to take in each state. Value-based methods learn it
+        indirectly: the agent learns how valuable each state is and then takes the actions that lead to
+        the more valuable states [^1]. Evolution strategies are not a third main approach. Like hill
+        climbing and simulated annealing, they are one way of optimizing a policy's parameters
+        directly, so they belong to the policy-based family [^2]. "Random-based methods" is not an
+        established category.
+      why:
+        1: 'Not an established category: acting at random can help exploration, but it is not a way of finding the optimal policy [^1].'
+        3: Evolution strategies optimize a policy's parameters directly, so they are one kind of policy-based method rather than a main approach of their own [^2].
+      references:
+        - source: hf-deep-rl-course
+          url: https://huggingface.co/learn/deep-rl-course/unit1/two-methods#policy
+          locator: "Unit 1, \"Two main approaches for solving RL problems\", section \"The Policy π: the agent's brain\""
+        - source: hf-deep-rl-course
+          url: https://huggingface.co/learn/deep-rl-course/unit4/what-are-policy-based-methods#the-difference-between-policy-based-and-policy-gradient-methods
+          locator: Unit 4, "What are the policy-based methods?", section "The difference between policy-based and policy-gradient methods"
+      references_replace: true
+  unit2/mid-way-quiz#q4:
+    difficulty: easy
+    fix:
+      explanation: |
+        Monte Carlo waits until the episode ends, computes the actual return $G_t$ and uses it as
+        the target: $V(S_t) \leftarrow V(S_t) + \alpha[G_t - V(S_t)]$ [^1][^2]. TD(0) updates after a
+        single step. Its target $R_{t+1} + \gamma V(S_{t+1})$ uses the current estimate of the next
+        state's value, which is called bootstrapping [^1][^2]. The two other options swap the
+        methods.
+      why:
+        1: Monte Carlo needs the actual return $G_t$, which is only known once the episode has ended [^1][^2].
+        2: TD(0) updates after a single step, with the target $R_{t+1} + \gamma V(S_{t+1})$, instead of waiting for the end of the episode [^1][^2].
+      references:
+        - source: hf-deep-rl-course
+          url: https://huggingface.co/learn/deep-rl-course/unit2/mc-vs-td
+          locator: Unit 2, "Monte Carlo vs Temporal Difference Learning"
+        - title: 'Sutton & Barto (2018), Reinforcement Learning: An Introduction, 2nd ed.'
+          url: http://incompleteideas.net/book/RLbook2020.pdf
+          locator: Sec. 6.1 TD Prediction, Eqs. (6.1)–(6.2), pp. 119–120
+      references_replace: true
+  unit3/quiz#q4:
+    difficulty: easy
+    fix:
+      explanation: |
+        The Deep Q-Learning training algorithm alternates two phases [^1]. In the sampling phase the
+        agent acts in the environment and stores the experience tuples it observes in a replay memory.
+        In the training phase it draws a small random batch of tuples from that memory and learns from
+        it with a gradient-descent step [^1][^2]. Drawing the batch at random is part of the training
+        phase, not a separate shuffling phase, and nothing is reranked.
+      why:
+        1: Drawing a random mini-batch from the replay memory is part of the training phase, not a phase of its own [^1].
+        2: 'Nothing is reranked: the algorithm only alternates between collecting experience and learning from a sample of it [^1].'
+      references:
+        - source: hf-deep-rl-course
+          url: https://huggingface.co/learn/deep-rl-course/unit3/deep-q-algorithm
+          locator: Unit 3, "The Deep Q-Learning Algorithm" (the two phases, Sampling and Training)
+        - title: 'Sutton & Barto (2018), Reinforcement Learning: An Introduction, 2nd ed.'
+          url: http://incompleteideas.net/book/RLbook2020.pdf
+          locator: Sec. 16.5 Human-level Video Game Play (experience replay), p. 440
+      references_replace: true
+  unit4/quiz#q1:
+    difficulty: medium
+    fix:
+      explanation: |
+        Policy-gradient methods output a probability distribution over actions, so they can learn a
+        genuinely stochastic policy. This builds exploration in and handles perceptual aliasing,
+        where two states look identical but need different actions [^1]. Value methods have no
+        natural way to find stochastic optimal policies [^2]. They also suit huge or continuous
+        action spaces. A Q-network has to score every action and take the max, and maximizing
+        over a continuous output is an optimization problem in its own right [^1]. The global
+        maximum claim is false: policy gradient frequently ends up at a local maximum, and
+        REINFORCE is only guaranteed to converge to a local optimum [^1][^2].
+      references:
+        - source: hf-deep-rl-course
+          url: https://huggingface.co/learn/deep-rl-course/unit4/advantages-disadvantages
+          locator: Unit 4, "The advantages and disadvantages of policy-gradient methods" (Advantages; Disadvantages)
+        - title: 'Sutton & Barto (2018), Reinforcement Learning: An Introduction, 2nd ed.'
+          url: http://incompleteideas.net/book/RLbook2020.pdf
+          locator: Sec. 13.1 Policy Approximation and its Advantages, pp. 322–324; Sec. 13.3 REINFORCE, p. 329
+      references_replace: true
+  unit6/quiz#q5:
+    difficulty: medium
+    fix:
+      explanation: |
+        Actor-critic learns two function approximators. The actor is a policy $\pi_\theta$ that
+        chooses actions, and the critic is a value function that judges them [^1]. It was
+        introduced to cut the high variance of REINFORCE's Monte Carlo returns [^1]. The critic's
+        one-step return varies far less than the actual return, although it adds some bias [^2].
+        The claim that the critic learns nothing is false: during training the actor updates its
+        policy parameters and the critic updates its value parameters [^1].
+      references:
+        - source: hf-deep-rl-course
+          url: https://huggingface.co/learn/deep-rl-course/unit6/advantage-actor-critic#the-actor-critic-process
+          locator: Unit 6, "Advantage Actor-Critic (A2C)", sections "Reducing variance with Actor-Critic methods" and "The Actor-Critic Process"
+        - title: 'Sutton & Barto (2018), Reinforcement Learning: An Introduction, 2nd ed.'
+          url: http://incompleteideas.net/book/RLbook2020.pdf
+          locator: Sec. 13.5 Actor–Critic Methods, p. 331
+      references_replace: true
+  unit7/quiz#q2:
+    difficulty: medium
+    fix:
+      explanation: |
+        In decentralized learning each agent is trained independently, as if it were alone, and treats
+        the other agents as part of the environment dynamics rather than as agents [^1]. The catch is
+        that those other agents keep learning and changing, so the underlying MDP shifts over time: the
+        environment becomes non-stationary, not stationary [^1]. Many RL algorithms then cannot
+        guarantee convergence to a global optimum [^1].
+      references:
+        - source: hf-deep-rl-course
+          url: https://huggingface.co/learn/deep-rl-course/unit7/multi-agent-setting#decentralized-system
+          locator: Unit 7, Designing Multi-Agents systems, sec. Decentralized system
+      references_replace: true
+  unit7/quiz#q3:
+    difficulty: medium
+    fix:
+      question: Which of the following statements are true about `centralized` learning? Select all that apply.
+      explanation: |
+        In the centralized approach a high-level process gathers all agents' experiences in a shared
+        buffer and learns one common policy from them [^1]. The policy takes the current state of the
+        environment and outputs joint actions, and the reward is global [^1]. Because the agents are
+        treated as one larger entity and each knows how the others' policy changes (it is the same
+        policy), the environment is stationary [^1]. Treating the other agents as part of the
+        environment is the decentralized approach, which makes the environment non-stationary [^1].
+      options:
+        - text: It learns one common policy based on the learnings from all agents' interactions
+          correct: true
+        - text: The reward is global
+          correct: true
+        - text: The environment with this approach is stationary
+          correct: true
+        - text: Each agent learns its own policy and treats the other agents as part of the environment
+          why: That is decentralized learning; the centralized approach pools all agents' experience and learns one shared policy [^1].
+      references:
+        - source: hf-deep-rl-course
+          url: https://huggingface.co/learn/deep-rl-course/unit7/multi-agent-setting#centralized-approach
+          locator: Unit 7, Designing Multi-Agents systems, sec. Centralized approach
+      references_replace: true

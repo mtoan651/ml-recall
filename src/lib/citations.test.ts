@@ -20,6 +20,14 @@ describe("citationMarkers (mirror of schema.py citation_markers)", () => {
     expect(citationMarkers(text)).toEqual([5]);
   });
 
+  it("lets inline math wrap onto the next line", () => {
+    expect(citationMarkers("so $a +\nb$ holds [^1] and $c$ too [^2]")).toEqual([1, 2]);
+  });
+
+  it("treats an escaped \\$ as a literal dollar", () => {
+    expect(citationMarkers("costs \\$45 [^1] since $x + y$ [^2] and \\$5")).toEqual([1, 2]);
+  });
+
   it("handles empty input", () => {
     expect(citationMarkers(undefined)).toEqual([]);
     expect(citationMarkers(null)).toEqual([]);

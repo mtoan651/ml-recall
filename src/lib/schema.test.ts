@@ -162,9 +162,14 @@ describe("question rules (Question._consistent)", () => {
       references: refs,
     };
     expect(ok(q)).toBe(false);
-    expect(ok({ ...q, difficulty: "easy", explanation: "Because." })).toBe(false);
-    expect(ok({ ...q, difficulty: "easy", explanation: "Because [^1]." })).toBe(true);
-    expect(ok({ ...q, difficulty: "easy", explanation: "Because $[^1]$." })).toBe(false);
+    const by = { reviewed_by: "claude" };
+    expect(ok({ ...q, ...by, difficulty: "easy", explanation: "Because." })).toBe(false);
+    expect(ok({ ...q, ...by, difficulty: "easy", explanation: "Because [^1]." })).toBe(true);
+    expect(ok({ ...q, ...by, difficulty: "easy", explanation: "Because $[^1]$." })).toBe(false);
+    expect(ok({ ...q, difficulty: "easy", explanation: "Because [^1]." })).toBe(false);
+    expect(ok({ ...q, reviewed_by: "someone", difficulty: "easy", explanation: "[^1]" })).toBe(
+      false,
+    );
   });
 
   it("checks that every citation marker has a reference", () => {

@@ -19,7 +19,14 @@ Text = Annotated[str, StringConstraints(min_length=1)]
 
 # Citation markers are Markdown-footnote style: "... is shift-invariant [^1]."
 CITATION_RE = re.compile(r"\[\^(\d+)\]")
-_CODE_OR_MATH_RE = re.compile(r"```.*?```|`[^`\n]*`|\$\$.*?\$\$|\$[^$\n]*\$", re.DOTALL)
+# Math as remark-math reads it: an escaped \$ is a literal dollar, and inline math may wrap
+# onto the next line but not across a blank line.
+_CODE_OR_MATH_RE = re.compile(
+    r"```.*?```|`[^`\n]*`"
+    r"|(?<!\\)\$\$.*?(?<!\\)\$\$"
+    r"|(?<!\\)\$(?:\\\$|[^$\n]|\n(?![ \t]*\n))*?(?<!\\)\$",
+    re.DOTALL,
+)
 
 
 def citation_markers(text: str | None) -> list[int]:
@@ -198,6 +205,13 @@ class Question(_Strict):
     status: Literal["draft", "reviewed", "retired"] = Field(
         description="draft: unreviewed; reviewed: checked + cited; retired: hidden, id kept forever"
     )
+    reviewed_by: Literal["owner", "claude"] | None = Field(
+        None,
+        description=(
+            "who reviewed it (status reviewed): owner = the repository owner; "
+            "claude = Claude, at the owner's request"
+        ),
+    )
 
     @model_validator(mode="after")
     def _consistent(self) -> Question:
@@ -209,7 +223,9 @@ class Question(_Strict):
             self._check_blanks(self.answer)
 
         if self.status == "reviewed":
-            missing = [f for f in ("explanation", "difficulty") if not getattr(self, f)]
+            missing = [
+                f for f in ("explanation", "difficulty", "reviewed_by") if not getattr(self, f)
+            ]
             if missing:
                 raise ValueError(f"reviewed questions need: {', '.join(missing)}")
             if not citation_markers(self.explanation):

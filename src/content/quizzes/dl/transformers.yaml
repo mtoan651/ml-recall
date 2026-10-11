@@ -28,7 +28,8 @@ questions:
       id: hf-llm-course
       ref: chapter1/7#q8
       url: https://huggingface.co/learn/llm-course/chapter1/7
-    status: draft
+    status: reviewed
+    reviewed_by: claude
   - id: transformers-002
     type: single
     difficulty: easy
@@ -43,9 +44,9 @@ questions:
     explanation: |
       Sequence-to-sequence (encoder-decoder) models are best suited to generating a new text from
       a given input, such as a summary or a translation. The encoder reads the whole input with
-      bidirectional attention, and the decoder then generates the output text [^1]. The course's
-      guide to choosing an architecture lists encoder-decoder models such as BART and T5 for
-      summarization [^1]. Modern decoder-only LLMs can summarize as well [^1], but they are
+      bidirectional attention, and the decoder then generates the output text [^1]. The Hugging Face
+      LLM Course's guide to choosing an architecture lists encoder-decoder models such as BART and T5
+      for summarization [^1]. Modern decoder-only LLMs can summarize as well [^1], but they are
       general-purpose text generators, not the dedicated architecture for this task.
     references:
       - source: hf-llm-course
@@ -55,7 +56,8 @@ questions:
       id: hf-llm-course
       ref: chapter1/7#q9
       url: https://huggingface.co/learn/llm-course/chapter1/7
-    status: draft
+    status: reviewed
+    reviewed_by: claude
   - id: transformers-003
     type: single
     difficulty: easy
@@ -69,10 +71,10 @@ questions:
         why: Sequence-to-sequence models are better suited for tasks where you want to generate text based on an input sentence, not a label.
     explanation: |
       Encoder models use bidirectional attention, so each token's representation reflects the
-      whole sentence. That is what sentence classification needs, and the course suggests encoder
-      models such as BERT and RoBERTa for text classification [^1]. Decoder models are built for
-      generating text, and sequence-to-sequence models for turning an input text into a new output
-      text, not for extracting a label [^1].
+      whole sentence. That is what sentence classification needs, and the Hugging Face LLM Course
+      suggests encoder models such as BERT and RoBERTa for text classification [^1]. Decoder models
+      are built for generating text, and sequence-to-sequence models for turning an input text into a
+      new output text, not for extracting a label [^1].
     references:
       - source: hf-llm-course
         url: https://huggingface.co/learn/llm-course/chapter1/6#encoder-models
@@ -81,24 +83,27 @@ questions:
       id: hf-llm-course
       ref: chapter1/7#q10
       url: https://huggingface.co/learn/llm-course/chapter1/7
-    status: draft
+    status: reviewed
+    reviewed_by: claude
   - id: transformers-004
     type: single
     difficulty: easy
     question: How many dimensions does the tensor output by the base Transformer model have, and what are they?
     options:
-      - text: '2: The sequence length and the batch size'
-        why: 'False! The tensor output by the model has a third dimension: hidden size.'
-      - text: '2: The sequence length and the hidden size'
-        why: False! All Transformer models handle batches, even with a single sequence; that would be a batch size of 1!
-      - text: '3: The sequence length, the batch size, and the hidden size'
+      - text: '2: batch size and sequence length'
+        why: 'The hidden size is missing: every token comes out as a vector of `hidden_size` numbers (768 for BERT-base) [^1].'
+      - text: '2: sequence length and hidden size'
+        why: The batch dimension is always there; a single sentence is passed as a batch of size 1 [^2].
+      - text: '3: batch size, sequence length and hidden size'
         correct: true
+      - text: '3: batch size, number of layers and hidden size'
+        why: The base model returns the hidden states of its last layer, one vector per token, so the middle dimension is the sequence length [^1].
     explanation: |
       The base model (`AutoModel`) outputs hidden states with three dimensions: the batch size
       (how many sequences are processed at once), the sequence length, and the hidden size (the
-      vector dimension of each input token) [^1]. In the course example, two sentences of 16 tokens
-      give `last_hidden_state.shape == torch.Size([2, 16, 768])` [^1]. The batch dimension is
-      always there: a single sentence is sent as a batch of one sequence [^2].
+      vector dimension of each input token) [^1]. In the Hugging Face LLM Course example, two
+      sentences of 16 tokens give `last_hidden_state.shape == torch.Size([2, 16, 768])` [^1]. The
+      batch dimension is always there: a single sentence is sent as a batch of one sequence [^2].
     references:
       - source: hf-llm-course
         url: https://huggingface.co/learn/llm-course/chapter2/2#a-high-dimensional-vector
@@ -110,7 +115,8 @@ questions:
       id: hf-llm-course
       ref: chapter2/9#q2
       url: https://huggingface.co/learn/llm-course/chapter2/9
-    status: draft
+    status: reviewed
+    reviewed_by: claude
   - id: transformers-005
     type: single
     difficulty: easy
@@ -136,7 +142,8 @@ questions:
       id: hf-llm-course
       ref: chapter2/9#q4
       url: https://huggingface.co/learn/llm-course/chapter2/9
-    status: draft
+    status: reviewed
+    reviewed_by: claude
   - id: transformers-006
     type: multiple
     difficulty: medium
@@ -169,20 +176,21 @@ questions:
       id: hf-llm-course
       ref: chapter2/9#q6
       url: https://huggingface.co/learn/llm-course/chapter2/9
-    status: draft
+    status: reviewed
+    reviewed_by: claude
   - id: transformers-007
     type: single
     difficulty: easy
     question: What does the `token_type_ids` field represent in BERT tokenization?
     options:
-      - text: The position of each token in the sequence.
-        why: That would be position embeddings, not token_type_ids.
-      - text: Which sentence each token belongs to when processing sentence pairs.
+      - text: The position index of each token within the input sequence
+        why: Order information comes from BERT's position embeddings inside the model, not from `token_type_ids`.
+      - text: Which sentence of a sentence pair each token belongs to
         correct: true
-      - text: The attention mask for each token.
-        why: The attention mask is a separate field that indicates which tokens to attend to.
-      - text: The vocabulary ID of each token.
-        why: That's the input_ids field, not token_type_ids.
+      - text: Whether each token is a real token or padding to be ignored
+        why: That is the separate `attention_mask` field [^1].
+      - text: The vocabulary ID of each token, used to look up its embedding
+        why: That is the `input_ids` field [^1].
     explanation: |
       For a sentence pair, BERT's tokenizer builds `[CLS] sentence1 [SEP] sentence2 [SEP]`, and
       `token_type_ids` says which part each token belongs to: 0 for `[CLS] sentence1 [SEP]` and 1
@@ -198,22 +206,27 @@ questions:
       id: hf-llm-course
       ref: chapter3/2#q3
       url: https://huggingface.co/learn/llm-course/chapter3/2
-    status: draft
+    status: reviewed
+    reviewed_by: claude
   - id: transformers-008
     type: single
     difficulty: easy
-    question: Attention mechanism provides a means of _____ the impact of an input vector on an output prediction of an RNN
+    question: In an RNN encoder–decoder, an attention mechanism provides a means of _____ the impact of each input vector on each output prediction.
     options:
       - text: weighting
         correct: true
+      - text: equalizing
+        why: Attention does the opposite of making all inputs count the same; it computes a separate weight for each input vector at each output step [^1][^2].
+      - text: removing
+        why: No input is removed; every encoder state enters the weighted sum, some just with small weights [^2].
       - text: training
-      - text: testing
+        why: Training is how the parameters are learned; attention is part of the model's forward computation, used in training and at test time alike.
     explanation: |
       Attention lets the decoder use all encoder hidden states $h_i$ when producing output $y_t$, each
       with its own weight $\alpha_{t,i}$, so it weights how much each input vector influences each
       output prediction [^1]. In Bahdanau attention the context vector is exactly such a weighted sum,
-      $c_{t'} = \sum_t \alpha(s_{t'-1}, h_t)\, h_t$ [^2]. Training and testing are stages of building
-      a model, not something attention does.
+      $c_{t'} = \sum_t \alpha(s_{t'-1}, h_t)\, h_t$ [^2]. Every input stays in the sum; only its weight
+      changes from one output step to the next.
     references:
       - source: ms-ai-for-beginners
         url: https://github.com/microsoft/AI-For-Beginners/blob/392d0df1b2647cbee104942390551f1ed9e072c8/lessons/5-NLP/18-Transformers/README.md
@@ -225,21 +238,24 @@ questions:
       id: ms-ai-for-beginners
       ref: quiz-118/q1
       url: https://github.com/microsoft/AI-For-Beginners/blob/392d0df1b2647cbee104942390551f1ed9e072c8/etc/quiz-app/src/assets/translations/en/lesson-18.json
-    status: draft
+    status: reviewed
+    reviewed_by: claude
   - id: transformers-009
     type: single
     difficulty: easy
-    question: BERT is an acronym for
+    question: What does the acronym BERT stand for?
     options:
       - text: Bidirectional Encoded Representations From Transformers
+        why: BERT is a stack of Transformer encoder layers, so the E stands for "Encoder", not "Encoded" [^2].
       - text: Bidirectional Encoder Representations From Transformers
         correct: true
       - text: Bidirectional Encoder Representatives of Transformers
+        why: BERT produces representations (vectors) of the input tokens, computed by Transformers; there are no "representatives" in the name [^2].
     explanation: |
       BERT stands for Bidirectional Encoder Representations from Transformers [^1][^2]. It is a stack
       of Transformer encoder layers (12 in BERT-base, 24 in BERT-large), pre-trained on a large text
-      corpus by predicting masked words [^1][^2]. The distractors change "Encoder" to "Encoded" or
-      "Representations" to "Representatives".
+      corpus by predicting masked words [^1][^2], and its output is one contextual representation per
+      input token.
     references:
       - source: ms-ai-for-beginners
         url: https://github.com/microsoft/AI-For-Beginners/blob/392d0df1b2647cbee104942390551f1ed9e072c8/lessons/5-NLP/18-Transformers/README.md#bert
@@ -251,7 +267,8 @@ questions:
       id: ms-ai-for-beginners
       ref: quiz-118/q2
       url: https://github.com/microsoft/AI-For-Beginners/blob/392d0df1b2647cbee104942390551f1ed9e072c8/etc/quiz-app/src/assets/translations/en/lesson-18.json
-    status: draft
+    status: reviewed
+    reviewed_by: claude
   - id: transformers-010
     type: single
     difficulty: easy
@@ -260,14 +277,16 @@ questions:
       - text: different types
         correct: true
       - text: a single type
+        why: One head would be enough for a single type; several heads, each with its own projections, let the layer attend to several kinds of relations at once [^2].
       - text: only short-range types
+        why: Every head can attend to any position, so the heads also capture long-range relations [^1].
     explanation: |
       Multi-head attention runs several attention heads in parallel, each with its own learned
       projections of the queries, keys and values, and concatenates their outputs [^2]. Each head
       can therefore pick up a different kind of dependency, such as long-range versus short-range
-      word relations or co-reference, which is the lesson's reason for using several heads
-      [^1][^2]. A single type would need only one head, and the heads are not limited to short
-      range: long-range relations are among the dependencies they capture [^1][^2].
+      word relations or co-reference, which is why transformers use several heads [^1][^2]. A single
+      type would need only one head, and the heads are not limited to short range: long-range
+      relations are among the dependencies they capture [^1][^2].
     references:
       - source: ms-ai-for-beginners
         url: https://github.com/microsoft/AI-For-Beginners/blob/392d0df1b2647cbee104942390551f1ed9e072c8/lessons/5-NLP/18-Transformers/README.md#multi-head-self-attention
@@ -279,7 +298,8 @@ questions:
       id: ms-ai-for-beginners
       ref: quiz-218/q2
       url: https://github.com/microsoft/AI-For-Beginners/blob/392d0df1b2647cbee104942390551f1ed9e072c8/etc/quiz-app/src/assets/translations/en/lesson-18.json
-    status: draft
+    status: reviewed
+    reviewed_by: claude
   - id: transformers-011
     type: multiple
     difficulty: medium
@@ -298,10 +318,10 @@ questions:
       what elephants eat, and the other words of idioms such as "the elephant in the room" keep
       appearing next to *elephant*. So the trained model learns to give these pairs high attention
       when they occur together, which is what lets it answer diet questions or read an idiom
-      correctly [^1]. Attention weights are computed afresh for each input (the page's "it … tired"
-      versus "it … wide" example), so "gaining a high score" means the model tends to assign that
-      weight whenever the words co-occur. Sarcasm and irony are not filtered out: large models
-      trained on broad data become good at recognising them and learn from them [^1].
+      correctly [^1]. Attention weights are computed afresh for each input, so "gaining a high score"
+      means the model tends to assign that weight whenever the words co-occur. Sarcasm and irony are
+      not filtered out: large models trained on broad data become good at recognising them and learn
+      from them [^1].
     references:
       - source: google-mlcc
         url: https://developers.google.com/machine-learning/crash-course/llm/transformers#what_is_self-attention
@@ -310,7 +330,8 @@ questions:
       id: google-mlcc
       ref: llm/transformers#q1
       url: https://developers.google.com/machine-learning/crash-course/llm/transformers
-    status: draft
+    status: reviewed
+    reviewed_by: claude
   - id: transformers-012
     type: single
     difficulty: medium
@@ -319,8 +340,11 @@ questions:
       - text: Self-attention handles all tokens in parallel and ignores order; an RNN gets order from its steps
         correct: true
       - text: Self-attention cannot handle sequences longer than the embedding size unless positions are encoded
+        why: Sequence length and embedding size are unrelated; without positional encodings self-attention accepts any length but cannot tell the order of the tokens [^2].
       - text: Positional encoding replaces the token embeddings, which a transformer does not use at all
+        why: Positional encodings are added to the token embeddings, which the transformer still uses [^1][^2].
       - text: It adds the recurrent connection between time steps that a transformer would otherwise lack
+        why: The transformer stays non-recurrent; positional encoding only adds order information to each token's input vector [^1].
     explanation: |
       In an RNN the relative position of tokens is given by the number of steps, so it need not be
       represented explicitly; once we switch to attention, the positions must be supplied [^1]. Self-
@@ -339,7 +363,8 @@ questions:
       id: ms-ai-for-beginners
       ref: quiz-118/q3
       url: https://github.com/microsoft/AI-For-Beginners/blob/392d0df1b2647cbee104942390551f1ed9e072c8/etc/quiz-app/src/assets/translations/en/lesson-18.json
-    status: draft
+    status: reviewed
+    reviewed_by: claude
   - id: transformers-013
     type: single
     difficulty: medium
@@ -348,8 +373,11 @@ questions:
       - text: Token and position each get an embedding of the same size, and the two vectors are added
         correct: true
       - text: The position number is appended to the token embedding as one extra dimension at the end of the vector
+        why: The position gets a learned embedding of the full width, and it is added, not appended as one number [^1].
       - text: The token embedding is multiplied by the token's position index
+        why: Scaling by the index only changes the vector's length and gives position 0 a zero vector; the two embeddings are added instead [^1].
       - text: Only the position is embedded; the token itself stays one-hot encoded
+        why: Both the tokens and the positions go through embedding layers, giving vectors of the same size [^1].
     explanation: |
       The sequence of tokens is paired with the sequence of their positions $0, 1, \dots$. With trainable
       positional embedding, embedding layers are applied to both tokens and positions, giving vectors of
@@ -368,7 +396,8 @@ questions:
       id: ms-ai-for-beginners
       ref: quiz-218/q1
       url: https://github.com/microsoft/AI-For-Beginners/blob/392d0df1b2647cbee104942390551f1ed9e072c8/etc/quiz-app/src/assets/translations/en/lesson-18.json
-    status: draft
+    status: reviewed
+    reviewed_by: claude
   - id: transformers-014
     type: single
     difficulty: medium
@@ -377,8 +406,11 @@ questions:
       - text: 'Encoder-decoder attention: queries come from the decoder, keys and values from the encoder outputs'
         correct: true
       - text: Self-attention inside the encoder, applied to the source tokens
+        why: Encoder self-attention only relates the source tokens to each other; the decoder takes no part in it [^2].
       - text: Masked self-attention inside the decoder, applied to the tokens generated so far
+        why: This attends only over the output prefix; the source sentence enters through the encoder–decoder attention [^2].
       - text: 'None: the encoder hands over only its final hidden state, exactly as in an RNN encoder-decoder without attention'
+        why: That bottleneck is what attention was introduced to remove; every decoder layer attends to all encoder outputs [^1][^2].
     explanation: |
       Transformers use attention in two ways: self-attention captures patterns within one text, and the
       attention layer between encoder and decoder performs the translation, much like attention in RNN
@@ -398,9 +430,11 @@ questions:
       id: ms-ai-for-beginners
       ref: quiz-218/q3
       url: https://github.com/microsoft/AI-For-Beginners/blob/392d0df1b2647cbee104942390551f1ed9e072c8/etc/quiz-app/src/assets/translations/en/lesson-18.json
-    status: draft
+    status: reviewed
+    reviewed_by: claude
   - id: transformers-015
     type: single
+    difficulty: medium
     question: |
       A pretrained Whisper model expects log-mel spectrograms as input. You have raw 16 kHz
       waveforms. What is the most reliable way to compute the model's input features?
@@ -414,24 +448,28 @@ questions:
       - text: Let the dataset library compute the features when it decodes the audio
         why: A dataset library decodes and resamples audio, but it does not know a model's feature settings. Feature extraction belongs to the model's preprocessor.
     explanation: |
-      A pretrained model only works well on inputs prepared exactly as during pretraining [^1].
-      Whisper uses 80-channel log-magnitude mel spectrograms computed on 25 ms windows with a 10 ms
-      stride, scaled to a fixed range and padded or trimmed to 30-second chunks [^2]. The
-      checkpoint's own feature extractor reproduces those settings.
+      A pretrained model only works well on inputs prepared exactly as during pretraining, which is why
+      every audio model in 🤗 Transformers comes with a feature extractor that turns raw audio into the
+      input features it expects [^1]. Whisper uses 80-channel log-magnitude mel spectrograms computed on
+      25 ms windows with a 10 ms stride, scaled to a fixed range, from 30-second chunks of 16 kHz
+      audio [^2]. The feature extractor loaded from the Whisper checkpoint reproduces those settings: it
+      pads or truncates every example to 30 s and converts it to a log-mel spectrogram [^1].
     references:
       - source: hf-audio-course
-        locator: Unit 1. Working with audio data
-        url: https://huggingface.co/learn/audio-course/chapter1/introduction
+        locator: Unit 1, Preprocessing an audio dataset, secs. Resampling the audio data and Pre-processing audio data
+        url: https://huggingface.co/learn/audio-course/chapter1/preprocessing
       - title: Radford et al. (2022), Robust Speech Recognition via Large-Scale Weak Supervision
-        locator: Sec. 2.2 Model
+        locator: Sec. 2.1 Data Processing; Sec. 2.2 Model
         url: https://arxiv.org/abs/2212.04356
     source:
       id: hf-audio-course
       ref: chapter1/quiz#q4
       url: https://huggingface.co/learn/audio-course/chapter1/quiz
-    status: draft
+    status: reviewed
+    reviewed_by: claude
   - id: transformers-016
     type: single
+    difficulty: easy
     question: How can you convert a spectrogram generated by a machine learning model into a waveform?
     options:
       - text: We can use a neural network called a vocoder to reconstruct a waveform from the spectrogram.
@@ -440,18 +478,27 @@ questions:
         why: A generated spectrogram is missing phase information that is required to use the inverse STFT.
       - text: You can't convert a spectrogram generated by a machine learning model into a waveform.
         why: It is possible. A vocoder network, or the classic Griffin–Lim algorithm, which estimates the missing phase, can reconstruct a waveform.
-    explanation: Since the phase information is missing in this case, we need to use a vocoder, or the classic Griffin-Lim algorithm to reconstruct the waveform. [^1]
+    explanation: |
+      The inverse STFT turns a spectrogram back into a waveform only if it has the phase as well as the
+      amplitudes, and a spectrogram generated by a model typically holds only the amplitudes [^1]. The
+      missing phase has to be reconstructed, classically with the Griffin–Lim algorithm, or with a
+      neural network called a vocoder, the usual choice in text-to-speech models [^1][^2].
     references:
       - source: hf-audio-course
-        locator: Unit 1. Working with audio data
-        url: https://huggingface.co/learn/audio-course/chapter1/introduction
+        locator: Unit 1, Introduction to audio data, sec. Spectrogram
+        url: https://huggingface.co/learn/audio-course/chapter1/audio_data
+      - source: hf-audio-course
+        locator: Unit 3, Transformer architectures for audio, sec. Model outputs (Spectrogram output)
+        url: https://huggingface.co/learn/audio-course/chapter3/introduction
     source:
       id: hf-audio-course
       ref: chapter1/quiz#q7
       url: https://huggingface.co/learn/audio-course/chapter1/quiz
-    status: draft
+    status: reviewed
+    reviewed_by: claude
   - id: transformers-017
     type: single
+    difficulty: easy
     question: What is a vocoder?
     options:
       - text: An additional neural network that turns the spectrogram output of a transformer into a waveform.
@@ -461,20 +508,27 @@ questions:
       - text: An additional neural network that preprocesses speech audio to remove background noise
         why: Removing background noise is speech enhancement, a preprocessing step. A vocoder is a postprocessing network that synthesises the waveform.
     explanation: |
-      Text-to-speech transformers usually predict a (mel) spectrogram rather than raw audio. A
-      spectrogram has no phase information, so a separate neural network, the vocoder (for
-      example HiFi-GAN), is trained to turn it into a waveform [^1].
+      Text-to-speech transformers such as SpeechT5 usually predict a (mel) spectrogram rather than raw
+      audio, and an additional neural network, the vocoder, turns this spectrogram into a waveform [^1].
+      The vocoder is not part of the sequence-to-sequence model and is trained separately [^2]. Removing
+      background noise would be a preprocessing step, and audio embeddings come from the model's own
+      encoder layers.
     references:
       - source: hf-audio-course
-        locator: Unit 3. Transformer architectures for audio
+        locator: Unit 3, Transformer architectures for audio, sec. Model outputs (Spectrogram output)
         url: https://huggingface.co/learn/audio-course/chapter3/introduction
+      - source: hf-audio-course
+        locator: Unit 3, Seq2Seq architectures, sec. Text-to-speech
+        url: https://huggingface.co/learn/audio-course/chapter3/seq2seq
     source:
       id: hf-audio-course
       ref: chapter3/quiz#q1
       url: https://huggingface.co/learn/audio-course/chapter3/quiz
-    status: draft
+    status: reviewed
+    reviewed_by: claude
   - id: transformers-018
     type: single
+    difficulty: easy
     question: Wav2Vec2, fine-tuned for speech recognition, is an example of which architecture?
     options:
       - text: Seq2Seq architecture
@@ -490,15 +544,17 @@ questions:
       loss, so it is a CTC (encoder-only) architecture [^1].
     references:
       - source: hf-audio-course
-        locator: Unit 3. Transformer architectures for audio
-        url: https://huggingface.co/learn/audio-course/chapter3/introduction
+        locator: Unit 3, CTC architectures, secs. Dude, where's my alignment? and The CTC algorithm
+        url: https://huggingface.co/learn/audio-course/chapter3/ctc
     source:
       id: hf-audio-course
       ref: chapter3/quiz#q2
       url: https://huggingface.co/learn/audio-course/chapter3/quiz
-    status: draft
+    status: reviewed
+    reviewed_by: claude
   - id: transformers-019
     type: single
+    difficulty: medium
     question: What does a blank token in CTC algorithm do?
     options:
       - text: It marks the breaks between the individual words of the sentence
@@ -514,15 +570,17 @@ questions:
       "hello") keeps them as two letters [^1].
     references:
       - source: hf-audio-course
-        locator: Unit 3. Transformer architectures for audio
-        url: https://huggingface.co/learn/audio-course/chapter3/introduction
+        locator: Unit 3, CTC architectures, sec. The CTC algorithm
+        url: https://huggingface.co/learn/audio-course/chapter3/ctc
     source:
       id: hf-audio-course
       ref: chapter3/quiz#q3
       url: https://huggingface.co/learn/audio-course/chapter3/quiz
-    status: draft
+    status: reviewed
+    reviewed_by: claude
   - id: transformers-020
     type: single
+    difficulty: medium
     question: Which of the following statements about CTC models is FALSE?
     options:
       - text: CTC models use only the encoder part of the transformer architecture.
@@ -532,37 +590,44 @@ questions:
       - text: CTC models tend to perform best for speech recognition compared to other architectures.
         correct: true
     explanation: |
-      This statement is false. CTC models are fast and simple, but each frame is predicted
-      independently, so outputs can sound right yet be misspelled, and they often need an
-      external language model. Sequence-to-sequence models such as Whisper, whose decoder acts as
-      a language model, usually reach lower error rates [^1].
+      This statement is false. A CTC head only looks at individual characters, so the output can sound
+      right yet be misspelled, and an external language model is often added as a spellchecker [^1].
+      A sequence-to-sequence model such as Whisper, whose decoder plays the role of a language model,
+      is a more powerful approach, even compared with CTC plus an external language model [^2]. The
+      other two statements are true: CTC models are encoder-only, and Wav2Vec2 and HuBERT share one
+      architecture but are pretrained differently [^1].
     references:
       - source: hf-audio-course
-        locator: Unit 3. Transformer architectures for audio
-        url: https://huggingface.co/learn/audio-course/chapter3/introduction
+        locator: Unit 3, CTC architectures, secs. The CTC algorithm and What's the difference between Wav2Vec2, HuBERT, M-CTC-T, …?
+        url: https://huggingface.co/learn/audio-course/chapter3/ctc
+      - source: hf-audio-course
+        locator: Unit 3, Seq2Seq architectures, sec. Automatic speech recognition
+        url: https://huggingface.co/learn/audio-course/chapter3/seq2seq
     source:
       id: hf-audio-course
       ref: chapter3/quiz#q4
       url: https://huggingface.co/learn/audio-course/chapter3/quiz
-    status: draft
+    status: reviewed
+    reviewed_by: claude
   - id: transformers-021
     type: single
+    difficulty: easy
     question: Which kind of speech-recognition architecture does Whisper use?
     options:
       - text: Seq2Seq architecture
         correct: true
       - text: CNN architecture
-        why: Whisper has two convolution layers at its input, but the model itself is an encoder–decoder transformer.
+        why: Whisper has two convolution layers at its input, but the model itself is an encoder–decoder transformer [^2].
       - text: CTC architecture
-        why: CTC models are encoder-only and predict one token per frame. Whisper's decoder generates the transcript token by token.
+        why: CTC models are encoder-only and predict one token per frame. Whisper's decoder generates the transcript token by token [^1].
     explanation: |
       Whisper is an encoder–decoder (sequence-to-sequence) transformer. The encoder reads the
       log-mel spectrogram, and the decoder generates the text tokens autoregressively, attending
-      to the encoder output through cross-attention [^1] [^2].
+      to the encoder output through cross-attention [^1][^2].
     references:
       - source: hf-audio-course
-        locator: Unit 3. Transformer architectures for audio
-        url: https://huggingface.co/learn/audio-course/chapter3/introduction
+        locator: Unit 3, Seq2Seq architectures, sec. Automatic speech recognition
+        url: https://huggingface.co/learn/audio-course/chapter3/seq2seq
       - title: Radford et al. (2022), Robust Speech Recognition via Large-Scale Weak Supervision
         locator: Sec. 2.2 Model
         url: https://arxiv.org/abs/2212.04356
@@ -570,7 +635,8 @@ questions:
       id: hf-audio-course
       ref: chapter3/quiz#q5
       url: https://huggingface.co/learn/audio-course/chapter3/quiz
-    status: draft
+    status: reviewed
+    reviewed_by: claude
   - id: transformers-022
     type: short_answer
     difficulty: hard
@@ -591,12 +657,12 @@ questions:
     explanation: |
       With $p_i = \mathrm{softmax}_i(q k_i)$ one gets $\partial p_i/\partial q = p_i(k_i - \sum_j p_j k_j)$,
       so the derivative is $\sum_i p_i k_i^2 - (\sum_i p_i k_i)^2$, the variance of the keys under
-      the attention distribution. This is the scalar case of the exercise's identity
+      the attention distribution [^1]. This is the scalar case of the identity
       $\nabla_{\mathbf{q}}\mathrm{Attention} = \mathrm{Cov}_{p(\mathbf{k}_i;\mathbf{q})}[\mathbf{k}_i]$
-      for softmax attention [^1]. At $q = 0$ the weights are uniform, the mean
-      key is 1 and the mean squared key $5/3$, giving $2/3$. The gradient vanishes when the weights
-      concentrate on one key, one reason why dot-product scores are scaled to keep the softmax out of
-      saturation [^2].
+      for softmax attention with keys equal to values, which d2l asks you to prove [^3]. At $q = 0$ the
+      weights are uniform, the mean key is 1 and the mean squared key $5/3$, giving $2/3$. The gradient
+      vanishes when the weights concentrate on one key, one reason why dot-product scores are scaled to
+      keep the softmax out of saturation [^2].
     references:
       - source: d2l
         locator: Sec. 11.1 Queries, Keys, and Values (softmax attention weights)
@@ -611,7 +677,8 @@ questions:
       id: d2l
       ref: chapter_attention-mechanisms-and-transformers/queries-keys-values#ex2
       url: https://d2l.ai/chapter_attention-mechanisms-and-transformers/queries-keys-values.html#exercises
-    status: draft
+    status: reviewed
+    reviewed_by: claude
   - id: transformers-023
     type: single
     difficulty: medium
@@ -654,7 +721,8 @@ questions:
       id: d2l
       ref: chapter_attention-mechanisms-and-transformers/attention-pooling#ex3
       url: https://d2l.ai/chapter_attention-mechanisms-and-transformers/attention-pooling.html#exercises
-    status: draft
+    status: reviewed
+    reviewed_by: claude
   - id: transformers-024
     type: single
     difficulty: medium
@@ -695,7 +763,8 @@ questions:
       id: d2l
       ref: chapter_attention-mechanisms-and-transformers/attention-scoring-functions#ex1
       url: https://d2l.ai/chapter_attention-mechanisms-and-transformers/attention-scoring-functions.html#exercises
-    status: draft
+    status: reviewed
+    reviewed_by: claude
   - id: transformers-025
     type: short_answer
     difficulty: easy
@@ -733,7 +802,8 @@ questions:
       id: d2l
       ref: chapter_attention-mechanisms-and-transformers/attention-scoring-functions#ex2
       url: https://d2l.ai/chapter_attention-mechanisms-and-transformers/attention-scoring-functions.html#exercises
-    status: draft
+    status: reviewed
+    reviewed_by: claude
   - id: transformers-026
     type: single
     difficulty: medium
@@ -775,7 +845,8 @@ questions:
       id: d2l
       ref: chapter_attention-mechanisms-and-transformers/attention-scoring-functions#ex3
       url: https://d2l.ai/chapter_attention-mechanisms-and-transformers/attention-scoring-functions.html#exercises
-    status: draft
+    status: reviewed
+    reviewed_by: claude
   - id: transformers-027
     type: single
     difficulty: medium
@@ -815,7 +886,8 @@ questions:
       id: d2l
       ref: chapter_attention-mechanisms-and-transformers/multihead-attention#ex2
       url: https://d2l.ai/chapter_attention-mechanisms-and-transformers/multihead-attention.html#exercises
-    status: draft
+    status: reviewed
+    reviewed_by: claude
   - id: transformers-028
     type: single
     difficulty: medium
@@ -859,7 +931,8 @@ questions:
       id: d2l
       ref: chapter_attention-mechanisms-and-transformers/self-attention-and-positional-encoding#ex2
       url: https://d2l.ai/chapter_attention-mechanisms-and-transformers/self-attention-and-positional-encoding.html#exercises
-    status: draft
+    status: reviewed
+    reviewed_by: claude
   - id: transformers-029
     type: short_answer
     difficulty: medium
@@ -897,7 +970,8 @@ questions:
       id: d2l
       ref: chapter_attention-mechanisms-and-transformers/self-attention-and-positional-encoding#ex3
       url: https://d2l.ai/chapter_attention-mechanisms-and-transformers/self-attention-and-positional-encoding.html#exercises
-    status: draft
+    status: reviewed
+    reviewed_by: claude
   - id: transformers-030
     type: single
     difficulty: medium
@@ -937,7 +1011,8 @@ questions:
       id: d2l
       ref: chapter_attention-mechanisms-and-transformers/transformer#ex2
       url: https://d2l.ai/chapter_attention-mechanisms-and-transformers/transformer.html#exercises
-    status: draft
+    status: reviewed
+    reviewed_by: claude
   - id: transformers-031
     type: single
     difficulty: easy
@@ -975,7 +1050,8 @@ questions:
       id: d2l
       ref: chapter_attention-mechanisms-and-transformers/transformer#ex4
       url: https://d2l.ai/chapter_attention-mechanisms-and-transformers/transformer.html#exercises
-    status: draft
+    status: reviewed
+    reviewed_by: claude
   - id: transformers-032
     type: short_answer
     difficulty: medium
@@ -1016,7 +1092,8 @@ questions:
       id: d2l
       ref: chapter_attention-mechanisms-and-transformers/vision-transformer#ex1
       url: https://d2l.ai/chapter_attention-mechanisms-and-transformers/vision-transformer.html#exercises
-    status: draft
+    status: reviewed
+    reviewed_by: claude
   - id: transformers-033
     type: single
     difficulty: medium
@@ -1061,7 +1138,8 @@ questions:
       id: d2l
       ref: chapter_attention-mechanisms-and-transformers/vision-transformer#ex2
       url: https://d2l.ai/chapter_attention-mechanisms-and-transformers/vision-transformer.html#exercises
-    status: draft
+    status: reviewed
+    reviewed_by: claude
   - id: transformers-034
     type: multiple
     difficulty: medium
@@ -1082,7 +1160,7 @@ questions:
       - text: The cost of self-attention grows quadratically with the sequence length, because it scores every pair of tokens
         correct: true
       - text: A self-attention layer outputs a single scalar for each token
-        why: Each output $y_i$ is a weighted sum of value vectors, so it is a vector (100-dimensional in the course's example), not a scalar [^2].
+        why: Each output $y_i$ is a weighted sum of value vectors, so it is a vector with the dimension of the values, not a scalar [^2].
     explanation: |
       Transformers eliminate recurrence and process all tokens simultaneously, which makes them easy
       to parallelize [^1]. Each token is projected into a query, a key and a value; the scores
@@ -1104,7 +1182,8 @@ questions:
       id: ubc-dsci575
       ref: lectures/notes/07_more-transformers.ipynb#ex7.1
       url: https://github.com/UBC-MDS/DSCI_575_adv-mach-learn/blob/af9d47c5fdaa26aa9a50e0f50cd991cf325f1972/lectures/notes/07_more-transformers.ipynb
-    status: draft
+    status: reviewed
+    reviewed_by: claude
   - id: transformers-035
     type: multiple
     difficulty: medium
@@ -1148,7 +1227,8 @@ questions:
       id: ubc-dsci575
       ref: lectures/notes/07_more-transformers.ipynb#ex7.2
       url: https://github.com/UBC-MDS/DSCI_575_adv-mach-learn/blob/af9d47c5fdaa26aa9a50e0f50cd991cf325f1972/lectures/notes/07_more-transformers.ipynb
-    status: draft
+    status: reviewed
+    reviewed_by: claude
   - id: transformers-036
     type: multiple
     difficulty: easy
@@ -1186,7 +1266,8 @@ questions:
       id: ubc-dsci575
       ref: lectures/notes/07_more-transformers.ipynb#ex7.3
       url: https://github.com/UBC-MDS/DSCI_575_adv-mach-learn/blob/af9d47c5fdaa26aa9a50e0f50cd991cf325f1972/lectures/notes/07_more-transformers.ipynb
-    status: draft
+    status: reviewed
+    reviewed_by: claude
   - id: transformers-037
     type: multiple
     difficulty: medium
@@ -1231,7 +1312,8 @@ questions:
       id: ubc-dsci575
       ref: lectures/notes/08_llms-applications.ipynb#ex7.3
       url: https://github.com/UBC-MDS/DSCI_575_adv-mach-learn/blob/af9d47c5fdaa26aa9a50e0f50cd991cf325f1972/lectures/notes/08_llms-applications.ipynb
-    status: draft
+    status: reviewed
+    reviewed_by: claude
   - id: transformers-038
     type: short_answer
     difficulty: easy
@@ -1261,7 +1343,8 @@ questions:
       id: trusthlt-nlp
       ref: lectures/lecture09/nlpwdl2025-lecture09.tex#causal-mask
       url: https://github.com/trusthlt/nlp-with-deep-learning-lectures/blob/751182ea7a6a6f2246bbd8313329ecd09d270dbc/lectures/lecture09/pdf/nlpwdl2025-lecture09-handout.pdf
-    status: draft
+    status: reviewed
+    reviewed_by: claude
   - id: transformers-039
     type: single
     difficulty: medium
@@ -1295,7 +1378,8 @@ questions:
       id: trusthlt-nlp
       ref: lectures/lecture09/nlpwdl2025-lecture09.tex#minus-infinity
       url: https://github.com/trusthlt/nlp-with-deep-learning-lectures/blob/751182ea7a6a6f2246bbd8313329ecd09d270dbc/lectures/lecture09/pdf/nlpwdl2025-lecture09-handout.pdf
-    status: draft
+    status: reviewed
+    reviewed_by: claude
   - id: transformers-040
     type: short_answer
     difficulty: medium
@@ -1316,8 +1400,8 @@ questions:
       Dividing numerator and denominator by $e^{929}$ gives $e^{-2}/(e^{-2} + e^{-532} + e^{-781} + 1)
       \approx 0.119$, and the fourth state gets about 0.881 [^1]. A score difference of only 2
       already splits the weight 12/88, and states 2 and 3 are effectively ignored [^1]. Computing
-      `np.exp(929)` directly overflows float64 to `inf` (the notebook switches to float128), which
-      is why softmax implementations subtract the maximum score first [^2].
+      `np.exp(929)` directly overflows float64 to `inf`, which is why softmax implementations
+      subtract the maximum score first [^2].
     references:
       - source: udacity-dl-pytorch
         locator: Attention Basics notebook, Attention Scoring; Softmax
@@ -1329,7 +1413,8 @@ questions:
       id: udacity-dl-pytorch
       ref: attention/Attention_Basics_Solution.ipynb#softmax-weights
       url: https://github.com/udacity/deep-learning-v2-pytorch/blob/c9404fc86181fc3f0906b368697268257f348535/attention/Attention_Basics_Solution.ipynb
-    status: draft
+    status: reviewed
+    reviewed_by: claude
   - id: transformers-041
     type: single
     difficulty: medium
@@ -1368,7 +1453,8 @@ questions:
       id: neuromatch-dl
       ref: W3D1_AttentionAndTransformers/W3D1_Tutorial1#think5
       url: https://github.com/NeuromatchAcademy/course-content-dl/blob/caba36c513fb8139ac3c9e7503f7a769dadde25e/tutorials/W3D1_AttentionAndTransformers/instructor/W3D1_Tutorial1.ipynb
-    status: draft
+    status: reviewed
+    reviewed_by: claude
   - id: transformers-042
     type: short_answer
     difficulty: medium
@@ -1376,7 +1462,8 @@ questions:
       - multi-head-attention
       - parameter-count
     question: |
-      NMA's multi-head self-attention layer gives every head the full embedding size `k`:
+      The multi-head self-attention layer of the Neuromatch Academy (NMA) transformer tutorial gives
+      every head the full embedding size `k`:
       ```python
       class SelfAttention(nn.Module):
           def __init__(self, k, heads=8):
@@ -1412,7 +1499,8 @@ questions:
       id: neuromatch-dl
       ref: W3D1_AttentionAndTransformers/W3D1_Tutorial1#ex3
       url: https://github.com/NeuromatchAcademy/course-content-dl/blob/caba36c513fb8139ac3c9e7503f7a769dadde25e/tutorials/W3D1_AttentionAndTransformers/instructor/W3D1_Tutorial1.ipynb
-    status: draft
+    status: reviewed
+    reviewed_by: claude
   - id: transformers-043
     type: single
     difficulty: medium
@@ -1463,7 +1551,8 @@ questions:
       id: neuromatch-dl
       ref: W3D1_AttentionAndTransformers/W3D1_Tutorial1#ex4
       url: https://github.com/NeuromatchAcademy/course-content-dl/blob/caba36c513fb8139ac3c9e7503f7a769dadde25e/tutorials/W3D1_AttentionAndTransformers/instructor/W3D1_Tutorial1.ipynb
-    status: draft
+    status: reviewed
+    reviewed_by: claude
   - id: transformers-044
     type: short_answer
     difficulty: easy
@@ -1483,10 +1572,11 @@ questions:
       model: '`x.mean(dim=1)` averages over the $t$ token positions'
     explanation: |
       Averaging over a dimension removes it, so the token dimension, index 1 in `(b, t, k)`, must be averaged away to
-      leave `(b, k)` [^1]. NMA's classifier does exactly this: the encoder outputs one vector per token, the mean over
-      tokens gives a sentence embedding, and a linear layer with `log_softmax` turns it into class log-probabilities
-      [^1]. (`dim=-2` would also work; `dim=2` would average over the embedding instead, leaving `(b, t)`.) A common
-      alternative is to use the output of a special classification token instead of the mean, as BERT does [^2].
+      leave `(b, k)` [^1]. The Neuromatch Academy (NMA) classifier does exactly this: the encoder outputs one vector
+      per token, the mean over tokens gives a sentence embedding, and a linear layer with `log_softmax` turns it into
+      class log-probabilities [^1]. (`dim=-2` would also work; `dim=2` would average over the embedding instead,
+      leaving `(b, t)`.) A common alternative is to use the output of a special classification token instead of the
+      mean, as BERT does [^2].
     references:
       - source: neuromatch-dl
         locator: W3D1 Tutorial 1, Section 7 Training Transformers, Coding Exercise 7 Transformer Architecture for classification
@@ -1498,7 +1588,8 @@ questions:
       id: neuromatch-dl
       ref: W3D1_AttentionAndTransformers/W3D1_Tutorial1#ex7
       url: https://github.com/NeuromatchAcademy/course-content-dl/blob/caba36c513fb8139ac3c9e7503f7a769dadde25e/tutorials/W3D1_AttentionAndTransformers/instructor/W3D1_Tutorial1.ipynb
-    status: draft
+    status: reviewed
+    reviewed_by: claude
   - id: transformers-045
     type: short_answer
     difficulty: medium
@@ -1518,8 +1609,8 @@ questions:
       Dimension 2 is even, $2i = 2$, so $i = 1$ and the frequency is $1/10000^{2/4} = 1/100$; the entry is
       $\sin(2/100) = \sin(0.02) \approx 0.020$ [^1][^2]. Dimensions 0 and 1 use frequency 1 ($\sin 2 \approx 0.909$,
       $\cos 2 \approx -0.416$): low dimensions oscillate fast and high dimensions slowly, a continuous analogue of
-      binary counting [^2]. NMA adds this fixed encoding to the token embeddings because self-attention by itself
-      ignores word order [^1].
+      binary counting [^2]. The Neuromatch Academy tutorial adds this fixed encoding to the token embeddings because
+      self-attention by itself ignores word order [^1].
     references:
       - source: neuromatch-dl
         locator: W3D1 Tutorial 1, Section 6 Positional encoding
@@ -1531,7 +1622,8 @@ questions:
       id: neuromatch-dl
       ref: W3D1_AttentionAndTransformers/W3D1_Tutorial1#sec6
       url: https://github.com/NeuromatchAcademy/course-content-dl/blob/caba36c513fb8139ac3c9e7503f7a769dadde25e/tutorials/W3D1_AttentionAndTransformers/instructor/W3D1_Tutorial1.ipynb
-    status: draft
+    status: reviewed
+    reviewed_by: claude
   - id: transformers-046
     type: short_answer
     difficulty: hard
@@ -1566,7 +1658,8 @@ questions:
       id: learn-pytorch
       ref: extras/solutions/08_pytorch_paper_replicating_exercise_solutions.ipynb#ex1
       url: https://github.com/mrdbourke/pytorch-deep-learning/blob/a16552001d963d078390d5bbdfc321e7e7c94bd1/extras/solutions/08_pytorch_paper_replicating_exercise_solutions.ipynb
-    status: draft
+    status: reviewed
+    reviewed_by: claude
   - id: transformers-047
     type: short_answer
     difficulty: medium
@@ -1604,7 +1697,8 @@ questions:
       id: learn-pytorch
       ref: extras/solutions/08_pytorch_paper_replicating_exercise_solutions.ipynb#ex1-b
       url: https://github.com/mrdbourke/pytorch-deep-learning/blob/a16552001d963d078390d5bbdfc321e7e7c94bd1/extras/solutions/08_pytorch_paper_replicating_exercise_solutions.ipynb
-    status: draft
+    status: reviewed
+    reviewed_by: claude
   - id: transformers-048
     type: multiple
     difficulty: medium
@@ -1642,7 +1736,8 @@ questions:
       id: mit-ocw-67960
       ref: mit6_7960_f24_hw3#q1e
       url: https://ocw.mit.edu/courses/6-7960-deep-learning-fall-2024/resources/mit6_7960_f24_hw3_pdf/
-    status: draft
+    status: reviewed
+    reviewed_by: claude
   - id: transformers-049
     type: single
     difficulty: easy
@@ -1678,7 +1773,8 @@ questions:
       id: mit-ocw-67960
       ref: mit6_7960_f24_hw3#q2a
       url: https://ocw.mit.edu/courses/6-7960-deep-learning-fall-2024/resources/mit6_7960_f24_hw3_pdf/
-    status: draft
+    status: reviewed
+    reviewed_by: claude
   - id: transformers-050
     type: short_answer
     difficulty: easy
@@ -1714,7 +1810,8 @@ questions:
       id: mit-ocw-67960
       ref: mit6_7960_f24_hw3#q2b
       url: https://ocw.mit.edu/courses/6-7960-deep-learning-fall-2024/resources/mit6_7960_f24_hw3_pdf/
-    status: draft
+    status: reviewed
+    reviewed_by: claude
   - id: transformers-051
     type: single
     difficulty: medium
@@ -1752,7 +1849,8 @@ questions:
       id: mit-ocw-67960
       ref: mit6_7960_f24_hw3#q3a
       url: https://ocw.mit.edu/courses/6-7960-deep-learning-fall-2024/resources/mit6_7960_f24_hw3_pdf/
-    status: draft
+    status: reviewed
+    reviewed_by: claude
   - id: transformers-052
     type: single
     difficulty: hard
@@ -1790,7 +1888,8 @@ questions:
       id: mit-ocw-67960
       ref: mit6_7960_f24_hw3#q3e-resolution
       url: https://ocw.mit.edu/courses/6-7960-deep-learning-fall-2024/resources/mit6_7960_f24_hw3_pdf/
-    status: draft
+    status: reviewed
+    reviewed_by: claude
   - id: transformers-053
     type: single
     difficulty: medium
@@ -1827,7 +1926,8 @@ questions:
       id: mit-ocw-67960
       ref: mit6_7960_f24_hw3#q4i
       url: https://ocw.mit.edu/courses/6-7960-deep-learning-fall-2024/resources/mit6_7960_f24_hw3_pdf/
-    status: draft
+    status: reviewed
+    reviewed_by: claude
   - id: transformers-054
     type: short_answer
     difficulty: medium
@@ -1861,7 +1961,8 @@ questions:
       id: nptel-intro-llms
       ref: intro-llms/assignment5#q8
       url: https://archive.nptel.ac.in/content/storage2/courses/downloads_new/106102576/noc25_cs45_assignment_Week_5.png
-    status: draft
+    status: reviewed
+    reviewed_by: claude
   - id: transformers-055
     type: short_answer
     difficulty: medium
@@ -1895,7 +1996,8 @@ questions:
       id: nptel-intro-llms
       ref: intro-llms/assignment6#q5
       url: https://archive.nptel.ac.in/content/storage2/courses/downloads_new/106102576/noc25_cs45_assignment_Week_6.png
-    status: draft
+    status: reviewed
+    reviewed_by: claude
   - id: transformers-056
     type: single
     difficulty: medium
@@ -1932,7 +2034,8 @@ questions:
       id: nptel-intro-llms
       ref: intro-llms/assignment6#q8
       url: https://archive.nptel.ac.in/content/storage2/courses/downloads_new/106102576/noc25_cs45_assignment_Week_6.png
-    status: draft
+    status: reviewed
+    reviewed_by: claude
   - id: transformers-057
     type: multiple
     difficulty: medium
@@ -1944,7 +2047,7 @@ questions:
     options:
       - text: It multiplies queries and keys by a position-dependent rotation matrix
         correct: true
-      - text: Each rotated vector encodes its absolute position, while their dot product depends only on the relative offset
+      - text: Each rotated vector encodes its absolute position, while their dot product depends on the positions only through the relative offset
         correct: true
       - text: Like sinusoidal encodings, it is added to the token embeddings at the input layer
         why: RoPE is applied multiplicatively to the queries and keys inside each attention layer, not added to the input [^2].
@@ -1967,4 +2070,5 @@ questions:
       id: nptel-intro-llms
       ref: intro-llms/assignment6#q4
       url: https://archive.nptel.ac.in/content/storage2/courses/downloads_new/106102576/noc25_cs45_assignment_Week_6.png
-    status: draft
+    status: reviewed
+    reviewed_by: claude
