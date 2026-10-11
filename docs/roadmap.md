@@ -25,7 +25,7 @@ Versions follow [conventions.md#versioning](conventions.md#versioning).
 
 ## v0.3.0 — Content I
 
-- [x] Explanations with citations for imported drafts (393/395; 2 await a key decision)
+- [x] Explanations with citations for imported drafts (all 395 imported drafts)
 - [ ] Review the first topics → `reviewed`
 - [ ] NCU Intro to DL lecture questions (Path B: extract → generate → review)
 - [ ] d2l exercises → MCQ / short answer; Deep Learning Interviews; Google MLCC

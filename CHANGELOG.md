@@ -15,12 +15,11 @@ versioning: [SemVer](https://semver.org) as defined in [docs/conventions.md](doc
 - Source registry: `hf-deep-rl-course`, `hf-agents-course`, `ms-ds-for-beginners`,
   `openintro-stats` (CC BY-SA 3.0) and `openstax-intro-stats` (reference only, see Changed) — 25
   external sources.
-- Cited explanations for 393 of the 395 imported questions that had none (all still `draft`):
+- Cited explanations for all 395 imported questions that had none (all still `draft`):
   each answer key re-solved first, every `[^n]` reference opened and checked, `difficulty` set,
   lesson references narrowed to the section that covers the point. Main sources: d2l, the
   course lessons, OpenIntro *Introduction to Modern Statistics*, Penn State STAT notes, Sutton &
-  Barto, scikit-learn, CS229, Interactive Linear Algebra, Active Calculus. Two questions are held
-  back for a key/wording decision (`statistics-005`, `trees-ensembles-006`).
+  Barto, scikit-learn, CS229, Interactive Linear Algebra, Active Calculus.
 - Curation: `default_drop` keep-lists, per-item overrides of `exclude_prefixes`, `keep: true` for
   flagged items.
 
@@ -32,6 +31,11 @@ versioning: [SemVer](https://semver.org) as defined in [docs/conventions.md](doc
 
 ### Fixed
 
+- `trees-ensembles-006`: the MMLU key "weak classifiers" contradicted how bagging works; the
+  question is reworded with a new key (bootstrap samples + averaging). `statistics-005`: the
+  distractor "a class of data" was also correct and is replaced. `statistics-021`: restored the
+  missing ≠ in $H_a$. `policy-gradient-007`: "n strategies" → "n trajectories". All four are
+  recorded as curation fixes.
 - Dollar amounts in imported statistics questions are escaped (`\$`) so KaTeX does not treat them
   as math.
 
