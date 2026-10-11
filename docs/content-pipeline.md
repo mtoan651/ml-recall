@@ -62,6 +62,15 @@ MMLU-Redux 90/100). v0.3 adds 607 upstream → 178 kept (Deep RL 36/48, Agents 1
 DS4B 15/120, MMLU-Redux statistics 75/100 and college math 33/100), then 199 more → 129 kept
 (Google MLCC 44/58, Google ML courses 22/41, numpy-100 63/100).
 
+**Keep and fix.** Drop an upstream question only for a content reason — `off-scope`, `trivial`
+(and not fixable by a small rewrite), `tool-specific`/`tool-trivia` for tools without a topic
+here, `duplicate`, `dated-trivia` — and say which. `ambiguous`, `inaccurate`, `lesson-specific`
+and flagged items are fixed with a `fix` instead (rewrite the stem, correct the key, replace a
+distractor, convert the type); pictures are redrawn. Re-review on 2026-10-11 under this rule:
+1139 upstream questions → 942 kept (HF 106/132, AI4B 141/145, ML4B 112/156, DS4B 70/120,
+MMLU-Redux 251/300, Deep RL 43/48, Agents 26/39, Google MLCC 58/58, Google ML courses 38/41,
+numpy-100 97/100).
+
 ## Path B — generate from course materials
 
 For lecture slides, PDFs and notes (`ncu-intro-dl`, and `adapt` books such as d2l). Planned to be

@@ -7,6 +7,15 @@ versioning: [SemVer](https://semver.org) as defined in [docs/conventions.md](doc
 
 ### Changed
 
+- Dropped upstream questions were re-reviewed under a keep-and-fix rule: an item is dropped only
+  for a content reason (off-scope, trivial, tool-specific, duplicate, dated trivia), while
+  ambiguous, inaccurate and lesson-specific ones are fixed. 287 more upstream questions kept
+  (942 of 1139): numpy-100 +34, MS Data Science +55, MS AI +49, MS ML +52, MMLU-Redux +53, HF
+  LLM/Agents/Deep RL +29, Google +15. Every fix is a curation `fix`, so a fresh import
+  reproduces the bank.
+- Deep Learning Interviews is no longer an `adapt` source: arXiv lists CC BY 4.0, but the
+  book's own copyright page reserves all rights and forbids quoting or paraphrasing. d2l
+  (pinned at d2l-en 23d7a5a) is used instead.
 - Practice and timed tests share one question bank: tests draw from every question of the
   topic or tag (e.g. NumPy: 1 → 64 questions to draw from, Q-learning: 8 → 20).
 - Short answers are always fill-ins, graded automatically: one number or word/phrase, or a
@@ -21,6 +30,9 @@ versioning: [SemVer](https://semver.org) as defined in [docs/conventions.md](doc
 
 ### Added
 
+- 67 questions for the thinnest topics, from d2l exercises (36) and original questions citing
+  d2l, scikit-learn, Distill and Wikipedia (31): information theory 1 → 17, logistic
+  regression 6 → 20, learning theory 3 → 22, dimensionality reduction 1 → 19.
 - Picture questions are kept and redrawn: 20 questions that had been dropped as image-only or
   page-dependent are restored (Google MLCC 11, Google ML courses 4, HF Deep RL 5), and 21
   questions (17 restored + 4 already kept) now show 30 SVG figures generated from code — ROC curves with exact AUCs, loss curves, histograms,
@@ -61,6 +73,15 @@ versioning: [SemVer](https://semver.org) as defined in [docs/conventions.md](doc
 
 ### Fixed
 
+- Audit of all 712 questions: every key re-solved, numbers recomputed. 2 wrong keys
+  (training-004 had two valid loop orders; huggingface-021 relied on `as_target_tokenizer`,
+  removed in Transformers v5), about 80 major issues (second defensible options, missing
+  context, misleading or pasted-together upstream explanations, chapter-intro citations,
+  fill-in keys that accepted wrong code such as unbracketed shapes or einsum strings without
+  commas) and about 250 minor ones (plain-text math → KaTeX, typos, options named by letter,
+  "all of the above", length giveaways). Longest-option bias 37% → 30%.
+- Equation figures put the underline below the deepest descender (q-learning-019).
+- Penn State STAT links point at the current URLs (without `.html`).
 - `trees-ensembles-006`: the MMLU key "weak classifiers" contradicted how bagging works; the
   question is reworded with a new key (bootstrap samples + averaging). `statistics-005`: the
   distractor "a class of data" was also correct and is replaced. `statistics-021`: restored the
