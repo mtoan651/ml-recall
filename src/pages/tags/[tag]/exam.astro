@@ -1,24 +1,20 @@
 ---
 import Exam from "../../../components/Exam";
 import Base from "../../../layouts/Base.astro";
-import { examQuestions, getBank, toQuizQuestions } from "../../../lib/bank";
+import { getBank, toQuizQuestions } from "../../../lib/bank";
 import { planExam } from "../../../lib/exam";
 import { tagUrl, url } from "../../../lib/url";
 
-// One test page per tag with at least one auto-gradable question.
+// One test page per tag: tests draw from the same questions as practice.
 export async function getStaticPaths() {
   const bank = await getBank();
-  return [...bank.tags.entries()]
-    .filter(([, tagged]) => examQuestions(tagged).length > 0)
-    .map(([tag]) => ({ params: { tag } }));
+  return [...bank.tags.entries()].map(([tag]) => ({ params: { tag } }));
 }
 
 const bank = await getBank();
 const tag = Astro.params.tag;
 const tagged = bank.tags.get(tag) ?? [];
-const eligible = examQuestions(tagged);
-// Only the questions a test can draw from are embedded in the page.
-const questions = await toQuizQuestions(eligible, bank);
+const questions = await toQuizQuestions(tagged, bank);
 const { count } = planExam(questions.length);
 ---
 
@@ -43,7 +39,6 @@ const { count } = planExam(questions.length);
       client:load
       questions={questions}
       scope={{ kind: "tag", id: tag, title: `#${tag}`, practiceUrl: tagUrl(tag) }}
-      excluded={tagged.length - eligible.length}
       showTopic
     />
   </div>

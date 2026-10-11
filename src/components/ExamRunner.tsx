@@ -332,6 +332,7 @@ export function ExamRunner({
             dispatch({ type: "type", text, id: item.id });
           }}
           onSubmitText={() => submitText(item.id)}
+          mode="exam"
         />
       </>
     );

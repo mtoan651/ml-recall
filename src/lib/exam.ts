@@ -1,6 +1,8 @@
 /**
  * Timed tests ("exam mode", docs/web-app.md#timed-tests): N random questions of one topic or
- * tag in N minutes, no feedback until the test is submitted. Pure logic only — the island
+ * tag in N minutes, no feedback until the test is submitted. Tests draw from the same question
+ * bank as practice — every type, open short answers included (the learner self-grades those on
+ * the results screen). Pure logic only — the island
  * (src/components/Exam.tsx) renders and dispatches, src/lib/storage.ts reads and writes.
  */
 import { gradeChoice, gradeShortAnswer, isAutoGraded, type ShortAnswerKey } from "./grading";
@@ -22,28 +24,12 @@ const MAX_TEXT_LENGTH = 2000;
 
 // --------------------------------------------------------------------------- pool and size
 
-/** What eligibility needs to know about a question (`QuizQuestion` and schema questions fit). */
-export interface EligibilityInput {
-  type: QuestionType;
-  answer?: ShortAnswerKey | null | undefined;
-}
-
-/**
- * Whether a question can be in a test: every choice question, and short answers with `accept`
- * or `numeric`. Open short answers (model answer only) need self-grading, which a test with
- * feedback at the end cannot ask for, so they stay practice-only.
- */
-export function isExamEligible(q: EligibilityInput): boolean {
-  if (q.type !== "short_answer") return true;
-  return Boolean(q.answer && isAutoGraded(q.answer));
-}
-
-/** The questions a test draws from: eligible ones, only `reviewed` ones if asked. */
-export function examPool<T extends EligibilityInput & { status: string }>(
+/** The questions a test draws from: all of them (as in practice), or only `reviewed` ones. */
+export function examPool<T extends { status: string }>(
   questions: readonly T[],
   reviewedOnly: boolean,
 ): T[] {
-  return questions.filter((q) => isExamEligible(q) && (!reviewedOnly || q.status === "reviewed"));
+  return questions.filter((q) => !reviewedOnly || q.status === "reviewed");
 }
 
 export interface ExamPlan {
@@ -286,7 +272,11 @@ export function timerAnnouncement(previousMs: number, currentMs: number): string
 
 // --------------------------------------------------------------------------- scoring
 
-export type ExamOutcome = "correct" | "incorrect" | "unanswered";
+/**
+ * `pending`: an open short answer (model answer only) that was answered; the learner compares it
+ * with the model answer on the results screen and marks it right or wrong.
+ */
+export type ExamOutcome = "correct" | "incorrect" | "unanswered" | "pending";
 
 /** What grading needs to know about a question (`QuizQuestion` fits). */
 export interface GradingInput {
@@ -297,8 +287,9 @@ export interface GradingInput {
 
 /**
  * Grades one answer with the practice rules (src/lib/grading.ts): choice questions are
- * all-or-nothing, short answers match `accept` / `numeric`. Text that is not a number for a
- * numeric-only key is wrong (a test cannot ask again).
+ * all-or-nothing, short answers match `numeric` / `accept` / `pattern`. Text that is not a number
+ * for a numeric-only key is wrong (a test cannot ask again). Open short answers wait for the
+ * learner's own verdict (`pending`).
  */
 export function gradeExamAnswer(q: GradingInput, answer: ExamAnswer | undefined): ExamOutcome {
   if (!answer || !isAnswered(answer)) return "unanswered";
@@ -311,6 +302,7 @@ export function gradeExamAnswer(q: GradingInput, answer: ExamAnswer | undefined)
     return correct ? "correct" : "incorrect";
   }
   if (!q.answer) return "incorrect";
+  if (!isAutoGraded(q.answer)) return "pending";
   const result = gradeShortAnswer(answer.text, q.answer);
   if (result.kind === "empty") return "unanswered";
   return result.kind === "graded" && result.correct ? "correct" : "incorrect";
@@ -321,20 +313,30 @@ export interface ExamScore {
   correct: number;
   incorrect: number;
   unanswered: number;
+  /** Open short answers still waiting for the learner's verdict (not counted as correct). */
+  pending: number;
   /** Rounded percentage of `total`. */
   percent: number;
   outcomes: Record<string, ExamOutcome>;
 }
 
+/**
+ * Scores a submitted test. `selfGrades` holds the learner's verdicts on open short answers
+ * (id → right?); answered open questions without a verdict stay `pending`.
+ */
 export function scoreExam(
   state: Pick<ExamState, "items" | "answers">,
   questions: ReadonlyMap<string, GradingInput>,
+  selfGrades: Readonly<Record<string, boolean>> = {},
 ): ExamScore {
   const outcomes: Record<string, ExamOutcome> = {};
-  const counts = { correct: 0, incorrect: 0, unanswered: 0 };
+  const counts = { correct: 0, incorrect: 0, unanswered: 0, pending: 0 };
   for (const { id } of state.items) {
     const q = questions.get(id);
-    const outcome = q ? gradeExamAnswer(q, state.answers[id]) : "unanswered";
+    let outcome = q ? gradeExamAnswer(q, state.answers[id]) : "unanswered";
+    if (outcome === "pending" && id in selfGrades) {
+      outcome = selfGrades[id] ? "correct" : "incorrect";
+    }
     outcomes[id] = outcome;
     counts[outcome]++;
   }
