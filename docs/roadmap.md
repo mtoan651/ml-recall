@@ -31,7 +31,8 @@ Versions follow [conventions.md#versioning](conventions.md#versioning).
 - [ ] NCU Intro to DL lecture questions (Path B: extract → generate → review)
 - [x] Google MLCC and Google ML courses quizzes; numpy-100 exercises
 - [ ] d2l exercises → MCQ / short answer; Deep Learning Interviews (PDF only)
-- [ ] `mlr extract` (markitdown/docling), `figstyle.py`, `mlr figs`
+- [x] `figstyle.py` and `mlr figs`; picture questions from Google MLCC, Google ML courses and HF Deep RL kept and redrawn (21 questions, 30 SVGs)
+- [ ] `mlr extract` (markitdown/docling)
 
 ## v0.4.0 — Review features
 

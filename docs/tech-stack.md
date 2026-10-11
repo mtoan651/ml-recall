@@ -15,7 +15,7 @@
 | Lint / format / test | ruff + pytest (Python); Biome + Vitest (TypeScript) | one tool per job, minimal config |
 | Runtime / packages | Node 24 LTS + pnpm (via fnm) for the web app | |
 | Hosting | GitHub Pages via GitHub Actions | free, deploys on merge to `main` |
-| Figures | matplotlib (plots), Graphviz DOT (graphs), Excalidraw (free-form), committed as SVG | see [figures.md](figures.md) |
+| Figures | matplotlib via `mlrecall.figstyle` (plots, small trees and diagrams, equations), Excalidraw (free-form), committed as SVG | see [figures.md](figures.md) |
 
 ## Alternatives considered
 

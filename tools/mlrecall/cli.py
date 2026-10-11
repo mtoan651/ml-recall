@@ -22,6 +22,10 @@ def main(argv: list[str] | None = None) -> int:
     p_import.add_argument("source", help="source id, or 'all'")
     p_import.add_argument("--dry-run", action="store_true", help="report without writing")
 
+    p_figs = sub.add_parser("figs", help="re-render figures whose generator script changed")
+    p_figs.add_argument("--force", action="store_true", help="re-render every figure")
+    p_figs.add_argument("--check", action="store_true", help="list stale figures, render nothing")
+
     p_stats = sub.add_parser("stats", help="print bank statistics as a Markdown table")
     p_stats.add_argument("--topics", action="store_true", help="one row per topic")
 
@@ -34,6 +38,10 @@ def main(argv: list[str] | None = None) -> int:
         from .importers import run_import
 
         return run_import(args.source, dry_run=args.dry_run)
+    if args.command == "figs":
+        from .figs import run as render_figs
+
+        return render_figs(force=args.force, check=args.check)
     if args.command == "stats":
         from .stats import markdown_table
 

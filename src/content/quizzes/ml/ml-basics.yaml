@@ -922,6 +922,9 @@ questions:
   - id: ml-basics-036
     type: single
     question: You split a dataset into a training set (70%), a validation set (15%) and a test set (15%). What should you do to ensure that the examples in the training set have a similar statistical distribution to the examples in the validation set and the test set?
+    figure:
+      src: ./ml-basics/ml-basics-036.svg
+      alt: A horizontal bar split into a training part (70%), a validation part (15%) and a test part (15%).
     options:
       - text: Shuffle the examples in the dataset extensively before partitioning them.
         correct: true
@@ -1283,4 +1286,157 @@ questions:
       id: google-ml-courses
       ref: problem-framing/problem-framing#q1
       url: https://developers.google.com/machine-learning/problem-framing/problem-framing
+    status: draft
+  - id: ml-basics-050
+    type: single
+    question: |
+      Here are two columns of a dataset, sorted by `Timestamp`:
+
+      | Timestamp | Temperature |
+      | --- | ---: |
+      | June 8, 2023 09:00 | 12 |
+      | June 8, 2023 10:00 | 18 |
+      | June 8, 2023 11:00 | *missing* |
+      | June 8, 2023 12:00 | 24 |
+      | June 8, 2023 13:00 | 38 |
+
+      Which of the following would be a reasonable value to impute for the missing value of `Temperature`?
+    options:
+      - text: '23'
+        correct: true
+      - text: '31'
+        why: Unlikely. The limited part of the dataset that we can see suggests that 31 is much too high for the 11:00 Temperature. However, we can't be sure without basing the imputation on a larger number of examples.
+      - text: '51'
+        why: Very unlikely. 51 is much higher than any of the displayed values (and, therefore, much higher than the mean).
+    explanation: Probably. 23 is the mean of the adjacent values (12, 18, 24, and 38). However, we aren't seeing the rest of the dataset, so it is possible that 23 would be an outlier for 11:00 on other days. [^1]
+    references:
+      - source: google-mlcc
+        locator: 'Datasets: Data characteristics'
+        url: https://developers.google.com/machine-learning/crash-course/overfitting/data-characteristics
+    source:
+      id: google-mlcc
+      ref: overfitting/data-characteristics#q1
+      url: https://developers.google.com/machine-learning/crash-course/overfitting/data-characteristics
+    status: draft
+  - id: ml-basics-051
+    type: multiple
+    question: The plot below shows a training loss curve. What **three** things could you do to try to improve it?
+    figure:
+      src: ./ml-basics/ml-basics-051.svg
+      alt: 'Loss against training steps: the loss swings up and down in large waves throughout training and never settles.'
+    options:
+      - text: Check your data against a data schema to detect bad examples, and then remove the bad examples from the training set.
+        correct: true
+      - text: Reduce the learning rate.
+        correct: true
+      - text: Reduce the training set to a tiny number of trustworthy examples.
+        correct: true
+      - text: Increase the number of examples in the training set.
+        why: This is a tempting idea, but it is extremely unlikely to fix the problem.
+      - text: Increase the learning rate.
+        why: In general, avoid increasing the learning rate when a model's learning curve indicates a problem.
+    explanation: 'A loss curve that keeps oscillating instead of flattening usually means the updates are too large or the data is noisy [^1]. Lowering the learning rate makes each step smaller. Checking examples against a data schema and removing bad ones takes out broken examples that kick the loss around. Training on a tiny set of trustworthy examples first is a debugging step: if the model cannot converge even there, the problem is in the model or the pipeline, and once it does you can add data back gradually [^1]. Adding more examples or raising the learning rate is unlikely to calm an oscillating curve.'
+    references:
+      - source: google-mlcc
+        locator: 'Overfitting: Interpreting loss curves'
+        url: https://developers.google.com/machine-learning/crash-course/overfitting/interpreting-loss-curves
+    source:
+      id: google-mlcc
+      ref: overfitting/interpreting-loss-curves#q1
+      url: https://developers.google.com/machine-learning/crash-course/overfitting/interpreting-loss-curves
+    status: draft
+  - id: ml-basics-052
+    type: multiple
+    question: Which **two** of the following statements identify possible reasons for the exploding loss shown in the plot below?
+    figure:
+      src: ./ml-basics/ml-basics-052.svg
+      alt: 'Loss against training steps: the loss falls smoothly for most of training, then suddenly shoots up to a high level and keeps jumping around there.'
+    options:
+      - text: The input data contains one or more NaNs—for example, a value caused by a division by zero.
+        correct: true
+      - text: The input data contains a burst of outliers.
+        correct: true
+      - text: The learning rate is too low.
+        why: A very low learning rate might increase training time, but it is not the cause of the strange loss curve.
+      - text: The regularization rate is too high.
+        why: True, a very high regularization could prevent a model from converging; however, it won't cause the strange loss curve shown in Figure 22.
+    explanation: This is more common than you might expect. Sometimes, due to improper shuffling of batches, a batch might contain a lot of outliers. [^1]
+    references:
+      - source: google-mlcc
+        locator: 'Overfitting: Interpreting loss curves'
+        url: https://developers.google.com/machine-learning/crash-course/overfitting/interpreting-loss-curves
+    source:
+      id: google-mlcc
+      ref: overfitting/interpreting-loss-curves#q2
+      url: https://developers.google.com/machine-learning/crash-course/overfitting/interpreting-loss-curves
+    status: draft
+  - id: ml-basics-053
+    type: single
+    question: The plot below shows the loss curves of the training and test sets. Which **one** of the following statements best identifies the reason for the difference between them?
+    figure:
+      src: ./ml-basics/ml-basics-053.svg
+      alt: 'Two loss curves against training steps: the training loss keeps decreasing, while the test loss decreases at first, then flattens and starts to rise.'
+    options:
+      - text: The model is overfitting the training set.
+        correct: true
+      - text: The learning rate is too high.
+        why: If the learning rate were too high, the loss curve for the training set would likely not have behaved as it did.
+    explanation: |
+      Yes, it probably is. Possible solutions:
+
+      * Make the model simpler, possibly by reducing the number
+      of features.
+      * Increase the regularization rate.
+      * Ensure that the training set and test set are statistically
+      equivalent. [^1]
+    references:
+      - source: google-mlcc
+        locator: 'Overfitting: Interpreting loss curves'
+        url: https://developers.google.com/machine-learning/crash-course/overfitting/interpreting-loss-curves
+    source:
+      id: google-mlcc
+      ref: overfitting/interpreting-loss-curves#q3
+      url: https://developers.google.com/machine-learning/crash-course/overfitting/interpreting-loss-curves
+    status: draft
+  - id: ml-basics-054
+    type: single
+    question: Which **one** of the following statements is the most likely explanation for the erratic loss curve shown below?
+    figure:
+      src: ./ml-basics/ml-basics-054.svg
+      alt: 'Loss against training steps: the loss drops quickly and levels off, then the same burst of jagged bumps repeats at regular intervals.'
+    options:
+      - text: The training set is not shuffled well.
+        correct: true
+      - text: The regularization rate is too high.
+        why: This is unlikely to be the cause.
+      - text: The training set contains too many features.
+        why: This is unlikely to be the cause.
+    explanation: This is a possibility. For example, a training set that contains 100 images of dogs followed by 100 images of cats may cause loss to oscillate as the model trains. Ensure that you shuffle examples sufficiently. [^1]
+    references:
+      - source: google-mlcc
+        locator: 'Overfitting: Interpreting loss curves'
+        url: https://developers.google.com/machine-learning/crash-course/overfitting/interpreting-loss-curves
+    source:
+      id: google-mlcc
+      ref: overfitting/interpreting-loss-curves#q4
+      url: https://developers.google.com/machine-learning/crash-course/overfitting/interpreting-loss-curves
+    status: draft
+  - id: ml-basics-055
+    type: single
+    shuffle: false
+    question: Your company wants to mail coupons ("Get 15% off a new bicycle helmet") to bicycle owners, so your model must predict which people own a bicycle. The dataset has no `bike owner` column, but it does have a column named `recently bought a bicycle`. Would `recently bought a bicycle` be a good proxy label or a poor proxy label for this model?
+    options:
+      - text: Good proxy label
+        correct: true
+      - text: Poor proxy label
+        why: Like all proxy labels, `recently bought a bicycle` is imperfect (some bicycles are bought as gifts and given to others). However, `recently bought a bicycle` is still a relatively good indicator that someone owns a bicycle.
+    explanation: The column `recently bought a bicycle` is a relatively good proxy label. After all, most of the people who buy bicycles now own bicycles. Nevertheless, like all proxy labels, even very good ones, `recently bought a bicycle` is imperfect. After all, the person buying an item isn't always the person using (or owning) that item. For example, people sometimes buy bicycles as a gift. [^1]
+    references:
+      - source: google-mlcc
+        locator: 'Datasets: Labels'
+        url: https://developers.google.com/machine-learning/crash-course/overfitting/labels
+    source:
+      id: google-mlcc
+      ref: overfitting/labels#q1
+      url: https://developers.google.com/machine-learning/crash-course/overfitting/labels
     status: draft

@@ -38,7 +38,10 @@ items:
 ```
 
 Fix keys: `question`, `options` (`{index: new text}`), `why` (`{index: new feedback}`, `null`
-removes it), `correct`, `type`, `shuffle`, `explanation`, `references`. Unlisted items are kept with the default topic; items flagged upstream
+removes it), `correct`, `type`, `shuffle`, `explanation`, `references`, `answer` (merged into the
+short-answer key, e.g. a `model` answer that upstream only gave as a picture), and the redrawn
+figures `figure`, `explanation_figure` and `images` (`{index: {src, alt}}` for option pictures) —
+see [figures.md](figures.md#redrawing-upstream-pictures). Unlisted items are kept with the default topic; items flagged upstream
 (MMLU-Redux error labels, or `image` when the text relies on a picture) are dropped unless they get
 a `fix` or `keep: true`.
 
