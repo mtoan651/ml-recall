@@ -633,3 +633,475 @@ questions:
       ref: mit6_7960_f24_hw5_sol#q14
       url: https://ocw.mit.edu/courses/6-7960-deep-learning-fall-2024/resources/mit6_7960_f24_hw5_sol_pdf/
     status: draft
+  - id: diffusion-018
+    type: single
+    difficulty: easy
+    tags:
+      - forward-process
+      - noise-schedule
+      - ddpm
+    question: |
+      A DDPM corrupts an image $x_0$ over $T$ steps with a forward process $q(x_t \mid x_{t-1})$ and a
+      variance schedule $\beta_1, \dots, \beta_T$. With $z_t \sim \mathcal{N}(0, I)$, which description of one
+      forward step is correct?
+    options:
+      - text: $x_t = \sqrt{1-\beta_t}\,x_{t-1} + \beta_t z_t$, so $\beta_t$ is the standard deviation of the added noise
+        why: In $q(x_t \mid x_{t-1}) = \mathcal{N}(x_t; \sqrt{1-\beta_t}\,x_{t-1}, \beta_t I)$, $\beta_t$ is the variance, so the noise standard deviation is $\sqrt{\beta_t}$ [^1].
+      - text: $x_t = x_{t-1} + \sqrt{\beta_t}\,z_t$, so the variance of $x_t$ keeps growing with $t$
+        why: Without the factor $\sqrt{1-\beta_t}$ the variance grows at every step. DDPM shrinks $x_{t-1}$ first, so a unit-variance input stays at unit variance [^2].
+      - text: A network predicts the noise to add at step $t$ and is trained jointly with the reverse process
+        why: The forward process is fixed. DDPM even fixes the $\beta_t$ to constants, so $q$ has no learnable parameters; only the reverse process is learned [^1].
+      - text: $x_t = \sqrt{1-\beta_t}\,x_{t-1} + \sqrt{\beta_t}\,z_t$, and the step has no trainable parameters
+        correct: true
+    explanation: |
+      The forward step is $q(x_t \mid x_{t-1}) = \mathcal{N}(x_t; \sqrt{1-\beta_t}\,x_{t-1}, \beta_t I)$
+      [^1], that is $x_t = \sqrt{1-\beta_t}\,x_{t-1} + \sqrt{\beta_t}\,z_t$. Shrinking $x_{t-1}$ by
+      $\sqrt{1-\beta_t}$ before adding noise of variance $\beta_t$ keeps the variance at $I$ when
+      $x_{t-1}$ has unit variance, since $(1-\beta_t) + \beta_t = 1$ [^2]. DDPM fixes the $\beta_t$ to
+      constants, so the forward process has no learnable parameters and only the reverse process
+      $p_\theta$ is trained [^1].
+    references:
+      - title: Ho, Jain & Abbeel (2020), Denoising Diffusion Probabilistic Models
+        url: https://arxiv.org/abs/2006.11239
+        locator: Sec. 2 Background, Eq. (2); Sec. 3.1 Forward process and L_T
+      - title: 'Wikipedia: Diffusion model'
+        url: https://en.wikipedia.org/wiki/Diffusion_model#Forward_diffusion
+        locator: Section "Denoising diffusion model", subsection "Forward diffusion"
+    source:
+      id: original
+      ref: diffusion-018
+    status: draft
+  - id: diffusion-019
+    type: short_answer
+    difficulty: medium
+    tags:
+      - closed-form
+      - code-reading
+      - pytorch
+    question: |
+      The DDPM forward process has the closed form
+      $q(x_t \mid x_0) = \mathcal{N}(\sqrt{\bar\alpha_t}\,x_0, (1-\bar\alpha_t) I)$ with
+      $\bar\alpha_t = \prod_{s=1}^{t}(1-\beta_s)$. A toy schedule has $T = 4$ steps. What value does
+      `xt` hold at the end?
+
+      ```python
+      import torch
+
+      betas = torch.tensor([0.05, 0.1, 0.2, 0.3])   # beta_1 .. beta_4
+      alphas_bar = torch.cumprod(1 - betas, dim=0)
+      x0, eps = 1.5, -1.0
+      t = 2                                         # a Python index into the tensors
+      xt = alphas_bar[t].sqrt() * x0 + (1 - alphas_bar[t]).sqrt() * eps
+      ```
+    answer:
+      numeric: 0.6784
+      tolerance: 0.005
+      hint: a number, 2 decimals
+      model: '`alphas_bar[2]` $= 0.95 \cdot 0.9 \cdot 0.8 = 0.684$, so $\sqrt{0.684} \cdot 1.5 + \sqrt{0.316} \cdot (-1) \approx 1.241 - 0.562 = 0.68$'
+    explanation: |
+      `torch.cumprod` returns the running products [^2], here $\bar\alpha_1, \dots, \bar\alpha_4 = 0.95,
+      0.855, 0.684, 0.4788$, and index `2` is the third one, $\bar\alpha_3 = 0.684$. The closed form
+      jumps from $x_0$ to $x_t$ in one step, $x_t = \sqrt{\bar\alpha_t}\,x_0 + \sqrt{1-\bar\alpha_t}\,
+      \epsilon$, without simulating $x_1$ and $x_2$ [^1]. So $x_3 = \sqrt{0.684} \cdot 1.5 - \sqrt{0.316}
+      \approx 1.241 - 0.562 = 0.678$. DDPM training (Algorithm 1) uses exactly this to noise each
+      example at a random $t$ [^1].
+    references:
+      - title: Ho, Jain & Abbeel (2020), Denoising Diffusion Probabilistic Models
+        url: https://arxiv.org/abs/2006.11239
+        locator: Sec. 2 Background, Eq. (4); Sec. 3.4 Simplified training objective, Algorithm 1
+      - title: 'PyTorch documentation: torch.cumprod'
+        url: https://docs.pytorch.org/docs/stable/generated/torch.cumprod.html
+        locator: torch.cumprod (y_i = x_1 × x_2 × … × x_i)
+    source:
+      id: original
+      ref: diffusion-019
+    status: draft
+  - id: diffusion-020
+    type: short_answer
+    difficulty: medium
+    tags:
+      - epsilon-prediction
+      - closed-form
+      - ddim
+    question: |
+      A trained DDPM noise predictor sees the noisy value $x_t = 1.0$ at a step with
+      $\bar\alpha_t = 0.64$ and predicts $\epsilon_\theta(x_t, t) = 1.5$. Using
+      $x_t = \sqrt{\bar\alpha_t}\,x_0 + \sqrt{1-\bar\alpha_t}\,\epsilon$, what is the model's estimate
+      $\hat{x}_0$ of the clean value?
+    answer:
+      numeric: 0.125
+      tolerance: 0.001
+      hint: a number, 3 decimals
+      model: $\hat{x}_0 = (x_t - \sqrt{1-\bar\alpha_t}\,\epsilon_\theta)/\sqrt{\bar\alpha_t} = (1.0 - 0.6 \cdot 1.5)/0.8 = 0.125$
+    explanation: |
+      Predicting the noise is equivalent to predicting the clean data: solving the closed form for
+      $x_0$ gives $\hat{x}_0 = (x_t - \sqrt{1-\bar\alpha_t}\,\epsilon_\theta(x_t, t))/\sqrt{\bar\alpha_t}$
+      [^1][^2]. With $\sqrt{0.64} = 0.8$ and $\sqrt{0.36} = 0.6$, $\hat{x}_0 = (1.0 - 0.9)/0.8 = 0.125$.
+      DDIM's update is built on this "predicted $x_0$": it rescales $\hat{x}_0$ to the next noise level
+      and adds back the predicted noise direction [^2].
+    references:
+      - title: 'Wikipedia: Diffusion model'
+        url: https://en.wikipedia.org/wiki/Diffusion_model#Noise_prediction_network
+        locator: Section "Denoising diffusion model", subsections "Noise prediction network" and "Backward diffusion process"
+      - title: Song, Meng & Ermon (2020), Denoising Diffusion Implicit Models
+        url: https://arxiv.org/abs/2010.02502
+        locator: Sec. 3.2 Generative process and unified variational inference objective, Eq. (9); Sec. 4.1 Denoising Diffusion Implicit Models, Eq. (12)
+    source:
+      id: original
+      ref: diffusion-020
+    status: draft
+  - id: diffusion-021
+    type: single
+    difficulty: hard
+    tags:
+      - noise-schedule
+      - linear-schedule
+      - closed-form
+    question: |
+      DDPM uses $T = 1000$ steps with $\beta_t$ increasing linearly from $\beta_1 = 10^{-4}$ to
+      $\beta_T = 0.02$. In $x_T = \sqrt{\bar\alpha_T}\,x_0 + \sqrt{1-\bar\alpha_T}\,\epsilon$, roughly how
+      large is the signal coefficient $\sqrt{\bar\alpha_T}$? Hint:
+      $\ln \bar\alpha_T = \sum_t \ln(1-\beta_t) \approx -\sum_t \beta_t$.
+    options:
+      - text: 'About $0.14$: the noise level of the last step, $\sqrt{\beta_T}$, sets the signal left'
+        why: $\sqrt{\beta_T}$ is the noise of a single step. The signal left after $T$ steps is a product over all of them [^2].
+      - text: 'About $0.006$: $x_T$ is almost pure noise, with only a faint trace of $x_0$'
+        correct: true
+      - text: 'About $0.95$: each step removes so little signal that most of $x_0$ survives'
+        why: $\sqrt{(1-10^{-4})^{1000}} \approx 0.95$ would hold only if every $\beta_t$ were the smallest one. The schedule grows to $0.02$, and the $\beta_t$ add up to about $10$ [^1].
+      - text: 'Exactly $0$: after $T$ steps no information at all about $x_0$ is left'
+        why: $\bar\alpha_T$ is a product of positive factors, so it is tiny but not zero; DDPM reports $L_T \approx 10^{-5}$ bits per dimension, small but not zero [^1].
+    explanation: |
+      With a linear schedule $\sum_t \beta_t = 1000 \cdot (10^{-4} + 0.02)/2 \approx 10.05$, so
+      $\bar\alpha_T \approx e^{-10.05} \approx 4 \times 10^{-5}$ and $\sqrt{\bar\alpha_T} \approx 0.006$
+      (the exact product gives $0.0064$). DDPM chose the schedule to keep the signal-to-noise ratio at
+      $x_T$ as small as possible, so that $q(x_T \mid x_0)$ is close to the prior $\mathcal{N}(0, I)$
+      and $L_T \approx 10^{-5}$ bits per dimension [^1]. The closed form
+      $q(x_t \mid x_0) = \mathcal{N}(\sqrt{\bar\alpha_t}\,x_0, (1-\bar\alpha_t) I)$ is what makes this
+      one-line estimate possible [^2].
+    references:
+      - title: Ho, Jain & Abbeel (2020), Denoising Diffusion Probabilistic Models
+        url: https://arxiv.org/abs/2006.11239
+        locator: Sec. 4 Experiments, first paragraph (T = 1000, β_t linear from 10⁻⁴ to 0.02, L_T ≈ 10⁻⁵ bits/dim)
+      - title: Ho, Jain & Abbeel (2020), Denoising Diffusion Probabilistic Models
+        url: https://arxiv.org/abs/2006.11239
+        locator: Sec. 2 Background, Eq. (4)
+    source:
+      id: original
+      ref: diffusion-021
+    status: draft
+  - id: diffusion-022
+    type: single
+    difficulty: medium
+    tags:
+      - noise-schedule
+      - cosine-schedule
+    question: |
+      Nichol and Dhariwal replaced DDPM's linear $\beta_t$ schedule with a cosine schedule,
+      $\bar\alpha_t = f(t)/f(0)$ with $f(t) = \cos^2\!\big(\frac{t/T + s}{1+s} \cdot \frac{\pi}{2}\big)$.
+      Which weakness of the linear schedule does this address?
+    options:
+      - text: It removes too little signal near $t = 0$, so the cosine schedule makes $\bar\alpha_t$ fall fastest there
+        why: The cosine schedule is designed to change very little near $t = 0$ and $t = T$, with a roughly linear drop of $\bar\alpha_t$ in the middle [^1].
+      - text: At $64 \times 64$ and $32 \times 32$, the end of its forward process is too noisy to help sample quality
+        correct: true
+      - text: It never brings $\bar\alpha_T$ close to zero, so $x_T$ still shows a visible trace of the image
+        why: The linear schedule ends at $\bar\alpha_T \approx 4 \times 10^{-5}$. Its problem is the opposite one, that the image is destroyed too early [^1][^2].
+      - text: Its $\beta_t$ exceed 1 near $t = T$, which makes the forward process undefined there
+        why: The linear $\beta_t$ only reach $0.02$. It is the cosine schedule whose $\beta_t$ has to be clipped at $0.999$ near $t = T$ [^1].
+    explanation: |
+      The linear schedule works for high-resolution images but is sub-optimal at $64 \times 64$ and
+      $32 \times 32$: the end of the forward process is too noisy to contribute much, and a model
+      trained with it barely gets worse (in FID) when up to 20% of the reverse process is skipped
+      [^1]. The cosine schedule makes $\bar\alpha_t$ drop roughly linearly in the middle and change
+      little near both ends, so information is destroyed more gradually [^1]. A small offset
+      $s = 0.008$ keeps $\beta_t$ from being too tiny near $t = 0$, and $\beta_t$ is clipped at $0.999$
+      [^1]. For $T = 1000$, $\sqrt{\bar\alpha_t}$ at $t = 500$ is about $0.28$ under DDPM's linear
+      schedule [^2] but about $0.70$ under the cosine one.
+    references:
+      - title: Nichol & Dhariwal (2021), Improved Denoising Diffusion Probabilistic Models
+        url: https://arxiv.org/abs/2102.09672
+        locator: Sec. 3.2 Improving the Noise Schedule, Eq. (17)
+      - title: Ho, Jain & Abbeel (2020), Denoising Diffusion Probabilistic Models
+        url: https://arxiv.org/abs/2006.11239
+        locator: Sec. 4 Experiments (linear schedule, β_1 = 10⁻⁴ to β_T = 0.02, T = 1000)
+    source:
+      id: original
+      ref: diffusion-022
+    status: draft
+  - id: diffusion-023
+    type: multiple
+    difficulty: hard
+    tags:
+      - training-objective
+      - epsilon-prediction
+      - score-matching
+    question: |
+      DDPM trains its noise predictor with
+      $L_{\text{simple}}(\theta) = \mathbb{E}_{t, x_0, \epsilon}\big[\lVert \epsilon - \epsilon_\theta(\sqrt{\bar\alpha_t}\,x_0 + \sqrt{1-\bar\alpha_t}\,\epsilon,\ t) \rVert^2\big]$.
+      Which statements about this objective are true? Select all that apply.
+    options:
+      - text: At the optimum, $\epsilon_\theta(x_t, t) = -\sqrt{1-\bar\alpha_t}\,\nabla_{x_t} \ln q(x_t)$
+        correct: true
+      - text: It drops the per-step weights of the variational bound, which down-weights the small-$t$ terms
+        correct: true
+      - text: For each example, $t \sim \text{Uniform}\{1, \dots, T\}$ and $\epsilon \sim \mathcal{N}(0, I)$
+        correct: true
+      - text: To build $x_t$, the forward chain has to be simulated step by step from $x_0$ up to $x_{t-1}$ first
+        why: The closed form $q(x_t \mid x_0)$ gives $x_t$ from $x_0$ and $\epsilon$ in one step; Algorithm 1 does exactly this [^1].
+      - text: The noise schedule $\beta_t$ is learned jointly with $\theta$ by backpropagating through this loss
+        why: DDPM fixes the $\beta_t$ to constants, so the forward process has no learnable parameters [^1].
+    explanation: |
+      Algorithm 1 samples $x_0$, a uniform $t$ and Gaussian $\epsilon$, forms $x_t$ in closed form and
+      takes a gradient step on $\lVert \epsilon - \epsilon_\theta(x_t, t) \rVert^2$ [^1].
+      $L_{\text{simple}}$ (Eq. 14) is the bound of Eq. (12) without its weights, which down-weights the
+      small-$t$ terms (very little noise) so the network focuses on the harder denoising at larger
+      $t$ [^1]. Ho et al. note that the objective resembles denoising score matching over many noise
+      scales [^1]; at the optimum the noise prediction equals the score of $q(x_t)$ scaled by
+      $-\sqrt{1-\bar\alpha_t}$ [^2].
+    references:
+      - title: Ho, Jain & Abbeel (2020), Denoising Diffusion Probabilistic Models
+        url: https://arxiv.org/abs/2006.11239
+        locator: Sec. 3.2 Reverse process and L_{1:T−1}, Eq. (12); Sec. 3.4 Simplified training objective, Eq. (14) and Algorithm 1
+      - title: 'Wikipedia: Diffusion model'
+        url: https://en.wikipedia.org/wiki/Diffusion_model#Their_equivalence
+        locator: Section "Score-based generative model", subsection "Their equivalence"
+    source:
+      id: original
+      ref: diffusion-023
+    status: draft
+  - id: diffusion-024
+    type: single
+    difficulty: medium
+    tags:
+      - ddim
+      - sampling
+      - ddpm
+    question: |
+      A noise predictor $\epsilon_\theta$ was trained with the standard DDPM objective for $T = 1000$
+      steps. Which statement about sampling from it with DDIM at $\eta = 0$ (all $\sigma_t = 0$) is
+      correct?
+    options:
+      - text: It must first retrain $\epsilon_\theta$ with a non-Markovian objective before it can skip steps
+        why: DDIM's non-Markovian processes lead to the same training objective as DDPM (Theorem 1), so a pretrained DDPM model can be used as is [^1].
+      - text: Like DDPM's Algorithm 2 it adds fresh noise $\sigma_t z$ at every step, only over fewer steps
+        why: Fresh noise with DDPM's variance is the $\eta = 1$ case. At $\eta = 0$ the noise coefficient is zero, so the sampler is deterministic [^1][^2].
+      - text: It reuses $\epsilon_\theta$ as is, can skip steps, and maps each $x_T$ to one fixed $x_0$
+        correct: true
+      - text: It only matches DDPM quality with all 1000 steps; with 10 to 50 steps DDPM sampling wins
+        why: It is the other way round. With 10 to 50 steps DDIM ($\eta = 0$) reaches a much lower FID than DDPM on CIFAR10 [^1].
+    explanation: |
+      DDIM generalises DDPM to non-Markovian forward processes that lead to the same training
+      objective, so a model trained for DDPM can be sampled directly [^1]. Its update (Eq. 12) adds a
+      "predicted $x_0$", a "direction pointing to $x_t$" and noise $\sigma_t \epsilon_t$; with
+      $\sigma_t = 0$ the noise term vanishes and the model becomes an implicit, deterministic map from
+      $x_T$ to $x_0$ [^1]. Because it can run on an increasing subsequence $\tau$ of $[1, \dots, T]$, it
+      samples 10× to 50× faster than DDPM, whose Algorithm 2 adds new noise at each of the $T$ steps
+      [^1][^2].
+    references:
+      - title: Song, Meng & Ermon (2020), Denoising Diffusion Implicit Models
+        url: https://arxiv.org/abs/2010.02502
+        locator: Sec. 3.2 (Theorem 1); Sec. 4.1 Denoising Diffusion Implicit Models, Eq. (12); Sec. 4.2 Accelerated generation processes; Sec. 5.1, Table 1
+      - title: Ho, Jain & Abbeel (2020), Denoising Diffusion Probabilistic Models
+        url: https://arxiv.org/abs/2006.11239
+        locator: Sec. 3.2 Reverse process and L_{1:T−1}, Algorithm 2 (Sampling)
+    source:
+      id: original
+      ref: diffusion-024
+    status: draft
+  - id: diffusion-025
+    type: short_answer
+    difficulty: medium
+    tags:
+      - classifier-free-guidance
+      - guidance
+    question: |
+      Classifier-free guidance combines the conditional and unconditional noise predictions of one
+      network as $\tilde\epsilon = (1+w)\,\epsilon_\theta(z, c) - w\,\epsilon_\theta(z)$. At one pixel,
+      $\epsilon_\theta(z, c) = 0.6$ and $\epsilon_\theta(z) = 0.2$. What is $\tilde\epsilon$ for the
+      guidance strength $w = 3$?
+    answer:
+      numeric: 1.8
+      tolerance: 0.001
+      hint: a number, 1 decimal
+      model: $(1+3) \cdot 0.6 - 3 \cdot 0.2 = 2.4 - 0.6 = 1.8$
+    explanation: |
+      Eq. (6) of the classifier-free guidance paper extrapolates past the conditional prediction, away
+      from the unconditional one: $\tilde\epsilon = \epsilon_\theta(z) + (1+w)(\epsilon_\theta(z, c) -
+      \epsilon_\theta(z))$ [^1]. Here $4 \cdot 0.6 - 3 \cdot 0.2 = 1.8$, much further from $0.2$ than the
+      conditional $0.6$. Larger $w$ trades diversity for fidelity: the best FID came from a little
+      guidance and the best Inception Score from strong guidance ($w \geq 4$) [^2]. The same rule can
+      also be written with a guidance scale $\gamma = 1 + w$, as
+      $\epsilon_{\text{uncond}} + \gamma(\epsilon_{\text{cond}} - \epsilon_{\text{uncond}})$ [^3].
+    references:
+      - title: Ho & Salimans (2022), Classifier-Free Diffusion Guidance
+        url: https://arxiv.org/abs/2207.12598
+        locator: Sec. 3.2 Classifier-free guidance, Eq. (6) and Algorithm 2
+      - title: Ho & Salimans (2022), Classifier-Free Diffusion Guidance
+        url: https://arxiv.org/abs/2207.12598
+        locator: Sec. 4.1 Varying the classifier-free guidance strength
+      - title: 'Wikipedia: Diffusion model'
+        url: https://en.wikipedia.org/wiki/Diffusion_model#Classifier-free_guidance_(CFG)
+        locator: Section "Main variants", subsection "Classifier-free guidance (CFG)"
+    source:
+      id: original
+      ref: diffusion-025
+    status: draft
+  - id: diffusion-026
+    type: true_false
+    difficulty: medium
+    tags:
+      - classifier-free-guidance
+      - guidance
+    shuffle: false
+    question: |
+      Classifier-free guidance samples with
+      $\tilde\epsilon = (1+w)\,\epsilon_\theta(z, c) - w\,\epsilon_\theta(z)$. True or false: setting the
+      guidance strength to $w = 0$ turns the sampler into an unconditional model that ignores $c$.
+    options:
+      - text: 'True'
+        why: With $w = 0$ the formula gives $\tilde\epsilon = \epsilon_\theta(z, c)$, the plain conditional model without guidance; the paper's tables list $w = 0$ as the non-guided model [^1]. The unconditional model would be $w = -1$.
+      - text: 'False'
+        correct: true
+    explanation: |
+      Plugging in $w = 0$ removes the unconditional term and leaves $\tilde\epsilon = \epsilon_\theta(z, c)$:
+      ordinary conditional sampling without guidance [^1]. Guidance starts at $w > 0$, which pushes the
+      prediction away from the unconditional one; the paper motivates this with the gradient of an
+      implicit classifier $p^i(c \mid z) \propto p(z \mid c)/p(z)$ [^1]. A fully unconditional sampler corresponds to
+      $w = -1$, which gives $\tilde\epsilon = \epsilon_\theta(z)$. In the equivalent form
+      $\epsilon_{\text{uncond}} + \gamma(\epsilon_{\text{cond}} - \epsilon_{\text{uncond}})$, $\gamma = 1$
+      is unguided and $\gamma = 0$ is unconditional [^2].
+    references:
+      - title: Ho & Salimans (2022), Classifier-Free Diffusion Guidance
+        url: https://arxiv.org/abs/2207.12598
+        locator: Sec. 3.2 Classifier-free guidance, Eq. (6); Table 1 caption (w = 0.0 is the non-guided model)
+      - title: 'Wikipedia: Diffusion model'
+        url: https://en.wikipedia.org/wiki/Diffusion_model#Classifier-free_guidance_(CFG)
+        locator: Section "Main variants", subsection "Classifier-free guidance (CFG)"
+    source:
+      id: original
+      ref: diffusion-026
+    status: draft
+  - id: diffusion-027
+    type: single
+    difficulty: medium
+    tags:
+      - classifier-free-guidance
+      - conditioning-dropout
+    question: |
+      Classifier-free guidance needs a conditional noise prediction $\epsilon_\theta(z, c)$ and an
+      unconditional one $\epsilon_\theta(z)$ at every sampling step. How does the original method obtain
+      the unconditional prediction?
+    options:
+      - text: The trained conditional model is reused with a randomly chosen class label in place of $c$
+        why: A random label only yields a sample of that random class. CFG trains the unconditional case explicitly, by dropping the label during training [^1].
+      - text: A classifier is trained on noisy images, and its gradient is subtracted from $\epsilon_\theta(z, c)$
+        why: That is classifier guidance, the method this paper sets out to replace; classifier-free guidance uses no classifier at all [^2].
+      - text: The conditional predictions for all classes are averaged at sampling time to form $\epsilon_\theta(z)$
+        why: That would cost one network call per class at every step. The method gets $\epsilon_\theta(z)$ from the same network by feeding the null token $c = \varnothing$ [^1].
+      - text: One network does both; in training the label is sometimes replaced by a null token
+        correct: true
+    explanation: |
+      Classifier-free guidance trains a single network for both tasks: in Algorithm 1 the conditioning
+      is discarded with probability $p_{\text{uncond}}$ and replaced by a null token $\varnothing$, so
+      $\epsilon_\theta(z) = \epsilon_\theta(z, c = \varnothing)$ [^1]. At sampling time the two
+      predictions are combined as $(1+w)\,\epsilon_\theta(z, c) - w\,\epsilon_\theta(z)$, so no
+      classifier trained on noisy data is needed [^1][^2]. The paper tried
+      $p_{\text{uncond}} \in \{0.1, 0.2, 0.5\}$: 0.1 and 0.2 worked about equally well and 0.5 was
+      worse, so only a small share of training goes to the unconditional task [^3].
+    references:
+      - title: Ho & Salimans (2022), Classifier-Free Diffusion Guidance
+        url: https://arxiv.org/abs/2207.12598
+        locator: Sec. 3.2 Classifier-free guidance, Algorithms 1 and 2
+      - title: Ho & Salimans (2022), Classifier-Free Diffusion Guidance
+        url: https://arxiv.org/abs/2207.12598
+        locator: Sec. 1 Introduction and Sec. 3.1 Classifier guidance
+      - title: Ho & Salimans (2022), Classifier-Free Diffusion Guidance
+        url: https://arxiv.org/abs/2207.12598
+        locator: Sec. 4.2 Varying the unconditional training probability
+    source:
+      id: original
+      ref: diffusion-027
+    status: draft
+  - id: diffusion-028
+    type: short_answer
+    difficulty: easy
+    tags:
+      - latent-diffusion
+      - autoencoder
+      - compression
+    question: |
+      A latent diffusion model encodes a $512 \times 512$ RGB image with an autoencoder of downsampling
+      factor $f = 8$ and $c = 4$ latent channels, and runs the whole diffusion process on the latent.
+      By what factor is the number of values the diffusion model works on smaller than the number of
+      pixel values?
+    answer:
+      numeric: 48
+      tolerance: 0
+      hint: a whole number
+      model: $\frac{512 \cdot 512 \cdot 3}{64 \cdot 64 \cdot 4} = \frac{786432}{16384} = 48$
+    explanation: |
+      The encoder maps $x \in \mathbb{R}^{H \times W \times 3}$ to $z \in \mathbb{R}^{h \times w \times c}$
+      with $f = H/h = W/w$ [^1], so here $z$ has $64 \cdot 64 \cdot 4 = 16{,}384$ values instead of
+      $786{,}432$, a factor of $48$. An $f = 8$, $c = 4$ autoencoder is one of those trained in the paper
+      [^2]. The denoising U-Net runs at every sampling step, while the decoder runs once at the end, so
+      the savings apply to the expensive part [^1]. The paper found $f = 4$ to $8$ the best balance:
+      $f = 1, 2$ train slowly and $f = 32$ loses too much information [^3].
+    references:
+      - title: Rombach et al. (2021), High-Resolution Image Synthesis with Latent Diffusion Models
+        url: https://arxiv.org/abs/2112.10752
+        locator: Sec. 3.1 Perceptual Image Compression; Sec. 3.2 Latent Diffusion Models
+      - title: Rombach et al. (2021), High-Resolution Image Synthesis with Latent Diffusion Models
+        url: https://arxiv.org/abs/2112.10752
+        locator: Appendix D.2, Table 8 (autoencoder zoo; f = 8, KL, c = 4)
+      - title: Rombach et al. (2021), High-Resolution Image Synthesis with Latent Diffusion Models
+        url: https://arxiv.org/abs/2112.10752
+        locator: Sec. 4.1 On Perceptual Compression Tradeoffs
+    source:
+      id: original
+      ref: diffusion-028
+    status: draft
+  - id: diffusion-029
+    type: multiple
+    difficulty: medium
+    tags:
+      - latent-diffusion
+      - cross-attention
+      - conditioning
+    question: |
+      Which statements about latent diffusion models (LDMs) as introduced by Rombach et al. are true?
+      Select all that apply.
+    options:
+      - text: The autoencoder is trained first, and once trained it can be reused for many diffusion models
+        correct: true
+      - text: The latent is a single flat vector, so the denoiser is an MLP rather than a convolutional U-Net
+        why: The latent keeps a two-dimensional $h \times w \times c$ structure, so the denoiser is a time-conditional U-Net built mainly from 2D convolutions [^1].
+      - text: A larger downsampling factor $f$ always gives better samples, because the diffusion model then gets cheaper to run
+        why: Very large factors (LDM-32) lose too much information in the first stage and limit quality; $f = 4$ to $8$ worked best [^3].
+      - text: In cross-attention, queries come from U-Net features and keys/values from the prompt encoding $\tau_\theta(y)$
+        correct: true
+      - text: The decoder $\mathcal{D}$ runs at every denoising step to check the image in pixel space
+        why: Sampling happens entirely in latent space; a sample from $p(z)$ is decoded with a single pass through $\mathcal{D}$ at the end [^1].
+    explanation: |
+      LDMs train in two stages: an autoencoder $(\mathcal{E}, \mathcal{D})$ learns a latent space that is
+      perceptually equivalent to pixel space but much smaller, and is trained only once and reused for
+      many diffusion models; a time-conditional U-Net then learns
+      $L_{\text{LDM}} = \mathbb{E}\lVert \epsilon - \epsilon_\theta(z_t, t) \rVert_2^2$ on $z = \mathcal{E}(x)$
+      [^1]. Conditioning uses cross-attention layers in the U-Net with $Q = W_Q\,\varphi_i(z_t)$,
+      $K = W_K\,\tau_\theta(y)$ and $V = W_V\,\tau_\theta(y)$, where $\tau_\theta$ is a domain-specific
+      encoder, for example a transformer for text [^2]. Generated latents are decoded once at the end,
+      and $f$ trades cost against fidelity [^1][^3].
+    references:
+      - title: Rombach et al. (2021), High-Resolution Image Synthesis with Latent Diffusion Models
+        url: https://arxiv.org/abs/2112.10752
+        locator: Sec. 1 Introduction; Sec. 3.1 Perceptual Image Compression; Sec. 3.2 Latent Diffusion Models, Eq. (2)
+      - title: Rombach et al. (2021), High-Resolution Image Synthesis with Latent Diffusion Models
+        url: https://arxiv.org/abs/2112.10752
+        locator: Sec. 3.3 Conditioning Mechanisms, Eq. (3)
+      - title: Rombach et al. (2021), High-Resolution Image Synthesis with Latent Diffusion Models
+        url: https://arxiv.org/abs/2112.10752
+        locator: Sec. 4.1 On Perceptual Compression Tradeoffs
+    source:
+      id: original
+      ref: diffusion-029
+    status: draft

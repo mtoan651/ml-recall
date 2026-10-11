@@ -728,3 +728,440 @@ questions:
       ref: theory.md#q126
       url: https://github.com/alexeygrigorev/data-science-interviews/blob/919f44547ef5ffc2bd59674fd301940529f4c1a8/theory.md#text-classification
     status: draft
+  - id: classification-022
+    type: multiple
+    difficulty: hard
+    tags:
+      - generative-vs-discriminative
+      - gaussian-classifier
+      - logistic-regression
+      - conditional-likelihood
+    question: |
+      Four classifiers are trained by maximum likelihood on the same 100 two-class examples:
+      **GaussI**, one Gaussian per class with both covariances fixed to $I$; **GaussX**, one Gaussian
+      per class with unrestricted covariances; **LinLog**, logistic regression on linear features;
+      **QuadLog**, logistic regression on all linear and quadratic features. The Gaussian models
+      maximize the joint likelihood of inputs and labels, the logistic ones the conditional
+      likelihood of labels. Using the average training value of $\log p(y \mid x)$, which
+      statements must always hold? Select all that apply.
+    options:
+      - text: GaussI $\le$ GaussX
+        why: GaussX has the higher *joint* likelihood, but neither Gaussian model maximizes $\log p(y \mid x)$, so their conditional scores can go either way [^1].
+      - text: LinLog also makes no more training classification errors than GaussI
+        why: A higher conditional log-likelihood does not imply fewer misclassifications; counterexamples exist in both directions [^1].
+      - text: LinLog $\le$ QuadLog
+        correct: true
+      - text: GaussX $\le$ QuadLog
+        correct: true
+      - text: GaussI $\le$ LinLog
+        correct: true
+    explanation: |
+      With shared covariance $I$, the posterior of GaussI is a logistic function of a linear
+      function of $x$; with separate covariances, GaussX's posterior is logistic in quadratic
+      features [^2]. LinLog and QuadLog maximize the conditional log-likelihood over exactly these
+      families, so they score at least as well as the Gaussian model of the same form, and the
+      quadratic family contains the linear one [^1]. Nothing similar holds for the number of
+      training errors, which none of the four models optimizes [^1].
+    references:
+      - source: mit-ocw-6867
+        locator: Mid-term exam (Fall 2001) solutions, Problem 6
+        url: https://ocw.mit.edu/courses/6-867-machine-learning-fall-2006/resources/midterm_f01soln/
+      - title: 'Wikipedia: Logistic regression'
+        locator: Alternatives (if the assumptions of linear discriminant analysis hold, the conditioning can be reversed to produce logistic regression)
+        url: https://en.wikipedia.org/wiki/Logistic_regression#Alternatives
+    source:
+      id: mit-ocw-6867
+      ref: midterm_f01soln#q6.1
+      url: https://ocw.mit.edu/courses/6-867-machine-learning-fall-2006/resources/midterm_f01soln/
+    status: draft
+  - id: classification-023
+    type: true_false
+    difficulty: hard
+    tags:
+      - gaussian-classifier
+      - nearest-mean
+      - training-error
+    shuffle: false
+    question: |
+      A binary classifier uses one Gaussian per class with covariance fixed to $\sigma^2 I$; only the
+      class means and the class priors are fit by maximum likelihood. Claim: for any three distinct
+      training points, choosing $\sigma^2$ small enough makes the training error zero.
+    options:
+      - text: 'True'
+        why: A small $\sigma^2$ turns the model into a nearest-class-mean rule, and a point can be closer to the other class's mean than to its own.
+      - text: 'False'
+        correct: true
+    explanation: |
+      Maximum likelihood puts each mean at the sample mean of its class and each prior at the class
+      frequency [^1]. As $\sigma^2 \to 0$ the distance term dominates the priors, so each point gets
+      the class of the nearest mean [^2]. With class A $= \{0, 10\}$ (mean 5) and class B $= \{4\}$
+      on the real line, the point 0 is closer to 4 than to 5 and is misclassified for every small
+      $\sigma^2$. The model is fit as a generative model, not to minimize training errors [^1].
+    references:
+      - source: mit-ocw-6867
+        locator: Final exam (Fall 2003) solutions, Problem 2.4
+        url: https://ocw.mit.edu/courses/6-867-machine-learning-fall-2006/resources/final_f03soln/
+      - title: 'Wikipedia: Linear discriminant analysis'
+        locator: LDA for two classes (the Bayes-optimal rule thresholds the log-likelihood ratio of the two Gaussians)
+        url: https://en.wikipedia.org/wiki/Linear_discriminant_analysis#LDA_for_two_classes
+    source:
+      id: mit-ocw-6867
+      ref: final_f03soln#q2.4
+      url: https://ocw.mit.edu/courses/6-867-machine-learning-fall-2006/resources/final_f03soln/
+    status: draft
+  - id: classification-024
+    type: multiple
+    difficulty: medium
+    tags:
+      - active-learning
+      - uncertainty-sampling
+      - logistic-regression
+      - bias-term
+    question: |
+      Documents are binary word-indicator vectors $\Phi$, and a logistic regression model
+      $P(y = 1 \mid \Phi, w) = g(w^\top\Phi)$ **without a bias term** is trained on $n$ labelled documents.
+      You may then request labels for the other documents one at a time, using the uncertainty
+      $2p_t(1 - p_t)$ with $p_t = P(y = 1 \mid \Phi_t, \hat w)$. Which statements are true? Select all
+      that apply.
+    options:
+      - text: A word that occurs in every document effectively acts as a bias term
+        correct: true
+      - text: A word that occurs only in the $n$ initially labelled documents works just as well as a bias term
+        why: That word is 0 in every unlabelled document, so its weight shifts nothing where predictions are needed [^1].
+      - text: After each query, the uncertainty of every unlabelled document decreases or stays the same
+        why: Retraining tilts the boundary, and some unlabelled documents can end up closer to it, so their uncertainty grows [^1].
+      - text: The next query should be the document with the largest $2p_t(1 - p_t)$
+        correct: true
+    explanation: |
+      A feature that equals 1 in every input adds the same amount to every $w^\top\Phi$, which is
+      exactly what a bias does [^1]. The criterion $2p_t(1 - p_t)$ is largest at $p_t = 1/2$, i.e.
+      for documents closest to the decision boundary, and labelling those tells us most about where
+      the boundary should lie (uncertainty sampling) [^2]. The method is greedy: it guarantees no
+      monotone decrease of uncertainty for the remaining documents [^1].
+    references:
+      - source: mit-ocw-6867
+        locator: Mid-term exam (Fall 2003) solutions, Problem 1
+        url: https://ocw.mit.edu/courses/6-867-machine-learning-fall-2006/resources/midterm_f03soln/
+      - title: 'Wikipedia: Active learning (machine learning)'
+        locator: Query strategies (uncertainty sampling)
+        url: https://en.wikipedia.org/wiki/Active_learning_(machine_learning)#Query_strategies
+    source:
+      id: mit-ocw-6867
+      ref: midterm_f03soln#q1
+      url: https://ocw.mit.edu/courses/6-867-machine-learning-fall-2006/resources/midterm_f03soln/
+    status: draft
+  - id: classification-025
+    type: single
+    difficulty: medium
+    tags:
+      - active-learning
+      - perceptron
+    question: |
+      A perceptron $\theta \leftarrow \theta + y_t x_t$ (updated only when $y_t\theta^\top x_t \le 0$) is
+      trained by active learning: at each step you may ask for the label of one unlabelled pool point
+      $x_t$. Which pool point is the most useful to query next?
+    options:
+      - text: The one with the largest $|\theta^\top x_t|$
+        why: These points are confidently classified; if the current $\theta$ is right about them, their labels cause no update at all.
+      - text: The one with the largest norm $\lVert x_t \rVert$
+        why: A large norm says nothing about whether the point is likely to be misclassified, which is what drives an update.
+      - text: A point drawn uniformly at random from the pool
+        why: A random point is usually far from the boundary and likely classified correctly, which causes no perceptron update [^1].
+      - text: The one with the smallest $|\theta^\top x_t|$
+        correct: true
+    explanation: |
+      The perceptron only changes $\theta$ on a mistake, so a query is useful only if the point may
+      be misclassified [^1]. We cannot know that before seeing the label, but points near the
+      current boundary are the likeliest candidates, and $|\theta^\top x_t|$ (divided by
+      $\lVert\theta\rVert$, it is the distance to the boundary) measures that closeness [^1]. This is
+      the margin-based form of uncertainty sampling [^2].
+    references:
+      - source: mit-ocw-6867
+        locator: Mid-term exam (Fall 2006) solutions, Problem 5
+        url: https://ocw.mit.edu/courses/6-867-machine-learning-fall-2006/resources/midterm_f06soln/
+      - title: 'Wikipedia: Active learning (machine learning)'
+        locator: Minimum marginal hyperplane
+        url: https://en.wikipedia.org/wiki/Active_learning_(machine_learning)#Minimum_marginal_hyperplane
+    source:
+      id: mit-ocw-6867
+      ref: midterm_f06soln#q5.2
+      url: https://ocw.mit.edu/courses/6-867-machine-learning-fall-2006/resources/midterm_f06soln/
+    status: draft
+  - id: classification-026
+    type: short_answer
+    difficulty: medium
+    tags:
+      - mutual-information
+      - feature-selection
+      - entropy
+    question: |
+      Eight training points $(x_1, x_2, x_3)$ with binary labels:
+
+      | label 1 | label 0 |
+      | --- | --- |
+      | $(1, 1, -1)$ | $(1, 1, 2)$ |
+      | $(0, 2, -2)$ | $(0, 2, 1)$ |
+      | $(0, -1, 1)$ | $(1, -1, -1)$ |
+      | $(0, -2, 2)$ | $(1, -2, -2)$ |
+
+      Using the empirical distribution of this training set, what is the mutual information between
+      feature $x_1$ and the label, in bits?
+    answer:
+      numeric: 0.189
+      tolerance: 0.002
+      hint: in bits, 3 decimals
+      model: $I = H(Y) - H(Y \mid x_1) = 1 - H_2(1/4) \approx 1 - 0.811 = 0.189$
+    explanation: |
+      $I(x_1; y) = H(y) - H(y \mid x_1)$ [^2]. The labels are balanced, so $H(y) = 1$ bit. Half the
+      points have $x_1 = 1$, and among them one has label 1 and three label 0; among the $x_1 = 0$
+      points it is three to one. Each group has entropy $H_2(1/4) \approx 0.811$ bits, so
+      $I \approx 0.189$ bits [^1]. Features $x_2$ and $x_3$ take the same values in both classes, so
+      their mutual information is 0, yet their product $x_2 x_3$ is negative for every label-1 point
+      and positive for every label-0 point [^1].
+    references:
+      - source: mit-ocw-6867
+        locator: Mid-term exam (Fall 2002) solutions, Problem 4, parts 2–3
+        url: https://ocw.mit.edu/courses/6-867-machine-learning-fall-2006/resources/midterm_f02soln/
+      - title: 'Wikipedia: Mutual information'
+        locator: Properties — Relation to conditional and joint entropy
+        url: https://en.wikipedia.org/wiki/Mutual_information#Relation_to_conditional_and_joint_entropy
+    source:
+      id: mit-ocw-6867
+      ref: midterm_f02soln#q4.2
+      url: https://ocw.mit.edu/courses/6-867-machine-learning-fall-2006/resources/midterm_f02soln/
+    status: draft
+  - id: classification-027
+    type: single
+    difficulty: hard
+    tags:
+      - feature-selection
+      - quadratic-features
+      - logistic-regression
+    question: |
+      Eight training points $(x_1, x_2, x_3)$ with binary labels:
+
+      | label 1 | label 0 |
+      | --- | --- |
+      | $(1, 1, -1)$ | $(1, 1, 2)$ |
+      | $(0, 2, -2)$ | $(0, 2, 1)$ |
+      | $(0, -1, 1)$ | $(1, -1, -1)$ |
+      | $(0, -2, 2)$ | $(1, -2, -2)$ |
+
+      A quadratic logistic regression
+      $g(w_0 + w_1 x_i + w_2 x_j + w_3 x_i x_j + w_4 x_i^2 + w_5 x_j^2)$ may use only one pair of
+      features $(x_i, x_j)$. Which pair gives the lowest training error?
+    options:
+      - text: $(x_2, x_3)$
+        correct: true
+      - text: $(x_1, x_2)$
+        why: $(1, 1, -1)$ and $(1, 1, 2)$ share $x_1 = 1, x_2 = 1$ but have different labels, so no function of $(x_1, x_2)$ can classify both.
+      - text: $(x_1, x_3)$
+        why: $(1, 1, -1)$ and $(1, -1, -1)$ share $x_1 = 1, x_3 = -1$ but have different labels.
+      - text: All three pairs reach zero training error
+        why: Two of the pairs map differently labelled points to the same input, so they must make at least one error.
+    explanation: |
+      For $(x_2, x_3)$ all eight points are distinct, and the product $x_2 x_3$ alone separates them:
+      it is negative ($-1, -4, -1, -4$) for label 1 and positive ($2, 2, 1, 4$) for label 0, so
+      keeping only $w_0$ and $w_3$ gives zero training error [^1]. Neither $x_2$ nor $x_3$ carries
+      any information about the label on its own (both have zero mutual information with it), which
+      shows why filter methods that score features one at a time can miss useful combinations [^2].
+    references:
+      - source: mit-ocw-6867
+        locator: Mid-term exam (Fall 2002) solutions, Problem 4, parts 3 and 5
+        url: https://ocw.mit.edu/courses/6-867-machine-learning-fall-2006/resources/midterm_f02soln/
+      - title: 'Wikipedia: Feature selection'
+        locator: Introduction (filter vs wrapper methods)
+        url: https://en.wikipedia.org/wiki/Feature_selection#Introduction
+    source:
+      id: mit-ocw-6867
+      ref: midterm_f02soln#q4.3
+      url: https://ocw.mit.edu/courses/6-867-machine-learning-fall-2006/resources/midterm_f02soln/
+    status: draft
+  - id: classification-028
+    type: single
+    difficulty: hard
+    tags:
+      - feature-selection
+      - wrapper-methods
+      - mutual-information
+    question: |
+      Eight training examples $(x_1, x_2, x_3)$:
+
+      | label 0 | label 1 |
+      | --- | --- |
+      | $(3, 3, 0)$ | $(2, 2, 0)$ |
+      | $(3, 3, 1)$ | $(1, 1, 1)$ |
+      | $(3, 3, 0)$ | $(1, 1, 0)$ |
+      | $(2, 2, 1)$ | $(1, 1, 1)$ |
+
+      A filter method that ranks single features by their mutual information with the label picks
+      $x_1$ and $x_2$. Which two features would a greedy wrapper (forward selection by the training
+      accuracy of a linear logistic regression) end up with?
+    options:
+      - text: $x_1$ and $x_2$, the same as the filter
+        why: $x_1$ and $x_2$ are identical, so once one is chosen the other adds nothing to the classifier.
+      - text: One of $x_1$ and $x_2$, plus $x_3$
+        correct: true
+      - text: $x_3$ first, then one of $x_1$ and $x_2$
+        why: $x_3$ has zero mutual information with the label and is useless alone; a greedy wrapper starts with the best single feature.
+      - text: All three, because no pair reaches zero training error
+        why: $x_1$ with $x_3$ already separates the data, e.g. predict label 1 when $2.5 - x_1 - x_3 > 0$.
+    explanation: |
+      $x_3$ has the same distribution in both classes, so its mutual information with the label is
+      0, while $x_1 = x_2$ is informative [^1]. A wrapper evaluates features by how much they help
+      the classifier in combination with those already chosen [^2]: it first takes $x_1$ (or $x_2$),
+      which separates all but the pair $(2,2,\cdot)$; the copy $x_2$ adds nothing, but $x_3$ tells
+      $(2, 2, 1)$ from $(2, 2, 0)$ and brings the training error to zero [^1].
+    references:
+      - source: mit-ocw-6867
+        locator: Mid-term exam (Fall 2001) solutions, Problem 3, parts 1–3
+        url: https://ocw.mit.edu/courses/6-867-machine-learning-fall-2006/resources/midterm_f01soln/
+      - title: 'Wikipedia: Feature selection'
+        locator: Introduction (wrapper methods score subsets with a predictive model)
+        url: https://en.wikipedia.org/wiki/Feature_selection#Introduction
+    source:
+      id: mit-ocw-6867
+      ref: midterm_f01soln#q3.3
+      url: https://ocw.mit.edu/courses/6-867-machine-learning-fall-2006/resources/midterm_f01soln/
+    status: draft
+  - id: classification-029
+    type: single
+    difficulty: medium
+    tags:
+      - quadratic-discriminant-analysis
+      - bayes-classifier
+      - gaussian-classifier
+    question: |
+      Given $Y \in \{0, 1\}$, the input is $X \mid Y \sim \mathcal{N}(\mu_Y, \Sigma_Y)$ in $\mathbb{R}^d$,
+      with $\mu_0 \ne \mu_1$ and two **different** positive definite covariance matrices
+      $\Sigma_0 \ne \Sigma_1$. What does the boundary between $\{h^* = 0\}$ and $\{h^* = 1\}$ of the Bayes
+      classifier look like in general?
+    options:
+      - text: A hyperplane, as when the covariances are equal
+        why: The quadratic terms $x^\top\Sigma_Y^{-1}x$ cancel only when $\Sigma_0 = \Sigma_1$; otherwise they remain in the log-odds.
+      - text: Always an ellipse (an ellipsoid) around one of the means
+        why: Ellipses are one possibility, but the quadric can also be a hyperbola, a parabola or a pair of lines.
+      - text: A quadric, e.g. a hyperbola in the plane
+        correct: true
+      - text: The perpendicular bisector of $\mu_0$ and $\mu_1$
+        why: That is the boundary only for equal, spherical covariances and equal priors.
+    explanation: |
+      The Bayes classifier compares $\log\pi_y - \frac12\log\det\Sigma_y - \frac12(x - \mu_y)^\top\Sigma_y^{-1}(x - \mu_y)$
+      for $y = 0, 1$ [^1]. With equal covariances the quadratic terms cancel and the boundary is a
+      hyperplane (LDA); with different covariances the difference is a quadratic function of $x$,
+      so the boundary is a quadric (QDA) [^2]. For $\Sigma_0 = \mathrm{diag}(1, 2)$ and
+      $\Sigma_1 = \mathrm{diag}(2, 1)$ in the plane it is a hyperbola [^1].
+    references:
+      - source: mit-ocw-18657
+        locator: Problem set 1 solutions, Problem 1 (2)–(3)
+        url: https://ocw.mit.edu/courses/18-657-mathematics-of-machine-learning-fall-2015/resources/assignment-1-solution/
+      - title: 'Wikipedia: Quadratic classifier'
+        locator: Quadratic discriminant analysis
+        url: https://en.wikipedia.org/wiki/Quadratic_classifier#Quadratic_discriminant_analysis
+    source:
+      id: mit-ocw-18657
+      ref: assignment-1#q1.3
+      url: https://ocw.mit.edu/courses/18-657-mathematics-of-machine-learning-fall-2015/resources/assignment-1-solution/
+    status: draft
+  - id: classification-030
+    type: true_false
+    difficulty: medium
+    tags:
+      - discriminant-analysis
+      - class-priors
+    shuffle: false
+    question: |
+      Discriminant analysis gives one classification function per class, and a point goes to the
+      class whose function is largest. An analyst first assumes three equally likely classes $C_1$,
+      $C_2$, $C_3$, then learns that $P(C_1) = 2P(C_2) = 2P(C_3)$. After recomputing with these
+      priors, the value of $C_1$'s classification function is larger at every data point.
+    options:
+      - text: 'True'
+        correct: true
+      - text: 'False'
+        why: The priors enter each classification function only through an additive $\log P(C_k)$ term, so $C_1$'s function goes up by the same constant everywhere [^2].
+    explanation: |
+      The Bayes discriminant rule assigns $x$ to the class maximizing $P(C_k)f_k(x)$, so in log form
+      each classification function is a term in $x$ plus the constant $\log P(C_k)$ [^2]. Raising $P(C_1)$ from $1/3$ to $1/2$
+      increases only that constant, by $\log(3/2)$, and leaves the coefficients of the inputs
+      unchanged, so $C_1$'s function is higher at every point and $C_1$ wins more often [^1].
+    references:
+      - source: mit-ocw-15062
+        locator: Midterm (2003) solutions, Problem 1.3
+        url: https://ocw.mit.edu/courses/15-062-data-mining-spring-2003/resources/midterm2003solutions/
+      - title: 'Wikipedia: Linear discriminant analysis'
+        locator: Discrimination rules (the Bayes discriminant rule maximizes π_i f_i(x))
+        url: https://en.wikipedia.org/wiki/Linear_discriminant_analysis#Discrimination_rules
+    source:
+      id: mit-ocw-15062
+      ref: midterm2003#q1.3
+      url: https://ocw.mit.edu/courses/15-062-data-mining-spring-2003/resources/midterm2003solutions/
+    status: draft
+  - id: classification-031
+    type: single
+    difficulty: easy
+    tags:
+      - naive-bayes
+      - missing-values
+    question: |
+      A naive Bayes classifier was trained with ten input variables. A new case has values for only
+      eight of them. How should it be classified?
+    options:
+      - text: It cannot be classified until the two missing values are measured
+        why: The missing variables can be summed out, and under the naive Bayes assumption that just removes their factors.
+      - text: Set the likelihood factors of the two missing variables to 0
+        why: A factor of 0 would make every class's score 0; the missing variables should contribute a factor of 1 (they are summed out).
+      - text: Retrain the classifier on all cases using only those eight variables
+        why: That gives the same answer for this case with much more work; dropping the two factors already does it.
+      - text: Score each class with the prior and the eight observed variables only
+        correct: true
+    explanation: |
+      Naive Bayes scores a class by $P(C)\prod_j P(x_j \mid C)$, with the features conditionally
+      independent given the class [^2]. Summing a missing feature over all its values turns its
+      factor into $\sum_{x_j} P(x_j \mid C) = 1$, so the case is classified with the product over the
+      eight observed variables only [^1].
+    references:
+      - source: mit-ocw-15062
+        locator: Midterm (2003) solutions, Problem 3
+        url: https://ocw.mit.edu/courses/15-062-data-mining-spring-2003/resources/midterm2003solutions/
+      - title: 'Wikipedia: Naive Bayes classifier'
+        locator: Probabilistic model
+        url: https://en.wikipedia.org/wiki/Naive_Bayes_classifier#Probabilistic_model
+    source:
+      id: mit-ocw-15062
+      ref: midterm2003#q3
+      url: https://ocw.mit.edu/courses/15-062-data-mining-spring-2003/resources/midterm2003solutions/
+    status: draft
+  - id: classification-032
+    type: true_false
+    difficulty: medium
+    tags:
+      - generative-models
+      - bayes-optimal
+      - decision-boundary
+    shuffle: false
+    question: |
+      A generative classifier with parametric class-conditional densities can produce the optimal
+      (Bayes) decision boundary only if its class-conditional densities are the correct ones.
+    options:
+      - text: 'True'
+        why: The boundary depends only on where the posterior class probabilities cross, and wrong densities can still put that crossing in the right place [^1].
+      - text: 'False'
+        correct: true
+    explanation: |
+      The decision depends only on whether $P(y = 1 \mid x) > P(y = 0 \mid x)$, not on every detail
+      of the class-conditional densities [^2]. In the extreme case where the true class-conditional
+      densities are identical, the optimal rule depends only on the class priors, and any model with
+      two identical (even wrong) class-conditional densities and the right priors reproduces it [^1].
+    references:
+      - source: mit-ocw-6867
+        locator: Mid-term exam (Fall 2002) solutions, Problem 3, part 7
+        url: https://ocw.mit.edu/courses/6-867-machine-learning-fall-2006/resources/midterm_f02soln/
+      - title: 'Wikipedia: Naive Bayes classifier'
+        locator: Discussion (correct classification despite poor probability estimates)
+        url: https://en.wikipedia.org/wiki/Naive_Bayes_classifier#Discussion
+    source:
+      id: mit-ocw-6867
+      ref: midterm_f02soln#q3.7
+      url: https://ocw.mit.edu/courses/6-867-machine-learning-fall-2006/resources/midterm_f02soln/
+    status: draft

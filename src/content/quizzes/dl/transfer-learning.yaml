@@ -920,3 +920,262 @@ questions:
       ref: mit6_7960_f24_hw4#q8b
       url: https://ocw.mit.edu/courses/6-7960-deep-learning-fall-2024/resources/mit6_7960_f24_hw4_pdf/
     status: draft
+  - id: transfer-learning-025
+    type: single
+    difficulty: medium
+    tags:
+      - feature-extraction
+      - fine-tuning
+      - dataset-size
+      - domain-similarity
+    question: |
+      You have 500 labeled microscope images of cells, which look nothing like ImageNet photos, and a
+      CNN pretrained on ImageNet. Following the usual rules of thumb for transfer learning, what should
+      you try first?
+    options:
+      - text: Train the same architecture from scratch, since pretrained features cannot help on such data
+        why: Training from scratch is an option only for a large dataset, and even then pretrained initialization usually helps [^1]; features from a distant task still beat random ones [^2].
+      - text: Freeze the network and train a linear classifier on the features just before its old output layer
+        why: Those top features are the most specific to ImageNet's classes; this is the recipe for a small dataset that is *similar* to ImageNet [^1].
+      - text: Freeze the network and train a linear classifier on activations from an earlier layer
+        correct: true
+      - text: Fine-tune every layer end to end, since only full fine-tuning can adapt to such different images
+        why: With only a few hundred images, fine-tuning the whole network is likely to overfit [^1].
+    explanation: |
+      The choice depends mainly on the size of the new dataset and its similarity to the original one
+      [^1]. A small dataset rules out fine-tuning because of overfitting, so a linear classifier on
+      frozen features is the safe choice. Early layers compute generic features such as edge and color
+      blob detectors, while later layers become specific to the original classes [^1][^2]. For a small
+      and very different dataset, the classifier should therefore be trained on activations from
+      somewhere earlier in the network rather than from the top [^1].
+    references:
+      - title: 'Stanford CS231n notes: Transfer Learning'
+        url: https://cs231n.github.io/transfer-learning/#tf
+        locator: Transfer Learning, "When and how to fine-tune?" (the four scenarios)
+      - title: Yosinski et al. (2014), How transferable are features in deep neural networks?
+        url: https://arxiv.org/abs/1411.1792
+        locator: Abstract; Sec. 4.3 Random Weights
+    source:
+      id: original
+      ref: transfer-learning-025
+    status: draft
+  - id: transfer-learning-026
+    type: multiple
+    difficulty: hard
+    tags:
+      - feature-generality
+      - co-adaptation
+      - layer-transfer
+    question: |
+      Yosinski et al. measured how well the features of each layer of an ImageNet-trained CNN transfer to
+      another task. Which findings did they report? Select all that apply.
+    options:
+      - text: Transfer gets worse as the base and target tasks grow apart, but distant-task features still beat random ones
+        correct: true
+      - text: First-layer features such as Gabor-like filters and color blobs are general and transfer almost perfectly
+        correct: true
+      - text: After fine-tuning on the target data, a transferred initialization does no better than a random one
+        why: The opposite was found; initializing with transferred features gives a boost to generalization that lingers even after fine-tuning [^1].
+      - text: The top layers are the most general, so they are the ones to reuse when the tasks differ
+        why: Features go from general in the first layers to specific in the last ones, so the top layers are the most task-specific [^1][^2].
+      - text: Freezing copied middle layers hurt even when retraining on the original task, because co-adapted neurons were split
+        correct: true
+    explanation: |
+      Transferability suffers from two separate effects: higher-layer neurons specialize to the original
+      task, and splitting the network between co-adapted neurons creates optimization difficulties [^1].
+      The second effect appeared when the first $n$ layers of a network were copied, frozen, and the
+      rest retrained on the *same* task: performance dropped for layers 3–5, while letting the copied
+      layers fine-tune removed the drop [^2]. Layers 1 and 2 transferred almost perfectly between tasks
+      [^2], and even features from a dissimilar task beat random weights [^1].
+    references:
+      - title: Yosinski et al. (2014), How transferable are features in deep neural networks?
+        url: https://arxiv.org/abs/1411.1792
+        locator: Abstract; Sec. 5 Conclusions
+      - title: Yosinski et al. (2014), How transferable are features in deep neural networks?
+        url: https://arxiv.org/abs/1411.1792
+        locator: Sec. 4.1 Similar Datasets, Figure 2 and interpretations 2–4
+    source:
+      id: original
+      ref: transfer-learning-026
+    status: draft
+  - id: transfer-learning-027
+    type: short_answer
+    difficulty: easy
+    tags:
+      - ulmfit
+      - discriminative-fine-tuning
+      - learning-rate
+    question: |
+      ULMFiT fine-tunes each layer with its own learning rate (discriminative fine-tuning). It first
+      picks the rate $\eta^L$ of the last layer and then sets $\eta^{l-1} = \eta^{l}/2.6$ for each lower
+      layer. If $\eta^L = 0.01$, what learning rate does layer $L-3$ get?
+    answer:
+      numeric: 0.000569
+      tolerance: 0.0000015
+      hint: a number with 3 significant figures, e.g. 0.000123
+      model: $\eta^{L-3} = 0.01 / 2.6^3 = 0.01 / 17.576 \approx 0.000569$
+    explanation: |
+      Different layers capture different types of information, so ULMFiT tunes them to different
+      extents: the last layer with $\eta^L$ and each lower layer with a rate 2.6 times smaller [^1].
+      Three layers down, the rate is $0.01/2.6^3 \approx 5.7 \times 10^{-4}$, so the general features of
+      the lower layers change slowly [^2]. ULMFiT combines this with slanted triangular learning rates (a
+      short linear increase, then a long linear decay) [^1] and with gradual unfreezing from the last
+      layer down, which avoids the risk of catastrophic forgetting when all layers are fine-tuned at
+      once [^3].
+    references:
+      - title: Howard & Ruder (2018), Universal Language Model Fine-tuning for Text Classification
+        url: https://arxiv.org/abs/1801.06146
+        locator: Sec. 3.2 Target task LM fine-tuning, "Discriminative fine-tuning" Eq. (2) and "Slanted triangular learning rates"
+      - title: Yosinski et al. (2014), How transferable are features in deep neural networks?
+        url: https://arxiv.org/abs/1411.1792
+        locator: Abstract
+      - title: Howard & Ruder (2018), Universal Language Model Fine-tuning for Text Classification
+        url: https://arxiv.org/abs/1801.06146
+        locator: Sec. 3.3 Target task classifier fine-tuning, "Gradual unfreezing"
+    source:
+      id: original
+      ref: transfer-learning-027
+    status: draft
+  - id: transfer-learning-028
+    type: single
+    difficulty: medium
+    tags:
+      - distribution-shift
+      - label-shift
+      - domain-shift
+    question: |
+      A pneumonia classifier was trained on chest X-rays from a hospital where 10% of patients have
+      pneumonia. It is deployed at a clinic during flu season, where 40% do. How pneumonia looks on an
+      X-ray is the same in both places. Which kind of distribution shift is this, and what is the
+      matching correction?
+    options:
+      - text: Label shift; reweight by $p(y)/q(y)$, estimating the new $p(y)$ with a confusion matrix
+        correct: true
+      - text: Concept shift; relabel the clinic's data, since the definition of pneumonia has changed
+        why: Concept shift means the definitions of the labels change; here pneumonia means the same thing and only its frequency differs [^1].
+      - text: Covariate shift; reweight by $p(\mathbf{x})/q(\mathbf{x})$ estimated with a domain classifier
+        why: Covariate shift assumes $P(y \mid \mathbf{x})$ stays fixed. Here the prevalence changes, so the same X-ray has a different chance of showing pneumonia; what stays fixed is $P(\mathbf{x} \mid y)$ [^1].
+      - text: No shift, because each class looks the same in both places, so no correction is needed
+        why: An unchanged class-conditional distribution is exactly the label-shift assumption; the prior $P(y)$ still changes, so the model's predicted probabilities are off [^1][^2].
+    explanation: |
+      Label shift means the label distribution $P(y)$ changes while the class-conditional distribution
+      $P(\mathbf{x} \mid y)$ stays fixed; it is the natural assumption when $y$ causes $\mathbf{x}$, as
+      diseases cause symptoms [^1]. The correction weights each training example by
+      $\beta_i = p(y_i)/q(y_i)$, here $0.4/0.1 = 4$ for pneumonia and $0.6/0.9 \approx 0.67$ for healthy
+      patients [^2]. In practice the new prior is unknown: average the model's predictions on test
+      inputs, $\mu(\hat{\mathbf{y}})$, and solve $\mathbf{C}\,p(\mathbf{y}) = \mu(\hat{\mathbf{y}})$ with
+      the confusion matrix $\mathbf{C}$ from validation data [^2].
+    references:
+      - source: d2l
+        locator: Sec. 4.7.1 Types of Distribution Shift (4.7.1.1 Covariate Shift, 4.7.1.2 Label Shift, 4.7.1.3 Concept Shift)
+        url: https://d2l.ai/chapter_linear-classification/environment-and-distribution-shift.html#label-shift
+      - source: d2l
+        locator: Sec. 4.7.3.3 Label Shift Correction
+        url: https://d2l.ai/chapter_linear-classification/environment-and-distribution-shift.html#label-shift-correction
+    source:
+      id: original
+      ref: transfer-learning-028
+    status: draft
+  - id: transfer-learning-029
+    type: short_answer
+    difficulty: hard
+    tags:
+      - fine-tuning
+      - parameter-count
+      - resnet
+      - batch-normalization
+      - code-reading
+    question: |
+      You fine-tune only the last stage and the new head of a torchvision ResNet-18:
+
+      ```python
+      model = torchvision.models.resnet18(weights="IMAGENET1K_V1")
+      model.fc = nn.Linear(512, 2)
+      for name, p in model.named_parameters():
+          p.requires_grad = name.startswith(("layer4.", "fc."))
+      n = sum(p.numel() for p in model.parameters() if p.requires_grad)
+      ```
+
+      `layer4` has two residual blocks. Block 1: a 3×3 conv 256→512 (stride 2), BatchNorm(512), a 3×3
+      conv 512→512, BatchNorm(512), and a shortcut made of a 1×1 conv 256→512 and BatchNorm(512).
+      Block 2: two 3×3 convs 512→512, each followed by BatchNorm(512). All convolutions have
+      `bias=False`; each BatchNorm has a learnable scale and shift per channel. What is `n`?
+    answer:
+      numeric: 8394754
+      tolerance: 0
+      hint: a whole number
+      model: 'block 1: $1\,179\,648 + 2\,359\,296 + 131\,072 + 3 \times 1024 = 3\,673\,088$; block 2: $2 \times (2\,359\,296 + 1024) = 4\,720\,640$; `fc`: $512 \times 2 + 2 = 1026$; total $8\,394\,754$'
+    explanation: |
+      A $k \times k$ convolution from $c_i$ to $c_o$ channels has $c_o c_i k^2$ weights [^1], and
+      torchvision builds these convolutions without bias [^5]:
+      $3 \cdot 3 \cdot 256 \cdot 512 = 1\,179\,648$, $3 \cdot 3 \cdot 512 \cdot 512 = 2\,359\,296$, and
+      $256 \cdot 512 = 131\,072$ for the 1×1 shortcut. Each BatchNorm adds a learnable $\gamma$ and
+      $\beta$ per channel, 1024 parameters [^2]; its running mean and variance are buffers, not
+      parameters, so they are not counted [^3]. `layer4` alone has 8,393,728 parameters, about 72% of
+      the 11.7 million in ResNet-18 [^4], so unfreezing just the last stage already trains most of the
+      weights. Note that freezing does not stop the BatchNorm layers of the frozen stages from updating
+      their running statistics in training mode [^2].
+    references:
+      - source: d2l
+        locator: Sec. 7.4 Multiple Input and Multiple Output Channels
+        url: https://d2l.ai/chapter_convolutional-neural-networks/channels.html
+      - title: 'PyTorch docs: torch.nn.BatchNorm2d'
+        url: https://docs.pytorch.org/docs/stable/generated/torch.nn.BatchNorm2d.html
+        locator: Class description (learnable γ and β of size C; running estimates kept during training)
+      - title: 'PyTorch docs: torch.nn.Module.register_buffer'
+        url: https://docs.pytorch.org/docs/stable/generated/torch.nn.Module.html#torch.nn.Module.register_buffer
+        locator: register_buffer ("BatchNorm's running_mean is not a parameter")
+      - title: 'torchvision docs: resnet18'
+        url: https://docs.pytorch.org/vision/stable/models/generated/torchvision.models.resnet18.html
+        locator: ResNet18_Weights.IMAGENET1K_V1 (num_params 11689512)
+      - title: 'torchvision source: models/resnet.py'
+        url: https://github.com/pytorch/vision/blob/main/torchvision/models/resnet.py
+        locator: conv3x3 / conv1x1 (bias=False), BasicBlock, ResNet._make_layer (downsample shortcut)
+    source:
+      id: original
+      ref: transfer-learning-029
+    status: draft
+  - id: transfer-learning-030
+    type: single
+    difficulty: hard
+    tags:
+      - linear-probing
+      - fine-tuning
+      - lp-ft
+      - out-of-distribution
+    question: |
+      A model with good pretrained features is adapted to a task whose test data come from a shifted
+      distribution. Kumar et al. compare full fine-tuning (randomly initialized head, all layers
+      trained) with linear probing (frozen features, only the head trained), and recommend LP-FT:
+      linear probing first, then full fine-tuning. Why does LP-FT help?
+    options:
+      - text: Linear probing reaches the better in-distribution accuracy, which fine-tuning then keeps
+        why: Full fine-tuning is usually more accurate in-distribution than linear probing; linear probing can win out-of-distribution [^1].
+      - text: LP-FT can use a much larger learning rate, which lets the backbone escape the pretrained solution
+        why: The goal is to stay close to the good pretrained features; with a random head, features get distorted even with an infinitesimally small learning rate [^2].
+      - text: Linear probing shrinks the backbone's weights first, which regularizes the later fine-tuning
+        why: Linear probing does not touch the backbone at all; it trains only the head on frozen features [^1].
+      - text: Starting from a trained head, fine-tuning distorts the pretrained features less
+        correct: true
+    explanation: |
+      Across ten distribution-shift benchmarks, fine-tuning was about 2% more accurate than linear
+      probing in-distribution but 7% less accurate out-of-distribution [^1]. With a random head, the head
+      and the feature extractor change together: the features of the training data get distorted while
+      those of OOD inputs change less, and the head fits only the distorted features [^2]. A
+      linear-probed head is already well aligned, so fine-tuning from it updates the features without
+      raising the OOD error much [^3]. Empirically LP-FT was about 1% better ID and 10% better OOD than
+      full fine-tuning [^1].
+    references:
+      - title: Kumar et al. (2022), Fine-Tuning can Distort Pretrained Features and Underperform Out-of-Distribution
+        url: https://arxiv.org/abs/2202.10054
+        locator: Abstract
+      - title: Kumar et al. (2022), Fine-Tuning can Distort Pretrained Features and Underperform Out-of-Distribution
+        url: https://arxiv.org/abs/2202.10054
+        locator: Sec. 1 Introduction
+      - title: Kumar et al. (2022), Fine-Tuning can Distort Pretrained Features and Underperform Out-of-Distribution
+        url: https://arxiv.org/abs/2202.10054
+        locator: 'Sec. 3.4 Linear probing then fine-tuning: a simple variant to mitigate tradeoffs'
+    source:
+      id: original
+      ref: transfer-learning-030
+    status: draft

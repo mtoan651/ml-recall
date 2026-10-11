@@ -747,3 +747,232 @@ questions:
       ref: intro-llms/assignment8#q9
       url: https://archive.nptel.ac.in/content/storage2/courses/downloads_new/106102576/noc25_cs45_assignment_Week_8.png
     status: draft
+  - id: policy-gradient-022
+    type: short_answer
+    difficulty: easy
+    tags:
+      - discounted-return
+      - reinforce
+    question: |
+      An episode gives the rewards $R_1 = 2$, $R_2 = 0$, $R_3 = 1$, $R_4 = 3$ and then ends. With
+      discount factor $\gamma = 0.8$, what is the return $G_0$ from the start of the episode?
+    answer:
+      numeric: 4.176
+      tolerance: 0.001
+      hint: a number, 3 decimals
+      model: $G_0 = 2 + 0.8 \cdot 0 + 0.8^2 \cdot 1 + 0.8^3 \cdot 3 = 2 + 0.64 + 1.536 = 4.176$
+    explanation: |
+      The discounted return is $G_t = R_{t+1} + \gamma R_{t+2} + \gamma^2 R_{t+3} + \dots$, so a
+      reward received $k$ steps after the first one is weighted by $\gamma^k$ [^1][^2]. It can also be
+      computed backwards with $G_t = R_{t+1} + \gamma G_{t+1}$: $G_3 = 3$, $G_2 = 1 + 0.8 \cdot 3 = 3.4$,
+      $G_1 = 0 + 0.8 \cdot 3.4 = 2.72$ and $G_0 = 2 + 0.8 \cdot 2.72 = 4.176$ [^1]. REINFORCE computes
+      such a return for every step of a finished episode and uses it to weight that step's update [^3].
+    references:
+      - title: 'Sutton & Barto (2018), Reinforcement Learning: An Introduction, 2nd ed.'
+        url: http://incompleteideas.net/book/the-book-2nd.html
+        locator: Sec. 3.3 Returns and Episodes
+      - title: 'OpenAI Spinning Up, Part 1: Key Concepts in RL'
+        url: https://spinningup.openai.com/en/latest/spinningup/rl_intro.html#reward-and-return
+        locator: Section "Reward and Return"
+      - title: 'Sutton & Barto (2018), Reinforcement Learning: An Introduction, 2nd ed.'
+        url: http://incompleteideas.net/book/the-book-2nd.html
+        locator: 'Sec. 13.3 REINFORCE: Monte Carlo Policy Gradient (boxed algorithm)'
+    source:
+      id: original
+      ref: policy-gradient-022
+    status: draft
+  - id: policy-gradient-023
+    type: short_answer
+    difficulty: hard
+    tags:
+      - reinforce
+      - softmax-policy
+      - log-likelihood-gradient
+    question: |
+      In one state, a policy is a soft-max over action preferences, one preference per action:
+      $h = (h_L, h_M, h_R) = (1.0, 2.0, 0.0)$ and $\pi(a) = e^{h_a} / \sum_b e^{h_b}$. At time
+      $t = 0$ the agent takes action L, and the episode's return is $G_0 = 2$. REINFORCE updates
+      $h \leftarrow h + \alpha\, G_0 \nabla_h \ln \pi(L)$ with $\alpha = 0.1$. What is the new value
+      of $h_M$, the preference of an action that was *not* taken?
+    answer:
+      numeric: 1.867
+      tolerance: 0.002
+      hint: a number, 3 decimals
+      model: $\pi(M) \approx 0.665$ and $\partial \ln \pi(L) / \partial h_M = -\pi(M)$, so $h_M = 2 - 0.1 \cdot 2 \cdot 0.665 \approx 1.867$
+    explanation: |
+      For a soft-max over preferences, the gradient of $\ln \pi(a)$ is the one-hot vector of the
+      action taken minus the vector of action probabilities [^1]. Here $\pi \approx (0.245, 0.665, 0.090)$,
+      so $\nabla_h \ln \pi(L) \approx (0.755, -0.665, -0.090)$. REINFORCE moves the parameters along
+      this vector, scaled by the step size and the return [^2][^3]: $h_L$ rises to about 1.151, while
+      $h_M$ falls to about 1.867 and $h_R$ to about $-0.018$. A positive return thus makes the
+      chosen action more likely and takes probability from the others in proportion to how likely
+      they were.
+    references:
+      - title: 'Sutton & Barto (2018), Reinforcement Learning: An Introduction, 2nd ed.'
+        url: http://incompleteideas.net/book/the-book-2nd.html
+        locator: Sec. 13.1 Policy Approximation and its Advantages (soft-max in action preferences); Sec. 13.3, Exercise 13.3 (eligibility vector)
+      - title: 'Sutton & Barto (2018), Reinforcement Learning: An Introduction, 2nd ed.'
+        url: http://incompleteideas.net/book/the-book-2nd.html
+        locator: 'Sec. 13.3 REINFORCE: Monte Carlo Policy Gradient'
+      - source: hf-deep-rl-course
+        url: https://huggingface.co/learn/deep-rl-course/unit4/policy-gradient#the-reinforce-algorithm-monte-carlo-reinforce
+        locator: Unit 4, "Diving deeper into policy-gradient methods", section "The Reinforce algorithm (Monte Carlo Reinforce)"
+    source:
+      id: original
+      ref: policy-gradient-023
+    status: draft
+  - id: policy-gradient-024
+    type: true_false
+    difficulty: medium
+    tags:
+      - baseline
+      - variance-reduction
+      - unbiased-gradient
+    shuffle: false
+    question: |
+      REINFORCE with baseline updates
+      $\theta \leftarrow \theta + \alpha\,\big(G_t - b(S_t)\big)\,\nabla_\theta \ln \pi(A_t \mid S_t, \theta)$.
+      True or false: subtracting $b(S_t)$ biases the expected update unless $b(S_t)$ equals the true
+      state value $v_\pi(S_t)$.
+    options:
+      - text: 'True'
+        why: Any baseline that does not depend on the action leaves the expected update unchanged, because $\sum_a b(s)\,\nabla \pi(a \mid s) = b(s)\,\nabla 1 = 0$ [^1].
+      - text: 'False'
+        correct: true
+    explanation: |
+      The baseline may be any function, even a random variable, as long as it does not vary with the
+      action: the probabilities sum to 1 in every state, so $\sum_a b(s) \nabla \pi(a \mid s) = 0$ [^1].
+      Spinning Up states the same fact as the expected grad-log-prob lemma,
+      $E_{a_t \sim \pi_\theta}[\nabla_\theta \log \pi_\theta(a_t \mid s_t)\, b(s_t)] = 0$ [^2]. The choice
+      of $b$ changes only the variance of the update; an estimate of the state value, learned
+      alongside the policy, is the usual choice because it reduces variance and speeds up
+      learning [^1][^2].
+    references:
+      - title: 'Sutton & Barto (2018), Reinforcement Learning: An Introduction, 2nd ed.'
+        url: http://incompleteideas.net/book/the-book-2nd.html
+        locator: Sec. 13.4 REINFORCE with Baseline
+      - title: 'OpenAI Spinning Up, Part 3: Intro to Policy Optimization'
+        url: https://spinningup.openai.com/en/latest/spinningup/rl_intro3.html#baselines-in-policy-gradients
+        locator: Sections "Expected Grad-Log-Prob Lemma" and "Baselines in Policy Gradients"
+    source:
+      id: original
+      ref: policy-gradient-024
+    status: draft
+  - id: policy-gradient-025
+    type: short_answer
+    difficulty: hard
+    tags:
+      - ppo
+      - clipped-objective
+      - probability-ratio
+    question: |
+      PPO's clipped objective for one sample is
+      $L = \min\big(r A,\ \operatorname{clip}(r, 1 - \epsilon, 1 + \epsilon)\, A\big)$ with
+      $r = \pi_\theta(a \mid s) / \pi_{\theta_{\text{old}}}(a \mid s)$. With $\epsilon = 0.2$ and an
+      advantage $A = -0.5$, the ratio has grown to $r = 1.4$ during the update epochs. What is $L$?
+    answer:
+      numeric: -0.7
+      tolerance: 0.001
+      hint: a number, 1 decimal
+      model: $rA = -0.7$ and the clipped term is $1.2 \cdot (-0.5) = -0.6$, so $L = \min(-0.7, -0.6) = -0.7$
+    explanation: |
+      Taking the minimum makes $L$ a pessimistic bound on the unclipped objective: a change in the
+      ratio is ignored only when it would improve the objective and kept when it makes it worse [^1].
+      With $A < 0$ the action should become less likely, yet its probability has risen, so the
+      unclipped $-0.7$ is kept and its gradient still pushes $r$ back down [^2][^3]. Had the ratio
+      fallen to $0.6$ instead, the term would be clipped to $0.8 \cdot (-0.5) = -0.4$ with zero
+      gradient, because lowering the probability further no longer pays [^2][^3].
+    references:
+      - title: Schulman et al. (2017), Proximal Policy Optimization Algorithms
+        url: https://arxiv.org/abs/1707.06347
+        locator: Sec. 3 Clipped Surrogate Objective, Eq. (7) and Figure 1
+      - title: 'OpenAI Spinning Up: Proximal Policy Optimization'
+        url: https://spinningup.openai.com/en/latest/algorithms/ppo.html#key-equations
+        locator: Key Equations (advantage is negative)
+      - source: hf-deep-rl-course
+        url: https://huggingface.co/learn/deep-rl-course/unit8/visualize#case-5-and-6-the-ratio-is-above-the-range
+        locator: Unit 8, "Visualize the Clipped Surrogate Objective Function", cases 3–6
+    source:
+      id: original
+      ref: policy-gradient-025
+    status: draft
+  - id: policy-gradient-026
+    type: single
+    difficulty: medium
+    tags:
+      - on-policy
+      - ppo
+      - sample-reuse
+    question: |
+      Vanilla policy gradient collects a batch of trajectories with the current policy, takes one
+      gradient step on $\hat{E}_t[\log \pi_\theta(a_t \mid s_t)\, \hat{A}_t]$, and then discards the
+      batch. Why doesn't it simply take many gradient steps on the same batch, as PPO does?
+    options:
+      - text: PPO is an off-policy method like Q-learning, while vanilla policy gradient is on-policy, so only PPO may reuse data
+        why: PPO is also on-policy; it reuses only the latest batch for a few epochs and keeps the new policy close to the one that collected it [^2][^3].
+      - text: Each return in the batch may be credited to only one update, otherwise the rewards would be counted twice in the objective
+        why: There is no such counting rule; the problem is that the data no longer match the policy being updated [^3].
+      - text: The gradient estimate assumes data from the current policy; after a step the batch is stale and reuse can wreck it
+        correct: true
+      - text: Reusing the batch would be just as sound for vanilla policy gradient; it is skipped only to save the memory for storing it
+        why: The PPO paper notes that repeated steps on this loss are not well-justified and often lead to destructively large policy updates [^1].
+    explanation: |
+      The policy gradient is an expectation over trajectories drawn from the current policy, so
+      vanilla policy gradient is on-policy: once $\theta$ changes, the old batch comes from a
+      different policy [^3]. Schulman et al. note that taking several steps on the same trajectories
+      is not well-justified and often gives destructively large updates [^1]. PPO instead optimizes
+      a surrogate with the ratio $\pi_\theta / \pi_{\theta_{\text{old}}}$ and clipping, which keeps
+      the new policy close to the old one, so it can run $K$ epochs of minibatch updates on each fresh
+      batch [^1][^2].
+    references:
+      - title: Schulman et al. (2017), Proximal Policy Optimization Algorithms
+        url: https://arxiv.org/abs/1707.06347
+        locator: Sec. 2.1 Policy Gradient Methods; Sec. 5 Algorithm, Algorithm 1
+      - title: 'OpenAI Spinning Up: Proximal Policy Optimization'
+        url: https://spinningup.openai.com/en/latest/algorithms/ppo.html#quick-facts
+        locator: Background; Quick Facts ("PPO is an on-policy algorithm")
+      - title: 'Wikipedia: Policy gradient method'
+        url: https://en.wikipedia.org/wiki/Policy_gradient_method#PPO
+        locator: Variance reduction (REINFORCE is on-policy); Proximal Policy Optimization (PPO)
+    source:
+      id: original
+      ref: policy-gradient-026
+    status: draft
+  - id: policy-gradient-027
+    type: single
+    difficulty: medium
+    tags:
+      - gae
+      - advantage-estimation
+      - bias-variance
+    question: |
+      Generalized advantage estimation computes $\hat{A}_t = \sum_{l \ge 0} (\gamma\lambda)^l\, \delta_{t+l}$
+      with the TD error $\delta_t = r_t + \gamma V(s_{t+1}) - V(s_t)$. What do the two extreme
+      settings of $\lambda$ give?
+    options:
+      - text: $\lambda = 0$ switches off discounting of future rewards; $\lambda = 1$ discounts them by the usual $\gamma$
+        why: Discounting is set by $\gamma$; $\lambda$ decides how many TD errors are summed into the estimate [^1].
+      - text: $\lambda = 0$ makes every advantage estimate zero; $\lambda = 1$ gives the one-step TD error $\delta_t$
+        why: With $\lambda = 0$ the sum keeps its first term $\delta_t$, which is generally not zero [^1].
+      - text: $\lambda = 0$ gives the TD error $\delta_t$; $\lambda = 1$ gives the discounted return minus $V(s_t)$
+        correct: true
+      - text: $\lambda = 0$ gives the discounted return minus $V(s_t)$; $\lambda = 1$ gives the TD error $\delta_t$
+        why: The two cases are swapped; with $\lambda = 0$ only the $l = 0$ term $\delta_t$ survives [^1].
+    explanation: |
+      With $\lambda = 0$ only the first term remains, $\hat{A}_t = \delta_t$; with $\lambda = 1$ the
+      sum telescopes to $\sum_l \gamma^l r_{t+l} - V(s_t)$ [^1]. The TD error has much lower variance
+      but is biased unless $V$ is exact, while the $\lambda = 1$ estimator is unbiased (for the
+      discounted objective) regardless of $V$ but has high variance; values in between trade bias
+      against variance [^1]. PPO uses a version truncated after $T$ steps; with $\lambda = 1$ it becomes
+      the rewards up to step $T$ plus the bootstrap $\gamma^{T-t} V(s_T)$, minus $V(s_t)$ [^2].
+    references:
+      - title: Schulman et al. (2015), High-Dimensional Continuous Control Using Generalized Advantage Estimation
+        url: https://arxiv.org/abs/1506.02438
+        locator: Sec. 3 Advantage Function Estimation, Eqs. (16)-(18)
+      - title: Schulman et al. (2017), Proximal Policy Optimization Algorithms
+        url: https://arxiv.org/abs/1707.06347
+        locator: Sec. 5 Algorithm, Eqs. (10)-(12)
+    source:
+      id: original
+      ref: policy-gradient-027
+    status: draft

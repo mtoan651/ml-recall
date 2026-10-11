@@ -3022,3 +3022,339 @@ questions:
       ref: ai-search-methods/assignment12#q9
       url: https://archive.nptel.ac.in/content/storage2/courses/downloads_new/106106126/Week_12_Assignment_12.pdf
     status: draft
+  - id: search-079
+    type: short_answer
+    difficulty: easy
+    tags:
+      - bfs
+      - complexity
+      - branching-factor
+    question: |
+      Breadth-first search runs on a tree in which every node has exactly $b = 3$ children. The
+      shallowest goal is at depth $d = 4$ and is the last node generated at that depth. BFS applies
+      the goal test as soon as a node is generated. Counting the root, how many nodes has BFS
+      generated when it finds the goal?
+    answer:
+      numeric: 121
+      tolerance: 0
+      hint: a whole number
+      model: $1 + 3 + 9 + 27 + 81 = 121$
+    explanation: |
+      BFS generates every node at one depth before any node at the next depth [^1], so in the worst
+      case it generates all $1 + b + b^2 + \dots + b^d$ nodes up to the goal depth:
+      $1 + 3 + 9 + 27 + 81 = 121$, which is $O(b^d)$. If the goal test is applied only when a node
+      is taken off the queue, BFS first expands the other 80 depth-4 nodes as well and generates
+      their 240 children, 361 nodes in all, which matches the $O(b^{d+1})$ bound often quoted for
+      BFS [^2].
+      The aima-python breadth-first graph search applies the goal test to each child as it is
+      generated [^3].
+    references:
+      - title: 'Wikipedia: Breadth-first search'
+        url: https://en.wikipedia.org/wiki/Breadth-first_search
+        locator: Introduction (level-by-level exploration)
+      - title: 'Wikipedia: Breadth-first search'
+        url: https://en.wikipedia.org/wiki/Breadth-first_search#Time_and_space_complexity
+        locator: Analysis > Time and space complexity
+      - title: 'aima-python (MIT licence), search.py: breadth_first_graph_search'
+        url: https://github.com/aimacode/aima-python/blob/f104e03fdc1582f014b3a4c93f1a9b7d2da70114/aima/search.py#L251-L270
+        locator: aima/search.py lines 251–270, commit f104e03
+    source:
+      id: original
+      ref: search-079
+    status: draft
+  - id: search-080
+    type: short_answer
+    difficulty: medium
+    tags:
+      - iterative-deepening
+      - complexity
+      - branching-factor
+    question: |
+      Iterative deepening search runs depth-limited DFS with limits 0, 1, 2, … on a tree in which
+      every node has $b = 3$ children; the shallowest goal is at depth $d = 4$. The goal is the last
+      depth-4 node to be visited, so every pass visits its whole tree. Counting every visit (the root
+      is visited once per pass), how many node visits does iterative deepening make in total?
+    answer:
+      numeric: 179
+      tolerance: 0
+      hint: a whole number
+      model: $\sum_{i=0}^{4} (5 - i)\,3^i = 5 + 12 + 27 + 54 + 81 = 179$
+    explanation: |
+      Nodes at depth $d$ are visited once, those at depth $d - 1$ twice, and so on up to the root,
+      which is visited $d + 1$ times, giving $\sum_{i=0}^{d} (d + 1 - i)\,b^i$ [^1]. For $b = 3$,
+      $d = 4$ that is $5 + 12 + 27 + 54 + 81 = 179$, against 121 for one breadth-first pass to the
+      same depth: about 48% extra here, and only about 11% when $b = 10$ [^1]. In exchange, iterative
+      deepening needs only $O(d)$ memory and still finds a goal with the fewest edges [^2].
+    references:
+      - title: 'Wikipedia: Iterative deepening depth-first search'
+        url: https://en.wikipedia.org/wiki/Iterative_deepening_depth-first_search#Time_complexity
+        locator: Asymptotic analysis > Time complexity (proof and example)
+      - title: 'Wikipedia: Iterative deepening depth-first search'
+        url: https://en.wikipedia.org/wiki/Iterative_deepening_depth-first_search#Properties
+        locator: Properties; Asymptotic analysis > Space complexity
+    source:
+      id: original
+      ref: search-080
+    status: draft
+  - id: search-081
+    type: multiple
+    difficulty: medium
+    tags:
+      - bfs
+      - dfs
+      - uniform-cost-search
+      - iterative-deepening
+      - completeness
+      - optimality
+    question: |
+      Which statements about uninformed search strategies are true? Assume a finite branching
+      factor. Select all that apply.
+    options:
+      - text: Uniform-cost search expands nodes in order of path cost and returns a cheapest path when step costs are positive.
+        correct: true
+      - text: Depth-limited DFS needs memory exponential in the depth limit, just like BFS.
+        why: It keeps only the current path, so its memory is proportional to the depth limit, far less than BFS needs [^2].
+      - text: BFS returns a path with the fewest edges, so it is optimal when every step has the same cost.
+        correct: true
+      - text: DFS is complete even on infinite state spaces, because it backtracks whenever a branch ends.
+        why: An infinite branch never ends, so DFS can follow it forever and never return [^1][^2].
+      - text: Iterative deepening finds a goal with the fewest edges while using memory linear in the goal depth.
+        correct: true
+    explanation: |
+      BFS explores level by level, so the first goal it reaches has the fewest edges [^1]. With
+      unequal step costs that need not be the cheapest path; uniform-cost search, the AI form of
+      Dijkstra's algorithm, guarantees it by always expanding the frontier node with the lowest path
+      cost [^3]. DFS can get lost in an infinite branch, so it is not complete there [^1][^2].
+      Depth-limited DFS stores only the current path [^2], and iterative deepening keeps that $O(d)$
+      memory while, like BFS, returning a goal with the fewest edges [^4].
+    references:
+      - title: 'Wikipedia: Breadth-first search'
+        url: https://en.wikipedia.org/wiki/Breadth-first_search#Completeness
+        locator: Introduction and Analysis > Completeness
+      - title: 'Wikipedia: Depth-first search'
+        url: https://en.wikipedia.org/wiki/Depth-first_search#Properties
+        locator: Properties
+      - title: "Wikipedia: Dijkstra's algorithm"
+        url: https://en.wikipedia.org/wiki/Dijkstra%27s_algorithm#Practical_optimizations_and_infinite_graphs
+        locator: Running time > Practical optimizations and infinite graphs (uniform-cost search)
+      - title: 'Wikipedia: Iterative deepening depth-first search'
+        url: https://en.wikipedia.org/wiki/Iterative_deepening_depth-first_search#Properties
+        locator: Properties; Asymptotic analysis > Space complexity
+    source:
+      id: original
+      ref: search-081
+    status: draft
+  - id: search-082
+    type: single
+    difficulty: medium
+    tags:
+      - bfs
+      - uniform-cost-search
+      - step-costs
+    question: |
+      An undirected graph has the edges S–A (cost 2), S–B (6), A–C (3), B–G (9) and C–G (4). Starting
+      at S with goal G, breadth-first search and uniform-cost search are both run as graph searches.
+      Which paths do they return?
+    options:
+      - text: BFS returns S–B–G (cost 15); UCS returns S–A–C–G (cost 9)
+        correct: true
+      - text: BFS returns S–A–C–G (cost 9); UCS returns S–B–G (cost 15)
+        why: The two are swapped. BFS reaches G first at depth 2 via B, while UCS finds the cheaper three-edge path [^1][^2].
+      - text: Both return S–A–C–G (cost 9), the cheapest path
+        why: BFS ignores step costs and returns the path with the fewest edges; S–B–G has 2 edges and S–A–C–G has 3 [^1].
+      - text: Both return S–B–G (cost 15), the path with the fewest edges
+        why: UCS expands in order of path cost, so it pops G at cost 9 via C before the cost-15 route is ever selected [^2].
+    explanation: |
+      BFS works level by level and stops at the shallowest goal; G is first reached at depth 2 via B,
+      so it returns S–B–G with cost 6 + 9 = 15 whatever the step costs [^1]. UCS always expands the
+      frontier node with the lowest path cost: S (0), A (2), C (5), B (6). G enters the frontier at
+      cost 9 via C, and the route through B would cost 15, so G is popped at cost 9 and UCS returns
+      S–A–C–G [^2]. BFS is optimal only when all steps cost the same, and UCS generalises it to
+      unequal costs.
+    references:
+      - title: 'Wikipedia: Breadth-first search'
+        url: https://en.wikipedia.org/wiki/Breadth-first_search#Applications
+        locator: Introduction and Applications (shortest path measured by number of edges)
+      - title: "Wikipedia: Dijkstra's algorithm"
+        url: https://en.wikipedia.org/wiki/Dijkstra%27s_algorithm#Practical_optimizations_and_infinite_graphs
+        locator: Running time > Practical optimizations and infinite graphs (uniform-cost search pseudocode)
+    source:
+      id: original
+      ref: search-082
+    status: draft
+  - id: search-083
+    type: short_answer
+    difficulty: hard
+    tags:
+      - a-star
+      - heuristic
+      - expansion-order
+    question: |
+      A* runs as a graph search from S to G on the undirected graph below. The goal test is applied
+      when a node is taken off the frontier, and ties in $f = g + h$ are broken alphabetically.
+
+      | Edge | S–A | S–B | A–C | A–D | B–C | B–D | C–E | D–G | E–G |
+      | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- |
+      | Cost | 2 | 3 | 4 | 7 | 2 | 5 | 3 | 3 | 4 |
+
+      | Node | S | A | B | C | D | E | G |
+      | --- | --- | --- | --- | --- | --- | --- | --- |
+      | $h$ | 10 | 9 | 7 | 7 | 3 | 4 | 0 |
+
+      A* expands S first, then {{1}}, then {{2}}, then {{3}}, and then takes the goal G off the
+      frontier. The path it returns costs {{4}}.
+    answer:
+      blanks:
+        - accept:
+            - B
+          hint: one node letter
+        - accept:
+            - A
+          hint: one node letter
+        - accept:
+            - D
+          hint: one node letter
+        - numeric: 11
+          tolerance: 0
+          hint: a whole number
+      model: S ($f = 10$), B ($3 + 7 = 10$), A ($2 + 9 = 11$, tie with D broken alphabetically), D ($8 + 3 = 11$), then G ($f = 11$); the path is S–B–D–G with cost 11.
+    explanation: |
+      A* always expands the frontier node with the lowest $f(n) = g(n) + h(n)$ and stops when the
+      goal is taken off the frontier [^1]. After S the frontier holds A ($2 + 9 = 11$) and B
+      ($3 + 7 = 10$), so B goes next and adds C ($5 + 7 = 12$) and D ($8 + 3 = 11$). A and D tie at
+      11 and A goes first; it finds no cheaper route to C or D. D then adds G with $f = 11$, which is
+      popped before C ($f = 12$). This $h$ is consistent, so the first path to G that is popped is
+      optimal: S–B–D–G with cost 11 [^2]. Nodes with $f > C^* = 11$, such as C, are never expanded [^3].
+    references:
+      - title: 'Wikipedia: A* search algorithm'
+        url: https://en.wikipedia.org/wiki/A*_search_algorithm#Description
+        locator: Description
+      - title: 'Wikipedia: Consistent heuristic'
+        url: https://en.wikipedia.org/wiki/Consistent_heuristic#Consequences_of_monotonicity
+        locator: Consequences of monotonicity
+      - title: 'Wikipedia: A* search algorithm'
+        url: https://en.wikipedia.org/wiki/A*_search_algorithm#Worst_case
+        locator: Complexity > Worst case
+    source:
+      id: original
+      ref: search-083
+    status: draft
+  - id: search-084
+    type: short_answer
+    difficulty: medium
+    tags:
+      - uniform-cost-search
+      - node-expansion
+    question: |
+      Uniform-cost search runs as a graph search from S to G on an undirected graph with these edge
+      costs. The goal test is applied when a node is taken off the frontier, and ties are broken
+      alphabetically.
+
+      | Edge | S–A | S–B | A–C | A–D | B–C | B–D | C–E | D–G | E–G |
+      | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- |
+      | Cost | 2 | 3 | 4 | 7 | 2 | 5 | 3 | 3 | 4 |
+
+      How many nodes does UCS expand before it takes G off the frontier? Count S, but not G.
+    answer:
+      numeric: 6
+      tolerance: 0
+      hint: a whole number
+      model: S (0), A (2), B (3), C (5), D (8), E (8) are expanded; G is popped at cost 11.
+    explanation: |
+      UCS expands nodes in order of their path cost $g$ and stops only when the goal is popped [^1].
+      From S it reaches A (2) and B (3); B lowers C to 5 and D to 8 (via A they would cost 6 and 9).
+      C adds E at 8. D and E both cost 8, less than G's 11, so both are expanded before G: all six
+      other nodes. With the consistent heuristic $h$ = (S 10, A 9, B 7, C 7, D 3, E 4), A* expands
+      only S, B, A and D on this graph, because it never expands a node with $f > C^* = 11$ [^2].
+    references:
+      - title: "Wikipedia: Dijkstra's algorithm"
+        url: https://en.wikipedia.org/wiki/Dijkstra%27s_algorithm#Practical_optimizations_and_infinite_graphs
+        locator: Running time > Practical optimizations and infinite graphs (uniform-cost search pseudocode)
+      - title: 'Wikipedia: A* search algorithm'
+        url: https://en.wikipedia.org/wiki/A*_search_algorithm#Worst_case
+        locator: Complexity > Worst case
+    source:
+      id: original
+      ref: search-084
+    status: draft
+  - id: search-085
+    type: short_answer
+    difficulty: hard
+    tags:
+      - a-star
+      - admissible-heuristic
+      - consistent-heuristic
+      - graph-search
+    question: |
+      A directed graph has the edges S→A (cost 1), S→B (3), A→B (1) and B→G (3). The heuristic is
+      $h(S) = 0$, $h(A) = 4$, $h(B) = 0$, $h(G) = 0$: it never overestimates the true cost to G, but
+      $h(A) > c(A, B) + h(B)$. A* runs as a graph search that never re-expands a node it has already
+      expanded, with the goal test applied when a node is taken off the frontier. What is the cost of
+      the path it returns?
+    answer:
+      numeric: 6
+      tolerance: 0
+      hint: a whole number
+      model: A* expands S ($f = 0$), B ($f = 3$, $g = 3$), then A ($f = 5$); the cheaper route A→B ($g = 2$) is ignored because B is already expanded, and G is popped with $g = 6$. The optimal cost is 5.
+    explanation: |
+      The heuristic is admissible, since the true costs to G are 5, 4, 3 and 0 for S, A, B and G [^1],
+      but it is not consistent, because $h(A) = 4 > c(A, B) + h(B) = 1$ [^2]. A* expands B through
+      the direct edge ($f = 3 + 0$) before A ($f = 1 + 4 = 5$), so B is closed with $g = 3$; when A
+      later reaches B at $g = 2$, the search discards it and returns S→B→G with cost 6 instead of the
+      optimal S→A→B→G with cost 5. With a consistent heuristic, a node is always first expanded along
+      its cheapest path, so skipping closed nodes is safe; an admissible but inconsistent heuristic
+      requires re-expanding a node whenever a cheaper path to it is found [^2]. aima-python's
+      best-first graph search, which its A* uses, never re-adds an explored state [^3].
+    references:
+      - title: 'Wikipedia: Admissible heuristic'
+        url: https://en.wikipedia.org/wiki/Admissible_heuristic#Formulation
+        locator: Formulation
+      - title: 'Wikipedia: Consistent heuristic'
+        url: https://en.wikipedia.org/wiki/Consistent_heuristic#Consequences_of_monotonicity
+        locator: Introduction and Consequences of monotonicity
+      - title: 'aima-python (MIT licence), search.py: best_first_graph_search and astar_search'
+        url: https://github.com/aimacode/aima-python/blob/f104e03fdc1582f014b3a4c93f1a9b7d2da70114/aima/search.py#L273-L300
+        locator: aima/search.py lines 273–300 and 459–465, commit f104e03
+    source:
+      id: original
+      ref: search-085
+    status: draft
+  - id: search-086
+    type: true_false
+    difficulty: medium
+    tags:
+      - uniform-cost-search
+      - goal-test
+      - optimality
+    shuffle: false
+    question: |
+      Breadth-first search can apply the goal test when a node is generated, instead of when it is
+      expanded, and still return a path with the fewest edges. True or false: uniform-cost search
+      can make the same change and still always return a cheapest path.
+    options:
+      - text: 'True'
+        why: 'Counter-example: edges S–G (10), S–A (1), A–G (2). Expanding S generates G at cost 10, and an early test would stop there, missing S–A–G with cost 3 [^1].'
+      - text: 'False'
+        correct: true
+    explanation: |
+      UCS takes the frontier node with the lowest path cost and applies the goal test only then [^1],
+      because a goal found on generation may still be reachable more cheaply through a node not yet
+      expanded. In the example S–G (10), S–A (1), A–G (2), the early test returns cost 10, while the
+      late test expands S and A and pops G at cost 3. A* follows the same rule: a goal may sit in the
+      frontier while nodes with lower $f$ are expanded first [^2]. For BFS the early test is safe,
+      since every later node is at least as deep; aima-python's breadth-first graph search tests on
+      generation, while its best-first search tests on removal [^3].
+    references:
+      - title: "Wikipedia: Dijkstra's algorithm"
+        url: https://en.wikipedia.org/wiki/Dijkstra%27s_algorithm#Practical_optimizations_and_infinite_graphs
+        locator: Running time > Practical optimizations and infinite graphs (uniform-cost search pseudocode)
+      - title: 'Wikipedia: A* search algorithm'
+        url: https://en.wikipedia.org/wiki/A*_search_algorithm#Description
+        locator: Description (note on goal nodes passed over)
+      - title: 'aima-python (MIT licence), search.py: breadth_first_graph_search and best_first_graph_search'
+        url: https://github.com/aimacode/aima-python/blob/f104e03fdc1582f014b3a4c93f1a9b7d2da70114/aima/search.py#L251-L300
+        locator: aima/search.py lines 251–300, commit f104e03
+    source:
+      id: original
+      ref: search-086
+    status: draft

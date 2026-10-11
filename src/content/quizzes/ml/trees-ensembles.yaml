@@ -1605,3 +1605,258 @@ questions:
       ref: ml_intermediate/ex6#q3
       url: https://github.com/Kaggle/learntools/blob/e9ba66dc899d3e17b80d3a1b9a5d29f430d310cb/notebooks/ml_intermediate/raw/ex6.ipynb
     status: draft
+  - id: trees-ensembles-046
+    type: short_answer
+    difficulty: easy
+    tags:
+      - adaboost
+      - classifier-weight
+    question: |
+      AdaBoost starts with equal weights $1/8$ on 8 training points. The first decision stump
+      misclassifies exactly one of them. Its vote is $\alpha_1 = \frac{1}{2}\ln\frac{1 - \epsilon_1}{\epsilon_1}$,
+      where $\epsilon_1$ is its weighted training error. What is $\alpha_1$?
+    answer:
+      numeric: 0.973
+      tolerance: 0.002
+      hint: a number, 3 decimals
+      model: $\epsilon_1 = 1/8$, so $\alpha_1 = \tfrac12\ln 7 \approx 0.973$
+    explanation: |
+      The weighted error is the total weight of the misclassified points, $\epsilon_1 = 1/8$ [^1].
+      Then $\alpha_1 = \frac{1}{2}\ln\frac{7/8}{1/8} = \frac{1}{2}\ln 7 \approx 0.973$ [^2]. (The exam
+      writes the vote with $\log_2$, giving $\frac{1}{2}\log_2 7$; the base only rescales all votes and
+      does not change the classifier.) A stump with error below $1/2$ always gets a positive vote [^1].
+    references:
+      - source: mit-ocw-6867
+        locator: Mid-term exam (Fall 2002) solutions, Problem 5, part 1
+        url: https://ocw.mit.edu/courses/6-867-machine-learning-fall-2006/resources/midterm_f02soln/
+      - title: 'Wikipedia: AdaBoost'
+        locator: Example algorithm (Discrete AdaBoost)
+        url: https://en.wikipedia.org/wiki/AdaBoost#Example_algorithm_(Discrete_AdaBoost)
+    source:
+      id: mit-ocw-6867
+      ref: midterm_f02soln#q5.1
+      url: https://ocw.mit.edu/courses/6-867-machine-learning-fall-2006/resources/midterm_f02soln/
+    status: draft
+  - id: trees-ensembles-047
+    type: short_answer
+    difficulty: medium
+    tags:
+      - adaboost
+      - example-weights
+      - reweighting
+    question: |
+      AdaBoost runs on 4 training examples with equal initial weights $1/4$. The first decision stump
+      misclassifies exactly one of them. After AdaBoost's reweighting (and normalization), what is the
+      weight of that misclassified example?
+    answer:
+      numeric: 0.5
+      tolerance: 0.001
+      hint: a weight between 0 and 1
+      model: $1/2$; the three correct examples get $1/6$ each
+    explanation: |
+      AdaBoost reweights so that the stump just chosen has weighted error exactly $1/2$ under the new
+      weights, i.e. it performs at chance level on them [^1]. With a single misclassified example, its
+      new weight must be $1/2$, and the other three share the remaining $1/2$ equally, $1/6$ each
+      [^1]. Directly: the weights are multiplied by $e^{\pm\alpha}$ with $e^{\alpha} = \sqrt{3}$, which
+      gives $\frac{1}{4}\sqrt{3}$ against $3 \cdot \frac{1}{4}/\sqrt{3}$, two equal halves [^2].
+    references:
+      - source: mit-ocw-6867
+        locator: Mid-term exam (Fall 2001) solutions, Problem 4, part 1; Final exam (Fall 2004) solutions, Problem 1, part 3
+        url: https://ocw.mit.edu/courses/6-867-machine-learning-fall-2006/resources/midterm_f01soln/
+      - title: 'Wikipedia: AdaBoost'
+        locator: Example algorithm (Discrete AdaBoost)
+        url: https://en.wikipedia.org/wiki/AdaBoost#Example_algorithm_(Discrete_AdaBoost)
+    source:
+      id: mit-ocw-6867
+      ref: midterm_f01soln#q4.1
+      url: https://ocw.mit.edu/courses/6-867-machine-learning-fall-2006/resources/midterm_f01soln/
+    status: draft
+  - id: trees-ensembles-048
+    type: single
+    difficulty: medium
+    tags:
+      - adaboost
+      - weak-learners
+      - reweighting
+    question: |
+      AdaBoost picks, in every round, the weak classifier (from a finite set, e.g. all decision
+      stumps on binary features) with the lowest weighted error. Which statement about choosing the
+      same weak classifier more than once is correct?
+    options:
+      - text: It can never be chosen again, because AdaBoost removes it from the pool
+        why: Nothing is removed; re-selecting a weak classifier is the only way AdaBoost can later correct its vote.
+      - text: It is chosen again in the next round whenever it had the lowest error before
+        why: After reweighting its weighted error is exactly $1/2$, the worst useful value, so another classifier always does at least as well.
+      - text: It can be chosen again in a later round, but never in the very next round
+        correct: true
+      - text: It can be chosen again only with a negative vote
+        why: A classifier with weighted error below $1/2$ always gets a positive vote; a flipped classifier is simply another member of the pool.
+    explanation: |
+      After round $k$ the weights are updated so that the classifier just chosen has weighted error
+      exactly $1/2$ [^1], so it cannot be the best choice in round $k + 1$ (if nothing beat chance any
+      more, boosting would stop). Its vote is never
+      re-optimized jointly with the others, though, so a later round may pick the same classifier
+      again, which adds to its total vote [^1]. With a discrete pool such as one stump per word and
+      label, this happens in practice [^2].
+    references:
+      - source: mit-ocw-6867
+        locator: Final exam (Fall 2004) solutions, Problem 1, part 3; Final exam (Fall 2003) solutions, Problem 3.3
+        url: https://ocw.mit.edu/courses/6-867-machine-learning-fall-2006/resources/final_f03soln/
+      - title: 'Wikipedia: AdaBoost'
+        locator: Training — Weighting
+        url: https://en.wikipedia.org/wiki/AdaBoost#Weighting
+    source:
+      id: mit-ocw-6867
+      ref: final_f03soln#q3.3
+      url: https://ocw.mit.edu/courses/6-867-machine-learning-fall-2006/resources/final_f03soln/
+    status: draft
+  - id: trees-ensembles-049
+    type: multiple
+    difficulty: medium
+    tags:
+      - adaboost
+      - overfitting
+      - votes
+    question: Which statements about AdaBoost with decision stumps are true? Select all that apply.
+    options:
+      - text: Its votes give the largest possible training margins of any weighting of the same stumps
+        why: The votes are set one at a time and never re-optimized, so another weighting of the same stumps can give larger margins [^1].
+      - text: Given enough rounds it always reaches zero training error, whatever the weak learners
+        why: If no weighted combination of the available weak classifiers separates the training set, the training error cannot reach zero [^1].
+      - text: The votes $\alpha_k$ it assigns are never negative
+        correct: true
+      - text: The training errors of the new stump and of the combined classifier move in concert
+        why: The combined classifier's training error usually falls while each new stump's weighted error rises toward $1/2$ [^1].
+      - text: The weighted error of each new stump tends to increase over the rounds
+        correct: true
+    explanation: |
+      AdaBoost only adds weak classifiers with weighted error below $1/2$ (a worse one can be
+      flipped), so every vote $\frac{1}{2}\ln\frac{1 - \epsilon}{\epsilon}$ is non-negative [^1] [^2]. The
+      reweighting concentrates on the examples that are hard to classify, so later stumps face harder
+      weighted problems and their errors drift toward $1/2$, and their votes shrink [^1]. The
+      combination is built greedily, so it can neither guarantee zero training error for every weak
+      learner class nor optimal margins [^1].
+    references:
+      - source: mit-ocw-6867
+        locator: Mid-term exam (Fall 2002) solutions, Problem 5, parts 2–4; Mid-term exam (Fall 2001) solutions, Problem 4, parts 2–3
+        url: https://ocw.mit.edu/courses/6-867-machine-learning-fall-2006/resources/midterm_f02soln/
+      - title: 'Wikipedia: AdaBoost'
+        locator: Example algorithm (Discrete AdaBoost)
+        url: https://en.wikipedia.org/wiki/AdaBoost#Example_algorithm_(Discrete_AdaBoost)
+    source:
+      id: mit-ocw-6867
+      ref: midterm_f02soln#q5.4
+      url: https://ocw.mit.edu/courses/6-867-machine-learning-fall-2006/resources/midterm_f02soln/
+    status: draft
+  - id: trees-ensembles-050
+    type: short_answer
+    difficulty: hard
+    tags:
+      - boosting
+      - logistic-loss
+      - outliers
+      - example-weights
+    question: |
+      A boosting algorithm gives example $t$ the unnormalized weight $-L'(z_t)$, where $z_t$ is the
+      example's current margin $y_t h(x_t)$ and $L$ the margin loss. With the logistic loss
+      $L(z) = \ln(1 + e^{-z})$, how many times larger is the weight of a badly misclassified example
+      ($z = -5$) than that of a barely misclassified one ($z = -0.1$)?
+    answer:
+      numeric: 1.892
+      tolerance: 0.005
+      hint: a ratio, 3 decimals
+      model: $-L'(z) = \frac{e^{-z}}{1 + e^{-z}} = \sigma(-z)$, and $\sigma(5)/\sigma(0.1) \approx 0.9933/0.5250 \approx 1.892$
+    explanation: |
+      The weight is $-L'(z) = e^{-z}/(1 + e^{-z})$, which lies between 0 and 1 [^1]. For $z = -5$ it is
+      $0.9933$ and for $z = -0.1$ it is $0.5250$, a ratio of about $1.89$. Under AdaBoost's
+      exponential loss the weight is $e^{-z}$, and the same ratio is $e^{4.9} \approx 134$ [^2]. Because
+      the logistic weights are bounded, a few badly misclassified outliers cannot take over the
+      weighted training set, which makes this variant more forgiving than AdaBoost [^1].
+    references:
+      - source: mit-ocw-6867
+        locator: Problem set 4 solutions, Problem 3 (a)
+        url: https://ocw.mit.edu/courses/6-867-machine-learning-fall-2006/resources/hw4_soln/
+      - title: 'Wikipedia: AdaBoost'
+        locator: Statistical understanding of boosting (AdaBoost's error function is e^(−y f(x)))
+        url: https://en.wikipedia.org/wiki/AdaBoost#Statistical_understanding_of_boosting
+    source:
+      id: mit-ocw-6867
+      ref: hw4_soln#q3a
+      url: https://ocw.mit.edu/courses/6-867-machine-learning-fall-2006/resources/hw4_soln/
+    status: draft
+  - id: trees-ensembles-051
+    type: single
+    difficulty: medium
+    tags:
+      - boosting
+      - base-learners
+      - separable-data
+    question: |
+      A boosting algorithm with the logistic loss chooses each vote by minimizing
+      $\sum_t \ln\big(1 + e^{-y_t(h_{m-1}(x_t) + \alpha_m h(x_t; \hat\theta_m))}\big)$ over $\alpha_m \ge 0$. The
+      base learner is a linear SVM, and the training set is linearly separable. What is $\hat\alpha_1$
+      in the first round ($h_0 = 0$)?
+    options:
+      - text: It is finite, because the logistic loss flattens out for large margins
+        why: 'Flattening is not enough: $\ln(1 + e^{-z})$ keeps decreasing toward 0 as $z$ grows, so every increase of $\alpha_1$ still lowers the loss.'
+      - text: It is 1, the scale at which the SVM's margin constraints are tight
+        why: The objective keeps decreasing beyond $\alpha_1 = 1$, because every margin $y_t h(x_t)$ is positive.
+      - text: It is 0, because a perfect base learner needs no reweighting
+        why: $\alpha_1 = 0$ leaves the loss at $n\ln 2$; any positive vote does better.
+      - text: It is infinite, since a larger $\alpha_1$ lowers every example's loss
+        correct: true
+    explanation: |
+      The SVM separates the training set, so $y_t h(x_t; \hat\theta_1) > 0$ for every $t$ [^1]. Each
+      term $\ln(1 + e^{-\alpha_1 y_t h(x_t)})$ then decreases strictly as $\alpha_1$ grows, so the
+      minimum is approached only as $\alpha_1 \to \infty$ [^1]. Boosting is meant for weak learners;
+      a strong learner that already fits the training data leaves nothing to combine [^2].
+    references:
+      - source: mit-ocw-6867
+        locator: Problem set 4 solutions, Problem 3 (b)
+        url: https://ocw.mit.edu/courses/6-867-machine-learning-fall-2006/resources/hw4_soln/
+      - title: 'Wikipedia: AdaBoost'
+        locator: Introduction (combining weak learners)
+        url: https://en.wikipedia.org/wiki/AdaBoost
+    source:
+      id: mit-ocw-6867
+      ref: hw4_soln#q3b
+      url: https://ocw.mit.edu/courses/6-867-machine-learning-fall-2006/resources/hw4_soln/
+    status: draft
+  - id: trees-ensembles-052
+    type: single
+    difficulty: medium
+    tags:
+      - boosting
+      - feature-selection
+      - mutual-information
+    question: |
+      For text classification with binary word features, you rank words in two ways: (a) by the
+      order in which boosting with one-word weak classifiers ($h(\phi) = \pm\phi_i$) first selects them,
+      or (b) by each word's estimated mutual information with the label. Which ranking is likely to be
+      more useful for a linear classifier, and why?
+    options:
+      - text: (a), as boosting scores each word against the combination built so far
+        correct: true
+      - text: (b), because mutual information measures the dependence on the label exactly
+        why: It does, but one word at a time; it cannot see that a word is redundant with, or complementary to, words already chosen.
+      - text: They give the same ranking, because both favour words that predict the label
+        why: They differ whenever words interact, e.g. two near-duplicate words both have high mutual information but only one helps boosting.
+      - text: (b), because boosting can select the same word several times
+        why: Re-selection only adjusts that word's vote; it does not make the ranking less useful.
+    explanation: |
+      Boosting builds a linear combination of weak classifiers, here single features, and each new
+      feature is chosen for how much it improves the current weighted combination [^1]. Mutual
+      information scores each feature on its own and cannot recognize how several features work
+      together in a linear predictor, such as redundancy between two copies of the same word [^1] [^2].
+    references:
+      - source: mit-ocw-6867
+        locator: Final exam (Fall 2003) solutions, Problem 3.4
+        url: https://ocw.mit.edu/courses/6-867-machine-learning-fall-2006/resources/final_f03soln/
+      - title: 'Wikipedia: Feature selection'
+        locator: Minimum-redundancy-maximum-relevance (mRMR) feature selection
+        url: https://en.wikipedia.org/wiki/Feature_selection#Minimum-redundancy-maximum-relevance_(mRMR)_feature_selection
+    source:
+      id: mit-ocw-6867
+      ref: final_f03soln#q3.4
+      url: https://ocw.mit.edu/courses/6-867-machine-learning-fall-2006/resources/final_f03soln/
+    status: draft

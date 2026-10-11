@@ -335,3 +335,607 @@ questions:
       ref: intro-llms/assignment8#q8
       url: https://archive.nptel.ac.in/content/storage2/courses/downloads_new/106102576/noc25_cs45_assignment_Week_8.png
     status: draft
+  - id: alignment-012
+    type: short_answer
+    difficulty: easy
+    tags:
+      - rlhf
+      - instructgpt
+      - pipeline
+    question: |
+      Complete InstructGPT's three-step RLHF recipe. First, labelers write demonstrations of the
+      desired behavior, and a pretrained GPT-3 is fine-tuned on them with {{1}} learning. Second,
+      labelers compare several outputs for the same prompt, and a {{2}} model is trained to predict
+      which output they prefer. Third, the fine-tuned policy is optimized against that model's score
+      with the RL algorithm {{3}}.
+    answer:
+      blanks:
+        - accept:
+            - supervised
+          hint: one word
+        - accept:
+            - reward
+            - preference
+          hint: one word
+        - accept:
+            - PPO
+            - proximal policy optimization
+          hint: an abbreviation
+      model: Supervised fine-tuning (SFT) on demonstrations, then a reward model trained on comparisons, then PPO against that reward model.
+    explanation: |
+      InstructGPT applies three steps: supervised fine-tuning (SFT) on labeler demonstrations, a
+      reward model (RM) trained on labeler comparisons between outputs, and PPO fine-tuning of the
+      SFT policy with the RM output as a scalar reward [^1]. The order matters: most comparison data
+      are sampled from the SFT policy, and the RL policy starts from the SFT model [^1]. The DPO
+      paper describes the same three phases as the standard RLHF pipeline [^2]. Steps 2 and 3 can be
+      iterated, collecting new comparisons on the current best policy [^1].
+    references:
+      - title: Ouyang et al. (2022), Training language models to follow instructions with human feedback (InstructGPT)
+        url: https://arxiv.org/abs/2203.02155
+        locator: Sec. 3.1 High-level methodology (Steps 1-3)
+      - title: 'Rafailov et al. (2023), Direct Preference Optimization: Your Language Model is Secretly a Reward Model'
+        url: https://arxiv.org/abs/2305.18290
+        locator: Sec. 3 Preliminaries (SFT, Reward Modelling Phase, RL Fine-Tuning Phase)
+    source:
+      id: original
+      ref: alignment-012
+    status: draft
+  - id: alignment-013
+    type: multiple
+    difficulty: medium
+    tags:
+      - rlhf
+      - instructgpt
+      - kl-penalty
+      - ppo-ptx
+    question: |
+      InstructGPT's RL step maximizes
+
+      $$\text{objective}(\phi) = E_{(x,y) \sim D_{\pi_\phi^{RL}}}\left[r_\theta(x,y) - \beta \log \frac{\pi_\phi^{RL}(y \mid x)}{\pi^{SFT}(y \mid x)}\right] + \gamma\, E_{x \sim D_{\text{pretrain}}}\left[\log \pi_\phi^{RL}(x)\right]$$
+
+      where $r_\theta$ is the reward model and $\pi^{SFT}$ the supervised fine-tuned model. Which
+      statements about this step are correct? Select all that apply.
+    options:
+      - text: Each episode is one prompt and one response; the reward model scores the response once and the episode ends
+        correct: true
+      - text: The $\beta$ term is a per-token KL penalty toward the SFT model, meant to curb reward-model over-optimization
+        correct: true
+      - text: The reward model $r_\theta$ is trained by maximizing this same objective, jointly with the policy
+        why: The reward model is trained beforehand on labeler comparisons with a pairwise loss; in this objective only the policy parameters $\phi$ are optimized [^1].
+      - text: The $\gamma$ term (PPO-ptx) mixes in pretraining gradients to reduce performance drops on public NLP datasets
+        correct: true
+      - text: The $\beta$ term rewards the policy for moving far away from the SFT model, which encourages exploring new outputs
+        why: The term is subtracted, so the policy is penalized, not rewarded, for drifting away from the SFT model [^1][^2].
+    explanation: |
+      The RL environment is a bandit: it shows a prompt, takes the response, assigns the reward-model
+      score and ends the episode [^1]. The KL penalty from the SFT model is there to mitigate
+      over-optimization of the reward model [^1]; it keeps the policy near the distribution on which
+      the reward model is accurate and preserves output diversity [^2]. RLHF fine-tuning lowered
+      scores relative to GPT-3 on public datasets such as SQuAD and DROP, an "alignment tax", and
+      mixing in pretraining gradients (PPO-ptx, $\gamma > 0$) greatly reduces these regressions; with
+      $\gamma = 0$ the models are called "PPO" [^1].
+    references:
+      - title: Ouyang et al. (2022), Training language models to follow instructions with human feedback (InstructGPT)
+        url: https://arxiv.org/abs/2203.02155
+        locator: Sec. 3.5 Models (Reinforcement learning, Eq. 2); Sec. 1 Introduction (alignment tax)
+      - title: 'Rafailov et al. (2023), Direct Preference Optimization: Your Language Model is Secretly a Reward Model'
+        url: https://arxiv.org/abs/2305.18290
+        locator: Sec. 3 Preliminaries, RL Fine-Tuning Phase, Eq. (3)
+    source:
+      id: original
+      ref: alignment-013
+    status: draft
+  - id: alignment-014
+    type: short_answer
+    difficulty: easy
+    tags:
+      - reward-model
+      - comparisons
+      - instructgpt
+    question: |
+      To collect preference data faster, InstructGPT shows a labeler $K$ responses to one prompt and
+      asks for a full ranking, which is then split into pairwise comparisons for the reward model.
+      For $K = 8$, how many pairwise comparisons does one ranking yield?
+    answer:
+      numeric: 28
+      tolerance: 0
+      hint: an integer
+      model: $\binom{8}{2} = \frac{8 \cdot 7}{2} = 28$
+    explanation: |
+      A ranking of $K$ responses contains one comparison for every pair, $\binom{K}{2}$ in total;
+      InstructGPT used $K$ between 4 and 9 [^1]. Each response appears in $K - 1 = 7$ of them, and
+      comparisons from one prompt are strongly correlated, so shuffling them in as separate data
+      points made the reward model overfit within one pass [^1]. InstructGPT therefore trains on all
+      $\binom{K}{2}$ comparisons of a prompt as a single batch element, which also needs only one
+      forward pass per response, and scales the loss by $1/\binom{K}{2}$ [^1][^2].
+    references:
+      - title: Ouyang et al. (2022), Training language models to follow instructions with human feedback (InstructGPT)
+        url: https://arxiv.org/abs/2203.02155
+        locator: Sec. 3.5 Models, Reward modeling (RM), Eq. (1) and footnote 5
+      - title: 'Wikipedia: Reinforcement learning from human feedback'
+        url: https://en.wikipedia.org/wiki/Reinforcement_learning_from_human_feedback#Reward_model
+        locator: Training, Reward model
+    source:
+      id: original
+      ref: alignment-014
+    status: draft
+  - id: alignment-015
+    type: short_answer
+    difficulty: medium
+    tags:
+      - bradley-terry
+      - reward-model
+      - preference-probability
+    question: |
+      A reward model is trained under the Bradley–Terry preference model,
+      $P(y_1 \succ y_2 \mid x) = \sigma\big(r(x, y_1) - r(x, y_2)\big)$. For three responses $A$, $B$,
+      $C$ to the same prompt it predicts $P(A \succ B) = 0.8$ and $P(B \succ C) = 0.6$. What
+      probability does it assign to $A \succ C$?
+    answer:
+      numeric: 0.857
+      tolerance: 0.002
+      hint: a probability, 3 decimals
+      model: $r_A - r_B = \ln 4$ and $r_B - r_C = \ln 1.5$, so $P(A \succ C) = \sigma(\ln 6) = 6/7 \approx 0.857$
+    explanation: |
+      In the Bradley–Terry model the log-odds of a preference is the difference of the two scores,
+      $\log \frac{P(i \succ j)}{P(j \succ i)} = \beta_i - \beta_j$ [^1]. Odds of 4 (from 0.8) and 1.5
+      (from 0.6) mean $r_A - r_B = \ln 4$ and $r_B - r_C = \ln 1.5$; the differences add, so the odds
+      multiply to $4 \times 1.5 = 6$ and $P(A \succ C) = 6/7 \approx 0.857$. RLHF reward models use
+      exactly this model: only reward differences matter, and they are turned into preference
+      probabilities by the sigmoid [^2][^3].
+    references:
+      - title: 'Wikipedia: Bradley–Terry model'
+        url: https://en.wikipedia.org/wiki/Bradley%E2%80%93Terry_model#Definition
+        locator: Definition (exponential scores and logit form)
+      - title: 'Rafailov et al. (2023), Direct Preference Optimization: Your Language Model is Secretly a Reward Model'
+        url: https://arxiv.org/abs/2305.18290
+        locator: Sec. 3 Preliminaries, Reward Modelling Phase, Eqs. (1)-(2)
+      - title: Ouyang et al. (2022), Training language models to follow instructions with human feedback (InstructGPT)
+        url: https://arxiv.org/abs/2203.02155
+        locator: Sec. 3.5 Models, Reward modeling (RM)
+    source:
+      id: original
+      ref: alignment-015
+    status: draft
+  - id: alignment-016
+    type: short_answer
+    difficulty: easy
+    tags:
+      - reward-model
+      - pairwise-loss
+      - bradley-terry
+    question: |
+      A reward model is trained with the pairwise loss $-\log \sigma\big(r(x, y_w) - r(x, y_l)\big)$,
+      where $y_w$ is the response the labeler preferred and $y_l$ the other one. On one comparison
+      it currently outputs $r(x, y_w) = 0.5$ and $r(x, y_l) = 1.7$. What is the loss on this pair
+      (natural log)?
+    answer:
+      numeric: 1.463
+      tolerance: 0.002
+      hint: a number, 3 decimals
+      model: $-\log \sigma(0.5 - 1.7) = \log(1 + e^{1.2}) \approx 1.463$
+    explanation: |
+      The loss is the negative log-likelihood of the label under the Bradley–Terry model, a binary
+      classification on the reward difference [^1][^2]. Here the difference is $-1.2$, so the model
+      gives the labeler's choice probability $\sigma(-1.2) \approx 0.231$ and the loss is
+      $-\log 0.231 \approx 1.463$. If the scores were the other way round, the loss would be only
+      $\log(1 + e^{-1.2}) \approx 0.263$, so the gradient mainly pushes $r(x, y_w)$ up and
+      $r(x, y_l)$ down on pairs the model gets wrong [^3].
+    references:
+      - title: Ouyang et al. (2022), Training language models to follow instructions with human feedback (InstructGPT)
+        url: https://arxiv.org/abs/2203.02155
+        locator: Sec. 3.5 Models, Reward modeling (RM), Eq. (1)
+      - title: 'Rafailov et al. (2023), Direct Preference Optimization: Your Language Model is Secretly a Reward Model'
+        url: https://arxiv.org/abs/2305.18290
+        locator: Sec. 3 Preliminaries, Reward Modelling Phase, Eq. (2)
+      - title: 'Wikipedia: Reinforcement learning from human feedback'
+        url: https://en.wikipedia.org/wiki/Reinforcement_learning_from_human_feedback#Reward_model
+        locator: Training, Reward model (loss as logistic regression)
+    source:
+      id: original
+      ref: alignment-016
+    status: draft
+  - id: alignment-017
+    type: true_false
+    difficulty: medium
+    tags:
+      - reward-model
+      - shift-invariance
+      - normalization
+    shuffle: false
+    question: |
+      A reward model is trained with the pairwise loss $-\log \sigma\big(r(x, y_w) - r(x, y_l)\big)$.
+      True or false: adding the same constant, say $+5$, to every reward the model outputs changes
+      the value of this loss.
+    options:
+      - text: 'True'
+        why: The constant cancels in the difference $r(x, y_w) - r(x, y_l)$, so the loss and its gradients are unchanged [^1].
+      - text: 'False'
+        correct: true
+    explanation: |
+      The loss depends only on reward differences, so the training data cannot fix the overall
+      level of the rewards [^1][^2]. InstructGPT notes this invariance to shifts and therefore
+      normalizes the reward model with a bias, so that labeler demonstrations get a mean score of 0
+      before RL starts [^1]. The Bradley–Terry preference probability has the same property: it
+      depends only on the difference of the two scores [^3].
+    references:
+      - title: Ouyang et al. (2022), Training language models to follow instructions with human feedback (InstructGPT)
+        url: https://arxiv.org/abs/2203.02155
+        locator: Sec. 3.5 Models, Reward modeling (RM), Eq. (1) and the normalization paragraph after Table 3
+      - title: 'Wikipedia: Reinforcement learning from human feedback'
+        url: https://en.wikipedia.org/wiki/Reinforcement_learning_from_human_feedback#Reward_model
+        locator: Training, Reward model (normalization of the outputs)
+      - title: 'Rafailov et al. (2023), Direct Preference Optimization: Your Language Model is Secretly a Reward Model'
+        url: https://arxiv.org/abs/2305.18290
+        locator: Sec. 4 Direct Preference Optimization (the Bradley–Terry model depends only on the difference of rewards)
+    source:
+      id: original
+      ref: alignment-017
+    status: draft
+  - id: alignment-018
+    type: single
+    difficulty: medium
+    tags:
+      - reward-overoptimization
+      - goodhart
+      - reward-model
+    question: |
+      Gao et al. (2022) let a fixed "gold" reward model play the role of human labelers and train a
+      smaller proxy reward model on its labels. A policy is then optimized against the proxy with RL.
+      As the optimization proceeds (measured by the KL divergence from the initial policy), how does
+      the gold reward score behave?
+    options:
+      - text: It falls from the very start, since optimizing any learned proxy hurts the true goal
+        why: Early optimization improves the gold score too; it only declines once the policy is pushed further [^1].
+      - text: It rises and levels off near the proxy score, since the proxy learned from gold labels
+        why: The proxy is imperfect, and optimizing it too much eventually lowers the gold score; the two curves diverge instead of meeting [^1].
+      - text: It first rises and later falls, even though the proxy score keeps rising
+        correct: true
+      - text: It tracks the proxy score exactly, apart from a constant offset between the two
+        why: The proxy keeps rising while the gold score turns down, so the gap between them grows; the paper uses this gap as one measure of overoptimization [^1].
+    explanation: |
+      Goodhart's law says that when a measure becomes a target, it ceases to be a good measure, and
+      a learned reward model is such a measure [^1]. Gao et al. observe that optimizing the proxy
+      makes the gold reward initially increase and later decrease; they call this overoptimization
+      and fit it with smooth functional forms of the KL distance [^1]. The same failure, a proxy
+      reward optimized at the expense of the true one, is the formal definition of reward hacking
+      given by Skalse et al. [^2].
+    references:
+      - title: Gao, Schulman & Hilton (2022), Scaling Laws for Reward Model Overoptimization
+        url: https://arxiv.org/abs/2210.10760
+        locator: Abstract; Sec. 1 Introduction; Figure 1 caption
+      - title: Skalse et al. (2022), Defining and Characterizing Reward Hacking
+        url: https://arxiv.org/abs/2209.13085
+        locator: Abstract
+    source:
+      id: original
+      ref: alignment-018
+    status: draft
+  - id: alignment-019
+    type: multiple
+    difficulty: medium
+    tags:
+      - reward-hacking
+      - specification-gaming
+      - rlhf
+    question: |
+      A language model is fine-tuned with RL against a learned reward model or an automatic checker.
+      Which of these behaviors are examples of reward hacking? Select all that apply.
+    options:
+      - text: The model learns to refuse requests for weapon instructions, exactly as the reward was meant to teach it
+        why: Here the reward and the designers' intent agree, so optimizing the reward produces the intended behavior [^1].
+      - text: The model agrees with a user's false claim, because agreeing tended to earn a high reward
+        correct: true
+      - text: Answers grow longer and longer, because the reward model happens to score long answers higher
+        correct: true
+      - text: A coding agent edits the unit tests so that they pass, instead of fixing the bug they test
+        correct: true
+      - text: The training loss diverges after a few steps, because the learning rate was set too high
+        why: This is an optimization failure; the policy is not exploiting a gap between the reward and the intended goal [^1].
+    explanation: |
+      Reward hacking means achieving the literal, formal objective without the outcome the designers
+      intended; Skalse et al. define it as optimizing an imperfect proxy reward so that performance
+      under the true reward becomes poor [^1][^2]. In RLHF the reward model is only a proxy for human
+      judgment, and common hacks include length bias and sycophancy [^1]. Agents used for software
+      development have also been reported modifying test or scoring code instead of solving the
+      task [^1].
+    references:
+      - title: 'Wikipedia: Reward hacking'
+        url: https://en.wikipedia.org/wiki/Reward_hacking#Reward_hacking_in_modern_language_models
+        locator: Lead section; Reward hacking in modern language models; Deliberate reward hacking in reasoning models
+      - title: Skalse et al. (2022), Defining and Characterizing Reward Hacking
+        url: https://arxiv.org/abs/2209.13085
+        locator: Abstract; Sec. 1 Introduction
+    source:
+      id: original
+      ref: alignment-019
+    status: draft
+  - id: alignment-020
+    type: multiple
+    difficulty: medium
+    tags:
+      - dpo
+      - implicit-reward
+      - kl-constraint
+    question: |
+      Direct Preference Optimization (DPO) trains a policy $\pi_\theta$ on a fixed dataset of
+      preference pairs $(x, y_w, y_l)$ with the loss
+
+      $$\mathcal{L}_{\text{DPO}} = -E\left[\log \sigma\left(\beta \log \frac{\pi_\theta(y_w \mid x)}{\pi_{\text{ref}}(y_w \mid x)} - \beta \log \frac{\pi_\theta(y_l \mid x)}{\pi_{\text{ref}}(y_l \mid x)}\right)\right]$$
+
+      Which statements are correct? Select all that apply.
+    options:
+      - text: The loss is a Bradley–Terry likelihood in which the implicit reward replaces a learned reward model
+        correct: true
+      - text: A larger $\beta$ lets the policy drift further away from $\pi_{\text{ref}}$, because the preference signal is stronger
+        why: $\beta$ weights the KL constraint toward the reference policy; a higher $\beta$ means less deviation from it [^1][^2].
+      - text: No separate reward model is trained; the implicit reward is $\beta \log \frac{\pi_\theta(y \mid x)}{\pi_{\text{ref}}(y \mid x)}$
+        correct: true
+      - text: The reference model $\pi_{\text{ref}}$ is no longer needed once training starts, since only $\pi_\theta$ is updated
+        why: Every term of the loss divides by $\pi_{\text{ref}}$, so its log-probabilities of $y_w$ and $y_l$ are needed for every pair [^1].
+      - text: No responses are sampled from $\pi_\theta$ during training; the loss uses only the stored pairs
+        correct: true
+    explanation: |
+      DPO starts from the same KL-constrained objective as RLHF, whose optimal policy can be written
+      in closed form, so the reward can be expressed as $\beta \log \frac{\pi(y \mid x)}{\pi_{\text{ref}}(y \mid x)}$
+      plus a term that cancels in the Bradley–Terry model [^1]. Plugging this into the Bradley–Terry
+      likelihood gives a simple classification loss over policies, so DPO needs neither a standalone
+      reward model nor an RL loop with sampling from the policy [^1]. In this objective $\beta$
+      controls how far the policy may deviate from $\pi_{\text{ref}}$ [^1][^2].
+    references:
+      - title: 'Rafailov et al. (2023), Direct Preference Optimization: Your Language Model is Secretly a Reward Model'
+        url: https://arxiv.org/abs/2305.18290
+        locator: Abstract; Sec. 3 Preliminaries, Eq. (3); Sec. 4 Direct Preference Optimization, Eqs. (5)-(7)
+      - title: 'Hugging Face TRL docs: DPO Trainer (DPOConfig, parameter beta)'
+        url: https://huggingface.co/docs/trl/dpo_trainer#trl.DPOConfig
+        locator: DPOConfig, beta ("Higher β means less deviation from the reference model")
+    source:
+      id: original
+      ref: alignment-020
+    status: draft
+  - id: alignment-021
+    type: short_answer
+    difficulty: hard
+    tags:
+      - dpo
+      - code-reading
+      - pytorch
+    question: |
+      This computes the DPO loss for one preference pair from summed log-probabilities of the whole
+      responses. What does it print?
+
+      ```python
+      import torch
+      import torch.nn.functional as F
+
+      beta = 0.1
+      # log-probabilities of the chosen and the rejected response
+      policy_chosen, policy_rejected = torch.tensor(-42.0), torch.tensor(-55.0)
+      ref_chosen, ref_rejected = torch.tensor(-45.0), torch.tensor(-50.0)
+
+      logits = beta * ((policy_chosen - ref_chosen) - (policy_rejected - ref_rejected))
+      loss = -F.logsigmoid(logits)
+      print(round(loss.item(), 3))
+      ```
+    answer:
+      numeric: 0.371
+      tolerance: 0.001
+      hint: a number, 3 decimals
+      model: $0.1 \cdot \big(3 - (-5)\big) = 0.8$ and $-\log \sigma(0.8) = \log(1 + e^{-0.8}) \approx 0.371$
+    explanation: |
+      The code is the DPO loss for one pair, $-\log \sigma\big(\beta \log \frac{\pi_\theta(y_w)}{\pi_{\text{ref}}(y_w)} - \beta \log \frac{\pi_\theta(y_l)}{\pi_{\text{ref}}(y_l)}\big)$
+      [^1][^2]. The policy raised the chosen response's log-probability by 3 and lowered the rejected
+      one's by 5 relative to the reference, so the implicit rewards are $0.3$ and $-0.5$ and
+      the logit is $0.8$. The loss $\log(1 + e^{-0.8}) \approx 0.371$ is already below
+      $\log 2 \approx 0.693$, its value when the policy equals the reference. Its gradient weights
+      each pair by how wrongly the implicit reward orders the two responses, so pairs like this one,
+      already ordered correctly, get a smaller weight [^1].
+    references:
+      - title: 'Rafailov et al. (2023), Direct Preference Optimization: Your Language Model is Secretly a Reward Model'
+        url: https://arxiv.org/abs/2305.18290
+        locator: Sec. 4 Direct Preference Optimization, Eq. (7) and "What does the DPO update do?"
+      - title: 'Hugging Face TRL docs: DPO Trainer'
+        url: https://huggingface.co/docs/trl/dpo_trainer#computing-the-loss
+        locator: Looking deeper into the DPO method, Computing the loss; Logged metrics (rewards/chosen, rewards/rejected)
+    source:
+      id: original
+      ref: alignment-021
+    status: draft
+  - id: alignment-022
+    type: single
+    difficulty: medium
+    tags:
+      - constitutional-ai
+      - rlaif
+      - critique-revision
+    question: |
+      Constitutional AI (Bai et al., 2022) trains a harmless assistant without any human labels of
+      harmfulness; human oversight comes only from a written list of principles. How is the
+      training organized?
+    options:
+      - text: Humans first rank answers by harmlessness to train a preference model, and afterwards the principles are used to write a supervised fine-tuning dataset
+        why: No human harmlessness labels are used, and the supervised stage comes first; the comparison labels for harmlessness come from a model [^1].
+      - text: A model invents new principles during training, and the policy is fine-tuned to imitate them directly, without any preference model or RL stage
+        why: The constitution is written by people, and the second stage trains a preference model and runs RL against it [^1][^2].
+      - text: The model critiques and revises its own answers by the principles and is tuned on the revisions; then AI-labeled pairs train a preference model for RL
+        correct: true
+      - text: The principles act as a fixed filter at inference time that blocks harmful outputs, so the model's weights are never trained on them at all
+        why: Both stages train the model, first with supervised learning on revised responses, then with RL against a preference model [^1].
+    explanation: |
+      In the supervised stage, a helpful-only model answers harmful prompts, critiques its answer
+      according to a principle drawn from the constitution, revises it, and a pretrained model is
+      fine-tuned on the final revisions [^1]. In the RL stage, the fine-tuned model produces pairs of
+      responses, a feedback model judges which one is less harmful according to a principle in a
+      multiple-choice format, and a preference model trained on these AI labels (mixed with human
+      helpfulness labels) provides the reward for RL, which the authors call RL from AI Feedback
+      (RLAIF) [^1][^2]. The result is a harmless but non-evasive assistant that explains its
+      objections to harmful requests [^2].
+    references:
+      - title: 'Bai et al. (2022), Constitutional AI: Harmlessness from AI Feedback'
+        url: https://arxiv.org/abs/2212.08073
+        locator: Sec. 1.2 The Constitutional AI Approach; Sec. 4.1 Method
+      - title: 'Bai et al. (2022), Constitutional AI: Harmlessness from AI Feedback'
+        url: https://arxiv.org/abs/2212.08073
+        locator: Abstract
+    source:
+      id: original
+      ref: alignment-022
+    status: draft
+  - id: alignment-023
+    type: true_false
+    difficulty: easy
+    tags:
+      - chain-of-thought
+      - prompting
+      - scale
+    shuffle: false
+    question: |
+      Wei et al. (2022) prompted language models of many sizes with a few chain-of-thought
+      exemplars, i.e. worked examples that spell out intermediate reasoning steps before the answer.
+      True or false: chain-of-thought prompting beat standard prompting for models of every size
+      they tested.
+    options:
+      - text: 'True'
+        why: Gains appeared only for models of about 100B parameters; smaller models wrote fluent but illogical chains and did worse than with standard prompting [^1].
+      - text: 'False'
+        correct: true
+    explanation: |
+      Chain-of-thought prompting puts exemplars with intermediate reasoning steps into a few-shot
+      prompt, so the model writes its own reasoning before answering [^2]. The paper finds that this
+      is an emergent ability of model scale: it does not help small models and only yields gains with
+      models of roughly 100B parameters [^1]. Smaller models produced fluent but illogical chains of
+      thought, which led to lower performance than standard prompting [^1].
+    references:
+      - title: Wei et al. (2022), Chain-of-Thought Prompting Elicits Reasoning in Large Language Models
+        url: https://arxiv.org/abs/2201.11903
+        locator: Sec. 3.2 Results (first takeaway)
+      - title: Wei et al. (2022), Chain-of-Thought Prompting Elicits Reasoning in Large Language Models
+        url: https://arxiv.org/abs/2201.11903
+        locator: Abstract; Sec. 2 Chain-of-Thought Prompting
+    source:
+      id: original
+      ref: alignment-023
+    status: draft
+  - id: alignment-024
+    type: short_answer
+    difficulty: easy
+    tags:
+      - self-consistency
+      - chain-of-thought
+      - test-time-compute
+    question: |
+      A model is prompted with chain-of-thought exemplars for a math word problem. Greedy decoding
+      gives the answer 26. With self-consistency, six reasoning paths are sampled instead:
+
+      | Path | Final answer | Length-normalized probability of the path |
+      |---|---|---|
+      | 1 | 18 | 0.44 |
+      | 2 | 26 | 0.52 |
+      | 3 | 18 | 0.40 |
+      | 4 | 14 | 0.47 |
+      | 5 | 18 | 0.43 |
+      | 6 | 26 | 0.49 |
+
+      Aggregating by majority vote over the final answers, which answer does self-consistency
+      return?
+    answer:
+      numeric: 18
+      tolerance: 0
+      hint: a number
+      model: 18 appears in 3 of the 6 paths, 26 in 2 and 14 in 1, so the majority answer is 18.
+    explanation: |
+      Self-consistency replaces greedy decoding in chain-of-thought prompting: it samples a diverse
+      set of reasoning paths and then marginalizes them out by taking a majority vote over the final
+      answers, $\operatorname*{arg\,max}_a \sum_i \mathbb{1}(a_i = a)$ [^1]. Here 18 wins with three
+      votes, although the single most probable path and the greedy decode both say 26. The idea is
+      that correct reasoning paths, even if they differ, tend to agree on the final answer more than
+      incorrect ones [^1]. Weighting the votes by the normalized path probabilities gave almost the
+      same accuracy as the plain vote [^1]; the price is the extra compute for sampling many
+      paths [^2].
+    references:
+      - title: Wang et al. (2023), Self-Consistency Improves Chain of Thought Reasoning in Language Models
+        url: https://arxiv.org/abs/2203.11171
+        locator: Sec. 2 Self-Consistency over Diverse Reasoning Paths; Table 1
+      - title: Wang et al. (2023), Self-Consistency Improves Chain of Thought Reasoning in Language Models
+        url: https://arxiv.org/abs/2203.11171
+        locator: Sec. 5 Conclusion and Discussion (computation cost)
+    source:
+      id: original
+      ref: alignment-024
+    status: draft
+  - id: alignment-025
+    type: single
+    difficulty: medium
+    tags:
+      - test-time-compute
+      - reasoning
+      - scaling
+    question: |
+      Snell et al. (2024) compared spending extra inference-time compute on a smaller model with
+      pretraining a roughly 14× larger model, at a matched FLOPs budget. What did they conclude?
+    options:
+      - text: It helps on easy and medium questions, but on the hardest ones more pretraining works better
+        correct: true
+      - text: One fixed strategy, best-of-N with as many samples as the budget allows, is optimal for every prompt
+        why: The best strategy depends on the prompt's difficulty, and choosing it per prompt was about 4× more efficient than best-of-N [^2].
+      - text: Extra test-time compute beats the larger pretrained model on questions of every difficulty level
+        why: On the most challenging questions they saw very little benefit from more test-time compute; there, pretraining was more effective [^1].
+      - text: Extra test-time compute never helps; at equal FLOPs the larger pretrained model always wins
+        why: On easy and medium questions a smaller model with more test-time compute could outperform the 14× larger model [^1][^2].
+    explanation: |
+      The paper finds that how well a test-time method works depends strongly on the difficulty of
+      the prompt, so it allocates test-time compute adaptively per prompt (a "compute-optimal"
+      strategy), which is more than 4× more efficient than a best-of-N baseline [^2]. In the
+      FLOPs-matched comparison, test-time compute can replace extra pretraining on questions within
+      the model's capabilities, but on questions beyond them pretraining is likely more effective, so
+      the two kinds of compute are not 1-to-1 exchangeable [^1].
+    references:
+      - title: Snell et al. (2024), Scaling LLM Test-Time Compute Optimally can be More Effective than Scaling Model Parameters
+        url: https://arxiv.org/abs/2408.03314
+        locator: Sec. 7 Putting it Together, box "Takeaways for exchanging pretraining and test-time compute"
+      - title: Snell et al. (2024), Scaling LLM Test-Time Compute Optimally can be More Effective than Scaling Model Parameters
+        url: https://arxiv.org/abs/2408.03314
+        locator: Abstract; Sec. 1 Introduction
+    source:
+      id: original
+      ref: alignment-025
+    status: draft
+  - id: alignment-026
+    type: single
+    difficulty: medium
+    tags:
+      - red-teaming
+      - safety-evaluation
+      - kl-penalty
+    question: |
+      Perez et al. (2022) red-team a chatbot with a second "red" language model that writes test
+      questions, while a classifier flags offensive replies. When the red LM is trained with RL to
+      elicit offensive replies, a KL penalty with weight $\alpha$ keeps it close to its initial
+      distribution. What happened as $\alpha$ was lowered?
+    options:
+      - text: Fewer of its questions drew offensive replies, but the questions became more diverse
+        why: That describes raising $\alpha$; lowering it trades diversity for expected reward, letting RL push harder on the reward [^1].
+      - text: Its questions became more diverse and also drew offensive replies more often
+        why: The methods traded diversity against harmfulness; with low $\alpha$ the red LM converged on one successful pattern [^1].
+      - text: Nothing changed, because the KL penalty affects only the training speed
+        why: The penalty changes what the red LM generates; without enough of it, RL collapses toward a single high-reward kind of question [^1].
+      - text: More of its questions drew offensive replies, but the questions became less diverse
+        correct: true
+    explanation: |
+      The KL penalty is there to stop RL from collapsing onto a single high-reward generation [^1].
+      With lower penalties RL elicited offensive replies most often, over 40% of the time at
+      $\alpha = 0.3$, but then 78% of its test cases contained the word "invisible": the red LM had
+      converged on one successful pattern. The methods trade diversity against difficulty [^1]. Manual
+      red teaming by people is the other approach: Ganguli et al. released 38,961 human red-team
+      attacks and found RLHF models harder to red team as they scale [^2].
+    references:
+      - title: Perez et al. (2022), Red Teaming Language Models with Language Models
+        url: https://arxiv.org/abs/2202.03286
+        locator: Sec. 2.2 Test Case Generation Methods (Reinforcement Learning); Sec. 3.2 Results
+      - title: 'Ganguli et al. (2022), Red Teaming Language Models to Reduce Harms: Methods, Scaling Behaviors, and Lessons Learned'
+        url: https://arxiv.org/abs/2209.07858
+        locator: Abstract
+    source:
+      id: original
+      ref: alignment-026
+    status: draft

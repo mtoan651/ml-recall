@@ -433,3 +433,672 @@ questions:
       ref: intro-llms/assignment8#q2
       url: https://archive.nptel.ac.in/content/storage2/courses/downloads_new/106102576/noc25_cs45_assignment_Week_8.png
     status: draft
+  - id: fine-tuning-013
+    type: single
+    difficulty: easy
+    tags:
+      - lora
+      - peft
+      - memory
+      - adam
+    question: |
+      You fine-tune a 7-billion-parameter language model with Adam. Full fine-tuning runs out of GPU
+      memory, but LoRA on the same model fits. Where does most of LoRA's memory saving come from?
+    options:
+      - text: LoRA stores the frozen pretrained weights in 4-bit precision instead of 16-bit precision
+        why: Storing the frozen base model in 4 bits is what QLoRA adds on top of LoRA [^3]; plain LoRA keeps $W_0$ as it is and only freezes it [^1].
+      - text: Frozen weights need no weight gradients and no Adam moment estimates; only $A$ and $B$ do
+        correct: true
+      - text: LoRA moves the pretrained matrices off the GPU during training and keeps only $BA$ there
+        why: The forward pass is $h = W_0\mathbf{x} + BA\mathbf{x}$, so $W_0$ is needed at every training step [^1].
+      - text: LoRA skips the backward pass through the frozen layers, so their activations need not be stored
+        why: Gradients still flow back through the frozen layers to reach the adapters below them; only the weight gradients of the frozen matrices are skipped [^3].
+    explanation: |
+      Adam keeps two moment estimates for every trainable parameter, on top of its gradient. In LoRA
+      the pretrained $W_0$ is frozen and receives no gradient updates, so gradients and optimizer
+      states exist only for the small matrices $A$ and $B$ [^1]. For a large Transformer this cuts
+      training VRAM by up to 2/3; on GPT-3 175B it went from 1.2 TB to 350 GB [^2]. The frozen
+      weights still sit in GPU memory, and the backward pass still runs through them; QLoRA goes
+      further and stores them in 4 bits [^3].
+    references:
+      - title: 'Hu et al. (2021), LoRA: Low-Rank Adaptation of Large Language Models'
+        url: https://arxiv.org/abs/2106.09685
+        locator: Sec. 4.1 Low-Rank-Parametrized Update Matrices, Eq. (3)
+      - title: 'Hu et al. (2021), LoRA: Low-Rank Adaptation of Large Language Models'
+        url: https://arxiv.org/abs/2106.09685
+        locator: Sec. 4.2 Applying LoRA to Transformer, paragraph "Practical Benefits and Limitations"
+      - title: 'Dettmers et al. (2023), QLoRA: Efficient Finetuning of Quantized LLMs'
+        url: https://arxiv.org/abs/2305.14314
+        locator: Abstract; Sec. 3 QLoRA Finetuning, paragraph "QLoRA"
+    source:
+      id: original
+      ref: fine-tuning-013
+    status: draft
+  - id: fine-tuning-014
+    type: single
+    difficulty: hard
+    tags:
+      - lora
+      - initialization
+      - gradients
+      - code-reading
+      - pytorch
+    question: |
+      A minimal LoRA layer wraps a pretrained `nn.Linear`:
+
+      ```python
+      class LoRALinear(nn.Module):
+          def __init__(self, base: nn.Linear, r=8, alpha=16):
+              super().__init__()
+              self.base = base.requires_grad_(False)       # frozen W0 and bias
+              self.A = nn.Parameter(0.01 * torch.randn(r, base.in_features))
+              self.B = nn.Parameter(torch.zeros(base.out_features, r))
+              self.scale = alpha / r
+
+          def forward(self, x):
+              return self.base(x) + (x @ self.A.T @ self.B.T) * self.scale
+      ```
+
+      You run one forward pass and `loss.backward()`, before any optimizer step. Which statement is
+      true?
+    options:
+      - text: The output equals the base layer's output; `A.grad` and `B.grad` are both zero, so training never starts
+        why: The gradient of $B$ is $s\,\mathbf{g}\,(A\mathbf{x})^\top$, which is nonzero because $A$ is random. Training would stall only if $A$ were zero too.
+      - text: The output differs from the base layer's output, because the random $A$ adds noise
+        why: The extra term is $BA\mathbf{x}$ with $B = 0$, so it is exactly zero and the model starts at the pretrained function [^1].
+      - text: The output equals the base layer's output; `B.grad` is nonzero and `A.grad` is all zeros
+        correct: true
+      - text: The output equals the base layer's output; `A.grad` is nonzero and `B.grad` is all zeros
+        why: It is the other way round. The gradient of $A$ is $s\,B^\top\mathbf{g}\,\mathbf{x}^\top$, which vanishes because $B = 0$.
+    explanation: |
+      This is LoRA's initialization: $A$ random Gaussian and $B$ zero, so $\Delta W = BA = 0$ and
+      training starts exactly at the pretrained $W_0$ [^1]. With $h = W_0\mathbf{x} + s\,BA\mathbf{x}$,
+      $s = \alpha/r$ [^1][^2], and the output gradient $\mathbf{g} = \partial L / \partial h$, the chain
+      rule gives $\partial L/\partial B = s\,\mathbf{g}\,(A\mathbf{x})^\top \neq 0$ and
+      $\partial L/\partial A = s\,B^\top\mathbf{g}\,\mathbf{x}^\top = 0$. After the first update
+      $B \neq 0$, and from then on $A$ learns too. Initializing both matrices to zero would keep both
+      gradients at zero forever.
+    references:
+      - title: 'Hu et al. (2021), LoRA: Low-Rank Adaptation of Large Language Models'
+        url: https://arxiv.org/abs/2106.09685
+        locator: Sec. 4.1 Low-Rank-Parametrized Update Matrices, Eq. (3) and the initialization paragraph
+      - title: 'Hugging Face PEFT docs: LoRA (conceptual guide)'
+        url: https://huggingface.co/docs/peft/main/en/conceptual_guides/lora#common-lora-parameters-in-peft
+        locator: Common LoRA parameters in PEFT (lora_alpha, default scaling lora_alpha/r)
+    source:
+      id: original
+      ref: fine-tuning-014
+    status: draft
+  - id: fine-tuning-015
+    type: short_answer
+    difficulty: medium
+    tags:
+      - lora
+      - parameter-count
+      - rank
+    question: |
+      LoRA adapts a pretrained $4096 \times 4096$ weight matrix $W_0$ with the update $\Delta W = BA$,
+      where $B \in \mathbb{R}^{4096 \times r}$ and $A \in \mathbb{R}^{r \times 4096}$. At which rank
+      $r$ does LoRA train exactly as many parameters as fine-tuning $W_0$ itself in full?
+    answer:
+      numeric: 2048
+      tolerance: 0
+      hint: a whole number
+      model: $r(d + k) = dk$ gives $r = \frac{dk}{d + k} = \frac{4096 \cdot 4096}{8192} = 2048$
+    explanation: |
+      LoRA trains $B \in \mathbb{R}^{d \times r}$ and $A \in \mathbb{R}^{r \times k}$ instead of the
+      $d \times k$ update [^1], so it has $r(d + k)$ parameters. Setting $r(d + k) = dk$ gives
+      $r = dk/(d + k)$, which is $d/2 = 2048$ for a square matrix. Ranks used in practice are tiny by
+      comparison: at $r = 8$ the count is $8 \cdot 8192 = 65\,536$, about 0.39% of the 16.8 million
+      entries of $W_0$. The saving comes from the low-rank assumption itself, since $BA$ has rank at
+      most $r$; LoRA roughly recovers the expressiveness of full fine-tuning only when $r$ is raised
+      to the rank of the pretrained matrix (with all biases trained too) [^2], where it would use
+      more parameters than full fine-tuning.
+    references:
+      - title: 'Hu et al. (2021), LoRA: Low-Rank Adaptation of Large Language Models'
+        url: https://arxiv.org/abs/2106.09685
+        locator: Sec. 4.1 Low-Rank-Parametrized Update Matrices, Eq. (3)
+      - title: 'Hu et al. (2021), LoRA: Low-Rank Adaptation of Large Language Models'
+        url: https://arxiv.org/abs/2106.09685
+        locator: Sec. 4.1, paragraph "A Generalization of Full Fine-tuning"
+    source:
+      id: original
+      ref: fine-tuning-015
+    status: draft
+  - id: fine-tuning-016
+    type: short_answer
+    difficulty: medium
+    tags:
+      - lora
+      - peft
+      - parameter-count
+      - code-reading
+      - grouped-query-attention
+    question: |
+      A decoder-only model has 16 layers. Each attention block contains
+      `q_proj = nn.Linear(2048, 2048, bias=False)`, `k_proj = nn.Linear(2048, 512, bias=False)`,
+      `v_proj = nn.Linear(2048, 512, bias=False)` and `o_proj = nn.Linear(2048, 2048, bias=False)`.
+      You wrap the model with PEFT:
+
+      ```python
+      from peft import LoraConfig, get_peft_model
+
+      config = LoraConfig(r=16, lora_alpha=32, target_modules=["q_proj", "v_proj"])
+      model = get_peft_model(base_model, config)
+      model.print_trainable_parameters()
+      ```
+
+      How many trainable parameters are reported?
+    answer:
+      numeric: 1703936
+      tolerance: 0
+      hint: a whole number
+      model: $16 \times 16 \times \big[(2048 + 2048) + (2048 + 512)\big] = 16 \times 16 \times 6656 = 1\,703\,936$
+    explanation: |
+      `target_modules` names the layers that get LoRA matrices; PEFT matches the names in every layer,
+      so `q_proj` and `v_proj` are adapted in all 16 layers, and all other weights are frozen [^1][^2].
+      A LoRA pair for a layer with $k$ inputs and $d$ outputs has $r(d + k)$ parameters [^3]:
+      $16 \times 4096 = 65\,536$ for `q_proj`, but only $16 \times 2560 = 40\,960$ for `v_proj`, whose
+      output is just 512 wide. Over 16 layers this gives $16 \times 106\,496 = 1\,703\,936$. The
+      `lora_alpha` value only scales the update and adds no parameters [^2].
+    references:
+      - title: 'Hugging Face PEFT docs: Quicktour'
+        url: https://huggingface.co/docs/peft/quicktour#peft-configuration-and-model
+        locator: PEFT configuration and model (target_modules matching, print_trainable_parameters)
+      - title: 'Hugging Face PEFT docs: LoRA (conceptual guide)'
+        url: https://huggingface.co/docs/peft/main/en/conceptual_guides/lora#common-lora-parameters-in-peft
+        locator: Common LoRA parameters in PEFT
+      - title: 'Hu et al. (2021), LoRA: Low-Rank Adaptation of Large Language Models'
+        url: https://arxiv.org/abs/2106.09685
+        locator: Sec. 4.1 Low-Rank-Parametrized Update Matrices, Eq. (3)
+    source:
+      id: original
+      ref: fine-tuning-016
+    status: draft
+  - id: fine-tuning-017
+    type: short_answer
+    difficulty: medium
+    tags:
+      - lora
+      - parameter-count
+      - ratio
+    question: |
+      A decoder-only model has 6.7 billion parameters in total, 32 layers and $d_{model} = 4096$. You
+      apply LoRA with rank $r = 16$ to all four attention projections $W_q, W_k, W_v, W_o$ (each
+      $4096 \times 4096$) in every layer. What percentage of the model's parameter count is trainable?
+    answer:
+      numeric: 0.25
+      tolerance: 0.005
+      hint: a percentage with 2 decimals, without the % sign
+      model: $32 \times 4 \times 16 \times (4096 + 4096) = 16\,777\,216$ trainable; $16\,777\,216 / (6.7 \times 10^9) \approx 0.25\%$
+    explanation: |
+      Each adapted $d \times k$ matrix gets $B \in \mathbb{R}^{d \times r}$ and
+      $A \in \mathbb{R}^{r \times k}$ [^1], so for square matrices the count is
+      $|\Theta| = 2 \times \hat{L}_{LoRA} \times d_{model} \times r$, where $\hat{L}_{LoRA}$ is the
+      number of adapted matrices [^2]. Here $\hat{L}_{LoRA} = 32 \times 4 = 128$, which gives
+      $2 \times 128 \times 4096 \times 16 \approx 16.8$ million, about 0.25% of 6.7 billion. Even with
+      every attention matrix adapted, LoRA trains a tiny fraction of the model, which is why a GPT-3
+      LoRA checkpoint shrank from 350 GB to 35 MB [^3].
+    references:
+      - title: 'Hu et al. (2021), LoRA: Low-Rank Adaptation of Large Language Models'
+        url: https://arxiv.org/abs/2106.09685
+        locator: Sec. 4.1 Low-Rank-Parametrized Update Matrices, Eq. (3)
+      - title: 'Hu et al. (2021), LoRA: Low-Rank Adaptation of Large Language Models'
+        url: https://arxiv.org/abs/2106.09685
+        locator: Sec. 5.1 Baselines, paragraph "LoRA" (formula for the number of trainable parameters)
+      - title: 'Hu et al. (2021), LoRA: Low-Rank Adaptation of Large Language Models'
+        url: https://arxiv.org/abs/2106.09685
+        locator: Sec. 4.2 Applying LoRA to Transformer, paragraph "Practical Benefits and Limitations"
+    source:
+      id: original
+      ref: fine-tuning-017
+    status: draft
+  - id: fine-tuning-018
+    type: single
+    difficulty: medium
+    tags:
+      - lora
+      - adapters
+      - inference-latency
+      - merging
+    question: |
+      After training, a LoRA model can be served with no extra inference latency compared with the
+      original model, while bottleneck adapters (Houlsby et al.) add latency even when the bottleneck is
+      very small. What explains the difference?
+    options:
+      - text: Adapters have far more parameters than LoRA, and inference latency grows with parameter count
+        why: Adapters can be tiny, yet the LoRA paper measures added latency even with a very small bottleneck, because the extra layers must run in sequence [^2].
+      - text: LoRA's matrices are so small that computing $BA\mathbf{x}$ as a separate branch costs no time
+        why: Kept as a separate branch, the low-rank path is extra work at inference; the zero-latency guarantee comes from merging it into $W_0$ [^1][^3].
+      - text: LoRA's update is linear and parallel to $W_0$, so it merges into one matrix $W_0 + BA$
+        correct: true
+      - text: LoRA weights are only needed during training and are thrown away once the model is deployed
+        why: The learned update is kept, folded into the weights; throwing it away would undo the fine-tuning [^1].
+    explanation: |
+      Because $h = W_0\mathbf{x} + BA\mathbf{x}$ is linear in $\mathbf{x}$, you can compute and store
+      $W = W_0 + BA$ once and run inference as usual, with no additional latency by construction [^1].
+      PEFT's `merge_and_unload()` does exactly this and returns a standalone model [^3][^4]. Adapter
+      layers contain a nonlinearity and sit in sequence after the attention and feed-forward
+      sub-layers, so they cannot be folded away; on GPT-2 medium with batch size 1 they added 20–30%
+      latency [^2]. To switch tasks, LoRA can subtract $BA$ and add another task's $B'A'$ [^1].
+    references:
+      - title: 'Hu et al. (2021), LoRA: Low-Rank Adaptation of Large Language Models'
+        url: https://arxiv.org/abs/2106.09685
+        locator: Sec. 4.1, paragraph "No Additional Inference Latency"
+      - title: 'Hu et al. (2021), LoRA: Low-Rank Adaptation of Large Language Models'
+        url: https://arxiv.org/abs/2106.09685
+        locator: Sec. 3 Aren't Existing Solutions Good Enough?, paragraph "Adapter Layers Introduce Inference Latency", Table 1
+      - title: 'Hugging Face PEFT docs: LoRA (conceptual guide)'
+        url: https://huggingface.co/docs/peft/main/en/conceptual_guides/lora#merge-lora-weights-into-the-base-model
+        locator: Merge LoRA weights into the base model
+      - source: hf-llm-course
+        url: https://huggingface.co/learn/llm-course/chapter11/4#merging-lora-adapters
+        locator: Chapter 11.4 LoRA (Low-Rank Adaptation), sec. Merging LoRA Adapters
+    source:
+      id: original
+      ref: fine-tuning-018
+    status: draft
+  - id: fine-tuning-019
+    type: single
+    difficulty: medium
+    tags:
+      - lora
+      - alpha
+      - scaling
+      - learning-rate
+    question: |
+      LoRA multiplies the low-rank update by a constant:
+      $h = W_0\mathbf{x} + \frac{\alpha}{r} BA\mathbf{x}$. The original paper sets $\alpha$ once, to the
+      first rank $r$ it tries, and never tunes it. What does the $\frac{\alpha}{r}$ factor give you when
+      training with Adam?
+    options:
+      - text: It caps the rank of $BA$ at $r$, which would otherwise grow during training
+        why: The shapes of $B$ ($d \times r$) and $A$ ($r \times k$) already bound the rank of $BA$ by $r$; no scale is needed for that [^1].
+      - text: It makes the update $BA$ zero at the start, so training begins at $W_0$
+        why: A zero update at the start comes from initializing $B$ to zero, not from the scale factor [^1].
+      - text: It shrinks the frozen weights $W_0$ so that the learned update can dominate the output
+        why: The factor multiplies only the update $BA\mathbf{x}$; $W_0\mathbf{x}$ is left as it is [^1].
+      - text: You can change the rank $r$ without retuning the learning rate each time
+        correct: true
+    explanation: |
+      With Adam, tuning $\alpha$ is roughly the same as tuning the learning rate, so the LoRA authors
+      fix $\alpha$ and divide by $r$; this reduces the need to retune hyperparameters when $r$ varies
+      [^1]. QLoRA likewise keeps $\alpha$ fixed and searches only the learning rate [^2], and the TRL
+      guide notes that the $1/r$ scaling makes the optimal learning rate approximately
+      rank-independent [^3]. In PEFT the default scale is `lora_alpha / r` [^4].
+    references:
+      - title: 'Hu et al. (2021), LoRA: Low-Rank Adaptation of Large Language Models'
+        url: https://arxiv.org/abs/2106.09685
+        locator: Sec. 4.1 Low-Rank-Parametrized Update Matrices (initialization and scaling paragraph)
+      - title: 'Dettmers et al. (2023), QLoRA: Efficient Finetuning of Quantized LLMs'
+        url: https://arxiv.org/abs/2305.14314
+        locator: Appendix A.1 Hyperparameters for QLoRA
+      - title: 'Hugging Face TRL docs: LoRA Without Regret'
+        url: https://huggingface.co/docs/trl/lora_without_regret#3-fullft-and-high-rank-loras-have-similar-learning-curves
+        locator: Key findings, 3. "FullFT and high-rank LoRAs have similar learning curves"
+      - title: 'Hugging Face PEFT docs: LoRA (conceptual guide)'
+        url: https://huggingface.co/docs/peft/main/en/conceptual_guides/lora#common-lora-parameters-in-peft
+        locator: Common LoRA parameters in PEFT (use_rslora, lora_alpha/r)
+    source:
+      id: original
+      ref: fine-tuning-019
+    status: draft
+  - id: fine-tuning-020
+    type: multiple
+    difficulty: hard
+    tags:
+      - lora
+      - target-modules
+      - attention
+      - qlora
+    question: |
+      Which statements about *where* to apply LoRA in a Transformer are supported by the LoRA paper and
+      later work? Select all that apply.
+    options:
+      - text: LoRA works only for square matrices, so the rectangular MLP projections cannot be adapted
+        why: $B \in \mathbb{R}^{d \times r}$ and $A \in \mathbb{R}^{r \times k}$ fit any $d \times k$ matrix [^1]; the paper left the MLP out for simplicity, not because it is impossible [^2].
+      - text: On GPT-3 with a fixed budget of trainable parameters, adapting $W_q$ and $W_v$ at $r = 4$ beat adapting $W_q$ alone at $r = 8$
+        correct: true
+      - text: Raising the rank of attention-only LoRA fully makes up for leaving the MLP layers untouched
+        why: The "LoRA Without Regret" results find that attention-only LoRA underperforms even when its rank is raised to match the parameter count [^5].
+      - text: QLoRA found that LoRA on all linear layers of each Transformer block is needed to match full fine-tuning
+        correct: true
+      - text: The original LoRA paper adapts only attention weights and keeps the MLP modules frozen
+        correct: true
+    explanation: |
+      The LoRA paper studies only the attention matrices, for simplicity and parameter efficiency [^2].
+      With an 18M-parameter budget on GPT-3 175B, $W_q$ and $W_v$ at $r = 4$ reached 73.7% on WikiSQL
+      and 91.3% on MultiNLI, against 70.4% and 91.0% for $W_q$ alone at $r = 8$ [^3]: covering more
+      matrices with a small rank beat a higher rank on one. Later work went further: QLoRA reports that
+      LoRA on all linear Transformer block layers is required to match full fine-tuning [^4], and the
+      TRL guide recommends `target_modules="all-linear"` [^5].
+    references:
+      - title: 'Hu et al. (2021), LoRA: Low-Rank Adaptation of Large Language Models'
+        url: https://arxiv.org/abs/2106.09685
+        locator: Sec. 4.1 Low-Rank-Parametrized Update Matrices, Eq. (3)
+      - title: 'Hu et al. (2021), LoRA: Low-Rank Adaptation of Large Language Models'
+        url: https://arxiv.org/abs/2106.09685
+        locator: Sec. 4.2 Applying LoRA to Transformer
+      - title: 'Hu et al. (2021), LoRA: Low-Rank Adaptation of Large Language Models'
+        url: https://arxiv.org/abs/2106.09685
+        locator: Sec. 7.1 Which Weight Matrices in Transformer Should We Apply LoRA to?, Table 5
+      - title: 'Dettmers et al. (2023), QLoRA: Efficient Finetuning of Quantized LLMs'
+        url: https://arxiv.org/abs/2305.14314
+        locator: Sec. 4 QLoRA vs. Standard Finetuning, paragraph "Default LoRA hyperparameters do not match 16-bit performance"
+      - title: 'Hugging Face TRL docs: LoRA Without Regret'
+        url: https://huggingface.co/docs/trl/lora_without_regret#1-lora-performs-better-when-applied-to-all-weight-matrices
+        locator: Key findings, 1. LoRA performs better when applied to all weight matrices
+    source:
+      id: original
+      ref: fine-tuning-020
+    status: draft
+  - id: fine-tuning-021
+    type: short_answer
+    difficulty: hard
+    tags:
+      - qlora
+      - quantization
+      - double-quantization
+      - memory
+    question: |
+      QLoRA stores a 7-billion-parameter base model in 4-bit NormalFloat, quantized in blocks of 64
+      weights with one quantization constant per block. With double quantization these constants are
+      themselves stored as 8-bit floats, and every 256 of them share one 32-bit second-level constant.
+      How many gigabytes ($10^9$ bytes) do the stored weights and constants take?
+    answer:
+      numeric: 3.61
+      tolerance: 0.006
+      hint: GB, 2 decimals
+      model: $4 + \frac{8}{64} + \frac{32}{64 \cdot 256} \approx 4.127$ bits per parameter; $7 \times 10^9 \times 4.127 / 8 \approx 3.61$ GB
+    explanation: |
+      The 4-bit codes alone take $7 \times 10^9 \times 4 / 8 = 3.5$ GB, against 14 GB for the same
+      weights in 16-bit. With 32-bit constants, one per block of 64, the constants would add
+      $32/64 = 0.5$ bits per parameter (3.94 GB in total); double quantization cuts this to
+      $8/64 + 32/(64 \cdot 256) = 0.127$ bits, a saving of 0.373 bits per parameter [^1], so the total
+      is about 3.61 GB. This counts only the frozen weights: the LoRA adapters, their optimizer states
+      and the activations come on top [^2]. Together these savings let QLoRA fine-tune a 65B model on a
+      single 48 GB GPU [^3].
+    references:
+      - title: 'Dettmers et al. (2023), QLoRA: Efficient Finetuning of Quantized LLMs'
+        url: https://arxiv.org/abs/2305.14314
+        locator: Sec. 3 QLoRA Finetuning, paragraph "Double Quantization"
+      - title: 'Dettmers et al. (2023), QLoRA: Efficient Finetuning of Quantized LLMs'
+        url: https://arxiv.org/abs/2305.14314
+        locator: Sec. 2 Background, paragraph "Memory Requirement of Parameter-Efficient Finetuning"
+      - title: 'Dettmers et al. (2023), QLoRA: Efficient Finetuning of Quantized LLMs'
+        url: https://arxiv.org/abs/2305.14314
+        locator: Abstract
+    source:
+      id: original
+      ref: fine-tuning-021
+    status: draft
+  - id: fine-tuning-022
+    type: multiple
+    difficulty: medium
+    tags:
+      - qlora
+      - quantization
+      - nf4
+      - paged-optimizers
+    question: |
+      QLoRA fine-tunes very large language models on a single GPU. Which statements describe how it
+      works? Select all that apply.
+    options:
+      - text: Paged optimizers move optimizer states to CPU RAM automatically when GPU memory runs short
+        correct: true
+      - text: Weight gradients are computed only for the LoRA parameters, which are kept in BFloat16
+        correct: true
+      - text: The frozen base weights are stored in 4-bit NormalFloat and dequantized to BFloat16 for computation
+        correct: true
+      - text: The 4-bit base weights also receive gradient updates, and the LoRA adapters add extra capacity
+        why: The base model stays frozen; gradients flow *through* it into the LoRA adapters only [^1][^2].
+      - text: NormalFloat spaces its levels evenly, because pretrained weights are spread out uniformly
+        why: NF4 is built for zero-centered, normally distributed weights and places its levels at quantiles, so that each bin gets an equal share of the values [^3].
+    explanation: |
+      QLoRA has one storage data type, usually 4-bit NormalFloat, and one computation data type,
+      BFloat16: weights are dequantized for the forward and backward pass, but weight gradients are
+      computed only for the LoRA parameters [^2]. Gradients flow back through the frozen 4-bit model
+      into the adapters [^1]. NF4 builds on quantile quantization and assumes the zero-centered normal
+      distribution of pretrained weights [^3]. Paged optimizers use NVIDIA unified memory to evict
+      optimizer states to CPU RAM when the GPU runs out of memory, which absorbs memory spikes [^4].
+    references:
+      - title: 'Dettmers et al. (2023), QLoRA: Efficient Finetuning of Quantized LLMs'
+        url: https://arxiv.org/abs/2305.14314
+        locator: Abstract
+      - title: 'Dettmers et al. (2023), QLoRA: Efficient Finetuning of Quantized LLMs'
+        url: https://arxiv.org/abs/2305.14314
+        locator: Sec. 3 QLoRA Finetuning, paragraph "QLoRA", Eq. (5)–(6)
+      - title: 'Dettmers et al. (2023), QLoRA: Efficient Finetuning of Quantized LLMs'
+        url: https://arxiv.org/abs/2305.14314
+        locator: Sec. 3 QLoRA Finetuning, paragraph "4-bit NormalFloat Quantization"
+      - title: 'Dettmers et al. (2023), QLoRA: Efficient Finetuning of Quantized LLMs'
+        url: https://arxiv.org/abs/2305.14314
+        locator: Sec. 3 QLoRA Finetuning, paragraph "Paged Optimizers"
+    source:
+      id: original
+      ref: fine-tuning-022
+    status: draft
+  - id: fine-tuning-023
+    type: short_answer
+    difficulty: medium
+    tags:
+      - adapters
+      - peft
+      - parameter-count
+    question: |
+      Houlsby-style adapters are added to a 12-layer Transformer with hidden size $d = 768$. Each
+      adapter is a bottleneck: a linear layer $d \to m$ with bias, a nonlinearity, a linear layer
+      $m \to d$ with bias, and a skip connection around them, with $m = 64$. Every layer gets two
+      adapters, one after the attention sub-layer and one after the feed-forward sub-layer. How many
+      adapter parameters are added in total? (Ignore layer-norm and classifier parameters.)
+    answer:
+      numeric: 2379264
+      tolerance: 0
+      hint: a whole number
+      model: $12 \times 2 \times (2md + d + m) = 24 \times (2 \cdot 64 \cdot 768 + 768 + 64) = 24 \times 99\,136 = 2\,379\,264$
+    explanation: |
+      The down-projection has $dm$ weights and $m$ biases and the up-projection $md$ weights and $d$
+      biases, so one adapter adds $2md + d + m$ parameters [^1]. Two adapters per layer over 12 layers
+      give $24 \times 99\,136 \approx 2.38$ million; $m = 64$ is the fixed adapter size the paper tried
+      on GLUE [^2]. Thanks to the skip connection, an adapter whose projections start near zero is
+      close to the identity, so training starts from the pretrained network's behavior [^1]. Unlike a
+      merged LoRA update, these extra layers still run in sequence at inference time [^3].
+    references:
+      - title: Houlsby et al. (2019), Parameter-Efficient Transfer Learning for NLP
+        url: https://arxiv.org/abs/1902.00751
+        locator: Sec. 2.1 Instantiation for Transformer Networks, Figure 2
+      - title: Houlsby et al. (2019), Parameter-Efficient Transfer Learning for NLP
+        url: https://arxiv.org/abs/1902.00751
+        locator: Sec. 3.2 GLUE benchmark
+      - title: 'Hu et al. (2021), LoRA: Low-Rank Adaptation of Large Language Models'
+        url: https://arxiv.org/abs/2106.09685
+        locator: Sec. 3 Aren't Existing Solutions Good Enough?, paragraph "Adapter Layers Introduce Inference Latency"
+    source:
+      id: original
+      ref: fine-tuning-023
+    status: draft
+  - id: fine-tuning-024
+    type: multiple
+    difficulty: medium
+    tags:
+      - prefix-tuning
+      - prompt-tuning
+      - soft-prompts
+      - scale
+    question: |
+      Prefix tuning and prompt tuning both freeze the pretrained language model and learn a few
+      continuous "virtual token" vectors per task. Which statements are correct? Select all that apply.
+    options:
+      - text: Both pick real tokens from the vocabulary, so the learned prompts stay readable
+        why: Soft prompts are learned by backpropagation and need not match any word's embedding, which is why they are not human-readable [^4].
+      - text: At the T5-XXL scale (11B parameters), prompt tuning matches full model tuning
+        correct: true
+      - text: Prefix tuning prepends trainable vectors to the activations of every layer
+        correct: true
+      - text: Prefix tuning also updates the model's weights, but with a small learning rate
+        why: Prefix tuning keeps the language model's parameters fixed; the prefix parameters are the only trainable ones [^1].
+      - text: Prompt tuning prepends trainable vectors only to the embedded input
+        correct: true
+    explanation: |
+      In prefix tuning the activations at the prefix positions of every layer are free parameters, and
+      later tokens attend to them as if they were virtual tokens [^1]. Prompt tuning simplifies this to
+      a single learned prompt prepended to the embedded input; the frozen Transformer computes the
+      upper layers from it [^2]. Prefix tuning also needs an MLP reparameterization to train stably,
+      which prompt tuning does without [^1][^2]. Prompt tuning becomes more competitive with scale: at
+      T5-XXL it matches even multi-task model tuning with over 20,000 times fewer task-specific
+      parameters [^3].
+    references:
+      - title: 'Li & Liang (2021), Prefix-Tuning: Optimizing Continuous Prompts for Generation'
+        url: https://arxiv.org/abs/2101.00190
+        locator: Sec. 4.2 Method, Eq. (3); Sec. 4.3 Parametrization of the prefix
+      - title: Lester, Al-Rfou & Constant (2021), The Power of Scale for Parameter-Efficient Prompt Tuning
+        url: https://arxiv.org/abs/2104.08691
+        locator: Sec. 4 Comparison to Similar Approaches
+      - title: Lester, Al-Rfou & Constant (2021), The Power of Scale for Parameter-Efficient Prompt Tuning
+        url: https://arxiv.org/abs/2104.08691
+        locator: Sec. 3.1 Closing the Gap, Figure 1
+      - title: 'Hugging Face PEFT docs: Soft prompts (conceptual guide)'
+        url: https://huggingface.co/docs/peft/main/en/conceptual_guides/prompting#soft-prompts
+        locator: Soft prompts (introduction), Prompt tuning, Prefix tuning
+    source:
+      id: original
+      ref: fine-tuning-024
+    status: draft
+  - id: fine-tuning-025
+    type: multiple
+    difficulty: medium
+    tags:
+      - catastrophic-forgetting
+      - ewc
+      - adapters
+      - replay
+    question: |
+      You fine-tune a pretrained model on a narrow new task and want it to keep what it could do before,
+      that is, to avoid catastrophic forgetting. Which strategies help? Select all that apply.
+    options:
+      - text: Unfreeze all layers at once with a large learning rate, so the new task needs fewer steps
+        why: Fine-tuning all layers at once risks catastrophic forgetting, which is why ULMFiT unfreezes gradually and gives lower layers smaller learning rates [^4]; large steps also move the pretrained weights further [^5].
+      - text: Train until the loss on the new task is near zero, so that the weights settle down
+        why: Gradient steps on the new task alone minimize its loss but destroy what was learned for the old task; more of them only moves further away [^2].
+      - text: Add an EWC penalty that keeps weights important for the old task close to their old values
+        correct: true
+      - text: Mix examples from the original data or tasks into the fine-tuning batches
+        correct: true
+      - text: Freeze the pretrained weights and train only small adapter modules for the new task
+        correct: true
+    explanation: |
+      Forgetting happens because the weights that solved the old task are overwritten for the new one.
+      Interleaving data from all tasks prevents it, since the weights are then optimized jointly for
+      every task [^1]. EWC adds $\sum_i \frac{\lambda}{2} F_i (\theta_i - \theta^*_{A,i})^2$ to the new
+      task's loss, slowing learning on weights whose Fisher information $F_i$ marks them as important
+      for the old task [^2]. Adapters keep the shared weights frozen, so the model has perfect memory of
+      earlier tasks [^3]. ULMFiT's gradual unfreezing and per-layer learning rates address the same
+      risk [^4].
+    references:
+      - title: Kirkpatrick et al. (2017), Overcoming catastrophic forgetting in neural networks
+        url: https://arxiv.org/abs/1612.00796
+        locator: Sec. 1 Introduction (interleaving data from multiple tasks)
+      - title: Kirkpatrick et al. (2017), Overcoming catastrophic forgetting in neural networks
+        url: https://arxiv.org/abs/1612.00796
+        locator: Sec. 2 Elastic weight consolidation, Eq. (3) and Figure 1
+      - title: Houlsby et al. (2019), Parameter-Efficient Transfer Learning for NLP
+        url: https://arxiv.org/abs/1902.00751
+        locator: Sec. 1 Introduction; Sec. 4 Related Work, paragraph "Continual Learning"
+      - title: Howard & Ruder (2018), Universal Language Model Fine-tuning for Text Classification
+        url: https://arxiv.org/abs/1801.06146
+        locator: Sec. 3.2 Target task LM fine-tuning (Discriminative fine-tuning); Sec. 3.3 (Gradual unfreezing)
+      - title: 'Stanford CS231n notes: Transfer Learning'
+        url: https://cs231n.github.io/transfer-learning/#tf
+        locator: Practical advice, "Learning rates"
+    source:
+      id: original
+      ref: fine-tuning-025
+    status: draft
+  - id: fine-tuning-026
+    type: true_false
+    difficulty: medium
+    tags:
+      - instruction-tuning
+      - flan
+      - zero-shot
+      - scale
+    shuffle: false
+    question: |
+      FLAN fine-tunes pretrained language models on over 60 NLP datasets phrased as natural-language
+      instructions (instruction tuning) and evaluates them zero-shot on task clusters held out of
+      training. True or false: in its scaling ablation, instruction tuning improved held-out zero-shot
+      performance at every model size tested, from 422M to 137B parameters.
+    options:
+      - text: 'True'
+        why: For the 8B and smaller models, instruction tuning actually hurt performance on held-out tasks; only the two models of about 100B parameters gained substantially [^2].
+      - text: 'False'
+        correct: true
+    explanation: |
+      For the 137B model, instruction tuning substantially improves zero-shot performance on unseen
+      tasks; FLAN beats zero-shot 175B GPT-3 on 20 of 25 datasets [^1]. A dataset counts as unseen only
+      if no dataset from its task cluster was used in instruction tuning [^3]. The scaling ablation shows
+      that the benefit needs scale: the models of about 100B parameters improve substantially on
+      held-out tasks, but for 8B and smaller ones instruction tuning hurts [^2]. The authors suggest that
+      learning the roughly 40 training tasks fills a small model's capacity, while a large model also
+      learns to follow instructions [^2].
+    references:
+      - title: Wei et al. (2021), Finetuned Language Models Are Zero-Shot Learners
+        url: https://arxiv.org/abs/2109.01652
+        locator: Abstract
+      - title: Wei et al. (2021), Finetuned Language Models Are Zero-Shot Learners
+        url: https://arxiv.org/abs/2109.01652
+        locator: Sec. 4.2 Scaling laws, Figure 7
+      - title: Wei et al. (2021), Finetuned Language Models Are Zero-Shot Learners
+        url: https://arxiv.org/abs/2109.01652
+        locator: Sec. 2.2 Evaluation Splits
+    source:
+      id: original
+      ref: fine-tuning-026
+    status: draft
+  - id: fine-tuning-027
+    type: multiple
+    difficulty: medium
+    tags:
+      - learning-rate
+      - data-quality
+      - lima
+      - lora
+      - sft
+    question: |
+      You fine-tune an LLM into a chat assistant. Which statements about learning rates, batch sizes and
+      training data are supported by published results? Select all that apply.
+    options:
+      - text: In LIMA's ablations, 16 times more examples of the same quality kept improving the answers
+        why: Diversity and quality helped, but a 16-fold increase in quantity alone left performance on a plateau [^3].
+      - text: LoRA tolerates large batch sizes better than full fine-tuning, so batches can grow freely
+        why: The opposite was found; LoRA is less tolerant of large batch sizes, raising the rank does not fix it, and an effective batch size below 32 is recommended [^1].
+      - text: LoRA usually needs a higher learning rate than full fine-tuning of the same model
+        correct: true
+      - text: LIMA made a 65B model a strong assistant with only 1,000 carefully curated examples
+        correct: true
+    explanation: |
+      Counterintuitively, LoRA's best learning rate is higher than full fine-tuning's; the TRL
+      reproduction of "LoRA Without Regret" used $10^{-5}$ for LoRA against $10^{-6}$ for full
+      fine-tuning [^1]. LIMA fine-tuned LLaMA 65B with the standard supervised loss on 1,000 curated
+      prompt–response pairs, without RLHF, and its answers were equivalent to or preferred over GPT-4's
+      in 43% of cases [^2]. Its ablations show that input diversity and output quality matter, while
+      scaling up quantity alone might not [^3]. The authors read this as support for the Superficial
+      Alignment Hypothesis: knowledge comes almost entirely from pretraining, and alignment mainly
+      teaches format and style [^4].
+    references:
+      - title: 'Hugging Face TRL docs: LoRA Without Regret'
+        url: https://huggingface.co/docs/trl/lora_without_regret#key-findings-in-optimizing-lora
+        locator: Key findings in optimizing LoRA, items 3 (learning rate) and 4 (batch size)
+      - title: 'Zhou et al. (2023), LIMA: Less Is More for Alignment'
+        url: https://arxiv.org/abs/2305.11206
+        locator: Abstract; Sec. 3 Training LIMA
+      - title: 'Zhou et al. (2023), LIMA: Less Is More for Alignment'
+        url: https://arxiv.org/abs/2305.11206
+        locator: Sec. 5 Why is Less More? Ablations on Data Diversity, Quality, and Quantity, Figure 6
+      - title: 'Zhou et al. (2023), LIMA: Less Is More for Alignment'
+        url: https://arxiv.org/abs/2305.11206
+        locator: Sec. 2 Alignment Data (Superficial Alignment Hypothesis)
+    source:
+      id: original
+      ref: fine-tuning-027
+    status: draft

@@ -349,3 +349,249 @@ questions:
       ref: theory.md#q118
       url: https://github.com/alexeygrigorev/data-science-interviews/blob/919f44547ef5ffc2bd59674fd301940529f4c1a8/theory.md#neural-networks-for-computer-vision
     status: draft
+  - id: segmentation-011
+    type: short_answer
+    difficulty: medium
+    tags:
+      - metrics
+      - iou
+      - mean-iou
+      - confusion-matrix
+    question: |
+      A 3-class segmentation model is evaluated on 120 pixels. Entry $n_{ij}$ counts the pixels of
+      true class $i$ (row) that were predicted as class $j$ (column).
+
+      | true \ predicted | background | cat | dog |
+      | --- | --- | --- | --- |
+      | **background** | 50 | 6 | 4 |
+      | **cat** | 5 | 21 | 4 |
+      | **dog** | 3 | 7 | 20 |
+
+      What is the mean IoU, the intersection over union averaged over the three classes?
+    answer:
+      numeric: 0.5833
+      tolerance: 0.005
+      hint: a number between 0 and 1, 2 decimals
+      model: $\frac{1}{3}\left(\frac{50}{68} + \frac{21}{43} + \frac{20}{38}\right) \approx \frac{1}{3}(0.735 + 0.488 + 0.526) \approx 0.58$
+    explanation: |
+      For class $i$ the intersection is $n_{ii}$, and the union is every pixel that is class $i$ in
+      the ground truth or in the prediction: row sum + column sum $- \, n_{ii}$ [^1][^2]. Background
+      gives $50/(60 + 58 - 50) = 50/68$, cat $21/(30 + 34 - 21) = 21/43$ and dog
+      $20/(30 + 28 - 20) = 20/38$; their mean is about 0.58. Pixel accuracy is higher,
+      $91/120 \approx 0.76$, because mean IoU weighs every class equally and counts both false
+      positives and false negatives [^1].
+    references:
+      - title: Long, Shelhamer & Darrell (2015), Fully Convolutional Networks for Semantic Segmentation
+        url: https://arxiv.org/abs/1411.4038
+        locator: Sec. 5 Results, Metrics (pixel accuracy, mean accuracy, mean IU)
+      - title: 'Wikipedia: Jaccard index'
+        url: https://en.wikipedia.org/wiki/Jaccard_index#Overview
+        locator: Introduction and Overview
+    source:
+      id: original
+      ref: segmentation-011
+    status: draft
+  - id: segmentation-012
+    type: short_answer
+    difficulty: hard
+    tags:
+      - metrics
+      - dice
+      - iou
+      - jaccard
+    question: |
+      For one object, the predicted mask $X$ and the ground-truth mask $Y$ have an IoU (Jaccard index)
+      of $J = 0.6$. What is their Dice coefficient $D = \frac{2|X \cap Y|}{|X| + |Y|}$?
+    answer:
+      numeric: 0.75
+      tolerance: 0.005
+      hint: a number between 0 and 1, 2 decimals
+      model: $D = \frac{2J}{1 + J} = \frac{1.2}{1.6} = 0.75$
+    explanation: |
+      With $I = |X \cap Y|$, the union is $|X| + |Y| - I$, so $J = \frac{I}{|X| + |Y| - I}$ [^2] and
+      $D = \frac{2I}{|X| + |Y|}$ [^1]. Eliminating the sizes gives $D = \frac{2J}{1 + J}$ and
+      $J = \frac{D}{2 - D}$ [^1]. For example, $I = 60$ and $|X| + |Y| = 160$ give $J = 60/100 = 0.6$
+      and $D = 120/160 = 0.75$. Dice is never below IoU (they are equal only at 0 and 1), and since
+      the conversion is increasing, both rank the masks of a single object in the same order.
+    references:
+      - title: 'Wikipedia: Sørensen–Dice coefficient'
+        url: https://en.wikipedia.org/wiki/S%C3%B8rensen%E2%80%93Dice_coefficient#Difference_from_Jaccard
+        locator: Formula and Difference from Jaccard
+      - title: 'Wikipedia: Jaccard index'
+        url: https://en.wikipedia.org/wiki/Jaccard_index#Overview
+        locator: Introduction and Overview
+    source:
+      id: original
+      ref: segmentation-012
+    status: draft
+  - id: segmentation-013
+    type: short_answer
+    difficulty: medium
+    tags:
+      - fcn
+      - transposed-convolution
+      - output-shape
+      - code-reading
+    question: |
+      An FCN upsamples its backbone's feature map with a transposed convolution. For a
+      $480 \times 640$ input image, the ResNet-18 backbone and the $1 \times 1$ convolution give a
+      $15 \times 20$ map with 21 class channels.
+
+      ```python
+      import torch
+      from torch import nn
+
+      conv_trans = nn.ConvTranspose2d(21, 21, kernel_size=64, padding=16, stride=32)
+      X = torch.rand(1, 21, 15, 20)
+      print(conv_trans(X).shape)
+      ```
+
+      What is the last number printed, the output width?
+    answer:
+      numeric: 640
+      tolerance: 0
+      hint: a whole number
+      model: $(20 - 1) \cdot 32 - 2 \cdot 16 + (64 - 1) + 1 = 640$
+    explanation: |
+      For a transposed convolution with dilation 1 and no output padding, the output width is
+      $(W_{in} - 1) \cdot s - 2p + (k - 1) + 1$ [^1], here $608 - 32 + 64 = 640$. In general, stride
+      $s$, padding $s/2$ and kernel $2s$ multiply height and width by exactly $s$ [^2], so the map
+      returns to $480 \times 640$, the input size, and its 21 channels hold the class scores of each
+      pixel [^2]. Padding in a transposed convolution removes rows and columns from the output
+      instead of adding them to the input [^3].
+    references:
+      - title: 'PyTorch documentation: torch.nn.ConvTranspose2d'
+        url: https://docs.pytorch.org/docs/stable/generated/torch.nn.ConvTranspose2d.html
+        locator: Shape (formula for H_out and W_out)
+      - source: d2l
+        url: https://d2l.ai/chapter_computer-vision/fcn.html#the-model
+        locator: Sec. 14.11.1 The Model
+      - source: d2l
+        url: https://d2l.ai/chapter_computer-vision/transposed-conv.html#padding-strides-and-multiple-channels
+        locator: Sec. 14.10.2 Padding, Strides, and Multiple Channels
+    source:
+      id: original
+      ref: segmentation-013
+    status: draft
+  - id: segmentation-014
+    type: multiple
+    difficulty: medium
+    tags:
+      - fcn
+      - transposed-convolution
+      - bilinear-interpolation
+      - transfer-learning
+    question: |
+      d2l builds a fully convolutional network (FCN) for semantic segmentation of Pascal VOC
+      (21 classes) from a pretrained ResNet-18. Which statements about this network are true?
+      Select all that apply.
+    options:
+      - text: Its transposed convolution starts as bilinear upsampling, not with random weights
+        correct: true
+      - text: Its input must be exactly $320 \times 480$, the image size used in training
+        why: A fully convolutional network accepts other sizes. d2l only needs height and width to be multiples of 32 and crops other test images into such areas [^2].
+      - text: It drops ResNet-18's global average pooling and fully connected layers
+        correct: true
+      - text: A $1 \times 1$ convolution turns the 512 feature channels into 21, one per class
+        correct: true
+      - text: Its output has a single channel holding each pixel's class index, so no argmax is needed
+        why: The output has 21 channels holding the class predictions for the pixel at the same position; the predicted class is the argmax over the channels [^1][^2].
+    explanation: |
+      The FCN copies the pretrained ResNet-18 layers except the final global average pooling and
+      fully connected layer, which a per-pixel output does not need [^1]. A $1 \times 1$ convolution
+      maps the channels to the number of classes, and a transposed convolution with stride 32 brings
+      the $1/32$-size map back to the input's height and width, so the channels at each position hold
+      the class predictions for that input pixel [^1]. The transposed convolution is initialised as
+      bilinear-interpolation upsampling, while the $1 \times 1$ convolution uses Xavier
+      initialisation [^3]. At prediction time each pixel's class is the argmax over the channels [^2].
+    references:
+      - source: d2l
+        url: https://d2l.ai/chapter_computer-vision/fcn.html#the-model
+        locator: Sec. 14.11.1 The Model
+      - source: d2l
+        url: https://d2l.ai/chapter_computer-vision/fcn.html#prediction
+        locator: Sec. 14.11.5 Prediction
+      - source: d2l
+        url: https://d2l.ai/chapter_computer-vision/fcn.html#initializing-transposed-convolutional-layers
+        locator: Sec. 14.11.2 Initializing Transposed Convolutional Layers
+    source:
+      id: original
+      ref: segmentation-014
+    status: draft
+  - id: segmentation-015
+    type: single
+    difficulty: medium
+    tags:
+      - dilated-convolution
+      - atrous-convolution
+      - receptive-field
+      - deeplab
+    question: |
+      DeepLab uses atrous (dilated) convolution. A $3 \times 3$ atrous convolution with rate $r = 3$
+      is applied with stride 1. How large is the input area that one output value sees, and how many
+      weights does the filter have (per input and output channel)?
+    options:
+      - text: A $7 \times 7$ area, with 49 weights
+        why: The inserted zeros are not parameters. Only the 9 taps are learned, so the field of view grows at no extra cost [^1].
+      - text: A $9 \times 9$ area, with 9 weights
+        why: The taps sit at offsets 0, 3 and 6, so they span $3 + 2 \cdot 2 = 7$ pixels, not $3 \cdot 3 = 9$ [^1].
+      - text: A $3 \times 3$ area, with the output downsampled by 3
+        why: This confuses the rate with a stride. The rate spreads the taps apart; with stride 1 the output keeps its resolution [^1].
+      - text: A $7 \times 7$ area, with 9 weights
+        correct: true
+    explanation: |
+      Atrous convolution with rate $r$ inserts $r - 1$ zeros between consecutive filter values, and
+      $r = 1$ is ordinary convolution [^1]. A $k \times k$ filter then covers
+      $k_e = k + (k - 1)(r - 1)$ pixels per side, here $3 + 2 \cdot 2 = 7$, yet it still has only
+      $k^2 = 9$ weights, so the field of view grows without more parameters or computation [^1].
+      DeepLab uses this to keep feature maps dense: it sets the stride of the last downsampling layer
+      to 1 and dilates the filters that follow instead, so the network sees more context without
+      losing resolution [^1].
+    references:
+      - title: 'Chen et al. (2016), DeepLab: Semantic Image Segmentation with Deep Convolutional Nets, Atrous Convolution, and Fully Connected CRFs'
+        url: https://arxiv.org/abs/1606.00915
+        locator: Sec. 3.1 Atrous Convolution for Dense Feature Extraction and Field-of-View Enlargement, Eq. (1)
+    source:
+      id: original
+      ref: segmentation-015
+    status: draft
+  - id: segmentation-016
+    type: single
+    difficulty: medium
+    tags:
+      - mask-r-cnn
+      - roialign
+      - roi-pooling
+      - instance-segmentation
+    question: |
+      Mask R-CNN extracts the features of each region of interest (RoI) from a feature map with
+      stride 16. RoIPool, used by Faster R-CNN, would map an RoI's left edge at $x = 37.8$ input
+      pixels to $[37.8 / 16] = [2.36] = 2$ on the feature map, where $[\cdot]$ is rounding. What does
+      Mask R-CNN's RoIAlign do instead?
+    options:
+      - text: Uses $2.36$ unrounded and reads the features there by bilinear interpolation
+        correct: true
+      - text: Rounds the same way, but splits each RoI into more bins so the error averages out
+        why: More bins still round every boundary. RoIAlign removes the quantisation itself, both of the RoI and of its bins [^1].
+      - text: Resizes the image so that every RoI edge falls on a whole feature-map cell
+        why: Nothing is resized. RoIAlign samples the feature map at fractional positions by bilinear interpolation [^1][^2].
+      - text: Rounds the same way, but averages each bin instead of taking its maximum
+        why: The pooling operator is not the issue; RoIAlign may aggregate by max or average. The gain comes from not rounding [^1].
+    explanation: |
+      RoIPool first quantises a floating-point RoI to the feature-map grid, computing $[x/16]$, and
+      then quantises its bins again [^1]. Here the edge moves to $2 \cdot 16 = 32$ input pixels,
+      almost 6 pixels off. Such misalignments hardly affect classification but hurt pixel-accurate
+      masks [^1]. RoIAlign keeps $x/16$, computes the features at four regularly sampled points in
+      each bin by bilinear interpolation and aggregates them by max or average [^1]; this preserves
+      the spatial information that pixel-level prediction needs [^2].
+    references:
+      - title: He, Gkioxari, Dollár & Girshick (2017), Mask R-CNN
+        url: https://arxiv.org/abs/1703.06870
+        locator: Sec. 3 Mask R-CNN, paragraph RoIAlign; Sec. 1 Introduction
+      - source: d2l
+        url: https://d2l.ai/chapter_computer-vision/rcnn.html#mask-r-cnn
+        locator: Sec. 14.8.4 Mask R-CNN
+    source:
+      id: original
+      ref: segmentation-016
+    status: draft

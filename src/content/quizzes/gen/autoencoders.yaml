@@ -912,3 +912,240 @@ questions:
       ref: deep-learning-2/assignment6#q2
       url: https://archive.nptel.ac.in/content/storage2/courses/downloads_new/106106201/noc19_cs18-assessmentid-73.pdf
     status: draft
+  - id: autoencoders-027
+    type: multiple
+    difficulty: medium
+    tags:
+      - undercomplete
+      - overcomplete
+      - identity-function
+      - regularization
+    question: |
+      An autoencoder with input size $d$ and code size $d'$ is trained only to minimise reconstruction
+      error. With $d' \geq d$ and no other constraint it can reach zero error by learning the identity,
+      which teaches it nothing useful. Which changes rule out this trivial solution? Select all that
+      apply.
+    options:
+      - text: Make the code undercomplete, $d' < d$, so the input has to pass through a bottleneck
+        correct: true
+      - text: Replace the squared error with a cross-entropy reconstruction loss on the same clean target
+        why: Cross-entropy is also minimised when the output equals the input, so copying stays an optimal solution; the loss changes which features are learned, not this problem [^2].
+      - text: Feed a corrupted copy $\tilde{x}$ of the input and score the output against the clean $x$
+        correct: true
+      - text: Add more units to the code layer, so the network has more capacity to learn useful features
+        why: More units make copying easier, not harder; with a large enough code or enough capacity the network can learn the identity [^1][^2].
+      - text: Keep $d' \geq d$ but penalise the code so that only a few units are active for each input
+        correct: true
+    explanation: |
+      Reconstruction alone does not force useful features: an autoencoder whose code is as large as the
+      input, or larger, can reconstruct perfectly by learning the identity [^1][^2]. Vincent et al.
+      describe the ways out: the classic bottleneck ($d' < d$), an overcomplete but sparse code, and
+      their denoising criterion, where the input is corrupted while the loss still compares with the
+      clean input, so copying is no longer optimal [^2]. Wikipedia names such modifications of the basic
+      autoencoder as the standard way to match code size and capacity to the data [^1].
+    references:
+      - title: 'Wikipedia: Autoencoder'
+        url: https://en.wikipedia.org/wiki/Autoencoder#Interpretation
+        locator: Section "Mathematical principles", subsection "Interpretation"
+      - title: 'Vincent et al. (2010), Stacked Denoising Autoencoders: Learning Useful Representations in a Deep Network with a Local Denoising Criterion'
+        url: https://www.jmlr.org/papers/v11/vincent10a.html
+        locator: Sec. 2.3 Merely Retaining Information is Not Enough; Sec. 3 Using a Denoising Criterion
+    source:
+      id: original
+      ref: autoencoders-027
+    status: draft
+  - id: autoencoders-028
+    type: short_answer
+    difficulty: hard
+    tags:
+      - linear-autoencoder
+      - pca
+      - reconstruction-error
+    question: |
+      Centred data in $\mathbb{R}^4$ have a covariance matrix (normalised by $1/N$) with eigenvalues
+      $6, 3, 2, 1$. A linear autoencoder $\hat{x} = W_d W_e x$ with a 2-unit code is trained to minimise
+      the mean squared reconstruction error $\frac{1}{N}\sum_i \lVert x_i - \hat{x}_i \rVert^2$. What is
+      the smallest value this error can reach?
+    answer:
+      numeric: 3
+      tolerance: 0.001
+      hint: a number
+      model: $2 + 1 = 3$, the variance along the two discarded principal directions
+    explanation: |
+      A linear autoencoder with $p$ code units computes a rank-$p$ linear map, and with squared error its
+      optimum is the orthogonal projection onto the span of the first $p$ principal components [^1][^2].
+      By the Eckart–Young theorem this is the best rank-$p$ least-squares fit, and the error left is the
+      variance along the discarded directions, $\sum_{j > p} \lambda_j$ [^3]. Here that is $2 + 1 = 3$,
+      a quarter of the total variance $12$. The trained weights need not be the principal components
+      themselves, only span the same subspace, so the error is the same either way [^1].
+    references:
+      - title: 'Wikipedia: Autoencoder'
+        url: https://en.wikipedia.org/wiki/Autoencoder#Principal_component_analysis
+        locator: Section "Applications", subsection "Dimensionality reduction", "Principal component analysis"
+      - title: 'Vincent et al. (2010), Stacked Denoising Autoencoders: Learning Useful Representations in a Deep Network with a Local Denoising Criterion'
+        url: https://www.jmlr.org/papers/v11/vincent10a.html
+        locator: Sec. 2.3 Merely Retaining Information is Not Enough (and footnote 4)
+      - title: 'Wikipedia: Principal component analysis'
+        url: https://en.wikipedia.org/wiki/Principal_component_analysis#Singular_value_decomposition
+        locator: Section "Details", subsection "Singular value decomposition" (Theorem "Optimal k-dimensional fit", relative residual variance R(k))
+    source:
+      id: original
+      ref: autoencoders-028
+    status: draft
+  - id: autoencoders-029
+    type: single
+    difficulty: medium
+    tags:
+      - vae
+      - reparameterization-trick
+      - backpropagation
+    question: |
+      A VAE encoder outputs $\mu_\phi(x)$ and $\sigma_\phi(x)$, and the loss contains
+      $\mathbb{E}_{z \sim q_\phi(z \mid x)}[\log p_\theta(x \mid z)]$, estimated with a sampled $z$. Why
+      is the sample written as $z = \mu_\phi(x) + \sigma_\phi(x) \odot \epsilon$ with
+      $\epsilon \sim \mathcal{N}(0, I)$?
+    options:
+      - text: Without it the decoder parameters $\theta$ would get no gradient from the reconstruction term
+        why: The gradient with respect to $\theta$ is easy either way, because $\theta$ does not appear in the sampling distribution; the trouble is with $\phi$ [^2].
+      - text: Sampling $z$ this way is what makes the KL term to the prior $\mathcal{N}(0, I)$ computable in closed form
+        why: The closed-form KL comes from both distributions being Gaussian (Appendix B), not from the way $z$ is sampled [^1].
+      - text: The noise moves into $\epsilon$, so $z$ is differentiable in $\phi$ and gradients reach the encoder
+        correct: true
+      - text: It removes sampling from training, since $\epsilon$ is drawn once and then kept fixed
+        why: A new $\epsilon$ is drawn as training proceeds; the estimate stays a Monte Carlo estimate, it just becomes differentiable in $\phi$ [^1].
+    explanation: |
+      The expectation is taken under $q_\phi$, so $\phi$ sits inside the sampling distribution and its
+      gradient cannot simply be moved inside the expectation [^2]. The naive Monte Carlo
+      (score-function) estimator of that gradient has very high variance and is impractical [^1]. The
+      reparameterization trick writes $z = g_\phi(\epsilon, x)$ with noise $\epsilon$ that does not
+      depend on $\phi$; for a Gaussian, $z = \mu + \sigma \epsilon$ [^1]. The Monte Carlo estimate then
+      becomes differentiable in $\phi$, an unbiased gradient estimate that ordinary backpropagation can
+      compute [^1][^2].
+    references:
+      - title: Kingma & Welling (2013), Auto-Encoding Variational Bayes
+        url: https://arxiv.org/abs/1312.6114
+        locator: Sec. 2.2 The variational bound (naive estimator); Sec. 2.4 The reparameterization trick; Appendix B
+      - title: 'Wikipedia: Variational autoencoder'
+        url: https://en.wikipedia.org/wiki/Variational_autoencoder#Reparameterization
+        locator: Section "Reparameterization"
+    source:
+      id: original
+      ref: autoencoders-029
+    status: draft
+  - id: autoencoders-030
+    type: short_answer
+    difficulty: medium
+    tags:
+      - vae
+      - kl-divergence
+      - code-reading
+      - pytorch
+    question: |
+      A VAE computes the KL term between the encoder's diagonal Gaussian $\mathcal{N}(\mu, \sigma^2)$ and
+      the prior $\mathcal{N}(0, I)$ like this. What does `kl` evaluate to, in nats?
+
+      ```python
+      import torch
+
+      mu = torch.tensor([1.0, 0.0])
+      logvar = torch.log(torch.tensor([1.0, 0.25]))    # log sigma^2
+      kl = -0.5 * torch.sum(1 + logvar - mu**2 - logvar.exp())
+      ```
+    answer:
+      numeric: 0.8181
+      tolerance: 0.005
+      hint: a number, 2 decimals
+      model: 'dimension 1: $\frac12(1 + 1 - 1 - 0) = 0.5$; dimension 2: $\frac12(0 + 0.25 - 1 - \ln 0.25) \approx 0.318$; total $\approx 0.82$'
+    explanation: |
+      For a diagonal Gaussian posterior and a standard normal prior the KL divergence has a closed form,
+      $D_{\mathrm{KL}} = \frac12 \sum_j (\mu_j^2 + \sigma_j^2 - 1 - \ln \sigma_j^2)$, which the code
+      computes with `logvar` $= \ln \sigma^2$ [^1][^2]. The first dimension only pays for its shifted
+      mean, $\frac12 \cdot 1^2 = 0.5$. The second has the right mean but too small a variance:
+      $\frac12(0.25 - 1 + 1.386) \approx 0.318$. Because this term is computed and differentiated
+      without sampling, only the reconstruction term needs the reparameterised Monte Carlo estimate
+      [^1].
+    references:
+      - title: Kingma & Welling (2013), Auto-Encoding Variational Bayes
+        url: https://arxiv.org/abs/1312.6114
+        locator: Sec. 3 Example Variational Auto-Encoder, Eq. (10); Appendix B Solution of −D_KL(q_φ(z)||p_θ(z)), Gaussian case
+      - title: 'Wikipedia: Kullback–Leibler divergence'
+        url: https://en.wikipedia.org/wiki/Kullback%E2%80%93Leibler_divergence#Multivariate_normal_distributions
+        locator: Section "Examples", subsection "Multivariate normal distributions"
+    source:
+      id: original
+      ref: autoencoders-030
+    status: draft
+  - id: autoencoders-031
+    type: single
+    difficulty: medium
+    tags:
+      - denoising-autoencoder
+      - corruption
+      - training
+    question: |
+      You train a denoising autoencoder (encoder $f$, decoder $g$, reconstruction loss $L$) with masking
+      noise. Which training setup matches the denoising autoencoder of Vincent et al.?
+    options:
+      - text: Train an ordinary autoencoder on clean $x$, and mask inputs only at test time to check robustness
+        why: Without corruption during training the criterion is the plain reconstruction one, so nothing pushes the network away from copying [^1].
+      - text: Mask part of $x$ to get $\tilde{x}$ and minimise $L(x, g(f(\tilde{x})))$, with a new mask each time
+        correct: true
+      - text: Mask a random fraction of $x$ to get $\tilde{x}$ and minimise $L(\tilde{x}, g(f(\tilde{x})))$ on the masked input
+        why: With the corrupted input as the target this is an ordinary autoencoder on noisy data, and copying (noise included) is still optimal. The loss must compare with the clean $x$ [^1].
+      - text: Mask a random fraction of the code $f(x)$ and minimise $L(x, g(\text{masked } f(x)))$
+        why: The denoising autoencoder corrupts the input, $\tilde{x} \sim q_D(\tilde{x} \mid x)$, so the encoder must learn features that can be computed robustly from a corrupted input [^1].
+    explanation: |
+      A denoising autoencoder corrupts each input with a stochastic mapping
+      $\tilde{x} \sim q_D(\tilde{x} \mid x)$, encodes $\tilde{x}$, and trains the reconstruction
+      $g(f(\tilde{x}))$ to be close to the uncorrupted $x$; a new corrupted version is drawn every time
+      an example is presented [^1]. Masking noise sets a random fraction $\nu$ of the inputs to 0, so the
+      network has to fill in the blanks from dependencies between dimensions [^1]. Since the target is
+      clean but the input is not, copying is no longer optimal and the features must capture structure
+      in the data [^1][^2]. Once trained, the encoder is applied to uncorrupted inputs [^1].
+    references:
+      - title: 'Vincent et al. (2010), Stacked Denoising Autoencoders: Learning Useful Representations in a Deep Network with a Local Denoising Criterion'
+        url: https://www.jmlr.org/papers/v11/vincent10a.html
+        locator: Sec. 3.1 The Denoising Autoencoder Algorithm; Sec. 3.3 Types of Corruption Considered; Sec. 3.5 Stacking Denoising Autoencoders
+      - title: 'Wikipedia: Autoencoder'
+        url: https://en.wikipedia.org/wiki/Autoencoder#Denoising_autoencoder_(DAE)
+        locator: Section "Variations", subsection "Denoising autoencoder (DAE)"
+    source:
+      id: original
+      ref: autoencoders-031
+    status: draft
+  - id: autoencoders-032
+    type: true_false
+    difficulty: medium
+    tags:
+      - beta-vae
+      - disentanglement
+      - kl-divergence
+    shuffle: false
+    question: |
+      A β-VAE maximises
+      $\mathbb{E}_{q(z \mid x)}[\log p(x \mid z)] - \beta\, D_{\mathrm{KL}}(q(z \mid x) \,\|\, p(z))$ with an
+      isotropic unit Gaussian prior $p(z)$. True or false: raising $\beta$ from 1 to, say, 4 typically
+      gives both more disentangled latent factors and more accurate reconstructions.
+    options:
+      - text: 'True'
+        why: A larger $\beta$ pulls the posterior harder toward the factorised prior. That favours disentangling, but it also limits how much information about $x$ the code carries, so reconstructions get worse [^1].
+      - text: 'False'
+        correct: true
+    explanation: |
+      With $\beta = 1$ the objective is the ordinary VAE bound; $\beta > 1$ weights the KL term more
+      [^1][^2]. The stronger pressure toward the factorised unit Gaussian prior encourages disentangled
+      latent factors [^1][^2], but the KL term also bounds how much information can pass through the
+      latent channels, so less detail about $x$ gets through [^1]. Burgess et al. note that the higher
+      $\beta$ values needed for disentangling often trade off against reconstruction fidelity, and they
+      propose gradually raising a target KL capacity instead [^1].
+    references:
+      - title: Burgess et al. (2018), Understanding disentangling in β-VAE
+        url: https://arxiv.org/abs/1804.03599
+        locator: Sec. 3 β-VAE, Eq. (5); Sec. 4.2 β-VAE through the information bottleneck perspective; Sec. 5 Controlled capacity increase
+      - title: 'Wikipedia: Variational autoencoder'
+        url: https://en.wikipedia.org/wiki/Variational_autoencoder#Variations
+        locator: Section "Variations" (β-VAE)
+    source:
+      id: original
+      ref: autoencoders-032
+    status: draft

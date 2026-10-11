@@ -521,3 +521,580 @@ questions:
       ref: ai-search-methods/assignment5#q9
       url: https://archive.nptel.ac.in/content/storage2/courses/downloads_new/106106126/Week_05_Assignment_05.pdf
     status: draft
+  - id: genetic-algorithms-017
+    type: single
+    difficulty: medium
+    tags:
+      - fitness-function
+      - representation
+      - knapsack
+    question: |
+      A genetic algorithm solves a 0/1 knapsack problem with capacity 12. Each chromosome is a bit
+      string whose $i$-th bit says whether item $i$ is packed. The fitness is the total value of the
+      packed items if their total weight fits, and 0 otherwise.
+
+      | Item | 1 | 2 | 3 | 4 | 5 |
+      | --- | --- | --- | --- | --- | --- |
+      | Value | 10 | 7 | 4 | 9 | 3 |
+      | Weight | 5 | 4 | 2 | 6 | 1 |
+
+      Which chromosome has the highest fitness?
+    options:
+      - text: '`01110`'
+        why: It is valid (weight 4 + 2 + 6 = 12) but worth only 7 + 4 + 9 = 20.
+      - text: '`11101`'
+        correct: true
+      - text: '`10011`'
+        why: It is valid (weight 5 + 6 + 1 = 12) but worth only 10 + 9 + 3 = 22.
+      - text: '`11010`'
+        why: Items 1, 2 and 4 are worth 26 but weigh 15 > 12, so the string is invalid and its fitness is 0 [^1].
+    explanation: |
+      The fitness function is defined over the genetic representation and is problem-dependent; for
+      the knapsack, a standard choice is the packed value for a valid bit string and 0 for an
+      overweight one [^1]. `11101` packs items 1, 2, 3 and 5, weighing 5 + 4 + 2 + 1 = 12 and worth
+      24, the best of all 32 strings. `11010` has the largest raw value, 26, but weighs 15, so its
+      fitness is 0. Fixed-length bit arrays are the standard representation because their parts stay
+      aligned, which makes crossover simple [^2].
+    references:
+      - title: 'Wikipedia: Genetic algorithm'
+        url: https://en.wikipedia.org/wiki/Genetic_algorithm#Selection
+        locator: Methodology > Selection (knapsack fitness example)
+      - title: 'Wikipedia: Genetic algorithm'
+        url: https://en.wikipedia.org/wiki/Genetic_algorithm#Optimization_problems
+        locator: Methodology > Optimization problems (bit-array representation)
+    source:
+      id: original
+      ref: genetic-algorithms-017
+    status: draft
+  - id: genetic-algorithms-018
+    type: short_answer
+    difficulty: medium
+    tags:
+      - selection
+      - stochastic-universal-sampling
+      - roulette-wheel
+    question: |
+      Four individuals have fitness values 9, 6, 3 and 2 (total 20). Stochastic universal sampling
+      fills a mating pool of 4 with a single spin: it places 4 pointers $20/4 = 5$ apart on the
+      fitness wheel, starting at a point drawn uniformly from $[0, 5)$, and each pointer selects the
+      individual whose share of the wheel it falls in. What is the probability that the fittest
+      individual (fitness 9) gets exactly 2 places in the pool?
+    answer:
+      numeric: 0.8
+      tolerance: 0.005
+      hint: a probability, 2 decimals
+      model: Its share of the wheel is 9 long and the pointers are 5 apart, so it always holds 1 or 2 pointers; the expected count $9/5 = 1.8$ gives $P(2) = 0.8$.
+    explanation: |
+      SUS uses a single random number to place $N$ evenly spaced pointers, $F/N$ apart, which gives
+      it no bias and minimal spread [^1]. A share of length 9 always contains either
+      $\lfloor 9/5 \rfloor = 1$ or $\lceil 9/5 \rceil = 2$ pointers. The expected number of pointers
+      in it is $9/5 = 1.8$, the same as the expected number of copies under roulette-wheel selection,
+      $4 \times 9/20$ [^2], so it holds 2 with probability $0.8$ and 1 with probability $0.2$. Four
+      independent roulette spins give the same expectation with a wider spread: the fittest
+      individual could get anywhere from 0 to 4 places, and it misses the pool entirely with
+      probability $0.55^4 \approx 0.09$ [^2].
+    references:
+      - title: 'Wikipedia: Stochastic universal sampling'
+        url: https://en.wikipedia.org/wiki/Stochastic_universal_sampling
+        locator: Introduction and Pseudo Code (pointer distance F/N, one random start, "no bias and minimal spread")
+      - title: 'Wikipedia: Fitness proportionate selection'
+        url: https://en.wikipedia.org/wiki/Fitness_proportionate_selection#Method
+        locator: Method
+    source:
+      id: original
+      ref: genetic-algorithms-018
+    status: draft
+  - id: genetic-algorithms-019
+    type: short_answer
+    difficulty: medium
+    tags:
+      - crossover
+      - order-crossover
+      - permutation-encoding
+    question: |
+      Order crossover (OX1) for permutation chromosomes copies a segment of parent $P_0$ into the
+      child at the same positions. It then fills the open positions from left to right with the
+      missing genes, in the order in which they appear in parent $P_1$.
+
+      $P_0$ = `A B C D E F G H`, $P_1$ = `G D H B A F E C`, and the copied segment is positions 3–5
+      of $P_0$. What is the child? Write its 8 letters in order.
+    answer:
+      accept:
+        - G H C D E B A F
+      pattern: '[(\[]?\s*G[\s,]*H[\s,]*C[\s,]*D[\s,]*E[\s,]*B[\s,]*A[\s,]*F\s*[)\]]?'
+      hint: 8 letters in order, e.g. A B C D E F G H
+      model: '`C D E` stays at positions 3–5; the missing genes in $P_1$ order are G, H, B, A, F, so the child is `G H C D E B A F`.'
+    explanation: |
+      OX1 keeps a segment of $P_0$ in place and takes the relative order of all other genes from
+      $P_1$, so the child is always a valid permutation [^1]. The segment `C D E` stays at positions
+      3–5. Reading $P_1$ = G D H B A F E C and skipping D, E and C, which are already placed, gives
+      G, H, B, A, F, which fill positions 1, 2, 6, 7 and 8. Every city appears exactly once, which
+      ordinary one-point crossover cannot guarantee for permutations [^1].
+    references:
+      - title: 'Wikipedia: Crossover (evolutionary algorithm)'
+        url: https://en.wikipedia.org/wiki/Crossover_(evolutionary_algorithm)#Order_crossover_(OX1)
+        locator: Crossover for permutations > Order crossover (OX1), worked example
+    source:
+      id: original
+      ref: genetic-algorithms-019
+    status: draft
+  - id: genetic-algorithms-020
+    type: short_answer
+    difficulty: easy
+    tags:
+      - selection
+      - roulette-wheel
+    question: |
+      A population of $N = 5$ individuals has fitness values 2, 5, 8, 10 and 15. A mating pool of 5
+      parents is filled by spinning a roulette wheel 5 times (fitness-proportionate selection, with
+      replacement). What is the expected number of copies of the fittest individual in the pool?
+    answer:
+      numeric: 1.875
+      tolerance: 0.006
+      hint: a number, 2 decimals
+      model: $5 \times \frac{15}{40} = 1.875$
+    explanation: |
+      Roulette-wheel selection picks individual $i$ with probability $p_i = f_i / \sum_j f_j$ on
+      every spin, and the same individual can be drawn several times [^1][^2]. The total fitness is
+      40, so the fittest individual has $p = 15/40 = 0.375$ per spin and is expected
+      $5 \times 0.375 = 1.875$ times in 5 spins. Equivalently, its expected count is its fitness
+      divided by the mean fitness, $15/8$: above-average individuals expect more than one copy and
+      below-average ones less, so the mating pool is fitter on average than the population.
+    references:
+      - title: 'Wikipedia: Fitness proportionate selection'
+        url: https://en.wikipedia.org/wiki/Fitness_proportionate_selection#Method
+        locator: Method
+      - title: 'Wikipedia: Selection (evolutionary algorithm)'
+        url: https://en.wikipedia.org/wiki/Selection_(evolutionary_algorithm)#Roulette_wheel_selection
+        locator: Methods of selection > Roulette wheel selection
+    source:
+      id: original
+      ref: genetic-algorithms-020
+    status: draft
+  - id: genetic-algorithms-021
+    type: short_answer
+    difficulty: medium
+    tags:
+      - selection
+      - tournament-selection
+      - selection-pressure
+    question: |
+      Tournament selection draws $k = 3$ individuals uniformly at random, *with replacement*, from a
+      population of $N = 8$ and selects the fittest of them (deterministic tournament). All fitness
+      values are different. What is the probability that the best individual of the population wins
+      a given tournament?
+    answer:
+      numeric: 0.33
+      tolerance: 0.005
+      hint: a number, 2 decimals
+      model: $1 - (7/8)^3 = 169/512 \approx 0.33$
+    explanation: |
+      A deterministic tournament always selects its fittest member [^1], so the best individual of
+      the population wins exactly when it is drawn at least once. Each draw misses it with
+      probability $7/8$, so $P = 1 - (7/8)^3 = 169/512 \approx 0.33$; counting all $8^3 = 512$
+      ordered draws gives the same result. A larger $k$ raises this probability and makes weak
+      individuals less likely to win, which is why the tournament size sets the selection pressure
+      [^1]. With $k = 1$ the probability drops to $1/8$: a 1-way tournament is random selection [^2].
+    references:
+      - title: 'Wikipedia: Tournament selection'
+        url: https://en.wikipedia.org/wiki/Tournament_selection#Pseudocode
+        locator: Introduction (selection pressure) and Pseudocode
+      - title: 'Wikipedia: Tournament selection'
+        url: https://en.wikipedia.org/wiki/Tournament_selection#Variants
+        locator: Variants (deterministic and 1-way tournaments)
+    source:
+      id: original
+      ref: genetic-algorithms-021
+    status: draft
+  - id: genetic-algorithms-022
+    type: multiple
+    difficulty: medium
+    tags:
+      - selection
+      - selection-pressure
+      - premature-convergence
+    question: Which statements about selection in a genetic algorithm are true? Select all that apply.
+    options:
+      - text: Very high selection pressure can make the population converge too early to a suboptimal solution.
+        correct: true
+      - text: A larger tournament size raises the selection pressure, since a weak individual is then more likely to meet a stronger one.
+        correct: true
+      - text: A tournament of size $k = 1$ always selects the best individual of the population.
+        why: A 1-way tournament picks one random individual, so it is the same as random selection [^1].
+      - text: Adding the same constant to every fitness value leaves the roulette-wheel selection probabilities unchanged.
+        why: $p_i = f_i / \sum_j f_j$ changes. Fitnesses 1, 2, 3, 4 give probabilities 0.1 to 0.4, but after adding 10 they give 0.22 to 0.28, so the pressure drops [^2].
+      - text: Adding the same constant to every fitness value does not change which individual wins a tournament.
+        correct: true
+    explanation: |
+      The tournament size sets the selection pressure: in a larger tournament a weak individual is
+      more likely to face a stronger one [^1]. A tournament only compares its members, so it does not
+      depend on how the fitness is scaled, whereas the roulette-wheel probabilities
+      $f_i / \sum_j f_j$ flatten when a constant is added [^1][^2]. The higher the pressure, the
+      faster the population converges and the less of the search space is explored, which is
+      premature convergence; if the pressure is too low, the population may not converge at all [^3].
+    references:
+      - title: 'Wikipedia: Tournament selection'
+        url: https://en.wikipedia.org/wiki/Tournament_selection#Advantages
+        locator: Introduction, Variants and Advantages
+      - title: 'Wikipedia: Fitness proportionate selection'
+        url: https://en.wikipedia.org/wiki/Fitness_proportionate_selection#Method
+        locator: Method
+      - title: 'Wikipedia: Selection (evolutionary algorithm)'
+        url: https://en.wikipedia.org/wiki/Selection_(evolutionary_algorithm)#Methods_of_selection
+        locator: Methods of selection (selection pressure and premature convergence)
+    source:
+      id: original
+      ref: genetic-algorithms-022
+    status: draft
+  - id: genetic-algorithms-023
+    type: single
+    difficulty: medium
+    tags:
+      - selection
+      - rank-selection
+      - roulette-wheel
+    question: |
+      Five individuals have fitness values 90, 4, 3, 2 and 1. What is the probability that the
+      fittest one is chosen in a single selection step under roulette-wheel selection, and under
+      linear rank selection with $P(i) = \frac{2(n - i + 1)}{n(n + 1)}$, where rank $i = 1$ is the best?
+    options:
+      - text: Roulette about 0.33, rank 0.90
+        why: The values are swapped. Roulette uses the raw fitness, $90 / 100 = 0.90$ [^1], while rank selection uses only the order [^2].
+      - text: Roulette 0.90, rank about 0.33
+        correct: true
+      - text: Roulette 0.90, rank 0.20
+        why: 0.20 = 1/5 would be uniform selection. Rank selection still favours better ranks, $P(1) = 2 \cdot 5 / 30 = 1/3$ [^2].
+      - text: Both 0.90, because ranking keeps the same order
+        why: Keeping the order does not keep the probabilities. With ranks, the gap between 90 and 4 counts no more than the gap between 4 and 3 [^2].
+    explanation: |
+      Roulette-wheel selection picks individual $i$ with probability $f_i / \sum_j f_j$ [^1], so one
+      dominant individual takes $90/100 = 0.9$ of the wheel and soon fills the mating pool. In rank
+      selection the probability depends only on the fitness rank [^2]: with $n = 5$ the probabilities
+      are $1/3, 4/15, 1/5, 2/15, 1/15$. The best individual is still favoured, but the others keep a
+      real chance to reproduce, which preserves diversity [^2].
+    references:
+      - title: 'Wikipedia: Fitness proportionate selection'
+        url: https://en.wikipedia.org/wiki/Fitness_proportionate_selection#Method
+        locator: Method
+      - title: 'Wikipedia: Selection (evolutionary algorithm)'
+        url: https://en.wikipedia.org/wiki/Selection_(evolutionary_algorithm)#Linear_rank_selection
+        locator: Methods of selection > Rank selection > Linear rank selection
+    source:
+      id: original
+      ref: genetic-algorithms-023
+    status: draft
+  - id: genetic-algorithms-024
+    type: single
+    difficulty: medium
+    tags:
+      - mutation
+      - exploration-exploitation
+      - mutation-rate
+    question: |
+      A genetic algorithm on bit strings uses bit-flip mutation: every bit of every offspring is
+      flipped independently with probability $p_m$. What happens if $p_m$ is set to 0.5?
+    options:
+      - text: Offspring become uniformly random strings, so the GA degrades to random search
+        correct: true
+      - text: The population converges prematurely, because mutation removes diversity
+        why: Mutation adds diversity [^1]. It is a very small mutation rate, not a large one, that risks losing diversity through genetic drift [^2].
+      - text: The search gets faster, because offspring explore more of the space
+        why: Each child bit is then 1 with probability 0.5 whatever the parent bit was, so offspring inherit nothing from the selected parents and good solutions are lost [^2].
+      - text: Nothing changes on average, because flips from 0 to 1 and from 1 to 0 cancel out
+        why: The flips do not cancel within one offspring. Each offspring is a fresh random string, unrelated to its parents.
+    explanation: |
+      With $p_m = 0.5$ a child bit is 1 with probability $\tfrac12$ whatever its parent bit, so
+      selection and crossover no longer influence the offspring, and the algorithm samples the space
+      uniformly at random: all exploration, no exploitation. Wikipedia warns that a mutation rate that
+      is too high may lead to the loss of good solutions unless elitism is used, and that a very small
+      one may lead to genetic drift [^2]. A common setting is $p_m = 1/l$ for strings of length $l$,
+      one flip per offspring on average [^1].
+    references:
+      - title: 'Wikipedia: Mutation (evolutionary algorithm)'
+        url: https://en.wikipedia.org/wiki/Mutation_(evolutionary_algorithm)#Bit_string_mutation
+        locator: Introduction and Bit string mutation
+      - title: 'Wikipedia: Genetic algorithm'
+        url: https://en.wikipedia.org/wiki/Genetic_algorithm#Genetic_operators
+        locator: Methodology > Genetic operators (parameter tuning paragraph)
+    source:
+      id: original
+      ref: genetic-algorithms-024
+    status: draft
+  - id: genetic-algorithms-025
+    type: short_answer
+    difficulty: easy
+    tags:
+      - schema-theorem
+      - schema-order
+      - defining-length
+    question: |
+      In Holland's schema notation, `*` is a wildcard and every other symbol is a fixed bit. For the
+      schema `**01*1**0*` of length 10, the order is {{1}}, the defining length is {{2}}, and the
+      number of bit strings that match the schema is {{3}}.
+    answer:
+      blanks:
+        - numeric: 4
+          tolerance: 0
+          hint: a whole number
+        - numeric: 6
+          tolerance: 0
+          hint: a whole number
+        - numeric: 64
+          tolerance: 0
+          hint: a whole number
+      model: Fixed positions 3, 4, 6 and 9, so the order is 4, the defining length is $9 - 3 = 6$, and $2^{10 - 4} = 64$ strings match.
+    explanation: |
+      The order $o(H)$ is the number of fixed positions and the defining length $\delta(H)$ is the
+      distance between the first and the last fixed position [^1]. Positions 3, 4, 6 and 9 are fixed,
+      so $o(H) = 4$ and $\delta(H) = 9 - 3 = 6$. Each of the $10 - 4 = 6$ wildcards can be 0 or 1, so
+      $2^6 = 64$ strings belong to the schema. For comparison, `1*10*1` has order 4 and defining
+      length 5 [^1].
+    references:
+      - title: "Wikipedia: Holland's schema theorem"
+        url: https://en.wikipedia.org/wiki/Holland%27s_schema_theorem#Description
+        locator: Description (order and defining length)
+    source:
+      id: original
+      ref: genetic-algorithms-025
+    status: draft
+  - id: genetic-algorithms-026
+    type: short_answer
+    difficulty: hard
+    tags:
+      - schema-theorem
+      - building-blocks
+    question: |
+      Holland's schema theorem states
+
+      $$\operatorname{E}[m(H, t+1)] \ge \frac{m(H, t)\, f(H)}{a_t}\,(1 - p), \qquad p = \frac{\delta(H)}{l - 1}\,p_c + o(H)\,p_m,$$
+
+      where $m(H, t)$ is the number of strings in schema $H$ at generation $t$, $f(H)$ their average
+      fitness, $a_t$ the average fitness of the population, $l$ the string length, and $p_c$, $p_m$
+      the crossover and mutation probabilities. For $H$ = `***1*0*1***` ($l = 11$), $m(H, t) = 20$,
+      $f(H) = 6$, $a_t = 4$, $p_c = 0.5$ and $p_m = 0.01$, what lower bound does the theorem give for
+      $\operatorname{E}[m(H, t+1)]$?
+    answer:
+      numeric: 23.1
+      tolerance: 0.05
+      hint: a number, 1 decimal
+      model: $o(H) = 3$, $\delta(H) = 8 - 4 = 4$, $p = \frac{4}{10}(0.5) + 3(0.01) = 0.23$, bound $= 20 \cdot \frac{6}{4} \cdot 0.77 = 23.1$
+    explanation: |
+      Selection multiplies the count by $f(H)/a_t = 1.5$, and the factor $1 - p$ discounts the
+      chance that crossover or mutation destroys the schema [^1]. The fixed positions are 4, 6 and 8,
+      so $p = 0.4 \cdot 0.5 + 3 \cdot 0.01 = 0.23$ and the bound is $30 \times 0.77 = 23.1$: the
+      schema is expected to grow from 20 strings to at least 23. A shorter defining length shrinks the
+      crossover term and a lower order the mutation term, which is why short, low-order schemata with
+      above-average fitness grow from generation to generation [^1]. Such schemata are the "building
+      blocks" of the building block hypothesis [^2].
+    references:
+      - title: "Wikipedia: Holland's schema theorem"
+        url: https://en.wikipedia.org/wiki/Holland%27s_schema_theorem#Description
+        locator: Description (inequality and disruption probability)
+      - title: 'Wikipedia: Genetic algorithm'
+        url: https://en.wikipedia.org/wiki/Genetic_algorithm#The_building_block_hypothesis
+        locator: The building block hypothesis
+    source:
+      id: original
+      ref: genetic-algorithms-026
+    status: draft
+  - id: genetic-algorithms-027
+    type: true_false
+    difficulty: medium
+    tags:
+      - elitism
+      - code-reading
+      - aima-python
+    shuffle: false
+    question: |
+      This is the main loop of the aima-python genetic algorithm. `select` samples two parents with
+      fitness-proportionate probability, `recombine` is one-point crossover, and `mutate` changes one
+      gene with probability `pmut`.
+
+      ```python
+      def genetic_algorithm(population, fitness_fn, gene_pool=[0, 1], f_thres=None, ngen=1000, pmut=0.1):
+          for i in range(ngen):
+              population = [mutate(recombine(*select(2, population, fitness_fn)), gene_pool, pmut)
+                            for i in range(len(population))]
+              fittest_individual = fitness_threshold(fitness_fn, f_thres, population)
+              if fittest_individual:
+                  return fittest_individual
+          return max(population, key=fitness_fn)
+      ```
+
+      True or false: with this loop, the best fitness in the population can never decrease from one
+      generation to the next.
+    options:
+      - text: 'True'
+        why: The whole population is replaced by new offspring and nothing copies the best individual over, so it can be lost [^1]. Only elitism gives that guarantee [^2].
+      - text: 'False'
+        correct: true
+    explanation: |
+      The loop builds every new population entirely from offspring [^1]. The current best individual
+      survives only if it is sampled as a parent and its genes come through crossover and mutation
+      intact, and fitness-proportionate sampling can miss it altogether [^3]. Elitist selection,
+      which carries the best individual(s) unchanged into the next generation, is the variant that
+      guarantees the solution quality does not decrease [^2].
+    references:
+      - title: 'aima-python (MIT licence), search.py: genetic_algorithm'
+        url: https://github.com/aimacode/aima-python/blob/f104e03fdc1582f014b3a4c93f1a9b7d2da70114/aima/search.py#L1388-L1398
+        locator: aima/search.py lines 1388–1398, commit f104e03
+      - title: 'Wikipedia: Genetic algorithm'
+        url: https://en.wikipedia.org/wiki/Genetic_algorithm#Elitism
+        locator: Variants > Elitism
+      - title: 'Wikipedia: Fitness proportionate selection'
+        url: https://en.wikipedia.org/wiki/Fitness_proportionate_selection#Method
+        locator: Method (even fit candidates may be eliminated)
+    source:
+      id: original
+      ref: genetic-algorithms-027
+    status: draft
+  - id: genetic-algorithms-028
+    type: short_answer
+    difficulty: hard
+    tags:
+      - crossover
+      - one-point-crossover
+      - code-reading
+      - aima-python
+    question: |
+      This one-point crossover is adapted from aima-python:
+
+      ```python
+      import random
+
+      def recombine(x, y):
+          n = len(x)
+          c = random.randrange(0, n)    # c is one of 0, 1, ..., n - 1
+          return x[:c] + y[c:]
+      ```
+
+      For `x = [1, 0, 1, 1, 0, 1]` and `y = [0, 0, 1, 0, 1, 1]`, how many *distinct* children can
+      `recombine(x, y)` return?
+    answer:
+      numeric: 4
+      tolerance: 0
+      hint: a whole number
+      model: '$c = 0, \dots, 5$ give `001011`, `101011`, `101011`, `101011`, `101111`, `101101`: 4 distinct children.'
+    explanation: |
+      The cut point $c$ takes the 6 values 0 to 5, and the child is the part of `x` before $c$
+      followed by the part of `y` from $c$ on [^1]. With $c = 0$ the child is simply a copy of `y`.
+      The parents agree at positions 2, 3 and 6, and moving the cut across a position where they agree
+      changes nothing, so $c = 1, 2, 3$ all give `101011`. The six cut points therefore give only four
+      strings, `001011`, `101011`, `101111` and `101101`, the last one equal to `x`. One-point
+      crossover swaps the genes on one side of a random point [^2], so it can create new strings only
+      where the parents differ.
+    references:
+      - title: 'aima-python (MIT licence), search.py: recombine'
+        url: https://github.com/aimacode/aima-python/blob/f104e03fdc1582f014b3a4c93f1a9b7d2da70114/aima/search.py#L1436-L1441
+        locator: aima/search.py lines 1436–1441, commit f104e03
+      - title: 'Wikipedia: Crossover (evolutionary algorithm)'
+        url: https://en.wikipedia.org/wiki/Crossover_(evolutionary_algorithm)#One-point_crossover
+        locator: Crossover for binary arrays > One-point crossover
+    source:
+      id: original
+      ref: genetic-algorithms-028
+    status: draft
+  - id: genetic-algorithms-029
+    type: short_answer
+    difficulty: medium
+    tags:
+      - mutation
+      - bit-flip
+      - mutation-rate
+    question: |
+      Bit-flip mutation flips each bit of a chromosome independently with probability $p_m$, and a
+      common default is $p_m = 1/l$ for chromosomes of length $l$. For $l = 20$, what is the
+      probability that an offspring passes through mutation completely unchanged?
+    answer:
+      numeric: 0.36
+      tolerance: 0.005
+      hint: a number, 2 decimals
+      model: $(1 - 1/20)^{20} = 0.95^{20} \approx 0.358$
+    explanation: |
+      Each bit stays as it is with probability $1 - p_m = 0.95$, independently of the others, so all
+      20 stay with probability $0.95^{20} \approx 0.36$. The expected number of flips is
+      $l \cdot p_m = 1$, which is why $p_m = 1/l$ amounts to a mutation rate of one per individual [^1].
+      As $l$ grows, $(1 - 1/l)^l$ approaches $e^{-1} \approx 0.37$, so roughly a third of the
+      offspring are not mutated at all. Mutation exists to keep diversity in the population [^1], and
+      its rate trades exploration against keeping good solutions [^2].
+    references:
+      - title: 'Wikipedia: Mutation (evolutionary algorithm)'
+        url: https://en.wikipedia.org/wiki/Mutation_(evolutionary_algorithm)#Bit_string_mutation
+        locator: Introduction and Bit string mutation
+      - title: 'Wikipedia: Genetic algorithm'
+        url: https://en.wikipedia.org/wiki/Genetic_algorithm#Genetic_operators
+        locator: Methodology > Genetic operators (parameter tuning paragraph)
+    source:
+      id: original
+      ref: genetic-algorithms-029
+    status: draft
+  - id: genetic-algorithms-030
+    type: short_answer
+    difficulty: medium
+    tags:
+      - crossover
+      - uniform-crossover
+    question: |
+      Uniform crossover builds a child by taking each bit from parent 1 or parent 2 with equal
+      probability, independently for every position. How many distinct children can it produce from
+      the parents `10110010` and `10011110`?
+    answer:
+      numeric: 8
+      tolerance: 0
+      hint: a whole number
+      model: The parents differ only at positions 3, 5 and 6, so there are $2^3 = 8$ children.
+    explanation: |
+      Uniform crossover treats each gene separately, like a coin flip per position [^1]. Where both
+      parents carry the same bit, the child gets that bit either way, so only the 3 positions where
+      they differ (3, 5 and 6) create choices: $2^3 = 8$ children, each with probability $1/8$,
+      including copies of both parents. Because it mixes genes position by position instead of in
+      long segments, uniform crossover is listed among the ways to counter premature convergence [^2].
+    references:
+      - title: 'Wikipedia: Crossover (evolutionary algorithm)'
+        url: https://en.wikipedia.org/wiki/Crossover_(evolutionary_algorithm)#Uniform_crossover
+        locator: Crossover for binary arrays > Uniform crossover
+      - title: 'Wikipedia: Premature convergence'
+        url: https://en.wikipedia.org/wiki/Premature_convergence#Strategies_for_preventing_premature_convergence
+        locator: Strategies for preventing premature convergence
+    source:
+      id: original
+      ref: genetic-algorithms-030
+    status: draft
+  - id: genetic-algorithms-031
+    type: true_false
+    difficulty: easy
+    tags:
+      - crossover
+      - mutation
+      - diversity
+    shuffle: false
+    question: |
+      Every individual in a genetic algorithm's population has become the same bit string. True or
+      false: one-point, two-point or uniform crossover can still produce an individual that is not
+      already in the population.
+    options:
+      - text: 'True'
+        why: Crossover only recombines genes the parents already carry, so two identical parents give a child identical to them [^1].
+      - text: 'False'
+        correct: true
+    explanation: |
+      Each of these operators copies every gene of the child from one of the two parents [^2], so
+      crossing two identical strings returns that same string, whatever the cut points. Wikipedia
+      notes that commonly used crossover operators cannot change any uniform population, and that
+      mutation alone can make the process ergodic, i.e. able to reach every point of the search space
+      [^1]. This is why diversity matters: crossing over a homogeneous population yields no new
+      solutions [^3].
+    references:
+      - title: 'Wikipedia: Genetic algorithm'
+        url: https://en.wikipedia.org/wiki/Genetic_algorithm#Problem_domains
+        locator: Problem domains
+      - title: 'Wikipedia: Crossover (evolutionary algorithm)'
+        url: https://en.wikipedia.org/wiki/Crossover_(evolutionary_algorithm)#Crossover_for_binary_arrays
+        locator: Crossover for binary arrays
+      - title: 'Wikipedia: Genetic algorithm'
+        url: https://en.wikipedia.org/wiki/Genetic_algorithm#Limitations
+        locator: Limitations (convergence to local optima, diversity)
+    source:
+      id: original
+      ref: genetic-algorithms-031
+    status: draft
