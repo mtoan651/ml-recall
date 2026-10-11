@@ -45,17 +45,39 @@ def test_citation_must_match_a_reference():
 
 def test_reviewed_needs_cited_explanation():
     with pytest.raises(ValidationError, match="cited explanation"):
-        make(status="reviewed", difficulty="easy", explanation="Because.")
+        make(status="reviewed", difficulty="easy", explanation="Because.", reviewed_by="owner")
     make(
         status="reviewed",
         difficulty="easy",
         explanation="Because [^1].",
         references=[{"source": "d2l", "locator": "Sec. 7.2"}],
+        reviewed_by="claude",
     )
+
+
+def test_reviewed_needs_reviewer():
+    with pytest.raises(ValidationError, match="reviewed_by"):
+        make(
+            status="reviewed",
+            difficulty="easy",
+            explanation="Because [^1].",
+            references=[{"source": "d2l", "locator": "Sec. 7.2"}],
+        )
+    with pytest.raises(ValidationError):
+        make(reviewed_by="someone")
 
 
 def test_citation_markers_ignore_code_and_math():
     assert citation_markers("x [^1] `a[^2]` $b[^3]$\n```\n[^4]\n```") == [1]
+
+
+def test_citation_markers_with_inline_math_wrapped_onto_two_lines():
+    # the closing $ of the first formula must not pair with the opening $ of the second
+    assert citation_markers("so $a +\nb$ holds [^1] and $c$ too [^2]") == [1, 2]
+
+
+def test_citation_markers_skip_escaped_dollars():
+    assert citation_markers("costs \\$45 [^1] since $x + y$ [^2] and \\$5") == [1, 2]
 
 
 POSITIONAL = [

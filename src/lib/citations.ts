@@ -12,7 +12,10 @@
 const MARKER_RE = /\[\^(\d+)\]/g;
 
 /** Same alternation as `_CODE_OR_MATH_RE` in schema.py (Python `re.DOTALL` → `[\s\S]`). */
-const CODE_OR_MATH_RE = /```[\s\S]*?```|`[^`\n]*`|\$\$[\s\S]*?\$\$|\$[^$\n]*\$/g;
+// Math as remark-math reads it: an escaped \$ is a literal dollar, and inline math may wrap
+// onto the next line but not across a blank line.
+const CODE_OR_MATH_RE =
+  /```[\s\S]*?```|`[^`\n]*`|(?<!\\)\$\$[\s\S]*?(?<!\\)\$\$|(?<!\\)\$(?:\\\$|[^$\n]|\n(?![ \t]*\n))*?(?<!\\)\$/g;
 
 /**
  * A run of markers, optionally separated by whitespace, plus the whitespace in front of it:
