@@ -121,11 +121,32 @@ def _check_question(r: Report, f: bank.BankFile, q: Question, sources: dict) -> 
     texts += [o.text for o in options] + [o.why for o in options]
     if any(t and _unbalanced_dollars(t) for t in texts):
         r.warnings.append(f"{where}: unbalanced $ — math won't render (escape a literal $ as \\$)")
+    if any(t and _math_line_starts_block(t) for t in texts):
+        r.warnings.append(
+            f"{where}: a line inside math starts with `+ `, `- `, `* ` or `1. `, which Markdown "
+            "reads as a list item — join it to the previous line"
+        )
 
 
 def _unbalanced_dollars(text: str) -> bool:
     text = re.sub(r"```.*?```|`[^`\n]*`", "", text, flags=re.DOTALL)
     return len(re.findall(r"(?<!\\)\$", text)) % 2 == 1
+
+
+# Block markers that may interrupt a paragraph (CommonMark): bullets, ordered lists starting at 1.
+_BLOCK_START_RE = re.compile(r"\s*(?:[-+*]\s|1[.)]\s|#{1,6}\s|>)")
+
+
+def _math_line_starts_block(text: str) -> bool:
+    """True if a line continuing an open `$…$` / `$$…$$` span looks like a Markdown block start."""
+    text = re.sub(r"```.*?```", "", text, flags=re.DOTALL)
+    dollars = 0
+    for line in text.split("\n"):
+        if dollars % 2 and _BLOCK_START_RE.match(line):
+            return True
+        # `$$` counts as one delimiter
+        dollars += len(re.findall(r"(?<!\\)\$\$?", re.sub(r"`[^`]*`", "", line)))
+    return False
 
 
 def _check_unique(r: Report, what: str, values: list[str]) -> None:
