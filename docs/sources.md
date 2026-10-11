@@ -32,6 +32,9 @@ original questions. See [content-pipeline.md](content-pipeline.md#copyright-rule
 | 27 | [UBC CPSC 330 Applied ML](https://github.com/UBC-CS/cpsc330-2025W1) (Kolhatkar et al.) | midterm/final prep MCQs (keys in red) and lecture iClicker exercises | CC-BY-4.0 | **v0.3 used** |
 | 28 | [UBC MDS DSCI 575 Advanced ML](https://github.com/UBC-MDS/DSCI_575_adv-mach-learn) | iClicker exercises: Markov models, HMMs, RNNs, transformers, LLMs | CC-BY-4.0 | **v0.3 used** |
 | 29 | [forall x: Calgary](https://forallx.openlogicproject.org/) (Magnus, Button et al.) | logic textbook: truth tables, validity, satisfiability, first-order models, keyed in the LaTeX source | CC-BY-4.0 | **v0.3 used** |
+| 31 | [Pen and Paper Exercises in ML](https://github.com/michaelgutmann/ml-pen-and-paper-exercises) (Gutmann) | worked exercises: graphical models, HMMs, learning, variational inference, sampling | CC-BY-4.0 | **v0.3 used** (5 exercises based on copyrighted books skipped) |
+| 32 | [ML-InterviewQs](https://github.com/dsgiitr/ML-InterviewQs) (DSG IIT Roorkee) | 6 keyed MCQs | MIT | **v0.3 used** |
+| 33 | [dlbook_exercises](https://github.com/goodfeli/dlbook_exercises) (Goodfellow) | 1 contributed exercise | BSD-3-Clause | **v0.3 used** |
 | 16 | [OpenIntro Statistics](https://www.openintro.org/book/os/) | end-of-section exercises, odd-numbered solutions, LaTeX source on GitHub | CC-BY-SA-3.0 | later — probability/statistics; take files from the [GitHub repo](https://github.com/OpenIntroStat/openintro-statistics) only (the website's terms restrict automated scraping) |
 
 ## Reference only
@@ -74,7 +77,9 @@ PyTorch for Deep Learning* (Bourke, MIT) · OpenAI Spinning Up exercises (MIT) �
 and 573 (CC BY 4.0, no keys) · Hugging Face MCP Course (Apache-2.0, mostly tool-specific).
 
 Citation targets for original questions (no quizzes): CS231n notes (MIT) · aima-python (MIT) ·
-Hugging Face smol-course, Diffusion course (Apache-2.0) and Computer Vision course (MIT).
+Hugging Face smol-course, Diffusion course (Apache-2.0) and Computer Vision course (MIT) · Udacity
+`deep-learning-v2-pytorch` (MIT) · *NLP with Deep Learning* lectures by trusthlt (CC BY-SA 4.0) ·
+Gustave Cortal's NLP course (MIT).
 
 Checked and not usable: Stanford CS336 (its `AGENTS.md` asks AI tools not to give solutions) ·
 AIMA exercises (the repo's MIT licence covers the website theme, not the book's exercises) ·
@@ -84,6 +89,13 @@ quizzes are LLM-generated) · CS-Bench (NC) · MMLU-Pro, SuperGPQA, MMLU-CF, The
 scraped from the web or textbooks) · ML-interview datasets on the Hugging Face Hub (synthetic,
 scraped or unlicensed) · GitHub repos of solutions to other courses' quizzes and homework
 (Coursera, CS229/CS231n, Sutton & Barto — the repo owner can't license someone else's questions).
+
+A user-supplied list of 88 links was screened on 2026-10-11 (sources 31–33 came from it). Also not
+usable: GRADuateML (terms bar scraping and use for ML training; its problems are LLM-generated),
+AppliedAIPrep, SpaceComplexity and Cloud Soft Solutions (terms bar scraping or derivatives) ·
+NPTEL (CC BY-NC-SA) · MIT OCW 6.7960 (CC BY-NC-SA) · Studyopedia, HackerX, 365 Data Science,
+NeetCode (all rights reserved) · 7wData (reposts Analytics Vidhya) · student repos of Coursera,
+CS229/CS231n/CS224n, Caltech CS156, MIT 6.036 and Kaggle solutions.
 
 ## Adding a source
 
