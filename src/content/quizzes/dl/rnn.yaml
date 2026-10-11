@@ -36,12 +36,14 @@ questions:
     options:
       - text: matrices
         correct: true
-      - text: cell
-      - text: neuron
+      - text: vectors
+      - text: scalars
     explanation: |
       A simple RNN cell holds two weight matrices: $W$ transforms the current input $X_i$ and $H$
       transforms the previous state $S_{i-1}$, and the new state is $\sigma(W X_i + H S_{i-1} + b)$
-      [^1]. d2l writes the same update as $H_t = \phi(X_t W_{xh} + H_{t-1} W_{hh} + b_h)$, with an
+      [^1]. With embedding size `emb_size` and state size `hid_size`, $W$ is
+      `emb_size` × `hid_size` and $H$ is `hid_size` × `hid_size` [^1]; only the bias $b$ is a
+      vector. d2l writes the same update as $H_t = \phi(X_t W_{xh} + H_{t-1} W_{hh} + b_h)$, with an
       input-to-hidden and a hidden-to-hidden matrix [^2].
     references:
       - source: ms-ai-for-beginners
@@ -84,15 +86,17 @@ questions:
   - id: rnn-004
     type: true_false
     difficulty: easy
-    question: All RNN Cells have the same shareable weights
+    question: When an RNN layer is unrolled over a sequence, the cells at all time steps share the same weights.
     options:
       - text: 'True'
         correct: true
       - text: 'False'
     explanation: |
       An RNN applies the same block at every time step, so all the unrolled cells share one set of
-      weights and are trained end to end with a single backpropagation pass [^1]. That sharing is why
-      an RNN's parameter count does not grow with the length of the sequence [^2].
+      weights and are trained end to end with a single backpropagation pass [^1]. That sharing is
+      why an RNN's parameter count does not grow with the length of the sequence [^2]. Stacked
+      layers are different: in a deep (multi-layer) RNN each layer $l$ has its own weights
+      $W_{xh}^{(l)}$ and $W_{hh}^{(l)}$ [^3].
     references:
       - source: ms-ai-for-beginners
         url: https://github.com/microsoft/AI-For-Beginners/blob/392d0df1b2647cbee104942390551f1ed9e072c8/lessons/5-NLP/16-RNN/README.md
@@ -100,6 +104,9 @@ questions:
       - source: d2l
         url: https://d2l.ai/chapter_recurrent-neural-networks/rnn.html#recurrent-neural-networks-with-hidden-states
         locator: Sec. 9.4.2 Recurrent Neural Networks with Hidden States
+      - source: d2l
+        url: https://d2l.ai/chapter_recurrent-modern/deep-rnn.html
+        locator: Sec. 10.3 Deep Recurrent Neural Networks, Eq. (10.3.1)
     source:
       id: ms-ai-for-beginners
       ref: quiz-216/q3
@@ -154,20 +161,19 @@ questions:
       url: https://github.com/microsoft/AI-For-Beginners/blob/392d0df1b2647cbee104942390551f1ed9e072c8/etc/quiz-app/src/assets/translations/en/lesson-17.json
     status: draft
   - id: rnn-007
-    type: single
+    type: true_false
     difficulty: easy
-    question: Selecting the character with higher probabilities always gives a meaningful text.
+    question: When generating text with an RNN, always picking the character with the highest probability guarantees meaningful text.
     options:
       - text: 'True'
       - text: 'False'
         correct: true
-      - text: maybe
     explanation: |
       Always taking the most probable character often makes the generated text cycle through the
-      same phrases. The top few probabilities can also be nearly equal, so the second choice may be
-      just as sensible [^1]. The lesson therefore samples from the predicted distribution, with a
-      temperature to control how random the choice is [^1]. More generally, picking the most likely
-      token at every step does not guarantee the most likely sequence overall [^2].
+      same phrases. The top few probabilities can also be nearly equal, so the runner-up character
+      may be just as sensible [^1]. The lesson therefore samples from the predicted distribution,
+      with a temperature to control how random the choice is [^1]. More generally, picking the most
+      likely token at every step does not guarantee the most likely sequence overall [^2].
     references:
       - source: ms-ai-for-beginners
         url: https://github.com/microsoft/AI-For-Beginners/blob/392d0df1b2647cbee104942390551f1ed9e072c8/lessons/5-NLP/17-GenerativeNetworks/README.md#soft-text-generation-and-temperature
@@ -185,21 +191,136 @@ questions:
     difficulty: easy
     question: Many-to-many can also be referred to as _____
     options:
-      - text: one-to-one
+      - text: sequence-to-vector
       - text: sequence-to-sequence
         correct: true
-      - text: one-to-many
+      - text: vector-to-sequence
     explanation: |
-      The lesson calls the many-to-many pattern sequence-to-sequence. One RNN collects the whole input
-      sequence into a hidden state and a second RNN unrolls that state into the output sequence, as in
-      machine translation [^1]. One-to-one is a plain network with a single input and output, and
-      one-to-many generates a sequence from a single input [^1].
+      The lesson calls the many-to-many pattern sequence-to-sequence: one RNN collects the whole
+      input sequence into a hidden state and a second RNN unrolls that state into the output
+      sequence, as in machine translation [^1]. Sequence-to-vector is the many-to-one pattern: a
+      whole sequence goes in and a single output comes out, as in text classification or sentiment
+      analysis [^1][^2]. Vector-to-sequence is one-to-many: a single input, such as an image, is
+      turned into a sequence, as in image captioning [^1][^2].
     references:
       - source: ms-ai-for-beginners
         url: https://github.com/microsoft/AI-For-Beginners/blob/392d0df1b2647cbee104942390551f1ed9e072c8/lessons/5-NLP/17-GenerativeNetworks/README.md
         locator: 'Lesson: Generative networks (architecture patterns)'
+      - title: Karpathy, The Unreasonable Effectiveness of Recurrent Neural Networks (2015)
+        url: http://karpathy.github.io/2015/05/21/rnn-effectiveness/
+        locator: Sec. Recurrent Neural Networks, figure of input/output patterns and its caption
     source:
       id: ms-ai-for-beginners
       ref: quiz-217/q3
+      url: https://github.com/microsoft/AI-For-Beginners/blob/392d0df1b2647cbee104942390551f1ed9e072c8/etc/quiz-app/src/assets/translations/en/lesson-17.json
+    status: draft
+  - id: rnn-009
+    type: single
+    difficulty: medium
+    question: Why does a plain (vanilla) RNN struggle to learn dependencies between tokens that are far apart in a long sequence?
+    options:
+      - text: Backpropagating through many time steps multiplies many factors, so the gradient vanishes before reaching early tokens
+        correct: true
+      - text: Every time step has its own separate weight matrices, so a long sequence ends up with far too many parameters to train
+      - text: It can only read sequences that are shorter than the size of its hidden state
+      - text: It processes all time steps in parallel, so it cannot tell which token came first
+    explanation: |
+      An RNN is trained end-to-end through all its steps, so the error has to travel back through every
+      step; it has difficulty reaching the first ones, and the network cannot learn relations between
+      distant tokens. This is the vanishing-gradient problem, which gated cells such as LSTM and GRU
+      were designed to avoid [^1]. Backpropagation through time multiplies long chains of the same
+      matrices, and high powers of a matrix make the gradient vanish or explode [^2]. All RNN steps share
+      the same weights and process the tokens one after another, so neither the parameter count nor
+      parallel processing is the issue, and sequence length is not limited by the hidden size [^1].
+    references:
+      - source: ms-ai-for-beginners
+        url: https://github.com/microsoft/AI-For-Beginners/blob/392d0df1b2647cbee104942390551f1ed9e072c8/lessons/5-NLP/16-RNN/README.md#long-short-term-memory-lstm
+        locator: 'Lesson: Recurrent Neural Networks, introduction and sec. Long Short Term Memory (LSTM)'
+      - source: d2l
+        url: https://d2l.ai/chapter_recurrent-neural-networks/bptt.html
+        locator: Sec. 9.7 Backpropagation Through Time (9.7.2 and Summary)
+    source:
+      id: ms-ai-for-beginners
+      ref: quiz-116/q3
+      url: https://github.com/microsoft/AI-For-Beginners/blob/392d0df1b2647cbee104942390551f1ed9e072c8/etc/quiz-app/src/assets/translations/en/lesson-16.json
+    status: draft
+  - id: rnn-010
+    type: single
+    difficulty: medium
+    question: When does a bidirectional RNN make sense?
+    options:
+      - text: When the whole sequence is available up front, so each position can use context on both sides
+        correct: true
+      - text: When generating text token by token, so the model can look at the words it has not generated yet
+      - text: When memory is short, because both directions share one hidden state and halve the parameters
+      - text: When sequences are long, because running backwards removes the vanishing-gradient problem
+    explanation: |
+      When we have random access to the whole input sequence, it can make sense to run the recurrent
+      computation in both directions; a bidirectional network then needs two hidden state vectors, one
+      per direction [^1]. Each time step's hidden state is determined by the data both before and after
+      it, which suits encoding a sequence, e.g. tagging parts of speech [^2]. Next-token prediction may
+      only use the leftward context, so a bidirectional RNN cannot generate text [^2]. Its long gradient
+      chains make it costly to train rather than curing vanishing gradients [^2].
+    references:
+      - source: ms-ai-for-beginners
+        url: https://github.com/microsoft/AI-For-Beginners/blob/392d0df1b2647cbee104942390551f1ed9e072c8/lessons/5-NLP/16-RNN/README.md#bidirectional-and-multilayer-rnns
+        locator: 'Lesson: Recurrent Neural Networks, sec. Bidirectional and Multilayer RNNs'
+      - source: d2l
+        url: https://d2l.ai/chapter_recurrent-modern/bi-rnn.html
+        locator: Sec. 10.4 Bidirectional Recurrent Neural Networks (introduction and Summary)
+    source:
+      id: ms-ai-for-beginners
+      ref: quiz-216/q2
+      url: https://github.com/microsoft/AI-For-Beginners/blob/392d0df1b2647cbee104942390551f1ed9e072c8/etc/quiz-app/src/assets/translations/en/lesson-16.json
+    status: draft
+  - id: rnn-011
+    type: single
+    difficulty: easy
+    question: Which recurrent-network pattern fits image captioning, where a single picture has to be turned into a sentence?
+    options:
+      - text: One-to-many
+        correct: true
+      - text: Many-to-one
+      - text: Many-to-many (sequence-to-sequence)
+      - text: One-to-one
+    explanation: |
+      One-to-many is the generative pattern: one input value produces a sequence of outputs. For image
+      captioning, the picture goes through a CNN to obtain a hidden state, and a recurrent chain then
+      generates the caption word by word [^1]. Many-to-one reads a sequence and outputs one value, as in
+      text classification; many-to-many (sequence-to-sequence) maps a sequence to a sequence, as in
+      machine translation; one-to-one is an ordinary network with one input and one output [^1].
+    references:
+      - source: ms-ai-for-beginners
+        url: https://github.com/microsoft/AI-For-Beginners/blob/392d0df1b2647cbee104942390551f1ed9e072c8/lessons/5-NLP/17-GenerativeNetworks/README.md
+        locator: 'Lesson: Generative networks, introduction (RNN patterns)'
+    source:
+      id: ms-ai-for-beginners
+      ref: quiz-117/q1
+      url: https://github.com/microsoft/AI-For-Beginners/blob/392d0df1b2647cbee104942390551f1ed9e072c8/etc/quiz-app/src/assets/translations/en/lesson-17.json
+    status: draft
+  - id: rnn-012
+    type: single
+    difficulty: medium
+    question: In a character-level generative RNN, an output layer is applied to the hidden state at every step. What does it produce?
+    options:
+      - text: A score for every character in the vocabulary, giving a probability distribution over the next one
+        correct: true
+      - text: The next hidden state, which replaces the recurrent connection
+      - text: An embedding of the character that was just read
+      - text: A single number, the index of the next character in the vocabulary, predicted directly by regression
+    explanation: |
+      A generative RNN is trained to produce, for each input character, the next character, and the
+      output of each step is a probability distribution over the characters [^1]. Generation then picks
+      or samples the next character from that distribution, possibly with a temperature, and feeds it
+      back in [^1]. The hidden state is passed along separately through the recurrent connection [^1],
+      embeddings belong to the input side, and predicting a character index as a number by regression
+      would impose a meaningless order on the characters.
+    references:
+      - source: ms-ai-for-beginners
+        url: https://github.com/microsoft/AI-For-Beginners/blob/392d0df1b2647cbee104942390551f1ed9e072c8/lessons/5-NLP/17-GenerativeNetworks/README.md#soft-text-generation-and-temperature
+        locator: 'Lesson: Generative networks, introduction and sec. Soft text generation and temperature'
+    source:
+      id: ms-ai-for-beginners
+      ref: quiz-217/q1
       url: https://github.com/microsoft/AI-For-Beginners/blob/392d0df1b2647cbee104942390551f1ed9e072c8/etc/quiz-app/src/assets/translations/en/lesson-17.json
     status: draft

@@ -5,8 +5,8 @@ title: Tokenization
 questions:
   - id: tokenization-001
     type: multiple
-    shuffle: false
-    question: Which of the following is an example of subword tokenization?
+    difficulty: easy
+    question: Which of the following are examples of subword tokenization?
     options:
       - text: WordPiece
         correct: true
@@ -18,13 +18,23 @@ questions:
         correct: true
       - text: Unigram
         correct: true
-      - text: None of the above
-        why: Wrong!
-    explanation: Yes, that's one example of subword tokenization! Yes, that's one example of subword tokenization! Yes, that's one example of subword tokenization! [^1]
+      - text: Lowercasing the text and removing accents
+        why: That's normalization, a cleanup step before the text is split; it produces no tokens.
+    explanation: |
+      Subword tokenization keeps frequent words whole and splits rare words into meaningful pieces, for
+      example "tokenization" into "token" and "ization", which gives good coverage with a small
+      vocabulary and almost no unknown tokens [^1]. BPE, WordPiece and Unigram are the three main
+      subword algorithms, used by GPT-2, BERT and T5 respectively [^2]. Splitting on whitespace and
+      punctuation is word-based tokenization, and character-based tokenization splits text into single
+      characters [^1]. Lowercasing and removing accents is normalization, a cleanup step before any
+      splitting [^2].
     references:
       - source: hf-llm-course
-        locator: 'Chapter 2: Using 🤗 Transformers'
-        url: https://huggingface.co/learn/llm-course/chapter2/1
+        url: https://huggingface.co/learn/llm-course/chapter2/4#subword-tokenization
+        locator: Chapter 2.4 Tokenizers, secs. Word-based, Character-based and Subword tokenization
+      - source: hf-llm-course
+        url: https://huggingface.co/learn/llm-course/chapter6/4#algorithm-overview
+        locator: Chapter 6.4 Normalization and pre-tokenization, secs. Normalization and Algorithm overview
     source:
       id: hf-llm-course
       ref: chapter2/9#q3
@@ -32,6 +42,7 @@ questions:
     status: draft
   - id: tokenization-002
     type: single
+    difficulty: medium
     question: When should you train a new tokenizer?
     options:
       - text: When your dataset is similar to that used by an existing pretrained model, and you want to pretrain a new model
@@ -42,11 +53,23 @@ questions:
         correct: true
       - text: When your dataset is different from the one used by an existing pretrained model, but you want to fine-tune a new model using this pretrained model
         why: To fine-tune a model from a pretrained model, you should always use the same tokenizer.
-    explanation: Correct! In this case there's no advantage to using the same tokenizer. [^1]
+    explanation: |
+      Fine-tuning a pretrained model always uses the tokenizer that model was pretrained with [^1]. A new
+      tokenizer is needed when you train a model from scratch on a corpus unlike the original one, such
+      as another language or domain: a tokenizer trained on English, for instance, performs poorly on
+      Japanese, where spaces and punctuation are used very differently [^1][^2]. If your data resemble
+      the original corpus, it is cheaper to keep the pretrained model and its tokenizer and fine-tune
+      [^3].
     references:
       - source: hf-llm-course
-        locator: 'Chapter 6: The 🤗 Tokenizers library'
         url: https://huggingface.co/learn/llm-course/chapter6/1
+        locator: Chapter 6.1 The 🤗 Tokenizers library, introduction
+      - source: hf-llm-course
+        url: https://huggingface.co/learn/llm-course/chapter6/2
+        locator: Chapter 6.2 Training a new tokenizer from an old one, introduction
+      - source: hf-llm-course
+        url: https://huggingface.co/learn/llm-course/chapter1/4#transfer-learning
+        locator: Chapter 1.4 How do Transformers work?, sec. Transfer Learning
     source:
       id: hf-llm-course
       ref: chapter6/10#q1
@@ -54,21 +77,27 @@ questions:
     status: draft
   - id: tokenization-003
     type: single
+    difficulty: easy
     question: What is normalization?
     options:
       - text: It's any cleanup the tokenizer performs on the texts in the initial stages.
         correct: true
       - text: It's a data augmentation technique that involves making the text more normal by removing rare words.
-        why: That's incorrect! Try again.
+        why: No, normalization neither augments data nor removes rare words; it only cleans up the text (whitespace, case, accents).
       - text: It's the final post-processing step where the tokenizer adds the special tokens.
         why: That stage is simply called post-processing.
       - text: It's when the embeddings are made with mean 0 and standard deviation 1, by subtracting the mean and dividing by the std.
         why: That process is commonly called normalization when applied to pixel values in computer vision, but it's not what normalization means in NLP.
-    explanation: That's correct -- for instance, it might involve removing accents or whitespace, or lowercasing the inputs. [^1]
+    explanation: |
+      Normalization is the first step of the tokenization pipeline, before pre-tokenization: a general
+      cleanup such as removing needless whitespace, lowercasing and/or removing accents, possibly with
+      Unicode normalization such as NFC or NFKC [^1]. For example, the `bert-base-uncased` tokenizer
+      lowercases the text and removes accents [^1].
     references:
       - source: hf-llm-course
-        locator: 'Chapter 6: The 🤗 Tokenizers library'
-        url: https://huggingface.co/learn/llm-course/chapter6/1
+        url: https://huggingface.co/learn/llm-course/chapter6/4#normalization
+        locator: Chapter 6.4 Normalization and pre-tokenization, introduction and sec. Normalization
+        quote: The normalization step involves some general cleanup, such as removing needless whitespace, lowercasing, and/or removing accents.
     source:
       id: hf-llm-course
       ref: chapter6/10#q6
@@ -76,6 +105,7 @@ questions:
     status: draft
   - id: tokenization-004
     type: single
+    difficulty: medium
     question: What is pre-tokenization for a subword tokenizer?
     options:
       - text: It's the step before the tokenization, where data augmentation (like random masking) is applied.
@@ -86,11 +116,17 @@ questions:
         correct: true
       - text: It's the step before the tokenizer model is applied, to split the input into tokens.
         why: No, splitting into tokens is the job of the tokenizer model.
-    explanation: That's the correct answer! [^1]
+    explanation: |
+      Pre-tokenization comes after normalization and before the tokenizer model: a tokenizer cannot be
+      trained on raw text alone, so the text is first split into small entities such as words, and these
+      act as boundaries for the subwords the tokenizer learns [^1]. BERT's pre-tokenizer splits on
+      whitespace and punctuation; GPT-2's does too but keeps the spaces as a `Ġ` symbol; T5's splits
+      only on whitespace [^1]. Cleanup is the normalization step, and splitting words into subword tokens
+      is the job of the tokenizer model itself [^1].
     references:
       - source: hf-llm-course
-        locator: 'Chapter 6: The 🤗 Tokenizers library'
-        url: https://huggingface.co/learn/llm-course/chapter6/1
+        url: https://huggingface.co/learn/llm-course/chapter6/4#pre-tokenization
+        locator: Chapter 6.4 Normalization and pre-tokenization, sec. Pre-tokenization
     source:
       id: hf-llm-course
       ref: chapter6/10#q7
@@ -98,6 +134,7 @@ questions:
     status: draft
   - id: tokenization-005
     type: multiple
+    difficulty: medium
     question: Select the sentences that apply to the BPE model of tokenization.
     options:
       - text: BPE is a subword tokenization algorithm that starts with a small vocabulary and learns merge rules.
@@ -112,11 +149,20 @@ questions:
         correct: true
       - text: BPE tokenizes words into subwords by finding the longest subword starting from the beginning that is in the vocabulary, then repeating the process for the rest of the text.
         why: No, that's another tokenization algorithm's way of doing things.
-    explanation: That's the case indeed! That's correct! That's correct! [^1]
+    explanation: |
+      BPE starts from a small vocabulary, the symbols used to write the words of the corpus, and learns
+      merge rules: at each step it merges the most frequent pair of tokens, until the vocabulary reaches
+      the desired size [^1][^2]. To tokenize a new word, it splits the word into characters and applies
+      the learned merges in order [^1][^2]. Starting from a big vocabulary and removing tokens is what
+      Unigram does; scoring pairs so that pairs of rarer parts win, and encoding by the longest match
+      from the start of the word, is WordPiece [^1].
     references:
       - source: hf-llm-course
-        locator: 'Chapter 6: The 🤗 Tokenizers library'
-        url: https://huggingface.co/learn/llm-course/chapter6/1
+        url: https://huggingface.co/learn/llm-course/chapter6/4#algorithm-overview
+        locator: Chapter 6.4 Normalization and pre-tokenization, sec. Algorithm overview (table)
+      - source: hf-llm-course
+        url: https://huggingface.co/learn/llm-course/chapter6/5#training-algorithm
+        locator: Chapter 6.5 Byte-Pair Encoding tokenization, secs. Training algorithm and Tokenization algorithm
     source:
       id: hf-llm-course
       ref: chapter6/10#q8
@@ -124,6 +170,7 @@ questions:
     status: draft
   - id: tokenization-006
     type: multiple
+    difficulty: hard
     question: Select the sentences that apply to the WordPiece model of tokenization.
     options:
       - text: WordPiece is a subword tokenization algorithm that starts with a small vocabulary and learns merge rules.
@@ -138,11 +185,21 @@ questions:
         why: No, that's how another tokenization algorithm works.
       - text: WordPiece tokenizes words into subwords by finding the longest subword starting from the beginning that is in the vocabulary, then repeating the process for the rest of the text.
         correct: true
-    explanation: That's the case indeed! That's correct! Yes, this is how WordPiece proceeds for the encoding. [^1]
+    explanation: |
+      Like BPE, WordPiece starts from a small vocabulary (the special tokens and the initial alphabet)
+      and learns merge rules [^2]. Instead of merging the most frequent pair, it merges the pair with
+      the best score, $\text{score}(a, b) = \dfrac{\text{freq}(a, b)}{\text{freq}(a) \times \text{freq}(b)}$,
+      which favours pairs whose individual parts are less frequent [^1][^2]. It keeps only the final
+      vocabulary, and it encodes a word by repeatedly taking the longest subword from the start that is
+      in the vocabulary [^1][^2]. Merging the most frequent pair is BPE; starting from a big vocabulary
+      and choosing the most likely segmentation is Unigram [^1].
     references:
       - source: hf-llm-course
-        locator: 'Chapter 6: The 🤗 Tokenizers library'
-        url: https://huggingface.co/learn/llm-course/chapter6/1
+        url: https://huggingface.co/learn/llm-course/chapter6/4#algorithm-overview
+        locator: Chapter 6.4 Normalization and pre-tokenization, sec. Algorithm overview (table)
+      - source: hf-llm-course
+        url: https://huggingface.co/learn/llm-course/chapter6/6#training-algorithm
+        locator: Chapter 6.6 WordPiece tokenization, secs. Training algorithm and Tokenization algorithm
     source:
       id: hf-llm-course
       ref: chapter6/10#q9
@@ -150,6 +207,7 @@ questions:
     status: draft
   - id: tokenization-007
     type: multiple
+    difficulty: hard
     question: Select the sentences that apply to the Unigram model of tokenization.
     options:
       - text: Unigram is a subword tokenization algorithm that starts with a small vocabulary and learns merge rules.
@@ -159,16 +217,25 @@ questions:
       - text: Unigram adapts its vocabulary by minimizing a loss computed over the whole corpus.
         correct: true
       - text: Unigram adapts its vocabulary by keeping the most frequent subwords.
-        why: No, this incorrect.
+        why: No, frequency alone does not decide which tokens stay; Unigram removes the tokens whose removal increases the corpus loss the least.
       - text: Unigram tokenizes words into subwords by finding the most likely segmentation into tokens, according to the model.
         correct: true
       - text: Unigram tokenizes words into subwords by splitting them into characters, then applying the merge rules.
         why: No, that's how another tokenization algorithm works.
-    explanation: That's correct! That's correct! That's correct! [^1]
+    explanation: |
+      Unigram works in the opposite direction to BPE and WordPiece: it starts from a big vocabulary and
+      removes tokens until it reaches the desired size [^1][^2]. At each step it computes a loss over the
+      whole corpus, the negative log-likelihood of the words under the unigram model, and removes the
+      tokens whose removal increases that loss the least [^2]. To tokenize a word, it picks the most
+      likely segmentation according to the token probabilities learned in training [^1][^2]. Learning
+      merge rules, and splitting words into characters before applying merges, is what BPE does [^1].
     references:
       - source: hf-llm-course
-        locator: 'Chapter 6: The 🤗 Tokenizers library'
-        url: https://huggingface.co/learn/llm-course/chapter6/1
+        url: https://huggingface.co/learn/llm-course/chapter6/4#algorithm-overview
+        locator: Chapter 6.4 Normalization and pre-tokenization, sec. Algorithm overview (table)
+      - source: hf-llm-course
+        url: https://huggingface.co/learn/llm-course/chapter6/7#training-algorithm
+        locator: Chapter 6.7 Unigram tokenization, secs. Training algorithm, Tokenization algorithm and Back to training
     source:
       id: hf-llm-course
       ref: chapter6/10#q10

@@ -5,6 +5,7 @@ title: RAG & Agents
 questions:
   - id: rag-agents-001
     type: single
+    difficulty: easy
     question: |
       What does observability in AI agents primarily refer to?
 
@@ -14,15 +15,26 @@ questions:
         correct: true
       - text: It is solely focused on reducing the financial cost of running the agent.
         why: Observability covers cost but is not limited to it.
-      - text: It refers only to the external appearance and UI of the agent.
-        why: Observability is about the internal processes, not the UI.
-      - text: It is concerned with coding style and code aesthetics only.
-        why: Code style is unrelated to observability in this context.
-    explanation: Correct! Observability means using logs, metrics, and spans to shed light on the inner workings of the agent. [^1]
+      - text: It means scoring the agent's answers on a test set whose correct outputs are known.
+        why: That is offline evaluation. Observability collects the signals (logs, metrics, traces); evaluation analyzes them and runs tests.
+      - text: It means recording only the final answer the agent returns to the user.
+        why: Observability looks inside the run, at the actions, tool calls and model calls, not just at the final answer.
+    explanation: |
+      Observability means understanding what happens inside an agent from the signals it emits:
+      logs, metrics and traces [^1]. A trace covers one whole task, and its spans are the individual
+      steps, such as an LLM call or a tool call [^2]. Tracking actions, tool use, model calls and
+      responses this way is what lets you debug the agent and improve it [^1]. Cost is one of the
+      metrics it watches, alongside latency, request errors, user feedback and accuracy [^3].
     references:
       - source: hf-agents-course
-        locator: Bonus Unit 2. Agent Observability and Evaluation
-        url: https://huggingface.co/learn/agents-course/bonus-unit2/introduction
+        url: https://huggingface.co/learn/agents-course/bonus-unit2/what-is-agent-observability-and-evaluation#-what-is-observability
+        locator: Bonus Unit 2. AI Agent Observability and Evaluation, sec. What is Observability?
+      - source: hf-agents-course
+        url: https://huggingface.co/learn/agents-course/bonus-unit2/what-is-agent-observability-and-evaluation#traces-and-spans
+        locator: Bonus Unit 2. AI Agent Observability and Evaluation, sec. Traces and Spans
+      - source: hf-agents-course
+        url: https://huggingface.co/learn/agents-course/bonus-unit2/what-is-agent-observability-and-evaluation#-key-metrics-to-monitor
+        locator: Bonus Unit 2. AI Agent Observability and Evaluation, sec. Key Metrics to Monitor
     source:
       id: hf-agents-course
       ref: bonus-unit2/quiz#q1
@@ -55,6 +67,7 @@ questions:
     status: draft
   - id: rag-agents-003
     type: single
+    difficulty: easy
     question: |
       What best describes offline evaluation of an AI agent?
 
@@ -66,13 +79,22 @@ questions:
         correct: true
       - text: Monitoring the agent's internal logs in real-time.
         why: This is more related to observability rather than evaluation.
-      - text: Running the agent without any evaluation metrics.
-        why: This approach does not provide meaningful insights.
-    explanation: Correct! Offline evaluation uses test datasets to gauge performance against known answers. [^1]
+      - text: Comparing two versions of the agent with an A/B test on live traffic.
+        why: A/B tests run on live traffic, so they are a form of online evaluation.
+    explanation: |
+      Offline evaluation tests the agent in a controlled setting on curated datasets whose expected
+      outputs are known, for example a set of math word problems with their answers, typically
+      during development or in a CI pipeline [^1]. Because there is ground truth, it is repeatable
+      and gives clear accuracy metrics [^1]. Anything run on real user traffic in production,
+      including A/B tests, is online evaluation [^2], and watching logs as they arrive is
+      observability rather than a test against known answers.
     references:
       - source: hf-agents-course
-        locator: Bonus Unit 2. Agent Observability and Evaluation
-        url: https://huggingface.co/learn/agents-course/bonus-unit2/introduction
+        url: https://huggingface.co/learn/agents-course/bonus-unit2/what-is-agent-observability-and-evaluation#-offline-evaluation
+        locator: Bonus Unit 2. AI Agent Observability and Evaluation, sec. Offline Evaluation
+      - source: hf-agents-course
+        url: https://huggingface.co/learn/agents-course/bonus-unit2/what-is-agent-observability-and-evaluation#-online-evaluation
+        locator: Bonus Unit 2. AI Agent Observability and Evaluation, sec. Online Evaluation
     source:
       id: hf-agents-course
       ref: bonus-unit2/quiz#q3
@@ -80,6 +102,7 @@ questions:
     status: draft
   - id: rag-agents-004
     type: single
+    difficulty: easy
     question: |
       Which advantage does online evaluation of agents offer?
 
@@ -93,11 +116,20 @@ questions:
         why: Both offline and online evaluations are important and complementary.
       - text: It solely focuses on reducing the computational cost of the agent.
         why: Cost monitoring is part of observability, not the primary advantage of online evaluation.
-    explanation: Correct! Online evaluation offers insights by monitoring the agent in a live setting. [^1]
+    explanation: |
+      Online evaluation monitors the agent on real user interactions in production, so it captures
+      what a lab test set can't anticipate, such as model drift over time and unexpected kinds of
+      queries [^1]. Controlled tests on predefined datasets are offline evaluation. The two are
+      complementary, not substitutes: teams usually loop between them, adding the failures seen
+      online to the offline test set [^2]. Cost is one of many observability metrics, not the point
+      of online evaluation.
     references:
       - source: hf-agents-course
-        locator: Bonus Unit 2. Agent Observability and Evaluation
-        url: https://huggingface.co/learn/agents-course/bonus-unit2/introduction
+        url: https://huggingface.co/learn/agents-course/bonus-unit2/what-is-agent-observability-and-evaluation#-online-evaluation
+        locator: Bonus Unit 2. AI Agent Observability and Evaluation, sec. Online Evaluation
+      - source: hf-agents-course
+        url: https://huggingface.co/learn/agents-course/bonus-unit2/what-is-agent-observability-and-evaluation#-combining-the-two
+        locator: Bonus Unit 2. AI Agent Observability and Evaluation, sec. Combining the two
     source:
       id: hf-agents-course
       ref: bonus-unit2/quiz#q4
@@ -105,6 +137,7 @@ questions:
     status: draft
   - id: rag-agents-005
     type: single
+    difficulty: medium
     question: |
       What role does OpenTelemetry play in AI agent observability and evaluation?
 
@@ -113,16 +146,26 @@ questions:
       - text: It provides a standardized framework to instrument code, enabling the collection of traces, metrics, and logs for observability.
         correct: true
       - text: It acts as a replacement for manual debugging by automatically fixing code issues.
-        why: Incorrect. OpenTelemetry is used for gathering telemetry data, not for debugging code issues.
+        why: Incorrect. The telemetry it collects helps you debug, but OpenTelemetry itself never changes or fixes code.
       - text: It primarily serves as a database for storing historical logs without real-time capabilities.
-        why: Incorrect. OpenTelemetry focuses on real-time telemetry data collection and exporting data to analysis tools.
+        why: Incorrect. OpenTelemetry is not a storage backend. It generates, collects and exports telemetry, and leaves storing and visualizing it to other tools.
       - text: It is used to optimize the computational performance of the AI agent by automatically tuning model parameters.
         why: Incorrect. OpenTelemetry is centered on observability rather than performance tuning.
-    explanation: Correct! OpenTelemetry standardizes instrumentation for telemetry data, which is crucial for monitoring and diagnosing agent behavior. [^1]
+    explanation: |
+      OpenTelemetry is an open-source, vendor-neutral observability framework and toolkit. You
+      instrument your code with it to generate, collect and export telemetry such as traces, metrics
+      and logs, and any compatible backend can then store and analyze that data [^1]. Agent
+      frameworks such as smolagents use the OpenTelemetry standard to expose their runs to
+      observability tools like Langfuse [^2]. It is not a storage backend itself, and it neither
+      fixes code nor tunes the model [^1].
     references:
+      - title: What is OpenTelemetry? (OpenTelemetry documentation)
+        url: https://opentelemetry.io/docs/what-is-opentelemetry/
+        locator: What is OpenTelemetry? (definition, "OpenTelemetry is not an observability backend itself")
+        quote: OpenTelemetry is not an observability backend itself.
       - source: hf-agents-course
-        locator: Bonus Unit 2. Agent Observability and Evaluation
-        url: https://huggingface.co/learn/agents-course/bonus-unit2/introduction
+        url: https://huggingface.co/learn/agents-course/bonus-unit2/what-is-agent-observability-and-evaluation#-observability-tools
+        locator: Bonus Unit 2. AI Agent Observability and Evaluation, sec. Observability Tools
     source:
       id: hf-agents-course
       ref: bonus-unit2/quiz#q5
@@ -130,6 +173,7 @@ questions:
     status: draft
   - id: rag-agents-006
     type: single
+    difficulty: easy
     question: |
       What is an Agent?
 
@@ -143,11 +187,19 @@ questions:
         why: A chatbot like this lacks the ability to take actions, making it different from an Agent.
       - text: An online repository of information that offers static content without the capability to execute tasks or interact actively with users.
         why: An Agent actively interacts with its environment rather than just providing static information.
-    explanation: This definition captures the essential characteristics of an Agent. [^1]
+    explanation: |
+      The course defines an Agent as a system that uses an AI model to interact with its environment
+      in order to achieve a user-defined objective, combining reasoning, planning and the execution
+      of actions, often through external tools [^1]. What makes it an agent is this agency, the
+      ability to act on its environment [^2]. A system that only processes text, a chatbot that can
+      only answer questions and a static repository of information all lack it.
     references:
       - source: hf-agents-course
-        locator: Unit 1. Introduction to Agents
-        url: https://huggingface.co/learn/agents-course/unit1/introduction
+        url: https://huggingface.co/learn/agents-course/unit1/what-are-agents#lets-go-more-formal
+        locator: Unit 1. What is an Agent?, sec. Let's go more formal
+      - source: hf-agents-course
+        url: https://huggingface.co/learn/agents-course/unit1/what-are-agents#the-big-picture-alfred-the-agent
+        locator: 'Unit 1. What is an Agent?, sec. The Big Picture: Alfred The Agent'
     source:
       id: hf-agents-course
       ref: unit1/quiz1#q1
@@ -155,6 +207,7 @@ questions:
     status: draft
   - id: rag-agents-007
     type: single
+    difficulty: easy
     question: |
       What is the Role of Planning in an Agent?
 
@@ -168,11 +221,23 @@ questions:
         why: Planning ensures the Agent's actions are intentional and not random.
       - text: To merely convert or translate text, bypassing any process of formulating a deliberate sequence of actions or employing strategic reasoning.
         why: Planning is about structuring actions, not just converting text.
-    explanation: Planning helps the Agent determine the best steps and tools to complete a task. [^1]
+    explanation: |
+      In the course's example, before fulfilling a request the agent reasons and plans: it works out
+      the sequence of steps and the tools it needs, and only then acts [^1]. Planning is done by the
+      agent's AI model, its "brain", which decides which actions to take in the situation [^2].
+      Planning thoughts break a complex task into smaller steps and are revised as new observations
+      arrive [^3]. Storing past interactions is memory, not planning, and planning is exactly what
+      keeps the actions from being arbitrary.
     references:
       - source: hf-agents-course
-        locator: Unit 1. Introduction to Agents
-        url: https://huggingface.co/learn/agents-course/unit1/introduction
+        url: https://huggingface.co/learn/agents-course/unit1/what-are-agents#the-big-picture-alfred-the-agent
+        locator: 'Unit 1. What is an Agent?, sec. The Big Picture: Alfred The Agent'
+      - source: hf-agents-course
+        url: https://huggingface.co/learn/agents-course/unit1/what-are-agents#lets-go-more-formal
+        locator: Unit 1. What is an Agent?, sec. Let's go more formal (The Brain)
+      - source: hf-agents-course
+        url: https://huggingface.co/learn/agents-course/unit1/thoughts
+        locator: 'Unit 1. Thought: Internal Reasoning and the ReAct Approach, introduction'
     source:
       id: hf-agents-course
       ref: unit1/quiz1#q2
@@ -185,19 +250,19 @@ questions:
 
       Why are tools essential for an Agent?
     options:
-      - text: Tools serve no real purpose and do not contribute to the Agent’s ability to perform actions beyond basic text generation.
-        why: Tools expand an Agent's capabilities by allowing it to perform actions beyond text generation.
+      - text: Tools let the LLM call external APIs by itself, so no agent code is needed to run them.
+        why: An LLM can only output text. It writes a tool call, and the agent parses it and runs the tool on the LLM's behalf.
       - text: Tools are solely designed for memory storage, lacking any capacity to facilitate the execution of tasks or enhance interactive performance.
         why: Tools are primarily for performing actions, not just for storing data.
-      - text: Tools severely restrict the Agent exclusively to generating text, thereby preventing it from engaging in a broader range of interactive actions.
-        why: On the contrary, tools allow Agents to go beyond text-based responses.
+      - text: Tools retrain the LLM's weights on new data, so the Agent permanently learns new skills.
+        why: Calling a tool doesn't change the model's weights; the tool's result is simply added to the conversation as an observation.
       - text: Tools provide the Agent with the ability to execute actions a text-generation model cannot perform natively, such as making coffee or generating images.
         correct: true
     explanation: Tools enable Agents to interact with the real world and complete tasks. [^1]
     references:
       - source: hf-agents-course
-        locator: Unit 1. Introduction to Agents
-        url: https://huggingface.co/learn/agents-course/unit1/introduction
+        url: https://huggingface.co/learn/agents-course/unit1/tools
+        locator: Unit 1. What are Tools?, "How do tools work?"
     source:
       id: hf-agents-course
       ref: unit1/quiz1#q3
@@ -213,16 +278,22 @@ questions:
       - text: Actions are the steps the Agent takes, while Tools are external resources the Agent can use to perform those actions.
         correct: true
       - text: Actions and Tools are entirely identical components that can be used interchangeably, with no clear differences between them.
-        why: No, Actions are goals or tasks, while Tools are specific utilities the Agent uses to achieve them.
-      - text: Tools are considered broad utilities available for various functions, whereas Actions are mistakenly thought to be restricted only to physical interactions.
+        why: No. Actions are the steps the Agent takes, while Tools are specific functions the Agent calls to carry some of them out.
+      - text: Tools are broad utilities available for many different functions, whereas Actions are restricted to physical interactions with the real world.
         why: Not necessarily. Actions can involve both digital and physical tasks.
       - text: Actions inherently require the use of LLMs to be determined and executed, whereas Tools are designed to function autonomously without such dependencies.
         why: While LLMs help decide Actions, Actions themselves are not dependent on LLMs.
-    explanation: Actions are higher-level objectives, while Tools are specific functions the Agent can call upon. [^1]
+    explanation: |
+      Actions are the concrete steps an Agent takes to interact with its environment, such as searching
+      the web, querying a database or replying to the user [^1]. Tools are the functions the Agent can
+      call to carry out some of those steps, for example a web-search or calculator function [^2].
     references:
       - source: hf-agents-course
-        locator: Unit 1. Introduction to Agents
-        url: https://huggingface.co/learn/agents-course/unit1/introduction
+        url: https://huggingface.co/learn/agents-course/unit1/actions
+        locator: 'Unit 1. Actions: Enabling the Agent to Engage with Its Environment'
+      - source: hf-agents-course
+        url: https://huggingface.co/learn/agents-course/unit1/tools
+        locator: Unit 1. What are Tools?
     source:
       id: hf-agents-course
       ref: unit1/quiz1#q4
@@ -239,15 +310,15 @@ questions:
         why: LLMs actively process text input and generate responses, rather than just storing information.
       - text: LLMs serve as the reasoning 'brain' of the Agent, processing text inputs to understand instructions and plan actions.
         correct: true
-      - text: LLMs are erroneously believed to be used solely for image processing, when in fact their primary function is to process and generate text.
-        why: LLMs primarily work with text, although they can sometimes interact with multimodal inputs.
-      - text: LLMs are considered completely irrelevant to the operation of AI Agents, implying that they are entirely superfluous in any practical application.
-        why: LLMs are a core component of modern AI Agents.
+      - text: LLMs execute the Agent's tools themselves, sending requests to external APIs directly without any agent code.
+        why: An LLM can only output text. It writes the tool call, and the agent runs the tool on its behalf.
+      - text: LLMs only turn the final result into polished text, while hand-written rules decide which actions to take.
+        why: In an Agent, the LLM is the reasoning engine that decides the next action, not just a text formatter.
     explanation: LLMs enable the Agent to interpret, plan, and decide on the next steps. [^1]
     references:
       - source: hf-agents-course
-        locator: Unit 1. Introduction to Agents
-        url: https://huggingface.co/learn/agents-course/unit1/introduction
+        url: https://huggingface.co/learn/agents-course/unit1/what-are-agents
+        locator: Unit 1. What is an Agent?
     source:
       id: hf-agents-course
       ref: unit1/quiz1#q5
@@ -255,6 +326,7 @@ questions:
     status: draft
   - id: rag-agents-011
     type: single
+    difficulty: easy
     question: |
       Which of the Following Best Demonstrates an AI Agent?
 
@@ -268,11 +340,23 @@ questions:
         correct: true
       - text: A video game NPC that operates on a fixed script of responses, without the ability to reason, plan, or use external tools.
         why: Unless the NPC can reason, plan, and use tools, it does not function as an AI Agent.
-    explanation: This example includes reasoning, planning, and interaction with the environment. [^1]
+    explanation: |
+      An agent understands natural language, reasons and plans, and acts on its environment [^1].
+      Virtual assistants such as Siri or Alexa do all three: they interpret a spoken request, work
+      out what it needs, and carry out actions such as setting reminders or sending messages [^2]. A
+      static FAQ page and a calculator only return fixed content or apply fixed rules, and an NPC on
+      a fixed script can't reason or use tools; the course counts an NPC as an agent only when an LLM
+      lets it respond to and adapt to the player [^3].
     references:
       - source: hf-agents-course
-        locator: Unit 1. Introduction to Agents
-        url: https://huggingface.co/learn/agents-course/unit1/introduction
+        url: https://huggingface.co/learn/agents-course/unit1/what-are-agents#lets-go-more-formal
+        locator: Unit 1. What is an Agent?, sec. Let's go more formal and closing summary
+      - source: hf-agents-course
+        url: https://huggingface.co/learn/agents-course/unit1/what-are-agents#example-1-personal-virtual-assistants
+        locator: 'Unit 1. What is an Agent?, sec. Example 1: Personal Virtual Assistants'
+      - source: hf-agents-course
+        url: https://huggingface.co/learn/agents-course/unit1/what-are-agents#example-3-ai-non-playable-character-in-a-video-game
+        locator: 'Unit 1. What is an Agent?, sec. Example 3: AI Non-Playable Character in a video game'
     source:
       id: hf-agents-course
       ref: unit1/quiz1#q6
@@ -282,15 +366,17 @@ questions:
     type: single
     question: Which of the following best describes an AI tool?
     options:
-      - text: A process that only generates text responses
-      - text: An executable process or external API that allows agents to perform specific tasks and interact with external environments
+      - text: A model component that only generates text responses
+        why: Generating text is what the LLM itself does; a tool is something the agent calls to act beyond text.
+      - text: A function or external API the agent can call to perform a specific task
         correct: true
-      - text: A feature that stores agent conversations
+      - text: A memory feature that stores the agent's past conversations
+        why: Storing conversations is the agent's memory, not a tool; a tool is a callable function with a clear objective.
     explanation: Tools are executable functions that agents can use to perform specific tasks and interact with external environments. [^1]
     references:
       - source: hf-agents-course
-        locator: Unit 1. Introduction to Agents
-        url: https://huggingface.co/learn/agents-course/unit1/introduction
+        url: https://huggingface.co/learn/agents-course/unit1/tools
+        locator: Unit 1. What are Tools?, "What are AI Tools?"
     source:
       id: hf-agents-course
       ref: unit1/quiz2#q1
@@ -300,15 +386,20 @@ questions:
     type: single
     question: How do AI agents use tools as a form of "acting" in an environment?
     options:
-      - text: By passively waiting for user instructions
-      - text: By only using pre-programmed responses
-      - text: By asking the LLM to generate tool invocation code when appropriate and running tools on behalf of the model
+      - text: By passively waiting for the user to give step-by-step instructions
+        why: An agent acts on its own initiative; its LLM decides when a tool is needed.
+      - text: By only returning pre-programmed responses to each request
+        why: That describes a rule-based bot; an agent's LLM decides which tool to call and with which arguments.
+      - text: By having the LLM write tool calls, which the agent then runs on its behalf
         correct: true
-    explanation: Agents can invoke tools and use reasoning to plan and re-plan based on the information gained. [^1]
+    explanation: |
+      An LLM can only output text, so it cannot call a tool by itself. It writes a tool call (as text or
+      code); the agent parses it, runs the tool on the LLM's behalf and adds the result to the
+      conversation, so the LLM can plan its next step [^1].
     references:
       - source: hf-agents-course
-        locator: Unit 1. Introduction to Agents
-        url: https://huggingface.co/learn/agents-course/unit1/introduction
+        url: https://huggingface.co/learn/agents-course/unit1/tools
+        locator: Unit 1. What are Tools?, "How do tools work?"
     source:
       id: hf-agents-course
       ref: unit1/quiz2#q2
@@ -338,6 +429,7 @@ questions:
     status: draft
   - id: rag-agents-015
     type: single
+    difficulty: easy
     question: |
       How does smolagents handle the debate between code-based actions and JSON-based actions?
 
@@ -351,11 +443,23 @@ questions:
         why: smolagents is specifically designed to grant LLMs the ability to call tools or code externally.
       - text: It requires users to manually convert every code snippet into a JSON object before running the agent
         why: smolagents can automatically manage code snippet creation within the CodeAgent path, no manual JSON conversion necessary.
-    explanation: Yes, smolagents primarily recommends code-based actions but includes a JSON-based alternative for users who prefer it or need it. [^1]
+    explanation: |
+      Unlike frameworks whose agents write actions as JSON, smolagents focuses on tool calls written as
+      code: the output can be executed directly, with no JSON to parse first [^1]. `CodeAgent` is its
+      primary agent type, but it also supports `ToolCallingAgent`, which writes tool calls as JSON [^2];
+      that option suits simple systems that don't need variable handling or complex tool calls [^3]. So
+      the library is code-first rather than JSON-only, nobody converts code into JSON by hand, and
+      calling external tools is exactly what both agent types are for.
     references:
       - source: hf-agents-course
-        locator: Unit 2.1 The smolagents framework
-        url: https://huggingface.co/learn/agents-course/unit2/smolagents/introduction
+        url: https://huggingface.co/learn/agents-course/unit2/smolagents/why_use_smolagents#code-vs-json-actions
+        locator: Unit 2.1 Why use smolagents, sec. Code vs. JSON Actions
+      - source: hf-agents-course
+        url: https://huggingface.co/learn/agents-course/unit2/smolagents/why_use_smolagents#agent-types-in-smolagents
+        locator: Unit 2.1 Why use smolagents, sec. Agent Types in smolagents
+      - source: hf-agents-course
+        url: https://huggingface.co/learn/agents-course/unit2/smolagents/tool_calling_agents
+        locator: Unit 2.1 Writing actions as code snippets or JSON blobs (Tool Calling Agents)
     source:
       id: hf-agents-course
       ref: unit2/smolagents/quiz1#q4
@@ -363,6 +467,7 @@ questions:
     status: draft
   - id: rag-agents-016
     type: single
+    difficulty: easy
     question: |
       How does a CodeAgent handle multi-step tasks using the ReAct (Reason + Act) approach?
 
@@ -371,18 +476,270 @@ questions:
       - text: It passes each step to a different agent in a multi-agent system, then combines results
         why: Although multi-agent systems can distribute tasks, CodeAgent itself can handle multiple steps on its own using ReAct.
       - text: It stores every action in JSON for easy parsing before executing them all at once
-        why: This behavior matches ToolCallingAgent's JSON-based approach, not CodeAgent.
-      - text: It cycles through writing internal thoughts, generating Python code, executing the code, and logging the results until it arrives at a final answer
+        why: JSON tool calls are what a ToolCallingAgent writes, and even it executes them step by step. A CodeAgent writes Python code and runs each snippet before deciding on the next step.
+      - text: It repeats a cycle of thinking, writing Python code, running it and logging the result until it reaches a final answer
         correct: true
       - text: It relies on a vision module to validate code output before continuing to the next step
         why: Vision capabilities are supported in smolagents, but they're not a default requirement for CodeAgent or the ReAct approach.
-    explanation: Correct. This describes the ReAct pattern that CodeAgent uses, including iterative reasoning and code execution. [^1]
+    explanation: |
+      `CodeAgent.run()` follows the ReAct framework: after the system prompt and the task are logged, a
+      loop sends the agent's memory to the model as chat messages, parses the completion to extract a
+      Python code snippet, executes it, and logs the result in an `ActionStep` [^1]. Each step is one
+      thought plus one tool call and its execution [^2], and the loop continues until the agent's
+      objective is fulfilled [^3], so a single CodeAgent carries out a multi-step task by itself.
+      Writing actions as JSON for the system to parse is what a `ToolCallingAgent` does [^4], and vision
+      is an optional capability, not a step of the loop.
     references:
       - source: hf-agents-course
-        locator: Unit 2.1 The smolagents framework
-        url: https://huggingface.co/learn/agents-course/unit2/smolagents/introduction
+        url: https://huggingface.co/learn/agents-course/unit2/smolagents/code_agents#how-does-a-code-agent-work
+        locator: Unit 2.1 Building Agents That Use Code, sec. How Does a Code Agent Work?
+      - source: hf-agents-course
+        url: https://huggingface.co/learn/agents-course/unit2/smolagents/why_use_smolagents#agent-types-in-smolagents
+        locator: Unit 2.1 Why use smolagents, sec. Agent Types in smolagents
+      - source: hf-agents-course
+        url: https://huggingface.co/learn/agents-course/unit1/agent-steps-and-structure#the-thought-action-observation-cycle
+        locator: Unit 1 Understanding AI Agents through the Thought-Action-Observation Cycle, sec. The Thought-Action-Observation Cycle
+      - source: hf-agents-course
+        url: https://huggingface.co/learn/agents-course/unit2/smolagents/tool_calling_agents#how-do-tool-calling-agents-work
+        locator: Unit 2.1 Writing actions as code snippets or JSON blobs, sec. How Do Tool Calling Agents Work?
     source:
       id: hf-agents-course
       ref: unit2/smolagents/quiz2#q2
       url: https://huggingface.co/learn/agents-course/unit2/smolagents/quiz2
+    status: draft
+  - id: rag-agents-017
+    type: single
+    difficulty: medium
+    question: |
+      When designing an LLM application you trade **control** (predictable behaviour, guardrails)
+      against **freedom** (letting the LLM decide what to do next). Where do graph-based workflow
+      frameworks such as LangGraph sit on this spectrum?
+    options:
+      - text: Toward control. The developer fixes the steps and allowed transitions, and the LLM decides only at the branch points
+        correct: true
+      - text: Toward freedom. The LLM plans every step itself and may even write new tools at run time, so behaviour is hard to predict
+        why: That describes code agents (for example in smolagents), which sit at the free end of the spectrum.
+      - text: Outside the trade-off. A graph gives the LLM complete freedom and still makes its behaviour fully predictable
+        why: The trade-off cannot be escaped. A graph buys predictability by restricting what the LLM may decide.
+      - text: Outside the trade-off. A graph workflow contains no LLM calls at all, only deterministic Python functions
+        why: Nodes can call an LLM, call tools or ask a human; a graph combines deterministic logic with LLM decisions.
+    explanation: |
+      Freedom gives the LLM room to be creative and handle unexpected problems, while control ensures
+      predictable behaviour and maintains guardrails [^1]. Code agents sit at the free end: they can
+      call several tools in one step or create their own tools, which makes them less predictable
+      [^1]. LangGraph sits at the control end: the developer designs the flow of steps and the
+      decision made at each junction, and the LLM works inside that structure [^1]. Its nodes can
+      still contain LLM calls, tool calls, conditional logic or human input [^2].
+    references:
+      - source: hf-agents-course
+        url: https://huggingface.co/learn/agents-course/unit2/langgraph/when_to_use_langgraph#control-vs-freedom
+        locator: Unit 2.3, What is LangGraph?, sec. Control vs freedom
+      - source: hf-agents-course
+        url: https://huggingface.co/learn/agents-course/unit2/langgraph/building_blocks
+        locator: Unit 2.3, Building Blocks of LangGraph, sec. 2. Nodes
+    source:
+      id: hf-agents-course
+      ref: unit2/langgraph/quiz1#q2
+      url: https://huggingface.co/learn/agents-course/unit2/langgraph/quiz1
+    status: draft
+  - id: rag-agents-018
+    type: single
+    difficulty: easy
+    question: |
+      In a graph-based agent workflow, such as one built with LangGraph, the application is a set of
+      **nodes** (steps) connected by **edges**. What is the **state** of such a graph?
+    options:
+      - text: Data you define yourself that flows through the application; nodes read it and return updates to it
+        correct: true
+      - text: The hidden activations of the LLM's transformer layers, carried over from one call to the next
+        why: The state is ordinary application data that you define (for example a TypedDict); the LLM's internal activations are not kept between calls.
+      - text: The latest text the LLM generated, which replaces the previous output each time a node runs
+        why: The developer defines the state's fields. An LLM output may be stored in one of them, but the state is not just the last generation.
+      - text: A log of past runs that is only read after execution, for debugging and tracing
+        why: That describes traces or logs. The state is used during execution, passed between nodes and consulted to choose the next node.
+    explanation: |
+      State is the central concept of LangGraph: it represents all the information that flows through
+      the application, and it is user-defined, so its fields must hold everything needed for the
+      decisions [^1]. Each node takes the state as input, performs an operation and returns updates
+      to the state [^1], and when the graph decides which node runs next, it looks at the current
+      state [^2]. It is application data, not the LLM's internal activations, the last LLM output or
+      an after-the-fact log.
+    references:
+      - source: hf-agents-course
+        url: https://huggingface.co/learn/agents-course/unit2/langgraph/building_blocks
+        locator: Unit 2.3, Building Blocks of LangGraph, secs. 1. State and 2. Nodes
+      - source: hf-agents-course
+        url: https://huggingface.co/learn/agents-course/unit2/langgraph/when_to_use_langgraph#how-does-langgraph-work
+        locator: Unit 2.3, What is LangGraph?, sec. How does LangGraph work?
+    source:
+      id: hf-agents-course
+      ref: unit2/langgraph/quiz1#q3
+      url: https://huggingface.co/learn/agents-course/unit2/langgraph/quiz1
+    status: draft
+  - id: rag-agents-019
+    type: single
+    difficulty: easy
+    question: |
+      In a graph-based agent workflow (for example in LangGraph), the steps are **nodes** and the
+      possible transitions between them are **edges**. What is a **conditional edge**?
+    options:
+      - text: An edge that picks which node runs next by evaluating a function of the current state
+        correct: true
+      - text: An edge that always leads from one node to the same next node, whatever the state
+        why: That is a direct (normal) edge. A conditional edge chooses among several possible next nodes.
+      - text: An edge that pauses the whole graph until a human approves the next step
+        why: Human input is a kind of node (a step). What makes an edge conditional is that it routes programmatically on the state.
+      - text: An edge that the LLM adds to the graph at run time when it needs an extra step
+        why: The possible edges are declared when the graph is built; only the choice among them is made at run time.
+    explanation: |
+      Edges connect nodes and define the possible paths through the graph [^1]. A direct edge always
+      goes from node A to node B, while a conditional edge chooses the next node based on the current
+      state: in code, a routing function reads the state and returns the name of the node to visit
+      next [^1]. The routing can be deterministic or depend on an LLM's output [^2]. Human input is
+      modelled as a node, and the possible edges are declared when the graph is built [^1].
+    references:
+      - source: hf-agents-course
+        url: https://huggingface.co/learn/agents-course/unit2/langgraph/building_blocks
+        locator: Unit 2.3, Building Blocks of LangGraph, secs. 2. Nodes, 3. Edges and 4. StateGraph
+      - source: hf-agents-course
+        url: https://huggingface.co/learn/agents-course/unit2/langgraph/when_to_use_langgraph#control-vs-freedom
+        locator: Unit 2.3, What is LangGraph?, sec. When should I use LangGraph? (Control vs freedom)
+    source:
+      id: hf-agents-course
+      ref: unit2/langgraph/quiz1#q4
+      url: https://huggingface.co/learn/agents-course/unit2/langgraph/quiz1
+    status: draft
+  - id: rag-agents-020
+    type: single
+    difficulty: easy
+    question: |
+      Graph-based workflow frameworks such as LangGraph structure an LLM application as explicit
+      steps with branches between them. How can such a structure help with LLM hallucinations?
+    options:
+      - text: It can add steps that check the LLM's output and route failures to a retry or fallback path
+        correct: true
+      - text: It removes hallucinations entirely, because the LLM may only answer inside fixed nodes
+        why: No framework can eliminate hallucinations; the LLM inside a node can still produce wrong content.
+      - text: It has no effect, because hallucinations come from the model's weights, which a workflow cannot change
+        why: The weights are unchanged, but validation steps and guardrails in the workflow can catch many wrong outputs before they are used.
+      - text: It fine-tunes the LLM on the graph's past runs, so the model learns to stop hallucinating
+        why: A workflow framework orchestrates calls to the model; it does not train or update it.
+    explanation: |
+      Choosing structure over freedom lets you ensure predictable behaviour and maintain guardrails
+      [^1]. Because nodes can hold conditional logic and edges can route on the current state, a
+      workflow can include a step that checks the LLM's output and send failures down another path,
+      such as a retry or a human review [^2]. This reduces the impact of hallucinations but cannot
+      remove them: the model inside each node is unchanged and can still be wrong.
+    references:
+      - source: hf-agents-course
+        url: https://huggingface.co/learn/agents-course/unit2/langgraph/when_to_use_langgraph#control-vs-freedom
+        locator: Unit 2.3, What is LangGraph?, sec. Control vs freedom
+      - source: hf-agents-course
+        url: https://huggingface.co/learn/agents-course/unit2/langgraph/building_blocks
+        locator: Unit 2.3, Building Blocks of LangGraph, secs. 2. Nodes and 3. Edges
+    source:
+      id: hf-agents-course
+      ref: unit2/langgraph/quiz1#q5
+      url: https://huggingface.co/learn/agents-course/unit2/langgraph/quiz1
+    status: draft
+  - id: rag-agents-021
+    type: single
+    difficulty: easy
+    question: |
+      LlamaIndex packages retrieval-augmented generation (RAG) as a `QueryEngine` that an agent can
+      use as a tool. What does such a component do when a question comes in?
+    options:
+      - text: It retrieves the chunks of your own data most relevant to the question and gives them to an LLM to answer
+        correct: true
+      - text: It fine-tunes the LLM on your documents before each question, so the answer is in the weights
+        why: RAG does not change the model's weights; it supplies relevant data to the LLM at query time.
+      - text: It returns the best-matching chunks with their similarity scores, with no LLM involved
+        why: That is a plain retriever. A query engine also passes the retrieved chunks to an LLM, which writes the response.
+      - text: It only stores the embeddings of your documents, while the LLM answers from its training data
+        why: Storing embeddings is the indexing and storing stage. A query engine also searches the index and uses the results to answer.
+    explanation: |
+      LLMs learn general knowledge from their training data but may not have seen data that is
+      relevant or up to date; RAG solves this by retrieving relevant information from your data and
+      giving it to the LLM [^1]. Documents are split into chunks and embedded during indexing, and at
+      query time the question is embedded into the same vector space to find the closest chunks [^1].
+      A retriever stops there and returns the chunks with similarity scores, while a query engine
+      also passes them to an LLM that writes the answer [^1]. The model itself is not retrained.
+    references:
+      - source: hf-agents-course
+        url: https://huggingface.co/learn/agents-course/unit2/llama-index/components
+        locator: Unit 2.2, What are components in LlamaIndex?, introduction and secs. Storing and indexing documents, Querying a VectorStoreIndex with prompts and LLMs
+    source:
+      id: hf-agents-course
+      ref: unit2/llama-index/quiz1#q1
+      url: https://huggingface.co/learn/agents-course/unit2/llama-index/quiz1
+    status: draft
+  - id: rag-agents-022
+    type: single
+    difficulty: medium
+    question: |
+      Agent frameworks can turn a plain Python function into a tool, for example with a `@tool`
+      decorator or LlamaIndex's `FunctionTool.from_defaults(fn)`. If you give only the function,
+      where does the tool description that the LLM reads come from?
+    options:
+      - text: From the function itself, i.e. its name, its type-hinted arguments and return type, and its docstring
+        correct: true
+      - text: From the function's full source code, which the framework pastes into the system prompt
+        why: The implementation does not matter to the LLM, only the name, what the tool does, its inputs and its output; introspection extracts just those.
+      - text: Nowhere; the LLM gets no description and learns what each tool does by calling it at random
+        why: Tool descriptions are given to the LLM in the system prompt; without them it could not choose tools sensibly.
+      - text: From a JSON schema you must always write by hand, because the function alone is not enough
+        why: Frameworks build the description automatically by introspecting the function; a hand-written name and description are optional overrides.
+    explanation: |
+      The LLM only sees a textual description of each tool in its system prompt: a name, what the tool
+      does, the inputs it expects and the output it returns [^1]. Frameworks build this text
+      automatically with Python introspection, so the function name, type hints and docstring become
+      the tool's name, argument types and description [^1]. LlamaIndex's `FunctionTool` works the same
+      way: its `name` and `description` arguments are optional, though good ones help the agent decide
+      when and how to use the tool [^2].
+    references:
+      - source: hf-agents-course
+        url: https://huggingface.co/learn/agents-course/unit1/tools#auto-formatting-tool-sections
+        locator: Unit 1, What are Tools?, secs. How do we give tools to an LLM? and Auto-formatting Tool sections
+      - source: hf-agents-course
+        url: https://huggingface.co/learn/agents-course/unit2/llama-index/tools#creating-a-functiontool
+        locator: Unit 2.2, Using Tools in LlamaIndex, sec. Creating a FunctionTool
+    source:
+      id: hf-agents-course
+      ref: unit2/llama-index/quiz1#q4
+      url: https://huggingface.co/learn/agents-course/unit2/llama-index/quiz1
+    status: draft
+  - id: rag-agents-023
+    type: single
+    difficulty: medium
+    question: |
+      Some agents, such as smolagents' `CodeAgent`, write each action as a Python snippet that is
+      executed, instead of a JSON object naming one tool and its arguments. What is a main
+      advantage of code actions?
+    options:
+      - text: One action can combine several tool calls with variables, loops and conditionals, and pass objects between them
+        correct: true
+      - text: Generated code cannot have side effects, so code actions need no sandbox or other safeguards
+        why: Executing LLM-generated code carries security risks, from prompt injection to harmful code, so it needs safeguards such as a sandbox.
+      - text: The LLM no longer needs descriptions of the available tools in its prompt
+        why: The model still has to know which tools exist and how to call them; code only changes how the call is written.
+      - text: JSON cannot carry arguments, so code is the only way to call a tool with inputs
+        why: 'JSON actions do carry arguments, for example `{"action": "get_weather", "action_input": {"location": "New York"}}`.'
+    explanation: |
+      A JSON action names one tool and its arguments as text that the framework must parse before it
+      can run the tool [^1]. Code is more expressive: it naturally represents loops, conditionals and
+      nested functions, can reuse functions across actions, and works directly with complex objects
+      such as images [^1] [^2]. It is also natural for LLMs, because high-quality code is already in
+      their training data [^2]. The price is security: executing LLM-generated code is risky, so it
+      needs safeguards [^1].
+    references:
+      - source: hf-agents-course
+        url: https://huggingface.co/learn/agents-course/unit1/actions#code-agents
+        locator: Unit 1, Actions, secs. The Stop and Parse Approach and Code Agents
+      - source: hf-agents-course
+        url: https://huggingface.co/learn/agents-course/unit2/smolagents/code_agents#why-code-agents
+        locator: Unit 2.1, Building Agents That Use Code, sec. Why Code Agents?
+    source:
+      id: hf-agents-course
+      ref: unit2/smolagents/quiz1#q1
+      url: https://huggingface.co/learn/agents-course/unit2/smolagents/quiz1
     status: draft

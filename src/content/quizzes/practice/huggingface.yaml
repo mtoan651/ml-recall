@@ -5,19 +5,28 @@ title: Hugging Face Ecosystem
 questions:
   - id: huggingface-001
     type: single
+    difficulty: easy
     question: Explore the Hub and look for the `roberta-large-mnli` checkpoint. What task does it perform?
     options:
       - text: Summarization
-        why: Look again on the [roberta-large-mnli page](https://huggingface.co/roberta-large-mnli).
+        why: Summarization produces a shorter version of an input text. This checkpoint outputs one of three labels for a pair of sentences.
       - text: Text classification
         correct: true
       - text: Text generation
-        why: Look again on the [roberta-large-mnli page](https://huggingface.co/roberta-large-mnli).
-    explanation: More precisely, it classifies if two sentences are logically linked across three labels (contradiction, neutral, entailment) — a task also called *natural language inference*. [^1]
+        why: Text generation continues a prompt with new text. This checkpoint is a classifier that outputs one of three labels.
+    explanation: |
+      `roberta-large-mnli` is RoBERTa-large fine-tuned on the Multi-Genre Natural Language
+      Inference (MNLI) corpus, and the Hub lists it under Text Classification [^1]. Natural language
+      inference is a classification task: given a premise and a hypothesis, the model predicts one of
+      three labels, contradiction, neutral or entailment [^2]. It outputs a label, never new text, so
+      it does neither summarization nor text generation.
     references:
-      - source: hf-llm-course
-        locator: 'Chapter 1: Transformer models'
-        url: https://huggingface.co/learn/llm-course/chapter1/1
+      - title: FacebookAI/roberta-large-mnli model card (Hugging Face Hub)
+        url: https://huggingface.co/FacebookAI/roberta-large-mnli#model-details
+        locator: Model card, sec. Model Details; task tag Text Classification
+      - title: FacebookAI/roberta-large-mnli, config.json
+        url: https://huggingface.co/FacebookAI/roberta-large-mnli/blob/main/config.json
+        locator: id2label (CONTRADICTION, NEUTRAL, ENTAILMENT)
     source:
       id: hf-llm-course
       ref: chapter1/7#q1
@@ -25,6 +34,7 @@ questions:
     status: draft
   - id: huggingface-002
     type: single
+    difficulty: easy
     question: |
       What will the following code return?
 
@@ -41,11 +51,18 @@ questions:
         why: This is incorrect — it would be a `text-generation` pipeline.
       - text: It will return the words representing persons, organizations or locations.
         correct: true
-    explanation: Furthermore, with `aggregation_strategy="simple"`, it will group together the words belonging to the same entity, like "Hugging Face". [^1]
+    explanation: |
+      `pipeline("ner")` runs named entity recognition: it finds the parts of the text that are
+      entities such as persons, organizations or locations, here Sylvain (PER), Hugging Face (ORG)
+      and Brooklyn (LOC), each returned with a score and its character offsets [^1]. With
+      `aggregation_strategy="simple"`, the pipeline also regroups the pieces that belong to the same
+      entity, so "Hugging Face" comes back as one organization and the subword pieces of "Sylvain" as
+      one word [^1]. Positive/negative labels would come from a `sentiment-analysis` pipeline, and a
+      completion of the sentence from `text-generation`.
     references:
       - source: hf-llm-course
-        locator: 'Chapter 1: Transformer models'
-        url: https://huggingface.co/learn/llm-course/chapter1/1
+        url: https://huggingface.co/learn/llm-course/chapter1/3#named-entity-recognition
+        locator: Chapter 1.3 Transformers, what can they do?, sec. Named entity recognition
     source:
       id: hf-llm-course
       ref: chapter1/7#q2
@@ -53,6 +70,7 @@ questions:
     status: draft
   - id: huggingface-003
     type: single
+    difficulty: easy
     question: |
       What should replace ... in this code sample?
 
@@ -69,11 +87,21 @@ questions:
         correct: true
       - text: This man has been waiting for you.
         why: This is incorrect. This pipeline fills in masked words, so it needs a mask token somewhere.
-    explanation: This model's mask token is [MASK]. [^1]
+    explanation: |
+      A fill-mask pipeline predicts the word hidden behind the model's mask token, so the input must
+      contain that model's exact mask token, and different checkpoints use different ones [^1].
+      BERT's is `[MASK]`, as in the `bert-base-cased` model card example
+      `unmasker("Hello I'm a [MASK] model.")` [^2]. `<mask>` is the token used in the course's
+      example with the pipeline's default checkpoint [^1]; BERT's tokenizer just splits it into
+      `<`, `mask` and `>`, so the pipeline finds no mask to fill, and a sentence without any mask
+      token has nothing to predict.
     references:
       - source: hf-llm-course
-        locator: 'Chapter 1: Transformer models'
-        url: https://huggingface.co/learn/llm-course/chapter1/1
+        url: https://huggingface.co/learn/llm-course/chapter1/3#mask-filling
+        locator: Chapter 1.3 Transformers, what can they do?, sec. Mask filling
+      - title: google-bert/bert-base-cased model card (Hugging Face Hub)
+        url: https://huggingface.co/google-bert/bert-base-cased#how-to-use
+        locator: Model card, sec. How to use
     source:
       id: hf-llm-course
       ref: chapter1/7#q3
@@ -81,6 +109,7 @@ questions:
     status: draft
   - id: huggingface-004
     type: single
+    difficulty: easy
     question: |
       Why will this code fail?
 
@@ -95,15 +124,30 @@ questions:
         correct: true
       - text: This pipeline requires several sentences, not just one.
         why: This is incorrect, though when properly used, this pipeline can take a list of sentences to process (like all other pipelines).
-      - text: The 🤗 Transformers library is broken, as usual.
-        why: We won't dignify this answer with a comment!
+      - text: This pipeline needs a `model=` argument, because the task has no default checkpoint.
+        why: Without `model=`, the pipeline falls back to a default checkpoint for the task and only prints a warning.
       - text: This pipeline requires longer inputs; this one is too short.
         why: This is incorrect. Note that a very long text will be truncated when processed by this pipeline.
-    explanation: Right — the correct code needs to include `candidate_labels=[...]`. [^1]
+    explanation: |
+      The `zero-shot-classification` pipeline classifies a text with labels you choose at call time
+      instead of the labels the model was trained with, so the call has to say which labels to choose
+      from: the course passes `candidate_labels=["education", "politics", "business"]` and gets a score
+      for each [^1]. That argument is the set of possible labels for each sequence [^2]; without it there
+      is nothing to score the text against, and the call fails. The same course example creates the
+      pipeline without `model=`, in which case the task's default checkpoint is loaded [^3], and it
+      classifies a single short sentence [^1].
     references:
       - source: hf-llm-course
-        locator: 'Chapter 1: Transformer models'
-        url: https://huggingface.co/learn/llm-course/chapter1/1
+        url: https://huggingface.co/learn/llm-course/chapter1/3#zero-shot-classification
+        locator: Chapter 1.3 Transformers, what can they do?, sec. Zero-shot classification
+      - title: Hugging Face Transformers documentation, Pipelines (ZeroShotClassificationPipeline)
+        url: https://huggingface.co/docs/transformers/main_classes/pipelines#transformers.ZeroShotClassificationPipeline.__call__.candidate_labels
+        locator: ZeroShotClassificationPipeline.__call__, candidate_labels
+        quote: The set of possible class labels to classify each sequence into.
+      - title: Hugging Face Transformers documentation, Pipelines (pipeline)
+        url: https://huggingface.co/docs/transformers/main_classes/pipelines#transformers.pipeline.model
+        locator: pipeline(), model
+        quote: If not provided, the default for the task will be loaded.
     source:
       id: hf-llm-course
       ref: chapter1/7#q4
@@ -111,6 +155,7 @@ questions:
     status: draft
   - id: huggingface-005
     type: single
+    difficulty: easy
     question: What is the order of the language modeling pipeline?
     options:
       - text: First, the model, which handles text and returns raw predictions. The tokenizer then makes sense of these predictions and converts them back to text when needed.
@@ -119,11 +164,22 @@ questions:
         why: The model's prediction cannot be text straight away. The tokenizer has to be used in order to convert the prediction back to text!
       - text: The tokenizer handles text and returns IDs. The model handles these IDs and outputs a prediction. The tokenizer can then be used once again to convert these predictions back to some text.
         correct: true
-    explanation: The tokenizer can be used for both tokenizing and de-tokenizing. [^1]
+    explanation: |
+      A model can't read raw text, so the tokenizer first splits the text into tokens and maps each
+      one to an integer ID [^1]. The model turns those IDs into numbers (hidden states, then logits
+      from the head), not text [^2]. When the task needs text back, as in generation or translation,
+      the tokenizer's `decode()` turns predicted IDs into a readable string, so the tokenizer is used
+      at both ends of the pipeline [^3].
     references:
       - source: hf-llm-course
-        locator: 'Chapter 2: Using 🤗 Transformers'
-        url: https://huggingface.co/learn/llm-course/chapter2/1
+        url: https://huggingface.co/learn/llm-course/chapter2/2#preprocessing-with-a-tokenizer
+        locator: Chapter 2.2 Behind the pipeline, sec. Preprocessing with a tokenizer
+      - source: hf-llm-course
+        url: https://huggingface.co/learn/llm-course/chapter2/2#going-through-the-model
+        locator: Chapter 2.2 Behind the pipeline, secs. Going through the model and Model heads
+      - source: hf-llm-course
+        url: https://huggingface.co/learn/llm-course/chapter2/4#decoding
+        locator: Chapter 2.4 Tokenizers, sec. Decoding
     source:
       id: hf-llm-course
       ref: chapter2/9#q1
@@ -131,19 +187,26 @@ questions:
     status: draft
   - id: huggingface-006
     type: single
+    difficulty: easy
     question: What is an AutoModel?
     options:
       - text: A model that automatically trains on your data
-        why: Are you mistaking this with our [AutoTrain](https://huggingface.co/autotrain) product?
+        why: That describes [AutoTrain](https://huggingface.co/autotrain), Hugging Face's no-code training tool. `AutoModel` only loads a model from a checkpoint.
       - text: An object that returns the correct architecture based on the checkpoint
         correct: true
       - text: A model that automatically detects the language used for its inputs to load the correct weights
         why: While some checkpoints and models are capable of handling multiple languages, there are no built-in tools for automatic checkpoint selection according to language. You should head over to the [Model Hub](https://huggingface.co/models) to find the best checkpoint for your task!
-    explanation: 'Exactly: the `AutoModel` only needs to know the checkpoint from which to initialize to return the correct architecture. [^1]'
+    explanation: |
+      `AutoModel` and its relatives are wrappers that look at the checkpoint passed to
+      `from_pretrained()`, work out which architecture it belongs to, and instantiate that model
+      class with the checkpoint's weights [^1]. So `AutoModel.from_pretrained("bert-base-cased")`
+      gives you a BERT model, just as `BertModel.from_pretrained("bert-base-cased")` would [^1]. It
+      neither trains on your data nor picks a checkpoint from the input's language: you choose the
+      checkpoint yourself.
     references:
       - source: hf-llm-course
-        locator: 'Chapter 2: Using 🤗 Transformers'
-        url: https://huggingface.co/learn/llm-course/chapter2/1
+        url: https://huggingface.co/learn/llm-course/chapter2/3#creating-a-transformer
+        locator: Chapter 2.3 Models, sec. Creating a Transformer
     source:
       id: hf-llm-course
       ref: chapter2/9#q5
@@ -161,11 +224,15 @@ questions:
         why: Wrong! Padding is very useful, but it's just one part of the tokenizer API.
       - text: '`tokenize`'
         why: The `tokenize` method is arguably one of the most useful methods, but it isn't the core of the tokenizer API.
-    explanation: Exactly! The `__call__` method of the tokenizer is a very powerful method which can handle pretty much anything. It is also the method used to retrieve predictions from a model. [^1]
+    explanation: |
+      Calling the tokenizer directly (its `__call__` method) is the main API: in one step it splits the
+      text into tokens, converts them to IDs and adds the model's special tokens, and it can also pad,
+      truncate and return framework tensors ready for the model [^1]. Methods such as `tokenize` or
+      `pad` each cover only one of those steps.
     references:
       - source: hf-llm-course
-        locator: 'Chapter 2: Using 🤗 Transformers'
-        url: https://huggingface.co/learn/llm-course/chapter2/1
+        url: https://huggingface.co/learn/llm-course/chapter2/6
+        locator: Chapter 2.6 Putting it all together
     source:
       id: hf-llm-course
       ref: chapter2/9#q8
@@ -173,6 +240,7 @@ questions:
     status: draft
   - id: huggingface-008
     type: single
+    difficulty: easy
     question: |
       What does the `result` variable contain in this code sample?
 
@@ -189,11 +257,18 @@ questions:
         why: Incorrect; that's what the `__call__` or `convert_tokens_to_ids` method is for!
       - text: A string containing all of the tokens
         why: This would be suboptimal, as the goal is to split the string into multiple tokens.
-    explanation: Absolutely! Convert this to IDs, and send them to a model! [^1]
+    explanation: |
+      `tokenize()` performs only the first step of encoding, splitting the text into tokens, and its
+      output is a list of strings [^1]; for `"Hello!"` that is `['Hello', '!']`. Turning tokens
+      into IDs is the second step, done by `convert_tokens_to_ids()` [^2] (calling the tokenizer
+      directly does both steps and more). Returning one joined string would undo the split.
     references:
       - source: hf-llm-course
-        locator: 'Chapter 2: Using 🤗 Transformers'
-        url: https://huggingface.co/learn/llm-course/chapter2/1
+        url: https://huggingface.co/learn/llm-course/chapter2/4#tokenization
+        locator: Chapter 2.4 Tokenizers, sec. Tokenization
+      - source: hf-llm-course
+        url: https://huggingface.co/learn/llm-course/chapter2/4#from-tokens-to-input-ids
+        locator: Chapter 2.4 Tokenizers, sec. From tokens to input IDs
     source:
       id: hf-llm-course
       ref: chapter2/9#q9
@@ -220,11 +295,15 @@ questions:
         correct: true
       - text: It's good practice to pad and truncate with the tokenizer as every input is a batch.
         why: It's true that every model input needs to be a batch. However, truncating or padding this sequence wouldn't necessarily make sense as there is only one of it, and those are techniques to batch together a list of sentences.
-    explanation: Right! [^1]
+    explanation: |
+      Text must be preprocessed exactly as it was when the model was pretrained, so the tokenizer and the
+      model should be loaded from the same checkpoint [^1]. Here the BERT tokenizer produces IDs from
+      BERT's vocabulary (with `[CLS]` and `[SEP]`), which GPT-2 reads as unrelated tokens of its own
+      vocabulary, so even if the code runs, the output is meaningless.
     references:
       - source: hf-llm-course
-        locator: 'Chapter 2: Using 🤗 Transformers'
-        url: https://huggingface.co/learn/llm-course/chapter2/1
+        url: https://huggingface.co/learn/llm-course/chapter2/2
+        locator: Chapter 2.2 Behind the pipeline, "Preprocessing with a tokenizer"
     source:
       id: hf-llm-course
       ref: chapter2/9#q10
@@ -232,21 +311,34 @@ questions:
     status: draft
   - id: huggingface-010
     type: single
+    difficulty: easy
     question: What is the main advantage of using `Dataset.map()` with `batched=True`?
     options:
-      - text: It uses less memory.
-        why: While it can be more memory efficient, this is not the main advantage.
-      - text: It processes multiple examples at once, making tokenization much faster.
+      - text: It uses less memory while the dataset is processed.
+        why: Saving memory isn't the point. Each call receives a whole batch of examples at once, so batching doesn't reduce memory; what it buys is speed.
+      - text: It tokenizes many examples per call, which is much faster.
         correct: true
-      - text: It automatically handles padding for you.
+      - text: It pads every example in a batch to the same length.
         why: Batching doesn't automatically handle padding - that's done by the data collator.
-      - text: It converts the data to PyTorch tensors.
+      - text: It converts the tokenized columns into PyTorch tensors.
         why: The tensor conversion happens when you set the format, not during batched mapping.
-    explanation: Correct! Processing in batches allows the fast tokenizer to work on multiple examples simultaneously, significantly improving speed. [^1]
+    explanation: |
+      With `batched=True`, `map()` passes the function many examples at once (each key holding a list)
+      instead of one example per call [^1]. The tokenizer accepts lists of sentence pairs, and the fast
+      tokenizer, written in Rust, is only really fast when it gets lots of inputs at once, so batching
+      greatly speeds up preprocessing [^1]. Padding is deliberately left out of this step and done per
+      batch by a data collator (dynamic padding) [^2], and the conversion to PyTorch tensors comes later,
+      when the dataset's format is set to `"torch"` [^3].
     references:
       - source: hf-llm-course
-        locator: 'Chapter 3: Fine-tuning a pretrained model'
-        url: https://huggingface.co/learn/llm-course/chapter3/1
+        url: https://huggingface.co/learn/llm-course/chapter3/2#preprocessing-a-dataset
+        locator: Chapter 3.2 Processing the data, sec. Preprocessing a dataset
+      - source: hf-llm-course
+        url: https://huggingface.co/learn/llm-course/chapter3/2#dynamic-padding
+        locator: Chapter 3.2 Processing the data, sec. Dynamic padding
+      - source: hf-llm-course
+        url: https://huggingface.co/learn/llm-course/chapter3/4#prepare-for-training
+        locator: Chapter 3.4 A full training loop, sec. Prepare for training
     source:
       id: hf-llm-course
       ref: chapter3/2#q1
@@ -261,14 +353,19 @@ questions:
       - text: The specific task or subset within the GLUE benchmark.
         correct: true
       - text: The split of the dataset (train/validation/test).
-        why: Splits are accessed after loading, not specified in the load_dataset call.
+        why: The split has its own keyword argument, `split=` (e.g. `split="train"`); without it, `load_dataset` returns a `DatasetDict` with every split [^2].
       - text: The format to return the data in.
         why: Format is set using the set_format() method after loading.
-    explanation: Correct! MRPC is one of the specific tasks within the larger GLUE benchmark collection. [^1]
+    explanation: |
+      The second positional argument of `load_dataset` is `name`, the dataset configuration [^2],
+      and MRPC is one of the specific tasks within the larger GLUE benchmark collection [^1].
     references:
       - source: hf-llm-course
-        locator: 'Chapter 3: Fine-tuning a pretrained model'
-        url: https://huggingface.co/learn/llm-course/chapter3/1
+        url: https://huggingface.co/learn/llm-course/chapter3/2
+        locator: Chapter 3.2 Processing the data, "Loading a dataset from the Hub"
+      - title: 🤗 Datasets documentation, Loading methods
+        url: https://huggingface.co/docs/datasets/package_reference/loading_methods#datasets.load_dataset
+        locator: load_dataset, parameters `name` and `split`
     source:
       id: hf-llm-course
       ref: chapter3/2#q4
@@ -276,21 +373,32 @@ questions:
     status: draft
   - id: huggingface-012
     type: single
+    difficulty: easy
     question: What is the purpose of removing columns like 'sentence1' and 'sentence2' before training?
     options:
       - text: To save memory during training.
         why: While it does save some memory, this is not the main reason.
       - text: The model doesn't expect these raw text columns and would throw an error.
         correct: true
-      - text: These columns are not needed for evaluation.
+      - text: These text columns are not needed when computing evaluation metrics.
         why: While true, the main reason is that the model can't process raw text.
-      - text: It improves training speed significantly.
+      - text: Dropping them makes each training step significantly faster.
         why: The speed improvement is minimal compared to avoiding errors from incompatible data types.
-    explanation: Correct! Models expect numerical tensors, not raw text strings. Keeping text columns would cause errors. [^1]
+    explanation: |
+      When you write your own training loop, you remove the columns the model does not expect
+      (`sentence1`, `sentence2` and `idx`), rename `label` to `labels` and set the format to PyTorch, so
+      that only `attention_mask`, `input_ids`, `labels` and `token_type_ids` remain [^1]. Each batch is
+      then passed to the model as `model(**batch)`, so every column becomes an argument the model must
+      accept, and the raw-text columns hold strings, from which no tensors can be created [^2]. Saving
+      memory or time is a side effect, not the reason, and the `Trainer` removes such columns for you
+      automatically [^1].
     references:
       - source: hf-llm-course
-        locator: 'Chapter 3: Fine-tuning a pretrained model'
-        url: https://huggingface.co/learn/llm-course/chapter3/1
+        url: https://huggingface.co/learn/llm-course/chapter3/4#prepare-for-training
+        locator: Chapter 3.4 A full training loop, secs. Prepare for training and The training loop
+      - source: hf-llm-course
+        url: https://huggingface.co/learn/llm-course/chapter3/2#dynamic-padding
+        locator: Chapter 3.2 Processing the data, sec. Dynamic padding (removing the string columns before batching)
     source:
       id: hf-llm-course
       ref: chapter3/2#q5
@@ -298,6 +406,7 @@ questions:
     status: draft
   - id: huggingface-013
     type: single
+    difficulty: easy
     question: What is the purpose of the `processing_class` parameter in the Trainer?
     options:
       - text: It specifies which model architecture to use.
@@ -308,11 +417,21 @@ questions:
         why: Batch size is set in TrainingArguments, not through processing_class.
       - text: It controls the evaluation frequency.
         why: Evaluation frequency is controlled by eval_strategy in TrainingArguments.
-    explanation: The processing_class parameter is a modern addition that helps the Trainer know which tokenizer to use. [^1]
+    explanation: |
+      `processing_class` is where you hand the `Trainer` your tokenizer (more generally a processor:
+      an image processor, feature extractor or multimodal processor also fits) [^1][^2]. The Trainer
+      uses it to process the inputs automatically, for instance by defaulting to a
+      `DataCollatorWithPadding` when it gets a tokenizer, and saves it with the model so that training
+      can be resumed or the fine-tuned model reused [^1][^2]. The architecture comes from the model
+      you load, while batch size and evaluation frequency are `TrainingArguments` settings [^1].
     references:
       - source: hf-llm-course
-        locator: 'Chapter 3: Fine-tuning a pretrained model'
-        url: https://huggingface.co/learn/llm-course/chapter3/1
+        url: https://huggingface.co/learn/llm-course/chapter3/3#training
+        locator: Chapter 3.3 Fine-tuning a model with the Trainer API, sec. Training
+      - title: 🤗 Transformers documentation, Trainer
+        url: https://huggingface.co/docs/transformers/main_classes/trainer#transformers.Trainer.processing_class
+        locator: Trainer, parameter `processing_class`
+        quote: Processing class used to process the data. If provided, will be used to automatically process the inputs for the model, and it will be saved along the model to make it easier to rerun an interrupted training or reuse the fine-tuned model.
     source:
       id: hf-llm-course
       ref: chapter3/3#q1
@@ -322,19 +441,24 @@ questions:
     type: single
     question: Which TrainingArguments parameter controls how often evaluation occurs during training?
     options:
-      - text: eval_frequency
-        why: There's no eval_frequency parameter in TrainingArguments.
-      - text: eval_strategy
+      - text: '`eval_frequency`'
+        why: There's no `eval_frequency` parameter in `TrainingArguments`.
+      - text: '`eval_strategy`'
         correct: true
-      - text: evaluation_steps
-        why: eval_steps sets the number of steps between evaluations, but eval_strategy determines if/when evaluation happens.
-      - text: do_eval
-        why: There's no do_eval parameter in modern TrainingArguments.
-    explanation: eval_strategy can be set to 'epoch', 'steps', or 'no' to control evaluation timing. [^1]
+      - text: '`evaluation_steps`'
+        why: There's no such parameter. The real `eval_steps` sets the number of steps between evaluations, but only when `eval_strategy="steps"`; `eval_strategy` decides if and when evaluation happens.
+      - text: '`do_eval`'
+        why: "`do_eval` exists, but the `Trainer` doesn't use it directly: it is a flag for your own scripts, set to `True` automatically when `eval_strategy` is not `\"no\"` [^2]."
+    explanation: |
+      `eval_strategy` can be `"no"` (the default), `"steps"` (evaluate every `eval_steps` steps) or
+      `"epoch"` (evaluate at the end of each epoch) [^1] [^2].
     references:
       - source: hf-llm-course
-        locator: 'Chapter 3: Fine-tuning a pretrained model'
-        url: https://huggingface.co/learn/llm-course/chapter3/1
+        url: https://huggingface.co/learn/llm-course/chapter3/3
+        locator: Chapter 3.3 Fine-tuning a model with the Trainer API, "Training"
+      - title: 🤗 Transformers documentation, Trainer
+        url: https://huggingface.co/docs/transformers/main_classes/trainer#transformers.TrainingArguments
+        locator: TrainingArguments, parameters `eval_strategy` and `do_eval`
     source:
       id: hf-llm-course
       ref: chapter3/3#q2
@@ -344,13 +468,13 @@ questions:
     type: single
     question: What is the role of the `compute_metrics` function in the Trainer?
     options:
-      - text: It calculates the loss during training.
+      - text: It calculates the loss that is backpropagated during training.
         why: Loss calculation is handled automatically by the model, not by compute_metrics.
-      - text: It converts logits to predictions and calculates evaluation metrics like accuracy and F1.
+      - text: It computes metrics like accuracy and F1 from the model's predictions.
         correct: true
-      - text: It determines which optimizer to use.
+      - text: It determines which optimizer and learning rate to use.
         why: Optimizer selection is not handled by compute_metrics.
-      - text: It preprocesses the training data.
+      - text: It preprocesses and tokenizes the training data.
         why: Data preprocessing is done before training, not by compute_metrics during evaluation.
     explanation: compute_metrics takes predictions and labels, then returns metrics for evaluation. [^1]
     references:
@@ -364,21 +488,31 @@ questions:
     status: draft
   - id: huggingface-016
     type: single
-    question: What happens when you don't provide an `eval_dataset` to the Trainer?
+    question: What happens when you don't provide an `eval_dataset` to the `Trainer` and keep the default `eval_strategy="no"`?
     options:
       - text: Training will fail with an error.
-        why: Training can proceed without an eval_dataset, though you won't get evaluation metrics.
+        why: Not with `eval_strategy="no"`. You only get an error if you ask for evaluation (`"steps"` or `"epoch"`) without passing an `eval_dataset`.
       - text: The Trainer will automatically split the training data for evaluation.
         why: The Trainer doesn't automatically create validation splits.
       - text: You won't get evaluation metrics during training, but training will still work.
         correct: true
       - text: The model will use the training data for evaluation.
         why: The Trainer won't automatically use training data for evaluation - it simply won't evaluate.
-    explanation: Evaluation is optional - you can train without it, but you won't see validation metrics. [^1]
+    explanation: |
+      With `eval_strategy="no"` (the default) the `Trainer` never evaluates, so it trains normally and
+      just reports no validation metrics [^1] [^2]. If you set `eval_strategy` to `"steps"` or `"epoch"`
+      without an `eval_dataset`, the `Trainer` raises a `ValueError` as soon as it is created [^3].
     references:
       - source: hf-llm-course
-        locator: 'Chapter 3: Fine-tuning a pretrained model'
-        url: https://huggingface.co/learn/llm-course/chapter3/1
+        url: https://huggingface.co/learn/llm-course/chapter3/3
+        locator: Chapter 3.3 Fine-tuning a model with the Trainer API, "Training"
+      - title: 🤗 Transformers documentation, Trainer
+        url: https://huggingface.co/docs/transformers/main_classes/trainer#transformers.TrainingArguments
+        locator: TrainingArguments, parameter `eval_strategy` (defaults to "no")
+      - title: transformers v5.4.0 source, trainer.py
+        url: https://github.com/huggingface/transformers/blob/v5.4.0/src/transformers/trainer.py#L635
+        locator: Trainer.__init__, eval_strategy / eval_dataset check
+        quote: but you didn't pass an `eval_dataset` to `Trainer`. Either set `args.eval_strategy` to `no` or pass an `eval_dataset`.
     source:
       id: hf-llm-course
       ref: chapter3/3#q5
@@ -386,6 +520,7 @@ questions:
     status: draft
   - id: huggingface-017
     type: single
+    difficulty: easy
     question: What does the 🤗 Accelerate library primarily help with?
     options:
       - text: Making your models train faster by optimizing the forward pass.
@@ -396,11 +531,21 @@ questions:
         correct: true
       - text: Converting models to different frameworks like TensorFlow.
         why: Accelerate works within PyTorch and doesn't convert between frameworks.
-    explanation: Correct! Accelerate handles distributed training complexity, allowing your code to run on single or multiple devices seamlessly. [^1]
+    explanation: |
+      🤗 Accelerate lets the same PyTorch training loop run on any distributed setup, such as several
+      GPUs or TPUs, with only a few added lines [^2]: create an `Accelerator`, pass the model,
+      optimizer and dataloaders to `accelerator.prepare()`, and replace `loss.backward()` with
+      `accelerator.backward(loss)` [^1]. It takes care of device placement, the distributed setup and
+      mixed precision [^1], but it doesn't change the model's architecture, search hyperparameters or
+      convert models to other frameworks.
     references:
       - source: hf-llm-course
-        locator: 'Chapter 3: Fine-tuning a pretrained model'
-        url: https://huggingface.co/learn/llm-course/chapter3/1
+        url: https://huggingface.co/learn/llm-course/chapter3/4#supercharge-your-training-loop-with-accelerate
+        locator: Chapter 3.4 A full training loop, sec. Supercharge your training loop with 🤗 Accelerate
+      - title: 🤗 Accelerate documentation
+        url: https://huggingface.co/docs/accelerate/index
+        locator: Overview (index page)
+        quote: Accelerate is a library that enables the same PyTorch code to be run across any distributed configuration by adding just four lines of code!
     source:
       id: hf-llm-course
       ref: chapter3/4#q3
@@ -412,17 +557,20 @@ questions:
     options:
       - text: You must rewrite your entire training loop from scratch.
         why: Accelerate requires minimal changes to existing PyTorch code.
-      - text: You wrap key objects with accelerator.prepare() and use accelerator.backward() instead of loss.backward().
+      - text: You wrap your objects with `accelerator.prepare()` and call `accelerator.backward(loss)`.
         correct: true
-      - text: You need to specify the number of GPUs in your code.
+      - text: You must hard-code the number of GPUs and their device IDs in your script.
         why: Accelerate automatically detects available hardware.
       - text: You must use a different optimizer and scheduler.
         why: You can use the same optimizers and schedulers with Accelerate.
-    explanation: Correct! These are the main changes - prepare your objects and use accelerator.backward() for proper distributed training. [^1]
+    explanation: |
+      These are the main changes: pass the dataloaders, model and optimizer to
+      `accelerator.prepare()`, and replace `loss.backward()` with `accelerator.backward(loss)` for
+      proper distributed training [^1].
     references:
       - source: hf-llm-course
-        locator: 'Chapter 3: Fine-tuning a pretrained model'
-        url: https://huggingface.co/learn/llm-course/chapter3/1
+        url: https://huggingface.co/learn/llm-course/chapter3/4
+        locator: Chapter 3.4 A full training loop, "Supercharge your training loop with 🤗 Accelerate"
     source:
       id: hf-llm-course
       ref: chapter3/4#q7
@@ -430,21 +578,28 @@ questions:
     status: draft
   - id: huggingface-019
     type: single
+    difficulty: medium
     question: What is the advantage of using a generator of lists of texts compared to a list of lists of texts when using `train_new_from_iterator()`?
     options:
       - text: That's the only type the method `train_new_from_iterator()` accepts.
-        why: A list of lists of texts is a particular kind of generator of lists of texts, so the method will accept this too. Try again!
+        why: The method takes any iterator over batches of texts, and a list of lists of texts works too; it just has to hold the whole corpus in memory.
       - text: You will avoid loading the whole dataset into memory at once.
         correct: true
       - text: This will allow the 🤗 Tokenizers library to use multiprocessing.
         why: No, it will use multiprocessing either way.
       - text: The tokenizer you train will generate better texts.
         why: The tokenizer does not generate text -- are you confusing it with a language model?
-    explanation: Right! Each batch of texts will be released from memory when you iterate, and the gain will be especially visible if you use 🤗 Datasets to store your texts. [^1]
+    explanation: |
+      `train_new_from_iterator()` takes an iterator over batches of texts; a list of lists of texts
+      works, but builds every batch in memory up front [^1]. A generator produces each batch (say
+      1,000 texts) only when the training loop asks for it, so the whole dataset is never loaded at
+      once [^1]. This matters for huge corpora, especially with 🤗 Datasets, which keeps the data on
+      disk instead of in RAM [^1]. The result is the same tokenizer either way, and a tokenizer
+      splits text rather than generating it.
     references:
       - source: hf-llm-course
-        locator: 'Chapter 6: The 🤗 Tokenizers library'
-        url: https://huggingface.co/learn/llm-course/chapter6/1
+        url: https://huggingface.co/learn/llm-course/chapter6/2#assembling-a-corpus
+        locator: Chapter 6.2 Training a new tokenizer from an old one, sec. Assembling a corpus
     source:
       id: hf-llm-course
       ref: chapter6/10#q2
@@ -462,11 +617,15 @@ questions:
         why: True, but slow tokenizers also do that.
       - text: It has some additional features allowing you to map tokens to the span of text that created them.
         correct: true
-    explanation: Correct! Thanks to parallelism implemented in Rust, it will be faster on batches of inputs. What other benefit can you think of? Indeed -- those are called offset mappings. That's not the only advantage, though. [^1]
+    explanation: |
+      A fast tokenizer is backed by the Rust 🤗 Tokenizers library, so it can tokenize a large batch in
+      parallel and is much faster there; on a single text it may even be slower than the slow version.
+      It also keeps track of the span of the original text that each token comes from, a feature called
+      *offset mapping*. Padding and truncation are available in both kinds of tokenizer [^1].
     references:
       - source: hf-llm-course
-        locator: 'Chapter 6: The 🤗 Tokenizers library'
-        url: https://huggingface.co/learn/llm-course/chapter6/1
+        url: https://huggingface.co/learn/llm-course/chapter6/3
+        locator: Chapter 6.3 Fast tokenizers' special powers
     source:
       id: hf-llm-course
       ref: chapter6/10#q3
@@ -474,21 +633,29 @@ questions:
     status: draft
   - id: huggingface-021
     type: single
-    question: What is the proper way to preprocess the data for a sequence-to-sequence problem?
+    question: What is the proper way to preprocess the data for a sequence-to-sequence problem with a 🤗 Transformers tokenizer?
     options:
-      - text: The inputs and targets have to be sent together to the tokenizer with `inputs=...` and `targets=...`.
-        why: This might be an API we add in the future, but that's not possible right now.
-      - text: The inputs and the targets both have to be preprocessed, in two separate calls to the tokenizer.
-        why: That is true, but incomplete. There is something you need to do to make sure the tokenizer processes both properly.
-      - text: As usual, we just have to tokenize the inputs.
-        why: Not in a sequence classification problem; the targets are also texts we need to convert into numbers!
-      - text: The inputs have to be sent to the tokenizer, and the targets too, but under a special context manager.
+      - text: Pass the inputs as usual and the targets through the tokenizer's `text_target` argument.
         correct: true
-    explanation: That's correct, the tokenizer needs to be put into target mode by that context manager. [^1]
+      - text: Tokenize the inputs and the targets with two ordinary calls, treating both the same way.
+        why: Then the targets go through the input tokenizer; for a Marian translation model, a French target gets split into many meaningless pieces. Mark them as targets with `text_target`.
+      - text: As usual, we just have to tokenize the inputs.
+        why: Not in a sequence-to-sequence problem; the targets are also texts we need to convert into numbers!
+      - text: Concatenate each input with its target and tokenize the result as one sequence.
+        why: That is how data is prepared for a decoder-only (causal) language model; an encoder-decoder model takes the inputs and the labels separately.
+    explanation: |
+      Call the tokenizer as `tokenizer(inputs, text_target=targets, ...)`: the targets are processed as
+      targets (for a translation model, with the target-language tokenizer) and returned under
+      `labels` [^1]. Older versions of the course used the `as_target_tokenizer()` context manager
+      instead; it was deprecated in favour of `text_target` and removed in Transformers v5 [^2].
     references:
       - source: hf-llm-course
-        locator: 'Chapter 7: Classical NLP tasks'
-        url: https://huggingface.co/learn/llm-course/chapter7/1
+        url: https://huggingface.co/learn/llm-course/chapter7/4
+        locator: Chapter 7.4 Translation, "Processing the data"
+      - title: transformers v4.46.0 source, tokenization_utils_base.py
+        url: https://github.com/huggingface/transformers/blob/v4.46.0/src/transformers/tokenization_utils_base.py#L4109
+        locator: PreTrainedTokenizerBase.as_target_tokenizer, deprecation warning
+        quote: '`as_target_tokenizer` is deprecated and will be removed in v5 of Transformers.'
     source:
       id: hf-llm-course
       ref: chapter7/9#q7
@@ -496,6 +663,7 @@ questions:
     status: draft
   - id: huggingface-022
     type: single
+    difficulty: medium
     question: Why is there a specific subclass of `Trainer` for sequence-to-sequence problems?
     options:
       - text: Because sequence-to-sequence problems use a custom loss, to ignore the labels set to `-100`
@@ -506,11 +674,21 @@ questions:
         why: The `Trainer` doesn't really care about that since they have been preprocessed before.
       - text: Because we use two models in sequence-to-sequence problems
         why: We do use two models in a way, an encoder and a decoder, but they are grouped together in one model.
-    explanation: That's correct. Sequence-to-sequence models' predictions are often run using the `generate()` method. [^1]
+    explanation: |
+      During training, a sequence-to-sequence model is fed the target tokens, with a mask that hides
+      the tokens after the one it is predicting; at inference there are no labels, so the decoder
+      must produce the output one token at a time with `generate()` [^1]. `Seq2SeqTrainer` adds
+      exactly this to `Trainer`: with `predict_with_generate=True` it evaluates and predicts by
+      generating, which is what text metrics such as BLEU or ROUGE need [^1][^2]. The -100 labels
+      are ignored by the usual loss, the targets are tokenized before training, and the encoder and
+      decoder form one model, so none of these needs a special class.
     references:
       - source: hf-llm-course
-        locator: 'Chapter 7: Classical NLP tasks'
-        url: https://huggingface.co/learn/llm-course/chapter7/1
+        url: https://huggingface.co/learn/llm-course/chapter7/4?fw=pt#metrics
+        locator: Chapter 7.4 Translation (PyTorch), sec. Metrics
+      - title: 🤗 Transformers documentation, Trainer
+        url: https://huggingface.co/docs/transformers/main_classes/trainer#transformers.Seq2SeqTrainingArguments.predict_with_generate
+        locator: Seq2SeqTrainingArguments, parameter `predict_with_generate`
     source:
       id: hf-llm-course
       ref: chapter7/9#q8
@@ -518,21 +696,469 @@ questions:
     status: draft
   - id: huggingface-023
     type: single
+    difficulty: easy
     question: What parameters control the training duration in SFT?
     options:
-      - text: num_train_epochs and max_steps
+      - text: '`num_train_epochs` and `max_steps`'
         correct: true
-      - text: batch_size and learning_rate
+      - text: '`batch_size` and `learning_rate`'
         why: While these affect training, they don't directly control the duration.
-      - text: gradient_checkpointing and warmup_ratio
-        why: These parameters affect training efficiency and stability, not duration.
-    explanation: Correct! These parameters determine how long the model will train, either by number of epochs or total steps. [^1]
+      - text: '`gradient_checkpointing` and `warmup_ratio`'
+        why: Gradient checkpointing trades compute for memory, so it changes the cost of each step but not how many steps are run, and `warmup_ratio` only sets which share of the run is used for learning-rate warmup.
+    explanation: |
+      The SFT configuration groups `num_train_epochs` and `max_steps` as the training-duration
+      parameters: the first sets how many passes over the data to make, the second is the alternative
+      that caps the total number of training steps [^1]. When `max_steps` is positive it overrides the
+      number of epochs [^2]. Batch size governs memory use and gradient stability, the learning rate the
+      size of each weight update, and `warmup_ratio` only the share of training used for warmup [^1];
+      gradient checkpointing saves memory at the cost of extra compute per step [^3].
     references:
       - source: hf-llm-course
-        locator: 'Chapter 11: Fine-tune Large Language Models'
-        url: https://huggingface.co/learn/llm-course/chapter11/1
+        url: https://huggingface.co/learn/llm-course/chapter11/3#training-configuration
+        locator: Chapter 11.3 Supervised Fine-Tuning, sec. Training Configuration
+      - title: Hugging Face Transformers documentation, Trainer (TrainingArguments)
+        url: https://huggingface.co/docs/transformers/main_classes/trainer#transformers.TrainingArguments.max_steps
+        locator: TrainingArguments, max_steps
+        quote: Overrides num_train_epochs. If set to a positive number, the total number of training steps to perform.
+      - title: Hugging Face Transformers documentation, Trainer (TrainingArguments)
+        url: https://huggingface.co/docs/transformers/main_classes/trainer#transformers.TrainingArguments.gradient_checkpointing
+        locator: TrainingArguments, gradient_checkpointing
+        quote: Enable gradient checkpointing to trade compute for memory.
     source:
       id: hf-llm-course
       ref: chapter11/3#q1
       url: https://huggingface.co/learn/llm-course/chapter11/3
+    status: draft
+  - id: huggingface-024
+    type: single
+    difficulty: easy
+    question: Which models can be hosted on the Hugging Face Hub?
+    options:
+      - text: Only models built with the 🤗 Transformers library
+        why: Models from the 🤗 Transformers library are supported on the Hub, but they are not the only ones.
+      - text: Only models whose interface matches the 🤗 Transformers API
+        why: There is no interface requirement for uploading a model to the Hub.
+      - text: Models from many libraries and fields, e.g. timm for vision or pyannote for speech
+        correct: true
+      - text: Only models for natural language processing (NLP) tasks
+        why: There is no requirement on the field of application; the Hub also hosts vision and speech models.
+    explanation: |
+      The Hub is not limited to 🤗 Transformers or even to NLP: it hosts, for example, Flair and
+      AllenNLP models for NLP, Asteroid and pyannote models for speech, and timm models for vision
+      [^1]. Each model, whatever library produced it, is stored as a Git repository [^1], so no
+      particular interface is required.
+    references:
+      - source: hf-llm-course
+        url: https://huggingface.co/learn/llm-course/chapter4/1
+        locator: 'Chapter 4.1: The Hugging Face Hub'
+    source:
+      id: hf-llm-course
+      ref: chapter4/6#q1
+      url: https://huggingface.co/learn/llm-course/chapter4/6
+    status: draft
+  - id: huggingface-025
+    type: single
+    difficulty: easy
+    question: Every model on the Hugging Face Hub lives in a repository. How are the files in these repositories versioned and managed?
+    options:
+      - text: With git, using a large-file extension (Git LFS, now also Xet) for big files such as weights
+        correct: true
+      - text: Through your own Google Cloud (GCP) account, which stores the model files
+        why: The Hub stores the files itself; no cloud account of yours is involved.
+      - text: Through peer-to-peer distribution among the users who download the model
+        why: Files are served from the Hub's own storage, not shared peer to peer.
+      - text: Only through the website, since repositories cannot be cloned and keep no history
+        why: Hub repositories can be cloned, pushed to and browsed by revision like any git repository.
+    explanation: |
+      Each model on the Hub is hosted as a Git repository, which gives versioning and
+      reproducibility [^1]. Regular files are managed with git, and large files such as weights are
+      registered with Git LFS (Large File Storage) [^2]. The Hub has since moved large-file storage to
+      its Xet backend, while Git LFS remains supported [^3]. Besides git, you can also upload with the
+      `huggingface_hub` Python library or the web interface [^2].
+    references:
+      - source: hf-llm-course
+        url: https://huggingface.co/learn/llm-course/chapter4/1
+        locator: 'Chapter 4.1: The Hugging Face Hub'
+      - source: hf-llm-course
+        url: https://huggingface.co/learn/llm-course/chapter4/3#uploading-the-model-files
+        locator: 'Chapter 4.3: Sharing pretrained models, secs. Uploading the model files and The git-based approach'
+      - title: Storage Backend (Xet) (Hugging Face Hub documentation)
+        url: https://huggingface.co/docs/hub/xet/index
+        locator: Introduction
+    source:
+      id: hf-llm-course
+      ref: chapter4/6#q2
+      url: https://huggingface.co/learn/llm-course/chapter4/6
+    status: draft
+  - id: huggingface-026
+    type: single
+    difficulty: easy
+    question: What is a model card on the Hugging Face Hub?
+    options:
+      - text: A Markdown README documenting the model's intended uses, limitations, biases, data and evaluation
+        correct: true
+      - text: A rough description of the model, less important than the model and tokenizer files
+        why: It is arguably as important as the model files; if it is incomplete or missing, the model is much less useful to others.
+      - text: A Python script that you run to print information about the model's architecture
+        why: A model card is a Markdown file, the repository's README.md, not code.
+      - text: The JSON config file that the library reads to rebuild the model's architecture
+        why: That is config.json. The model card is documentation written for people.
+    explanation: |
+      The model card is the repository's README.md, a Markdown file, and the course calls it arguably
+      as important as the model and tokenizer files [^1]. It describes the model, its intended uses
+      and limitations, how to use it, its biases, its training data and procedure, and its evaluation
+      results [^1]. The idea comes from "Model Cards for Model Reporting", which proposes short
+      documents that report a model's evaluation and intended use so that it is not used where it is
+      not suited [^2].
+    references:
+      - source: hf-llm-course
+        url: https://huggingface.co/learn/llm-course/chapter4/4
+        locator: 'Chapter 4.4: Building a model card'
+      - title: Mitchell et al. (2019), Model Cards for Model Reporting
+        url: https://arxiv.org/abs/1810.03993
+        locator: Abstract
+    source:
+      id: hf-llm-course
+      ref: chapter4/6#q4
+      url: https://huggingface.co/learn/llm-course/chapter4/6
+    status: draft
+  - id: huggingface-027
+    type: multiple
+    difficulty: medium
+    question: Which of these objects can be uploaded to the Hub directly by calling their own `push_to_hub()` method?
+    options:
+      - text: A tokenizer
+        correct: true
+      - text: A model configuration
+        correct: true
+      - text: A model
+        correct: true
+      - text: A `Trainer`
+        correct: true
+      - text: A data collator such as `DataCollatorWithPadding`
+        why: A data collator only pads examples into batches; it has no files to share and no `push_to_hub()` method.
+    explanation: |
+      Models, tokenizers and configuration objects each have a `push_to_hub()` method that creates the
+      repository and uploads their files [^1]. A `Trainer` has one too: `trainer.push_to_hub()`
+      uploads the final model and generates a model card with the hyperparameters and evaluation
+      results [^1]. A data collator such as `DataCollatorWithPadding` is just the function that pads
+      the samples of a batch to the same length [^2], so there is nothing to push.
+    references:
+      - source: hf-llm-course
+        url: https://huggingface.co/learn/llm-course/chapter4/3#using-the-pushtohub-api
+        locator: 'Chapter 4.3: Sharing pretrained models, sec. Using the push_to_hub API'
+      - source: hf-llm-course
+        url: https://huggingface.co/learn/llm-course/chapter3/2#dynamic-padding
+        locator: 'Chapter 3.2: Processing the data, sec. Dynamic padding'
+    source:
+      id: hf-llm-course
+      ref: chapter4/6#q5
+      url: https://huggingface.co/learn/llm-course/chapter4/6
+    status: draft
+  - id: huggingface-028
+    type: multiple
+    difficulty: easy
+    question: Before you can upload with `push_to_hub()` or the `hf` command-line tool, what must you do first on your machine?
+    options:
+      - text: Log in on the huggingface.co website in your browser
+        why: A browser session does not give your local Python process or terminal a token.
+      - text: Run `hf auth login` in a terminal
+        correct: true
+      - text: Run `notebook_login()` in a notebook
+        correct: true
+      - text: Run `git lfs install` in the model folder
+        why: That only prepares git for large files; it does not authenticate you.
+    explanation: |
+      Uploading needs an authentication token so that the `huggingface_hub` API knows who you are and
+      which namespaces you can write to [^1]. In a notebook you log in with `notebook_login()`, and in
+      a terminal with the CLI's login command [^1], which is now `hf auth login` (the course still
+      shows the older `huggingface-cli login`) [^2]. Logging in on the website or setting up Git LFS
+      does not store a token for your local code.
+    references:
+      - source: hf-llm-course
+        url: https://huggingface.co/learn/llm-course/chapter4/3#using-the-pushtohub-api
+        locator: 'Chapter 4.3: Sharing pretrained models, sec. Using the push_to_hub API'
+      - title: Command Line Interface (Hugging Face Hub documentation)
+        url: https://huggingface.co/docs/huggingface_hub/guides/cli#hf-auth-login
+        locator: hf auth login
+    source:
+      id: hf-llm-course
+      ref: chapter4/6#q6
+      url: https://huggingface.co/learn/llm-course/chapter4/6
+    status: draft
+  - id: huggingface-029
+    type: multiple
+    difficulty: easy
+    question: The `load_dataset()` function in 🤗 Datasets can load a dataset from which of these locations?
+    options:
+      - text: Local files, e.g. CSV or JSON files on your laptop
+        correct: true
+      - text: The Hugging Face Hub, by dataset name
+        correct: true
+      - text: A remote server, by passing URLs as `data_files`
+        correct: true
+      - text: A Python list in memory, passed as the first argument
+        why: The first argument is a dataset name or a path (a string). Data already in memory is wrapped with `Dataset.from_list()` or `Dataset.from_dict()` instead.
+    explanation: |
+      `load_dataset()` downloads datasets from the Hub by name, and it also loads local and remote
+      files: you give the format (`csv`, `json`, `text`, ...) and point `data_files` at local paths or
+      at URLs [^1] [^2]. Data that is already in memory, such as a Python dict or a list of dicts, is
+      turned into a dataset with `Dataset.from_dict()` or `Dataset.from_list()` [^2].
+    references:
+      - source: hf-llm-course
+        url: https://huggingface.co/learn/llm-course/chapter5/2#working-with-local-and-remote-datasets
+        locator: "Chapter 5.2: What if my dataset isn't on the Hub?, secs. Loading a local dataset and Loading a remote dataset"
+      - title: Load (🤗 Datasets documentation)
+        url: https://huggingface.co/docs/datasets/loading
+        locator: Hugging Face Hub; Local and remote files; In-memory data
+    source:
+      id: hf-llm-course
+      ref: chapter5/8#q1
+      url: https://huggingface.co/learn/llm-course/chapter5/8
+    status: draft
+  - id: huggingface-030
+    type: single
+    difficulty: easy
+    question: |
+      Suppose you load one of the GLUE tasks as follows:
+
+      ```py
+      from datasets import load_dataset
+
+      dataset = load_dataset("glue", "mrpc", split="train")
+      ```
+
+      Which of the following commands will produce a random sample of 50 elements from `dataset`?
+    options:
+      - text: '`dataset.sample(50)`'
+        why: There is no `Dataset.sample()` method.
+      - text: '`dataset.shuffle().select(range(50))`'
+        correct: true
+      - text: '`dataset.select(range(50)).shuffle()`'
+        why: The code runs, but it only shuffles the first 50 elements of the dataset, so the sample is not random.
+      - text: '`dataset.shuffle(50)`'
+        why: The first parameter of `shuffle()` is the random seed, so this returns the whole dataset in a new order.
+    explanation: |
+      A random sample is made by chaining `Dataset.shuffle()` and `Dataset.select()`: shuffle the
+      whole dataset, then select the first indices of the shuffled result [^1]. Selecting first and
+      shuffling afterwards only reorders the first 50 rows. `Dataset` has no `sample()` method, and the
+      first parameter of `shuffle()` is the seed, so `shuffle(50)` still returns every row [^2].
+    references:
+      - source: hf-llm-course
+        url: https://huggingface.co/learn/llm-course/chapter5/3#slicing-and-dicing-our-data
+        locator: 'Chapter 5.3: Time to slice and dice, sec. Slicing and dicing our data'
+      - title: Dataset.shuffle (🤗 Datasets documentation)
+        url: https://huggingface.co/docs/datasets/package_reference/main_classes#datasets.Dataset.shuffle
+        locator: Main classes, Dataset.shuffle, parameter seed
+    source:
+      id: hf-llm-course
+      ref: chapter5/8#q2
+      url: https://huggingface.co/learn/llm-course/chapter5/8
+    status: draft
+  - id: huggingface-031
+    type: multiple
+    difficulty: easy
+    question: Suppose you have a dataset about household pets called `pets_dataset`, which has a `name` column that denotes the name of each pet. Which of the following approaches would allow you to filter the dataset for all pets whose names start with the letter "L"?
+    options:
+      - text: "`pets_dataset.filter(lambda x: x['name'].startswith('L'))`"
+        correct: true
+      - text: "`pets_dataset.filter(lambda x['name'].startswith('L'))`"
+        why: 'This is a syntax error: a lambda has the form `lambda <arguments> : <expression>`, so it needs an argument before the colon.'
+      - text: "Define `def filter_names(x): return x['name'].startswith('L')` and run `pets_dataset.filter(filter_names)`"
+        correct: true
+      - text: "`pets_dataset.select(lambda x: x['name'].startswith('L'))`"
+        why: '`select()` expects an iterable of row indices, not a function; keeping rows that satisfy a condition is the job of `filter()`.'
+    explanation: |
+      `Dataset.filter()` keeps the rows for which a function returns `True`, and that function can be
+      a named function or a lambda [^1]. A lambda takes the general form
+      `lambda <arguments> : <expression>`, so the version without an argument is a syntax error
+      [^1]. `Dataset.select()` takes an iterable of indices such as `range(1000)`, not a condition
+      [^1].
+    references:
+      - source: hf-llm-course
+        url: https://huggingface.co/learn/llm-course/chapter5/3#slicing-and-dicing-our-data
+        locator: 'Chapter 5.3: Time to slice and dice, sec. Slicing and dicing our data'
+    source:
+      id: hf-llm-course
+      ref: chapter5/8#q3
+      url: https://huggingface.co/learn/llm-course/chapter5/8
+    status: draft
+  - id: huggingface-032
+    type: single
+    difficulty: easy
+    question: 🤗 Datasets treats each dataset as a memory-mapped file. What is memory mapping?
+    options:
+      - text: A mapping between CPU RAM and GPU memory
+        why: Memory mapping is about RAM and files on disk, not about moving data to the GPU.
+      - text: A mapping between RAM and filesystem storage
+        correct: true
+      - text: A mapping between two files in the 🤗 Datasets cache
+        why: It maps a file on disk into memory, not one file onto another.
+      - text: A mapping from each token to its ID in the vocabulary
+        why: That is the tokenizer's vocabulary, which has nothing to do with how the dataset is stored.
+    explanation: |
+      🤗 Datasets treats each dataset as a memory-mapped file, which provides a mapping between RAM and
+      filesystem storage [^1]. The library can then access and operate on elements of the dataset
+      without loading all of it into memory, which is how a dataset of almost 20 GB can be used with
+      far less RAM [^1]. It has nothing to do with GPU memory or with a tokenizer's vocabulary.
+    references:
+      - source: hf-llm-course
+        url: https://huggingface.co/learn/llm-course/chapter5/4#the-magic-of-memory-mapping
+        locator: 'Chapter 5.4: Big data? 🤗 Datasets to the rescue!, sec. The magic of memory mapping'
+    source:
+      id: hf-llm-course
+      ref: chapter5/8#q4
+      url: https://huggingface.co/learn/llm-course/chapter5/8
+    status: draft
+  - id: huggingface-033
+    type: multiple
+    difficulty: medium
+    question: What are the main benefits of the memory mapping used by 🤗 Datasets?
+    options:
+      - text: Several processes can share one memory-mapped file, so `Dataset.map()` can run in parallel without copying the data
+        correct: true
+      - text: Programs can access parts of an extremely large file without first reading the whole file into RAM
+        correct: true
+      - text: The whole dataset is read into RAM once, so that later accesses never touch the disk
+        why: It is the opposite. Memory mapping avoids loading the whole dataset into RAM.
+      - text: The dataset is compressed, so that it takes up much less space on disk
+        why: Memory mapping changes how a file is accessed, not how big it is on disk.
+    explanation: |
+      A memory-mapped dataset can be accessed and operated on without being fully loaded into memory
+      [^1]. Memory-mapped files can also be shared across processes, so methods like `Dataset.map()`
+      can be parallelized without moving or copying the dataset [^1]. Memory mapping neither loads
+      everything into RAM up front nor compresses the data; for corpora too large even for the disk,
+      the course turns to streaming [^1].
+    references:
+      - source: hf-llm-course
+        url: https://huggingface.co/learn/llm-course/chapter5/4#the-magic-of-memory-mapping
+        locator: 'Chapter 5.4: Big data? 🤗 Datasets to the rescue!, secs. The magic of memory mapping and Streaming datasets'
+    source:
+      id: hf-llm-course
+      ref: chapter5/8#q5
+      url: https://huggingface.co/learn/llm-course/chapter5/8
+    status: draft
+  - id: huggingface-034
+    type: single
+    difficulty: easy
+    question: |
+      With `streaming=True`, `load_dataset()` does not download the whole dataset first:
+
+      ```py
+      from datasets import load_dataset
+
+      dataset = load_dataset("allocine", streaming=True, split="train")
+      ```
+
+      Why can't you get the first review with `dataset[0]`, as you could without streaming?
+    options:
+      - text: It is too large to fit in RAM, so streaming refuses to return single elements
+        why: Streamed datasets are decompressed on the fly, so you can process terabyte-sized datasets with very little RAM.
+      - text: Streaming returns an `IterableDataset`, which has no random access by index
+        correct: true
+      - text: The `allocine` dataset has no `train` split
+        why: It has train, validation and test splits; the problem is the type of object that streaming returns.
+      - text: Streamed examples arrive as token IDs and must be decoded before they can be read
+        why: Streamed examples are ordinary dicts of raw fields, as in a regular dataset; tokenizing is a separate `map()` step.
+    explanation: |
+      With `streaming=True`, `load_dataset()` returns an `IterableDataset` instead of a `Dataset`, and
+      its elements are accessed by iterating over it, e.g. `next(iter(dataset))` [^1]. Streaming is
+      meant precisely for corpora too large for RAM or even the disk, because entries are read on the
+      fly [^1]. To pick examples from a stream you use `take()` and `skip()` rather than indices [^1].
+    references:
+      - source: hf-llm-course
+        url: https://huggingface.co/learn/llm-course/chapter5/4#streaming-datasets
+        locator: 'Chapter 5.4: Big data? 🤗 Datasets to the rescue!, sec. Streaming datasets'
+    source:
+      id: hf-llm-course
+      ref: chapter5/8#q6
+      url: https://huggingface.co/learn/llm-course/chapter5/8
+    status: draft
+  - id: huggingface-035
+    type: multiple
+    difficulty: easy
+    question: Which of the following are the main benefits of writing a dataset card for a dataset you share on the Hub?
+    options:
+      - text: It tells others the intended use and supported tasks, so they can decide whether the dataset suits them
+        correct: true
+      - text: It draws attention to the biases present in the corpus
+        correct: true
+      - text: It makes it more likely that others in the community will use the dataset
+        correct: true
+      - text: It removes the biases in the corpus by documenting them
+        why: Documenting a bias helps users evaluate the risks, but it does not change the data.
+    explanation: |
+      A dataset card, the repository's README.md, gives users the context to decide whether the
+      dataset is relevant to their task and to evaluate potential biases or risks in using it [^1].
+      Well-documented datasets are also more likely to be useful to others, including your future self
+      [^1]. Writing down a bias does not remove it from the data, though.
+    references:
+      - source: hf-llm-course
+        url: https://huggingface.co/learn/llm-course/chapter5/5#creating-a-dataset-card
+        locator: 'Chapter 5.5: Creating your own dataset, sec. Creating a dataset card'
+    source:
+      id: hf-llm-course
+      ref: chapter5/8#q7
+      url: https://huggingface.co/learn/llm-course/chapter5/8
+    status: draft
+  - id: huggingface-036
+    type: true_false
+    difficulty: easy
+    question: 🤗 Datasets can only load text data, so audio or computer-vision datasets need a different library.
+    options:
+      - text: 'True'
+        why: 🤗 Datasets also loads and processes audio, image and tabular data.
+      - text: 'False'
+        correct: true
+    explanation: |
+      🤗 Datasets is a library for accessing and sharing datasets for audio, computer vision and NLP
+      tasks, with the same loading and processing methods for all of them [^1]. Its documentation has
+      separate guides for loading and processing audio data, image data and tabular data [^1].
+    references:
+      - title: 🤗 Datasets documentation
+        url: https://huggingface.co/docs/datasets/index
+        locator: Introduction and guides (Audio, Vision, Text, Tabular)
+    source:
+      id: hf-llm-course
+      ref: chapter5/8#q10
+      url: https://huggingface.co/learn/llm-course/chapter5/8
+    status: draft
+  - id: huggingface-037
+    type: single
+    difficulty: easy
+    question: |
+      In a PyTorch training loop for a 🤗 Transformers model you can write
+
+      ```py
+      outputs = model(**batch)
+      loss = outputs.loss
+      loss.backward()
+      ```
+
+      without defining a loss function yourself. Why?
+    options:
+      - text: Transformer models are trained without supervision, so they need no loss function
+        why: Every model trained by gradient descent needs a loss; here the model computes it internally.
+      - text: When the batch contains `labels`, the model computes the loss itself and returns it
+        correct: true
+      - text: '`outputs.loss` is the metric that `compute_metrics()` returns after each evaluation'
+        why: '`compute_metrics()` reports evaluation metrics; it is not run in the forward pass and is not what gets back-propagated.'
+      - text: The optimizer computes the loss from the gradients during `optimizer.step()`
+        why: It is the other way round. The loss comes first, `backward()` turns it into gradients, and the optimizer only uses them to update the weights.
+    explanation: |
+      All 🤗 Transformers models return the loss when `labels` are provided, alongside the logits [^1].
+      A manual training loop therefore takes `outputs.loss`, calls `backward()` on it and then steps
+      the optimizer [^1]. The loss is handled by the model, while `compute_metrics()` only computes
+      evaluation metrics such as accuracy or F1 [^2].
+    references:
+      - source: hf-llm-course
+        url: https://huggingface.co/learn/llm-course/chapter3/4#prepare-for-training
+        locator: 'Chapter 3.4: A full training loop, secs. Prepare for training and The training loop'
+      - source: hf-llm-course
+        url: https://huggingface.co/learn/llm-course/chapter3/3
+        locator: 'Chapter 3.3: Fine-tuning a model with the Trainer API, section quiz on compute_metrics'
+    source:
+      id: hf-llm-course
+      ref: chapter7/9#q9
+      url: https://huggingface.co/learn/llm-course/chapter7/9
     status: draft

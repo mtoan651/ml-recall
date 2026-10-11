@@ -5,6 +5,7 @@ title: Transfer Learning
 questions:
   - id: transfer-learning-001
     type: single
+    difficulty: easy
     question: What does "transfer learning" mean?
     options:
       - text: Transferring the knowledge of a pretrained model to a new model by training it on the same dataset.
@@ -13,11 +14,20 @@ questions:
         correct: true
       - text: Transferring the knowledge of a pretrained model to a new model by building the second model with the same architecture as the first model.
         why: The architecture is just the way the model is built; there is no knowledge shared or transferred in this case.
-    explanation: When the second model is trained on a new task, it *transfers* the knowledge of the first model. [^1]
+    explanation: |
+      Transfer learning starts from a pretrained model and continues training it on a new,
+      task-specific dataset (fine-tuning). Because the second model starts from the first model's
+      weights rather than random ones, what was learned during pretraining is carried over, or
+      *transferred* [^1]. Training again on the same dataset transfers nothing to a new task, and
+      copying only the architecture copies no knowledge: the architecture is just the skeleton of
+      layers, while the learned knowledge lives in the weights (the checkpoint) [^2].
     references:
       - source: hf-llm-course
-        locator: 'Chapter 1: Transformer models'
-        url: https://huggingface.co/learn/llm-course/chapter1/1
+        url: https://huggingface.co/learn/llm-course/chapter1/4#transfer-learning
+        locator: Chapter 1.4 How do Transformers work?, sec. Transfer Learning
+      - source: hf-llm-course
+        url: https://huggingface.co/learn/llm-course/chapter1/4#architecture-vs-checkpoints
+        locator: Chapter 1.4 How do Transformers work?, sec. Architectures vs. checkpoints
     source:
       id: hf-llm-course
       ref: chapter1/7#q5
@@ -25,6 +35,7 @@ questions:
     status: draft
   - id: transfer-learning-002
     type: single
+    difficulty: easy
     question: What does "domain adaptation" mean?
     options:
       - text: It's when we run a model on a dataset and get the predictions for each sample in that dataset.
@@ -35,11 +46,18 @@ questions:
         correct: true
       - text: It's when we add misclassified samples to a dataset to make our model more robust.
         why: That's certainly something you should do if you retrain your model regularly, but it's not domain adaptation.
-    explanation: Correct! The model adapted its knowledge to the new dataset. [^1]
+    explanation: |
+      Domain adaptation means fine-tuning a pretrained model on in-domain data so that it fits that
+      domain better. For example, a model pretrained on Wikipedia treats the specialised words of
+      legal contracts or scientific articles as rare tokens until it is further trained on such
+      text [^1]. The course fine-tunes DistilBERT's masked language model on IMDb movie reviews so
+      that it adapts from Wikipedia's factual style to the more subjective language of reviews
+      [^1]. Running inference, training a model from scratch and adding misclassified samples to
+      the data are all useful steps, but none of them adapts a pretrained model to a new domain.
     references:
       - source: hf-llm-course
-        locator: 'Chapter 7: Classical NLP tasks'
-        url: https://huggingface.co/learn/llm-course/chapter7/1
+        url: https://huggingface.co/learn/llm-course/chapter7/3
+        locator: Chapter 7.3 Fine-tuning a masked language model (introduction and the IMDb dataset)
     source:
       id: hf-llm-course
       ref: chapter7/9#q4
@@ -71,21 +89,26 @@ questions:
       url: https://github.com/microsoft/AI-For-Beginners/blob/392d0df1b2647cbee104942390551f1ed9e072c8/etc/quiz-app/src/assets/translations/en/lesson-8.json
     status: draft
   - id: transfer-learning-004
-    type: single
-    difficulty: easy
-    shuffle: false
-    question: freezing weights of convolutional feature extractor can be done by ____
+    type: multiple
+    difficulty: medium
+    question: Which of the following freeze the weights of a pretrained convolutional feature extractor, so that training only updates the new classifier on top?
     options:
-      - text: setting `requires_grad` property to `False`
-      - text: setting `trainable` property to `False`
-      - text: a and b
+      - text: In PyTorch, setting `requires_grad` to `False` on all of the feature extractor's parameters
         correct: true
+      - text: In Keras/TensorFlow, setting the feature extractor's `trainable` attribute to `False`
+        correct: true
+      - text: In PyTorch, calling `.eval()` on the feature extractor
+        why: '`eval()` only switches layers such as dropout and batch normalization to their evaluation behaviour. It does not stop gradient computation, so the optimizer still updates the weights [^5].'
+      - text: Training the whole network with a 10 times lower learning rate
+        why: A lower learning rate makes the updates smaller, but the pretrained weights still change. Retraining everything with a very low learning rate is what the Keras guide calls fine-tuning, the step that comes after training with frozen layers [^4].
     explanation: |
-      Both work; they are the PyTorch and the Keras/TensorFlow way of doing the same thing. In the
-      PyTorch notebook the feature extractor is frozen by setting `requires_grad = False` on all its
-      parameters [^1], which keeps them out of the backward graph so they get no gradient updates
-      [^3]. In the TensorFlow notebook the pre-trained VGG16 layer gets `trainable = False` [^2],
-      which moves its weights from the trainable to the non-trainable list [^4].
+      Both settings freeze the feature extractor; they are the PyTorch and the Keras/TensorFlow way
+      of doing the same thing. In the PyTorch notebook the feature extractor is frozen by setting
+      `requires_grad = False` on all its parameters [^1], which keeps them out of the backward graph
+      so they get no gradient updates [^3]. In the TensorFlow notebook the pre-trained VGG16 layer
+      gets `trainable = False` [^2], which moves its weights from the trainable to the
+      non-trainable list, so training leaves them unchanged [^4]. Evaluation mode and a smaller
+      learning rate freeze nothing: the weights still receive updates [^4][^5].
     references:
       - source: ms-ai-for-beginners
         url: https://github.com/microsoft/AI-For-Beginners/blob/392d0df1b2647cbee104942390551f1ed9e072c8/lessons/4-ComputerVision/08-TransferLearning/TransferLearningPyTorch.ipynb
@@ -96,9 +119,14 @@ questions:
       - title: Autograd mechanics (PyTorch documentation)
         url: https://docs.pytorch.org/docs/stable/notes/autograd.html#setting-requires-grad
         locator: Locally disabling gradient computation, Setting requires_grad
+        quote: To freeze parts of your model, simply apply .requires_grad_(False) to the parameters that you don’t want updated.
       - title: Transfer learning & fine-tuning (Keras developer guide)
         url: https://keras.io/guides/transfer_learning/#freezing-layers-understanding-the-trainable-attribute
-        locator: 'Freezing layers: understanding the trainable attribute'
+        locator: 'Sections "Freezing layers: understanding the trainable attribute" and "Fine-tuning"'
+      - title: Autograd mechanics (PyTorch documentation)
+        url: https://docs.pytorch.org/docs/stable/notes/autograd.html#evaluation-mode-nn-module-eval
+        locator: Locally disabling gradient computation, Evaluation Mode (nn.Module.eval())
+        quote: Evaluation mode is not a mechanism to locally disable gradient computation.
     source:
       id: ms-ai-for-beginners
       ref: quiz-208/q2

@@ -9,15 +9,14 @@ questions:
     shuffle: false
     question: What is Q-Learning?
     options:
-      - text: a mechanism for recording the 'goodness' of each state
+      - text: a mechanism for recording the 'goodness' of each action in each state
       - text: an algorithm where the policy is defined by a Q-Table
       - text: both of the above
         correct: true
     explanation: |
-      The lesson describes both statements. In Q-learning the policy is defined by a Q-table,
-      and that table records the "goodness" (quality) of each action in each state [^1]. More
-      precisely, an entry is the value of a state–action pair, not of a state alone. The agent
-      acts by choosing the action with the highest value in its current state [^1][^2].
+      The ML-For-Beginners lesson describes Q-learning in both ways. Its policy is defined by a
+      Q-table, and that table records the "goodness" (quality) of each action in each state [^1].
+      The agent acts by choosing the action with the highest value in its current state [^1][^2].
       Q-learning itself is the algorithm that fills in this table using TD updates [^2].
     references:
       - source: ms-ml-for-beginners
@@ -61,6 +60,7 @@ questions:
     status: draft
   - id: q-learning-003
     type: multiple
+    difficulty: easy
     question: What are the two main approaches to find optimal policy?
     options:
       - text: Policy-based methods
@@ -69,11 +69,21 @@ questions:
       - text: Value-based methods
         correct: true
       - text: Evolution-strategies methods
-    explanation: With Policy-Based methods, we train the policy directly to learn which action to take given a state. With value-based methods, we train a value function to learn which state is more valuable and use this value function to take the action that leads to it. [^1]
+    explanation: |
+      Both approaches look for the optimal policy $\pi^*$. Policy-based methods learn it directly:
+      the agent is trained to output which action to take in each state. Value-based methods learn it
+      indirectly: the agent learns how valuable each state is and then takes the actions that lead to
+      the more valuable states [^1]. Evolution strategies are not a third main approach. Like hill
+      climbing and simulated annealing, they are one way of optimizing a policy's parameters
+      directly, so they belong to the policy-based family [^2]. "Random-based methods" is not an
+      established category.
     references:
       - source: hf-deep-rl-course
-        locator: Unit 2. Introduction to Q-Learning
-        url: https://huggingface.co/learn/deep-rl-course/unit2/introduction
+        url: https://huggingface.co/learn/deep-rl-course/unit1/two-methods#policy
+        locator: "Unit 1, \"Two main approaches for solving RL problems\", section \"The Policy π: the agent's brain\""
+      - source: hf-deep-rl-course
+        url: https://huggingface.co/learn/deep-rl-course/unit4/what-are-policy-based-methods#the-difference-between-policy-based-and-policy-gradient-methods
+        locator: Unit 4, "What are the policy-based methods?", section "The difference between policy-based and policy-gradient methods"
     source:
       id: hf-deep-rl-course
       ref: unit2/mid-way-quiz#q1
@@ -99,7 +109,7 @@ questions:
           hint: one word
         - accept:
             - discounted
-          hint: one word
+          hint: one word (what the factor γ does to it)
       model: $V(S_t) = R_{t+1} + \gamma V(S_{t+1})$
     explanation: |
       Defining the value of a state through the value of its successor means you no longer have to
@@ -160,11 +170,11 @@ questions:
       - text: The algorithm we use to train our Q-function
         correct: true
       - text: A value function
-        why: It's an action-value function since it determines the value of being at a particular state and taking a specific action at that state
+        why: Q-learning is not a function but the algorithm that trains one. The function it trains is the Q-function, an action-value function that gives the value of taking a specific action in a particular state.
       - text: An algorithm that determines the value of being at a particular state and taking a specific action at that state
         why: Q-function is the function that determines the value of being at a particular state and taking a specific action at that state.
       - text: A table
-        why: Q-learning is not a Q-table. The Q-function is the algorithm that will feed the Q-table.
+        why: Q-learning is not a Q-table. The Q-table stores the Q-function's values, and Q-learning is the algorithm that fills it in.
     explanation: |
       Q-learning is an off-policy, value-based TD algorithm. Its job is to train the Q-function,
       the action-value function [^1]. Its update moves $Q$ towards the optimal action-value
@@ -191,8 +201,8 @@ questions:
       - text: An algorithm we use in Q-Learning
       - text: Q-table is the internal memory of our agent
         correct: true
-      - text: In Q-table each cell corresponds a state value
-        why: Each cell corresponds to a state-action value pair value. Not a state value.
+      - text: In Q-table each cell corresponds to a state value
+        why: Each cell holds the value of a state–action pair, not the value of a state alone.
     explanation: |
       The Q-table is where the Q-function keeps its values, its memory or "cheat sheet". There is
       one cell per state–action pair, and a lookup returns the value of taking that action in
@@ -355,8 +365,13 @@ questions:
     question: Why can't we use a classical Q-Learning to solve an Atari Game?
     options:
       - text: Atari environments are too fast for Q-Learning
-      - text: Atari environments have a big observation space. So creating an updating the Q-Table would not be efficient
+        why: Speed is not the obstacle. The problem is the size of the observation space.
+      - text: Atari environments have a big observation space. So creating and updating the Q-Table would not be efficient
         correct: true
+      - text: Atari games have a continuous action space, so a Q-table cannot have one column per action
+        why: Atari games have a discrete action space with only a handful of joystick moves, so the actions fit easily in a table [^3].
+      - text: Classical Q-learning needs the environment's transition probabilities, which Atari games do not provide
+        why: Q-learning is model-free. It learns from sampled transitions and never needs the environment's transition probabilities [^4].
     explanation: |
       Classical Q-learning needs one table entry per state–action pair. An Atari observation is a
       $210 \times 160 \times 3$ image with values from 0 to 255, so there are about
@@ -364,6 +379,8 @@ questions:
       Memory is only part of the problem: almost every state would be new, so the agent has to
       generalize from similar states, which needs function approximation [^2]. The course puts
       the problem down to the size of the observation space, not to how fast the game runs [^1].
+      The actions are not the issue either, since Atari's action space is discrete [^3]. And
+      Q-learning is model-free, which is one reason DQN was built on it [^4].
     references:
       - source: hf-deep-rl-course
         url: https://huggingface.co/learn/deep-rl-course/unit3/from-q-to-dqn
@@ -371,6 +388,12 @@ questions:
       - title: 'Sutton & Barto (2018), Reinforcement Learning: An Introduction, 2nd ed.'
         url: http://incompleteideas.net/book/RLbook2020.pdf
         locator: Part II introduction (Approximate Solution Methods), p. 195
+      - title: 'OpenAI Spinning Up, Part 1: Key Concepts in RL'
+        url: https://spinningup.openai.com/en/latest/spinningup/rl_intro.html#action-spaces
+        locator: Section "Action Spaces"
+      - title: 'Sutton & Barto (2018), Reinforcement Learning: An Introduction, 2nd ed.'
+        url: http://incompleteideas.net/book/RLbook2020.pdf
+        locator: Sec. 16.5 Human-level Video Game Play, p. 438
     source:
       id: hf-deep-rl-course
       ref: unit3/quiz#q2
@@ -382,8 +405,9 @@ questions:
     question: |
       Why do we stack four frames together when we use frames as input in Deep Q-Learning? Complete
       the reasoning. A single frame shows where objects are but not how they move: in Pong you cannot
-      tell from one frame which way the ball is going. On its own, a frame is therefore not a {{1}}
-      state. Stacking the four most recent frames supplies the missing {{2}} information.
+      tell from one frame which way the ball is going. On its own, a frame therefore lacks the {{1}}
+      property: it does not hold everything needed to decide what to do next without looking at the
+      history. Stacking the four most recent frames supplies the missing {{2}} information.
     answer:
       blanks:
         - accept:
@@ -396,14 +420,18 @@ questions:
             - movement
             - time
             - velocity
+            - direction
+            - speed
           hint: one word
     explanation: |
       One frame shows positions but not velocities, which is why a single Pong frame cannot tell you
-      where the ball is heading; the course calls this the problem of temporal limitation [^2]. In RL
-      terms, the frame is not a Markov state, because the full state of many Atari games cannot be
-      observed from one image [^1]. DQN (Mnih et al.) therefore stacked the four most recent
-      preprocessed $84 \times 84$ frames into an $84 \times 84 \times 4$ input; this did not remove
-      partial observability in every game, but it made many of them more Markovian [^1].
+      where the ball is heading; the course calls this the problem of temporal limitation [^2]. The
+      Markov property means the current state alone is enough to choose an action, with no need for
+      the history of earlier states [^3]. A single frame fails this test, because the full state of
+      many Atari games cannot be observed from one image [^1]. DQN (Mnih et al.) therefore stacked
+      the four most recent preprocessed $84 \times 84$ frames into an $84 \times 84 \times 4$ input;
+      this did not remove partial observability in every game, but it made many of them more
+      Markovian [^1].
     references:
       - title: 'Sutton & Barto (2018), Reinforcement Learning: An Introduction, 2nd ed.'
         url: http://incompleteideas.net/book/RLbook2020.pdf
@@ -411,6 +439,9 @@ questions:
       - source: hf-deep-rl-course
         url: https://huggingface.co/learn/deep-rl-course/unit3/deep-q-network#preprocessing
         locator: Unit 3, "The Deep Q-Network (DQN)", section "Preprocessing the input and temporal limitation"
+      - source: hf-deep-rl-course
+        url: https://huggingface.co/learn/deep-rl-course/unit1/rl-framework#markov-property
+        locator: Unit 1, "The Reinforcement Learning Framework", section "Markov Property"
     source:
       id: hf-deep-rl-course
       ref: unit3/quiz#q3
@@ -418,6 +449,7 @@ questions:
     status: draft
   - id: q-learning-013
     type: multiple
+    difficulty: easy
     question: What are the two phases of Deep Q-Learning?
     options:
       - text: Sampling
@@ -426,11 +458,19 @@ questions:
       - text: Reranking
       - text: Training
         correct: true
-    explanation: We perform actions and store the observed experiences tuples in a replay memory. We select the small batch of tuple randomly and learn from it using a gradient descent update step. [^1]
+    explanation: |
+      The Deep Q-Learning training algorithm alternates two phases [^1]. In the sampling phase the
+      agent acts in the environment and stores the experience tuples it observes in a replay memory.
+      In the training phase it draws a small random batch of tuples from that memory and learns from
+      it with a gradient-descent step [^1][^2]. Drawing the batch at random is part of the training
+      phase, not a separate shuffling phase, and nothing is reranked.
     references:
       - source: hf-deep-rl-course
-        locator: Unit 3. Deep Q-Learning with Atari Games
-        url: https://huggingface.co/learn/deep-rl-course/unit3/introduction
+        url: https://huggingface.co/learn/deep-rl-course/unit3/deep-q-algorithm
+        locator: Unit 3, "The Deep Q-Learning Algorithm" (the two phases, Sampling and Training)
+      - title: 'Sutton & Barto (2018), Reinforcement Learning: An Introduction, 2nd ed.'
+        url: http://incompleteideas.net/book/RLbook2020.pdf
+        locator: Sec. 16.5 Human-level Video Game Play (experience replay), p. 440
     source:
       id: hf-deep-rl-course
       ref: unit3/quiz#q4
@@ -794,4 +834,68 @@ questions:
       id: hf-deep-rl-course
       ref: unit2/quiz2#q6
       url: https://huggingface.co/learn/deep-rl-course/unit2/quiz2
+    status: draft
+  - id: q-learning-021
+    type: single
+    difficulty: easy
+    question: An agent picks each action with probability proportional to that action's value in the Q-table for the current state. For which Q-table does this policy behave like a random walk?
+    options:
+      - text: One where all entries are equal
+        correct: true
+      - text: One where each state's best action has a much higher value than the rest
+      - text: One where all entries are different
+    explanation: |
+      A random walk chooses the next action at random from the allowed actions, each equally likely
+      [^1]. If actions are picked with probabilities proportional to their Q-values, equal values give
+      equal probabilities: that is why the lesson's Q-table, initialized with the same value (0.25)
+      for every move, corresponds to the random-walk policy [^2]. As learning makes some entries
+      larger, the agent picks the better actions more often while still exploring now and then [^3];
+      once one action's value dominates, the policy almost always takes it, the opposite of a random
+      walk.
+    references:
+      - source: ms-ml-for-beginners
+        url: https://github.com/microsoft/ML-For-Beginners/blob/de2d4e12236445198213a0711855e348e7253cd4/8-Reinforcement/1-QLearning/README.md#random-walk
+        locator: 'Lesson: Introduction to reinforcement learning and Q-learning, sec. Random walk'
+      - source: ms-ml-for-beginners
+        url: https://github.com/microsoft/ML-For-Beginners/blob/de2d4e12236445198213a0711855e348e7253cd4/8-Reinforcement/1-QLearning/README.md#q-learning
+        locator: 'Lesson: Introduction to reinforcement learning and Q-learning, sec. Q-Learning'
+      - source: ms-ml-for-beginners
+        url: https://github.com/microsoft/ML-For-Beginners/blob/de2d4e12236445198213a0711855e348e7253cd4/8-Reinforcement/1-QLearning/README.md#exploit-vs-explore
+        locator: 'Lesson: Introduction to reinforcement learning and Q-learning, sec. Exploit vs. explore'
+    source:
+      id: ms-ml-for-beginners
+      ref: quiz-46/q2
+      url: https://github.com/microsoft/ML-For-Beginners/blob/de2d4e12236445198213a0711855e348e7253cd4/quiz-app/src/assets/translations/en.json
+    status: draft
+  - id: q-learning-022
+    type: single
+    difficulty: easy
+    question: When the number of possible states is not known in advance, a Q-table can be stored as a Python dictionary instead of a fixed-size array. What are its keys and values?
+    options:
+      - text: 'Key: a (state, action) pair; value: the Q-value estimated for that pair'
+        correct: true
+      - text: 'Key: a state; value: the single action the agent should take in that state'
+      - text: 'Key: a Q-value; value: the action that produced it'
+    explanation: |
+      A Q-table records how good each action is in each state, one value per state–action pair [^1],
+      and the Q-learning update changes the value of one such pair at a time [^2]. In the CartPole
+      lesson the discretized states have no guaranteed bounds, so the table becomes a dictionary keyed
+      by the pair (state, action), with the Q-value as the value and 0 as the default for pairs not
+      seen yet [^3]. A map from each state to an action is a policy, which the agent derives from the
+      Q-values, not the Q-table itself [^1]. Q-values make no sense as keys, since many pairs can
+      share the same value.
+    references:
+      - source: ms-ml-for-beginners
+        url: https://github.com/microsoft/ML-For-Beginners/blob/de2d4e12236445198213a0711855e348e7253cd4/8-Reinforcement/1-QLearning/README.md#q-learning
+        locator: 'Lesson: Introduction to reinforcement learning and Q-learning, secs. Actions and policy and Q-Learning'
+      - title: 'Sutton & Barto (2018), Reinforcement Learning: An Introduction, 2nd ed.'
+        url: http://incompleteideas.net/book/RLbook2020.pdf
+        locator: 'Sec. 6.5 Q-learning: Off-policy TD Control, pp. 131–132'
+      - source: ms-ml-for-beginners
+        url: https://github.com/microsoft/ML-For-Beginners/blob/de2d4e12236445198213a0711855e348e7253cd4/8-Reinforcement/2-Gym/README.md#the-q-table-structure
+        locator: 'Lesson: CartPole skating, sec. The Q-Table structure'
+    source:
+      id: ms-ml-for-beginners
+      ref: quiz-48/q2
+      url: https://github.com/microsoft/ML-For-Beginners/blob/de2d4e12236445198213a0711855e348e7253cd4/quiz-app/src/assets/translations/en.json
     status: draft

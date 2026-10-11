@@ -62,7 +62,7 @@ questions:
     question: |
       Evaluate both statements.
 
-      **Statement 1.** The softmax function is commonly used in mutliclass logistic regression.
+      **Statement 1.** The softmax function is commonly used in multiclass logistic regression.
 
       **Statement 2.** The temperature of a nonuniform softmax distribution affects its entropy.
     options:
@@ -136,15 +136,20 @@ questions:
     status: draft
   - id: logistic-regression-005
     type: single
-    shuffle: false
     question: A logistic regression model with three features has bias $b = 1$ and weights $w_1 = 2$, $w_2 = -1$, $w_3 = 5$. For the input $x_1 = 0$, $x_2 = 10$, $x_3 = 2$, what is the value of $z$ (the linear output before the sigmoid)?
     options:
-      - text: –1
+      - text: '21'
+        why: This drops the minus sign of $w_2$. The term is $(-1)(10) = -10$, not $+10$.
       - text: '0'
+        why: This leaves out the bias $b = 1$.
       - text: '0.731'
+        why: That is $\sigma(z)$, the predicted probability. $z$ is the value before the sigmoid.
       - text: '1'
         correct: true
-    explanation: Correct! The linear equation defined by the weights and bias is *z* = 1 + 2x1 – x2 + 5 x3. Plugging the input values into the equation produces z = 1 + (2)(0) - (10) + (5)(2) = 1 [^1]
+    explanation: |
+      The linear part of the model is $z = b + w_1x_1 + w_2x_2 + w_3x_3 = 1 + 2x_1 - x_2 + 5x_3$.
+      Plugging in the input gives $z = 1 + 2(0) - 10 + 5(2) = 1$ [^1]. Only after that is the
+      sigmoid applied, giving the probability $\sigma(1) \approx 0.731$ [^1].
     references:
       - source: google-mlcc
         locator: 'Logistic regression: Calculating a probability with the sigmoid function'
@@ -184,4 +189,578 @@ questions:
       id: google-mlcc
       ref: logistic-regression/sigmoid-function#q2
       url: https://developers.google.com/machine-learning/crash-course/logistic-regression/sigmoid-function
+    status: draft
+  - id: logistic-regression-007
+    type: short_answer
+    difficulty: medium
+    tags:
+      - softmax
+      - cross-entropy
+      - gradient
+    question: |
+      A softmax-regression model outputs the logits $\mathbf{o} = (2, 1, 0)$ for an example whose
+      true class is the first one, so the one-hot label is $\mathbf{y} = (1, 0, 0)$. What is the
+      derivative $\partial l / \partial o_1$ of the cross-entropy loss?
+    answer:
+      numeric: -0.335
+      tolerance: 0.002
+      hint: a number, 3 decimals (it may be negative)
+      model: $\mathrm{softmax}(\mathbf{o})_1 - y_1 = \frac{e^2}{e^2 + e^1 + e^0} - 1 \approx 0.665 - 1 = -0.335$
+    explanation: |
+      For a softmax followed by the cross-entropy loss, the derivative with respect to a logit is
+      the predicted probability minus the label, $\partial_{o_j} l = \mathrm{softmax}(\mathbf{o})_j - y_j$ [^1].
+      Here $\mathrm{softmax}(\mathbf{o})_1 = e^2 / (e^2 + e + 1) \approx 7.389 / 11.107 \approx 0.665$,
+      so the derivative is $0.665 - 1 \approx -0.335$. It is negative, so a gradient-descent step
+      raises $o_1$ and with it the probability of the true class. The other two derivatives are
+      just their probabilities, about 0.245 and 0.090, and all three add up to zero [^1].
+    references:
+      - source: d2l
+        url: https://d2l.ai/chapter_linear-classification/softmax-regression.html#softmax-and-cross-entropy-loss
+        locator: Sec. 4.1.2.2 Softmax and Cross-Entropy Loss, Eq. (4.1.10)
+    source:
+      id: original
+      ref: logistic-regression-007
+    status: draft
+  - id: logistic-regression-008
+    type: short_answer
+    difficulty: hard
+    tags:
+      - softmax
+      - cross-entropy
+      - hessian
+      - convexity
+    question: |
+      For softmax regression with three classes, an example gets
+      $\mathrm{softmax}(\mathbf{o}) = (0.2, 0.3, 0.5)$. What is the second derivative
+      $\partial^2 l / \partial o_1^2$ of its cross-entropy loss? (The true class does not matter.)
+    answer:
+      numeric: 0.16
+      tolerance: 0.001
+      hint: a number, 2 decimals
+      model: $p_1(1 - p_1) = 0.2 \times 0.8 = 0.16$
+    explanation: |
+      The first derivative is $\partial_{o_j} l = p_j - y_j$ with $p = \mathrm{softmax}(\mathbf{o})$ [^1].
+      The label is a constant, so the second derivative is the derivative of the softmax itself,
+      $\partial p_j / \partial o_i = p_j(\delta_{ij} - p_i)$ [^2]. On the diagonal this is
+      $p_1(1 - p_1) = 0.2 \times 0.8 = 0.16$, whatever the label. The full matrix
+      $\mathrm{diag}(p) - pp^\top$ is the covariance of a one-hot vector drawn from
+      $\mathrm{softmax}(\mathbf{o})$, the link between the second derivative and the variance that the
+      d2l exercise asks for [^3]. A covariance matrix is positive semidefinite, so the loss is convex
+      in the logits.
+    references:
+      - source: d2l
+        url: https://d2l.ai/chapter_linear-classification/softmax-regression.html#softmax-and-cross-entropy-loss
+        locator: Sec. 4.1.2.2 Softmax and Cross-Entropy Loss, Eq. (4.1.10)
+      - title: 'Wikipedia: Softmax function'
+        url: https://en.wikipedia.org/wiki/Softmax_function#Gradients
+        locator: Gradients
+      - source: d2l
+        url: https://d2l.ai/chapter_linear-classification/softmax-regression.html#exercises
+        locator: Sec. 4.1.5 Exercises, Exercise 1
+    source:
+      id: d2l
+      ref: chapter_linear-classification/softmax-regression#ex1
+      url: https://d2l.ai/chapter_linear-classification/softmax-regression.html
+    status: draft
+  - id: logistic-regression-009
+    type: short_answer
+    difficulty: easy
+    tags:
+      - softmax
+      - sigmoid
+      - bradley-terry
+    question: |
+      In a Bradley–Terry choice model, a user picks an apple or an orange with probabilities given
+      by a softmax over the scores $o_{\text{apple}} = 3$ and $o_{\text{orange}} = 1$. What is the
+      probability that the user picks the apple?
+    answer:
+      numeric: 0.881
+      tolerance: 0.002
+      hint: a probability, 3 decimals
+      model: $\frac{e^3}{e^3 + e^1} = \frac{1}{1 + e^{-2}} = \sigma(2) \approx 0.881$
+    explanation: |
+      The softmax gives $P(\text{apple}) = e^{3} / (e^{3} + e^{1})$ [^1]. Dividing the numerator and
+      the denominator by $e^3$ turns this into $1 / (1 + e^{-(3 - 1)})$, the sigmoid of the score
+      difference [^2]. With $\sigma(2) \approx 0.881$ [^3], the higher-scored apple is the likelier
+      choice. A two-class softmax is therefore binary logistic regression, whose log-odds is the
+      score difference [^2].
+    references:
+      - source: d2l
+        url: https://d2l.ai/chapter_linear-classification/softmax-regression.html#the-softmax
+        locator: Sec. 4.1.1.2 The Softmax, Eq. (4.1.3)
+      - title: 'Wikipedia: Bradley–Terry model'
+        url: https://en.wikipedia.org/wiki/Bradley%E2%80%93Terry_model#Definition
+        locator: Definition
+      - source: google-mlcc
+        url: https://developers.google.com/machine-learning/crash-course/logistic-regression/sigmoid-function#sigmoid_function
+        locator: 'Logistic regression: Calculating a probability with the sigmoid function (sigmoid table)'
+    source:
+      id: d2l
+      ref: chapter_linear-classification/softmax-regression#ex4
+      url: https://d2l.ai/chapter_linear-classification/softmax-regression.html
+    status: draft
+  - id: logistic-regression-010
+    type: single
+    difficulty: medium
+    tags:
+      - softmax
+      - bradley-terry
+      - choice-models
+    question: |
+      The apple/orange choice model gets a third option, "neither", with score
+      $o_{\text{neither}} = 0$, and the softmax now runs over all three scores
+      ($o_{\text{apple}} = 3$, $o_{\text{orange}} = 1$). What happens to the ratio
+      $P(\text{apple}) / P(\text{orange})$?
+    options:
+      - text: It stays $e^{3 - 1} \approx 7.39$; only the shared denominator changes
+        correct: true
+      - text: It falls, because the new option takes most of its share from the favourite
+        why: Both probabilities are divided by the same new denominator, so they shrink by the same factor [^1].
+      - text: It grows, because the apple has the larger score and loses less
+        why: Both probabilities shrink by the same factor, so neither option gains relative to the other [^1].
+      - text: It now depends on the score given to the "neither" option
+        why: The "neither" score only enters the shared denominator, which cancels in the ratio [^1].
+    explanation: |
+      A softmax gives option $i$ the probability $e^{o_i} / \sum_k e^{o_k}$ [^1]. The denominator is
+      shared, so $P(\text{apple}) / P(\text{orange}) = e^{3 - 1} = e^2 \approx 7.39$ whatever the
+      other options are. Both probabilities do shrink, from about 0.881 and 0.119 to about 0.844
+      and 0.114, because "neither" now takes about 0.042. Relative odds that ignore the other
+      options are called independence of irrelevant alternatives, and a softmax-style choice rule
+      has this property [^2].
+    references:
+      - source: d2l
+        url: https://d2l.ai/chapter_linear-classification/softmax-regression.html#the-softmax
+        locator: Sec. 4.1.1.2 The Softmax, Eq. (4.1.3)
+      - title: "Wikipedia: Luce's choice axiom"
+        url: https://en.wikipedia.org/wiki/Luce%27s_choice_axiom
+        locator: Introduction and Matching law formulation
+    source:
+      id: d2l
+      ref: chapter_linear-classification/softmax-regression#ex4-b
+      url: https://d2l.ai/chapter_linear-classification/softmax-regression.html
+    status: draft
+  - id: logistic-regression-011
+    type: single
+    difficulty: medium
+    tags:
+      - softmax
+      - log-sum-exp
+    question: |
+      Softmax takes its name from $\mathrm{RealSoftMax}(a, b) = \ln(e^a + e^b)$, which is always
+      larger than $\max(a, b)$. What is the largest possible gap
+      $\mathrm{RealSoftMax}(a, b) - \max(a, b)$?
+    options:
+      - text: $\ln 2 \approx 0.693$, reached when $a = b$
+        correct: true
+      - text: $\ln 2 \approx 0.693$, approached as $|a - b| \to \infty$
+        why: The gap is $\ln(1 + e^{-|a - b|})$, which shrinks toward 0 as the numbers move apart [^2].
+      - text: Exactly $1$, reached when $a = b$
+        why: At $a = b$ the gap is $\ln(2e^a) - a = \ln 2$, not 1.
+      - text: It has no maximum and grows with $|a - b|$
+        why: The gap $\ln(1 + e^{-|a - b|})$ never exceeds $\ln 2$ and shrinks as $|a - b|$ grows [^2].
+    explanation: |
+      Take $a \ge b$ and factor out $e^a$: $\ln(e^a + e^b) - a = \ln(1 + e^{-(a - b)})$ [^1]. Because
+      $e^{-(a - b)}$ lies in $(0, 1]$, the gap lies in $(0, \ln 2]$. It equals $\ln 2$ when $a = b$
+      and tends to 0 as the numbers move apart, so the function is a smooth upper approximation
+      of the maximum [^2]. Scaling as $\lambda^{-1}\mathrm{RealSoftMax}(\lambda a, \lambda b)$ with
+      $\lambda > 0$ divides the gap by $\lambda$, so it tends to $\max(a, b)$ as
+      $\lambda \to \infty$ [^2].
+    references:
+      - source: d2l
+        url: https://d2l.ai/chapter_linear-classification/softmax-regression.html#exercises
+        locator: Sec. 4.1.5 Exercises, Exercise 5
+      - title: 'Wikipedia: LogSumExp'
+        url: https://en.wikipedia.org/wiki/LogSumExp#Properties
+        locator: Properties
+    source:
+      id: d2l
+      ref: chapter_linear-classification/softmax-regression#ex5
+      url: https://d2l.ai/chapter_linear-classification/softmax-regression.html
+    status: draft
+  - id: logistic-regression-012
+    type: true_false
+    difficulty: medium
+    tags:
+      - log-sum-exp
+      - softmax
+      - numerical-stability
+    shuffle: false
+    question: |
+      Let $g(\mathbf{x}) = \log \sum_i \exp(x_i)$ be the log-partition (log-sum-exp) function.
+      True or false: adding the same constant $b$ to every coordinate leaves it unchanged,
+      $g(\mathbf{x} + b) = g(\mathbf{x})$.
+    options:
+      - text: 'True'
+        why: Every term gains a factor $e^b$, and the logarithm turns it into $+b$, so $g(\mathbf{x} + b) = g(\mathbf{x}) + b$. It is the softmax, the gradient of $g$, that stays the same [^1][^2].
+      - text: 'False'
+        correct: true
+    explanation: |
+      $g(\mathbf{x} + b) = \log\left(e^b \sum_i e^{x_i}\right) = g(\mathbf{x}) + b$, so the value
+      moves by exactly $b$ [^1]. What stays the same are the softmax probabilities
+      $e^{x_i} / \sum_k e^{x_k}$, which are the partial derivatives of $g$ [^2]. Stable code uses
+      the shift rule with $b = \max_i x_i$: it computes $g(\mathbf{x}) = b + g(\mathbf{x} - b)$, so
+      no exponent is positive and nothing overflows [^1][^3]. The d2l exercise calls $g$
+      translation invariant, but the shift has to be added back.
+    references:
+      - title: 'Wikipedia: LogSumExp'
+        url: https://en.wikipedia.org/wiki/LogSumExp#Properties
+        locator: Properties, and log-sum-exp trick for log-domain calculations
+      - title: 'Wikipedia: Softmax function'
+        url: https://en.wikipedia.org/wiki/Softmax_function#Gradients
+        locator: Gradients
+      - source: d2l
+        url: https://d2l.ai/chapter_linear-classification/softmax-regression-concise.html#softmax-revisited
+        locator: Sec. 4.5.2 Softmax Revisited, Eq. (4.5.2)
+    source:
+      id: d2l
+      ref: chapter_linear-classification/softmax-regression#ex6
+      url: https://d2l.ai/chapter_linear-classification/softmax-regression.html
+    status: draft
+  - id: logistic-regression-013
+    type: short_answer
+    difficulty: medium
+    tags:
+      - softmax
+      - temperature
+    question: |
+      A softmax with temperature $T$ gives $P(i) \propto \exp(o_i / T)$. You build a new
+      distribution $Q(i) \propto P(i)^\alpha$ with $\alpha > 0$. Which value of $\alpha$ doubles the
+      temperature?
+    answer:
+      numeric: 0.5
+      tolerance: 0.001
+      hint: a number, e.g. 3
+      model: $P(i)^\alpha \propto \exp(\alpha o_i / T) = \exp\big(o_i / (T/\alpha)\big)$, so the new temperature is $T/\alpha$ and $\alpha = 1/2$ doubles it.
+    explanation: |
+      Raising to the power $\alpha$ multiplies every exponent by $\alpha$:
+      $P(i)^\alpha \propto \exp(\alpha o_i / T) = \exp(o_i / T')$ with $T' = T / \alpha$, and the
+      normalization absorbs the remaining constant [^1]. Doubling the temperature means
+      $T' = 2T$, so $\alpha = 1/2$; halving it needs $\alpha = 2$. A higher temperature flattens the
+      distribution toward uniform, with higher entropy, while a lower one sharpens it toward the
+      largest logit [^2].
+    references:
+      - source: d2l
+        url: https://d2l.ai/chapter_linear-classification/softmax-regression.html#the-softmax
+        locator: Sec. 4.1.1.2 The Softmax (temperature, exp(-E/kT)) and Sec. 4.1.5 Exercise 7
+      - title: 'Wikipedia: Softmax function'
+        url: https://en.wikipedia.org/wiki/Softmax_function#Definition
+        locator: Definition (temperature)
+    source:
+      id: d2l
+      ref: chapter_linear-classification/softmax-regression#ex7
+      url: https://d2l.ai/chapter_linear-classification/softmax-regression.html
+    status: draft
+  - id: logistic-regression-014
+    type: single
+    difficulty: medium
+    tags:
+      - softmax
+      - numerical-stability
+      - code-reading
+      - pytorch
+    question: |
+      This is the from-scratch softmax of d2l, run in PyTorch's default float32. What does the
+      last line return?
+
+      ```python
+      import torch
+
+      def softmax(X):
+          X_exp = torch.exp(X)
+          partition = X_exp.sum(1, keepdim=True)
+          return X_exp / partition
+
+      softmax(torch.tensor([[100.0, 0.0]]))
+      ```
+    options:
+      - text: '`tensor([[nan, 0.]])`'
+        correct: true
+      - text: '`tensor([[1., 0.]])`'
+        why: That is close to the mathematically correct result, but the code never gets there, because $e^{100} \approx 2.7 \times 10^{43}$ overflows to `inf` first [^2].
+      - text: '`tensor([[inf, 0.]])`'
+        why: The numerator is `inf`, but so is the denominator, and `inf / inf` is `nan`, not `inf` [^3].
+      - text: '`tensor([[0.5, 0.5]])`'
+        why: Equal outputs would need equal logits, and these logits differ by 100.
+    explanation: |
+      Single-precision floats only reach about $10^{38}$, so $\exp(x)$ overflows once $x$ is
+      larger than roughly 90 [^2]. Here $e^{100}$ becomes `inf`, the row sum $\infty + 1$ is `inf`,
+      and the first entry is `inf / inf`, which is `nan` [^3]. The second entry is
+      $1 / \infty = 0$. d2l warns that this naive softmax is not robust to very large or very
+      small arguments [^1]. The fix is to subtract the largest logit before exponentiating, or to
+      let the framework fuse softmax and cross-entropy [^2].
+    references:
+      - source: d2l
+        url: https://d2l.ai/chapter_linear-classification/softmax-regression-scratch.html#the-softmax
+        locator: Sec. 4.4.1 The Softmax (caution about large arguments) and Sec. 4.4.7 Exercise 1
+      - source: d2l
+        url: https://d2l.ai/chapter_linear-classification/softmax-regression-concise.html#softmax-revisited
+        locator: Sec. 4.5.2 Softmax Revisited
+      - title: 'Wikipedia: NaN'
+        url: https://en.wikipedia.org/wiki/NaN#Operations_generating_NaN
+        locator: Operations generating NaN
+    source:
+      id: d2l
+      ref: chapter_linear-classification/softmax-regression-scratch#ex1
+      url: https://d2l.ai/chapter_linear-classification/softmax-regression-scratch.html
+    status: draft
+  - id: logistic-regression-015
+    type: true_false
+    difficulty: medium
+    tags:
+      - cross-entropy
+      - code-reading
+      - pytorch
+      - numerical-stability
+    shuffle: false
+    question: |
+      For one example with integer label `k`, one-hot label vector `y` and predicted probabilities
+      `y_hat`, true or false: `-(y * torch.log(y_hat)).sum()` always returns the same value as
+      `-torch.log(y_hat[k])`.
+    options:
+      - text: 'True'
+        why: If a wrong class has a predicted probability of exactly 0, its term is `0 * log(0)`, that is `0 * -inf`, which is `nan`, and the whole sum becomes `nan` [^2].
+      - text: 'False'
+        correct: true
+    explanation: |
+      On paper the one-hot vector zeroes every term except the true class, so the two expressions
+      agree [^1]. In floating point they can differ. A predicted probability of exactly 0 for a
+      wrong class gives `log(0) = -inf`, and multiplying by the label 0 gives `nan`, which spoils
+      the whole sum [^2]. Indexing takes the log of the true-class probability only, and it also
+      skips $q - 1$ useless multiplications, which is why d2l selects the entries by indexing [^1][^3].
+    references:
+      - source: d2l
+        url: https://d2l.ai/chapter_linear-classification/softmax-regression-scratch.html#the-cross-entropy-loss
+        locator: Sec. 4.4.3 The Cross-Entropy Loss
+      - title: 'Wikipedia: NaN'
+        url: https://en.wikipedia.org/wiki/NaN#Operations_generating_NaN
+        locator: Operations generating NaN
+      - source: d2l
+        url: https://d2l.ai/chapter_linear-classification/softmax-regression-scratch.html#exercises
+        locator: Sec. 4.4.7 Exercises, Exercise 2
+    source:
+      id: d2l
+      ref: chapter_linear-classification/softmax-regression-scratch#ex2
+      url: https://d2l.ai/chapter_linear-classification/softmax-regression-scratch.html
+    status: draft
+  - id: logistic-regression-016
+    type: short_answer
+    difficulty: medium
+    tags:
+      - decision-threshold
+      - cost-sensitive
+      - binary-classification
+    question: |
+      A logistic-regression screening model outputs $p = P(\text{disease} \mid \mathbf{x})$. Missing
+      a sick patient (a false negative) costs 10 times as much as a false alarm (a false positive),
+      and correct decisions cost nothing. To minimize the expected cost, you flag a patient when
+      $p$ is above which threshold?
+    answer:
+      numeric: 0.0909
+      tolerance: 0.001
+      hint: a probability, 3 decimals
+      model: Flag when $10p > 1 \cdot (1 - p)$, that is when $p > 1/11 \approx 0.091$.
+    explanation: |
+      Weighting each kind of error by its cost gives the expected cost of each decision [^1].
+      Flagging costs $1 \cdot (1 - p)$ on average (a false alarm if the patient is healthy), and not
+      flagging costs $10p$ (a miss if the patient is sick). Flagging is cheaper when $10p > 1 - p$,
+      that is when $p > 1/11 \approx 0.091$. Returning the most likely label, which means a threshold
+      of 0.5, is a poor rule here: when misses are expensive the threshold belongs well below
+      0.5 [^2][^3].
+    references:
+      - title: 'Wikipedia: Cost-sensitive machine learning'
+        url: https://en.wikipedia.org/wiki/Cost-sensitive_machine_learning#Cost_Matrix
+        locator: Cost Matrix (expected cost)
+      - title: scikit-learn User Guide
+        url: https://scikit-learn.org/stable/modules/classification_threshold.html
+        locator: Sec. 3.3 Tuning the decision threshold for class prediction (introduction, cancer-detection example)
+      - source: d2l
+        url: https://d2l.ai/chapter_linear-classification/softmax-regression-scratch.html#exercises
+        locator: Sec. 4.4.7 Exercises, Exercise 3
+    source:
+      id: d2l
+      ref: chapter_linear-classification/softmax-regression-scratch#ex3
+      url: https://d2l.ai/chapter_linear-classification/softmax-regression-scratch.html
+    status: draft
+  - id: logistic-regression-017
+    type: single
+    difficulty: medium
+    tags:
+      - cross-entropy
+      - softmax
+      - code-reading
+      - pytorch
+    question: |
+      What is wrong with this PyTorch training step for a 10-class classifier?
+
+      ```python
+      logits = model(X)                     # shape (batch, 10)
+      probs = torch.softmax(logits, dim=1)
+      loss = F.cross_entropy(probs, y)      # y holds class indices
+      ```
+    options:
+      - text: '`F.cross_entropy` applies log-softmax itself; pass `logits` instead'
+        correct: true
+      - text: Nothing, because `F.cross_entropy` expects probabilities that sum to 1
+        why: It expects unnormalized logits. Passing probabilities applies a softmax a second time [^1].
+      - text: '`y` must be one-hot encoded before calling `F.cross_entropy`'
+        why: The target may hold class indices in $[0, C)$; probability targets are an option, not a requirement [^1].
+      - text: The softmax should use `dim=0`, so that each column sums to 1
+        why: Each row is one example, so the softmax must normalize over the class dimension, `dim=1` [^2].
+    explanation: |
+      `F.cross_entropy` takes raw logits and applies log-softmax followed by the negative
+      log-likelihood [^1]. Fusing the two steps lets it compute
+      $\log \hat y_j = o_j - \bar o - \log \sum_k \exp(o_k - \bar o)$ directly, which avoids overflow
+      and underflow [^2]. Feeding it `probs` applies a second softmax to numbers in $[0, 1]$: even a
+      perfectly confident prediction $(1, 0, \ldots, 0)$ is scored as
+      $e / (e + 9) \approx 0.23$ for the true class, so the loss cannot approach 0 and training
+      suffers. Keep the softmax for reading out probabilities only [^2].
+    references:
+      - title: torch.nn.CrossEntropyLoss (PyTorch documentation)
+        url: https://docs.pytorch.org/docs/stable/generated/torch.nn.CrossEntropyLoss.html
+        locator: Description of input (unnormalized logits) and target (class indices or probabilities)
+      - source: d2l
+        url: https://d2l.ai/chapter_linear-classification/softmax-regression-concise.html#softmax-revisited
+        locator: Sec. 4.5.2 Softmax Revisited, Eq. (4.5.2)
+    source:
+      id: original
+      ref: logistic-regression-017
+    status: draft
+  - id: logistic-regression-018
+    type: single
+    difficulty: easy
+    tags:
+      - log-odds
+      - odds-ratio
+      - interpretation
+    question: |
+      In a binary logistic-regression model, the weight of the feature "number of past purchases"
+      is $w = \ln 2 \approx 0.693$. Holding the other features fixed, what does one more past
+      purchase do?
+    options:
+      - text: It multiplies the odds $p / (1 - p)$ by 2
+        correct: true
+      - text: It multiplies the predicted probability $p$ by 2
+        why: The model is linear in the log-odds, not in $p$. Doubling $p$ would push it above 1 whenever $p > 0.5$ [^1].
+      - text: It adds 0.693 to the predicted probability $p$
+        why: The weight is added to the log-odds $z$, and the sigmoid then bends that change [^1].
+      - text: It multiplies the log-odds $z$ by 2
+        why: The weight is added to $z$, not multiplied, so $z$ grows by $\ln 2$ [^1][^2].
+    explanation: |
+      The linear part $z = b + \sum_j w_j x_j$ is the log-odds, $z = \ln\frac{p}{1 - p}$ [^1]. One
+      more unit of the feature adds $w = \ln 2$ to $z$, so the odds $e^z$ are multiplied by
+      $e^{\ln 2} = 2$ [^2]. The effect on $p$ itself depends on the starting point: from $p = 0.5$
+      (odds 1) it moves to $2/3$ (odds 2), not to 1.
+    references:
+      - source: google-mlcc
+        url: https://developers.google.com/machine-learning/crash-course/logistic-regression/sigmoid-function#transforming_linear_output_using_the_sigmoid_function
+        locator: "Logistic regression: Calculating a probability with the sigmoid function, 'Transforming linear output using the sigmoid function' (log-odds)"
+      - title: 'Wikipedia: Logistic regression'
+        url: https://en.wikipedia.org/wiki/Logistic_regression#The_odds_ratio
+        locator: The odds ratio
+    source:
+      id: original
+      ref: logistic-regression-018
+    status: draft
+  - id: logistic-regression-019
+    type: single
+    difficulty: medium
+    tags:
+      - decision-boundary
+      - decision-threshold
+      - log-odds
+    question: |
+      A logistic-regression model on two features has log-odds $z = 2x_1 - x_2 - 4$. With the
+      usual threshold of 0.5, its decision boundary is the line $2x_1 - x_2 - 4 = 0$. If you
+      predict the positive class only when $p > 0.8$, what is the new boundary?
+    options:
+      - text: The parallel line $2x_1 - x_2 - 4 = \ln 4$
+        correct: true
+      - text: The line $2x_1 - x_2 - 4 = 0.8$
+        why: The threshold is a probability. On the log-odds scale it becomes $\ln\frac{0.8}{0.2} = \ln 4 \approx 1.39$ [^1].
+      - text: The same line, since thresholds change only the probabilities
+        why: The threshold decides which points are predicted positive, so the boundary moves to the points where $p = 0.8$ [^2].
+      - text: A curve, since the sigmoid is nonlinear in $x_1$ and $x_2$
+        why: $p > 0.8$ is the same as $z > \ln 4$, and $z$ is linear in the features, so the boundary stays a straight line [^1].
+    explanation: |
+      The sigmoid is increasing, so $p > t$ is the same as $z > \ln\frac{t}{1 - t}$ [^1]. For the
+      default $t = 0.5$ the right-hand side is 0 [^2]; for $t = 0.8$ it is $\ln 4 \approx 1.39$. The
+      new boundary $2x_1 - x_2 - 4 = \ln 4$ has the same normal vector $(2, -1)$, so it is parallel
+      to the old one, shifted into the old positive region. Every threshold gives a straight-line
+      boundary, because $z$ is linear in the features.
+    references:
+      - source: google-mlcc
+        url: https://developers.google.com/machine-learning/crash-course/logistic-regression/sigmoid-function#transforming_linear_output_using_the_sigmoid_function
+        locator: 'Logistic regression: Calculating a probability with the sigmoid function (log-odds, z = ln(y / (1 - y)))'
+      - title: scikit-learn User Guide
+        url: https://scikit-learn.org/stable/modules/classification_threshold.html
+        locator: Sec. 3.3 Tuning the decision threshold for class prediction (default cut-off 0.5, or decision score 0)
+    source:
+      id: original
+      ref: logistic-regression-019
+    status: draft
+  - id: logistic-regression-020
+    type: single
+    difficulty: easy
+    tags:
+      - regularization
+      - scikit-learn
+    question: |
+      A scikit-learn `LogisticRegression` model with default settings overfits. Which change to
+      the parameter `C` makes the regularization stronger?
+    options:
+      - text: Decrease `C`, for example from 1.0 to 0.1
+        correct: true
+      - text: Increase `C`, for example from 1.0 to 10
+        why: '`C` is the inverse of the regularization strength, so a larger `C` weakens the penalty [^1].'
+      - text: Set `C=np.inf` to get the strongest penalty
+        why: '`C=np.inf` removes the penalty and fits unpenalized logistic regression [^1].'
+      - text: Leave `C` alone, it only acts once a penalty is switched on
+        why: scikit-learn regularizes logistic regression by default, with `C=1.0` [^1][^2].
+    explanation: |
+      In scikit-learn, `C` is the inverse of the regularization strength: smaller values mean a
+      stronger penalty, and `C=np.inf` turns it off [^1]. The penalty term is divided by `C` in the
+      training objective, and regularization is applied by default [^2]. Regularization matters for
+      logistic regression: without it, the asymptotic shape of the sigmoid keeps driving the loss
+      toward 0 when there are many features, which overfits [^3].
+    references:
+      - title: scikit-learn API reference
+        url: https://scikit-learn.org/stable/modules/generated/sklearn.linear_model.LogisticRegression.html
+        locator: sklearn.linear_model.LogisticRegression, parameter C
+      - title: scikit-learn User Guide
+        url: https://scikit-learn.org/stable/modules/linear_model.html#logistic-regression
+        locator: Sec. 1.1.11 Logistic regression (Regularization note) and Sec. 1.1.11.1 Binary Case, Eq. (1)
+      - source: google-mlcc
+        url: https://developers.google.com/machine-learning/crash-course/logistic-regression/loss-regularization#regularization_in_logistic_regression
+        locator: "Logistic regression: Loss and regularization, 'Regularization in logistic regression'"
+    source:
+      id: original
+      ref: logistic-regression-020
+    status: draft
+  - id: logistic-regression-021
+    type: true_false
+    difficulty: medium
+    question: 'True or false: if your features are only weakly correlated with the target, you should switch from linear to logistic regression.'
+    options:
+      - text: 'True'
+      - text: 'False'
+        correct: true
+    explanation: |
+      False. What decides between the two is the target: linear regression predicts a continuous
+      value, while logistic regression predicts a category such as "white or not white" [^1]. The
+      lesson remarks that logistic regression does not need the variables to line up the way linear
+      regression does, which is why its weakly correlated pumpkin data was still usable [^1], but
+      that is no reason to switch models. Logistic regression still computes a linear combination of
+      the features, the log-odds, and passes it through a sigmoid [^2]; features that carry little
+      information about the target give a weak classifier just as they give a weak regression.
+    references:
+      - source: ms-ml-for-beginners
+        url: https://github.com/microsoft/ML-For-Beginners/blob/de2d4e12236445198213a0711855e348e7253cd4/2-Regression/4-Logistic/README.md#binary-classification
+        locator: 'Lesson: Logistic regression, secs. Binary classification and Variables DO NOT have to correlate'
+      - source: google-mlcc
+        url: https://developers.google.com/machine-learning/crash-course/logistic-regression/sigmoid-function#transforming_linear_output_using_the_sigmoid_function
+        locator: 'Logistic regression: Calculating a probability with the sigmoid function, Transforming linear output using the sigmoid function'
+    source:
+      id: ms-ml-for-beginners
+      ref: quiz-15/q3
+      url: https://github.com/microsoft/ML-For-Beginners/blob/de2d4e12236445198213a0711855e348e7253cd4/quiz-app/src/assets/translations/en.json
     status: draft

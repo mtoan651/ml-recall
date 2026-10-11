@@ -36,11 +36,11 @@ questions:
   - id: object-detection-002
     type: single
     difficulty: easy
-    question: An Object detection model gives us
+    question: An object detection model gives us
     options:
-      - text: object class
-      - text: bounding box
-      - text: both class and bounding box
+      - text: object class only
+      - text: bounding box only
+      - text: class and bounding box
         correct: true
     explanation: |
       A detector has to say both what each object is and where it is. Its output is therefore a
@@ -151,4 +151,64 @@ questions:
       id: mmlu-redux
       ref: machine_learning/32
       url: https://huggingface.co/datasets/edinburgh-dawg/mmlu-redux-2.0/viewer/machine_learning/test?row=32
+    status: draft
+  - id: object-detection-006
+    type: single
+    difficulty: medium
+    question: |
+      A naive object detector cuts an image into tiles and runs an image classifier on each tile.
+      Why do real object detectors also need a regression output?
+    options:
+      - text: Tiles locate an object only roughly; precise bounding-box coordinates must be predicted by regression
+        correct: true
+      - text: The class label of each detected object is a continuous number, so it must also be predicted by regression
+      - text: Image classifiers cannot process an image that is larger than a single tile of the grid
+      - text: A regression output removes the need for images labelled with the objects they contain
+    explanation: |
+      The tile approach (split the image, classify each tile, keep tiles with high activation) finds
+      the object's bounding box only very imprecisely [^1]. For a precise location the detector has to
+      predict the coordinates of the box, which is a regression task and needs datasets labelled with
+      boxes, such as PASCAL VOC or COCO [^1]. YOLO, for example, frames detection as regression from
+      the image to box coordinates and class probabilities [^2]. The class itself is still predicted by
+      classification.
+    references:
+      - source: ms-ai-for-beginners
+        url: https://github.com/microsoft/AI-For-Beginners/blob/392d0df1b2647cbee104942390551f1ed9e072c8/lessons/4-ComputerVision/11-ObjectDetection/README.md#a-naive-approach-to-object-detection
+        locator: 'Lesson: Object Detection, secs. A Naive Approach to Object Detection and Datasets for Object Detection'
+      - title: 'You Only Look Once: Unified, Real-Time Object Detection (Redmon et al., 2016)'
+        url: https://arxiv.org/abs/1506.02640
+        locator: Sec. 2 Unified Detection, Figure 2
+    source:
+      id: ms-ai-for-beginners
+      ref: quiz-111/q1
+      url: https://github.com/microsoft/AI-For-Beginners/blob/392d0df1b2647cbee104942390551f1ed9e072c8/etc/quiz-app/src/assets/translations/en/lesson-11.json
+    status: draft
+  - id: object-detection-007
+    type: short_answer
+    difficulty: easy
+    question: |
+      YOLO divides an image into an $S \times S$ grid, and every grid cell predicts $B$ bounding boxes,
+      each with a confidence score. With $S = 7$ and $B = 2$, how many bounding boxes does the
+      network predict for one image, before low-confidence boxes are discarded?
+    answer:
+      numeric: 98
+      tolerance: 0
+      model: $7 \times 7 \times 2 = 98$
+    explanation: |
+      YOLO splits the image into $S \times S$ regions, and for each region a CNN predicts several
+      possible objects with bounding-box coordinates and a confidence [^1]. On PASCAL VOC it uses
+      $S = 7$ and $B = 2$, so it predicts $7 \times 7 \times 2 = 98$ boxes per image in a single pass
+      [^2]. The number of objects actually reported varies from image to image: boxes with low
+      confidence are dropped, and non-maximal suppression removes duplicates of the same object [^2].
+    references:
+      - source: ms-ai-for-beginners
+        url: https://github.com/microsoft/AI-For-Beginners/blob/392d0df1b2647cbee104942390551f1ed9e072c8/lessons/4-ComputerVision/11-ObjectDetection/README.md#yolo---you-only-look-once
+        locator: 'Lesson: Object Detection, sec. YOLO - You Only Look Once'
+      - title: 'You Only Look Once: Unified, Real-Time Object Detection (Redmon et al., 2016)'
+        url: https://arxiv.org/abs/1506.02640
+        locator: Sec. 2 Unified Detection and Sec. 2.3 Inference
+    source:
+      id: ms-ai-for-beginners
+      ref: quiz-111/q3
+      url: https://github.com/microsoft/AI-For-Beginners/blob/392d0df1b2647cbee104942390551f1ed9e072c8/etc/quiz-app/src/assets/translations/en/lesson-11.json
     status: draft

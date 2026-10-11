@@ -9,7 +9,7 @@ questions:
     question: |
       Evaluate both statements.
 
-      **Statement 1.** For any two variables x and y having joint distribution p(x, y), we always have H[x, y] ≥ H[x] + H[y] where H is entropy function.
+      **Statement 1.** For any two variables $x$ and $y$ having joint distribution $p(x, y)$, we always have $H[x, y] \ge H[x] + H[y]$, where $H$ is the entropy function.
 
       **Statement 2.** For some directed graphs, moralization decreases the number of edges present in the graph.
     options:
@@ -32,4 +32,627 @@ questions:
       id: mmlu-redux
       ref: machine_learning/53
       url: https://huggingface.co/datasets/edinburgh-dawg/mmlu-redux-2.0/viewer/machine_learning/test?row=53
+    status: draft
+  - id: information-theory-002
+    type: short_answer
+    difficulty: easy
+    tags:
+      - self-information
+      - bits
+    question: |
+      A friend shuffles a standard 52-card deck, turns over one card and says "This is the 3 of
+      spades". All 52 cards were equally likely. How much self-information does this statement
+      carry, in bits?
+    answer:
+      numeric: 5.70
+      tolerance: 0.01
+      hint: bits, 2 decimals
+      model: $I = -\log_2(1/52) = \log_2 52 \approx 5.70$ bits
+    explanation: |
+      An event of probability $p$ carries $I = -\log_2 p$ bits of self-information [^1]. The named
+      card has probability $1/52$, so $I = \log_2 52 \approx 5.70$ bits. For comparison, "I see a
+      heart" has probability $1/4$ and carries only 2 bits, while reading out the whole shuffled
+      order (one of $52!$ equally likely orders) carries about 225.6 bits [^2]. The less likely the
+      event, the more bits it carries.
+    references:
+      - source: d2l
+        url: https://d2l.ai/chapter_appendix-mathematics-for-deep-learning/information-theory.html#self-information
+        locator: Sec. 22.11.1.1 Self-information, Eq. (22.11.1)
+      - source: d2l
+        url: https://d2l.ai/chapter_appendix-mathematics-for-deep-learning/information-theory.html#information
+        locator: Sec. 22.11.1 Information (the card examples)
+    source:
+      id: d2l
+      ref: chapter_appendix-mathematics-for-deep-learning/information-theory#ex1
+      url: https://d2l.ai/chapter_appendix-mathematics-for-deep-learning/information-theory.html
+    status: draft
+  - id: information-theory-003
+    type: short_answer
+    difficulty: medium
+    tags:
+      - kl-divergence
+      - jensen-inequality
+      - proof
+    question: |
+      Complete the proof that $D_{\mathrm{KL}}(p \| q) \ge 0$ (assume $p$ and $q$ are positive on
+      the same outcomes). Write the divergence as $E_{x \sim p}\left[-\log \frac{q(x)}{p(x)}\right]$.
+      Because $-\log$ is convex, Jensen's inequality moves the expectation inside the logarithm:
+      $D_{\mathrm{KL}}(p \| q) \ge -\log E_{x \sim p}\left[\frac{q(x)}{p(x)}\right]$. The
+      expectation inside the logarithm equals $\sum_x q(x)$, which is {{1}}. So the right-hand side
+      equals {{2}}, and the divergence can never be negative.
+    answer:
+      blanks:
+        - numeric: 1
+          hint: a number
+        - numeric: 0
+          hint: a number
+      model: The probabilities $q(x)$ sum to $1$, and $-\log 1 = 0$.
+    explanation: |
+      Jensen's inequality for a convex function $f$ says $E[f(Z)] \ge f(E[Z])$; with $f = -\log$ and
+      $Z = q(x)/p(x)$ it gives the bound in the question [^1]. The inner expectation is
+      $\sum_x p(x) \frac{q(x)}{p(x)} = \sum_x q(x) = 1$, and $-\log 1 = 0$, so
+      $D_{\mathrm{KL}}(p \| q) \ge 0$. This is Gibbs' inequality, and equality holds only when the
+      two distributions are the same [^2][^3]. If $q$ also puts mass where $p$ is zero, the sum is
+      below 1 and the bound is still non-negative.
+    references:
+      - source: d2l
+        url: https://d2l.ai/chapter_appendix-mathematics-for-deep-learning/information-theory.html#exercises
+        locator: "Sec. 22.11.7 Exercises, Exercise 2 (hint: Jensen's inequality)"
+      - source: d2l
+        url: https://d2l.ai/chapter_appendix-mathematics-for-deep-learning/information-theory.html#kl-divergence-properties
+        locator: Sec. 22.11.4.2 KL Divergence Properties, Eq. (22.11.23)
+      - title: 'Wikipedia: Kullback–Leibler divergence'
+        url: https://en.wikipedia.org/wiki/Kullback%E2%80%93Leibler_divergence#Properties
+        locator: Properties (Gibbs' inequality)
+    source:
+      id: d2l
+      ref: chapter_appendix-mathematics-for-deep-learning/information-theory#ex2
+      url: https://d2l.ai/chapter_appendix-mathematics-for-deep-learning/information-theory.html
+    status: draft
+  - id: information-theory-004
+    type: short_answer
+    difficulty: medium
+    tags:
+      - entropy
+      - bits
+      - uniform-distribution
+    question: |
+      Compute the randomness per character of two text sources. A monkey presses one of 44
+      typewriter keys uniformly at random: that gives {{1}} bits per character. A typesetter picks
+      one of 2,000 words uniformly at random, and a word has 4.5 letters on average: that gives
+      {{2}} bits per character.
+    answer:
+      blanks:
+        - numeric: 5.46
+          tolerance: 0.01
+          hint: bits, 2 decimals
+        - numeric: 2.44
+          tolerance: 0.01
+          hint: bits, 2 decimals
+      model: $\log_2 44 \approx 5.46$ and $\log_2 2000 / 4.5 \approx 10.97 / 4.5 \approx 2.44$
+    explanation: |
+      A uniform distribution over $k$ outcomes has entropy $\log_2 k$ bits, the largest possible
+      for $k$ outcomes [^1]. Each keystroke of the monkey is one of 44 equally likely keys, so it
+      carries $\log_2 44 \approx 5.46$ bits. Each word of the typesetter carries
+      $\log_2 2000 \approx 10.97$ bits, and spreading that over 4.5 letters gives about 2.44 bits per
+      character [^2]. Picking whole words from a fixed vocabulary makes each letter far more
+      predictable than a random keystroke.
+    references:
+      - source: d2l
+        url: https://d2l.ai/chapter_appendix-mathematics-for-deep-learning/information-theory.html#properties-of-entropy
+        locator: Sec. 22.11.2.4 Properties of Entropy, Eq. (22.11.8)
+      - source: d2l
+        url: https://d2l.ai/chapter_appendix-mathematics-for-deep-learning/information-theory.html#exercises
+        locator: Sec. 22.11.7 Exercises, Exercise 3
+    source:
+      id: d2l
+      ref: chapter_appendix-mathematics-for-deep-learning/information-theory#ex3
+      url: https://d2l.ai/chapter_appendix-mathematics-for-deep-learning/information-theory.html
+    status: draft
+  - id: information-theory-005
+    type: short_answer
+    difficulty: medium
+    tags:
+      - mutual-information
+      - conditional-entropy
+    question: |
+      Two binary random variables have the joint distribution $p(0,0) = p(1,1) = 0.4$ and
+      $p(0,1) = p(1,0) = 0.1$. What is their mutual information $I(X, Y)$, in bits?
+    answer:
+      numeric: 0.278
+      tolerance: 0.002
+      hint: bits, 3 decimals
+      model: $I(X, Y) = H(X) - H(X \mid Y) = 1 - 0.722 = 0.278$ bits
+    explanation: |
+      Both marginals are $(0.5, 0.5)$, so $H(X) = 1$ bit. Whatever $Y$ is, $X$ equals it with
+      probability 0.8, so $H(X \mid Y) = -0.8\log_2 0.8 - 0.2\log_2 0.2 \approx 0.722$ bits. The
+      mutual information is the uncertainty removed by learning $Y$:
+      $I(X, Y) = H(X) - H(X \mid Y) \approx 0.278$ bits [^1]. The definition
+      $\sum_{x,y} p(x,y)\log_2 \frac{p(x,y)}{p(x)p(y)} = 0.8\log_2 1.6 + 0.2\log_2 0.4 \approx 0.542 - 0.264$
+      gives the same value [^2].
+    references:
+      - source: d2l
+        url: https://d2l.ai/chapter_appendix-mathematics-for-deep-learning/information-theory.html#id3
+        locator: Sec. 22.11.3.3 Mutual Information (equivalent forms of I(X, Y))
+      - source: d2l
+        url: https://d2l.ai/chapter_appendix-mathematics-for-deep-learning/information-theory.html#equation-eq-mut-ent-def
+        locator: Sec. 22.11.3.3 Mutual Information, Eq. (22.11.18)
+    source:
+      id: d2l
+      ref: chapter_appendix-mathematics-for-deep-learning/information-theory#ex4
+      url: https://d2l.ai/chapter_appendix-mathematics-for-deep-learning/information-theory.html
+    status: draft
+  - id: information-theory-006
+    type: multiple
+    difficulty: medium
+    tags:
+      - mutual-information
+      - joint-entropy
+      - conditional-entropy
+    question: Select all expressions that equal the mutual information $I(X, Y)$.
+    options:
+      - text: $H(X) - H(X \mid Y)$
+        correct: true
+      - text: $H(X) + H(Y) - H(X, Y)$
+        correct: true
+      - text: $H(X, Y) - H(X)$
+        why: This is the conditional entropy $H(Y \mid X)$, the information in $Y$ that $X$ does not already contain [^2].
+      - text: $H(X \mid Y) + H(Y \mid X)$
+        why: This adds up the parts that $X$ and $Y$ do not share, which is $H(X, Y) - I(X, Y)$, not the shared part [^1].
+    explanation: |
+      Mutual information is the information that $X$ and $Y$ share. $H(X) - H(X \mid Y)$ is the
+      uncertainty about $X$ minus what is left once $Y$ is known, so it measures how much $Y$
+      tells us about $X$ [^1]. $H(X) + H(Y)$ counts the shared part twice, and subtracting the joint
+      entropy $H(X, Y)$ leaves it exactly once [^1]. The difference $H(X, Y) - H(X)$ is the
+      conditional entropy $H(Y \mid X)$ instead [^2].
+    references:
+      - source: d2l
+        url: https://d2l.ai/chapter_appendix-mathematics-for-deep-learning/information-theory.html#id3
+        locator: Sec. 22.11.3.3 Mutual Information, Eq. (22.11.17) and Fig. 22.11.1
+      - source: d2l
+        url: https://d2l.ai/chapter_appendix-mathematics-for-deep-learning/information-theory.html#conditional-entropy
+        locator: Sec. 22.11.3.2 Conditional Entropy, Eq. (22.11.16)
+    source:
+      id: d2l
+      ref: chapter_appendix-mathematics-for-deep-learning/information-theory#ex4-b
+      url: https://d2l.ai/chapter_appendix-mathematics-for-deep-learning/information-theory.html
+    status: draft
+  - id: information-theory-007
+    type: short_answer
+    difficulty: hard
+    tags:
+      - kl-divergence
+      - gaussian
+      - nats
+    question: |
+      Let $P = \mathcal{N}(0, 1)$ and $Q = \mathcal{N}(1, 2^2)$. Using natural logarithms, what is
+      $D_{\mathrm{KL}}(P \| Q)$, in nats?
+    answer:
+      numeric: 0.443
+      tolerance: 0.002
+      hint: nats, 3 decimals
+      model: $\ln 2 + \frac{1 + 1^2}{2 \cdot 4} - \frac{1}{2} \approx 0.693 + 0.25 - 0.5 = 0.443$
+    explanation: |
+      For $P = \mathcal{N}(\mu_1, \sigma_1^2)$ and $Q = \mathcal{N}(\mu_2, \sigma_2^2)$ the
+      divergence has the closed form
+      $D_{\mathrm{KL}}(P \| Q) = \ln\frac{\sigma_2}{\sigma_1} + \frac{\sigma_1^2 + (\mu_1 - \mu_2)^2}{2\sigma_2^2} - \frac{1}{2}$ [^1].
+      With $\sigma_1 = 1$, $\sigma_2 = 2$ and $\mu_1 - \mu_2 = -1$ this is
+      $\ln 2 + 2/8 - 1/2 \approx 0.443$ nats. Swapping the arguments gives
+      $\ln\frac{1}{2} + \frac{4 + 1}{2} - \frac{1}{2} \approx 1.307$ nats, a reminder that the KL
+      divergence is not symmetric [^2].
+    references:
+      - title: 'Wikipedia: Kullback–Leibler divergence'
+        url: https://en.wikipedia.org/wiki/Kullback%E2%80%93Leibler_divergence#Multivariate_normal_distributions
+        locator: 'Examples: Multivariate normal distributions (univariate case)'
+      - source: d2l
+        url: https://d2l.ai/chapter_appendix-mathematics-for-deep-learning/information-theory.html#kl-divergence-properties
+        locator: Sec. 22.11.4.2 KL Divergence Properties, Eq. (22.11.22)
+    source:
+      id: d2l
+      ref: chapter_appendix-mathematics-for-deep-learning/information-theory#ex5
+      url: https://d2l.ai/chapter_appendix-mathematics-for-deep-learning/information-theory.html
+    status: draft
+  - id: information-theory-008
+    type: true_false
+    difficulty: hard
+    tags:
+      - kl-divergence
+      - gaussian
+      - asymmetry
+    shuffle: false
+    question: |
+      The KL divergence is not symmetric in general. True or false: for two Gaussians with the
+      same variance, $P = \mathcal{N}(\mu_1, \sigma^2)$ and $Q = \mathcal{N}(\mu_2, \sigma^2)$, the
+      two directions agree, $D_{\mathrm{KL}}(P \| Q) = D_{\mathrm{KL}}(Q \| P)$.
+    options:
+      - text: 'True'
+        correct: true
+      - text: 'False'
+        why: Asymmetry means that some pairs give different values in the two directions, not that every pair does. With equal variances both directions reduce to $(\mu_1 - \mu_2)^2 / (2\sigma^2)$ [^1].
+    explanation: |
+      With $\sigma_1 = \sigma_2 = \sigma$ the closed form
+      $\ln\frac{\sigma_2}{\sigma_1} + \frac{\sigma_1^2 + (\mu_1 - \mu_2)^2}{2\sigma_2^2} - \frac{1}{2}$
+      loses its log term and becomes $\frac{(\mu_1 - \mu_2)^2}{2\sigma^2}$, which does not change
+      when $\mu_1$ and $\mu_2$ swap [^1]. The non-symmetry property only says that there exist
+      $P, Q$ with $D_{\mathrm{KL}}(P \| Q) \neq D_{\mathrm{KL}}(Q \| P)$ [^2]; Gaussians with
+      different variances are such a pair. The sampled toy example in the same d2l section applies
+      the formula to sorted random draws rather than to density values, so its large gap between
+      the two directions is not the exact divergence of these Gaussians [^3].
+    references:
+      - title: 'Wikipedia: Kullback–Leibler divergence'
+        url: https://en.wikipedia.org/wiki/Kullback%E2%80%93Leibler_divergence#Multivariate_normal_distributions
+        locator: 'Examples: Multivariate normal distributions (univariate case)'
+      - source: d2l
+        url: https://d2l.ai/chapter_appendix-mathematics-for-deep-learning/information-theory.html#kl-divergence-properties
+        locator: Sec. 22.11.4.2 KL Divergence Properties, Eq. (22.11.22)
+      - source: d2l
+        url: https://d2l.ai/chapter_appendix-mathematics-for-deep-learning/information-theory.html#example
+        locator: Sec. 22.11.4.3 Example (code that sorts the samples and calls kl_divergence)
+    source:
+      id: d2l
+      ref: chapter_appendix-mathematics-for-deep-learning/information-theory#ex5-b
+      url: https://d2l.ai/chapter_appendix-mathematics-for-deep-learning/information-theory.html
+    status: draft
+  - id: information-theory-009
+    type: short_answer
+    difficulty: medium
+    tags:
+      - entropy
+      - coding
+      - bits
+    question: |
+      Three classes occur with equal probability $\frac{1}{3}$. Instead of coding each observation
+      on its own, you code 5 independent observations together with one fixed-length binary
+      codeword. How many bits per observation does this scheme use?
+    answer:
+      numeric: 1.6
+      tolerance: 0.001
+      hint: bits per observation, e.g. 1.75
+      model: $3^5 = 243 \le 2^8 = 256$, so 8 bits cover 5 observations, $8/5 = 1.6$ bits each.
+    explanation: |
+      Five observations have $3^5 = 243$ equally likely combinations. Seven bits give only 128
+      codewords, but eight bits give 256, so one 8-bit codeword covers all five observations, or
+      $8/5 = 1.6$ bits per observation. Coding each observation alone needs 2 bits. No code can
+      average fewer than $H = \log_2 3 \approx 1.585$ bits per observation [^1][^2], and coding
+      longer blocks moves the cost toward that bound.
+    references:
+      - source: d2l
+        url: https://d2l.ai/chapter_linear-classification/softmax-regression.html#entropy
+        locator: Sec. 4.1.3.1 Entropy, Eq. (4.1.11)
+      - source: d2l
+        url: https://d2l.ai/chapter_appendix-mathematics-for-deep-learning/information-theory.html#properties-of-entropy
+        locator: Sec. 22.11.2.4 Properties of Entropy (entropy as a lower bound on the average code length)
+    source:
+      id: d2l
+      ref: chapter_linear-classification/softmax-regression#ex2
+      url: https://d2l.ai/chapter_linear-classification/softmax-regression.html
+    status: draft
+  - id: information-theory-010
+    type: single
+    difficulty: easy
+    tags:
+      - entropy
+      - coding
+      - bits
+    question: |
+      Three classes occur with equal probability $\frac{1}{3}$. You give each observation its own
+      fixed-length binary codeword. What is the problem with this code?
+    options:
+      - text: Each costs 2 bits, about 0.415 bits above the entropy
+        correct: true
+      - text: One bit per observation is enough, so a 2-bit code wastes a whole bit
+        why: One bit has only two codewords, which cannot tell three classes apart.
+      - text: No binary code can tell three classes apart without ambiguity
+        why: Two bits give four codewords, which is enough for three classes. The problem is waste, not ambiguity.
+      - text: Nothing, because the entropy of three equal classes is exactly 2 bits
+        why: The entropy is $\log_2 3 \approx 1.585$ bits, not 2 [^2].
+    explanation: |
+      Telling three classes apart needs two bits ($2^1 < 3 \le 2^2$), so one of the four codewords
+      is never used. The entropy of the uniform distribution on three outcomes is
+      $\log_2 3 \approx 1.585$ bits, the minimum average code length [^1][^2], so each observation
+      wastes about $2 - 1.585 = 0.415$ bits. Coding several observations jointly reduces the waste.
+    references:
+      - source: d2l
+        url: https://d2l.ai/chapter_linear-classification/softmax-regression.html#entropy
+        locator: Sec. 4.1.3.1 Entropy, Eq. (4.1.11)
+      - source: d2l
+        url: https://d2l.ai/chapter_appendix-mathematics-for-deep-learning/information-theory.html#properties-of-entropy
+        locator: Sec. 22.11.2.4 Properties of Entropy, Eq. (22.11.8)
+    source:
+      id: d2l
+      ref: chapter_linear-classification/softmax-regression#ex2-b
+      url: https://d2l.ai/chapter_linear-classification/softmax-regression.html
+    status: draft
+  - id: information-theory-011
+    type: short_answer
+    difficulty: easy
+    tags:
+      - coding
+      - ternary
+    question: |
+      PAM-3 signalling sends one of three levels $\{-1, 0, 1\}$ per symbol instead of one of two.
+      How many ternary symbols are needed to transmit any integer in $\{0, \ldots, 7\}$?
+    answer:
+      numeric: 2
+      hint: a whole number of symbols
+      model: $3^1 = 3 < 8 \le 9 = 3^2$, so 2 ternary symbols (binary needs 3 bits).
+    explanation: |
+      With $n$ three-level symbols you can send $3^n$ different values. One symbol gives only 3,
+      two give $9 \ge 8$, so 2 symbols suffice, where a binary code needs $\log_2 8 = 3$ bits [^1].
+      Each three-level symbol carries up to $\log_2 3 \approx 1.585$ bits, the entropy of a uniform
+      choice among three levels [^2]. PAM-3 sends these levels as positive, zero and negative
+      voltages [^3].
+    references:
+      - source: d2l
+        url: https://d2l.ai/chapter_linear-classification/softmax-regression.html#exercises
+        locator: Sec. 4.1.5 Exercises, Exercise 3
+      - source: d2l
+        url: https://d2l.ai/chapter_appendix-mathematics-for-deep-learning/information-theory.html#properties-of-entropy
+        locator: Sec. 22.11.2.4 Properties of Entropy, Eq. (22.11.8)
+      - title: 'Wikipedia: Ternary signal'
+        url: https://en.wikipedia.org/wiki/Ternary_signal
+        locator: Introduction (PAM-3 example)
+    source:
+      id: d2l
+      ref: chapter_linear-classification/softmax-regression#ex3
+      url: https://d2l.ai/chapter_linear-classification/softmax-regression.html
+    status: draft
+  - id: information-theory-012
+    type: single
+    difficulty: medium
+    tags:
+      - cross-entropy
+      - kl-divergence
+      - loss-functions
+    question: |
+      When training a classifier, the data distribution $P$ is fixed and only the model
+      distribution $Q$ changes. Why does minimizing the cross-entropy $\mathrm{CE}(P, Q)$ give the
+      same $Q$ as minimizing $D_{\mathrm{KL}}(P \| Q)$?
+    options:
+      - text: $\mathrm{CE}(P, Q) = H(P) + D_{\mathrm{KL}}(P \| Q)$, and $H(P)$ does not depend on $Q$
+        correct: true
+      - text: $\mathrm{CE}(P, Q) = H(Q) + D_{\mathrm{KL}}(P \| Q)$, and $H(Q)$ stays constant in training
+        why: The entropy in the decomposition is that of the data $P$, and $H(Q)$ does change as the model changes [^1].
+      - text: The KL divergence is symmetric, so it equals the cross-entropy in either direction
+        why: The KL divergence is not symmetric, and it differs from the cross-entropy by $H(P)$ [^1][^2].
+      - text: Both quantities reach their minimum when $Q$ is the uniform distribution
+        why: Both are minimized at $Q = P$, not at the uniform distribution [^2].
+    explanation: |
+      Cross-entropy splits into the entropy of the data plus the KL divergence,
+      $\mathrm{CE}(P, Q) = H(P) + D_{\mathrm{KL}}(P \| Q)$ [^1]. Since $H(P)$ is a constant during
+      training, the two objectives differ by a constant and have the same minimizer. Both are also
+      equivalent to maximizing the expected log-likelihood $E_{x \sim P}[\log q(x)]$ [^1], and the
+      lowest cross-entropy, $H(P)$, is reached at $Q = P$ [^2].
+    references:
+      - source: d2l
+        url: https://d2l.ai/chapter_appendix-mathematics-for-deep-learning/information-theory.html#formal-definition
+        locator: Sec. 22.11.5.1 Formal Definition, Eq. (22.11.26), and Sec. 22.11.5.2 Properties
+      - source: d2l
+        url: https://d2l.ai/chapter_linear-classification/softmax-regression.html#cross-entropy-revisited
+        locator: Sec. 4.1.3.3 Cross-Entropy Revisited
+    source:
+      id: original
+      ref: information-theory-012
+    status: draft
+  - id: information-theory-013
+    type: single
+    difficulty: hard
+    tags:
+      - mutual-information
+      - correlation
+    question: |
+      $X$ is uniform on $\{-1, 0, 1\}$ and $Y = X^2$. Their correlation is zero, because
+      $E[XY] = E[X^3] = 0 = E[X]\,E[Y]$. What is the mutual information $I(X, Y)$?
+    options:
+      - text: About 0.918 bits, equal to $H(Y)$ because $X$ fixes $Y$
+        correct: true
+      - text: Exactly 0 bits, since uncorrelated variables share no information
+        why: Zero correlation only rules out a linear relation. $I(X, Y) = 0$ requires independence, and $Y$ is fully determined by $X$ [^1][^2].
+      - text: About 1.585 bits, since $I(X, Y) = H(X)$ whenever $Y$ depends on $X$
+        why: $I(X, Y) = H(X)$ needs an invertible relation. $Y = X^2$ cannot tell $-1$ from $1$, so $Y$ holds less information than $X$ [^1].
+      - text: It is undefined, since $Y$ is a deterministic function of $X$
+        why: Mutual information is defined for any joint distribution, including deterministic relations [^1].
+    explanation: |
+      Mutual information is zero only for independent variables, and it captures any kind of
+      dependence, not just the linear kind that correlation measures [^1][^2]. Here $H(Y \mid X) = 0$
+      because $X$ fixes $Y$, so $I(X, Y) = H(Y) - H(Y \mid X) = H(Y)$. $Y = 1$ with probability
+      $2/3$ and $Y = 0$ with probability $1/3$, so
+      $H(Y) = -\frac{2}{3}\log_2\frac{2}{3} - \frac{1}{3}\log_2\frac{1}{3} \approx 0.918$ bits.
+    references:
+      - source: d2l
+        url: https://d2l.ai/chapter_appendix-mathematics-for-deep-learning/information-theory.html#properties-of-mutual-information
+        locator: Sec. 22.11.3.3 Mutual Information and Sec. 22.11.3.4 Properties of Mutual Information
+      - title: 'Wikipedia: Mutual information'
+        url: https://en.wikipedia.org/wiki/Mutual_information#Linear_correlation
+        locator: Linear correlation
+    source:
+      id: original
+      ref: information-theory-013
+    status: draft
+  - id: information-theory-014
+    type: single
+    difficulty: medium
+    tags:
+      - cross-entropy
+      - surprisal
+    question: |
+      An observer believes the probabilities $Q$, but the data are actually generated by $P$.
+      Which quantity is the observer's expected surprisal per observation?
+    options:
+      - text: $H(P, Q) = -\sum_j P(j) \log Q(j)$
+        correct: true
+      - text: $H(P) = -\sum_j P(j) \log P(j)$
+        why: This is the expected surprisal of an observer who knows the true probabilities $P$ [^1].
+      - text: $H(Q) = -\sum_j Q(j) \log Q(j)$
+        why: This averages over $Q$, but the outcomes are drawn from $P$, so the average must be taken under $P$ [^2].
+      - text: $D_{\mathrm{KL}}(Q \| P) = \sum_j Q(j) \log \frac{Q(j)}{P(j)}$
+        why: A KL divergence measures extra surprisal on top of an entropy, and this one also averages over $Q$ instead of the data distribution $P$ [^3].
+    explanation: |
+      Seeing outcome $j$ after assigning it probability $Q(j)$ causes surprisal $-\log Q(j)$ [^1].
+      Outcomes arrive with the true probabilities $P(j)$, so the average surprisal is the
+      cross-entropy $H(P, Q) = -\sum_j P(j)\log Q(j)$ [^2]. It is smallest when $Q = P$, where it
+      equals the entropy $H(P)$ [^2]. This is why minimizing the cross-entropy loss can be read as
+      minimizing the surprisal, and so the number of bits, needed to communicate the labels [^2].
+    references:
+      - source: d2l
+        url: https://d2l.ai/chapter_linear-classification/softmax-regression.html#surprisal
+        locator: Sec. 4.1.3.2 Surprisal
+      - source: d2l
+        url: https://d2l.ai/chapter_linear-classification/softmax-regression.html#cross-entropy-revisited
+        locator: Sec. 4.1.3.3 Cross-Entropy Revisited
+      - source: d2l
+        url: https://d2l.ai/chapter_appendix-mathematics-for-deep-learning/information-theory.html#id4
+        locator: Sec. 22.11.4.1 Definition (KL divergence), Eq. (22.11.21)
+    source:
+      id: original
+      ref: information-theory-014
+    status: draft
+  - id: information-theory-015
+    type: single
+    difficulty: medium
+    tags:
+      - kl-divergence
+      - zero-probability
+    question: |
+      A model $Q$ assigns probability exactly $0$ to an outcome $x$ that has $p(x) > 0$ under the
+      true distribution $P$. What is $D_{\mathrm{KL}}(P \| Q)$?
+    options:
+      - text: Infinite, because the term for $x$ contains $\log \frac{p(x)}{0}$
+        correct: true
+      - text: Unaffected, because the sum only runs over outcomes with $q(x) > 0$
+        why: The expectation is taken under $P$, so every outcome with $p(x) > 0$ contributes, including this one [^1].
+      - text: Zero for that term, because an impossible outcome carries no information
+        why: Outcomes with $p(x) = 0$ drop out of the expectation, but here $p(x) > 0$ and $q(x) = 0$, the case that makes the divergence infinite [^1].
+      - text: Finite, and at most the logarithm of the number of outcomes
+        why: The bound $\log k$ applies to the entropy of a distribution over $k$ outcomes, not to the KL divergence [^3].
+    explanation: |
+      $D_{\mathrm{KL}}(P \| Q) = E_{x \sim P}\left[\log \frac{p(x)}{q(x)}\right]$, so an outcome that
+      $P$ produces but $Q$ rules out contributes $p(x) \log \frac{p(x)}{0} = \infty$ [^1]. The
+      cross-entropy loss has the same weakness: confidently assigning probability 0 to the true
+      label costs $-\log 0 = \infty$ [^2]. In exact arithmetic a softmax never outputs 0 for finite
+      logits [^2], although in floating point a tiny probability can underflow to 0 [^4].
+    references:
+      - source: d2l
+        url: https://d2l.ai/chapter_appendix-mathematics-for-deep-learning/information-theory.html#kl-divergence-properties
+        locator: Sec. 22.11.4.2 KL Divergence Properties
+      - source: d2l
+        url: https://d2l.ai/chapter_linear-classification/softmax-regression.html#log-likelihood
+        locator: Sec. 4.1.2.1 Log-Likelihood
+      - source: d2l
+        url: https://d2l.ai/chapter_appendix-mathematics-for-deep-learning/information-theory.html#properties-of-entropy
+        locator: Sec. 22.11.2.4 Properties of Entropy, Eq. (22.11.8)
+      - source: d2l
+        url: https://d2l.ai/chapter_linear-classification/softmax-regression-concise.html#softmax-revisited
+        locator: Sec. 4.5.2 Softmax Revisited (underflow)
+    source:
+      id: original
+      ref: information-theory-015
+    status: draft
+  - id: information-theory-016
+    type: true_false
+    difficulty: medium
+    tags:
+      - differential-entropy
+      - entropy
+    shuffle: false
+    question: |
+      The entropy of a discrete random variable is never negative. True or false: the same holds
+      for the differential entropy $h(X) = -\int p(x) \log p(x)\,dx$ of a continuous random
+      variable.
+    options:
+      - text: 'True'
+        why: A density can exceed 1, which makes $-\log p(x)$ negative. The uniform distribution on $[0, \frac{1}{2}]$ has density 2 and differential entropy $-1$ bit [^2].
+      - text: 'False'
+        correct: true
+    explanation: |
+      Non-negativity is guaranteed only for discrete variables; the entropy of a continuous
+      variable can be negative [^1]. A probability is at most 1, but a density is not. The uniform
+      distribution on $[0, \frac{1}{2}]$ has density 2, so
+      $h = -\int_0^{1/2} 2 \log_2 2 \, dx = -1$ bit [^2].
+    references:
+      - source: d2l
+        url: https://d2l.ai/chapter_appendix-mathematics-for-deep-learning/information-theory.html#properties-of-entropy
+        locator: Sec. 22.11.2.4 Properties of Entropy
+      - title: 'Wikipedia: Differential entropy'
+        url: https://en.wikipedia.org/wiki/Differential_entropy#Definition
+        locator: Definition (example of U(0, 1/2)) and Properties of differential entropy
+    source:
+      id: original
+      ref: information-theory-016
+    status: draft
+  - id: information-theory-017
+    type: short_answer
+    difficulty: medium
+    tags:
+      - entropy
+      - code-reading
+      - pytorch
+      - numerical-stability
+    question: |
+      This is the d2l entropy function. What does the last line return?
+
+      ```python
+      import torch
+
+      def nansum(x):
+          return x[~torch.isnan(x)].sum()
+
+      def entropy(p):
+          return nansum(-p * torch.log2(p))
+
+      entropy(torch.tensor([0.5, 0.25, 0.25, 0.0]))
+      ```
+    answer:
+      numeric: 1.5
+      tolerance: 0.001
+      hint: a number (bits)
+      model: $0.5 \cdot 1 + 0.25 \cdot 2 + 0.25 \cdot 2 = 1.5$; the entry for $p = 0$ is `nan` and is skipped.
+    explanation: |
+      The function computes $H = -\sum_i p_i \log_2 p_i$ [^1]. The three non-zero entries give
+      $0.5 \cdot 1 + 0.25 \cdot 2 + 0.25 \cdot 2 = 1.5$ bits. For the zero entry,
+      `torch.log2(0.0)` is $-\infty$ and $0 \times (-\infty)$ is `nan` in floating point [^2], so
+      `nansum` drops it. That matches the rule that outcomes with probability zero add no
+      information [^3].
+    references:
+      - source: d2l
+        url: https://d2l.ai/chapter_appendix-mathematics-for-deep-learning/information-theory.html#definition
+        locator: Sec. 22.11.2.2 Definition, Eq. (22.11.4) and the entropy code
+      - title: 'Wikipedia: NaN'
+        url: https://en.wikipedia.org/wiki/NaN#Operations_generating_NaN
+        locator: Operations generating NaN
+      - source: d2l
+        url: https://d2l.ai/chapter_appendix-mathematics-for-deep-learning/information-theory.html#motivating-entropy
+        locator: Sec. 22.11.2.1 Motivating Entropy (first axiom)
+    source:
+      id: original
+      ref: information-theory-017
+    status: draft
+  - id: information-theory-018
+    type: single
+    difficulty: medium
+    question: |
+      Cross-entropy $H(p, q) = -\sum_j p_j \log q_j$ is the usual classification loss, with $p$ the
+      target distribution and $q$ the model's predicted distribution. Which statement about it is
+      true?
+    options:
+      - text: For a fixed $p$ it is smallest at $q = p$, so lower values mean a prediction closer to the target
+        correct: true
+      - text: It measures how similar the two distributions are, so training should make it as large as possible
+      - text: It is symmetric, $H(p, q) = H(q, p)$, so it is a true distance between distributions
+      - text: It equals $0$ whenever the prediction matches the target ($q = p$), for every $p$
+    explanation: |
+      The cross-entropy from $p$ to $q$ is the expected surprisal of an observer who believes $q$ while
+      the data come from $p$; its lowest possible value is reached at $q = p$, where
+      $H(p, p) = H(p)$ [^1]. So it behaves like a dissimilarity and training minimises it [^1]. That
+      minimum is the entropy $H(p)$, which is $0$ only for a one-hot target, not for every $p$. It is
+      not symmetric: for $p = (1, 0)$ and $q = (0.5, 0.5)$, $H(p, q) = \log 2$, but $H(q, p)$ is
+      infinite because it takes $\log 0$ [^1].
+    references:
+      - source: d2l
+        url: https://d2l.ai/chapter_linear-classification/softmax-regression.html#cross-entropy-revisited
+        locator: Sec. 4.1.3.3 Cross-Entropy Revisited
+    source:
+      id: ms-ai-for-beginners
+      ref: quiz-204/q3
+      url: https://github.com/microsoft/AI-For-Beginners/blob/392d0df1b2647cbee104942390551f1ed9e072c8/etc/quiz-app/src/assets/translations/en/lesson-4.json
     status: draft

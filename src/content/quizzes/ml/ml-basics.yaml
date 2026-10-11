@@ -57,17 +57,18 @@ questions:
   - id: ml-basics-003
     type: single
     difficulty: easy
-    question: If your Machine Learning model's training accuracy is 95 % and the testing accuracy is 30 %, then what type of condition it is called?
+    question: If your machine learning model's training accuracy is 95% and its test accuracy is 30%, what is this condition called?
     options:
       - text: Overfitting
         correct: true
       - text: Underfitting
-      - text: Double Fitting
+      - text: Good fit
     explanation: |
       A large gap between training accuracy (95%) and test accuracy (30%) is the signature of
       overfitting. The model has learned the details and noise of its training data so closely that
       it fails on new data [^1][^2]. An underfit model would do poorly on the training data as well
-      [^1][^2]. "Double fitting" is not a standard term.
+      [^1][^2]. A good fit, a model that generalizes well, makes good predictions on new data too, so
+      it would not lose this much accuracy on the test set [^2].
     references:
       - source: ms-ml-for-beginners
         url: https://github.com/microsoft/ML-For-Beginners/blob/de2d4e12236445198213a0711855e348e7253cd4/1-Introduction/4-techniques-of-ML/README.md#evaluate-the-model
@@ -83,7 +84,7 @@ questions:
   - id: ml-basics-004
     type: single
     difficulty: easy
-    question: "The process of splitting a dataset into a certain ratio of training and testing dataset using Scikit Learn's 'train_test_split()' method/function is called:"
+    question: "The process of splitting a dataset into a certain ratio of training and testing dataset using scikit-learn's `train_test_split()` function is called:"
     options:
       - text: Cross-Validation
       - text: Hold-Out Validation
@@ -164,6 +165,7 @@ questions:
     status: draft
   - id: ml-basics-007
     type: single
+    difficulty: medium
     question: |
       Evaluate both statements.
 
@@ -176,10 +178,23 @@ questions:
       - text: True, False
         correct: true
       - text: False, True
-    explanation: '**Statement 1** is true: with little training data a flexible model can fit the noise. **Statement 2** is false: a *small* hypothesis space limits capacity, which makes underfitting — not overfitting — more likely. MMLU-Redux experts flagged the original answer key as wrong [^1].'
+    explanation: |
+      **Statement 1** is true: with little training data a flexible model can fit the noise, and for
+      a fixed model, the fewer training samples there are, the more likely overfitting becomes [^2].
+      **Statement 2** is false: a *small* hypothesis space limits capacity, which makes
+      underfitting — not overfitting — more likely. Overfitting grows with model complexity, not
+      with its absence [^3]. MMLU-Redux experts flagged the original answer key as wrong [^1].
     references:
       - source: mmlu-redux
         locator: machine_learning row 8 — wrong_groundtruth
+      - source: d2l
+        url: https://d2l.ai/chapter_linear-regression/generalization.html#dataset-size
+        locator: Sec. 3.6.2.2 Dataset Size
+        quote: Fixing our model, the fewer samples we have in the training dataset, the more likely (and more severely) we are to encounter overfitting.
+      - source: d2l
+        url: https://d2l.ai/chapter_linear-regression/generalization.html#model-complexity
+        locator: Sec. 3.6.1.1 Model Complexity and Sec. 3.6.2 Underfitting or Overfitting?
+        quote: when we work with more complex models and/or fewer examples, we expect the training error to go down but the generalization gap to grow.
     source:
       id: mmlu-redux
       ref: machine_learning/8
@@ -220,14 +235,13 @@ questions:
   - id: ml-basics-009
     type: single
     difficulty: easy
-    shuffle: false
     question: Given a large dataset of medical records from patients suffering from heart disease, try to learn whether there might be different clusters of such patients for which we might tailor separate treatments. What kind of learning problem is this?
     options:
       - text: Supervised learning
       - text: Unsupervised learning
         correct: true
-      - text: Both (a) and (b)
-      - text: Neither (a) nor (b)
+      - text: Both supervised and unsupervised learning
+      - text: Neither supervised nor unsupervised learning
     explanation: |
       The records carry no labels, and the goal is to discover groups of similar patients. Finding
       groups in unlabeled data is clustering, a core unsupervised learning task [^1][^2]. Supervised
@@ -364,7 +378,7 @@ questions:
   - id: ml-basics-014
     type: single
     difficulty: medium
-    question: 'Adding more basis functions in a linear model, pick the most probably option:'
+    question: 'Adding more basis functions in a linear model, pick the most probable option:'
     options:
       - text: Decreases model bias
         correct: true
@@ -427,7 +441,7 @@ questions:
     question: Suppose your model is overfitting. Which of the following is NOT a valid way to try and reduce the overfitting?
     options:
       - text: Increase the amount of training data.
-      - text: Improve the optimisation algorithm being used for error minimisation.
+      - text: Improve the optimisation algorithm.
         correct: true
       - text: Decrease the model complexity.
       - text: Reduce the noise in the training data.
@@ -755,19 +769,26 @@ questions:
     status: draft
   - id: ml-basics-028
     type: single
+    difficulty: medium
     question: Suppose you train on the training set and evaluate on the test set over multiple rounds. In each round, you use the test set results to guide how to update hyperparameters and the feature set. Can you see anything wrong with this approach?
     options:
       - text: Doing many rounds of this procedure might cause the model to implicitly fit the peculiarities of the test set.
         correct: true
       - text: This approach is fine. After all, you're training on the training set and evaluating on a separate test set.
-        why: Actually, there's a subtle issue here. Think about what might gradually go wrong.
+        why: A separate test set is not enough. Each round uses the test results to make a decision, so information about the test set leaks into the model, and after many rounds the test score no longer reflects performance on new data.
       - text: This approach is computationally inefficient. Don't change hyperparameters or feature sets after each round of testing.
         why: Frequent testing is expensive but critical. However, frequent testing is far less expensive than additional training. Optimizing hyperparameters and the feature set can dramatically improve model quality, so always budget time and computational resources to work on these.
-    explanation: Yes! The more often you use the same test set, the more likely the model closely fits the test set. Like a teacher "teaching to the test," the model inadvertently fits the test set, which might make it harder for the model to fit real-world data. [^1]
+    explanation: |
+      Every time the test results decide a change to the hyperparameters or features, some information
+      about the test set leaks into the model. Over many rounds the model ends up fitting the test set's
+      peculiarities, like a teacher teaching to the test, and does worse on real-world data than the
+      test score suggests [^1]. The remedy is a third split: tune against a validation set and use the
+      test set only to confirm the final model [^1]. Tuning is worth the compute; the problem is which
+      data the choices are based on, and even validation and test sets "wear out" with repeated use [^1].
     references:
       - source: google-mlcc
-        locator: 'Datasets: Dividing the original dataset'
-        url: https://developers.google.com/machine-learning/crash-course/overfitting/dividing-datasets
+        url: https://developers.google.com/machine-learning/crash-course/overfitting/dividing-datasets#training_validation_and_test_sets
+        locator: 'Datasets: Dividing the original dataset, sec. Training, validation, and test sets'
     source:
       id: google-mlcc
       ref: overfitting/dividing-datasets#q1
@@ -775,6 +796,7 @@ questions:
     status: draft
   - id: ml-basics-029
     type: single
+    difficulty: medium
     question: You shuffled all the examples in the dataset and divided the shuffled examples into training, validation, and test sets. However, the loss value on your test set is so staggeringly low that you suspect a mistake. What might have gone wrong?
     options:
       - text: Many of the examples in the test set are duplicates of examples in the training set.
@@ -783,11 +805,18 @@ questions:
         why: Although loss does vary a little on each run, it shouldn't vary so much that you think you won the machine learning lottery.
       - text: By chance, the test set just happened to contain examples that the model performed well on.
         why: The examples were well shuffled, so this is extremely unlikely.
-    explanation: Yes. This can be a problem in a dataset with a lot of redundant examples. We strongly recommend deleting duplicate examples from the test set before testing. [^1]
+    explanation: |
+      A test loss that is too good to be true usually means the model is being tested on examples it
+      has already seen. If the dataset has many redundant examples, shuffling and splitting puts copies
+      of training examples into the test set; in MLCC's spam example, a model reached 99% precision on
+      both sets because duplicates of the same spam emails had not been removed before the split [^1].
+      The fix is to delete from the validation and test sets every example that duplicates a training
+      example [^1]. Run-to-run randomness changes the loss only a little, and with well-shuffled data a
+      lucky test set is extremely unlikely.
     references:
       - source: google-mlcc
-        locator: 'Datasets: Dividing the original dataset'
-        url: https://developers.google.com/machine-learning/crash-course/overfitting/dividing-datasets
+        url: https://developers.google.com/machine-learning/crash-course/overfitting/dividing-datasets#additional_problems_with_test_sets
+        locator: 'Datasets: Dividing the original dataset, sec. Additional problems with test sets'
     source:
       id: google-mlcc
       ref: overfitting/dividing-datasets#q2
@@ -800,7 +829,7 @@ questions:
       - text: Every example used in testing the model is one less example used in training the model.
         correct: true
       - text: The number of examples in the test set must be greater than the number of examples in the validation set.
-        why: In theory, the validation set and test test should contain the same number of examples or nearly so.
+        why: In theory, the validation set and test set should contain the same number of examples or nearly so.
       - text: The number of examples in the test set must be greater than the number of examples in the validation set or training set.
         why: The number of examples in the training set is usually greater than the number of examples in the validation set or test set; however, there are no percentage requirements for the different sets.
     explanation: Dividing examples into train/test/validation sets is a zero-sum game. This is the central trade-off. [^1]
@@ -815,17 +844,28 @@ questions:
     status: draft
   - id: ml-basics-031
     type: single
+    difficulty: easy
     question: Suppose your test set contains enough examples to perform a statistically significant test. Furthermore, testing against the test set yields low loss. However, the model performed poorly in the real world. What should you do?
     options:
       - text: Determine how the original dataset differs from real-life data.
         correct: true
       - text: Retest on the same test set. The test results might have been an anomaly.
         why: Although retesting might yield slightly different results, this tactic probably isn't very helpful.
-    explanation: Yes. Even the best datasets are only a snapshot of real-life data; the underlying [ground truth](https://developers.google.com/machine-learning/glossary#ground-truth) tends to change over time. Although your test set matched your training set well enough to suggest good model quality, your dataset probably doesn't adequately match real-world data. You might have to retrain and retest against a new dataset. [^1]
+    explanation: |
+      A good test set must represent the dataset as a whole and also the real-world data the model will
+      meet [^1]. Low loss on a large, statistically significant test set shows only that the test set
+      resembles the training set. If the model still fails in production, the dataset itself differs
+      from real-world data, for example because the world has changed since the data was collected;
+      good generalization needs a stationary dataset whose partitions are statistically similar to
+      real-world data [^2]. Find out how the data differs, then retrain and retest on data that matches
+      reality; rerunning the same test would only reproduce the same misleading result.
     references:
       - source: google-mlcc
-        locator: 'Datasets: Dividing the original dataset'
-        url: https://developers.google.com/machine-learning/crash-course/overfitting/dividing-datasets
+        url: https://developers.google.com/machine-learning/crash-course/overfitting/dividing-datasets#additional_problems_with_test_sets
+        locator: 'Datasets: Dividing the original dataset, sec. Additional problems with test sets (criteria for a good test set)'
+      - source: google-mlcc
+        url: https://developers.google.com/machine-learning/crash-course/overfitting/overfitting#generalization_conditions
+        locator: Overfitting, sec. Generalization conditions
     source:
       id: google-mlcc
       ref: overfitting/dividing-datasets#q4
@@ -863,12 +903,12 @@ questions:
     status: draft
   - id: ml-basics-033
     type: single
-    question: You are developing a physics equation. Which of the following formulas conform more closely to Occam's Razor?
+    question: You are developing a physics equation. Which of the following formulas conforms more closely to Occam's Razor?
     options:
       - text: A formula with three variables.
         correct: true
       - text: A formula with twelve variables.
-        why: Twelve variables seems overly complicated, doesn't it? The two most famous physics formulas of all time (F=ma and E=mc2) each involve only three variables.
+        why: Twelve variables seems overly complicated, doesn't it? The two most famous physics formulas of all time ($F = ma$ and $E = mc^2$) each involve only three variables.
     explanation: Three variables is more Occam-friendly than twelve variables. [^1]
     references:
       - source: google-mlcc
@@ -909,7 +949,13 @@ questions:
         correct: true
       - text: Complexity is a function of the biases of all the features in the model.
         why: Bias doesn't measure complexity.
-    explanation: Yes, this is one way to measure some models' complexity. This metric is called [**L1 regularization.**](https://developers.google.com/machine-learning/glossary#L1_regularization) Yes, you can measure some models' complexity this way. This metric is called [**L2 regularization**](https://developers.google.com/machine-learning/glossary#L2_regularization). [^1]
+    explanation: |
+      Both statements about weights describe reasonable complexity measures, and each corresponds
+      to a standard regularization penalty [^1]. Measuring complexity from the weights themselves
+      (their absolute values) is what [L1 regularization](https://developers.google.com/machine-learning/glossary#L1_regularization)
+      penalizes, and measuring it from the squares of the weights is what
+      [L2 regularization](https://developers.google.com/machine-learning/glossary#L2_regularization)
+      penalizes [^1]. The bias terms do not measure complexity [^1].
     references:
       - source: google-mlcc
         locator: 'Overfitting: Model complexity'
@@ -921,6 +967,7 @@ questions:
     status: draft
   - id: ml-basics-036
     type: single
+    difficulty: easy
     question: You split a dataset into a training set (70%), a validation set (15%) and a test set (15%). What should you do to ensure that the examples in the training set have a similar statistical distribution to the examples in the validation set and the test set?
     figure:
       src: ./ml-basics/ml-basics-036.svg
@@ -932,11 +979,18 @@ questions:
         why: If the examples in the dataset are not stationary, then sorting makes the partitions *less* similar.
       - text: Do nothing. Given enough examples, the law of averages naturally ensures that the distributions will be statistically similar.
         why: Unfortunately, this is not the case. The examples in certain sections of the dataset may differ from those in other sections.
-    explanation: Yes. Good shuffling of examples makes partitions much more likely to be statistically similar. [^1]
+    explanation: |
+      Good generalization requires partitions with the same distribution: the training examples should
+      be statistically similar to the validation and test examples [^1]. Shuffling the whole dataset
+      thoroughly before splitting makes this much more likely, since each partition then gets a random
+      sample of every part of the data. Sorting from earliest to latest does the opposite when the data
+      is not stationary (it doesn't stay the same over time [^1]): the training set would get the old
+      examples and the test set the newest ones. Doing nothing is risky too, because datasets are often
+      stored in some order, so different sections can differ however many examples there are.
     references:
       - source: google-mlcc
-        locator: Overfitting
-        url: https://developers.google.com/machine-learning/crash-course/overfitting/overfitting
+        url: https://developers.google.com/machine-learning/crash-course/overfitting/overfitting#generalization_conditions
+        locator: Overfitting, sec. Generalization conditions
     source:
       id: google-mlcc
       ref: overfitting/overfitting#q1
@@ -944,6 +998,7 @@ questions:
     status: draft
   - id: ml-basics-037
     type: single
+    difficulty: easy
     question: A streaming service is developing a model to predict the popularity of potential new television shows for the next three years. The streaming service plans to train the model on a dataset containing hundreds of millions of examples, spanning the previous ten years. Will this model encounter a problem?
     options:
       - text: Probably. Viewers' tastes change in ways that past behavior can't predict.
@@ -952,11 +1007,17 @@ questions:
         why: Unfortunately, viewers' tastes are nonstationary.
       - text: Probably not. Viewers' tastes change in predictably cyclical ways. Ten years of data will enable the model to make good predictions on future trends.
         why: Although certain aspects of entertainment are somewhat cyclical, a model trained from past entertainment history will almost certainly have trouble making predictions about the next few years.
-    explanation: Yes. Viewer tastes are not stationary. They constantly change. [^1]
+    explanation: |
+      A model generalizes well only if the dataset is stationary, that is, if it doesn't change
+      significantly over time [^1]. Viewers' tastes are not stationary: they keep changing in ways that
+      past behavior can't predict, so a model trained on the last ten years will probably misjudge what
+      becomes popular in the next three. A bigger dataset doesn't fix this, since hundreds of millions of
+      examples of past tastes still describe the past, and although some aspects of entertainment are
+      somewhat cyclical, that is not enough to forecast new trends reliably.
     references:
       - source: google-mlcc
-        locator: Overfitting
-        url: https://developers.google.com/machine-learning/crash-course/overfitting/overfitting
+        url: https://developers.google.com/machine-learning/crash-course/overfitting/overfitting#generalization_conditions
+        locator: Overfitting, sec. Generalization conditions
     source:
       id: google-mlcc
       ref: overfitting/overfitting#q2
@@ -964,17 +1025,24 @@ questions:
     status: draft
   - id: ml-basics-038
     type: single
+    difficulty: medium
     question: A model aims to predict the time it takes for people to walk a mile based on weather data (temperature, dew point, and precipitation) collected over one year in a city whose weather varies significantly by season. Can you build and test a model from this dataset, even though the weather readings change dramatically by season?
     options:
       - text: Yes
         correct: true
       - text: No
         why: Assuming this dataset contains enough examples of temperature, dew point, and precipitation, then you can build and test a model from this dataset. You just have to ensure that the data is partitioned equally, so that data from all four seasons is distributed equally into the different partitions.
-    explanation: Yes, it is possible to build and test a model from this dataset. You just have to ensure that the data is partitioned equally, so that data from all four seasons is distributed equally into the different partitions. [^1]
+    explanation: |
+      Seasonal variation is not a problem in itself; what generalization needs is that the training,
+      validation and test partitions share the same distribution [^1]. A full year of data covers all
+      four seasons, so as long as there are enough examples and every season is spread evenly across the
+      partitions (for example, by shuffling the whole year before splitting), the model is trained and
+      tested on the same mix of weather. Splitting by date would break this: a model trained on spring
+      to autumn and tested on winter would meet weather it never saw in training.
     references:
       - source: google-mlcc
-        locator: Overfitting
-        url: https://developers.google.com/machine-learning/crash-course/overfitting/overfitting
+        url: https://developers.google.com/machine-learning/crash-course/overfitting/overfitting#generalization_conditions
+        locator: Overfitting, sec. Generalization conditions
     source:
       id: google-mlcc
       ref: overfitting/overfitting#q3
@@ -1018,7 +1086,14 @@ questions:
         correct: true
       - text: You can react quickly to changes in the world.
         why: No, this is a disadvantage of static inference.
-    explanation: Yes, the model must make predictions for all possible inputs and store them in a cache or lookup table. If the set of things that the model is predicting is limited, then static inference might be a good choice. However, for free-form inputs like user queries that have a long tail of unusual or rare items, static inference can't provide full coverage. Yes, this is a useful aspect of static inference. Yes, static inference can almost always serve predictions faster than dynamic inference. [^1]
+    explanation: |
+      Static inference computes predictions ahead of time and serves them from a cache or lookup
+      table [^1]. So the model must make a prediction for every input it may be asked about, which
+      works when the set of items is limited but not for free-form inputs with a long tail of rare
+      cases. Because the predictions exist before anyone uses them, the system can verify them
+      before serving them, and looking a prediction up is almost always faster than computing it
+      on demand as dynamic inference does [^1]. The price is that cached predictions are refreshed
+      only every few hours or days, so you cannot react quickly to changes in the world [^1].
     references:
       - source: google-mlcc
         locator: 'Production ML systems: Static versus dynamic inference'
@@ -1030,6 +1105,7 @@ questions:
     status: draft
   - id: ml-basics-041
     type: single
+    difficulty: medium
     question: Which **one** of the following statements is true of dynamic inference?
     options:
       - text: You can provide predictions for all possible items.
@@ -1038,11 +1114,20 @@ questions:
         why: In general, it's not possible to do a post-verification of all predictions before they get used because predictions are being made on demand. You can, however, potentially monitor *aggregate* prediction qualities to provide some level of quality checking, but these will signal fire alarms only after the fire has already spread.
       - text: When performing dynamic inference, you don't need to worry about prediction latency (the lag time for returning predictions) as much as when performing static inference.
         why: Prediction latency is often a real concern in dynamic inference. Unfortunately, you can't necessarily fix prediction latency issues by adding more inference servers.
-    explanation: Yes, this is a strength of dynamic inference. Any request that comes in will be given a score. Dynamic inference handles long-tail distributions (those with many rare items), like the space of all possible sentences written in movie reviews. [^1]
+    explanation: |
+      Dynamic (online) inference makes a prediction on demand for whatever request comes in, so it can
+      serve any new item, including rare, long-tail inputs that a cache of precomputed predictions would
+      not contain [^1]. The price is that it is compute intensive and latency sensitive, which may force
+      a simpler model, and it needs more monitoring [^1]. Checking predictions before they are served is
+      an advantage of static inference, which computes and caches them in advance [^2]; a dynamic
+      prediction is used as soon as it is made, so at best you can monitor aggregate quality afterwards.
     references:
       - source: google-mlcc
-        locator: 'Production ML systems: Static versus dynamic inference'
-        url: https://developers.google.com/machine-learning/crash-course/production-ml-systems/static-vs-dynamic-inference
+        url: https://developers.google.com/machine-learning/crash-course/production-ml-systems/static-vs-dynamic-inference#dynamic_inference
+        locator: 'Production ML systems: Static versus dynamic inference, sec. Dynamic inference'
+      - source: google-mlcc
+        url: https://developers.google.com/machine-learning/crash-course/production-ml-systems/static-vs-dynamic-inference#static_inference
+        locator: 'Production ML systems: Static versus dynamic inference, sec. Static inference'
     source:
       id: google-mlcc
       ref: production-ml-systems/static-vs-dynamic-inference#q2
@@ -1050,6 +1135,7 @@ questions:
     status: draft
   - id: ml-basics-042
     type: multiple
+    difficulty: medium
     question: Which **two** of the following statements are true about static (offline) training?
     options:
       - text: The model stays up to date as new data arrives.
@@ -1060,11 +1146,18 @@ questions:
         correct: true
       - text: Very little monitoring of input data needs to be done at inference time.
         why: Counterintuitively, you do need to monitor input data at serving time. If the input distributions change, then our model's predictions may become unreliable. Imagine, for example, a model trained only on summertime clothing data suddenly being used to predict clothing buying behavior in wintertime.
-    explanation: Yes, offline training gives ample opportunity to verify model performance before introducing the model in production. In general, monitoring requirements at training time are more modest for offline training, which insulates you from many production considerations. However, the more frequently you train your model, the higher the investment you'll need to make in monitoring. You'll also want to validate regularly to ensure that changes to your code (and its dependencies) don't adversely affect model quality. [^1]
+    explanation: |
+      With static (offline) training you train the model once and serve it for a while, so you develop
+      and test it once and can verify it before it goes into production [^1]. Because training jobs run
+      rarely, monitoring at training time is more modest than for online training, whose continuous
+      training jobs must be watched [^1]. The cost is staleness: the model can't take in new data, so its
+      predictions degrade if the relationship between features and labels changes [^1]. For the same
+      reason you still have to monitor the input data at serving time; a model trained only on summer
+      data would be unreliable in winter [^1].
     references:
       - source: google-mlcc
-        locator: 'Production ML systems: Static versus dynamic training'
         url: https://developers.google.com/machine-learning/crash-course/production-ml-systems/static-vs-dynamic-training
+        locator: 'Production ML systems: Static versus dynamic training, Table 1 and the text after it'
     source:
       id: google-mlcc
       ref: production-ml-systems/static-vs-dynamic-training#q1
@@ -1095,9 +1188,9 @@ questions:
     difficulty: easy
     question: A company wants to use ML in their health and well-being app to help people feel better. Do you think they'll need to use proxy labels to accomplish their goals?
     options:
-      - text: Yes, the company will need to find proxy labels. Categories like happiness and well-being can't be measured directly. Instead, they need to be approximated with respect to some other feature, like hours spent exercising per week, or time spent engaged in hobbies or with friends.
+      - text: Yes. Happiness and well-being can't be measured directly, so they must be approximated by measurable signals such as weekly exercise hours.
         correct: true
-      - text: No, the company won't need to use proxy labels. Happiness and well-being can be directly measured.
+      - text: No. Happiness and well-being can be measured directly, so the app can record them and use them as labels without a stand-in.
     explanation: |
       You use a proxy label when the thing you really want to predict is not recorded in the data
       and cannot be measured directly [^1]. "Feeling better", happiness and well-being are not
@@ -1359,8 +1452,14 @@ questions:
       - text: The learning rate is too low.
         why: A very low learning rate might increase training time, but it is not the cause of the strange loss curve.
       - text: The regularization rate is too high.
-        why: True, a very high regularization could prevent a model from converging; however, it won't cause the strange loss curve shown in Figure 22.
-    explanation: This is more common than you might expect. Sometimes, due to improper shuffling of batches, a batch might contain a lot of outliers. [^1]
+        why: True, a very high regularization could prevent a model from converging; however, it won't cause the strange loss curve shown in the plot.
+    explanation: |
+      A loss that falls smoothly and then suddenly shoots up points to bad input data rather than a
+      badly tuned hyperparameter [^1]. One cause is NaNs in the input, for example from a division
+      by zero, which is more common than you might expect. Another is a batch packed with outliers,
+      which can happen when batches are not shuffled properly [^1]. A low learning rate only slows
+      training down, and a very high regularization rate can keep a model from converging, but
+      neither produces a sudden jump like this one [^1].
     references:
       - source: google-mlcc
         locator: 'Overfitting: Interpreting loss curves'
@@ -1372,6 +1471,7 @@ questions:
     status: draft
   - id: ml-basics-053
     type: single
+    difficulty: easy
     question: The plot below shows the loss curves of the training and test sets. Which **one** of the following statements best identifies the reason for the difference between them?
     figure:
       src: ./ml-basics/ml-basics-053.svg
@@ -1382,17 +1482,23 @@ questions:
       - text: The learning rate is too high.
         why: If the learning rate were too high, the loss curve for the training set would likely not have behaved as it did.
     explanation: |
-      Yes, it probably is. Possible solutions:
-
-      * Make the model simpler, possibly by reducing the number
-      of features.
-      * Increase the regularization rate.
-      * Ensure that the training set and test set are statistically
-      equivalent. [^1]
+      The two curves fall together at first, then diverge: the training loss keeps going down while the
+      test loss levels off and starts to rise. The model is learning details of the training set that
+      don't carry over to new data, the classic sign of overfitting [^1]. A learning rate that is too
+      high would show up in the training curve itself, which would bounce around or keep increasing
+      instead of falling smoothly [^2]. Possible fixes are a simpler model (for example, fewer features),
+      a higher regularization rate, and making sure the training and test sets are statistically
+      equivalent [^3].
     references:
       - source: google-mlcc
-        locator: 'Overfitting: Interpreting loss curves'
-        url: https://developers.google.com/machine-learning/crash-course/overfitting/interpreting-loss-curves
+        url: https://developers.google.com/machine-learning/crash-course/overfitting/overfitting#detecting_overfitting
+        locator: Overfitting, sec. Detecting overfitting
+      - source: google-mlcc
+        url: https://developers.google.com/machine-learning/crash-course/linear-regression/hyperparameters#learning_rate
+        locator: 'Linear regression: Hyperparameters, sec. Learning rate'
+      - source: google-mlcc
+        url: https://developers.google.com/machine-learning/crash-course/overfitting/interpreting-loss-curves#exercise_3_test_loss_diverges_from_training_loss
+        locator: 'Overfitting: Interpreting loss curves, Exercise 3. Test loss diverges from training loss'
     source:
       id: google-mlcc
       ref: overfitting/interpreting-loss-curves#q3
@@ -1439,4 +1545,602 @@ questions:
       id: google-mlcc
       ref: overfitting/labels#q1
       url: https://developers.google.com/machine-learning/crash-course/overfitting/labels
+    status: draft
+  - id: ml-basics-056
+    type: single
+    difficulty: easy
+    question: What is AutoML (automated machine learning)?
+    options:
+      - text: Automatically trying many algorithms and settings to find the best model
+        correct: true
+      - text: Automatically deploying a trained model to a web endpoint
+      - text: Automatically collecting new data from users
+      - text: Automatically labeling a raw dataset
+    explanation: |
+      AutoML automates the time-consuming, iterative tasks of model development [^1][^2]: it trains
+      many pipelines that try different algorithms, features and hyperparameters, scores each on the
+      chosen metric and recommends the best model [^2]. Deployment is a separate, later step: the
+      lesson deploys the model that AutoML selected afterwards [^1]. You also bring your own labeled
+      training data, so collecting and labeling data are not what AutoML does [^2].
+    references:
+      - source: ms-ds-for-beginners
+        url: https://github.com/microsoft/Data-Science-For-Beginners/blob/4d2ac427ad6f022e73a75c4f46a28bbb7978ec3f/5-Data-Science-In-Cloud/18-Low-Code/README.md#24-low-codeno-code-training-with-automl
+        locator: 'Lesson 18: Data Science in the Cloud, the Low code/No code way, sec. 2.4 Low code/No Code training with AutoML and 3. model deployment'
+      - title: 'Microsoft Learn: What is automated ML? AutoML (Azure Machine Learning)'
+        url: https://learn.microsoft.com/en-us/azure/machine-learning/concept-automated-ml
+        locator: introduction and sec. How does AutoML work?
+    source:
+      id: ms-ds-for-beginners
+      ref: quiz-36/q3
+      url: https://github.com/microsoft/Data-Science-For-Beginners/blob/4d2ac427ad6f022e73a75c4f46a28bbb7978ec3f/quiz-app/src/assets/translations/en/group-5.json
+    status: draft
+  - id: ml-basics-057
+    type: single
+    difficulty: easy
+    question: In the bias-variance view of a model's error, what causes *bias* error?
+    options:
+      - text: The model is not powerful enough to capture the real relationship in the data, so it underfits
+        correct: true
+      - text: The model fits the random noise in the training data instead of the real relationship, so it overfits
+      - text: The computer does not have enough memory to train the model to convergence
+      - text: The labels contain random noise that no model could ever remove
+    explanation: |
+      Bias error comes from an algorithm that cannot capture the relationship in the training data,
+      typically because the model is not powerful enough; this is underfitting [^1]. Approximating the
+      noise in the data instead of the meaningful relationship is variance error, i.e. overfitting
+      [^1]. Noise that no model can remove is a third term of the decomposition, the irreducible error,
+      which is neither bias nor variance [^2]; hardware limits are not part of the decomposition at
+      all.
+    references:
+      - source: ms-ai-for-beginners
+        url: https://github.com/microsoft/AI-For-Beginners/blob/392d0df1b2647cbee104942390551f1ed9e072c8/lessons/3-NeuralNetworks/05-Frameworks/README.md#overfitting-and-bias-variance-tradeoff
+        locator: 'Lesson: Neural Network Frameworks, sec. Overfitting and Bias-Variance Tradeoff'
+      - title: scikit-learn documentation
+        url: https://scikit-learn.org/stable/auto_examples/ensemble/plot_bias_variance.html
+        locator: 'Example: Single estimator versus bagging: bias-variance decomposition'
+    source:
+      id: ms-ai-for-beginners
+      ref: quiz-105/q3
+      url: https://github.com/microsoft/AI-For-Beginners/blob/392d0df1b2647cbee104942390551f1ed9e072c8/etc/quiz-app/src/assets/translations/en/lesson-5.json
+    status: draft
+  - id: ml-basics-058
+    type: single
+    difficulty: medium
+    question: |
+      A teammate's experiment found a combination of hyperparameters that beats the team's baseline
+      metric. You are running your own experiments on a different model. What should you do?
+    options:
+      - text: Maybe adopt one of those hyperparameters as a single change, but continue with your own experiments
+        correct: true
+      - text: Change all the hyperparameters in your current experiment to match your teammate's
+        why: Hyperparameters that improved one model need not improve a different one, and changing many things at once hides which change helped.
+      - text: Stop experimenting and put your teammate's model into production right away
+        why: Beating the baseline does not make it the final model; further experiments may raise the baseline even more.
+    explanation: |
+      Experiments should make a single, small change at a time, such as a new learning rate, and when a
+      change improves the model, its metrics become the new baseline for later experiments [^1].
+      Hyperparameters that helped one model need not help another, so copying all of them into a
+      different model is not a controlled experiment. Progress is non-linear and many experiments are
+      usually needed before the model is good enough for production, so one improvement over the
+      baseline is a reason to keep experimenting, not to stop [^1].
+    references:
+      - source: google-ml-courses
+        url: https://developers.google.com/machine-learning/managing-ml-projects/experiments
+        locator: 'Managing ML Projects: Experiments'
+    source:
+      id: google-ml-courses
+      ref: managing-ml-projects/experiments#q1
+      url: https://developers.google.com/machine-learning/managing-ml-projects/experiments
+    status: draft
+  - id: ml-basics-059
+    type: single
+    difficulty: medium
+    question: |
+      You work for a nature preservation company and manage the company's plant identification software. You want to create a model to classify 60 types of invasive plant species to help conservationists manage the habitats for endangered animals.
+
+      You found sample code that solves a similar plant identification problem, and the estimated costs to implement your solution are within the project's budget. While the dataset has lots of training examples, it has only a few for the five most invasive species. Leadership isn't requiring that the model's predictions be interpretable, and there doesn't appear to be negative consequences related to bad predictions. Is your ML solution feasible?
+    options:
+      - text: No.
+        correct: true
+      - text: Yes.
+        why: Although most of the feasibility criteria are met, there aren't enough examples for each species to train a model well enough to make good predictions.
+    explanation: |
+      Feasibility depends on data availability, problem difficulty, prediction quality, technical
+      requirements and cost [^1]. Here most criteria are met (similar code exists, the budget fits,
+      interpretability is not required), but the data is not: a classification model needs numerous
+      examples for every label, and with only a few examples for some labels it cannot predict them
+      well [^1]. The five most invasive species are exactly the classes the conservationists care
+      about most, so the solution is not feasible until more examples of them are collected.
+    references:
+      - source: google-ml-courses
+        url: https://developers.google.com/machine-learning/managing-ml-projects/feasibility
+        locator: 'Managing ML Projects: Feasibility, sec. Data availability'
+    source:
+      id: google-ml-courses
+      ref: managing-ml-projects/feasibility#q1
+      url: https://developers.google.com/machine-learning/managing-ml-projects/feasibility
+    status: draft
+  - id: ml-basics-060
+    type: multiple
+    difficulty: easy
+    question: Which of the following models are likely to go stale quickly, so that they must be replaced regularly with models trained on newer data? Select all that apply.
+    options:
+      - text: Predicts spam
+        correct: true
+        why: Spam tactics change constantly, so yesterday's training data soon stops describing today's spam.
+      - text: Recommends clothes
+        correct: true
+        why: Consumer preferences for clothes change frequently, so recommendations go stale fast.
+      - text: Classifies bird species
+        why: Bird species don't change over time.
+      - text: Predicts if transaction is fraudulent
+        correct: true
+        why: Fraudsters keep changing their methods, so the patterns in older transactions soon stop applying.
+    explanation: |
+      As the world changes, trends in data shift and production models go stale, so they need
+      retraining on up-to-date data [^1]. How fast depends on how dynamic the data is: a clothes
+      recommender goes stale quickly because preferences change often, while a model that identifies
+      flowers might never go stale because their identifying features are stable [^1]. Spam and fraud
+      also change constantly in response to new tactics, whereas bird species, like flowers, keep their
+      characteristics [^1].
+    references:
+      - source: google-ml-courses
+        url: https://developers.google.com/machine-learning/managing-ml-projects/pipelines
+        locator: 'Managing ML Projects: ML pipelines, secs. Updating the model and Model staleness and training frequency'
+    source:
+      id: google-ml-courses
+      ref: managing-ml-projects/pipelines#q1
+      url: https://developers.google.com/machine-learning/managing-ml-projects/pipelines
+    status: draft
+  - id: ml-basics-061
+    type: multiple
+    difficulty: easy
+    question: What are some of the main reasons for using versioned repositories to store predictions, datasets, and models? Select all that apply.
+    options:
+      - text: Reproduce and debug issues
+        correct: true
+      - text: Monitor model quality
+        correct: true
+      - text: Reduce compute quota
+    explanation: |
+      Storing datasets in version-controlled repositories makes training reproducible and lets you
+      compare the prediction quality of different models [^1]. Versioned model repositories let you
+      track the evaluation and prediction quality of production models and reproduce results and debug
+      issues by tracing a model's datasets and dependencies, and logged predictions with their ground
+      truth help monitor model quality [^1]. Versioning does not reduce the compute quota a pipeline
+      needs; quota is planned separately [^1].
+    references:
+      - source: google-ml-courses
+        url: https://developers.google.com/machine-learning/managing-ml-projects/pipelines
+        locator: 'Managing ML Projects: ML pipelines, secs. Assets and metadata storage'
+    source:
+      id: google-ml-courses
+      ref: managing-ml-projects/pipelines#q2
+      url: https://developers.google.com/machine-learning/managing-ml-projects/pipelines
+    status: draft
+  - id: ml-basics-062
+    type: true_false
+    difficulty: easy
+    question: When choosing hardware to serve predictions, you should always choose more powerful hardware than was used to train the model.
+    options:
+      - text: 'True'
+      - text: 'False'
+        correct: true
+    explanation: |
+      Training and serving may run on the same or on different hardware, but in general it is common to
+      train on bigger hardware and serve on smaller hardware [^1]. Hardware is chosen per pipeline by
+      asking what the model's size and architecture need and whether cheaper hardware would do [^1].
+      Training is usually the heavier job: it passes over the whole dataset many times and computes
+      gradients, while serving runs one forward pass per request.
+    references:
+      - source: google-ml-courses
+        url: https://developers.google.com/machine-learning/managing-ml-projects/production
+        locator: 'Managing ML Projects: Productionization, sec. Provisioning compute resources'
+    source:
+      id: google-ml-courses
+      ref: managing-ml-projects/production#q1
+      url: https://developers.google.com/machine-learning/managing-ml-projects/production
+    status: draft
+  - id: ml-basics-063
+    type: multiple
+    difficulty: medium
+    question: Logging and monitoring are set up across a production ML system. Which of these should they be able to detect? Select all that apply.
+    options:
+      - text: Skews or drifts in the serving data compared with the training data
+        correct: true
+      - text: A jump in a proxy for model quality, such as the share of mail that users move to spam
+        correct: true
+      - text: Quota usage that is about to reach its limit
+        correct: true
+      - text: Whether each prediction was right, by checking it against its true label in real time
+    explanation: |
+      Logging and monitoring let you find problems in ML pipelines before they affect users [^1]. They
+      should catch skews or drifts in serving data, features and predictions, data-type problems, quota
+      usage and model-quality metrics [^1]. In production you usually do not have the ground truth in
+      real time, so model quality is tracked through proxies: a mail app cannot know which mail is spam
+      as it arrives, but a jump in the share of mail users move to spam, say from 0.5% to 3%, signals a
+      problem [^1].
+    references:
+      - source: google-ml-courses
+        url: https://developers.google.com/machine-learning/managing-ml-projects/production
+        locator: 'Managing ML Projects: Productionization, sec. Logging, monitoring, and alerting'
+    source:
+      id: google-ml-courses
+      ref: managing-ml-projects/production#q2
+      url: https://developers.google.com/machine-learning/managing-ml-projects/production
+    status: draft
+  - id: ml-basics-064
+    type: single
+    difficulty: easy
+    question: The model recommends a shopping app to a user because they recently installed a similar app. What kind of filtering is this an example of?
+    options:
+      - text: Content-based filtering
+        correct: true
+      - text: Collaborative filtering
+        why: Collaborative filtering takes other users into consideration. In the given scenario we only care about one user.
+    explanation: |
+      Content-based filtering recommends items similar to what the user already likes, using item
+      features and that user's own actions, without information about other users [^1]. Installing an
+      app that is similar to the recommended one is such a signal. Collaborative filtering instead uses
+      similarities between users and items at the same time, so it can recommend an item to one user
+      because a similar user liked it [^2].
+    references:
+      - source: google-ml-courses
+        url: https://developers.google.com/machine-learning/recommendation/content-based/basics
+        locator: 'Recommendation Systems: Content-based filtering, Basics'
+      - source: google-ml-courses
+        url: https://developers.google.com/machine-learning/recommendation/collaborative/basics
+        locator: 'Recommendation Systems: Collaborative filtering, Basics'
+    source:
+      id: google-ml-courses
+      ref: recommendation/collaborative/basics#q1
+      url: https://developers.google.com/machine-learning/recommendation/collaborative/basics
+    status: draft
+  - id: ml-basics-065
+    type: single
+    difficulty: easy
+    question: |
+      A content-based recommender represents apps and the user in the same binary feature space
+      (1 = the app has the feature, or the user has shown interest in it):
+
+      | | Education | Casual | Health | TimeWastr | Science R Us | Healthcare |
+      | --- | :-: | :-: | :-: | :-: | :-: | :-: |
+      | Educational app by Science R Us | 1 | 0 | 0 | 0 | 1 | 0 |
+      | Casual app by TimeWastr | 0 | 1 | 0 | 1 | 0 | 0 |
+      | Health app by Healthcare | 0 | 0 | 1 | 0 | 0 | 1 |
+      | **User** | 1 | 0 | 0 | 0 | 1 | 1 |
+
+      Using the dot product as the similarity measure, which app should it recommend?
+    options:
+      - text: The educational app created by Science R Us.
+        correct: true
+      - text: The health app created by Healthcare.
+        why: This app scores a 1. It isn't the worst recommendation our system could make, but it certainly isn't the best.
+      - text: The casual app created by TimeWastr.
+        why: This app actually has the lowest dot product at 0. Our user isn't interested in casual apps like games.
+    explanation: |
+      With binary vectors, the dot product $\langle x, y \rangle = \sum_i x_i y_i$ counts the features
+      active in both the user and the app, so a higher value means a more similar item [^1]. The
+      educational app shares Education and Science R Us with the user (score 2), the health app shares
+      only Healthcare (score 1), and the casual app shares nothing (score 0). The system scores every
+      candidate and recommends the highest, here the educational app [^1].
+    references:
+      - source: google-ml-courses
+        url: https://developers.google.com/machine-learning/recommendation/content-based/basics
+        locator: 'Recommendation Systems: Content-based filtering, Basics (sec. Using dot product as a similarity measure)'
+    source:
+      id: google-ml-courses
+      ref: recommendation/content-based/basics#q1
+      url: https://developers.google.com/machine-learning/recommendation/content-based/basics
+    status: draft
+  - id: ml-basics-066
+    type: single
+    difficulty: easy
+    question: Platforms such as YouTube and Google Play already have search. Why do they also use recommendation systems?
+    options:
+      - text: They surface items users would not think to search for in a huge, growing catalogue
+        correct: true
+      - text: Search cannot find any item in a catalogue that holds more than a few thousand items
+      - text: Recommendations need no data about users or items, so they are cheaper to run than search
+      - text: Recommendations guarantee that every item in the catalogue is shown equally often
+    explanation: |
+      A recommendation system helps users find compelling content in a very large corpus: Google Play
+      has millions of apps and YouTube billions of videos. Search works when you know what to look for,
+      but recommendations can show items users might not have thought to search for, and they drive a
+      large share of installs and watch time [^1]. They depend on data about users and items, such as
+      past interactions, to measure similarity [^1], and they rank items by relevance rather than
+      showing all equally.
+    references:
+      - source: google-ml-courses
+        url: https://developers.google.com/machine-learning/recommendation/overview
+        locator: 'Recommendation Systems: Recommendation systems overview, sec. Why recommendations?'
+    source:
+      id: google-ml-courses
+      ref: recommendation/overview/check-your-understanding#q1
+      url: https://developers.google.com/machine-learning/recommendation/overview/check-your-understanding
+    status: draft
+  - id: ml-basics-067
+    type: single
+    difficulty: easy
+    question: A common architecture for large-scale recommendation systems has three stages. Which are they?
+    options:
+      - text: candidate generation, scoring, and re-ranking
+        correct: true
+      - text: embedding, similarity metrics, and serving
+        why: These elements are related to recommendation systems, but they are not primary components.
+      - text: matrix factorization, DNN, and reranking
+        why: While re-ranking is a component, matrix factorization and DNN are types of candidate generators.
+    explanation: |
+      One common architecture has three stages. Candidate generation cuts a huge corpus down to a small
+      subset, e.g. from billions of videos to hundreds; scoring ranks those candidates with a more
+      precise model to pick about ten items; and re-ranking applies further constraints such as removing
+      disliked items, boosting fresh content and ensuring diversity and fairness [^1]. Embeddings and
+      similarity measures are tools used inside these stages, and matrix factorization and deep networks
+      are kinds of candidate generators, not stages [^1].
+    references:
+      - source: google-ml-courses
+        url: https://developers.google.com/machine-learning/recommendation/overview/types
+        locator: 'Recommendation Systems: Recommendation systems overview, Candidate generation, scoring and re-ranking'
+    source:
+      id: google-ml-courses
+      ref: recommendation/overview/check-your-understanding#q2
+      url: https://developers.google.com/machine-learning/recommendation/overview/check-your-understanding
+    status: draft
+  - id: ml-basics-068
+    type: single
+    difficulty: easy
+    question: |
+      Evaluate both statements.
+
+      **Statement 1.** Classical results on generalization assume that training and test examples are drawn independently from the same distribution (the i.i.d. assumption).
+
+      **Statement 2.** Around 2017, object detectors trained on COCO usually started from a backbone pretrained on ImageNet classification.
+    options:
+      - text: True, True
+        correct: true
+      - text: False, False
+      - text: True, False
+      - text: False, True
+    explanation: 'Statement 1 is true: the usual argument that training error tells us something about generalization error assumes the training and test data are drawn independently from identical distributions, the IID assumption [^1]. Statement 2 is also true: fine-tuning an ImageNet-pretrained network was the de facto recipe for COCO detection, and the top COCO 2017 competition results used ImageNet pre-training, which is why training from scratch was later presented as a challenge to conventional wisdom [^2]. This is the fine-tuning pattern of transfer learning: pretrain a model on a large source dataset, then train it further on the target task [^3].'
+    references:
+      - source: d2l
+        url: https://d2l.ai/chapter_linear-regression/generalization.html#training-error-and-generalization-error
+        locator: Sec. 3.6.1 Training Error and Generalization Error (IID assumption)
+      - title: 'He, Girshick, Dollár (2018): Rethinking ImageNet Pre-training (arXiv:1811.08883)'
+        url: https://arxiv.org/abs/1811.08883
+        locator: Abstract
+      - source: d2l
+        url: https://d2l.ai/chapter_computer-vision/fine-tuning.html#steps
+        locator: Sec. 14.2.1 Steps (fine-tuning)
+    source:
+      id: mmlu-redux
+      ref: machine_learning/86
+      url: https://huggingface.co/datasets/edinburgh-dawg/mmlu-redux-2.0/viewer/machine_learning/test?row=86
+    status: draft
+  - id: ml-basics-069
+    type: single
+    difficulty: easy
+    question: Why might a business choose a machine-learning approach instead of a hand-coded rules engine?
+    options:
+      - text: The patterns are too complex or change too often to write as rules, but can be learned from data
+        correct: true
+      - text: An ML model is guaranteed to give the right answer on every input, which hand-written rules can never promise
+      - text: An ML model needs no data, only a description of the problem
+      - text: Hand-written rules cannot be changed once they are deployed
+    explanation: |
+      The lesson starts the ML workflow with a question that cannot be answered by a simple
+      conditional program or rules engine, for example predicting mortality when many health
+      variables interact [^1]. d2l gives the same two reasons: some tasks follow a pattern that
+      changes over time, and others involve relationships too complicated to code by hand, so the
+      program has to learn from experience, usually data [^2]. ML models still make mistakes and
+      cannot learn without data. A rules engine can be changed too, but only when its developers
+      decide to update it by hand [^2].
+    references:
+      - source: ms-ml-for-beginners
+        url: https://github.com/microsoft/ML-For-Beginners/blob/de2d4e12236445198213a0711855e348e7253cd4/1-Introduction/4-techniques-of-ML/README.md#what-question-to-ask
+        locator: 'Lesson: Techniques of Machine Learning, secs. Introduction (step 1) and What question to ask'
+      - source: d2l
+        url: https://d2l.ai/chapter_introduction/index.html
+        locator: Ch. 1 Introduction (opening section, rules vs. learning from experience)
+    source:
+      id: ms-ml-for-beginners
+      ref: quiz-1/q3
+      url: https://github.com/microsoft/ML-For-Beginners/blob/de2d4e12236445198213a0711855e348e7253cd4/quiz-app/src/assets/translations/en.json
+    status: draft
+  - id: ml-basics-070
+    type: true_false
+    difficulty: easy
+    question: 'True or false: machine learning algorithms are designed to simulate the human brain.'
+    options:
+      - text: 'True'
+      - text: 'False'
+        correct: true
+    explanation: |
+      False. The lesson calls ML "loosely inspired" by how the brain learns from what it perceives
+      and draws only "motivational similarities" between the two. What defines ML is algorithms
+      that learn hidden patterns from data to support decisions [^1]. Most classical methods, such
+      as linear regression, decision trees or k-means, contain nothing brain-like. Even neural
+      networks took little more than their name from biology: d2l notes that the biological
+      interpretation has become less literal over time, and what such networks share is layers of
+      linear and nonlinear units trained with the chain rule [^2].
+    references:
+      - source: ms-ml-for-beginners
+        url: https://github.com/microsoft/ML-For-Beginners/blob/de2d4e12236445198213a0711855e348e7253cd4/1-Introduction/1-intro-to-ML/README.md#why-study-machine-learning
+        locator: "Lesson: Introduction to machine learning, secs. The child's brain and Why study machine learning?"
+      - source: d2l
+        url: https://d2l.ai/chapter_introduction/index.html#roots
+        locator: Sec. 1.4 Roots
+    source:
+      id: ms-ml-for-beginners
+      ref: quiz-2/q1
+      url: https://github.com/microsoft/ML-For-Beginners/blob/de2d4e12236445198213a0711855e348e7253cd4/quiz-app/src/assets/translations/en.json
+    status: draft
+  - id: ml-basics-071
+    type: single
+    difficulty: easy
+    question: Which of these is a classical machine-learning technique, as opposed to deep learning?
+    options:
+      - text: Logistic regression
+        correct: true
+      - text: A convolutional neural network
+      - text: A Transformer language model
+    explanation: |
+      The curriculum's "classical machine learning" means methods such as regression,
+      classification and clustering built with scikit-learn, and it explicitly leaves out neural
+      networks and deep learning [^1]. Logistic regression belongs to that classical toolbox.
+      Convolutional networks and Transformers are deep neural network architectures: d2l describes
+      how, once data and compute grew, the sweet spot moved from linear models and kernel methods
+      to deep networks such as these [^2]. Natural language processing, the key given upstream, is
+      an application area rather than a technique; it can be tackled with classical methods (as the
+      curriculum does) or with deep learning.
+    references:
+      - source: ms-ml-for-beginners
+        url: https://github.com/microsoft/ML-For-Beginners/blob/de2d4e12236445198213a0711855e348e7253cd4/1-Introduction/1-intro-to-ML/README.md#what-we-will-not-cover
+        locator: 'Lesson: Introduction to machine learning, secs. Concepts to cover and What we will not cover'
+      - source: d2l
+        url: https://d2l.ai/chapter_introduction/index.html#the-road-to-deep-learning
+        locator: Sec. 1.5 The Road to Deep Learning
+    source:
+      id: ms-ml-for-beginners
+      ref: quiz-2/q2
+      url: https://github.com/microsoft/ML-For-Beginners/blob/de2d4e12236445198213a0711855e348e7253cd4/quiz-app/src/assets/translations/en.json
+    status: draft
+  - id: ml-basics-072
+    type: single
+    difficulty: easy
+    question: In the usual machine-learning workflow, which order of these two steps is right?
+    options:
+      - text: Prepare the data, then train the model
+        correct: true
+      - text: Choose a training method, then collect and prepare the data
+      - text: Tune the hyperparameters, then train the model for the first time
+    explanation: |
+      The lesson's workflow runs: decide on the question, collect and prepare the data, choose a
+      training method, train the model, evaluate it, tune parameters, and predict [^1]. The training
+      method comes after the data because the choice depends on the question and on the nature of
+      the data [^1]. Tuning comes after a first round of training: you look at how the trained model
+      performs on test data and then redo the process with different hyperparameters [^1].
+    references:
+      - source: ms-ml-for-beginners
+        url: https://github.com/microsoft/ML-For-Beginners/blob/de2d4e12236445198213a0711855e348e7253cd4/1-Introduction/4-techniques-of-ML/README.md#introduction
+        locator: 'Lesson: Techniques of Machine Learning, secs. Introduction (steps 1-7) and Parameter tuning'
+    source:
+      id: ms-ml-for-beginners
+      ref: quiz-7/q1
+      url: https://github.com/microsoft/ML-For-Beginners/blob/de2d4e12236445198213a0711855e348e7253cd4/quiz-app/src/assets/translations/en.json
+    status: draft
+  - id: ml-basics-073
+    type: single
+    difficulty: easy
+    question: In scikit-learn, which call trains a model on the feature matrix `X` and the targets `y`?
+    options:
+      - text: '`model.predict(X)`'
+      - text: '`model.train()`'
+      - text: '`model.fit(X, y)`'
+        correct: true
+    explanation: |
+      Every scikit-learn estimator is trained with its `fit` method, which takes the samples matrix
+      `X` and the target values `y`; once fitted, `predict` applies the trained model to new data
+      without retraining [^1]. The lesson notes that `model.fit` is the training call in many ML
+      libraries [^2]. `model.train()` is a trap from PyTorch: it only switches a module into training
+      mode, which changes how layers such as dropout and batch normalization behave, and trains
+      nothing by itself [^3].
+    references:
+      - title: 'scikit-learn: Getting Started'
+        url: https://scikit-learn.org/stable/getting_started.html#fitting-and-predicting-estimator-basics
+        locator: 'Fitting and predicting: estimator basics'
+      - source: ms-ml-for-beginners
+        url: https://github.com/microsoft/ML-For-Beginners/blob/de2d4e12236445198213a0711855e348e7253cd4/1-Introduction/4-techniques-of-ML/README.md#train-a-model
+        locator: 'Lesson: Techniques of Machine Learning, sec. Train a model'
+      - title: 'PyTorch documentation: torch.nn.Module'
+        url: https://docs.pytorch.org/docs/stable/generated/torch.nn.Module.html#torch.nn.Module.train
+        locator: Method train(mode=True)
+    source:
+      id: ms-ml-for-beginners
+      ref: quiz-8/q3
+      url: https://github.com/microsoft/ML-For-Beginners/blob/de2d4e12236445198213a0711855e348e7253cd4/quiz-app/src/assets/translations/en.json
+    status: draft
+  - id: ml-basics-074
+    type: multiple
+    difficulty: medium
+    question: You save a trained scikit-learn model with Python's `pickle` module. Which statements are true? Select all that apply.
+    options:
+      - text: '`pickle.dump` serializes the model object into a byte stream that can be written to a file'
+        correct: true
+      - text: '`pickle.load` rebuilds the model object, so it can predict without being retrained'
+        correct: true
+      - text: Loading a pickle file from an untrusted source is safe, because the file only holds numbers
+      - text: Programs in any language, such as JavaScript, can load the pickle file directly
+    explanation: |
+      Pickling converts a Python object hierarchy, such as a fitted model, into a byte stream, and
+      unpickling turns the byte stream back into the object [^1]; the lesson pickles its trained
+      model and then reloads it to call `predict` [^2]. Unpickling an untrusted file is not safe:
+      malicious pickle data can execute arbitrary code while it loads, and the lesson warns about
+      this too [^1][^2]. The format is Python-specific, so non-Python programs may be unable to read
+      it; scikit-learn points to ONNX when a model must be served without Python [^1][^3].
+    references:
+      - title: 'Python documentation: pickle — Python object serialization'
+        url: https://docs.python.org/3/library/pickle.html
+        locator: Module introduction, Warning, and Data stream format
+      - source: ms-ml-for-beginners
+        url: https://github.com/microsoft/ML-For-Beginners/blob/de2d4e12236445198213a0711855e348e7253cd4/3-Web-App/1-Web-App/README.md#exercise---pickle-your-model
+        locator: "Lesson: Build a web app to use a ML model, secs. Tool and Exercise - 'pickle' your model"
+      - title: 'scikit-learn User Guide: Model persistence'
+        url: https://scikit-learn.org/stable/model_persistence.html
+        locator: Summary of model persistence methods
+    source:
+      id: ms-ml-for-beginners
+      ref: quiz-17/q3
+      url: https://github.com/microsoft/ML-For-Beginners/blob/de2d4e12236445198213a0711855e348e7253cd4/quiz-app/src/assets/translations/en.json
+    status: draft
+  - id: ml-basics-075
+    type: true_false
+    difficulty: easy
+    question: 'True or false: if a trained model is exported (for example to ONNX) and run inside the web page itself, instead of on a server that the page calls, the app can keep making predictions while the device is offline.'
+    options:
+      - text: 'True'
+        correct: true
+      - text: 'False'
+    explanation: |
+      True. The cuisine recommender converts its scikit-learn model to ONNX and runs it in the
+      browser with ONNX Runtime, and the lesson notes that this lets the app run locally and even
+      offline [^1]. The earlier UFO app instead sends each request to a pickled model inside a Flask
+      server, so every prediction needs a connection to that server [^2].
+    references:
+      - source: ms-ml-for-beginners
+        url: https://github.com/microsoft/ML-For-Beginners/blob/de2d4e12236445198213a0711855e348e7253cd4/4-Classification/4-Applied/README.md#build-your-model
+        locator: 'Lesson: Build a cuisine recommender web app, secs. Build your model and Build a recommender web application'
+      - source: ms-ml-for-beginners
+        url: https://github.com/microsoft/ML-For-Beginners/blob/de2d4e12236445198213a0711855e348e7253cd4/3-Web-App/1-Web-App/README.md#exercise---build-a-flask-app
+        locator: 'Lesson: Build a web app to use a ML model, sec. Exercise - build a Flask app'
+    source:
+      id: ms-ml-for-beginners
+      ref: quiz-25/q2
+      url: https://github.com/microsoft/ML-For-Beginners/blob/de2d4e12236445198213a0711855e348e7253cd4/quiz-app/src/assets/translations/en.json
+    status: draft
+  - id: ml-basics-076
+    type: single
+    difficulty: easy
+    question: 'Using a trained model to make predictions on new inputs, as a web app does when a user submits a form, is called:'
+    options:
+      - text: inference
+        correct: true
+      - text: training
+      - text: validation
+    explanation: |
+      Inference is the process of making predictions by applying a trained model to new, unlabeled
+      examples [^1]. In the lesson's terms, the app takes the user's input and sends it to the model
+      for inference [^2]. Training is the earlier step in which the model is fitted to the training
+      data, and validation uses a separate set of examples to tune the model's hyperparameters [^2].
+    references:
+      - source: google-mlcc
+        url: https://developers.google.com/machine-learning/crash-course/production-ml-systems/static-vs-dynamic-inference
+        locator: 'Production ML systems: Static versus dynamic inference'
+      - source: ms-ml-for-beginners
+        url: https://github.com/microsoft/ML-For-Beginners/blob/de2d4e12236445198213a0711855e348e7253cd4/1-Introduction/4-techniques-of-ML/README.md#prediction
+        locator: 'Lesson: Techniques of Machine Learning, secs. Split your dataset, Train a model and Prediction'
+    source:
+      id: ms-ml-for-beginners
+      ref: quiz-26/q3
+      url: https://github.com/microsoft/ML-For-Beginners/blob/de2d4e12236445198213a0711855e348e7253cd4/quiz-app/src/assets/translations/en.json
     status: draft

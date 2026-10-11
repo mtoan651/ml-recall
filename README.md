@@ -8,8 +8,8 @@ mock exams and spaced repetition. Free static site on GitHub Pages.
 
 ## What's inside
 
-- **712 questions** across 10 domains — 655 curated from open-licensed sources, 51 paraphrased from
-  CE6146 course exercises, 6 original examples; 56 reviewed.
+- **1066 questions** across 10 domains — 942 imported from open-licensed quiz sets, 36 adapted
+  from d2l exercises, 51 paraphrased from CE6146 course exercises, 37 original; 56 reviewed.
 - Four question types: `single`, `multiple` (select all), `true_false`, `short_answer`
   (auto-graded fill-in: a number, a word or phrase, or a gap-fill with several blanks).
 - **Timed tests** for every topic and tag: up to 20 random questions, one minute each, scored and
@@ -19,21 +19,21 @@ mock exams and spaced repetition. Free static site on GitHub Pages.
 
 | Domain | Topics | Questions | Reviewed |
 | --- | ---: | ---: | ---: |
-| Artificial Intelligence | 5 | 30 | 1 |
-| Mathematics for ML | 5 | 133 | 9 |
-| Machine Learning | 14 | 186 | 14 |
-| Deep Learning | 8 | 110 | 32 |
-| Computer Vision | 3 | 10 | 0 |
-| Natural Language Processing | 5 | 48 | 0 |
-| Generative Models | 2 | 15 | 0 |
-| Large Language Models | 4 | 40 | 0 |
-| Reinforcement Learning | 3 | 48 | 0 |
-| Practical Tools | 3 | 92 | 0 |
-| **Total** | | **712** | **56** |
+| Artificial Intelligence | 6 | 64 | 1 |
+| Mathematics for ML | 5 | 212 | 9 |
+| Machine Learning | 14 | 316 | 14 |
+| Deep Learning | 8 | 129 | 32 |
+| Computer Vision | 3 | 19 | 0 |
+| Natural Language Processing | 5 | 62 | 0 |
+| Generative Models | 2 | 17 | 0 |
+| Large Language Models | 4 | 50 | 0 |
+| Reinforcement Learning | 3 | 55 | 0 |
+| Practical Tools | 3 | 142 | 0 |
+| **Total** | | **1066** | **56** |
 
 Imported so far: Hugging Face LLM, Deep RL and AI Agents courses; Microsoft AI, ML and Data
 Science for Beginners; Google's ML Crash Course and ML courses; MMLU-Redux; 100 NumPy exercises;
-and the CE6146 course exercises. See [docs/sources.md](docs/sources.md) for all 26 registered
+exercises from *Dive into Deep Learning*; and the CE6146 course exercises. See [docs/sources.md](docs/sources.md) for all 26 registered
 external sources and their licenses.
 
 ## Quick start

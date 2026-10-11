@@ -5,19 +5,20 @@ title: Neural Network Basics
 questions:
   - id: neural-networks-001
     type: single
+    difficulty: easy
     question: Select the sentence that best describes the terms "model", "architecture", and "weights".
     options:
       - text: If a model is a building, its architecture is the blueprint and the weights are the people living inside.
         why: Following this metaphor, the weights would be the bricks and other materials used to construct the building.
       - text: An architecture is a map to build a model and its weights are the cities represented on the map.
         why: The problem with this metaphor is that a map usually represents one existing reality (there is only one city in France named Paris). For a given architecture, multiple weights are possible.
-      - text: An architecture is a succession of mathematical functions to build a model and its weights are those functions parameters.
+      - text: An architecture is a succession of mathematical functions to build a model and its weights are those functions' parameters.
         correct: true
     explanation: The same set of mathematical functions (architecture) can be used to build different models by using different parameters (weights). [^1]
     references:
       - source: hf-llm-course
-        locator: 'Chapter 1: Transformer models'
-        url: https://huggingface.co/learn/llm-course/chapter1/1
+        url: https://huggingface.co/learn/llm-course/chapter1/4#architecture-vs-checkpoints
+        locator: 'Chapter 1, How do Transformers work?: Architectures vs. checkpoints'
     source:
       id: hf-llm-course
       ref: chapter1/7#q7
@@ -25,19 +26,32 @@ questions:
     status: draft
   - id: neural-networks-002
     type: multiple
+    difficulty: easy
     question: What is the point of applying a SoftMax function to the logits output by a sequence classification model?
     options:
       - text: It softens the logits so that they're more reliable.
         why: No, the SoftMax function does not affect the reliability of results.
       - text: It applies a lower and upper bound so that they're understandable.
         correct: true
+        why: Every softmax output lies between 0 and 1.
       - text: The total sum of the output is then 1, resulting in a possible probabilistic interpretation.
         correct: true
-    explanation: The resulting values are bound between 0 and 1. That's not the only reason we use a SoftMax function, though. Correct! That's not the only reason we use a SoftMax function, though. [^1]
+        why: Dividing each exponentiated logit by the sum of all of them makes the outputs add up to 1, like a probability distribution.
+    explanation: |
+      The logits of a sequence classification model are raw, unnormalized scores; to be read as
+      probabilities they go through a SoftMax layer [^1]. Softmax exponentiates every logit, which
+      makes it non-negative, and divides by the sum of the exponentials, so each output lies between
+      0 and 1 and all outputs add up to 1 [^2]. Both properties together allow the probabilistic
+      reading. Softmax also preserves the ordering of the logits, so it does not change which class
+      wins and does not make the prediction any more reliable [^2].
     references:
       - source: hf-llm-course
-        locator: 'Chapter 2: Using 🤗 Transformers'
-        url: https://huggingface.co/learn/llm-course/chapter2/1
+        url: https://huggingface.co/learn/llm-course/chapter2/2#postprocessing-the-output
+        locator: 'Chapter 2, Behind the pipeline: Postprocessing the output'
+      - source: d2l
+        url: https://d2l.ai/chapter_linear-classification/softmax-regression.html#the-softmax
+        locator: Sec. 4.1.1.2 The Softmax, Eqs. (4.1.3)–(4.1.4)
+        quote: because the softmax operation preserves the ordering among its arguments, we do not need to compute the softmax to determine which class has been assigned the highest probability
     source:
       id: hf-llm-course
       ref: chapter2/9#q7
@@ -1053,6 +1067,7 @@ questions:
     status: reviewed
   - id: neural-networks-039
     type: single
+    difficulty: medium
     shuffle: false
     question: The fully connected network below has 3 input features, one hidden layer of four neurons and a single output node. How many parameters (weights and biases) does it have?
     figure:
@@ -1060,7 +1075,7 @@ questions:
       alt: 'Network diagram: three input nodes x1, x2 and x3, a hidden layer of four nodes and one output node; every node is connected to every node in the next layer.'
     options:
       - text: '4'
-        why: 'Our original model in [Exercise 1](https://developers.google.com/machine-learning/crash-course/neural-networks/nodes-hidden-layers#exercise-1) had four parameters: w11, w21, w31, and b. Because this model contains a hidden layer, there are more parameters.'
+        why: Four parameters (one weight per input plus a bias) is the count for the same network without the hidden layer. The hidden layer adds more parameters.
       - text: '12'
         why: Note that the total number of parameters includes both the parameters used to calculate the node values in the hidden layer from the input values, and the parameters used to calculate the output value from the node values in the hidden layer.
       - text: '16'
@@ -1106,4 +1121,67 @@ questions:
       id: google-mlcc
       ref: neural-networks/nodes-hidden-layers#q2
       url: https://developers.google.com/machine-learning/crash-course/neural-networks/nodes-hidden-layers
+    status: draft
+  - id: neural-networks-041
+    type: short_answer
+    difficulty: medium
+    question: |
+      A perceptron outputs $+1$ if $w^\top x \ge 0$ and $-1$ otherwise. When it misclassifies a
+      training example $x$ with target $t \in \{-1, +1\}$, it updates $w \leftarrow w + \eta\, t\, x$.
+      With $w = (1, -1)$ and $\eta = 1$, it receives the positive example $x = (1, 2)$, $t = +1$.
+      What is $w$ after this step?
+    answer:
+      accept:
+        - (2, 1)
+      pattern: \(?\s*2\s*(?:[,;]|\s)\s*1\s*\)?
+      hint: Two numbers, e.g. (0, 3)
+      model: $w^\top x = 1 - 2 = -1 < 0$, so the positive example is misclassified and $w \leftarrow (1, -1) + 1 \cdot (+1) \cdot (1, 2) = (2, 1)$.
+    explanation: |
+      The perceptron is trained by gradient descent on the perceptron criterion, which sums
+      $-w^\top x_i t_i$ over the misclassified examples; its gradient step becomes
+      $w \leftarrow w + \eta\, x_i t_i$ [^1]. Here $w^\top x = 1 \cdot 1 + (-1) \cdot 2 = -1 < 0$, so the
+      perceptron outputs $-1$ for a positive example and must update: $w = (1, -1) + (1, 2) = (2, 1)$.
+      The new weights give $w^\top x = 4 \ge 0$, so this example is now classified correctly. A correctly
+      classified example would leave $w$ unchanged [^1].
+    references:
+      - source: ms-ai-for-beginners
+        url: https://github.com/microsoft/AI-For-Beginners/blob/392d0df1b2647cbee104942390551f1ed9e072c8/lessons/3-NeuralNetworks/03-Perceptron/README.md#training-the-perceptron
+        locator: 'Lesson: Introduction to Neural Networks: Perceptron, sec. Training the Perceptron'
+    source:
+      id: ms-ai-for-beginners
+      ref: quiz-103/q1
+      url: https://github.com/microsoft/AI-For-Beginners/blob/392d0df1b2647cbee104942390551f1ed9e072c8/etc/quiz-app/src/assets/translations/en/lesson-3.json
+    status: draft
+  - id: neural-networks-042
+    type: single
+    difficulty: medium
+    question: |
+      Two losses for classification are the 0-1 loss, which counts misclassified examples (it is
+      essentially one minus the accuracy), and the logistic loss. Why are neural networks trained by
+      minimising the logistic loss rather than the 0-1 loss?
+    options:
+      - text: The 0-1 loss changes only in jumps, so it gives gradient descent no useful gradient
+        correct: true
+      - text: The 0-1 loss is a regression loss, so it cannot be computed from class labels
+      - text: The 0-1 loss needs predicted probabilities for every class, which a neural network cannot output
+      - text: The logistic loss always gives a higher test accuracy than any other loss
+    explanation: |
+      Training minimises the loss by gradient descent, which needs the derivative of the loss with
+      respect to the parameters [^1]. The 0-1 loss is essentially the model's accuracy [^1], and
+      accuracy is hard to optimise directly because it is not differentiable [^2]: a small change of
+      the weights either flips no prediction (zero gradient) or flips one (a jump). It is a
+      classification loss, not a regression one [^1], and it needs only hard class predictions; a
+      network can output class probabilities anyway through softmax [^1]. The logistic loss is used
+      because it is smooth, not because it guarantees the best test accuracy.
+    references:
+      - source: ms-ai-for-beginners
+        url: https://github.com/microsoft/AI-For-Beginners/blob/392d0df1b2647cbee104942390551f1ed9e072c8/lessons/3-NeuralNetworks/04-OwnFramework/README.md#formalization-of-machine-learning
+        locator: 'Lesson: Introduction to Neural Networks. Multi-Layered Perceptron, secs. Formalization of Machine Learning and Gradient Descent Optimization'
+      - source: d2l
+        url: https://d2l.ai/chapter_linear-classification/classification.html#accuracy
+        locator: Sec. 4.3.2 Accuracy
+    source:
+      id: ms-ai-for-beginners
+      ref: quiz-204/q2
+      url: https://github.com/microsoft/AI-For-Beginners/blob/392d0df1b2647cbee104942390551f1ed9e072c8/etc/quiz-app/src/assets/translations/en/lesson-4.json
     status: draft

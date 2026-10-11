@@ -1,6 +1,9 @@
 # Curation for hf-llm-course (see docs/content-pipeline.md#curation).
 # Items not listed are kept with their chapter's default topic (importers/hf_course.py).
-# Reviewed 2026-10-09.
+# Reviewed 2026-10-09 — 86 of 132 kept. Re-reviewed 2026-10-11 under keep-and-fix — 106 kept: the
+# Hub/Datasets/debugging items that test common APIs or general concepts are kept by per-item
+# decisions (which override the group exclusions below); Gradio, Argilla, forum etiquette and
+# removed APIs stay dropped.
 exclude_prefixes:
   "chapter4/": tool-specific   # sharing models on the Hub
   "chapter5/": tool-specific   # 🤗 Datasets library
@@ -10,66 +13,683 @@ exclude_prefixes:
 
 items:
   # chapter 1 — Transformer models
-  "chapter1/7#q1": {topic: huggingface}
+  "chapter1/7#q1":
+    topic: huggingface
+    fix:
+      why:
+        0: Summarization produces a shorter version of an input text. This checkpoint outputs one of three labels for a pair of sentences.
+        2: Text generation continues a prompt with new text. This checkpoint is a classifier that outputs one of three labels.
   "chapter1/7#q2": {topic: huggingface}
   "chapter1/7#q3": {topic: huggingface}
-  "chapter1/7#q4": {topic: huggingface}
+  "chapter1/7#q4":
+    topic: huggingface
+    fix:
+      options:
+        2: This pipeline needs a `model=` argument, because the task has no default checkpoint.
+      why:
+        2: Without `model=`, the pipeline falls back to a default checkpoint for the task and only prints a warning.
   "chapter1/7#q5": {topic: transfer-learning}
-  "chapter1/7#q6": {topic: language-models}
-  "chapter1/7#q7": {topic: neural-networks}
+  "chapter1/7#q6":
+    topic: language-models
+    fix:
+      type: true_false
+      question: A language model usually does not need labels for its pretraining.
+      why:
+        1: Pretraining labels are created automatically from the text itself (the next word, or a masked word), so no human labelling is needed.
+  "chapter1/7#q7":
+    topic: neural-networks
+    fix:
+      options:
+        2: An architecture is a succession of mathematical functions to build a model and its weights are those functions' parameters.
   "chapter1/7#q11": {topic: ai-ethics}
   # chapter 2 — Using 🤗 Transformers (concepts → transformers/tokenization, API → huggingface)
   "chapter2/9#q2": {topic: transformers}
-  "chapter2/9#q3": {topic: tokenization}
+  "chapter2/9#q3":
+    topic: tokenization
+    fix:
+      question: Which of the following are examples of subword tokenization?
+      shuffle: true
+      options:
+        5: Lowercasing the text and removing accents
+      why:
+        5: That's normalization, a cleanup step before the text is split; it produces no tokens.
   "chapter2/9#q4": {topic: transformers}
   "chapter2/9#q6": {topic: transformers}
-  "chapter2/9#q7": {topic: neural-networks}
+  "chapter2/9#q7":
+    topic: neural-networks
+    fix:
+      why:
+        1: Every softmax output lies between 0 and 1.
+        2: Dividing each exponentiated logit by the sum of all of them makes the outputs add up to 1, like a probability distribution.
   # chapter 3 — Fine-tuning a pretrained model
-  "chapter3/2#q1": {topic: huggingface}
+  "chapter3/2#q1":
+    topic: huggingface
+    fix:
+      options:
+        1: It tokenizes many examples per call, which is much faster.
+        0: It uses less memory while the dataset is processed.
+        2: It pads every example in a batch to the same length.
+        3: It converts the tokenized columns into PyTorch tensors.
+      why:
+        0: Saving memory isn't the point. Each call receives a whole batch of examples at once, so batching doesn't reduce memory; what it buys is speed.
   "chapter3/2#q3": {topic: transformers}
-  "chapter3/2#q4": {topic: huggingface}
-  "chapter3/2#q5": {topic: huggingface}
+  "chapter3/2#q4":
+    topic: huggingface
+    fix:
+      why:
+        2: The split has its own keyword argument, `split=` (e.g. `split="train"`); without it, `load_dataset` returns a `DatasetDict` with every split [^2].
+  "chapter3/2#q5":
+    topic: huggingface
+    fix:
+      options:
+        2: These text columns are not needed when computing evaluation metrics.
+        3: Dropping them makes each training step significantly faster.
   "chapter3/3#q1": {topic: huggingface}
-  "chapter3/3#q2": {topic: huggingface}
-  "chapter3/3#q3": {topic: training}
-  "chapter3/3#q4": {topic: huggingface}
-  "chapter3/3#q5": {topic: huggingface}
-  "chapter3/3#q6": {topic: training}
+  "chapter3/3#q2":
+    topic: huggingface
+    fix:
+      options:
+        0: '`eval_frequency`'
+        1: '`eval_strategy`'
+        2: '`evaluation_steps`'
+        3: '`do_eval`'
+      why:
+        0: There's no `eval_frequency` parameter in `TrainingArguments`.
+        2: There's no such parameter. The real `eval_steps` sets the number of steps between evaluations, but only when `eval_strategy="steps"`; `eval_strategy` decides if and when evaluation happens.
+        3: "`do_eval` exists, but the `Trainer` doesn't use it directly: it is a flag for your own scripts, set to `True` automatically when `eval_strategy` is not `\"no\"` [^2]."
+  "chapter3/3#q3":
+    topic: training
+    fix:
+      options:
+        0: 16-bit integer weights and activations for faster training.
+        1: Mixed precision training with 16-bit floating-point numbers.
+        2: Training for exactly 16 epochs with the default batch size.
+        3: Distributed data-parallel training across 16 GPUs.
+  "chapter3/3#q4":
+    topic: huggingface
+    fix:
+      options:
+        0: It calculates the loss that is backpropagated during training.
+        1: It computes metrics like accuracy and F1 from the model's predictions.
+        2: It determines which optimizer and learning rate to use.
+        3: It preprocesses and tokenizes the training data.
+  "chapter3/3#q5":
+    topic: huggingface
+    fix:
+      question: What happens when you don't provide an `eval_dataset` to the `Trainer` and keep the default `eval_strategy="no"`?
+      why:
+        0: Not with `eval_strategy="no"`. You only get an error if you ask for evaluation (`"steps"` or `"epoch"`) without passing an `eval_dataset`.
+  "chapter3/3#q6":
+    topic: training
+    fix:
+      options:
+        0: It saves gradients to disk, enabled with `save_gradients=True`.
+        1: It accumulates gradients over multiple batches before updating, enabled with `gradient_accumulation_steps`.
+        2: It speeds up gradient computation, enabled automatically with `fp16`.
+        3: It prevents gradient overflow, enabled with `gradient_clipping=True`.
   "chapter3/4#q1": {topic: training}
-  "chapter3/4#q2": {topic: training}
+  "chapter3/4#q2":
+    topic: training
+    fix:
+      question: In a training loop that uses a learning-rate scheduler, what is the correct order of operations for each batch?
+      options:
+        0: Forward pass → Backward pass → Scheduler step → Optimizer step → Zero gradients
+        3: Forward pass → Backward pass → Zero gradients → Optimizer step → Scheduler step
+      why:
+        0: The scheduler should step after the optimizer. In PyTorch, calling the scheduler before the optimizer's update skips the first value of the learning-rate schedule.
+        2: The optimizer step comes before the backward pass here, so it cannot use the gradients of the current batch.
+        3: Zeroing the gradients between the backward pass and the optimizer step wipes out the gradients that were just computed.
   "chapter3/4#q3": {topic: huggingface}
-  "chapter3/4#q4": {topic: pytorch}
-  "chapter3/4#q5": {topic: pytorch}
-  "chapter3/4#q6": {topic: pytorch}
-  "chapter3/4#q7": {topic: huggingface}
+  "chapter3/4#q4":
+    topic: pytorch
+    fix:
+      options:
+        0: To make each training step run faster.
+        1: Because the model and the data must be on the same device.
+        2: To reduce how much memory each batch uses.
+        3: Because the DataLoader only accepts batches that are on the GPU.
+  "chapter3/4#q5":
+    topic: pytorch
+    fix:
+      options:
+        1: It switches layers like dropout and batch norm to inference behavior.
+  "chapter3/4#q6":
+    topic: pytorch
+    fix:
+      options:
+        1: To skip gradient tracking, which saves memory and computation.
+  "chapter3/4#q7":
+    topic: huggingface
+    fix:
+      options:
+        1: You wrap your objects with `accelerator.prepare()` and call `accelerator.backward(loss)`.
+        2: You must hard-code the number of GPUs and their device IDs in your script.
   "chapter3/5#q1": {topic: training}
-  "chapter3/5#q2": {topic: training}
+  "chapter3/5#q2":
+    topic: training
+    fix:
+      options:
+        0: There is a bug in how the accuracy is being calculated.
+        1: Accuracy changes only when a prediction flips to another class.
+        2: The model is not learning effectively between the jumps.
+        3: The batch size is too small to give stable gradient estimates.
   "chapter3/5#q3": {topic: training}
   "chapter3/5#q4": {topic: training}
   "chapter3/5#q5": {topic: training}
   # chapter 6 — Tokenizers
-  "chapter6/10#q2": {topic: huggingface}
+  "chapter6/10#q2":
+    topic: huggingface
+    fix:
+      why:
+        0: The method takes any iterator over batches of texts, and a list of lists of texts works too; it just has to hold the whole corpus in memory.
   "chapter6/10#q3": {topic: huggingface}
-  "chapter6/10#q4": {topic: nlp-tasks}
-  "chapter6/10#q5": {topic: nlp-tasks}
+  "chapter6/10#q4":
+    topic: nlp-tasks
+    fix:
+      why:
+        0: Too simple. Merging every run of tokens with the same entity type would fuse two adjacent entities of that type into one; the `B-` label exists to mark where a new entity starts.
+  "chapter6/10#q5":
+    topic: nlp-tasks
+    fix:
+      why:
+        0: No, truncating could cut off the answer; the pipeline splits a long context into chunks instead.
   # chapter 7 — Main NLP tasks
   "chapter7/9#q4": {topic: transfer-learning}
   "chapter7/9#q5": {topic: language-models}
-  "chapter7/9#q7": {topic: huggingface}
+  "chapter7/9#q7":
+    topic: huggingface
+    fix:
+      question: What is the proper way to preprocess the data for a sequence-to-sequence problem with a 🤗 Transformers tokenizer?
+      options:
+        0: Pass the inputs as usual and the targets through the tokenizer's `text_target` argument.
+        1: Tokenize the inputs and the targets with two ordinary calls, treating both the same way.
+        3: Concatenate each input with its target and tokenize the result as one sequence.
+      why:
+        1: Then the targets go through the input tokenizer; for a Marian translation model, a French target gets split into many meaningless pieces. Mark them as targets with `text_target`.
+        2: Not in a sequence-to-sequence problem; the targets are also texts we need to convert into numbers!
+        3: That is how data is prepared for a decoder-only (causal) language model; an encoder-decoder model takes the inputs and the labels separately.
+        0:
+      correct:
+        - 0
   "chapter7/9#q8": {topic: huggingface}
-  "chapter7/9#q9": {drop: tool-specific}   # Keras compile(); course is PyTorch-first now
-  "chapter7/9#q10": {topic: language-models}
-  "chapter7/9#q11": {topic: language-models}
+  "chapter7/9#q9":                         # Keras compile(); course is PyTorch-first now
+    topic: huggingface
+    fix:
+      question: |
+        In a PyTorch training loop for a 🤗 Transformers model you can write
+
+        ```py
+        outputs = model(**batch)
+        loss = outputs.loss
+        loss.backward()
+        ```
+
+        without defining a loss function yourself. Why?
+      options:
+        - text: Transformer models are trained without supervision, so they need no loss function
+          why: Every model trained by gradient descent needs a loss; here the model computes it internally.
+        - text: When the batch contains `labels`, the model computes the loss itself and returns it
+          correct: true
+        - text: '`outputs.loss` is the metric that `compute_metrics()` returns after each evaluation'
+          why: '`compute_metrics()` reports evaluation metrics; it is not run in the forward pass and is not what gets back-propagated.'
+        - text: The optimizer computes the loss from the gradients during `optimizer.step()`
+          why: It is the other way round. The loss comes first, `backward()` turns it into gradients, and the optimizer only uses them to update the weights.
+  "chapter7/9#q10":
+    topic: language-models
+    fix:
+      why:
+        3: Poor results usually come from the fine-tuning setup (data, hyperparameters, bugs); debug that first, since pretraining from scratch costs far more.
+  "chapter7/9#q11":
+    topic: language-models
+    fix:
+      why:
+        0: True, but raw text is only usable at that scale because nobody has to label it. If the objective needed human labels, the amount of text online would hardly help.
+        2: True, but short training code isn't what makes huge corpora usable. The bottleneck would be labeling the data, and the self-supervised objective removes it.
   # chapter 11 — Fine-tuning LLMs (SFT, evaluation)
-  "chapter11/3#q1": {topic: huggingface}
+  "chapter11/3#q1":
+    topic: huggingface
+    fix:
+      options:
+        0: '`num_train_epochs` and `max_steps`'
+        1: '`batch_size` and `learning_rate`'
+        2: '`gradient_checkpointing` and `warmup_ratio`'
+      why:
+        2: Gradient checkpointing trades compute for memory, so it changes the cost of each step but not how many steps are run, and `warmup_ratio` only sets which share of the run is used for learning-rate warmup.
   "chapter11/3#q2": {topic: training}
-  "chapter11/3#q3": {topic: training}
+  "chapter11/3#q3":
+    topic: training
+    fix:
+      question: What is `gradient_accumulation_steps` used for?
+      why:
+        1: This is handled by the `save_steps` and `save_strategy` parameters.
+        2: Learning rate scheduling is controlled by `learning_rate` and `warmup_ratio`.
   "chapter11/3#q5": {topic: training}
   "chapter11/5#q1": {topic: llm-basics}
   "chapter11/5#q2": {topic: llm-basics}
-  "chapter11/5#q3": {topic: llm-basics}
-  "chapter11/5#q4": {topic: llm-basics}
-  "chapter11/5#q5": {topic: llm-basics}
-  "chapter11/5#q6": {topic: llm-basics}
+  "chapter11/5#q3":
+    topic: llm-basics
+    fix:
+      options:
+        2: Letting users vote on which of two anonymous models answered better
+      why:
+        2: Incorrect! That is an evaluation arena such as Chatbot Arena, where the judges are crowds of human users, not a model.
+  "chapter11/5#q4":
+    topic: llm-basics
+    fix:
+      options:
+        0: Only standard benchmarks, since they are reproducible and comparable
+        2: Only custom datasets built from real queries in your own domain
+  "chapter11/5#q5":
+    topic: llm-basics
+    fix:
+      options:
+        0: They are too expensive to run for most model developers
+        1: A high benchmark score may not carry over to real-world use
+        2: They can only evaluate models below a certain size
+  "chapter11/5#q6":
+    topic: llm-basics
+    fix:
+      options:
+        0: To reflect your use case, e.g. with real user queries from your domain
+        1: To replace standard benchmarks entirely with in-house tests
+        2: To make evaluation easier and cheaper than running benchmarks
   # chapter 12 — Reasoning models
-  "chapter12/3#q1": {drop: inaccurate}     # GRPO was introduced in DeepSeekMath, not R1
+  "chapter12/3#q1":                        # GRPO was introduced in DeepSeekMath, not R1
+    fix:
+      question: What is the main contribution of the DeepSeek-R1 paper (2025)?
+      options:
+        - text: Introducing GRPO, a new RL algorithm that compares groups of sampled answers
+          why: R1 is trained with GRPO, but GRPO was introduced earlier, in the DeepSeekMath paper (2024).
+        - text: Training with far more GPUs and compute than any earlier language model
+          why: The contribution is the training method, not the amount of compute.
+        - text: Scaling the model to more parameters than any existing language model
+          why: The contribution is the training method, not the model size.
+        - text: Showing that reasoning can emerge from RL alone, without human-written reasoning examples
+          correct: true
+  chapter1/7#q9:
+    fix:
+      question: You want to fine-tune a dedicated summarization model, which reads a whole document and then writes a shorter text. Which type of Transformer model is the standard choice?
+      options:
+        0: An encoder-only model
+        1: A decoder-only model
+      why:
+        1: Decoder-only LLMs can summarize a text placed in their prompt, but each token attends only to the tokens before it. Models built specifically for summarization, such as BART and T5, are encoder-decoders [^1].
+  chapter6/10#q6:
+    fix:
+      why:
+        1: No, normalization neither augments data nor removes rare words; it only cleans up the text (whitespace, case, accents).
+  chapter6/10#q10:
+    fix:
+      why:
+        3: No, frequency alone does not decide which tokens stay; Unigram removes the tokens whose removal increases the corpus loss the least.
+  chapter7/9#q1:
+    fix:
+      options:
+        3: Find the chunk of words in a sentence that is the answer to a question.
+  chapter7/9#q2:
+    fix:
+      question: Which parts of the preprocessing for token classification differ from the other preprocessing pipelines?
+  chapter7/9#q13:
+    fix:
+      why:
+        1: Close, but the answer is not decoded from the tokens; the offset mapping is used to cut the matching span out of the original context text.
+  chapter12/2#q4:
+    fix:
+      options:
+        0: To score how well the model's responses match the desired behavior
+        1: To measure how large a vocabulary the model has learned to use
+        2: To set how fast the model trains, the way a learning rate does
+      why:
+        1: Rewards aren't used to evaluate vocabulary knowledge. They score the quality of the responses the model generates.
+        2: Training speed is set by things like the optimizer and its learning rate. The reward is feedback on how good a response was.
+  chapter12/3#q4:
+    fix:
+      options:
+        0: It samples 4–16 answers to the same prompt and scores them together
+        1: It combines several different models into one ensemble
+  chapter12/3#q5:
+    fix:
+      options:
+        0: R1-Zero is trained with pure RL; R1 adds supervised fine-tuning
+        1: R1-Zero is a smaller version of R1 with fewer parameters
+        2: R1-Zero was pre-trained on much less text than R1
+  chapter4/6#q1:
+    fix:
+      question: Which models can be hosted on the Hugging Face Hub?
+      options:
+        - text: Only models built with the 🤗 Transformers library
+          why: Models from the 🤗 Transformers library are supported on the Hub, but they are not the only ones.
+        - text: Only models whose interface matches the 🤗 Transformers API
+          why: There is no interface requirement for uploading a model to the Hub.
+        - text: Models from many libraries and fields, e.g. timm for vision or pyannote for speech
+          correct: true
+        - text: Only models for natural language processing (NLP) tasks
+          why: There is no requirement on the field of application; the Hub also hosts vision and speech models.
+  chapter4/6#q2:
+    fix:
+      question: Every model on the Hugging Face Hub lives in a repository. How are the files in these repositories versioned and managed?
+      options:
+        - text: With git, using a large-file extension (Git LFS, now also Xet) for big files such as weights
+          correct: true
+        - text: Through your own Google Cloud (GCP) account, which stores the model files
+          why: The Hub stores the files itself; no cloud account of yours is involved.
+        - text: Through peer-to-peer distribution among the users who download the model
+          why: Files are served from the Hub's own storage, not shared peer to peer.
+        - text: Only through the website, since repositories cannot be cloned and keep no history
+          why: Hub repositories can be cloned, pushed to and browsed by revision like any git repository.
+  chapter4/6#q4:
+    fix:
+      question: What is a model card on the Hugging Face Hub?
+      options:
+        - text: A Markdown README documenting the model's intended uses, limitations, biases, data and evaluation
+          correct: true
+        - text: A rough description of the model, less important than the model and tokenizer files
+          why: It is arguably as important as the model files; if it is incomplete or missing, the model is much less useful to others.
+        - text: A Python script that you run to print information about the model's architecture
+          why: A model card is a Markdown file, the repository's README.md, not code.
+        - text: The JSON config file that the library reads to rebuild the model's architecture
+          why: That is config.json. The model card is documentation written for people.
+  chapter4/6#q5:
+    fix:
+      question: Which of these objects can be uploaded to the Hub directly by calling their own `push_to_hub()` method?
+      options:
+        - text: A tokenizer
+          correct: true
+        - text: A model configuration
+          correct: true
+        - text: A model
+          correct: true
+        - text: A `Trainer`
+          correct: true
+        - text: A data collator such as `DataCollatorWithPadding`
+          why: A data collator only pads examples into batches; it has no files to share and no `push_to_hub()` method.
+  chapter4/6#q6:
+    fix:
+      question: Before you can upload with `push_to_hub()` or the `hf` command-line tool, what must you do first on your machine?
+      options:
+        - text: Log in on the huggingface.co website in your browser
+          why: A browser session does not give your local Python process or terminal a token.
+        - text: Run `hf auth login` in a terminal
+          correct: true
+        - text: Run `notebook_login()` in a notebook
+          correct: true
+        - text: Run `git lfs install` in the model folder
+          why: That only prepares git for large files; it does not authenticate you.
+  chapter5/8#q1:
+    fix:
+      question: The `load_dataset()` function in 🤗 Datasets can load a dataset from which of these locations?
+      options:
+        - text: Local files, e.g. CSV or JSON files on your laptop
+          correct: true
+        - text: The Hugging Face Hub, by dataset name
+          correct: true
+        - text: A remote server, by passing URLs as `data_files`
+          correct: true
+        - text: A Python list in memory, passed as the first argument
+          why: The first argument is a dataset name or a path (a string). Data already in memory is wrapped with `Dataset.from_list()` or `Dataset.from_dict()` instead.
+  chapter5/8#q2:
+    fix:
+      options:
+        - text: '`dataset.sample(50)`'
+          why: There is no `Dataset.sample()` method.
+        - text: '`dataset.shuffle().select(range(50))`'
+          correct: true
+        - text: '`dataset.select(range(50)).shuffle()`'
+          why: The code runs, but it only shuffles the first 50 elements of the dataset, so the sample is not random.
+        - text: '`dataset.shuffle(50)`'
+          why: The first parameter of `shuffle()` is the random seed, so this returns the whole dataset in a new order.
+  chapter5/8#q3:
+    fix:
+      options:
+        - text: "`pets_dataset.filter(lambda x: x['name'].startswith('L'))`"
+          correct: true
+        - text: "`pets_dataset.filter(lambda x['name'].startswith('L'))`"
+          why: 'This is a syntax error: a lambda has the form `lambda <arguments> : <expression>`, so it needs an argument before the colon.'
+        - text: "Define `def filter_names(x): return x['name'].startswith('L')` and run `pets_dataset.filter(filter_names)`"
+          correct: true
+        - text: "`pets_dataset.select(lambda x: x['name'].startswith('L'))`"
+          why: '`select()` expects an iterable of row indices, not a function; keeping rows that satisfy a condition is the job of `filter()`.'
+  chapter5/8#q4:
+    fix:
+      question: 🤗 Datasets treats each dataset as a memory-mapped file. What is memory mapping?
+      options:
+        - text: A mapping between CPU RAM and GPU memory
+          why: Memory mapping is about RAM and files on disk, not about moving data to the GPU.
+        - text: A mapping between RAM and filesystem storage
+          correct: true
+        - text: A mapping between two files in the 🤗 Datasets cache
+          why: It maps a file on disk into memory, not one file onto another.
+        - text: A mapping from each token to its ID in the vocabulary
+          why: That is the tokenizer's vocabulary, which has nothing to do with how the dataset is stored.
+  chapter5/8#q5:
+    fix:
+      question: What are the main benefits of the memory mapping used by 🤗 Datasets?
+      options:
+        - text: Several processes can share one memory-mapped file, so `Dataset.map()` can run in parallel without copying the data
+          correct: true
+        - text: Programs can access parts of an extremely large file without first reading the whole file into RAM
+          correct: true
+        - text: The whole dataset is read into RAM once, so that later accesses never touch the disk
+          why: It is the opposite. Memory mapping avoids loading the whole dataset into RAM.
+        - text: The dataset is compressed, so that it takes up much less space on disk
+          why: Memory mapping changes how a file is accessed, not how big it is on disk.
+  chapter5/8#q6:
+    fix:
+      question: |
+        With `streaming=True`, `load_dataset()` does not download the whole dataset first:
+
+        ```py
+        from datasets import load_dataset
+
+        dataset = load_dataset("allocine", streaming=True, split="train")
+        ```
+
+        Why can't you get the first review with `dataset[0]`, as you could without streaming?
+      options:
+        - text: It is too large to fit in RAM, so streaming refuses to return single elements
+          why: Streamed datasets are decompressed on the fly, so you can process terabyte-sized datasets with very little RAM.
+        - text: Streaming returns an `IterableDataset`, which has no random access by index
+          correct: true
+        - text: The `allocine` dataset has no `train` split
+          why: It has train, validation and test splits; the problem is the type of object that streaming returns.
+        - text: Streamed examples arrive as token IDs and must be decoded before they can be read
+          why: Streamed examples are ordinary dicts of raw fields, as in a regular dataset; tokenizing is a separate `map()` step.
+  chapter5/8#q7:
+    fix:
+      question: Which of the following are the main benefits of writing a dataset card for a dataset you share on the Hub?
+      options:
+        - text: It tells others the intended use and supported tasks, so they can decide whether the dataset suits them
+          correct: true
+        - text: It draws attention to the biases present in the corpus
+          correct: true
+        - text: It makes it more likely that others in the community will use the dataset
+          correct: true
+        - text: It removes the biases in the corpus by documenting them
+          why: Documenting a bias helps users evaluate the risks, but it does not change the data.
+  chapter5/8#q8:
+    topic: text-representation
+    fix:
+      type: single
+      options:
+        - text: Finding documents that contain the exact words of the query
+          why: That is lexical (keyword) search, what traditional search engines do.
+        - text: Finding documents by meaning, comparing embeddings of the query and documents
+          correct: true
+        - text: Ranking documents by how many of the query's keywords they contain
+          why: Counting shared keywords is still lexical matching; a document that uses synonyms would score zero.
+        - text: Translating the query into several languages and keyword-searching each one
+          why: The matching would still be on exact words; translation does not add an understanding of meaning.
+  chapter5/8#q9:
+    topic: text-representation
+    fix:
+      question: In *asymmetric* semantic search, what do the query and the matching documents usually look like?
+      options:
+        - text: A short query and a longer paragraph that answers it
+          correct: true
+        - text: A query and documents of about the same length
+          why: That is symmetric semantic search, e.g. finding questions similar to a given question.
+        - text: A long query and a shorter paragraph that answers it
+          why: It is the other way round; the query is usually short, like a question or a few keywords.
+        - text: A query in one language and documents in another
+          why: That is cross-lingual search. Asymmetric refers to the different length and content of query and documents.
+  chapter5/8#q10:
+    fix:
+      type: true_false
+      question: 🤗 Datasets can only load text data, so audio or computer-vision datasets need a different library.
+      options:
+        - text: 'True'
+          why: 🤗 Datasets also loads and processes audio, image and tabular data.
+        - text: 'False'
+          correct: true
+  chapter8/7#q4:
+    topic: training
+    fix:
+      question: |
+        `trainer.train()` (🤗 Transformers `Trainer`) fails with a cryptic error that doesn't say where
+        it comes from. The `Trainer` turns datasets into dataloaders, feeds batches to the model,
+        computes gradients, updates the weights and evaluates. Where should you look first?
+      options:
+        - text: The optimization step, where gradients are computed and the weights updated
+          why: Bugs can hide there, but it comes several steps into the pipeline, so check the earlier stages first.
+        - text: The evaluation step, where the metrics are computed
+          why: Evaluation usually runs after a full epoch of training, so check something earlier in the pipeline first.
+        - text: The training dataset itself, by inspecting and decoding a few examples
+          correct: true
+        - text: The dataloader that collates examples into batches
+          why: Very close, but the dataloader is built from the dataset; if the data is corrupted it cannot form batches, so check the dataset first.
+  chapter8/7#q5:
+    topic: pytorch
+    fix:
+      question: Your PyTorch training code fails on the GPU with a CUDA error that is **not** an out-of-memory error. What is usually the best way to debug it?
+      options:
+        - text: Post the error message on the forums or on GitHub
+          why: CUDA error messages are usually very uninformative, so others can do little with them either.
+        - text: Run the same code on the CPU to get an informative error
+          correct: true
+        - text: Read the traceback to find the line that caused the error
+          why: GPU operations are asynchronous, so the error is raised at a later synchronization point, far from the operation that caused it.
+        - text: Reduce the batch size
+          why: That is the usual fix for CUDA out-of-memory errors, not for other CUDA errors.
+        - text: Restart the Jupyter kernel and run the code again
+          why: A CUDA error does break the kernel, so you must restart it, but running the same code again gives the same error.
+  chapter8/7#q7:
+    topic: training
+    fix:
+      question: When a model doesn't seem to train properly, why is overfitting a single batch a good debugging test?
+      options:
+        - text: It isn't; overfitting is always bad and should be avoided
+          why: On the full dataset overfitting is a sign of poor generalization, but in this test you train on one batch on purpose.
+        - text: 'It checks that the model can learn at all: the loss on that batch should drop to near zero'
+          correct: true
+        - text: It checks that the tensor shapes of the inputs and labels match what the model expects
+          why: With misaligned shapes you could not train even on one batch; the test assumes training already runs.
+        - text: It gives a quick estimate of the validation accuracy the full model will reach
+          why: A model that memorizes one batch tells you nothing about how well it generalizes.
+  chapter4/6#q3:
+    drop: off-scope
+    comment: 'web-portal clicks: which buttons the Hub website offers (create a repo, edit and upload files, view diffs, no fork); not ML knowledge'
+  chapter4/6#q7:
+    drop: duplicate
+    comment: "'call push_to_hub() on the model and the tokenizer' is the same fact as chapter4/6#q5 (kept: which objects have push_to_hub())"
+  chapter4/6#q8:
+    drop: tool-specific
+    comment: git operations of the huggingface_hub `Repository` class, which was deprecated and is no longer in huggingface_hub (absent in v2.2); outdated API
+  chapter8/7#q1:
+    drop: off-scope
+    comment: reading a Python traceback bottom-up is general Python, not ML
+  chapter8/7#q2:
+    drop: off-scope
+    comment: what a minimal reproducible example is (asking for help on forums and issues)
+  chapter8/7#q3:
+    drop: off-scope
+    comment: choosing a forum topic title (forum etiquette)
+  chapter8/7#q6:
+    drop: off-scope
+    comment: how to get a GitHub issue fixed (issue etiquette)
+  chapter8/7#q8:
+    drop: off-scope
+    comment: why to paste `transformers-cli env` output into a GitHub issue (bug-report etiquette); every option is correct
+  chapter9/9#q1:
+    drop: tool-specific
+    comment: what the Gradio demo library is for (demo, share, debug, not train)
+  chapter9/9#q2:
+    drop: tool-specific
+    comment: which ML frameworks Gradio supports
+  chapter9/9#q3:
+    drop: tool-specific
+    comment: where a Gradio demo can be launched (IDE, Colab, Jupyter)
+  chapter9/9#q4:
+    drop: tool-specific
+    comment: which data types Gradio supports
+  chapter9/9#q5:
+    drop: tool-specific
+    comment: Gradio feature list (state, authentication, analytics, Hub loading)
+  chapter9/9#q6:
+    drop: tool-specific
+    comment: path prefixes accepted by gr.Interface.load()
+  chapter9/9#q7:
+    drop: tool-specific
+    comment: steps to add state to a Gradio Interface
+  chapter9/9#q8:
+    drop: tool-specific
+    comment: names of Gradio UI components
+  chapter9/9#q9:
+    drop: tool-specific
+    comment: features of Gradio Blocks layouts
+  chapter9/9#q10:
+    drop: tool-specific
+    comment: sharing and hosting options of Gradio Blocks demos
+  chapter10/7#q1:
+    drop: tool-specific
+    comment: what the Argilla annotation tool can be used for
+  chapter10/7#q2:
+    drop: tool-specific
+    comment: where Argilla can be deployed
+  chapter10/7#q3:
+    drop: tool-specific
+    comment: when the Argilla Python SDK needs a Hugging Face token
+  chapter10/7#q4:
+    drop: tool-specific
+    comment: Argilla 'fields' vs metadata in its dataset settings
+  chapter10/7#q5:
+    drop: tool-specific
+    comment: Argilla question types (SpanQuestion, LabelQuestion, TextQuestion)
+  chapter10/7#q6:
+    drop: tool-specific
+    comment: the Argilla UI 'Save as draft' button
+  chapter10/7#q7:
+    drop: tool-specific
+    comment: whether Argilla suggests labels automatically
+  chapter10/7#q8:
+    drop: tool-specific
+    comment: Argilla SDK calls to export a dataset to the Hub
+  chapter2/9#q5:
+    fix:
+      why:
+        0: That describes [AutoTrain](https://huggingface.co/autotrain), Hugging Face's no-code training tool. `AutoModel` only loads a model from a checkpoint.
+  chapter3/2#q2:
+    fix:
+      options:
+        1: It pads each batch only to its own longest sequence, saving computation.
+  chapter11/3#q4:
+    fix:
+      options:
+        1: Only the training loss curve
+        2: Only the quality of the model's generated outputs
+  chapter12/2#q2:
+    fix:
+      options:
+        1: It makes models generate text much faster at inference time
+        2: It reduces the amount of memory the model needs to run
+  chapter12/2#q3:
+    fix:
+      options:
+        1: Updating the model's weights after it receives a reward
+        2: Reading and encoding the tokens of the input prompt
+      why:
+        1: That is the learning step, in which the policy is improved after rewards come in. It is not an action taken in the environment.
+        2: Taking in the prompt is how the agent observes its current state. The action is what it generates in response.
+  chapter7/9#q12:
+    fix:
+      why:
+        0: True, but every NLP task needs tokenized inputs, and it is a routine call to the tokenizer. The difficulties specific to QA are long contexts and locating the answer's tokens.

@@ -33,3 +33,704 @@ questions:
       ref: machine_learning/25
       url: https://huggingface.co/datasets/edinburgh-dawg/mmlu-redux-2.0/viewer/machine_learning/test?row=25
     status: draft
+  - id: dim-reduction-002
+    type: short_answer
+    difficulty: easy
+    tags:
+      - pca
+      - eigendecomposition
+      - explained-variance
+    question: |
+      A centered dataset with two features has the sample covariance matrix
+
+      $$\mathbf{C} = \begin{bmatrix} 2 & 1 \\ 1 & 2 \end{bmatrix}.$$
+
+      PCA keeps only the first principal component. What fraction of the total variance does that
+      component explain?
+    answer:
+      numeric: 0.75
+      tolerance: 0.001
+      hint: a fraction between 0 and 1, e.g. 0.42
+      model: $\lambda_1 / (\lambda_1 + \lambda_2) = 3 / (3 + 1) = 0.75$
+    explanation: |
+      The eigenvalues solve $\det(\mathbf{C} - \lambda \mathbf{I}) = (2 - \lambda)^2 - 1 = 0$, so
+      $\lambda = 3$ and $\lambda = 1$, with eigenvectors $(1, 1)^\top/\sqrt{2}$ and
+      $(1, -1)^\top/\sqrt{2}$ [^1]. The principal components are the eigenvectors of the covariance
+      matrix, and the sum of all eigenvalues equals the total variance of the data [^2]. scikit-learn's
+      `explained_variance_` likewise holds the largest eigenvalues of the covariance matrix [^3]. The
+      first component, along the diagonal $(1, 1)$, therefore explains $3 / 4 = 0.75$ of the variance.
+    references:
+      - source: d2l
+        url: https://d2l.ai/chapter_appendix-mathematics-for-deep-learning/eigendecomposition.html#finding-eigenvalues
+        locator: Sec. 22.2.1 Finding Eigenvalues (Exercise 1 of Sec. 22.2)
+      - title: 'Wikipedia: Principal component analysis'
+        url: https://en.wikipedia.org/wiki/Principal_component_analysis#Further_considerations
+        locator: Sections "Overview" and "Further considerations"
+      - title: 'scikit-learn API reference: sklearn.decomposition.PCA'
+        url: https://scikit-learn.org/stable/modules/generated/sklearn.decomposition.PCA.html
+        locator: Attributes explained_variance_ and explained_variance_ratio_
+    source:
+      id: d2l
+      ref: chapter_appendix-mathematics-for-deep-learning/eigendecomposition#ex1
+      url: https://d2l.ai/chapter_appendix-mathematics-for-deep-learning/eigendecomposition.html
+    status: draft
+  - id: dim-reduction-003
+    type: single
+    difficulty: medium
+    tags:
+      - pca
+      - eigendecomposition
+      - covariance-matrix
+    question: |
+      A d2l exercise asks for the eigenvectors of
+      $\mathbf{A} = \begin{bmatrix} 2 & 1 \\ 0 & 2 \end{bmatrix}$. The eigenvalue $2$ is repeated,
+      yet there is only one independent eigenvector, $(1, 0)^\top$, so $\mathbf{A}$ has no
+      eigendecomposition. Why can this never happen to the covariance matrix that PCA eigendecomposes?
+    options:
+      - text: Covariance matrices are symmetric, and real symmetric matrices always have an orthonormal eigenbasis.
+        correct: true
+      - text: Covariance matrices always have distinct eigenvalues, so a repeated eigenvalue like this one cannot occur.
+        why: Repeated eigenvalues do occur, for example for isotropic data with covariance $\sigma^2 \mathbf{I}$. Symmetry, not distinctness, guarantees enough eigenvectors.
+      - text: Centering the data removes all off-diagonal covariances, so PCA only eigendecomposes a diagonal matrix.
+        why: Centering subtracts the means; correlated features keep nonzero covariances afterwards. Diagonalizing that matrix is exactly PCA's job.
+      - text: Covariance matrices are always invertible, and every invertible matrix has a full set of eigenvectors.
+        why: The exercise matrix is itself invertible (its determinant is 4) yet lacks a second eigenvector, and a covariance matrix is singular whenever features are linearly dependent.
+    explanation: |
+      Here $\det(\mathbf{A} - \lambda \mathbf{I}) = (2 - \lambda)^2$, so $\lambda = 2$ twice, but
+      $(\mathbf{A} - 2\mathbf{I})\mathbf{v} = 0$ only allows multiples of $(1, 0)^\top$ [^1]. d2l
+      points out that such matrices lack enough eigenvectors, whereas a symmetric matrix
+      ($\mathbf{A} = \mathbf{A}^\top$) always has an orthogonal eigenvector matrix $\mathbf{W}$ and
+      real eigenvalues, so $\mathbf{A} = \mathbf{W}\boldsymbol{\Sigma}\mathbf{W}^\top$ [^2]. A
+      covariance matrix is symmetric, which is why its eigenvectors, the principal components, can
+      always be chosen orthogonal and the component scores come out uncorrelated [^3].
+    references:
+      - source: d2l
+        url: https://d2l.ai/chapter_appendix-mathematics-for-deep-learning/eigendecomposition.html#finding-eigenvalues
+        locator: Sec. 22.2.1 Finding Eigenvalues (Exercise 2 of Sec. 22.2)
+      - source: d2l
+        url: https://d2l.ai/chapter_appendix-mathematics-for-deep-learning/eigendecomposition.html#eigendecompositions-of-symmetric-matrices
+        locator: Sec. 22.2.4 Eigendecompositions of Symmetric Matrices
+      - title: 'Wikipedia: Principal component analysis'
+        url: https://en.wikipedia.org/wiki/Principal_component_analysis#Covariances
+        locator: Section "Details", subsection "Covariances"
+    source:
+      id: d2l
+      ref: chapter_appendix-mathematics-for-deep-learning/eigendecomposition#ex2
+      url: https://d2l.ai/chapter_appendix-mathematics-for-deep-learning/eigendecomposition.html
+    status: draft
+  - id: dim-reduction-004
+    type: short_answer
+    difficulty: medium
+    tags:
+      - pca
+      - eigendecomposition
+      - gershgorin
+    question: |
+      The symmetric matrix below, taken from a d2l exercise, is the covariance matrix of four
+      features:
+
+      $$\mathbf{A} = \begin{bmatrix} 3.0 & 0.1 & 0.3 & 1.0 \\ 0.1 & 1.0 & 0.1 & 0.2 \\ 0.3 & 0.1 & 5.0 & 0.0 \\ 1.0 & 0.2 & 0.0 & 1.8 \end{bmatrix}$$
+
+      The variance along the last principal component equals the smallest eigenvalue of
+      $\mathbf{A}$. Without computing any eigenvalue, what lower bound on that variance does the
+      Gershgorin circle theorem give?
+    answer:
+      numeric: 0.6
+      tolerance: 0.001
+      hint: one number, e.g. 1.25
+      model: Rows 2 and 4 give intervals starting at $1.0 - 0.4 = 1.8 - 1.2 = 0.6$
+    explanation: |
+      By the Gershgorin circle theorem, every eigenvalue lies in a disc centred at a diagonal entry
+      $a_{ii}$ with radius $r_i = \sum_{j \ne i} |a_{ij}|$, and for a symmetric matrix the
+      eigenvalues are real, so the discs reduce to intervals [^1]. Here $r = (1.4, 0.4, 0.4, 1.2)$,
+      giving $[1.6, 4.4]$, $[0.6, 1.4]$, $[4.6, 5.4]$ and $[0.6, 3.0]$, so no eigenvalue is below
+      $0.6$; this answers the exercise's question too, since the smallest eigenvalue cannot be below
+      $0.5$ (a numerical check gives about $0.93$). Because the eigenvalues of the covariance matrix
+      are the variances along the principal components, no direction in this data has variance
+      below $0.6$ [^2].
+    references:
+      - source: d2l
+        url: https://d2l.ai/chapter_appendix-mathematics-for-deep-learning/eigendecomposition.html#gershgorin-circle-theorem
+        locator: Sec. 22.2.5 Gershgorin Circle Theorem (Exercise 3 of Sec. 22.2)
+      - title: 'Wikipedia: Principal component analysis'
+        url: https://en.wikipedia.org/wiki/Principal_component_analysis#Covariances
+        locator: Section "Details", subsection "Covariances"
+    source:
+      id: d2l
+      ref: chapter_appendix-mathematics-for-deep-learning/eigendecomposition#ex3
+      url: https://d2l.ai/chapter_appendix-mathematics-for-deep-learning/eigendecomposition.html
+    status: draft
+  - id: dim-reduction-005
+    type: single
+    difficulty: easy
+    tags:
+      - pca
+      - variance
+      - principal-components
+    question: For a centered dataset, which direction does PCA choose as the first principal component?
+    options:
+      - text: The unit vector along which the projected data have the largest variance
+        correct: true
+      - text: The unit vector along which the projected data have the smallest variance
+        why: That is the last principal component, the eigenvector with the smallest eigenvalue. It is useful for spotting near-constant relations between features, but it comes last, not first.
+      - text: The original feature axis whose own values have the largest variance
+        why: PCA builds new directions as linear combinations of all the features; picking one existing feature would be feature selection, not PCA.
+      - text: The unit vector along which the labelled classes are best separated
+        why: PCA is unsupervised and never looks at labels; class separation is the objective of linear discriminant analysis.
+    explanation: |
+      The first principal component is the direction that maximizes the variance of the projected
+      data, and each later one maximizes the remaining variance while staying orthogonal to the
+      earlier ones [^1][^2]. Equivalently, it is the eigenvector of the covariance matrix with the
+      largest eigenvalue, while the last components are those with the smallest variance [^5][^3].
+      PCA is not optimized for class separability; linear discriminant analysis is the alternative
+      that is [^4].
+    references:
+      - title: 'Wikipedia: Principal component analysis'
+        url: https://en.wikipedia.org/wiki/Principal_component_analysis#Overview
+        locator: Section "Overview"
+      - title: scikit-learn User Guide
+        url: https://scikit-learn.org/stable/modules/decomposition.html#exact-pca-and-probabilistic-interpretation
+        locator: Sec. 2.5.1.1 Exact PCA and probabilistic interpretation
+      - title: 'Wikipedia: Principal component analysis'
+        url: https://en.wikipedia.org/wiki/Principal_component_analysis#Properties
+        locator: Section "Properties and limitations", subsection "Properties" (Property 2)
+      - title: 'Wikipedia: Principal component analysis'
+        url: https://en.wikipedia.org/wiki/Principal_component_analysis#Further_considerations
+        locator: Section "Further considerations" (class separability)
+      - title: 'Wikipedia: Dimensionality reduction'
+        url: https://en.wikipedia.org/wiki/Dimensionality_reduction#Principal_component_analysis_(PCA)
+        locator: Section "Feature projection", subsection "Principal component analysis (PCA)"
+    source:
+      id: original
+      ref: dim-reduction-005
+    status: draft
+  - id: dim-reduction-006
+    type: short_answer
+    difficulty: medium
+    tags:
+      - pca
+      - explained-variance
+      - choosing-k
+    question: |
+      PCA on six standardized features gives the covariance eigenvalues
+      $5.2,\ 2.1,\ 1.1,\ 0.8,\ 0.5,\ 0.3$. What is the smallest number of components $k$ whose
+      cumulative explained variance is at least 90%?
+    answer:
+      numeric: 4
+      tolerance: 0
+      hint: a whole number of components
+      model: Cumulative ratios $0.52, 0.73, 0.84, 0.92, \dots$, so $k = 4$
+    explanation: |
+      Each eigenvalue is the variance along its component, so a component's explained-variance ratio
+      is its eigenvalue divided by the sum of all eigenvalues [^1][^2]. The total here is $10$, so
+      the cumulative ratios are $0.52, 0.73, 0.84, 0.92, 0.97, 1.00$. The usual rule picks the
+      smallest $k$ whose cumulative share reaches the threshold [^1]: three components stop at 84%,
+      and four reach 92%, so $k = 4$.
+    references:
+      - title: 'Wikipedia: Principal component analysis'
+        url: https://en.wikipedia.org/wiki/Principal_component_analysis#Computation_using_the_covariance_method
+        locator: Section "Computation using the covariance method" (cumulative energy content; select a subset of the eigenvectors)
+      - title: 'scikit-learn API reference: sklearn.decomposition.PCA'
+        url: https://scikit-learn.org/stable/modules/generated/sklearn.decomposition.PCA.html
+        locator: Attributes explained_variance_ and explained_variance_ratio_
+    source:
+      id: original
+      ref: dim-reduction-006
+    status: draft
+  - id: dim-reduction-007
+    type: true_false
+    difficulty: medium
+    tags:
+      - pca
+      - whitening
+      - scikit-learn
+    shuffle: false
+    question: After `PCA(whiten=True)` in scikit-learn, the first output component still has a larger variance than the second.
+    options:
+      - text: 'True'
+        why: Whitening divides each component by its singular value (times $\sqrt{n}$), so every output component ends up with unit variance.
+      - text: 'False'
+        correct: true
+    explanation: |
+      With `whiten=True`, scikit-learn rescales the projection so that the outputs are uncorrelated
+      and each has unit variance [^1]. This deliberately throws away the relative variance scales of
+      the components, so the first and second components both have variance 1 [^1]. Whitening is
+      useful when a downstream model assumes an isotropic signal, such as an SVM with an RBF kernel
+      or k-means [^2].
+    references:
+      - title: 'scikit-learn API reference: sklearn.decomposition.PCA'
+        url: https://scikit-learn.org/stable/modules/generated/sklearn.decomposition.PCA.html
+        locator: Parameter whiten
+      - title: scikit-learn User Guide
+        url: https://scikit-learn.org/stable/modules/decomposition.html#exact-pca-and-probabilistic-interpretation
+        locator: Sec. 2.5.1.1 Exact PCA and probabilistic interpretation
+    source:
+      id: original
+      ref: dim-reduction-007
+    status: draft
+  - id: dim-reduction-008
+    type: short_answer
+    difficulty: medium
+    tags:
+      - pca
+      - svd
+      - explained-variance
+    question: |
+      The centered data matrix $X$ has singular values $10,\ 6,\ 3,\ 1$. What fraction of the total
+      variance do the first two principal components explain?
+    answer:
+      numeric: 0.932
+      tolerance: 0.001
+      hint: a fraction, 3 decimals
+      model: $(10^2 + 6^2) / (10^2 + 6^2 + 3^2 + 1^2) = 136 / 146 \approx 0.932$
+    explanation: |
+      The right singular vectors of the centered $X$ are the eigenvectors of $X^\top X$, and each
+      singular value is the square root of the matching eigenvalue, so the variance along component
+      $k$ is proportional to $\sigma_k^2$ [^1]. The share explained by two components is therefore
+      $(100 + 36) / (100 + 36 + 9 + 1) = 136 / 146 \approx 0.932$. Adding the raw singular values
+      instead ($16 / 20 = 0.8$) understates it, because variance scales with $\sigma^2$, not
+      $\sigma$ [^1]. scikit-learn computes PCA from this SVD of the centered data and reports these
+      shares in `explained_variance_ratio_` [^2].
+    references:
+      - title: 'Wikipedia: Principal component analysis'
+        url: https://en.wikipedia.org/wiki/Principal_component_analysis#Singular_value_decomposition
+        locator: Section "Details", subsection "Singular value decomposition"
+      - title: 'scikit-learn API reference: sklearn.decomposition.PCA'
+        url: https://scikit-learn.org/stable/modules/generated/sklearn.decomposition.PCA.html
+        locator: Class description; attributes components_ and explained_variance_ratio_
+    source:
+      id: original
+      ref: dim-reduction-008
+    status: draft
+  - id: dim-reduction-009
+    type: short_answer
+    difficulty: hard
+    tags:
+      - pca
+      - svd
+      - reconstruction-error
+      - low-rank-approximation
+    question: |
+      The centered data matrix $X$ has singular values $5,\ 3,\ 1$. You reconstruct it from the
+      first principal component only, which gives the best rank-1 approximation $X_1$. What is the
+      reconstruction error $\lVert X - X_1 \rVert_F$ (Frobenius norm)?
+    answer:
+      numeric: 3.162
+      tolerance: 0.001
+      hint: 3 decimals
+      model: $\sqrt{3^2 + 1^2} = \sqrt{10} \approx 3.162$
+    explanation: |
+      By the Eckart–Young theorem, keeping only the largest singular value and its singular vectors
+      gives the rank-1 matrix closest to $X$ in Frobenius norm, and this is exactly the PCA
+      reconstruction from one component [^1][^2]. The residual
+      $X - X_1 = \sum_{i \ge 2} \sigma_i \mathbf{u}_i \mathbf{v}_i^\top$ keeps the discarded singular
+      values $3$ and $1$, and a matrix's Frobenius norm is the square root of the sum of its squared
+      singular values [^3]. The error is therefore $\sqrt{9 + 1} = \sqrt{10} \approx 3.162$, and the
+      relative residual variance is $10 / 35 \approx 0.29$ [^1].
+    references:
+      - title: 'Wikipedia: Principal component analysis'
+        url: https://en.wikipedia.org/wiki/Principal_component_analysis#Singular_value_decomposition
+        locator: Section "Details", subsection "Singular value decomposition" (Eckart–Young; optimal k-dimensional fit)
+      - title: 'Wikipedia: Singular value decomposition'
+        url: https://en.wikipedia.org/wiki/Singular_value_decomposition#Low-rank_matrix_approximation
+        locator: Section "Applications of the SVD", subsection "Low-rank matrix approximation"
+      - title: 'Wikipedia: Singular value decomposition'
+        url: https://en.wikipedia.org/wiki/Singular_value_decomposition#Hilbert%E2%80%93Schmidt_or_Frobenius_norm
+        locator: Section "Norms", subsection "Hilbert–Schmidt or Frobenius norm"
+    source:
+      id: original
+      ref: dim-reduction-009
+    status: draft
+  - id: dim-reduction-010
+    type: single
+    difficulty: easy
+    tags:
+      - pca
+      - feature-scaling
+      - standardization
+    question: |
+      A dataset has two features: annual income in dollars (standard deviation about 20,000) and age
+      in years (standard deviation about 12). You run PCA on the raw, unscaled features. What will
+      the first principal component look like?
+    options:
+      - text: Almost parallel to the income axis, because income has by far the largest variance
+        correct: true
+      - text: An equal mix of income and age, because PCA does not depend on the feature units
+        why: PCA is sensitive to scaling. Rescaling a feature changes the covariance matrix and rotates the components toward the inflated feature.
+      - text: Almost parallel to the age axis, because the low-variance feature carries the signal
+        why: PCA ranks directions by variance alone, so without standardization the small-variance age axis comes last, not first.
+      - text: The same as after standardizing, because PCA already centers every feature
+        why: Centering only removes each feature's mean; it leaves the difference in spread untouched, and scikit-learn's PCA does not scale.
+    explanation: |
+      PCA looks for directions of maximal variance, so a feature that varies more only because of
+      its units dominates the first principal component [^1]. Wikipedia gives the same example: if
+      one of two perfectly correlated features with equal variance is multiplied by 100, the first
+      component becomes almost that feature [^2]. scikit-learn's `PCA` centers but does not scale the data, so standardize
+      the features first (for example with `StandardScaler`) when they are measured in different
+      units [^3][^1].
+    references:
+      - title: 'scikit-learn example: Importance of Feature Scaling'
+        url: https://scikit-learn.org/stable/auto_examples/preprocessing/plot_scaling_importance.html#effect-of-rescaling-on-a-pca-dimensional-reduction
+        locator: Section "Effect of rescaling on a PCA dimensional reduction"
+      - title: 'Wikipedia: Principal component analysis'
+        url: https://en.wikipedia.org/wiki/Principal_component_analysis#Further_considerations
+        locator: Section "Further considerations" (sensitivity to the scaling of the variables)
+      - title: scikit-learn User Guide
+        url: https://scikit-learn.org/stable/modules/decomposition.html#exact-pca-and-probabilistic-interpretation
+        locator: Sec. 2.5.1.1 Exact PCA and probabilistic interpretation
+    source:
+      id: original
+      ref: dim-reduction-010
+    status: draft
+  - id: dim-reduction-011
+    type: short_answer
+    difficulty: easy
+    tags:
+      - pca
+      - scikit-learn
+      - choosing-k
+      - code-reading
+    question: |
+      Complete the scikit-learn call so that PCA keeps just enough components to explain more than
+      95% of the variance: `pca = PCA(n_components=`{{1}}`, svd_solver="full").fit(X)`
+    answer:
+      blanks:
+        - numeric: 0.95
+          tolerance: 0.0001
+          hint: a number
+      model: '`PCA(n_components=0.95, svd_solver="full")`; the chosen number of components is then in `pca.n_components_`'
+    explanation: |
+      When `0 < n_components < 1` and `svd_solver="full"`, scikit-learn reads the value as a
+      fraction of variance and keeps the number of components needed to explain more than that
+      fraction [^1]. So 0.95 means 95%, whereas an integer such as 95 would ask for 95 components.
+      After fitting, the chosen number is stored in `n_components_`, and `explained_variance_ratio_`
+      lists the share of each kept component [^1].
+    references:
+      - title: 'scikit-learn API reference: sklearn.decomposition.PCA'
+        url: https://scikit-learn.org/stable/modules/generated/sklearn.decomposition.PCA.html
+        locator: Parameter n_components; attributes n_components_ and explained_variance_ratio_
+    source:
+      id: original
+      ref: dim-reduction-011
+    status: draft
+  - id: dim-reduction-012
+    type: short_answer
+    difficulty: medium
+    tags:
+      - pca
+      - scikit-learn
+      - shapes
+      - code-reading
+    question: |
+      ```python
+      import numpy as np
+      from sklearn.decomposition import PCA
+
+      X = np.random.default_rng(0).normal(size=(200, 50))  # 200 samples, 50 features
+      pca = PCA(n_components=10).fit(X)
+      Z = pca.transform(X)
+      ```
+
+      `pca.components_` has shape {{1}} and `Z` has shape {{2}}.
+    answer:
+      blanks:
+        - accept:
+            - (10, 50)
+          pattern: \(?\s*10\s*[,x×]\s*50\s*\)?
+          hint: e.g. (3, 4)
+        - accept:
+            - (200, 10)
+          pattern: \(?\s*200\s*[,x×]\s*10\s*\)?
+          hint: e.g. (3, 4)
+      model: '`components_`: (10, 50), one principal axis per row; `Z`: (200, 10), one row of scores per sample'
+    explanation: |
+      `components_` stores the principal axes as rows, one per kept component, each a vector in
+      feature space, so its shape is (n_components, n_features) = (10, 50) [^1]. `transform`
+      projects every sample onto those axes and returns an array of shape (n_samples, n_components)
+      = (200, 10) [^1]. In matrix form the scores are $T_L = X W_L$, where the $50 \times 10$ matrix
+      $W_L$ holds the first 10 axes as columns: $(200 \times 50)(50 \times 10)$ [^2].
+    references:
+      - title: 'scikit-learn API reference: sklearn.decomposition.PCA'
+        url: https://scikit-learn.org/stable/modules/generated/sklearn.decomposition.PCA.html
+        locator: Attribute components_; method transform (Returns)
+      - title: 'Wikipedia: Principal component analysis'
+        url: https://en.wikipedia.org/wiki/Principal_component_analysis#Singular_value_decomposition
+        locator: Section "Details", subsection "Singular value decomposition" (truncated score matrix)
+    source:
+      id: original
+      ref: dim-reduction-012
+    status: draft
+  - id: dim-reduction-013
+    type: single
+    difficulty: easy
+    tags:
+      - feature-extraction
+      - feature-selection
+      - pca
+    question: Which of these reduces the number of inputs by feature extraction rather than by feature selection?
+    options:
+      - text: Replacing the features with their first 10 principal component scores
+        correct: true
+      - text: Keeping the 10 features with the highest univariate test scores (`SelectKBest`)
+        why: This keeps a subset of the original columns unchanged, which is univariate feature selection.
+      - text: Recursively dropping the features with the smallest model coefficients (RFE)
+        why: Recursive feature elimination prunes original features until the desired number is left, so it is feature selection.
+      - text: Removing every feature whose variance falls below a chosen threshold
+        why: '`VarianceThreshold` simply drops low-variance columns; scikit-learn calls it a baseline feature-selection method.'
+    explanation: |
+      Feature selection keeps a subset of the original variables, while feature extraction (also
+      called feature projection) transforms the data into a smaller set of new variables [^1]. PCA
+      scores are new variables, each a linear combination of all the original features, so PCA is
+      extraction [^1][^2]. `SelectKBest`, recursive feature elimination and `VarianceThreshold` only
+      discard original columns and leave the rest unchanged [^3]. One price of extraction is
+      interpretability: the principal components cannot be read the way the original features can
+      [^4].
+    references:
+      - title: 'Wikipedia: Dimensionality reduction'
+        url: https://en.wikipedia.org/wiki/Dimensionality_reduction#Feature_projection
+        locator: Sections "Feature selection" and "Feature projection"
+      - title: 'Wikipedia: Principal component analysis'
+        url: https://en.wikipedia.org/wiki/Principal_component_analysis#Overview
+        locator: Section "Overview"
+      - title: scikit-learn User Guide
+        url: https://scikit-learn.org/stable/modules/feature_selection.html
+        locator: Sec. 1.13.1 Removing features with low variance, 1.13.2 Univariate feature selection, 1.13.3 Recursive feature elimination
+      - title: 'Wikipedia: Principal component analysis'
+        url: https://en.wikipedia.org/wiki/Principal_component_analysis#Limitations
+        locator: Section "Properties and limitations", subsection "Limitations"
+    source:
+      id: original
+      ref: dim-reduction-013
+    status: draft
+  - id: dim-reduction-014
+    type: multiple
+    difficulty: medium
+    tags:
+      - nonlinear-dimensionality-reduction
+      - manifold-learning
+      - kernel-pca
+    question: Which of these dimensionality-reduction methods can capture nonlinear structure in the data?
+    options:
+      - text: Kernel PCA
+        correct: true
+      - text: Isomap
+        correct: true
+      - text: Truncated SVD (latent semantic analysis)
+        why: Truncated SVD is a linear low-rank factorization $X \approx U_k \Sigma_k V_k^\top$; new data are mapped by the matrix product $X V_k$.
+      - text: Gaussian random projection
+        why: It multiplies the data by a random matrix, which is a linear projection; it roughly preserves pairwise distances but cannot unfold curved structure.
+    explanation: |
+      Kernel PCA extends PCA with kernels and so achieves a nonlinear reduction [^1]. Isomap is a
+      manifold-learning method that looks for a low-dimensional embedding preserving geodesic
+      distances, measured along the data rather than straight through space [^2]. Truncated SVD maps
+      data with the matrix $V_k$, and a Gaussian random projection projects onto a random matrix;
+      both are linear maps [^3][^4]. Linear projections can be powerful, but they often miss the
+      nonlinear structure that manifold learning tries to capture [^5].
+    references:
+      - title: scikit-learn User Guide
+        url: https://scikit-learn.org/stable/modules/decomposition.html#kernel-principal-component-analysis-kpca
+        locator: Sec. 2.5.2 Kernel Principal Component Analysis (kPCA)
+      - title: scikit-learn User Guide
+        url: https://scikit-learn.org/stable/modules/manifold.html#isomap
+        locator: Sec. 2.2.2 Isomap
+      - title: scikit-learn User Guide
+        url: https://scikit-learn.org/stable/modules/decomposition.html#truncated-singular-value-decomposition-and-latent-semantic-analysis
+        locator: Sec. 2.5.3 Truncated singular value decomposition and latent semantic analysis
+      - title: scikit-learn User Guide
+        url: https://scikit-learn.org/stable/modules/random_projection.html#gaussian-random-projection
+        locator: Sec. 8.6.2 Gaussian random projection
+      - title: scikit-learn User Guide
+        url: https://scikit-learn.org/stable/modules/manifold.html#introduction
+        locator: Sec. 2.2.1 Introduction (Manifold learning)
+    source:
+      id: original
+      ref: dim-reduction-014
+    status: draft
+  - id: dim-reduction-015
+    type: single
+    difficulty: medium
+    tags:
+      - t-sne
+      - visualization
+    question: |
+      You generate 2-D data from two Gaussian clusters, one with 10 times the spread of the other,
+      and run t-SNE until the layout is stable. In the plot both clusters look about the same size.
+      What is the best explanation?
+    options:
+      - text: t-SNE adapts distances to local density, expanding dense clusters and contracting sparse ones
+        correct: true
+      - text: The perplexity was set too low, so random local clumping hides the clusters' true relative sizes
+        why: The equal sizes appear across the usual perplexity range. Low-perplexity clumping is a different artefact, seen even in pure noise.
+      - text: The optimization stopped too early and would reveal the true sizes after more iterations
+        why: The layout was already stable; stopping early produces pinched or point-like shapes, not equalized cluster sizes.
+      - text: Any reduction to fewer dimensions distorts distances, and this is that unavoidable information loss
+        why: The data were 2-D to begin with, so no dimensions were removed. The equalization is a built-in feature of t-SNE.
+    explanation: |
+      t-SNE adapts its notion of distance to regional density, so it naturally expands dense clusters
+      and contracts sparse ones, evening out their sizes [^1]. Distill stresses that this is not the
+      usual distortion of dimensionality reduction (their data were 2-D already) but a predictable
+      effect of the design, so relative cluster sizes cannot be read off a t-SNE plot [^1]. This
+      follows from t-SNE's focus on local structure: it matches neighbourhood probabilities, not
+      global distances [^2].
+    references:
+      - title: Wattenberg, Viégas & Johnson (2016), How to Use t-SNE Effectively, Distill
+        url: https://distill.pub/2016/misread-tsne/
+        locator: Sec. 2 "Cluster sizes in a t-SNE plot mean nothing"
+      - title: scikit-learn User Guide
+        url: https://scikit-learn.org/stable/modules/manifold.html#t-distributed-stochastic-neighbor-embedding-t-sne
+        locator: Sec. 2.2.9 t-distributed Stochastic Neighbor Embedding (t-SNE)
+    source:
+      id: original
+      ref: dim-reduction-015
+    status: draft
+  - id: dim-reduction-016
+    type: true_false
+    difficulty: easy
+    tags:
+      - t-sne
+      - visualization
+    shuffle: false
+    question: In a t-SNE plot, if cluster A sits much farther from cluster C than from cluster B, then A is also much farther from C than from B in the original space.
+    options:
+      - text: 'True'
+        why: Distances between well-separated clusters in a t-SNE plot depend heavily on perplexity and may mean nothing about the original geometry.
+      - text: 'False'
+        correct: true
+    explanation: |
+      Distill builds three Gaussian clusters with one pair five times farther apart than the other:
+      at low perplexity the t-SNE plot shows them as equidistant, and with more points per cluster
+      none of the perplexities tried recovers the true geometry [^1]. Their conclusion is that
+      distances between well-separated clusters in a t-SNE plot may mean nothing [^1]. t-SNE focuses
+      on local structure and does not explicitly preserve global structure; initializing with PCA
+      only mitigates this [^2].
+    references:
+      - title: Wattenberg, Viégas & Johnson (2016), How to Use t-SNE Effectively, Distill
+        url: https://distill.pub/2016/misread-tsne/
+        locator: Sec. 3 "Distances between clusters might not mean anything"
+      - title: scikit-learn User Guide
+        url: https://scikit-learn.org/stable/modules/manifold.html#t-distributed-stochastic-neighbor-embedding-t-sne
+        locator: Sec. 2.2.9 t-distributed Stochastic Neighbor Embedding (t-SNE)
+    source:
+      id: original
+      ref: dim-reduction-016
+    status: draft
+  - id: dim-reduction-017
+    type: short_answer
+    difficulty: easy
+    tags:
+      - t-sne
+      - perplexity
+      - hyperparameters
+    question: |
+      In t-SNE, the {{1}} hyperparameter is, loosely, a guess at the number of close neighbours each
+      point has. Lower values make the embedding pay more attention to {{2}} structure and less to
+      global structure.
+    answer:
+      blanks:
+        - accept:
+            - perplexity
+          hint: one word
+        - accept:
+            - local
+            - local neighbourhood
+            - local neighborhood
+          hint: one word
+      model: Perplexity; low perplexity favours local structure.
+    explanation: |
+      Distill describes perplexity as a rough guess at the number of close neighbours of each point,
+      balancing attention between local and global aspects of the data; typical values lie between 5
+      and 50 [^1]. scikit-learn defines it as $2^{S}$, where $S$ is the Shannon entropy of the
+      conditional distribution, so it is effectively the number of nearest neighbours considered, and
+      a lower perplexity ignores more global information in favour of the local neighbourhood [^2].
+      It should also stay below the number of points, and comparing plots at several perplexities is
+      good practice [^1].
+    references:
+      - title: Wattenberg, Viégas & Johnson (2016), How to Use t-SNE Effectively, Distill
+        url: https://distill.pub/2016/misread-tsne/
+        locator: Introduction and Sec. 1 "Those hyperparameters really matter"
+      - title: scikit-learn User Guide
+        url: https://scikit-learn.org/stable/modules/manifold.html#t-distributed-stochastic-neighbor-embedding-t-sne
+        locator: Sec. 2.2.9 t-distributed Stochastic Neighbor Embedding (t-SNE), "Optimizing t-SNE"
+    source:
+      id: original
+      ref: dim-reduction-017
+    status: draft
+  - id: dim-reduction-018
+    type: single
+    difficulty: hard
+    tags:
+      - autoencoders
+      - pca
+      - nonlinear-dimensionality-reduction
+    question: |
+      An autoencoder has a single hidden layer of $k$ linear units, fewer than the number of inputs,
+      and is trained to minimize the squared reconstruction error. How does its optimal solution
+      relate to PCA?
+    options:
+      - text: Its weights span the subspace of the top $k$ principal components but need not be orthogonal
+        correct: true
+      - text: Its weights equal the top $k$ principal components exactly, orthonormal and in the same order
+        why: The loss does not change if the code space is rotated, so the weights are generally neither the components nor orthogonal; the components can be recovered from them with an SVD.
+      - text: It learns a curved manifold that PCA cannot represent, so its reconstruction error is lower
+        why: With linear units the whole network is a linear map, so it cannot beat PCA's best rank-$k$ reconstruction; nonlinear activations are needed for that.
+      - text: Nothing in common, since through the bottleneck it simply learns to copy its input exactly
+        why: With $k$ smaller than the input size the code is undercomplete, so exact copying (the identity) is impossible; only a code at least as large as the input could learn it.
+    explanation: |
+      With linear activations, the optimal single-hidden-layer autoencoder with $k$ units spans the
+      same subspace as the first $k$ principal components, and its output is the orthogonal
+      projection onto that subspace [^1]. Its weights are generally neither equal to the components
+      nor orthogonal, because the loss is invariant to rotations of the code space; the components
+      can be recovered with an SVD [^1]. The bottleneck is what prevents learning the identity
+      function [^2]. The real power of autoencoders comes from nonlinear activations, which let them
+      learn nonlinear reduction functions [^3]; Hinton's deep autoencoder with a 30-unit code
+      had a smaller reconstruction error than the first 30 principal components [^1].
+    references:
+      - title: 'Wikipedia: Autoencoder'
+        url: https://en.wikipedia.org/wiki/Autoencoder#Principal_component_analysis
+        locator: Section "Applications", subsections "Dimensionality reduction" and "Principal component analysis"
+      - title: 'Wikipedia: Autoencoder'
+        url: https://en.wikipedia.org/wiki/Autoencoder#Interpretation
+        locator: Section "Mathematical principles", subsection "Interpretation" (undercomplete autoencoders)
+      - title: 'Wikipedia: Dimensionality reduction'
+        url: https://en.wikipedia.org/wiki/Dimensionality_reduction#Autoencoder
+        locator: Section "Feature projection", subsection "Autoencoder"
+    source:
+      id: original
+      ref: dim-reduction-018
+    status: draft
+  - id: dim-reduction-019
+    type: short_answer
+    difficulty: medium
+    tags:
+      - curse-of-dimensionality
+      - high-dimensional-geometry
+    question: |
+      Points are spread uniformly in the cube $[-1, 1]^d$. What fraction of the cube's volume lies
+      inside the inscribed unit ball when $d = 10$?
+    answer:
+      numeric: 0.0025
+      tolerance: 0.0001
+      hint: a decimal rounded to 4 places, e.g. 0.0123
+      model: $\pi^{5} / (10 \cdot 2^{9} \cdot \Gamma(5)) = 306.02 / 122880 \approx 0.0025$
+    explanation: |
+      The volume of a ball of radius $r$ divided by that of the enclosing cube of side $2r$ is
+      $\pi^{d/2} / (d\, 2^{d-1}\, \Gamma(d/2))$, which tends to 0 as $d$ grows [^1]. For $d = 10$
+      this is $\pi^5 / (10 \cdot 512 \cdot 24) \approx 0.0025$, against $0.785$ for $d = 2$ and
+      $0.524$ for $d = 3$. Almost all of the volume sits in the corners, far from the centre, so
+      uniformly spread data become sparse; this is one face of the curse of dimensionality, in which
+      the amount of data needed often grows exponentially with the dimension [^2]. Reducing the
+      dimension first is a common remedy, for example before a k-nearest-neighbours search [^3].
+    references:
+      - title: 'Wikipedia: Curse of dimensionality'
+        url: https://en.wikipedia.org/wiki/Curse_of_dimensionality#Distance_function
+        locator: Section "Domains", subsection "Distance function"
+      - title: 'Wikipedia: Curse of dimensionality'
+        url: https://en.wikipedia.org/wiki/Curse_of_dimensionality
+        locator: Lead section
+      - title: 'Wikipedia: Dimensionality reduction'
+        url: https://en.wikipedia.org/wiki/Dimensionality_reduction#Dimension_reduction
+        locator: Section "Dimension reduction"
+    source:
+      id: original
+      ref: dim-reduction-019
+    status: draft

@@ -30,7 +30,11 @@ Versions follow [conventions.md#versioning](conventions.md#versioning).
 - [ ] Review the first topics → `reviewed`
 - [ ] NCU Intro to DL lecture questions (Path B: extract → generate → review)
 - [x] Google MLCC and Google ML courses quizzes; numpy-100 exercises
-- [ ] d2l exercises → MCQ / short answer; Deep Learning Interviews (PDF only)
+- [x] d2l exercises → auto-graded questions for the thin topics (information theory, logistic
+  regression, learning theory, dimensionality reduction: 36 from d2l + 31 original); Deep Learning
+  Interviews not used (its in-book licence forbids reuse)
+- [x] Full audit of the bank (every key re-solved; 283 + 48 fixes) and re-review of all dropped
+  upstream items under keep-and-fix (+287 kept)
 - [x] `figstyle.py` and `mlr figs`; picture questions from Google MLCC, Google ML courses and HF Deep RL kept and redrawn (21 questions, 30 SVGs)
 - [ ] `mlr extract` (markitdown/docling)
 

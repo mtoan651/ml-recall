@@ -41,4 +41,7 @@ pnpm lint && pnpm test && pnpm check && pnpm build   # must pass before committi
 - Do not fetch pages whose terms forbid ingestion by LLMs/AI (e.g. all OpenStax books since
   July 2026; see `docs/sources.md`), and do not cite them.
 - Keep imported questions that show pictures: redraw them from code (`docs/figures.md`), don't drop them.
+- Keep and fix rather than drop or retire: drop an upstream item only for a content reason
+  (`docs/content-pipeline.md#curation`), and record every bank edit of an imported question
+  as a curation `fix` so a fresh import reproduces it.
 - Run `uv run mlr check` after every data change and fix all errors.
