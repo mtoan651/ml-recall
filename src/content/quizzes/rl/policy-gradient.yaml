@@ -5,6 +5,7 @@ title: Policy Gradient & Actor-Critic
 questions:
   - id: policy-gradient-001
     type: multiple
+    difficulty: medium
     question: What are the advantages of policy-gradient over value-based methods? (Check all that apply)
     options:
       - text: Policy-gradient methods can learn a stochastic policy
@@ -13,10 +14,22 @@ questions:
         correct: true
       - text: Policy-gradient converges most of the time on a global maximum.
         why: No, frequently, policy-gradient converges on a local maximum instead of a global optimum.
+    explanation: |
+      Policy-gradient methods output a probability distribution over actions, so they can learn a
+      genuinely stochastic policy. This builds exploration in and handles perceptual aliasing,
+      where two states look identical but need different actions [^1]. Value methods have no
+      natural way to find stochastic optimal policies [^2]. They also suit huge or continuous
+      action spaces. A Q-network has to score every action and take the max, and maximizing
+      over a continuous output is an optimization problem in its own right [^1]. The global
+      maximum claim is false: policy gradient frequently ends up at a local maximum, and
+      REINFORCE is only guaranteed to converge to a local optimum [^1][^2].
     references:
       - source: hf-deep-rl-course
-        locator: Unit 4. Policy Gradient with PyTorch
-        url: https://huggingface.co/learn/deep-rl-course/unit4/introduction
+        url: https://huggingface.co/learn/deep-rl-course/unit4/advantages-disadvantages
+        locator: Unit 4, "The advantages and disadvantages of policy-gradient methods" (Advantages; Disadvantages)
+      - title: 'Sutton & Barto (2018), Reinforcement Learning: An Introduction, 2nd ed.'
+        url: http://incompleteideas.net/book/RLbook2020.pdf
+        locator: Sec. 13.1 Policy Approximation and its Advantages, pp. 322–324; Sec. 13.3 REINFORCE, p. 329
     source:
       id: hf-deep-rl-course
       ref: unit4/quiz#q1
@@ -24,13 +37,26 @@ questions:
     status: draft
   - id: policy-gradient-002
     type: short_answer
+    difficulty: medium
     question: What is the Policy Gradient Theorem?
     answer:
       model: '*The Policy Gradient Theorem* is a formula that will help us to reformulate the objective function into a differentiable function that does not involve the differentiation of the state distribution.'
+    explanation: |
+      The problem it solves is that $J(\theta)$ depends on which states the agent visits, and how
+      a policy change shifts that state distribution depends on environment dynamics that are
+      usually unknown [^1]. The theorem gives
+      $\nabla J(\theta) \propto \sum_s \mu(s) \sum_a q_\pi(s,a)\, \nabla \pi(a \mid s, \theta)$,
+      which contains no derivative of the state distribution [^1]. In the trajectory form, the
+      transition-probability terms drop out of $\nabla_\theta \log P(\tau;\theta)$, leaving only
+      $\sum_t \nabla_\theta \log \pi_\theta(a_t \mid s_t)$, so the gradient can be estimated from
+      sampled episodes [^2].
     references:
+      - title: 'Sutton & Barto (2018), Reinforcement Learning: An Introduction, 2nd ed.'
+        url: http://incompleteideas.net/book/RLbook2020.pdf
+        locator: Sec. 13.2 The Policy Gradient Theorem, Eq. (13.5), pp. 324–326
       - source: hf-deep-rl-course
-        locator: Unit 4. Policy Gradient with PyTorch
-        url: https://huggingface.co/learn/deep-rl-course/unit4/introduction
+        url: https://huggingface.co/learn/deep-rl-course/unit4/pg-theorem
+        locator: Unit 4, "(Optional) the Policy Gradient Theorem"
     source:
       id: hf-deep-rl-course
       ref: unit4/quiz#q2
@@ -38,6 +64,7 @@ questions:
     status: draft
   - id: policy-gradient-003
     type: multiple
+    difficulty: medium
     question: What's the difference between policy-based methods and policy-gradient methods? (Check all that apply)
     options:
       - text: Policy-based methods are a subset of policy-gradient methods.
@@ -47,10 +74,21 @@ questions:
         correct: true
       - text: In Policy-gradient methods, we optimize the parameter θ **directly** by performing the gradient ascent on the performance of the objective function.
         correct: true
+    explanation: |
+      Policy-gradient methods are a subclass of policy-based methods, not the other way round
+      [^1]. Both search directly for a policy. They differ in how they optimize $\theta$.
+      General policy-based methods may improve $\theta$ indirectly, for example by hill climbing,
+      simulated annealing or evolution strategies on a local approximation of the objective.
+      Policy-gradient methods compute (an estimate of) $\nabla_\theta J(\theta)$ and do gradient
+      ascent on it [^1]. Sutton & Barto define policy-gradient methods by exactly this
+      gradient-ascent update on a performance measure $J(\theta)$ [^2].
     references:
       - source: hf-deep-rl-course
-        locator: Unit 4. Policy Gradient with PyTorch
-        url: https://huggingface.co/learn/deep-rl-course/unit4/introduction
+        url: https://huggingface.co/learn/deep-rl-course/unit4/what-are-policy-based-methods#the-difference-between-policy-based-and-policy-gradient-methods
+        locator: Unit 4, "What are the policy-based methods?", section "The difference between policy-based and policy-gradient methods"
+      - title: 'Sutton & Barto (2018), Reinforcement Learning: An Introduction, 2nd ed.'
+        url: http://incompleteideas.net/book/RLbook2020.pdf
+        locator: Ch. 13 introduction, Eq. (13.1), p. 321
     source:
       id: hf-deep-rl-course
       ref: unit4/quiz#q3
@@ -58,15 +96,25 @@ questions:
     status: draft
   - id: policy-gradient-004
     type: single
+    difficulty: easy
     question: Why do we use gradient ascent instead of gradient descent to optimize J(θ)?
     options:
       - text: We want to minimize J(θ) and gradient ascent gives us the direction of the steepest increase of J(θ)
       - text: We want to maximize J(θ) and gradient ascent gives us the direction of the steepest increase of J(θ)
         correct: true
+    explanation: |
+      $J(\theta)$ is the expected return of the policy, which is something we want to make as
+      large as possible [^1]. The gradient points in the direction of steepest increase, so we
+      step along it: $\theta \leftarrow \theta + \alpha \nabla_\theta J(\theta)$ [^1][^2].
+      Gradient descent is the right tool when the objective is a loss to minimize. Saying we
+      want to minimize $J$ contradicts using the direction that increases it.
     references:
       - source: hf-deep-rl-course
-        locator: Unit 4. Policy Gradient with PyTorch
-        url: https://huggingface.co/learn/deep-rl-course/unit4/introduction
+        url: https://huggingface.co/learn/deep-rl-course/unit4/policy-gradient#gradient-ascent-and-the-policy-gradient-theorem
+        locator: Unit 4, "Diving deeper into policy-gradient methods", sections "The objective function" and "Gradient Ascent and the Policy-gradient Theorem"
+      - title: 'Sutton & Barto (2018), Reinforcement Learning: An Introduction, 2nd ed.'
+        url: http://incompleteideas.net/book/RLbook2020.pdf
+        locator: Ch. 13 introduction, Eq. (13.1), p. 321
     source:
       id: hf-deep-rl-course
       ref: unit4/quiz#q4
@@ -74,16 +122,31 @@ questions:
     status: draft
   - id: policy-gradient-005
     type: single
+    difficulty: medium
     question: Which of the following interpretations of bias-variance tradeoff is the most accurate in the field of Reinforcement Learning?
     options:
       - text: The bias-variance tradeoff reflects how my model is able to generalize the knowledge to previously tagged data we give to the model during training time.
         why: This is the traditional bias-variance tradeoff in Machine Learning. In our specific case of Reinforcement Learning, we don't have previously tagged data, but only a reward signal.
       - text: The bias-variance tradeoff reflects how well the reinforcement signal reflects the true reward the agent should get from the enviromment
         correct: true
+    explanation: |
+      An RL agent has no labeled examples of the correct action; it learns only from a reward
+      signal [^1]. In RL, bias and variance describe the estimate of return used as the learning
+      signal. REINFORCE uses the actual Monte Carlo return, which is unbiased but varies a lot
+      between episodes [^2]. Actor-critic methods replace it with a bootstrapped one-step return,
+      which has lower variance but introduces bias [^3]. The tradeoff is therefore about how
+      faithfully the reinforcement signal tracks the true expected return. Generalizing from
+      labeled training data is the supervised-learning reading of bias and variance.
     references:
+      - title: 'Sutton & Barto (2018), Reinforcement Learning: An Introduction, 2nd ed.'
+        url: http://incompleteideas.net/book/RLbook2020.pdf
+        locator: Sec. 1.1 Reinforcement Learning, pp. 1–2
       - source: hf-deep-rl-course
-        locator: Unit 6. Actor Critic methods with Robotics environments
-        url: https://huggingface.co/learn/deep-rl-course/unit6/introduction
+        url: https://huggingface.co/learn/deep-rl-course/unit6/variance-problem
+        locator: Unit 6, "The Problem of Variance in Reinforce"
+      - title: 'Sutton & Barto (2018), Reinforcement Learning: An Introduction, 2nd ed.'
+        url: http://incompleteideas.net/book/RLbook2020.pdf
+        locator: Sec. 13.5 Actor–Critic Methods, p. 331
     source:
       id: hf-deep-rl-course
       ref: unit6/quiz#q1
@@ -91,6 +154,7 @@ questions:
     status: draft
   - id: policy-gradient-006
     type: multiple
+    difficulty: medium
     question: Which of the following statements are true, when talking about models with bias and/or variance in RL?
     options:
       - text: An unbiased reward signal returns rewards similar to the real / expected ones from the environment
@@ -101,10 +165,21 @@ questions:
         correct: true
       - text: A reward signal with low variance has much noise in it and gets affected by, for example, stochastic (non constant) elements in the environment
         why: If a reward signal has low variance, then it's less affected by the noise of the environment and produce similar values regardless the random elements in the environment
+    explanation: |
+      "Unbiased" means the signal matches the true expected return on average. The Monte Carlo
+      return in REINFORCE is unbiased because it is the return actually obtained, not an
+      estimate [^1]. "High variance" means noisy: randomness in the environment and in the
+      policy can give very different returns from the same starting state [^1]. The two wrong
+      options swap the terms. A biased signal is one that systematically differs from the true
+      return; bootstrapping on a critic's estimate is the classic source of such bias [^2].
+      A low-variance signal is the one that stays stable despite the noise.
     references:
       - source: hf-deep-rl-course
-        locator: Unit 6. Actor Critic methods with Robotics environments
-        url: https://huggingface.co/learn/deep-rl-course/unit6/introduction
+        url: https://huggingface.co/learn/deep-rl-course/unit6/variance-problem
+        locator: Unit 6, "The Problem of Variance in Reinforce"
+      - title: 'Sutton & Barto (2018), Reinforcement Learning: An Introduction, 2nd ed.'
+        url: http://incompleteideas.net/book/RLbook2020.pdf
+        locator: Sec. 13.5 Actor–Critic Methods, p. 331
     source:
       id: hf-deep-rl-course
       ref: unit6/quiz#q2
@@ -112,18 +187,29 @@ questions:
     status: draft
   - id: policy-gradient-007
     type: multiple
+    difficulty: medium
     question: Which of the following statements are true about Monte Carlo method?
     options:
       - text: It's a sampling mechanism, which means we don't analyze all the possible states, but a sample of those
         correct: true
       - text: It's very resistant to stochasticity (random elements in the trajectory)
         why: Monte Carlo randomly estimates everytime a sample of trajectories. However, even same trajectories can have different reward values if they contain stochastic elements
-      - text: To reduce the impact of stochastic elements in Monte Carlo, we take `n` strategies and average them, reducing their individual impact
+      - text: To reduce the impact of stochastic elements in Monte Carlo, we sample `n` trajectories and average them, reducing their individual impact
         correct: true
+    explanation: |
+      Monte Carlo estimation works from samples. It runs episodes and averages the returns it
+      actually observes, rather than accounting for every possible state and trajectory [^1][^2].
+      That makes it sensitive to randomness, not resistant: stochastic transitions and a
+      stochastic policy can give very different returns from the same start [^1]. The usual
+      remedy is to collect many trajectories and average them, so that each one's noise has less
+      influence. The price is lower sample efficiency [^1].
     references:
       - source: hf-deep-rl-course
-        locator: Unit 6. Actor Critic methods with Robotics environments
-        url: https://huggingface.co/learn/deep-rl-course/unit6/introduction
+        url: https://huggingface.co/learn/deep-rl-course/unit6/variance-problem
+        locator: Unit 6, "The Problem of Variance in Reinforce"
+      - title: 'Sutton & Barto (2018), Reinforcement Learning: An Introduction, 2nd ed.'
+        url: http://incompleteideas.net/book/RLbook2020.pdf
+        locator: Sec. 3.5 Policies and Value Functions, pp. 58–59 (Monte Carlo methods average sample returns)
     source:
       id: hf-deep-rl-course
       ref: unit6/quiz#q3
@@ -131,16 +217,27 @@ questions:
     status: draft
   - id: policy-gradient-008
     type: short_answer
+    difficulty: medium
     question: How would you describe, with your own words, the Actor-Critic Method (A2C)?
     answer:
       model: |
         The idea behind Actor-Critic is that we learn two function approximations:
         1. A `policy` that controls how our agent acts (π)
         2. A `value` function to assist the policy update by measuring how good the action taken is (q)
+    explanation: |
+      The motivation is variance: REINFORCE scores actions with full Monte Carlo returns, which
+      are very noisy, so actor-critic lets a learned critic assess each action instead [^1].
+      Sutton & Barto's one-step version replaces the return with
+      $R_{t+1} + \gamma \hat v(S_{t+1}, w)$, which has lower variance at the cost of some
+      bias [^2]. Both parts keep learning together: the actor updates the policy from the
+      critic's feedback, and the critic updates its value estimate [^1].
     references:
       - source: hf-deep-rl-course
-        locator: Unit 6. Actor Critic methods with Robotics environments
-        url: https://huggingface.co/learn/deep-rl-course/unit6/introduction
+        url: https://huggingface.co/learn/deep-rl-course/unit6/advantage-actor-critic#reducing-variance-with-actor-critic-methods
+        locator: Unit 6, "Advantage Actor-Critic (A2C)", sections "Reducing variance with Actor-Critic methods" and "The Actor-Critic Process"
+      - title: 'Sutton & Barto (2018), Reinforcement Learning: An Introduction, 2nd ed.'
+        url: http://incompleteideas.net/book/RLbook2020.pdf
+        locator: Sec. 13.5 Actor–Critic Methods, Eqs. (13.12)–(13.14), p. 331
     source:
       id: hf-deep-rl-course
       ref: unit6/quiz#q4
@@ -148,6 +245,7 @@ questions:
     status: draft
   - id: policy-gradient-009
     type: multiple
+    difficulty: medium
     question: Which of the following statements are true about the Actor-Critic Method?
     options:
       - text: The Critic does not learn any function during the training process
@@ -156,10 +254,20 @@ questions:
         correct: true
       - text: It adds resistance to stochasticity and reduces high variance
         correct: true
+    explanation: |
+      Actor-critic learns two function approximators. The actor is a policy $\pi_\theta$ that
+      chooses actions, and the critic is a value function that judges them [^1]. It was
+      introduced to cut the high variance of REINFORCE's Monte Carlo returns [^1]. The critic's
+      one-step return varies far less than the actual return, although it adds some bias [^2].
+      The claim that the critic learns nothing is false: during training the actor updates its
+      policy parameters and the critic updates its value parameters [^1].
     references:
       - source: hf-deep-rl-course
-        locator: Unit 6. Actor Critic methods with Robotics environments
-        url: https://huggingface.co/learn/deep-rl-course/unit6/introduction
+        url: https://huggingface.co/learn/deep-rl-course/unit6/advantage-actor-critic#the-actor-critic-process
+        locator: Unit 6, "Advantage Actor-Critic (A2C)", sections "Reducing variance with Actor-Critic methods" and "The Actor-Critic Process"
+      - title: 'Sutton & Barto (2018), Reinforcement Learning: An Introduction, 2nd ed.'
+        url: http://incompleteideas.net/book/RLbook2020.pdf
+        locator: Sec. 13.5 Actor–Critic Methods, p. 331
     source:
       id: hf-deep-rl-course
       ref: unit6/quiz#q5
@@ -167,16 +275,26 @@ questions:
     status: draft
   - id: policy-gradient-010
     type: short_answer
+    difficulty: medium
     question: What is `Advantage` in the A2C method?
     answer:
       model: |
         Instead of using directly the Action-Value function of the Critic as it is, we could use an `Advantage` function. The idea behind an `Advantage` function is that we calculate the relative advantage of an action compared to the others possible at a state, averaging them.
 
         In other words: how taking that action at a state is better compared to the average value of the state
+    explanation: |
+      Formally, $A(s,a) = Q(s,a) - V(s)$: how much better action $a$ is than acting on average
+      from $s$ under the current policy [^2]. In the update, a positive advantage pushes up that
+      action's probability and a negative one pushes it down [^1]. Learning both $Q$ and $V$
+      would need two value functions, so A2C estimates the advantage with the TD error
+      $r + \gamma V(s') - V(s)$ [^1].
     references:
       - source: hf-deep-rl-course
-        locator: Unit 6. Actor Critic methods with Robotics environments
-        url: https://huggingface.co/learn/deep-rl-course/unit6/introduction
+        url: https://huggingface.co/learn/deep-rl-course/unit6/advantage-actor-critic#adding-advantage-in-actor-critic-a2c
+        locator: Unit 6, "Advantage Actor-Critic (A2C)", section "Adding Advantage in Actor-Critic (A2C)"
+      - title: 'OpenAI Spinning Up, Part 1: Key Concepts in RL'
+        url: https://spinningup.openai.com/en/latest/spinningup/rl_intro.html#advantage-functions
+        locator: Section "Advantage Functions"
     source:
       id: hf-deep-rl-course
       ref: unit6/quiz#q6

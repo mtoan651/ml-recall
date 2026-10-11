@@ -7,18 +7,42 @@ versioning: [SemVer](https://semver.org) as defined in [docs/conventions.md](doc
 
 ### Added
 
+- Timed tests for every topic and tag (`/topics/<topic>/exam/`, `/tags/<tag>/exam/`): up to 20
+  random auto-graded questions, 1 minute each, one question per screen or all on one page. The
+  clock runs from the start time, a reload resumes the test, it is submitted at 00:00, and the
+  results page explains every question. Best score and history per topic/tag.
+- Regex-graded short answers: `pattern` (full match, case-insensitive, NFKC, ASCII semantics,
+  checked in Python and JavaScript) and `hint` (format guidance under the input).
+- "No explanation yet" notice for questions without any explanation.
 - 178 draft questions from four new importers (pinned upstream revisions, per-item curation):
   Hugging Face Deep RL Course (36, incl. self-graded open questions), Hugging Face AI Agents Course
   (19), Microsoft Data Science for Beginners (15) and MMLU-Redux `high_school_statistics` (75, 2
   answer keys corrected) and `college_mathematics` (33). Topics with ≥ 20 questions: 4 → 7;
   `rag-agents` and `policy-gradient` are no longer empty.
 - Source registry: `hf-deep-rl-course`, `hf-agents-course`, `ms-ds-for-beginners`,
-  `openintro-stats` (CC BY-SA 3.0) and `openstax-intro-stats` (CC BY 4.0) — 25 external sources.
+  `openintro-stats` (CC BY-SA 3.0) and `openstax-intro-stats` (reference only, see Changed) — 25
+  external sources.
+- Cited explanations for all 395 imported questions that had none (all still `draft`):
+  each answer key re-solved first, every `[^n]` reference opened and checked, `difficulty` set,
+  lesson references narrowed to the section that covers the point. Main sources: d2l, the
+  course lessons, OpenIntro *Introduction to Modern Statistics*, Penn State STAT notes, Sutton &
+  Barto, scikit-learn, CS229, Interactive Linear Algebra, Active Calculus.
 - Curation: `default_drop` keep-lists, per-item overrides of `exclude_prefixes`, `keep: true` for
   flagged items.
 
+### Changed
+
+- `openstax-intro-stats` is now `reference` and not used: OpenStax moved to CC BY-NC-SA 4.0 and
+  forbids ingestion into LLMs/generative AI (July 2026). CLAUDE.md and docs/sources.md say not to
+  fetch or cite such sources.
+
 ### Fixed
 
+- `trees-ensembles-006`: the MMLU key "weak classifiers" contradicted how bagging works; the
+  question is reworded with a new key (bootstrap samples + averaging). `statistics-005`: the
+  distractor "a class of data" was also correct and is replaced. `statistics-021`: restored the
+  missing ≠ in $H_a$. `policy-gradient-007`: "n strategies" → "n trajectories". All four are
+  recorded as curation fixes.
 - Dollar amounts in imported statistics questions are escaped (`\$`) so KaTeX does not treat them
   as math.
 

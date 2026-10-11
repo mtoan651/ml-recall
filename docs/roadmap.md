@@ -26,7 +26,8 @@ Versions follow [conventions.md#versioning](conventions.md#versioning).
 ## v0.3.0 — Content I
 
 - [x] Timed tests per topic and tag (N questions, 1 min/question, max 20) — see [web-app](web-app.md#timed-tests)
-- [ ] Explanations with citations for imported drafts; review the first topics → `reviewed`
+- [x] Explanations with citations for imported drafts (all 395 imported drafts)
+- [ ] Review the first topics → `reviewed`
 - [ ] NCU Intro to DL lecture questions (Path B: extract → generate → review)
 - [ ] d2l exercises → MCQ / short answer; Deep Learning Interviews; Google MLCC
 - [ ] `mlr extract` (markitdown/docling), `figstyle.py`, `mlr figs`
