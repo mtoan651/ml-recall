@@ -1663,3 +1663,215 @@ questions:
       ref: econometrics/96
       url: https://huggingface.co/datasets/edinburgh-dawg/mmlu-redux-2.0/viewer/econometrics/test?row=96
     status: draft
+  - id: linear-regression-050
+    type: multiple
+    difficulty: medium
+    tags:
+      - polynomial-features
+      - model-selection
+      - feature-engineering
+    question: |
+      You add polynomial features to a regression dataset $X$, giving an augmented dataset $Z$, and
+      fit least squares $J(w) = \sum_{i=1}^n (w^\top x_i - y_i)^2$, where each $x_i$ starts with a
+      constant 1 (the column-of-ones notation). Which statements are true? Select all that apply.
+    options:
+      - text: Linear regression on $Z$ learns a linear function of $Z$
+        correct: true
+      - text: The loss $J(w)$ does not depend on the bias term
+        why: With a leading 1 in every $x_i$, the first weight is the bias, so $J(w)$ depends on it like on any other weight [^1].
+      - text: If degrees $d$ and $d + 4$ give the same validation error, prefer degree $d$
+        correct: true
+      - text: With 1000 features, it is wise to start simple with one or two features to check your intuitions
+        correct: true
+      - text: If you trained on degree-3 features, you must compute degree-3 features of each test example to predict
+        correct: true
+    explanation: |
+      A polynomial transformation is a change of basis: the model is still linear in its weights,
+      so it is a linear function of $Z$ but a nonlinear function of $X$ [^1]. In the course's
+      notation a column of ones is added to $X$, which makes the intercept one of the weights in
+      $w$ [^1]. The transformation is part of the model, so test inputs must go through the same
+      transformation, and among models with equal validation error the simpler one is preferred [^2].
+    references:
+      - source: ubc-dsci573
+        locator: Lecture 3 notes, Polynomial feature transformations for non-linear regression (Matrix vector notation, Polynomial transformations)
+        url: https://github.com/UBC-MDS/DSCI_573_feat-model-select/blob/741d72d4f4dd495a86352d4d6ee990dea41914ac/lectures/03_feature-engineering.ipynb
+      - source: ubc-dsci573
+        locator: 'Lecture 5 notes, Complexity penalties and L0 regularization (Model selection: complexity penalty)'
+        url: https://github.com/UBC-MDS/DSCI_573_feat-model-select/blob/741d72d4f4dd495a86352d4d6ee990dea41914ac/lectures/05_loss-functions-regularization_intro.ipynb
+    source:
+      id: ubc-dsci573
+      ref: lectures/03_feature-engineering.ipynb#ex3.2
+      url: https://github.com/UBC-MDS/DSCI_573_feat-model-select/blob/741d72d4f4dd495a86352d4d6ee990dea41914ac/lectures/03_feature-engineering.ipynb
+    status: draft
+  - id: linear-regression-051
+    type: short_answer
+    difficulty: hard
+    tags:
+      - l0-regularization
+      - feature-selection
+      - complexity-penalty
+    question: |
+      L0-regularized least squares scores a weight vector by
+      $f(w) = \lVert Xw - y \rVert_2^2 + \lambda \lVert w \rVert_0$, where $\lVert w \rVert_0$
+      counts the non-zero weights. Two candidates are
+      $w^1 = (0.8,\ 0,\ 0.03,\ 0.1)$ with squared error 4.0 and $w^2 = (0,\ 0,\ 0.22,\ 0)$ with
+      squared error 6.5. Above which value of $\lambda$ does $w^2$ get the better (lower) score?
+    answer:
+      numeric: 1.25
+      tolerance: 0.001
+      hint: a number, 2 decimals
+      model: $4 + 3\lambda > 6.5 + \lambda \iff 2\lambda > 2.5 \iff \lambda > 1.25$
+    explanation: |
+      $\lVert w \rVert_0$ is the number of non-zero values, here 3 for $w^1$ and 1 for $w^2$ [^1].
+      The scores are $4 + 3\lambda$ and $6.5 + \lambda$, equal at $\lambda = 1.25$. For larger
+      $\lambda$ the penalty on each used feature outweighs $w^1$'s lower error, so L0
+      regularization picks the sparser $w^2$: a larger $\lambda$ sets more weights to zero, i.e.
+      discards more features [^1].
+    references:
+      - source: ubc-dsci573
+        locator: Lecture 5 notes, L0 "norm" and the number of features used; Scoring using L0 "norm"
+        url: https://github.com/UBC-MDS/DSCI_573_feat-model-select/blob/741d72d4f4dd495a86352d4d6ee990dea41914ac/lectures/05_loss-functions-regularization_intro.ipynb
+    source:
+      id: ubc-dsci573
+      ref: lectures/05_loss-functions-regularization_intro.ipynb#ex5.1
+      url: https://github.com/UBC-MDS/DSCI_573_feat-model-select/blob/741d72d4f4dd495a86352d4d6ee990dea41914ac/lectures/05_loss-functions-regularization_intro.ipynb
+    status: draft
+  - id: linear-regression-052
+    type: true_false
+    difficulty: easy
+    tags:
+      - ridge
+      - l2-regularization
+      - alpha
+    question: |
+      You fit `Ridge` twice on the same data, once with $\alpha = 0$ and once with $\alpha = 10$,
+      and get the weights $w^1 = (32.43,\ 23.14,\ 16.4)$ and $w^2 = (2.03,\ 1.2,\ 0.4)$ without
+      knowing which is which. True or false: $w^1$ probably comes from $\alpha = 10$ and $w^2$ from
+      $\alpha = 0$.
+    options:
+      - text: 'True'
+        why: A larger $\alpha$ penalizes $\lVert w \rVert_2^2$ more, so the $\alpha = 10$ model should have the smaller weights, $w^2$ [^1].
+      - text: 'False'
+        correct: true
+    explanation: |
+      Ridge minimizes $\lVert Xw - y \rVert_2^2 + \alpha \lVert w \rVert_2^2$; $\alpha = 0$ is
+      ordinary least squares, and increasing $\alpha$ makes the squared error go up and
+      $\lVert w \rVert_2^2$ go down [^1]. So the large weights $w^1$ almost certainly come from
+      $\alpha = 0$ and the shrunken weights $w^2$ from $\alpha = 10$.
+    references:
+      - source: ubc-dsci573
+        locator: 'Lecture 6 notes, Example: L2-Regularization "Shrinking"'
+        url: https://github.com/UBC-MDS/DSCI_573_feat-model-select/blob/741d72d4f4dd495a86352d4d6ee990dea41914ac/lectures/06_L2-L1-regularization.ipynb
+    source:
+      id: ubc-dsci573
+      ref: lectures/05_loss-functions-regularization_intro.ipynb#ex5.2
+      url: https://github.com/UBC-MDS/DSCI_573_feat-model-select/blob/741d72d4f4dd495a86352d4d6ee990dea41914ac/lectures/05_loss-functions-regularization_intro.ipynb
+    status: draft
+  - id: linear-regression-053
+    type: multiple
+    difficulty: medium
+    tags:
+      - l2-regularization
+      - ridge
+      - sparsity
+    question: |
+      You add L2 regularization (ridge) with a well-chosen $\lambda > 0$ to a least-squares model.
+      Which statements are true? Select all that apply.
+    options:
+      - text: The model becomes less sensitive to small changes in $X$
+        correct: true
+      - text: The model can fit the training set worse than without regularization
+        correct: true
+      - text: The weights shrink but all $w_j$ tend to stay non-zero
+        correct: true
+      - text: Many weights become exactly zero, so ridge also performs feature selection
+        why: That is L1 regularization (lasso); with L2 the weights get very close to zero but not exactly zero [^2].
+    explanation: |
+      The L2 penalty pulls the weights towards zero, which gives a unique, more stable solution that
+      is less sensitive to the data, at the cost of a higher training error than plain least squares
+      [^1]. The shrinking is gradual: coefficients approach zero as $\lambda$ grows but do not reach
+      it, whereas the L1 penalty drives weights to exactly zero and can be used for feature
+      selection [^2].
+    references:
+      - source: ubc-dsci573
+        locator: Lecture 6 notes, Some properties of L2-regularization; Regularization learning curves
+        url: https://github.com/UBC-MDS/DSCI_573_feat-model-select/blob/741d72d4f4dd495a86352d4d6ee990dea41914ac/lectures/06_L2-L1-regularization.ipynb
+      - source: ubc-dsci573
+        locator: 'Lecture 6 notes, The weights become smaller but do not become zero; L1 regularization: the weights become smaller and eventually become zero'
+        url: https://github.com/UBC-MDS/DSCI_573_feat-model-select/blob/741d72d4f4dd495a86352d4d6ee990dea41914ac/lectures/06_L2-L1-regularization.ipynb
+    source:
+      id: ubc-dsci573
+      ref: lectures/06_L2-L1-regularization.ipynb#ex6.1
+      url: https://github.com/UBC-MDS/DSCI_573_feat-model-select/blob/741d72d4f4dd495a86352d4d6ee990dea41914ac/lectures/06_L2-L1-regularization.ipynb
+    status: draft
+  - id: linear-regression-054
+    type: single
+    difficulty: medium
+    tags:
+      - l0-regularization
+      - l1-regularization
+      - l2-regularization
+      - norms
+    question: |
+      Three weight vectors reach the same, minimal training error:
+      $w^1 = (100,\ 0.02)$, $w^2 = (100,\ 0)$ and $w^3 = (99.99,\ 0.02)$. Regularization breaks
+      the tie. Which vector does each penalty pick?
+    options:
+      - text: L0 picks $w^2$, L1 picks $w^2$, L2 picks $w^3$
+        correct: true
+      - text: L0 picks $w^2$, L1 picks $w^2$, L2 picks $w^2$
+        why: $\lVert w^3 \rVert_2^2 = 9998.0005$ is smaller than $\lVert w^2 \rVert_2^2 = 10000$; L2 prefers shrinking the large weight over zeroing the small one [^1].
+      - text: L0 picks $w^2$, L1 picks $w^3$, L2 picks $w^3$
+        why: $\lVert w^2 \rVert_1 = 100 < \lVert w^3 \rVert_1 = 100.01$, so L1 still picks the sparse $w^2$ [^1].
+      - text: L0 picks $w^1$, L1 picks $w^2$, L2 picks $w^3$
+        why: $w^1$ has two non-zero entries while $w^2$ has one, so L0 picks $w^2$ [^1].
+    explanation: |
+      The L0 "norms" are 2, 1, 2, so L0 picks $w^2$; the L1 norms are 100.02, 100 and 100.01, so
+      L1 also picks $w^2$; the squared L2 norms are 10000.0004, 10000 and 9998.0005, so L2 picks
+      $w^3$ [^1]. L2 cares most about shrinking the largest weights and barely notices a tiny one,
+      while L1 keeps pushing every weight until it reaches 0, which is why L0 and L1 encourage
+      sparsity [^1].
+    references:
+      - source: ubc-dsci573
+        locator: 'Lecture 6 notes, Example: L0 vs. L1 vs. L2 (and the three slides that follow)'
+        url: https://github.com/UBC-MDS/DSCI_573_feat-model-select/blob/741d72d4f4dd495a86352d4d6ee990dea41914ac/lectures/06_L2-L1-regularization.ipynb
+    source:
+      id: ubc-dsci573
+      ref: lectures/06_L2-L1-regularization.ipynb#l0-l1-l2-example
+      url: https://github.com/UBC-MDS/DSCI_573_feat-model-select/blob/741d72d4f4dd495a86352d4d6ee990dea41914ac/lectures/06_L2-L1-regularization.ipynb
+    status: draft
+  - id: linear-regression-055
+    type: single
+    difficulty: hard
+    tags:
+      - collinearity
+      - l1-regularization
+      - l2-regularization
+    question: |
+      A dataset contains three identical copies of one feature, and the best fit needs a total
+      weight of 1 on that feature. How do ridge (L2) and lasso (L1) regression share this weight
+      among the three copies?
+    options:
+      - text: Ridge splits it equally, 1/3 each; lasso's split is not unique
+        correct: true
+      - text: Both split it equally, 1/3 each, because the copies are identical
+        why: For L1 every non-negative split with the same total has the same penalty, so the solution is not unique; only L2 forces the equal split [^1].
+      - text: Ridge puts all weight on one copy; lasso splits it equally
+        why: L2 prefers many small weights, so it splits equally, while L1 is indifferent between splits and may put all the weight on one copy [^1].
+      - text: Neither model can be fit, since collinear features make the solution undefined
+        why: Collinearity is a problem for plain least squares; with L2 the solution is unique, and with L1 it exists but is not unique [^1].
+    explanation: |
+      For a fixed total $w_1 + w_2 + w_3 = 1$, the L2 penalty $w_1^2 + w_2^2 + w_3^2$ is smallest
+      when the weights are equal, and the L2 solution is unique, so each copy gets 1/3 [^1]. The L1
+      penalty $|w_1| + |w_2| + |w_3|$ equals 1 for every non-negative split, so (1, 0, 0),
+      (1/2, 1/4, 1/4) and (1/3, 1/3, 1/3) are all equally good; lasso's solution is not unique
+      [^1]. Elastic nets mix both penalties and select whole groups of correlated variables [^1].
+    references:
+      - source: ubc-dsci573
+        locator: 'Lecture 6 notes, Regularization: scaling and collinearity (Collinearity and regularization; Elastic nets)'
+        url: https://github.com/UBC-MDS/DSCI_573_feat-model-select/blob/741d72d4f4dd495a86352d4d6ee990dea41914ac/lectures/06_L2-L1-regularization.ipynb
+    source:
+      id: ubc-dsci573
+      ref: lectures/06_L2-L1-regularization.ipynb#collinearity
+      url: https://github.com/UBC-MDS/DSCI_573_feat-model-select/blob/741d72d4f4dd495a86352d4d6ee990dea41914ac/lectures/06_L2-L1-regularization.ipynb
+    status: draft

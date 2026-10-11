@@ -250,3 +250,181 @@ questions:
       ref: variational-inference#variational-posterior-approximation-ii-b
       url: https://github.com/michaelgutmann/ml-pen-and-paper-exercises/blob/571295dfe49b37d16884b2c5397e62e154ce5f88/topics/variational-inference.tex
     status: draft
+  - id: autoencoders-009
+    type: short_answer
+    difficulty: easy
+    tags:
+      - linear-autoencoder
+      - parameter-count
+      - bottleneck
+    question: |
+      A linear autoencoder for flattened $28 \times 28$ MNIST images has an encoder
+      `nn.Linear(784, 32)` and a decoder `nn.Linear(32, 784)`. How many trainable parameters does it
+      have in total?
+    answer:
+      numeric: 50992
+      tolerance: 0
+      hint: a whole number
+      model: $784 \cdot 32 + 32 + 32 \cdot 784 + 784 = 25{,}120 + 25{,}872 = 50{,}992$
+    explanation: |
+      Each linear layer has $n_\text{in} \times n_\text{out}$ weights plus $n_\text{out}$ biases:
+      $25{,}088 + 32$ for the encoder and $25{,}088 + 784$ for the decoder [^2]. The 32 units in the
+      middle are the compressed representation; the targets are the inputs themselves, and a sigmoid
+      on the decoder output matches the $[0, 1]$ pixel range [^1].
+    references:
+      - source: udacity-dl-pytorch
+        locator: Simple Autoencoder notebook, Linear Autoencoder
+        url: https://github.com/udacity/deep-learning-v2-pytorch/blob/c9404fc86181fc3f0906b368697268257f348535/autoencoder/linear-autoencoder/Simple_Autoencoder_Solution.ipynb
+      - title: 'PyTorch documentation: Linear'
+        url: https://pytorch.org/docs/stable/generated/torch.nn.Linear.html
+        locator: weight of shape (out_features, in_features) and bias of shape (out_features)
+    source:
+      id: udacity-dl-pytorch
+      ref: autoencoder/linear-autoencoder/Simple_Autoencoder_Solution.ipynb#parameter-count
+      url: https://github.com/udacity/deep-learning-v2-pytorch/blob/c9404fc86181fc3f0906b368697268257f348535/autoencoder/linear-autoencoder/Simple_Autoencoder_Solution.ipynb
+    status: draft
+  - id: autoencoders-010
+    type: short_answer
+    difficulty: medium
+    tags:
+      - convolutional-autoencoder
+      - compression
+      - shapes
+    question: |
+      A convolutional autoencoder's encoder is:
+
+      ```python
+      x = F.relu(nn.Conv2d(1, 16, 3, padding=1)(x))   # input: 1 × 28 × 28
+      x = nn.MaxPool2d(2, 2)(x)
+      x = F.relu(nn.Conv2d(16, 4, 3, padding=1)(x))
+      x = nn.MaxPool2d(2, 2)(x)                        # compressed representation
+      ```
+
+      How many numbers does the compressed representation of one image contain?
+    answer:
+      numeric: 196
+      tolerance: 0
+      hint: a whole number
+      model: $1 \times 28 \times 28 \to 16 \times 14 \times 14 \to 4 \times 7 \times 7 = 196$
+    explanation: |
+      The padded $3 \times 3$ convolutions keep the spatial size, and each $2 \times 2$ max-pool
+      halves it, $28 \to 14 \to 7$ [^1][^2]. The last convolution has 4 channels, so the code is
+      $4 \times 7 \times 7 = 196$ numbers, a quarter of the 784 input pixels. The decoder must undo
+      this, here with two transposed convolutions of kernel size and stride 2 [^1].
+    references:
+      - source: udacity-dl-pytorch
+        locator: Convolutional Autoencoder notebook, Encoder; Decoder
+        url: https://github.com/udacity/deep-learning-v2-pytorch/blob/c9404fc86181fc3f0906b368697268257f348535/autoencoder/convolutional-autoencoder/Convolutional_Autoencoder_Solution.ipynb
+      - source: d2l
+        locator: Sec. 7.5.2 Padding and Stride
+        url: https://d2l.ai/chapter_convolutional-neural-networks/pooling.html#padding-and-stride
+    source:
+      id: udacity-dl-pytorch
+      ref: autoencoder/convolutional-autoencoder/Convolutional_Autoencoder_Solution.ipynb#compressed-representation
+      url: https://github.com/udacity/deep-learning-v2-pytorch/blob/c9404fc86181fc3f0906b368697268257f348535/autoencoder/convolutional-autoencoder/Convolutional_Autoencoder_Solution.ipynb
+    status: draft
+  - id: autoencoders-011
+    type: short_answer
+    difficulty: medium
+    tags:
+      - transposed-convolution
+      - decoder
+      - shapes
+    question: |
+      A denoising autoencoder's encoder pools a $28 \times 28$ image three times with
+      `nn.MaxPool2d(2, 2)`, giving $28 \to 14 \to 7 \to 3$. Its decoder starts with
+      `nn.ConvTranspose2d(8, 8, kernel_size=3, stride=2)` (no padding). What is the spatial size
+      of this layer's output for a $3 \times 3$ input?
+    answer:
+      numeric: 7
+      tolerance: 0
+      hint: a whole number
+      model: $(3 - 1) \cdot 2 - 2 \cdot 0 + 3 = 7$
+    explanation: |
+      A transposed convolution produces $(H_\text{in} - 1) \cdot s - 2p + k$ outputs per side
+      [^2]; with $H_\text{in} = 3$, $s = 2$, $k = 3$ this is 7. Pooling 7 down to 3 floors away a
+      row and a column, so a kernel of 2 would only give 6; the notebook uses kernel size 3 for this
+      first layer to get back to $7 \times 7$, then two layers with kernel and stride 2 give 14 and
+      28 [^1].
+    references:
+      - source: udacity-dl-pytorch
+        locator: "Denoising Autoencoder notebook, Denoising (ConvDenoiser: t_conv1 'kernel_size=3 to get to a 7x7 image output')"
+        url: https://github.com/udacity/deep-learning-v2-pytorch/blob/c9404fc86181fc3f0906b368697268257f348535/autoencoder/denoising-autoencoder/Denoising_Autoencoder_Solution.ipynb
+      - title: 'PyTorch documentation: ConvTranspose2d'
+        url: https://pytorch.org/docs/stable/generated/torch.nn.ConvTranspose2d.html
+        locator: Shape (H_out formula)
+    source:
+      id: udacity-dl-pytorch
+      ref: autoencoder/denoising-autoencoder/Denoising_Autoencoder_Solution.ipynb#transpose-conv-size
+      url: https://github.com/udacity/deep-learning-v2-pytorch/blob/c9404fc86181fc3f0906b368697268257f348535/autoencoder/denoising-autoencoder/Denoising_Autoencoder_Solution.ipynb
+    status: draft
+  - id: autoencoders-012
+    type: single
+    difficulty: easy
+    tags:
+      - denoising-autoencoder
+      - reconstruction-loss
+    question: |
+      You train a denoising autoencoder on MNIST by adding Gaussian noise to each batch,
+      `noisy = clip(images + 0.5 * randn)`. What do you feed into the model, and what do you
+      compare its output with in the MSE loss?
+    options:
+      - text: Feed the noisy images; compare the output with the clean images
+        correct: true
+      - text: Feed the clean images; compare the output with the noisy images
+        why: That would train the network to add noise, the opposite of denoising [^1].
+      - text: Feed the noisy images; compare the output with the noisy images
+        why: Reconstructing its own noisy input teaches the network to copy the noise, not remove it [^1].
+      - text: Feed the noisy images; compare the output with the noise that was added
+        why: That trains a noise estimator, not a model whose output is a clean image [^1].
+    explanation: |
+      A denoising autoencoder uses noisy images as input and the original, clean images as
+      targets, so the loss rewards outputs that remove the noise [^1]. Because pixel values are
+      compared as quantities, a regression loss such as `MSELoss` fits, and the noise is regenerated
+      for every batch, so the network cannot memorize it [^1].
+    references:
+      - source: udacity-dl-pytorch
+        locator: Denoising Autoencoder notebook, Denoising; Training
+        url: https://github.com/udacity/deep-learning-v2-pytorch/blob/c9404fc86181fc3f0906b368697268257f348535/autoencoder/denoising-autoencoder/Denoising_Autoencoder_Solution.ipynb
+    source:
+      id: udacity-dl-pytorch
+      ref: autoencoder/denoising-autoencoder/Denoising_Autoencoder_Solution.ipynb#inputs-and-targets
+      url: https://github.com/udacity/deep-learning-v2-pytorch/blob/c9404fc86181fc3f0906b368697268257f348535/autoencoder/denoising-autoencoder/Denoising_Autoencoder_Solution.ipynb
+    status: draft
+  - id: autoencoders-013
+    type: single
+    difficulty: medium
+    tags:
+      - transposed-convolution
+      - upsampling
+      - checkerboard-artifacts
+    question: |
+      The reconstructions of a convolutional autoencoder whose decoder uses transposed convolutions
+      show checkerboard-like artifacts. Which decoder change addresses this?
+    options:
+      - text: Nearest-neighbour upsampling followed by ordinary convolutions
+        correct: true
+      - text: Transposed convolutions with a kernel larger than the stride, e.g. kernel 3 and stride 2
+        why: Kernels larger than the stride make neighbouring outputs overlap unevenly, which is exactly what causes checkerboard patterns [^1].
+      - text: Max pooling at the end of the decoder
+        why: Pooling shrinks the image; the decoder needs to enlarge the compressed representation [^1].
+      - text: A softmax over the pixels in the output layer
+        why: Softmax makes the pixels compete and sum to 1; it does not affect how the image is upsampled [^1].
+    explanation: |
+      Transposed convolutions can produce checkerboard artifacts because their kernels overlap
+      unevenly; choosing the stride equal to the kernel size avoids the overlap [^1]. The alternative
+      in the notebooks, following the Distill article, resizes the feature map with nearest-neighbour
+      upsampling and then applies a normal convolution, so every output pixel gets the same number
+      of contributions [^1][^2].
+    references:
+      - source: udacity-dl-pytorch
+        locator: Convolutional Autoencoder notebook, Transpose Convolutions, Decoder; Upsampling notebook (decoder with upsampling and convolutional layers)
+        url: https://github.com/udacity/deep-learning-v2-pytorch/blob/c9404fc86181fc3f0906b368697268257f348535/autoencoder/convolutional-autoencoder/Upsampling_Solution.ipynb
+      - title: Odena, Dumoulin & Olah (2016), Deconvolution and Checkerboard Artifacts, Distill
+        url: https://distill.pub/2016/deconv-checkerboard/
+        locator: Overlap & Artifacts; Better Upsampling
+    source:
+      id: udacity-dl-pytorch
+      ref: autoencoder/convolutional-autoencoder/Upsampling_Solution.ipynb#checkerboard
+      url: https://github.com/udacity/deep-learning-v2-pytorch/blob/c9404fc86181fc3f0906b368697268257f348535/autoencoder/convolutional-autoencoder/Upsampling_Solution.ipynb
+    status: draft

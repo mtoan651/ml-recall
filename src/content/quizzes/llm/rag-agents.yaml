@@ -743,3 +743,270 @@ questions:
       ref: unit2/smolagents/quiz1#q1
       url: https://huggingface.co/learn/agents-course/unit2/smolagents/quiz1
     status: draft
+  - id: rag-agents-024
+    type: short_answer
+    difficulty: medium
+    tags:
+      - information-retrieval
+      - average-precision
+      - ranking
+    question: |
+      For one query, a retrieval system returns five documents; the 1st, 3rd and 5th are relevant
+      and the 2nd and 4th are not. Average precision (AP) averages the precision measured at the
+      rank of each relevant document. What is AP for this query?
+    answer:
+      numeric: 0.756
+      tolerance: 0.002
+      hint: a number, 3 decimals
+      model: 'Precision at ranks 1, 3, 5: $1/1, 2/3, 3/5$; $\mathrm{AP} = (1 + 0.667 + 0.6)/3 \approx 0.756$'
+    explanation: |
+      Plain precision and recall ignore the order of the returned documents, so ranked retrieval
+      uses a metric that rewards putting relevant documents high [^1]. AP takes, for each relevant
+      document $d$ in the set $R_r$, the precision at the rank where $d$ was found and averages
+      these values: $(1 + 2/3 + 3/5)/3 \approx 0.756$ [^1]. Mean average precision (MAP) averages
+      AP over a set of queries; in RAG this measures the retriever before generation [^1].
+    references:
+      - source: trusthlt-nlp
+        locator: Lecture 11 slides, frames 'Evaluation', 'Towards Mean Average Precision (MAP)', 'Mean Average Precision (MAP)'
+        url: https://github.com/trusthlt/nlp-with-deep-learning-lectures/blob/751182ea7a6a6f2246bbd8313329ecd09d270dbc/lectures/lecture11/pdf/nlpwdl2025-lecture11-handout.pdf
+    source:
+      id: trusthlt-nlp
+      ref: lectures/lecture11/nlpwdl2025-lecture11.tex#average-precision
+      url: https://github.com/trusthlt/nlp-with-deep-learning-lectures/blob/751182ea7a6a6f2246bbd8313329ecd09d270dbc/lectures/lecture11/pdf/nlpwdl2025-lecture11-handout.pdf
+    status: draft
+  - id: rag-agents-025
+    type: single
+    difficulty: easy
+    tags:
+      - mcp
+      - model-context-protocol
+      - interoperability
+    question: What is the primary purpose of the Model Context Protocol (MCP)?
+    options:
+      - text: A standard way to connect AI apps to external tools and data
+        correct: true
+      - text: A method for training language models on the outputs of external tools
+        why: MCP works at run time, connecting an application to tools and data; it does not train models [^1].
+      - text: A structured query language that replaces prompting
+        why: MCP adds capabilities around the model; prompting is still how the model is instructed [^1].
+      - text: A file format that lets any inference framework load any model's weights
+        why: That describes model-exchange formats; MCP standardizes the connection between applications and external capabilities [^1].
+    explanation: |
+      MCP is described as the "USB-C for AI applications": a standard interface that links AI
+      models to external capabilities such as tools, data sources and environments [^1]. Users get
+      consistent experiences, application developers get easy integration, and tool providers write
+      one implementation that works with many applications, which is the interoperability MCP is
+      meant to provide [^1].
+    references:
+      - source: hf-mcp-course
+        locator: Unit 1, Key Concepts and Terminology (introduction and The Integration Problem)
+        url: https://github.com/huggingface/mcp-course/blob/dbfa79bf6f311ae50256912308e169661996aab1/units/en/unit1/key-concepts.mdx
+    source:
+      id: hf-mcp-course
+      ref: units/en/unit1/quiz1.mdx#q1
+      url: https://github.com/huggingface/mcp-course/blob/dbfa79bf6f311ae50256912308e169661996aab1/units/en/unit1/quiz1.mdx
+    status: draft
+  - id: rag-agents-026
+    type: short_answer
+    difficulty: easy
+    tags:
+      - mcp
+      - integration-problem
+    question: |
+      A company runs 4 AI applications that should each use the same 6 external tools. Without a
+      standard, every application–tool pair needs its own custom integration (the M×N problem).
+      With MCP, each application implements the client side once and each tool the server side
+      once. How many implementations are needed with MCP?
+    answer:
+      numeric: 10
+      tolerance: 0
+      hint: a whole number
+      model: $M + N = 4 + 6 = 10$, instead of $M \times N = 24$ custom integrations
+    explanation: |
+      Without a protocol, connecting $M$ applications to $N$ tools takes $M \times N$ custom
+      integrations, each with its own interface and maintenance cost [^1]. MCP turns this into an
+      $M + N$ problem: every application implements the MCP client side once and every tool or data
+      source implements the server side once, so here $4 + 6 = 10$ implementations replace 24 [^1].
+    references:
+      - source: hf-mcp-course
+        locator: 'Unit 1, Key Concepts and Terminology — The Integration Problem (Without MCP: M×N; With MCP: M+N)'
+        url: https://github.com/huggingface/mcp-course/blob/dbfa79bf6f311ae50256912308e169661996aab1/units/en/unit1/key-concepts.mdx
+    source:
+      id: hf-mcp-course
+      ref: units/en/unit1/quiz1.mdx#q5
+      url: https://github.com/huggingface/mcp-course/blob/dbfa79bf6f311ae50256912308e169661996aab1/units/en/unit1/quiz1.mdx
+    status: draft
+  - id: rag-agents-027
+    type: single
+    difficulty: easy
+    tags:
+      - mcp
+      - host
+      - client
+      - server
+    question: In MCP terminology, what is the "Host"?
+    options:
+      - text: The user-facing AI application, e.g. a chat app or IDE
+        correct: true
+      - text: The external program that exposes tools, resources and prompts
+        why: That is an MCP Server [^1].
+      - text: The component that keeps a 1:1 connection with one server
+        why: That is an MCP Client, a component inside the Host [^1].
+      - text: A read-only data source that provides context to the model
+        why: That is a Resource, one of the capabilities a server can expose [^2].
+    explanation: |
+      The Host is the application end users interact with; it manages user interactions and
+      permissions, initiates connections to servers through its clients, and orchestrates the flow
+      between user requests, LLM processing and external tools [^1]. Inside it, each Client handles
+      the protocol with exactly one Server, and Servers expose Tools, Resources and Prompts [^1][^2].
+    references:
+      - source: hf-mcp-course
+        locator: Unit 1, Architectural Components of MCP — Host, Client, and Server
+        url: https://github.com/huggingface/mcp-course/blob/dbfa79bf6f311ae50256912308e169661996aab1/units/en/unit1/architectural-components.mdx
+      - source: hf-mcp-course
+        locator: Unit 1, Key Concepts and Terminology — Capabilities
+        url: https://github.com/huggingface/mcp-course/blob/dbfa79bf6f311ae50256912308e169661996aab1/units/en/unit1/key-concepts.mdx
+    source:
+      id: hf-mcp-course
+      ref: units/en/unit1/quiz1.mdx#q4
+      url: https://github.com/huggingface/mcp-course/blob/dbfa79bf6f311ae50256912308e169661996aab1/units/en/unit1/quiz1.mdx
+    status: draft
+  - id: rag-agents-028
+    type: short_answer
+    difficulty: easy
+    tags:
+      - mcp
+      - client
+      - architecture
+    question: |
+      An AI-enhanced IDE (the MCP Host) is connected at the same time to three MCP servers: one for
+      GitHub, one for a database and one for web search. How many MCP clients does the Host run?
+    answer:
+      numeric: 3
+      tolerance: 0
+      hint: a whole number
+      model: 'One client per server: 3'
+    explanation: |
+      A Client is the component inside the Host that manages communication with one specific
+      Server, and each Client keeps a 1:1 connection with a single Server [^1]. A Host that talks to
+      three servers simultaneously therefore runs three clients; new servers can be added without
+      changing the existing ones, which keeps the architecture modular [^1].
+    references:
+      - source: hf-mcp-course
+        locator: Unit 1, Architectural Components of MCP — Client; Communication Flow
+        url: https://github.com/huggingface/mcp-course/blob/dbfa79bf6f311ae50256912308e169661996aab1/units/en/unit1/architectural-components.mdx
+    source:
+      id: hf-mcp-course
+      ref: units/en/unit1/architectural-components.mdx#client
+      url: https://github.com/huggingface/mcp-course/blob/dbfa79bf6f311ae50256912308e169661996aab1/units/en/unit1/architectural-components.mdx
+    status: draft
+  - id: rag-agents-029
+    type: single
+    difficulty: medium
+    tags:
+      - mcp
+      - capabilities
+      - resources
+      - tools
+    question: |
+      An MCP server for a coding assistant offers the project's documentation so that the model
+      can read it as context; reading it has no side effects and needs no significant computation.
+      Which MCP capability type fits best?
+    options:
+      - text: Resource
+        correct: true
+      - text: Tool
+        why: Tools are executable functions the model invokes to perform actions or compute results, such as running code [^1].
+      - text: Prompt
+        why: Prompts are predefined templates or workflows that guide interactions, such as a code-style prompt [^1].
+      - text: Sampling
+        why: Sampling lets the server ask the client to run an LLM interaction, e.g. to review generated code [^1].
+    explanation: |
+      MCP distinguishes Tools (executable functions with actions or computed results), Resources
+      (read-only data sources that provide context without significant computation), Prompts
+      (predefined templates or workflows) and Sampling (server-initiated LLM requests) [^1]. The
+      course's code-agent example uses exactly a documentation Resource next to a code-interpreter
+      Tool, a code-style Prompt and a code-review Sampling step [^1].
+    references:
+      - source: hf-mcp-course
+        locator: Unit 1, Key Concepts and Terminology — Capabilities (table and code-agent example)
+        url: https://github.com/huggingface/mcp-course/blob/dbfa79bf6f311ae50256912308e169661996aab1/units/en/unit1/key-concepts.mdx
+    source:
+      id: hf-mcp-course
+      ref: units/en/unit1/key-concepts.mdx#capabilities
+      url: https://github.com/huggingface/mcp-course/blob/dbfa79bf6f311ae50256912308e169661996aab1/units/en/unit1/key-concepts.mdx
+    status: draft
+  - id: rag-agents-030
+    type: multiple
+    difficulty: medium
+    tags:
+      - mcp
+      - sdk
+      - protocol
+    question: |
+      The official MCP SDKs (Python, TypeScript and others) are libraries for writing MCP clients
+      and servers. Which of these tasks do they typically handle? Select all that apply.
+    options:
+      - text: Serializing and deserializing protocol messages
+        correct: true
+      - text: Registering and discovering capabilities
+        correct: true
+      - text: Managing connections between clients and servers
+        correct: true
+      - text: Hosting and running the large language model
+        why: The SDKs connect applications to capabilities; the model runs in or behind the Host application [^1].
+      - text: Deciding which tool the model should call for a user request
+        why: That decision belongs to the Host and its LLM; the SDK only carries out the protocol [^2].
+    explanation: |
+      The SDKs implement the MCP specification so that developers can focus on their
+      application's capabilities: they handle protocol-level communication, capability
+      registration and discovery, message serialization and deserialization, connection management
+      and error handling [^1]. Choosing which capability to invoke happens in the Host, often with
+      the help of its LLM [^2].
+    references:
+      - source: hf-mcp-course
+        locator: Unit 1, MCP SDK — SDK Overview
+        url: https://github.com/huggingface/mcp-course/blob/dbfa79bf6f311ae50256912308e169661996aab1/units/en/unit1/sdk.mdx
+      - source: hf-mcp-course
+        locator: Unit 1, Architectural Components of MCP — Communication Flow (steps 2 and 5)
+        url: https://github.com/huggingface/mcp-course/blob/dbfa79bf6f311ae50256912308e169661996aab1/units/en/unit1/architectural-components.mdx
+    source:
+      id: hf-mcp-course
+      ref: units/en/unit1/quiz2.mdx#q2
+      url: https://github.com/huggingface/mcp-course/blob/dbfa79bf6f311ae50256912308e169661996aab1/units/en/unit1/quiz2.mdx
+    status: draft
+  - id: rag-agents-031
+    type: single
+    difficulty: medium
+    tags:
+      - mcp
+      - json-rpc
+      - transport
+    question: What role does JSON-RPC 2.0 play in MCP?
+    options:
+      - text: The message format of all client–server communication
+        correct: true
+      - text: The transport that carries messages between machines
+        why: Transport is separate; MCP uses stdio for local and HTTP+SSE or Streamable HTTP for remote communication [^1].
+      - text: The schema language in which tools are defined
+        why: Capabilities are described by their own schemas; JSON-RPC is used to invoke them and exchange data [^2].
+      - text: The authentication scheme that secures servers
+        why: JSON-RPC defines requests, responses and notifications, not authentication [^1].
+    explanation: |
+      MCP uses JSON-RPC 2.0, a lightweight remote procedure call protocol encoded in JSON, as the
+      format of every message: requests (client to server, with an id), responses (with the same
+      id, a result or an error) and notifications (no reply expected) [^1]. How the messages travel
+      is specified separately by the transport mechanisms, stdio locally and HTTP-based streaming
+      remotely [^1].
+    references:
+      - source: hf-mcp-course
+        locator: 'Unit 1, The Communication Protocol — JSON-RPC: The Foundation; Transport Mechanisms'
+        url: https://github.com/huggingface/mcp-course/blob/dbfa79bf6f311ae50256912308e169661996aab1/units/en/unit1/communication-protocol.mdx
+      - source: hf-mcp-course
+        locator: 'Unit 1, Quiz 2: MCP SDK, Q5 (feedback on the options)'
+        url: https://github.com/huggingface/mcp-course/blob/dbfa79bf6f311ae50256912308e169661996aab1/units/en/unit1/quiz2.mdx
+    source:
+      id: hf-mcp-course
+      ref: units/en/unit1/quiz2.mdx#q5
+      url: https://github.com/huggingface/mcp-course/blob/dbfa79bf6f311ae50256912308e169661996aab1/units/en/unit1/quiz2.mdx
+    status: draft

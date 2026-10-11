@@ -435,3 +435,269 @@ questions:
       ref: chapter_generative-adversarial-networks/dcgan#ex1
       url: https://d2l.ai/chapter_generative-adversarial-networks/dcgan.html#exercises
     status: draft
+  - id: gans-015
+    type: single
+    difficulty: easy
+    tags:
+      - gan
+      - tanh
+      - preprocessing
+    question: |
+      A GAN's generator ends with a `tanh` activation. The real training images come from
+      `ToTensor()`, with pixel values in $[0, 1]$. Why are the real images rescaled to $[-1, 1]$
+      before they are shown to the discriminator?
+    options:
+      - text: So that real and generated images share the same value range
+        correct: true
+      - text: Because the discriminator's leaky ReLU units only accept negative inputs
+        why: Leaky ReLU accepts any real input; it only gives negative inputs a small slope [^1].
+      - text: Because $[-1, 1]$ inputs make the discriminator's loss independent of the labels
+        why: The binary cross-entropy still depends on the real/fake labels; the rescaling only matches the value ranges [^1].
+      - text: To give the discriminator inputs it cannot classify, which regularizes it
+        why: The goal is the opposite; if the ranges differed, the discriminator could separate real from fake by pixel range alone [^1].
+    explanation: |
+      `tanh` squashes the generator's outputs to $[-1, 1]$, so the notebooks rescale real images
+      with $x \mapsto 2x - 1$ [^1]. Otherwise every negative pixel would betray a fake, the
+      discriminator could separate the two sets by value range alone, and the generator would get a
+      useless training signal. DCGAN likewise uses `tanh` in the generator's output layer [^2].
+    references:
+      - source: udacity-dl-pytorch
+        locator: 'MNIST GAN notebook, Generator — tanh Output; DCGAN notebook, Pre-processing: scaling from -1 to 1'
+        url: https://github.com/udacity/deep-learning-v2-pytorch/blob/c9404fc86181fc3f0906b368697268257f348535/dcgan-svhn/DCGAN_Solution.ipynb
+      - source: d2l
+        locator: Sec. 20.2 Deep Convolutional Generative Adversarial Networks (20.2.2 The Generator, 20.2.3 Discriminator, 20.2.5 Summary)
+        url: https://d2l.ai/chapter_generative-adversarial-networks/dcgan.html#the-generator
+    source:
+      id: udacity-dl-pytorch
+      ref: gan-mnist/MNIST_GAN_Solution.ipynb#tanh-output-scaling
+      url: https://github.com/udacity/deep-learning-v2-pytorch/blob/c9404fc86181fc3f0906b368697268257f348535/gan-mnist/MNIST_GAN_Solution.ipynb
+    status: draft
+  - id: gans-016
+    type: short_answer
+    difficulty: hard
+    tags:
+      - label-smoothing
+      - bce-with-logits
+      - discriminator
+    question: |
+      With one-sided label smoothing, the discriminator's loss on real images uses target 0.9
+      instead of 1:
+
+      ```python
+      labels = torch.ones(batch_size) * 0.9
+      loss = nn.BCEWithLogitsLoss()(D_out.squeeze(), labels)
+      ```
+
+      For a single real image, which logit `D_out` minimizes this loss? Give the value
+      (natural log).
+    answer:
+      numeric: 2.197
+      tolerance: 0.003
+      hint: a number, 3 decimals
+      model: The loss is minimized at $\sigma(z) = 0.9$, i.e. $z = \ln\frac{0.9}{0.1} = \ln 9 \approx 2.197$
+    explanation: |
+      `BCEWithLogitsLoss` applies a sigmoid to the logit $z$ and computes
+      $-[0.9 \log \sigma(z) + 0.1 \log(1 - \sigma(z))]$ [^2]. As a function of $p = \sigma(z)$ this
+      cross-entropy is smallest at $p = 0.9$, so the optimum logit is
+      $\ln(0.9/0.1) = \ln 9 \approx 2.197$. With target 1 the loss keeps falling as $z \to \infty$;
+      smoothing the real labels to 0.9 stops the discriminator from becoming overconfident, which
+      the notebook says helps it generalize better [^1].
+    references:
+      - source: udacity-dl-pytorch
+        locator: MNIST GAN notebook, Discriminator and Generator Losses — Discriminator Losses (labels reduced from 1.0 to 0.9)
+        url: https://github.com/udacity/deep-learning-v2-pytorch/blob/c9404fc86181fc3f0906b368697268257f348535/gan-mnist/MNIST_GAN_Solution.ipynb
+      - title: 'PyTorch documentation: BCEWithLogitsLoss'
+        url: https://pytorch.org/docs/stable/generated/torch.nn.BCEWithLogitsLoss.html
+        locator: loss formula with sigmoid applied to the input
+    source:
+      id: udacity-dl-pytorch
+      ref: gan-mnist/MNIST_GAN_Solution.ipynb#label-smoothing
+      url: https://github.com/udacity/deep-learning-v2-pytorch/blob/c9404fc86181fc3f0906b368697268257f348535/gan-mnist/MNIST_GAN_Solution.ipynb
+    status: draft
+  - id: gans-017
+    type: single
+    difficulty: medium
+    tags:
+      - generator-loss
+      - flipped-labels
+      - gan-training
+    question: |
+      A GAN is trained with these helpers, where `real_loss` compares the discriminator's outputs
+      with label 1 and `fake_loss` with label 0:
+
+      ```python
+      fake_images = G(z)
+      D_fake = D(fake_images)
+      g_loss = ???(D_fake)
+      g_loss.backward(); g_optimizer.step()
+      ```
+
+      Which call belongs in place of `???` for the generator step?
+    options:
+      - text: '`real_loss`: the generator wants its fakes classified as real'
+        correct: true
+      - text: '`fake_loss`: the fakes really are fake, so their label must be 0'
+        why: With label 0 the generator would be trained to make its images look *more* fake, helping the discriminator instead of fooling it [^1].
+      - text: '`real_loss(D(real_images))`: the generator learns from real images'
+        why: The generator's parameters do not influence $D$ on real images, so this term gives the generator no gradient [^1].
+      - text: '`fake_loss + real_loss`, the same total loss as the discriminator'
+        why: That is the discriminator's objective; minimizing it would make the generator help the discriminator [^1].
+    explanation: |
+      The discriminator is trained to output 1 for real and 0 for fake images [^1]. The generator
+      loss uses **flipped** labels: it computes the discriminator loss on the fake images as if they
+      were real, so minimizing it pushes $D(G(z))$ towards 1 [^1]. This is the non-saturating
+      generator loss, which gives stronger gradients early in training than minimizing
+      $\log(1 - D(G(z)))$ [^2].
+    references:
+      - source: udacity-dl-pytorch
+        locator: MNIST GAN notebook, Discriminator and Generator Losses — Generator Loss; Training — Generator training
+        url: https://github.com/udacity/deep-learning-v2-pytorch/blob/c9404fc86181fc3f0906b368697268257f348535/gan-mnist/MNIST_GAN_Solution.ipynb
+      - source: d2l
+        locator: Sec. 20.1 Generative Adversarial Networks (introduction, Fig. 20.1.1)
+        url: https://d2l.ai/chapter_generative-adversarial-networks/gan.html
+    source:
+      id: udacity-dl-pytorch
+      ref: gan-mnist/MNIST_GAN_Solution.ipynb#generator-loss
+      url: https://github.com/udacity/deep-learning-v2-pytorch/blob/c9404fc86181fc3f0906b368697268257f348535/gan-mnist/MNIST_GAN_Solution.ipynb
+    status: draft
+  - id: gans-018
+    type: single
+    difficulty: medium
+    tags:
+      - bce-with-logits
+      - sigmoid
+      - discriminator
+    question: |
+      A GAN discriminator's forward pass ends with `out = torch.sigmoid(self.fc4(x))`, and its loss
+      is `nn.BCEWithLogitsLoss()`. What is wrong?
+    options:
+      - text: The sigmoid is applied twice, so outputs never drop below 0.5
+        correct: true
+      - text: Nothing; `BCEWithLogitsLoss` detects probabilities and skips its own sigmoid
+        why: '`BCEWithLogitsLoss` always applies a sigmoid to its input; it cannot tell logits from probabilities [^2].'
+      - text: The loss becomes negative and training diverges
+        why: Binary cross-entropy stays non-negative; the problem is that the outputs are squashed into $(0.5, 0.73)$ [^2].
+      - text: '`BCEWithLogitsLoss` needs a softmax output, not a sigmoid'
+        why: It is meant for raw logits of a binary task; it applies the sigmoid itself [^2].
+    explanation: |
+      The notebooks leave the discriminator's last layer without an activation because
+      `BCEWithLogitsLoss` combines the sigmoid and the binary cross-entropy in one numerically
+      stable function [^1][^2]. With an extra sigmoid, the loss sees $\sigma(\sigma(z))$, which lies
+      in $(0.5, 0.73)$: "fake" can never be predicted with confidence, and the gradients are
+      distorted. Use either raw logits with `BCEWithLogitsLoss`, or a sigmoid with `BCELoss`.
+    references:
+      - source: udacity-dl-pytorch
+        locator: MNIST GAN notebook, Discriminator — Sigmoid Output
+        url: https://github.com/udacity/deep-learning-v2-pytorch/blob/c9404fc86181fc3f0906b368697268257f348535/gan-mnist/MNIST_GAN_Solution.ipynb
+      - title: 'PyTorch documentation: BCEWithLogitsLoss'
+        url: https://pytorch.org/docs/stable/generated/torch.nn.BCEWithLogitsLoss.html
+        locator: '"This loss combines a Sigmoid layer and the BCELoss in one single class"'
+    source:
+      id: udacity-dl-pytorch
+      ref: gan-mnist/MNIST_GAN_Solution.ipynb#sigmoid-output
+      url: https://github.com/udacity/deep-learning-v2-pytorch/blob/c9404fc86181fc3f0906b368697268257f348535/gan-mnist/MNIST_GAN_Solution.ipynb
+    status: draft
+  - id: gans-019
+    type: short_answer
+    difficulty: medium
+    tags:
+      - dcgan
+      - strided-convolution
+      - shapes
+    question: |
+      A DCGAN discriminator for $32 \times 32 \times 3$ images has three convolutions
+      with `kernel_size=4, stride=2, padding=1` and 32, 64 and 128 output channels, then flattens
+      the result into one `nn.Linear(?, 1)` layer. How many input features does that linear layer
+      need?
+    answer:
+      numeric: 2048
+      tolerance: 0
+      hint: a whole number
+      model: '$32 \to 16 \to 8 \to 4$ pixels per side, 128 channels: $128 \times 4 \times 4 = 2048$'
+    explanation: |
+      Each strided convolution gives $\lfloor (W - F + 2P)/S \rfloor + 1 = (W - 4 + 2)/2 + 1 = W/2$,
+      so the side length halves: 32, 16, 8, 4 [^2]. The last feature map is $128 \times 4 \times 4$,
+      flattened to 2048 features, as in the notebook's `nn.Linear(conv_dim*4*4*4, 1)` with
+      `conv_dim = 32` [^1]. DCGAN downsamples with strided convolutions instead of max pooling [^1].
+    references:
+      - source: udacity-dl-pytorch
+        locator: DCGAN notebook, Discriminator (helper conv function, Discriminator class)
+        url: https://github.com/udacity/deep-learning-v2-pytorch/blob/c9404fc86181fc3f0906b368697268257f348535/dcgan-svhn/DCGAN_Solution.ipynb
+      - source: d2l
+        locator: Sec. 7.3.2 Stride, Eq. (7.3.2)
+        url: https://d2l.ai/chapter_convolutional-neural-networks/padding-and-strides.html#stride
+    source:
+      id: udacity-dl-pytorch
+      ref: dcgan-svhn/DCGAN_Solution.ipynb#discriminator-shapes
+      url: https://github.com/udacity/deep-learning-v2-pytorch/blob/c9404fc86181fc3f0906b368697268257f348535/dcgan-svhn/DCGAN_Solution.ipynb
+    status: draft
+  - id: gans-020
+    type: short_answer
+    difficulty: medium
+    tags:
+      - lsgan
+      - least-squares-loss
+      - cyclegan
+    question: |
+      A CycleGAN discriminator is trained with the least-squares (LSGAN) loss: the real loss is
+      the mean of $(D(x) - 1)^2$ over real images and the fake loss the mean of $D(G(z))^2$ over
+      fakes; the discriminator loss is their sum. For two real images the outputs are 0.8 and 0.6,
+      for two fakes 0.3 and 0.1. What is the discriminator loss?
+    answer:
+      numeric: 0.15
+      tolerance: 0.001
+      hint: a number, 2 decimals
+      model: 'real: $((-0.2)^2 + (-0.4)^2)/2 = 0.10$; fake: $(0.3^2 + 0.1^2)/2 = 0.05$; total $0.15$'
+    explanation: |
+      LSGAN replaces the sigmoid cross-entropy with mean squared errors to the targets 1 (real)
+      and 0 (fake); the notebook's `real_mse_loss` is `torch.mean((D_out-1)**2)` and its
+      `fake_mse_loss` is `torch.mean(D_out**2)` [^1]. Here $0.10 + 0.05 = 0.15$. Squared errors
+      keep penalizing fakes that are on the right side of the decision boundary but far from the
+      real data, which counters vanishing gradients and stabilizes training [^1][^2].
+    references:
+      - source: udacity-dl-pytorch
+        locator: CycleGAN notebook, Least Squares GANs — Discriminator Losses
+        url: https://github.com/udacity/deep-learning-v2-pytorch/blob/c9404fc86181fc3f0906b368697268257f348535/cycle-gan/CycleGAN_Solution.ipynb
+      - title: Mao et al. (2017), Least Squares Generative Adversarial Networks
+        url: https://arxiv.org/abs/1611.04076
+        locator: Abstract and Sec. 3.2 Least Squares GANs
+    source:
+      id: udacity-dl-pytorch
+      ref: cycle-gan/CycleGAN_Solution.ipynb#lsgan-discriminator-loss
+      url: https://github.com/udacity/deep-learning-v2-pytorch/blob/c9404fc86181fc3f0906b368697268257f348535/cycle-gan/CycleGAN_Solution.ipynb
+    status: draft
+  - id: gans-021
+    type: short_answer
+    difficulty: medium
+    tags:
+      - cyclegan
+      - cycle-consistency
+      - l1-loss
+    question: |
+      A CycleGAN translates a real image $x$ to the other domain and back, giving $\hat{x}$. Its
+      cycle-consistency loss is $\lambda$ times the mean absolute pixel difference, with
+      $\lambda = 10$. For a toy 4-pixel image $x = (0.5, -0.2, 0.1, 0.0)$ and reconstruction
+      $\hat{x} = (0.4, -0.2, 0.3, 0.1)$, what is the loss?
+    answer:
+      numeric: 1.0
+      tolerance: 0.001
+      hint: a number, e.g. 0.5
+      model: $10 \times (0.1 + 0 + 0.2 + 0.1)/4 = 10 \times 0.1 = 1.0$
+    explanation: |
+      With unpaired data there is no target image for a translation, so CycleGAN adds cycle
+      consistency: translating to the other domain and back should return the original [^1]. The
+      notebook computes `lambda_weight * torch.mean(torch.abs(real_im - reconstructed_im))` with
+      `lambda_weight=10`, the value used in the CycleGAN paper [^1][^2]. Here the mean absolute
+      difference is 0.1, so the loss is 1.0; it is added to both generators' adversarial losses.
+    references:
+      - source: udacity-dl-pytorch
+        locator: CycleGAN notebook, Generator Losses — Cycle Consistency Loss; training loop
+        url: https://github.com/udacity/deep-learning-v2-pytorch/blob/c9404fc86181fc3f0906b368697268257f348535/cycle-gan/CycleGAN_Solution.ipynb
+      - title: Zhu et al. (2017), Unpaired Image-to-Image Translation using Cycle-Consistent Adversarial Networks
+        url: https://arxiv.org/abs/1703.10593
+        locator: Sec. 3.2 Cycle Consistency Loss; Sec. 4 Implementation (λ = 10)
+    source:
+      id: udacity-dl-pytorch
+      ref: cycle-gan/CycleGAN_Solution.ipynb#cycle-consistency-loss
+      url: https://github.com/udacity/deep-learning-v2-pytorch/blob/c9404fc86181fc3f0906b368697268257f348535/cycle-gan/CycleGAN_Solution.ipynb
+    status: draft

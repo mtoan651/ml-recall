@@ -807,3 +807,326 @@ questions:
       ref: econometrics/62
       url: https://huggingface.co/datasets/edinburgh-dawg/mmlu-redux-2.0/viewer/econometrics/test?row=62
     status: draft
+  - id: metrics-028
+    type: short_answer
+    difficulty: medium
+    tags:
+      - accuracy
+      - precision
+      - confusion-matrix
+      - class-imbalance
+    question: |
+      Two classifiers are tested on 100 examples, 95 negative and 5 positive. Rows are the true
+      class, columns the predicted class:
+
+      | Method A | predicted negative | predicted positive |
+      | --- | --- | --- |
+      | **negative** | 90 | 5 |
+      | **positive** | 5 | 0 |
+
+      | Method B | predicted negative | predicted positive |
+      | --- | --- | --- |
+      | **negative** | 80 | 15 |
+      | **positive** | 0 | 5 |
+
+      Method A has accuracy {{1}} and precision {{2}}; method B has accuracy {{3}} and precision {{4}}.
+    answer:
+      blanks:
+        - numeric: 0.9
+          tolerance: 0.001
+          hint: e.g. 0.75
+        - numeric: 0
+          tolerance: 0.001
+          hint: e.g. 0.75
+        - numeric: 0.85
+          tolerance: 0.001
+          hint: e.g. 0.75
+        - numeric: 0.25
+          tolerance: 0.001
+          hint: e.g. 0.75
+      model: 'A: accuracy $90/100 = 0.90$, precision $0/(0+5) = 0$; B: accuracy $85/100 = 0.85$, precision $5/(5+15) = 0.25$'
+    explanation: |
+      Accuracy is the fraction of all predictions that are correct, while precision is
+      $TP/(TP + FP)$, the fraction of predicted positives that are really positive [^1]. Method A
+      wins on accuracy (0.90 vs 0.85) only because it gets the many negatives right; it never finds
+      a positive, so its precision (and recall) is 0. Method B catches all 5 positives with precision
+      0.25. This is the course's counterexample to "higher accuracy implies higher precision" [^2].
+    references:
+      - source: ubc-dsci573
+        locator: Lecture 1 notes, Confusion matrix; Precision, recall, f1 score
+        url: https://github.com/UBC-MDS/DSCI_573_feat-model-select/blob/741d72d4f4dd495a86352d4d6ee990dea41914ac/lectures/01_classification-metrics.ipynb
+      - source: ubc-dsci573
+        locator: Lecture 1 notes, iClicker Exercise 1.1 (answer with methods A and B)
+        url: https://github.com/UBC-MDS/DSCI_573_feat-model-select/blob/741d72d4f4dd495a86352d4d6ee990dea41914ac/lectures/01_classification-metrics.ipynb
+    source:
+      id: ubc-dsci573
+      ref: lectures/01_classification-metrics.ipynb#ex1.1
+      url: https://github.com/UBC-MDS/DSCI_573_feat-model-select/blob/741d72d4f4dd495a86352d4d6ee990dea41914ac/lectures/01_classification-metrics.ipynb
+    status: draft
+  - id: metrics-029
+    type: multiple
+    difficulty: medium
+    tags:
+      - average-precision
+      - f1-score
+      - roc-curve
+      - class-weight
+    question: |
+      You evaluate a fraud classifier with threshold-based metrics and try to fix its class
+      imbalance. Which statements are true? Select all that apply.
+    options:
+      - text: The average precision (AP) score at threshold 0.5 is the same as the F1 score
+        why: F1 is computed at one threshold from hard predictions; AP summarizes precision and recall over all thresholds of `predict_proba`, so it has no threshold [^1].
+      - text: '`class_weight="balanced"` is likely to decrease false negatives but increase false positives'
+        correct: true
+      - text: Along an ROC curve, the threshold goes from 1 at the lower left to 0 at the upper right
+        correct: true
+      - text: A macro-averaged recall gives every class the same weight, whatever its size
+        correct: true
+    explanation: |
+      F1 measures the quality of `predict` at a single threshold, while AP is a summary across
+      thresholds that measures the quality of `predict_proba` [^1]. On an ROC curve a threshold of 1
+      labels nothing positive (FPR = TPR = 0) and a threshold of 0 labels everything positive
+      (FPR = TPR = 1) [^1]. Balanced class weights make errors on the rare positive class costlier,
+      so the model predicts it more often: fewer false negatives, more false positives [^2]. Macro
+      averaging takes the plain mean over classes, unlike weighted averaging [^1].
+    references:
+      - source: ubc-dsci573
+        locator: Lecture 1 notes, AP score; AP vs. F1-score; ROC curve; (Optional) Macro average and weighted average
+        url: https://github.com/UBC-MDS/DSCI_573_feat-model-select/blob/741d72d4f4dd495a86352d4d6ee990dea41914ac/lectures/01_classification-metrics.ipynb
+      - source: ubc-dsci573
+        locator: 'Lecture 1 notes, Dealing with class imbalance: class_weight="balanced"'
+        url: https://github.com/UBC-MDS/DSCI_573_feat-model-select/blob/741d72d4f4dd495a86352d4d6ee990dea41914ac/lectures/01_classification-metrics.ipynb
+    source:
+      id: ubc-dsci573
+      ref: lectures/02_regression-metrics.ipynb#ex2.1
+      url: https://github.com/UBC-MDS/DSCI_573_feat-model-select/blob/741d72d4f4dd495a86352d4d6ee990dea41914ac/lectures/02_regression-metrics.ipynb
+    status: draft
+  - id: metrics-030
+    type: short_answer
+    difficulty: easy
+    tags:
+      - class-imbalance
+      - class-weight
+    question: |
+      A training set has 950 non-fraud and 50 fraud transactions. scikit-learn's
+      `class_weight="balanced"` gives class $c$ the weight
+      $\frac{n_\text{samples}}{n_\text{classes} \cdot n_c}$. What weight does the fraud class get?
+    answer:
+      numeric: 10
+      tolerance: 0.001
+      hint: a number
+      model: $1000 / (2 \times 50) = 10$ (and $1000 / (2 \times 950) \approx 0.53$ for non-fraud)
+    explanation: |
+      `class_weight` tells the classifier that errors on some classes matter more, for example a
+      false negative ten times more than a false positive [^1]. The "balanced" setting picks weights
+      inversely proportional to the class frequencies, $n_\text{samples} / (n_\text{classes}\,n_c)$
+      [^1]: $1000/(2 \cdot 50) = 10$ for fraud and $1000/(2 \cdot 950) \approx 0.53$ for non-fraud,
+      so both classes carry the same total weight of 500.
+    references:
+      - source: ubc-dsci573
+        locator: Lecture 1 notes, Changing the training procedure; class_weight="balanced"
+        url: https://github.com/UBC-MDS/DSCI_573_feat-model-select/blob/741d72d4f4dd495a86352d4d6ee990dea41914ac/lectures/01_classification-metrics.ipynb
+    source:
+      id: ubc-dsci573
+      ref: lectures/01_classification-metrics.ipynb#class-weight-balanced
+      url: https://github.com/UBC-MDS/DSCI_573_feat-model-select/blob/741d72d4f4dd495a86352d4d6ee990dea41914ac/lectures/01_classification-metrics.ipynb
+    status: draft
+  - id: metrics-031
+    type: short_answer
+    difficulty: easy
+    tags:
+      - accuracy
+      - confusion-matrix
+      - multi-class
+    question: |
+      A part-of-speech tagger with three tags has this confusion matrix (rows: true tag, columns:
+      predicted tag):
+
+      | | NN | VB | ADJ |
+      | --- | --- | --- | --- |
+      | **NN** | 25 | 5 | 1 |
+      | **VB** | 2 | 15 | 12 |
+      | **ADJ** | 1 | 6 | 0 |
+
+      What is its accuracy?
+    answer:
+      numeric: 0.597
+      tolerance: 0.002
+      hint: a number, 3 decimals
+      model: $(25 + 15 + 0) / 67 = 40/67 \approx 0.597$
+    explanation: |
+      Accuracy is the share of correct predictions, i.e. the diagonal of the confusion matrix
+      divided by the total count [^1]. The diagonal holds $25 + 15 + 0 = 40$ of the
+      $31 + 29 + 7 = 67$ tagged words, so the accuracy is $40/67 \approx 0.597$ [^2]. Per-class
+      metrics show that this hides a complete failure on ADJ.
+    references:
+      - source: trusthlt-nlp
+        locator: Lecture 1 slides, frames 'Accuracy' and 'Confusion matrix -- multi-class'
+        url: https://github.com/trusthlt/nlp-with-deep-learning-lectures/blob/751182ea7a6a6f2246bbd8313329ecd09d270dbc/lectures/lecture01/pdf/nlpwdl2025-lecture01-handout.pdf
+      - source: trusthlt-nlp
+        locator: Exercise 1 (2025), Sec. 1 Classification evaluation, Task 1 (solution sheet)
+        url: https://github.com/trusthlt/nlp-with-deep-learning-lectures/blob/751182ea7a6a6f2246bbd8313329ecd09d270dbc/exercises/ex01/solution/solution_01.pdf
+    source:
+      id: trusthlt-nlp
+      ref: exercises/ex01/solution/solution_01.pdf#task1-accuracy
+      url: https://github.com/trusthlt/nlp-with-deep-learning-lectures/blob/751182ea7a6a6f2246bbd8313329ecd09d270dbc/exercises/ex01/solution/solution_01.pdf
+    status: draft
+  - id: metrics-032
+    type: short_answer
+    difficulty: medium
+    tags:
+      - precision
+      - recall
+      - multi-class
+    question: |
+      A part-of-speech tagger with three tags has this confusion matrix (rows: true tag, columns:
+      predicted tag):
+
+      | | NN | VB | ADJ |
+      | --- | --- | --- | --- |
+      | **NN** | 25 | 5 | 1 |
+      | **VB** | 2 | 15 | 12 |
+      | **ADJ** | 1 | 6 | 0 |
+
+      For the tag VB, the precision is {{1}} and the recall is {{2}}.
+    answer:
+      blanks:
+        - numeric: 0.577
+          tolerance: 0.002
+          hint: 3 decimals
+        - numeric: 0.517
+          tolerance: 0.002
+          hint: 3 decimals
+      model: $P_{VB} = 15/(5 + 15 + 6) = 15/26 \approx 0.577$; $R_{VB} = 15/(2 + 15 + 12) = 15/29 \approx 0.517$
+    explanation: |
+      For class $i$, precision divides the diagonal entry by its **column** sum (everything predicted
+      as $i$) and recall divides it by its **row** sum (everything that truly is $i$) [^1]. Column VB
+      sums to $5 + 15 + 6 = 26$, row VB to $2 + 15 + 12 = 29$, so $P = 15/26 \approx 0.58$ and
+      $R = 15/29 \approx 0.52$, matching the exercise's solution [^2]. Swapping row and column is
+      the most common slip in such calculations.
+    references:
+      - source: trusthlt-nlp
+        locator: Lecture 1 slides, frames 'Precision, recall, F-1 score' and 'Confusion matrix --- multi-class'
+        url: https://github.com/trusthlt/nlp-with-deep-learning-lectures/blob/751182ea7a6a6f2246bbd8313329ecd09d270dbc/lectures/lecture01/pdf/nlpwdl2025-lecture01-handout.pdf
+      - source: trusthlt-nlp
+        locator: 'Exercise 1 (2025), Sec. 1, Task 1 (solution sheet: P_VB, R_VB)'
+        url: https://github.com/trusthlt/nlp-with-deep-learning-lectures/blob/751182ea7a6a6f2246bbd8313329ecd09d270dbc/exercises/ex01/solution/solution_01.pdf
+    source:
+      id: trusthlt-nlp
+      ref: exercises/ex01/solution/solution_01.pdf#task1-vb
+      url: https://github.com/trusthlt/nlp-with-deep-learning-lectures/blob/751182ea7a6a6f2246bbd8313329ecd09d270dbc/exercises/ex01/solution/solution_01.pdf
+    status: draft
+  - id: metrics-033
+    type: short_answer
+    difficulty: hard
+    tags:
+      - macro-f1
+      - f1-score
+      - multi-class
+    question: |
+      A part-of-speech tagger with three tags has this confusion matrix (rows: true tag, columns:
+      predicted tag):
+
+      | | NN | VB | ADJ |
+      | --- | --- | --- | --- |
+      | **NN** | 25 | 5 | 1 |
+      | **VB** | 2 | 15 | 12 |
+      | **ADJ** | 1 | 6 | 0 |
+
+      Compute the macro-F1 score as the plain average of the three per-class F1 scores. ADJ has
+      precision and recall 0; count its F1 as 0.
+    answer:
+      numeric: 0.464
+      tolerance: 0.003
+      hint: a number, 3 decimals
+      model: $F1_{NN} = \frac{2 \cdot 0.893 \cdot 0.806}{0.893 + 0.806} \approx 0.847$, $F1_{VB} \approx 0.545$, $F1_{ADJ} = 0$; mean $\approx 0.464$
+    explanation: |
+      $F1 = 2PR/(P + R)$ for each class [^1]. NN has $P = 25/28 \approx 0.893$ and
+      $R = 25/31 \approx 0.806$, so $F1 \approx 0.847$; VB has $P = 15/26$, $R = 15/29$, so
+      $F1 \approx 0.545$; ADJ is never predicted correctly, so its F1 is 0 [^2]. Macro-averaging
+      gives every class the same weight: $(0.847 + 0.545 + 0)/3 \approx 0.464$, far below the
+      accuracy of about 0.60, because the rare tag ADJ counts as much as the frequent ones.
+    references:
+      - source: trusthlt-nlp
+        locator: Lecture 1 slides, frame 'Precision, recall, F-1 score'
+        url: https://github.com/trusthlt/nlp-with-deep-learning-lectures/blob/751182ea7a6a6f2246bbd8313329ecd09d270dbc/lectures/lecture01/pdf/nlpwdl2025-lecture01-handout.pdf
+      - source: trusthlt-nlp
+        locator: Exercise 1 (2025), Sec. 1, Task 1 solution and Task 3 (macro-F1); reference code solution/confusion-matrix.py
+        url: https://github.com/trusthlt/nlp-with-deep-learning-lectures/blob/751182ea7a6a6f2246bbd8313329ecd09d270dbc/exercises/ex01/solution/solution_01.pdf
+    source:
+      id: trusthlt-nlp
+      ref: exercises/ex01/solution/solution_01.pdf#task3
+      url: https://github.com/trusthlt/nlp-with-deep-learning-lectures/blob/751182ea7a6a6f2246bbd8313329ecd09d270dbc/exercises/ex01/solution/solution_01.pdf
+    status: draft
+  - id: metrics-034
+    type: single
+    difficulty: hard
+    tags:
+      - class-imbalance
+      - macro-f1
+      - accuracy
+      - recall
+    question: |
+      A test set has 990 examples of class A and 10 of class B. Model-One labels everything A.
+      Model-Two flips a fair coin for each example. Taking expected counts for Model-Two and
+      counting an undefined precision as 0, which statement is true?
+    options:
+      - text: Model-One wins on both accuracy and macro-F1, yet never finds a B
+        correct: true
+      - text: Macro-F1 ranks Model-Two above Model-One, because it gives both classes equal weight
+        why: Model-Two's macro-F1 is about $(0.664 + 0.020)/2 \approx 0.34$, below Model-One's $(0.995 + 0)/2 \approx 0.50$ [^1].
+      - text: Model-Two's expected recall for class B is 0.01
+        why: Model-Two finds half of the B examples, recall 0.5; 0.01 is its expected precision for B, $5/500$ [^1].
+      - text: Both models have the same expected accuracy
+        why: Model-One is right on all 990 A's (accuracy 0.99); Model-Two is right half of the time (0.5) [^1].
+    explanation: |
+      Model-One: accuracy $990/1000 = 0.99$; for A, $P = 0.99$, $R = 1$, $F1 \approx 0.995$; for B
+      nothing is predicted, so $R = 0$ and $F1 = 0$; macro-F1 $\approx 0.497$ [^1]. Model-Two: about
+      495 A's and 5 B's are right; for A, $P = 495/500$, $R = 0.5$, $F1 \approx 0.664$; for B,
+      $P = 5/500 = 0.01$, $R = 0.5$, $F1 \approx 0.020$; macro-F1 $\approx 0.342$. Neither accuracy
+      nor macro-F1 alone exposes Model-One; the recall of the rare class does [^2].
+    references:
+      - source: trusthlt-nlp
+        locator: Exercise 1 (2025), Sec. 1 Classification evaluation, Task 4
+        url: https://github.com/trusthlt/nlp-with-deep-learning-lectures/blob/751182ea7a6a6f2246bbd8313329ecd09d270dbc/exercises/ex01/blank/blank_01.pdf
+      - source: trusthlt-nlp
+        locator: Lecture 1 slides, frames 'Accuracy' and 'Precision, recall, F-1 score'
+        url: https://github.com/trusthlt/nlp-with-deep-learning-lectures/blob/751182ea7a6a6f2246bbd8313329ecd09d270dbc/lectures/lecture01/pdf/nlpwdl2025-lecture01-handout.pdf
+    source:
+      id: trusthlt-nlp
+      ref: exercises/ex01/blank/blank_01.pdf#task4-compare
+      url: https://github.com/trusthlt/nlp-with-deep-learning-lectures/blob/751182ea7a6a6f2246bbd8313329ecd09d270dbc/exercises/ex01/blank/blank_01.pdf
+    status: draft
+  - id: metrics-035
+    type: short_answer
+    difficulty: medium
+    tags:
+      - precision
+      - class-imbalance
+      - random-baseline
+    question: |
+      A test set has 990 examples of class A and 10 of class B. A model flips a fair coin for each
+      example and predicts B on heads. Using expected counts, what is its precision for class B?
+    answer:
+      numeric: 0.01
+      tolerance: 0.0005
+      hint: a number, e.g. 0.05
+      model: 'About 500 B predictions, of which $10 \times 0.5 = 5$ are true B: $P_B = 5/500 = 0.01$'
+    explanation: |
+      Precision is $TP/(TP + FP)$ [^1]. The coin predicts B for about half of all 1000 examples,
+      i.e. 500 times; only 5 of those are real B's (half of the 10), so $P_B = 5/500 = 0.01$, while
+      the recall for B is $5/10 = 0.5$ [^2]. A random classifier's precision for a class is just
+      that class's share of the data, which is why precision is so low for rare classes.
+    references:
+      - source: trusthlt-nlp
+        locator: Lecture 1 slides, frame 'Precision, recall, F-1 score'
+        url: https://github.com/trusthlt/nlp-with-deep-learning-lectures/blob/751182ea7a6a6f2246bbd8313329ecd09d270dbc/lectures/lecture01/pdf/nlpwdl2025-lecture01-handout.pdf
+      - source: trusthlt-nlp
+        locator: Exercise 1 (2025), Sec. 1 Classification evaluation, Task 4 (Model-Two)
+        url: https://github.com/trusthlt/nlp-with-deep-learning-lectures/blob/751182ea7a6a6f2246bbd8313329ecd09d270dbc/exercises/ex01/blank/blank_01.pdf
+    source:
+      id: trusthlt-nlp
+      ref: exercises/ex01/blank/blank_01.pdf#task4-model-two
+      url: https://github.com/trusthlt/nlp-with-deep-learning-lectures/blob/751182ea7a6a6f2246bbd8313329ecd09d270dbc/exercises/ex01/blank/blank_01.pdf
+    status: draft

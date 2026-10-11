@@ -1308,3 +1308,183 @@ questions:
       ref: questions/dl.yml#q1
       url: https://github.com/dsgiitr/ML-InterviewQs/blob/8c6d228b051af7ceb429e6322befda068964e6b5/questions/dl.yml
     status: draft
+  - id: rnn-037
+    type: single
+    difficulty: easy
+    tags:
+      - acceptor
+      - transducer
+      - sequence-labeling
+    question: |
+      You train one RNN to tag every word of a sentence with its part of speech, with a loss at each
+      position, and another RNN to classify a review's sentiment from its last output only. How are
+      these two uses of an RNN called?
+    options:
+      - text: The tagger is a transducer, the sentiment model an acceptor
+        correct: true
+      - text: The tagger is an acceptor, the sentiment model a transducer
+        why: An acceptor is supervised on its final output only; supervision on every output makes a transducer [^1].
+      - text: Both are transducers, since both read every word
+        why: Both read every word, but only the tagger is supervised at every position [^1].
+      - text: Both are bidirectional RNNs, since both use the whole sentence
+        why: Bidirectionality is about running a second RNN right-to-left, not about where the loss is computed [^1].
+    explanation: |
+      In the RNN-as-acceptor (or encoder) setting the loss is computed on the final output, e.g.
+      $\mathbf{y}_n$ fed to an MLP for a document label [^1]. In the transducer setting there is
+      supervision on each output, as in sequence tagging, and the network's loss is the sum of the
+      per-position losses [^1]. Either setting can use a bidirectional RNN, which concatenates a
+      left-to-right and a right-to-left RNN [^1].
+    references:
+      - source: trusthlt-nlp
+        locator: "Lecture 6 slides, frames 'RNN as acceptor or encoder: Supervision on the last output', 'RNN as transducer: Supervision on each output', 'Bi-directional RNNs'"
+        url: https://github.com/trusthlt/nlp-with-deep-learning-lectures/blob/751182ea7a6a6f2246bbd8313329ecd09d270dbc/lectures/lecture06/pdf/nlpwdl2025-lecture06-handout.pdf
+    source:
+      id: trusthlt-nlp
+      ref: lectures/lecture06/nlpwdl2025-lecture06.tex#acceptor-transducer
+      url: https://github.com/trusthlt/nlp-with-deep-learning-lectures/blob/751182ea7a6a6f2246bbd8313329ecd09d270dbc/lectures/lecture06/pdf/nlpwdl2025-lecture06-handout.pdf
+    status: draft
+  - id: rnn-038
+    type: short_answer
+    difficulty: medium
+    tags:
+      - gates
+      - lstm
+      - hadamard-product
+    question: |
+      A binary gate controls which memory positions are overwritten:
+      $\mathbf{s}' = \mathbf{g} \odot \mathbf{x} + (\mathbf{1} - \mathbf{g}) \odot \mathbf{s}$,
+      with $\odot$ the element-wise product. For memory $\mathbf{s} = (8, 9, 3)$, input
+      $\mathbf{x} = (10, 11, 12)$ and gate $\mathbf{g} = (0, 1, 0)$, what is $\mathbf{s}'$?
+    answer:
+      accept:
+        - (8, 11, 3)
+      pattern: \(?\s*8\s*[,;]\s*11\s*[,;]\s*3\s*\)?
+      hint: three numbers, e.g. (1, 2, 3)
+      model: $(0 \cdot 10 + 1 \cdot 8,\ 1 \cdot 11 + 0 \cdot 9,\ 0 \cdot 12 + 1 \cdot 3) = (8, 11, 3)$
+    explanation: |
+      Where the gate is 1, the entry is read from the input and written to memory; where it is 0,
+      the old memory value is copied [^1]. Only position 2 is open, so it becomes 11 while positions
+      1 and 3 keep 8 and 3. Such hard 0/1 gates are neither learnable nor differentiable, so LSTMs
+      replace them with soft sigmoid gates in $(0, 1)$ [^1][^2].
+    references:
+      - source: trusthlt-nlp
+        locator: Lecture 6 slides, frames 'How to provide more controlled memory access?' and 'Gate example'
+        url: https://github.com/trusthlt/nlp-with-deep-learning-lectures/blob/751182ea7a6a6f2246bbd8313329ecd09d270dbc/lectures/lecture06/pdf/nlpwdl2025-lecture06-handout.pdf
+      - source: d2l
+        locator: Sec. 10.1.1.2 Input Gate, Forget Gate, and Output Gate
+        url: https://d2l.ai/chapter_recurrent-modern/lstm.html#input-gate-forget-gate-and-output-gate
+    source:
+      id: trusthlt-nlp
+      ref: lectures/lecture06/nlpwdl2025-lecture06.tex#gate-example
+      url: https://github.com/trusthlt/nlp-with-deep-learning-lectures/blob/751182ea7a6a6f2246bbd8313329ecd09d270dbc/lectures/lecture06/pdf/nlpwdl2025-lecture06-handout.pdf
+    status: draft
+  - id: rnn-039
+    type: single
+    difficulty: medium
+    tags:
+      - padding
+      - lstm
+      - sentiment-analysis
+    question: |
+      A sentiment LSTM reads reviews padded or truncated to 200 tokens and classifies each review
+      from the LSTM output at the **last** time step only, `lstm_out[:, -1, :]`. Why are short
+      reviews padded with zeros on the left, e.g. `[0, 0, …, 0, 117, 18, 128]`?
+    options:
+      - text: So that the last time step comes right after the real words
+        correct: true
+      - text: Because the embedding layer cannot look up index 0 at the end of a sequence
+        why: Index 0 is an ordinary row of the embedding table; its position in the sequence does not matter to the lookup [^1].
+      - text: To make the LSTM read the review backwards
+        why: The LSTM still reads left to right; only the padding moves to the front [^1].
+      - text: Because right padding would change the length of the feature rows
+        why: Both left and right padding give rows of exactly 200 values [^1].
+    explanation: |
+      The network ignores all sigmoid outputs except the very last one [^1]. With left padding the
+      LSTM first runs over the zeros and then over the words, so its final state has just read the
+      review; with right padding the final state would come after up to 199 padding steps, which can
+      wash out what was learned from the words. Word indices start at 1 so that 0 is free for
+      padding [^1].
+    references:
+      - source: udacity-dl-pytorch
+        locator: Sentiment RNN notebook, Network Architecture; Encoding the words; Padding sequences
+        url: https://github.com/udacity/deep-learning-v2-pytorch/blob/c9404fc86181fc3f0906b368697268257f348535/sentiment-rnn/Sentiment_RNN_Solution.ipynb
+    source:
+      id: udacity-dl-pytorch
+      ref: sentiment-rnn/Sentiment_RNN_Solution.ipynb#left-padding
+      url: https://github.com/udacity/deep-learning-v2-pytorch/blob/c9404fc86181fc3f0906b368697268257f348535/sentiment-rnn/Sentiment_RNN_Solution.ipynb
+    status: draft
+  - id: rnn-040
+    type: single
+    difficulty: medium
+    tags:
+      - truncated-bptt
+      - hidden-state
+      - lstm
+    question: |
+      Inside the batch loop, a character-level LSTM is trained with:
+
+      ```python
+      h = tuple([each.data for each in h])   # h = (hidden state, cell state)
+      output, h = net(inputs, h)
+      loss.backward()
+      ```
+
+      What does the first line achieve?
+    options:
+      - text: It detaches the states from older graphs
+        correct: true
+      - text: It resets the hidden and cell states to zero
+        why: '`.data` keeps the values; only `init_hidden` creates zero states, at the start of each epoch [^1].'
+      - text: It moves the states to the GPU
+        why: '`.data` does not change the device; that is done with `.cuda()` or `.to(device)` [^1].'
+      - text: It merges the two states into one tensor
+        why: The result is still a tuple of two tensors, one for $h$ and one for $c$ [^1].
+    explanation: |
+      The notebook creates new variables for the hidden state because otherwise it would
+      backpropagate through the entire training history; the LSTM's state is a tuple of hidden and
+      cell state [^1]. Keeping the values but cutting the graph is truncated backpropagation through
+      time: the state still carries information across batches, while gradients flow only through
+      the current `seq_length` steps [^2].
+    references:
+      - source: udacity-dl-pytorch
+        locator: Character-Level LSTM notebook, Time to train (detaching the hidden state; clip_grad_norm_)
+        url: https://github.com/udacity/deep-learning-v2-pytorch/blob/c9404fc86181fc3f0906b368697268257f348535/recurrent-neural-networks/char-rnn/Character_Level_RNN_Solution.ipynb
+      - source: d2l
+        locator: Sec. 9.7.1.4 Comparing Strategies
+        url: https://d2l.ai/chapter_recurrent-neural-networks/bptt.html#comparing-strategies
+    source:
+      id: udacity-dl-pytorch
+      ref: recurrent-neural-networks/char-rnn/Character_Level_RNN_Solution.ipynb#detach-hidden
+      url: https://github.com/udacity/deep-learning-v2-pytorch/blob/c9404fc86181fc3f0906b368697268257f348535/recurrent-neural-networks/char-rnn/Character_Level_RNN_Solution.ipynb
+    status: draft
+  - id: rnn-041
+    type: short_answer
+    difficulty: easy
+    tags:
+      - mini-batches
+      - sequence-batching
+      - char-rnn
+    question: |
+      A character-level RNN makes mini-batches of `batch_size` sequences of `seq_length`
+      characters each, and first discards characters so that only full batches remain. The encoded
+      text has 12,345 characters, `batch_size = 10` and `seq_length = 50`. How many mini-batches
+      does one epoch contain?
+    answer:
+      numeric: 24
+      tolerance: 0
+      hint: a whole number
+      model: $10 \times 50 = 500$ characters per batch; $\lfloor 12345 / 500 \rfloor = 24$ (345 characters are dropped)
+    explanation: |
+      Each batch holds $N \times M = 10 \times 50 = 500$ characters, so $K = \lfloor 12345/500
+      \rfloor = 24$ full batches fit and $N \cdot M \cdot K = 12{,}000$ characters are kept [^1]. The
+      kept array is reshaped to $N \times (M \cdot K) = 10 \times 1200$ and a window of 50 columns
+      slides over it; the targets are the inputs shifted by one character [^1].
+    references:
+      - source: udacity-dl-pytorch
+        locator: Character-Level LSTM notebook, Making training mini-batches — Creating Batches
+        url: https://github.com/udacity/deep-learning-v2-pytorch/blob/c9404fc86181fc3f0906b368697268257f348535/recurrent-neural-networks/char-rnn/Character_Level_RNN_Solution.ipynb
+    source:
+      id: udacity-dl-pytorch
+      ref: recurrent-neural-networks/char-rnn/Character_Level_RNN_Solution.ipynb#get-batches
+      url: https://github.com/udacity/deep-learning-v2-pytorch/blob/c9404fc86181fc3f0906b368697268257f348535/recurrent-neural-networks/char-rnn/Character_Level_RNN_Solution.ipynb
+    status: draft

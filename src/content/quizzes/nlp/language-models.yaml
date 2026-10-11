@@ -721,3 +721,253 @@ questions:
       ref: lectures/notes/02_LMs-text-preprocessing.ipynb#ex2.3
       url: https://github.com/UBC-MDS/DSCI_575_adv-mach-learn/blob/af9d47c5fdaa26aa9a50e0f50cd991cf325f1972/lectures/notes/02_LMs-text-preprocessing.ipynb
     status: draft
+  - id: language-models-021
+    type: short_answer
+    difficulty: easy
+    tags:
+      - n-gram
+      - markov-assumption
+      - long-range-dependencies
+    question: |
+      An $n$-gram language model predicts the next word from the previous $n - 1$ words. What is the
+      smallest $n$ for which it can capture a dependency between the next word and the word 10
+      positions before it?
+    answer:
+      numeric: 11
+      tolerance: 0
+      hint: a whole number
+      model: 'The context must reach back 10 words, plus the predicted word: $n = 11$'
+    explanation: |
+      A $k$-th order Markov model conditions the next word on the last $k$ words only, which is an
+      $n$-gram model with $n = k + 1$ [^1]. To see a word 10 positions back, the context needs
+      $k = 10$ words, so the model must have observed the relevant 11-grams; this is the
+      long-range-dependency shortcoming of $n$-gram models [^1]. Counts of 11-grams are
+      astronomically sparse, which is why neural language models replace counting [^2].
+    references:
+      - source: trusthlt-nlp
+        locator: Lecture 5 slides, frames 'Simplifications in classical language models' and 'Shortcomings of n-gram language models'
+        url: https://github.com/trusthlt/nlp-with-deep-learning-lectures/blob/751182ea7a6a6f2246bbd8313329ecd09d270dbc/lectures/lecture05/pdf/nlpwdl2025-lecture05-handout.pdf
+      - source: d2l
+        locator: Sec. 9.3.1.3 Laplace Smoothing (limitations of n-gram counting)
+        url: https://d2l.ai/chapter_recurrent-neural-networks/language-model.html#laplace-smoothing
+    source:
+      id: trusthlt-nlp
+      ref: lectures/lecture05/nlpwdl2025-lecture05.tex#ngram-shortcomings
+      url: https://github.com/trusthlt/nlp-with-deep-learning-lectures/blob/751182ea7a6a6f2246bbd8313329ecd09d270dbc/lectures/lecture05/pdf/nlpwdl2025-lecture05-handout.pdf
+    status: draft
+  - id: language-models-022
+    type: short_answer
+    difficulty: medium
+    tags:
+      - neural-language-model
+      - embedding-layer
+      - parameter-count
+    question: |
+      A neural language model looks up 50-dimensional embeddings for the previous 3 words,
+      concatenates them, applies a hidden layer $g(\mathbf{x}\mathbf{W}^1 + \mathbf{b}^1)$ with 100
+      units, and then a softmax layer over a vocabulary of 10,000 words. How many parameters do
+      $\mathbf{W}^1$ and $\mathbf{b}^1$ have together?
+    answer:
+      numeric: 15100
+      tolerance: 0
+      hint: a whole number
+      model: '$\mathbf{x} \in \mathbb{R}^{3 \cdot 50 = 150}$: $150 \times 100 + 100 = 15{,}100$'
+    explanation: |
+      Each lookup returns a row of the embedding matrix $\mathbf{E} \in \mathbb{R}^{|V| \times 50}$,
+      and concatenating three of them gives $\mathbf{x} \in \mathbb{R}^{150}$ [^1]. The hidden layer
+      therefore has $150 \times 100$ weights plus 100 biases, 15,100 in all [^1]. For comparison,
+      $\mathbf{E}$ has $500{,}000$ parameters and the output layer $100 \times 10{,}000 + 10{,}000$;
+      the vocabulary size, not the context length, dominates, and adding a context word only adds
+      $50 \times 100$ weights [^1].
+    references:
+      - source: trusthlt-nlp
+        locator: "Lecture 5 slides, frames 'Network concatenating 3 words as embeddings (d_w = 50)', 'Embedding layer: Lookup operation', 'Some advantages of neural LMs'"
+        url: https://github.com/trusthlt/nlp-with-deep-learning-lectures/blob/751182ea7a6a6f2246bbd8313329ecd09d270dbc/lectures/lecture05/pdf/nlpwdl2025-lecture05-handout.pdf
+    source:
+      id: trusthlt-nlp
+      ref: lectures/lecture05/nlpwdl2025-lecture05.tex#neural-lm-concat
+      url: https://github.com/trusthlt/nlp-with-deep-learning-lectures/blob/751182ea7a6a6f2246bbd8313329ecd09d270dbc/lectures/lecture05/pdf/nlpwdl2025-lecture05-handout.pdf
+    status: draft
+  - id: language-models-023
+    type: short_answer
+    difficulty: medium
+    tags:
+      - masked-language-modeling
+      - bert
+      - cross-entropy
+    question: |
+      During masked-language-model pretraining, the input "The cat sat" is masked at positions 1
+      and 3: "[MASK] cat [MASK]". The model gives the true token probability 0.5 for "The" at
+      position 1, 0.9 for "cat" at position 2 and 0.25 for "sat" at position 3. What is the loss of
+      this sequence (sum of negative natural-log likelihoods)?
+    answer:
+      numeric: 2.079
+      tolerance: 0.003
+      hint: a number, 3 decimals
+      model: 'Only masked positions count: $-\ln 0.5 - \ln 0.25 = 0.693 + 1.386 \approx 2.079$'
+    explanation: |
+      The masked-LM loss sums $-\log P_\theta[t, x_t]$ over the masked positions $\tilde{T}$ only
+      [^1]. Position 2 was kept, so its 0.9 does not enter the loss; the loss is
+      $-\ln 0.5 - \ln 0.25 \approx 0.693 + 1.386 = 2.079$. BERT is trained to predict only the
+      masked tokens, from their bidirectional context [^2].
+    references:
+      - source: trusthlt-nlp
+        locator: "Lecture 7 slides, frames 'BERT: pre-training by masked language modeling' and 'Explaining line 9 (negative log likelihood)'"
+        url: https://github.com/trusthlt/nlp-with-deep-learning-lectures/blob/751182ea7a6a6f2246bbd8313329ecd09d270dbc/lectures/lecture07/pdf/nlpwdl2025-lecture07-handout.pdf
+      - source: d2l
+        locator: Sec. 15.8.5.1 Masked Language Modeling
+        url: https://d2l.ai/chapter_natural-language-processing-pretraining/bert.html#masked-language-modeling
+    source:
+      id: trusthlt-nlp
+      ref: lectures/lecture07/nlpwdl2025-lecture07.tex#mlm-loss
+      url: https://github.com/trusthlt/nlp-with-deep-learning-lectures/blob/751182ea7a6a6f2246bbd8313329ecd09d270dbc/lectures/lecture07/pdf/nlpwdl2025-lecture07-handout.pdf
+    status: draft
+  - id: language-models-024
+    type: short_answer
+    difficulty: medium
+    tags:
+      - bigram
+      - maximum-likelihood
+      - sentence-probability
+    question: |
+      A bigram model is estimated by counting, $P(w_i \mid w_{i-1}) = \frac{\text{count}(w_{i-1}\, w_i)}{\text{count}(w_{i-1})}$,
+      on a three-sentence corpus:
+
+      ```text
+      <s> I am Gustave </s>
+      <s> Gustave I am </s>
+      <s> I love natural language processing </s>
+      ```
+
+      What probability does it assign to the sentence `<s> I am Gustave </s>`?
+    answer:
+      numeric: 0.111
+      tolerance: 0.002
+      hint: a probability, 3 decimals
+      model: $P(I \mid \text{<s>}) \cdot P(am \mid I) \cdot P(Gustave \mid am) \cdot P(\text{</s>} \mid Gustave) = \frac23 \cdot \frac23 \cdot \frac12 \cdot \frac12 = \frac19$
+    explanation: |
+      The chain rule with the bigram (first-order Markov) assumption turns the sentence probability
+      into a product of bigram probabilities [^1]. Counting: "I" follows `<s>` in 2 of 3 sentences;
+      "am" follows "I" in 2 of the 3 occurrences of "I" (the slide's example); "Gustave" follows
+      "am" once of twice; `</s>` follows "Gustave" once of twice [^1]. The product is
+      $\frac{2}{3}\cdot\frac{2}{3}\cdot\frac{1}{2}\cdot\frac{1}{2} = \frac{1}{9} \approx 0.111$. In
+      practice such products are computed as sums of logs to avoid underflow [^1].
+    references:
+      - source: cortal-nlp
+        locator: 'N-grams slides, slides 10–14 (How to compute P(S)?; N-grams are Markov models; Example: estimating bigram probabilities) and slide 18 (Practical issues)'
+        url: https://github.com/gustavecortal/natural-language-processing/blob/49945d346964022ea6003bf59a64e11966bbb863/2%20-%20N-grams/n-grams.pdf
+    source:
+      id: cortal-nlp
+      ref: 2 - N-grams/n-grams.pdf#bigram-sentence-probability
+      url: https://github.com/gustavecortal/natural-language-processing/blob/49945d346964022ea6003bf59a64e11966bbb863/2%20-%20N-grams/n-grams.pdf
+    status: draft
+  - id: language-models-025
+    type: short_answer
+    difficulty: medium
+    tags:
+      - add-one-smoothing
+      - laplace-smoothing
+      - bigram
+    question: |
+      On the corpus
+
+      ```text
+      <s> I am Gustave </s>
+      <s> Gustave I am </s>
+      <s> I love natural language processing </s>
+      ```
+
+      the word "love" occurs once, always followed by "natural", so the unsmoothed estimate is
+      $P(\text{natural} \mid \text{love}) = 1$. With add-one smoothing,
+      $P(w_i \mid w_{i-1}) = \frac{\text{count}(w_{i-1}\, w_i) + 1}{\text{count}(w_{i-1}) + |V|}$,
+      and a vocabulary of $|V| = 8$ word types (the 7 words plus `</s>`), what is
+      $P(\text{natural} \mid \text{love})$?
+    answer:
+      numeric: 0.222
+      tolerance: 0.002
+      hint: a probability, 3 decimals
+      model: $\frac{1 + 1}{1 + 8} = \frac{2}{9} \approx 0.222$
+    explanation: |
+      Add-one smoothing pretends every bigram was seen once more than it was, so unseen bigrams
+      such as "love Gustave" get $(0 + 1)/(1 + 8) = 1/9$ instead of 0 and no longer zero out a
+      sentence's probability [^1]. The probability mass for them is taken from the seen bigrams:
+      here $P(\text{natural} \mid \text{love})$ drops from 1 to $2/9 \approx 0.222$ [^1]. Such large
+      shifts after rare contexts are why better methods use backoff or interpolation [^1][^2].
+    references:
+      - source: cortal-nlp
+        locator: 'N-grams slides, slide 18 (Practical issues: add-1 smoothing) and slide 19 (backoff or interpolation)'
+        url: https://github.com/gustavecortal/natural-language-processing/blob/49945d346964022ea6003bf59a64e11966bbb863/2%20-%20N-grams/n-grams.pdf
+      - source: d2l
+        locator: Sec. 9.3.1.3 Laplace Smoothing (limitations of n-gram counting)
+        url: https://d2l.ai/chapter_recurrent-neural-networks/language-model.html#laplace-smoothing
+    source:
+      id: cortal-nlp
+      ref: 2 - N-grams/n-grams.pdf#add-one-smoothing
+      url: https://github.com/gustavecortal/natural-language-processing/blob/49945d346964022ea6003bf59a64e11966bbb863/2%20-%20N-grams/n-grams.pdf
+    status: draft
+  - id: language-models-026
+    type: short_answer
+    difficulty: medium
+    tags:
+      - perplexity
+      - evaluation
+    question: |
+      A language model assigns the probabilities 0.5, 0.25, 0.5 and 0.125 to the four tokens of a
+      test text, each given the tokens before it. What is its perplexity on this text,
+      $P(w_1, \dots, w_N)^{-1/N}$?
+    answer:
+      numeric: 3.364
+      tolerance: 0.005
+      hint: a number, 3 decimals
+      model: $P = 0.5 \cdot 0.25 \cdot 0.5 \cdot 0.125 = 1/128$; $128^{1/4} = 2^{7/4} \approx 3.364$
+    explanation: |
+      Perplexity is the inverse probability of the test set, normalized by its length, so longer
+      texts are not penalized just for being long; minimizing perplexity means maximizing
+      probability [^1]. Here $P = 2^{-7}$ over $N = 4$ tokens, so the perplexity is
+      $2^{7/4} \approx 3.36$: on average the model is as unsure as if it chose uniformly among about
+      3.4 tokens, matching the reading $\text{perplexity} = 2^H$ with $H = 1.75$ bits per token
+      [^1][^2].
+    references:
+      - source: cortal-nlp
+        locator: N-grams slides, slide 16 (Perplexity) and slide 17 (Perplexity and Entropy)
+        url: https://github.com/gustavecortal/natural-language-processing/blob/49945d346964022ea6003bf59a64e11966bbb863/2%20-%20N-grams/n-grams.pdf
+      - source: d2l
+        locator: Sec. 9.3.2 Perplexity
+        url: https://d2l.ai/chapter_recurrent-neural-networks/language-model.html#perplexity
+    source:
+      id: cortal-nlp
+      ref: 2 - N-grams/n-grams.pdf#perplexity
+      url: https://github.com/gustavecortal/natural-language-processing/blob/49945d346964022ea6003bf59a64e11966bbb863/2%20-%20N-grams/n-grams.pdf
+    status: draft
+  - id: language-models-027
+    type: short_answer
+    difficulty: easy
+    tags:
+      - interpolation
+      - trigram
+      - smoothing
+    question: |
+      An interpolated trigram model combines
+      $\hat{P}(w_n \mid w_{n-2}, w_{n-1}) = \lambda_1 P(w_n \mid w_{n-2}, w_{n-1}) + \lambda_2 P(w_n \mid w_{n-1}) + \lambda_3 P(w_n)$
+      with $\lambda_1 = 0.5$, $\lambda_2 = 0.3$, $\lambda_3 = 0.2$. The trigram, bigram and unigram
+      estimates for a word are 0.4, 0.2 and 0.05. What is the interpolated probability?
+    answer:
+      numeric: 0.27
+      tolerance: 0.001
+      hint: a probability, 2 decimals
+      model: $0.5 \cdot 0.4 + 0.3 \cdot 0.2 + 0.2 \cdot 0.05 = 0.20 + 0.06 + 0.01 = 0.27$
+    explanation: |
+      Interpolation trains models of different orders and mixes their estimates with weights that
+      sum to 1, so the result is still a probability distribution [^1]. Here
+      $0.20 + 0.06 + 0.01 = 0.27$. If the trigram was never seen, its estimate is 0 but the bigram
+      and unigram terms keep the word's probability above 0; backoff instead switches to the
+      shorter context only when the longer one has no counts [^1].
+    references:
+      - source: cortal-nlp
+        locator: N-grams slides, slide 19 (Better n-grams using backoff or interpolation methods)
+        url: https://github.com/gustavecortal/natural-language-processing/blob/49945d346964022ea6003bf59a64e11966bbb863/2%20-%20N-grams/n-grams.pdf
+    source:
+      id: cortal-nlp
+      ref: 2 - N-grams/n-grams.pdf#interpolation
+      url: https://github.com/gustavecortal/natural-language-processing/blob/49945d346964022ea6003bf59a64e11966bbb863/2%20-%20N-grams/n-grams.pdf
+    status: draft

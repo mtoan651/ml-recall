@@ -298,3 +298,122 @@ questions:
       ref: chapter_computer-vision/fine-tuning#ex4
       url: https://d2l.ai/chapter_computer-vision/fine-tuning.html#exercises
     status: draft
+  - id: transfer-learning-009
+    type: single
+    difficulty: hard
+    tags:
+      - vgg16
+      - freezing
+      - fine-tuning
+      - code-reading
+    question: |
+      Transfer learning with VGG-16 for 5 flower classes:
+
+      ```python
+      vgg16 = models.vgg16(pretrained=True)
+      for param in vgg16.features.parameters():
+          param.requires_grad = False
+      vgg16.classifier[6] = nn.Linear(4096, 5)
+      optimizer = optim.SGD(vgg16.classifier.parameters(), lr=0.001)
+      ```
+
+      `vgg16.classifier` holds three fully connected layers, the last of which was just replaced.
+      Which parameters change during training?
+    options:
+      - text: All three fully connected layers of the classifier
+        correct: true
+      - text: Only the new `nn.Linear(4096, 5)` layer
+        why: Only `features` was frozen; the first two classifier layers keep `requires_grad=True` and are passed to the optimizer too [^1].
+      - text: All layers, including the convolutional features
+        why: The feature parameters have `requires_grad=False` and are not in the optimizer, so they get no updates [^1].
+      - text: None of the pretrained layers, plus the new layer only after the first epoch
+        why: There is no warm-up rule in this code; every parameter in the optimizer is updated from the first step [^1].
+    explanation: |
+      Setting `requires_grad = False` freezes only the convolutional `features` block, which then
+      acts as a fixed feature extractor [^1]. The new output layer and the two pretrained fully
+      connected layers before it still require gradients, and `vgg16.classifier.parameters()` hands
+      all of them to SGD, so the whole classifier is fine-tuned [^1]. Fine-tuning the top layers on
+      the new data while reusing pretrained low-level features is the usual recipe [^2].
+    references:
+      - source: udacity-dl-pytorch
+        locator: Transfer Learning notebook, Define the Model (Freeze training for all features layers; Final Classifier Layer; Specify Loss Function and Optimizer)
+        url: https://github.com/udacity/deep-learning-v2-pytorch/blob/c9404fc86181fc3f0906b368697268257f348535/transfer-learning/Transfer_Learning_Solution.ipynb
+      - source: d2l
+        locator: Sec. 14.2.1 Steps (fine-tuning)
+        url: https://d2l.ai/chapter_computer-vision/fine-tuning.html#steps
+    source:
+      id: udacity-dl-pytorch
+      ref: transfer-learning/Transfer_Learning_Solution.ipynb#which-layers-train
+      url: https://github.com/udacity/deep-learning-v2-pytorch/blob/c9404fc86181fc3f0906b368697268257f348535/transfer-learning/Transfer_Learning_Solution.ipynb
+    status: draft
+  - id: transfer-learning-010
+    type: short_answer
+    difficulty: easy
+    tags:
+      - vgg16
+      - output-layer
+      - parameter-count
+    question: |
+      VGG-16's last layer, `classifier[6]`, maps 4096 features to the 1000 ImageNet classes. You
+      replace it with a new layer for 5 flower classes. How many parameters (weights and biases)
+      does the new layer have?
+    answer:
+      numeric: 20485
+      tolerance: 0
+      hint: a whole number
+      model: $4096 \times 5 + 5 = 20{,}485$
+    explanation: |
+      The new layer keeps the 4096 inputs that the unchanged part of the network produces and needs
+      one output per flower class, `nn.Linear(4096, 5)` [^1]: $4096 \cdot 5 = 20{,}480$ weights plus
+      5 biases. Only this new layer starts from random weights; the pretrained layers below it are
+      reused, which is why fine-tuning works with a small target dataset [^2].
+    references:
+      - source: udacity-dl-pytorch
+        locator: Transfer Learning notebook, Final Classifier Layer
+        url: https://github.com/udacity/deep-learning-v2-pytorch/blob/c9404fc86181fc3f0906b368697268257f348535/transfer-learning/Transfer_Learning_Solution.ipynb
+      - source: d2l
+        locator: Sec. 14.2.2.2 Defining and Initializing the Model
+        url: https://d2l.ai/chapter_computer-vision/fine-tuning.html#defining-and-initializing-the-model
+    source:
+      id: udacity-dl-pytorch
+      ref: transfer-learning/Transfer_Learning_Solution.ipynb#new-output-layer
+      url: https://github.com/udacity/deep-learning-v2-pytorch/blob/c9404fc86181fc3f0906b368697268257f348535/transfer-learning/Transfer_Learning_Solution.ipynb
+    status: draft
+  - id: transfer-learning-011
+    type: single
+    difficulty: easy
+    tags:
+      - normalization
+      - imagenet
+      - preprocessing
+    question: |
+      Before feeding images to an ImageNet-pretrained DenseNet, the notebook normalizes each colour
+      channel with the means `[0.485, 0.456, 0.406]` and standard deviations
+      `[0.229, 0.224, 0.225]`. Why these particular values?
+    options:
+      - text: The pretrained model was trained on inputs normalized this way
+        correct: true
+      - text: They are the statistics of the new cat-and-dog images
+        why: They are fixed ImageNet values; the point is to give the pretrained weights inputs on the scale they were trained on [^1].
+      - text: They make every pixel lie exactly in $[0, 1]$
+        why: Subtracting a mean and dividing by a standard deviation centres the values around 0; it does not map them into $[0, 1]$ [^1].
+      - text: They remove colour information so that the model focuses on shapes
+        why: Each channel is shifted and scaled separately; the colour information stays in the image [^1].
+    explanation: |
+      Most pretrained torchvision models expect $224 \times 224$ inputs normalized per channel
+      exactly as during their ImageNet training, so the notebook uses those means and standard
+      deviations for both training and test transforms [^1]. Feeding differently scaled inputs
+      would shift every activation away from what the pretrained filters learned to respond to,
+      which is also why d2l reuses the ImageNet statistics when fine-tuning [^2].
+    references:
+      - source: udacity-dl-pytorch
+        locator: Intro to PyTorch, Part 8 - Transfer Learning (Solution), data transforms
+        url: https://github.com/udacity/deep-learning-v2-pytorch/blob/c9404fc86181fc3f0906b368697268257f348535/intro-to-pytorch/Part%208%20-%20Transfer%20Learning%20(Solution).ipynb
+      - source: d2l
+        locator: Sec. 14.2.1 Steps (fine-tuning)
+        url: https://d2l.ai/chapter_computer-vision/fine-tuning.html#steps
+    source:
+      id: udacity-dl-pytorch
+      ref: intro-to-pytorch/Part 8 - Transfer Learning (Solution).ipynb#imagenet-normalization
+      url: https://github.com/udacity/deep-learning-v2-pytorch/blob/c9404fc86181fc3f0906b368697268257f348535/intro-to-pytorch/Part%208%20-%20Transfer%20Learning%20(Solution).ipynb
+    status: draft

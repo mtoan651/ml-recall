@@ -1648,3 +1648,87 @@ questions:
       ref: chapter_linear-classification/image-classification-dataset#ex1
       url: https://d2l.ai/chapter_linear-classification/image-classification-dataset.html#exercises
     status: draft
+  - id: pytorch-040
+    type: single
+    difficulty: medium
+    tags:
+      - log-softmax
+      - nll-loss
+      - cross-entropy-loss
+      - code-reading
+    question: |
+      A pretrained DenseNet gets a new classifier and loss:
+
+      ```python
+      model.classifier = nn.Sequential(nn.Linear(1024, 256), nn.ReLU(), nn.Dropout(0.2),
+                                       nn.Linear(256, 2), nn.LogSoftmax(dim=1))
+      criterion = nn.NLLLoss()
+      ```
+
+      Why is `NLLLoss` the right loss here rather than `nn.CrossEntropyLoss`?
+    options:
+      - text: The outputs are already log-probabilities; `CrossEntropyLoss` would normalize again
+        correct: true
+      - text: '`CrossEntropyLoss` only works for more than two classes'
+        why: '`CrossEntropyLoss` works for any number of classes, two included [^1].'
+      - text: '`NLLLoss` applies the softmax that the model is missing'
+        why: '`NLLLoss` applies no softmax; it just picks the negative log-probability of the true class from its input [^1].'
+      - text: '`CrossEntropyLoss` needs one-hot encoded targets, while `NLLLoss` takes class indices'
+        why: Both accept class-index targets [^1].
+    explanation: |
+      `CrossEntropyLoss` combines `LogSoftmax` and `NLLLoss` and expects raw logits [^1]. The
+      classifier here ends in `LogSoftmax`, so its outputs are already log-probabilities, and
+      `NLLLoss` completes the cross-entropy; `torch.exp(output)` recovers probabilities for
+      accuracy [^2]. Feeding log-probabilities to `CrossEntropyLoss` would normalize twice.
+    references:
+      - title: 'PyTorch documentation: CrossEntropyLoss'
+        url: https://pytorch.org/docs/stable/generated/torch.nn.CrossEntropyLoss.html
+        locator: description (input is unnormalized logits; LogSoftmax + NLLLoss)
+      - source: udacity-dl-pytorch
+        locator: Intro to PyTorch, Part 8 - Transfer Learning (Solution), classifier and training loop
+        url: https://github.com/udacity/deep-learning-v2-pytorch/blob/c9404fc86181fc3f0906b368697268257f348535/intro-to-pytorch/Part%208%20-%20Transfer%20Learning%20(Solution).ipynb
+    source:
+      id: udacity-dl-pytorch
+      ref: intro-to-pytorch/Part 8 - Transfer Learning (Solution).ipynb#logsoftmax-nllloss
+      url: https://github.com/udacity/deep-learning-v2-pytorch/blob/c9404fc86181fc3f0906b368697268257f348535/intro-to-pytorch/Part%208%20-%20Transfer%20Learning%20(Solution).ipynb
+    status: draft
+  - id: pytorch-041
+    type: short_answer
+    difficulty: medium
+    tags:
+      - lstm
+      - reshape
+      - shapes
+      - code-reading
+    question: |
+      A character-level LSTM with `batch_first=True` and `n_hidden = 256` processes a batch of 10
+      sequences of 50 characters over a vocabulary of 83 characters:
+
+      ```python
+      r_output, hidden = self.lstm(x, hidden)          # r_output: (10, 50, 256)
+      out = r_output.contiguous().view(-1, self.n_hidden)
+      out = self.fc(out)                               # fc = nn.Linear(256, 83)
+      ```
+
+      What is the shape of `out`?
+    answer:
+      accept:
+        - (500, 83)
+      pattern: \(?\s*500\s*[,x×]\s*83\s*\)?
+      hint: two numbers, e.g. (64, 10)
+      model: '`view(-1, 256)` stacks all $10 \times 50 = 500$ time steps: $(500, 256) \to$ `fc` $\to (500, 83)$'
+    explanation: |
+      `view(-1, n_hidden)` stacks the outputs of every time step of every sequence into rows,
+      $10 \cdot 50 = 500$ rows of 256 values (`contiguous()` is needed first because the LSTM output
+      may not be stored contiguously) [^1]. The linear layer maps each row to 83 character scores,
+      so one cross-entropy loss covers all 500 next-character predictions, with the targets flattened
+      the same way [^1].
+    references:
+      - source: udacity-dl-pytorch
+        locator: Character-Level LSTM notebook, Defining the network with PyTorch (CharRNN.forward) and Time to train
+        url: https://github.com/udacity/deep-learning-v2-pytorch/blob/c9404fc86181fc3f0906b368697268257f348535/recurrent-neural-networks/char-rnn/Character_Level_RNN_Solution.ipynb
+    source:
+      id: udacity-dl-pytorch
+      ref: recurrent-neural-networks/char-rnn/Character_Level_RNN_Solution.ipynb#output-shape
+      url: https://github.com/udacity/deep-learning-v2-pytorch/blob/c9404fc86181fc3f0906b368697268257f348535/recurrent-neural-networks/char-rnn/Character_Level_RNN_Solution.ipynb
+    status: draft

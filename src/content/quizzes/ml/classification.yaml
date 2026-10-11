@@ -528,3 +528,166 @@ questions:
       ref: chapter_linear-classification/classification#ex3-b
       url: https://d2l.ai/chapter_linear-classification/classification.html#exercises
     status: draft
+  - id: classification-017
+    type: single
+    difficulty: medium
+    tags:
+      - naive-bayes
+      - bayes-rule
+      - text-classification
+    question: |
+      You want $P(\text{spam} \mid \text{message})$ for a new SMS. Why not estimate it, or
+      $P(\text{message} \mid \text{spam})$, by counting how often that exact message occurs among
+      the spam and ham messages of the training set?
+    options:
+      - text: Most messages are unique, so the counts would almost always be zero
+        correct: true
+      - text: Bayes' rule cannot be applied to text data
+        why: Naive Bayes is exactly Bayes' rule applied to text; the problem is estimating the likelihood, not using the rule [^1].
+      - text: The counts would give probabilities that do not sum to 1 over the classes
+        why: Relative frequencies over the classes always sum to 1; the issue is that there are almost no counts at all [^1].
+      - text: Spam labels are too noisy for counting to work
+        why: Label noise is not the obstacle; even perfectly labelled data rarely contains the same message twice [^1].
+    explanation: |
+      A whole message is one point in an enormous space of word sequences, so estimating
+      $P(\text{message} \mid \text{spam})$ directly, word by word given all previous words, needs a
+      huge number of parameters and an impossibly large training set [^1]. Naive Bayes makes this
+      tractable with two assumptions: a bag-of-words representation and conditional independence of
+      the words given the class, so only per-word probabilities have to be counted [^1].
+    references:
+      - source: ubc-dsci571
+        locator: Lecture 7 notes, Exercise 7.1.3 Calculating P(spam | message) and P(ham | message), and the slides that follow
+        url: https://github.com/UBC-MDS/DSCI_571_sup-learn-1/blob/70be2d76ec40e11fe7ddcff2a8c9e602a2698129/lectures/notes/07_naive-Bayes.ipynb
+    source:
+      id: ubc-dsci571
+      ref: lectures/notes/07_naive-Bayes.ipynb#ex7.1.3
+      url: https://github.com/UBC-MDS/DSCI_571_sup-learn-1/blob/70be2d76ec40e11fe7ddcff2a8c9e602a2698129/lectures/notes/07_naive-Bayes.ipynb
+    status: draft
+  - id: classification-018
+    type: multiple
+    difficulty: medium
+    tags:
+      - naive-bayes
+      - bernoulli-nb
+      - conditional-independence
+    question: |
+      A Bernoulli naive Bayes spam filter uses binary features for $d$ vocabulary words (present or
+      absent). Which statements are true? Select all that apply.
+    options:
+      - text: For the two classes it has to estimate $2d + 1$ probabilities
+        correct: true
+      - text: It should only be used if the words really are conditionally independent given the class
+        why: The independence assumption is strong and often unrealistic, yet naive Bayes still works well in practice, e.g. in spam filtering [^1].
+      - text: Naive Bayes can only be used when all features are binary
+        why: Multinomial naive Bayes uses word counts and Gaussian naive Bayes handles continuous features [^2].
+      - text: Dropping the shared denominator $P(\text{message})$ does not change which class gets the higher score
+        correct: true
+    explanation: |
+      Per word and class it needs $P(w = 1 \mid c)$, since $P(w = 0 \mid c) = 1 - P(w = 1 \mid c)$;
+      that is $2d$ numbers, plus one prior $P(\text{spam})$, as $P(\text{ham}) = 1 - P(\text{spam})$
+      [^1]. $P(\text{message})$ is the same for both classes, so ignoring it changes the scores but
+      not their ranking [^1]. The "naive" assumption is rarely true, which makes the probability
+      estimates poor, but the predicted class is often still right [^2].
+    references:
+      - source: ubc-dsci571
+        locator: Lecture 7 notes, Naive Bayes predict; Naive Bayes classifier fit (Prior and Conditional probabilities)
+        url: https://github.com/UBC-MDS/DSCI_571_sup-learn-1/blob/70be2d76ec40e11fe7ddcff2a8c9e602a2698129/lectures/notes/07_naive-Bayes.ipynb
+      - source: ubc-dsci571
+        locator: Lecture 7 notes, Naive Bayes with continuous features; Summary and final remarks
+        url: https://github.com/UBC-MDS/DSCI_571_sup-learn-1/blob/70be2d76ec40e11fe7ddcff2a8c9e602a2698129/lectures/notes/07_naive-Bayes.ipynb
+    source:
+      id: ubc-dsci571
+      ref: lectures/notes/07_naive-Bayes.ipynb#ex7.2
+      url: https://github.com/UBC-MDS/DSCI_571_sup-learn-1/blob/70be2d76ec40e11fe7ddcff2a8c9e602a2698129/lectures/notes/07_naive-Bayes.ipynb
+    status: draft
+  - id: classification-019
+    type: short_answer
+    difficulty: medium
+    tags:
+      - naive-bayes
+      - bernoulli-nb
+      - worked-example
+    question: |
+      Six training SMS are encoded by whether four words occur:
+
+      | message | block | free | prize | urgent | label |
+      | --- | --- | --- | --- | --- | --- |
+      | 1 | 0 | 0 | 1 | 1 | spam |
+      | 2 | 0 | 1 | 0 | 1 | ham |
+      | 3 | 1 | 0 | 0 | 0 | ham |
+      | 4 | 0 | 1 | 1 | 1 | spam |
+      | 5 | 0 | 1 | 0 | 0 | spam |
+      | 6 | 1 | 0 | 0 | 0 | ham |
+
+      A Bernoulli naive Bayes model is fit by plain counting (no smoothing). The new message
+      "URGENT! Free!!" has block = 0, free = 1, prize = 0, urgent = 1. What is
+      $P(\text{spam} \mid \text{message})$ after normalizing the two class scores?
+    answer:
+      numeric: 0.8
+      tolerance: 0.001
+      hint: a probability, e.g. 0.65
+      model: 'spam: $\frac{3}{6}\cdot\frac33\cdot\frac23\cdot\frac13\cdot\frac23 = \frac{2}{27}$; ham: $\frac{3}{6}\cdot\frac13\cdot\frac13\cdot\frac33\cdot\frac13 = \frac{1}{54}$; $\frac{2/27}{2/27 + 1/54} = 0.8$'
+    explanation: |
+      Naive Bayes scores each class by $P(c)\prod_i P(x_i \mid c)$, with every probability
+      estimated by counting [^1]. For spam: $P(\text{spam}) = 3/6$, $P(\text{block}=0) = 3/3$,
+      $P(\text{free}=1) = 2/3$, $P(\text{prize}=0) = 1/3$, $P(\text{urgent}=1) = 2/3$, product
+      $0.0741$. For ham the factors are $3/6, 1/3, 1/3, 3/3, 1/3$, product $0.0185$ [^1].
+      Dividing by their sum gives $0.8$ for spam and $0.2$ for ham. Absent words count too, through
+      $P(x_i = 0 \mid c)$.
+    references:
+      - source: ubc-dsci571
+        locator: 'Lecture 7 notes, Naive Bayes predict (worked example: computing prior and conditional probabilities)'
+        url: https://github.com/UBC-MDS/DSCI_571_sup-learn-1/blob/70be2d76ec40e11fe7ddcff2a8c9e602a2698129/lectures/notes/07_naive-Bayes.ipynb
+    source:
+      id: ubc-dsci571
+      ref: lectures/notes/07_naive-Bayes.ipynb#nb-predict-example
+      url: https://github.com/UBC-MDS/DSCI_571_sup-learn-1/blob/70be2d76ec40e11fe7ddcff2a8c9e602a2698129/lectures/notes/07_naive-Bayes.ipynb
+    status: draft
+  - id: classification-020
+    type: short_answer
+    difficulty: hard
+    tags:
+      - naive-bayes
+      - laplace-smoothing
+      - bernoulli-nb
+    question: |
+      Six training SMS are encoded by whether four words occur:
+
+      | message | block | free | prize | urgent | label |
+      | --- | --- | --- | --- | --- | --- |
+      | 1 | 0 | 0 | 1 | 1 | spam |
+      | 2 | 0 | 1 | 0 | 1 | ham |
+      | 3 | 1 | 0 | 0 | 0 | ham |
+      | 4 | 0 | 1 | 1 | 1 | spam |
+      | 5 | 0 | 1 | 0 | 0 | spam |
+      | 6 | 1 | 0 | 0 | 0 | ham |
+
+      The message "urgent free block" has block = 1, free = 1, prize = 0, urgent = 1. "block" never
+      occurs in a spam message, so plain counting gives spam a score of 0. With Laplace smoothing
+      for a Bernoulli model, $P(x_i = 1 \mid c) = \frac{\text{count}(x_i = 1, c) + 1}{\text{count}(c) + 2}$,
+      and unsmoothed priors, what is $P(\text{spam} \mid \text{message})$?
+    answer:
+      numeric: 0.273
+      tolerance: 0.002
+      hint: a probability, 3 decimals
+      model: 'spam: $\frac12\cdot\frac15\cdot\frac35\cdot\frac25\cdot\frac35 = 0.0144$; ham: $\frac12\cdot\frac35\cdot\frac25\cdot\frac45\cdot\frac25 = 0.0384$; $\frac{0.0144}{0.0528} \approx 0.273$'
+    explanation: |
+      Without smoothing, one zero factor wipes out all other evidence for a class [^1]. Laplace
+      smoothing adds one pseudo-count for "present" and one for "absent" per word and class, hence
+      $+2$ in the denominator of the Bernoulli model [^1]. For spam the smoothed factors are
+      $P(\text{block}=1) = 1/5$, $P(\text{free}=1) = 3/5$, $P(\text{prize}=0) = 2/5$,
+      $P(\text{urgent}=1) = 3/5$; for ham they are $3/5, 2/5, 4/5, 2/5$. With priors $1/2$ the
+      normalized spam probability is $0.0144 / (0.0144 + 0.0384) \approx 0.273$, so the message is
+      classified as ham. scikit-learn's `BernoulliNB(alpha=1)` uses the same formula [^2].
+    references:
+      - source: ubc-dsci571
+        locator: Lecture 7 notes, Laplace smoothing; (Optional) Details on the formulas
+        url: https://github.com/UBC-MDS/DSCI_571_sup-learn-1/blob/70be2d76ec40e11fe7ddcff2a8c9e602a2698129/lectures/notes/07_naive-Bayes.ipynb
+      - title: 'scikit-learn User Guide: 1.9.4 Bernoulli Naive Bayes'
+        url: https://scikit-learn.org/stable/modules/naive_bayes.html#bernoulli-naive-bayes
+        locator: Sec. 1.9.4 Bernoulli Naive Bayes
+    source:
+      id: ubc-dsci571
+      ref: lectures/notes/07_naive-Bayes.ipynb#laplace-smoothing-example
+      url: https://github.com/UBC-MDS/DSCI_571_sup-learn-1/blob/70be2d76ec40e11fe7ddcff2a8c9e602a2698129/lectures/notes/07_naive-Bayes.ipynb
+    status: draft

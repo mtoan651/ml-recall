@@ -484,3 +484,223 @@ questions:
       ref: chapter_natural-language-processing-pretraining/subword-embedding#ex4
       url: https://d2l.ai/chapter_natural-language-processing-pretraining/subword-embedding.html#exercises
     status: draft
+  - id: tokenization-014
+    type: single
+    difficulty: medium
+    tags:
+      - bpe
+      - subword
+      - merges
+    question: |
+      Byte-pair encoding is trained on the toy corpus "this fat cat with the hat is in the cave of
+      the thin bat", split into characters, counting adjacent pairs only inside words. The first
+      merge is `t h` → `th` (6 times), the second `a t` → `at` (4 times). Which pair is merged
+      third?
+    options:
+      - text: '`th e`, which occurs 3 times'
+        correct: true
+      - text: '`th i`, which occurs 2 times'
+        why: '`th i` occurs only in "this" and "thin" (2 times), fewer than `th e` [^1].'
+      - text: '`i s`, which occurs 2 times'
+        why: '`i s` occurs in "this" and "is" (2 times), fewer than `th e` [^1].'
+      - text: '`h e`, which occurs 3 times'
+        why: After the first merge, every `h` that followed a `t` is part of `th`, so `h e` no longer occurs in "the"; it is now `th e` [^1].
+    explanation: |
+      BPE repeatedly merges the most frequent adjacent pair and adds it to the vocabulary [^1].
+      After `th` and `at`, "the" appears three times as `th e`, more often than any other pair
+      inside a word (`th i`, `i s` and `i n` occur twice), so the third merge creates `the` [^1].
+      Frequent words thus end up as single tokens, while rare words stay split into subwords [^2].
+    references:
+      - source: trusthlt-nlp
+        locator: "Lecture 3 slides, frames 'Subword units: Byte-pair encoding' and 'Byte-pair encoding example on a toy corpus (parts 1 and 2)'"
+        url: https://github.com/trusthlt/nlp-with-deep-learning-lectures/blob/751182ea7a6a6f2246bbd8313329ecd09d270dbc/lectures/lecture03/pdf/nlpwdl2025-lecture03-handout.pdf
+      - source: d2l
+        locator: Sec. 15.6.2 Byte Pair Encoding
+        url: https://d2l.ai/chapter_natural-language-processing-pretraining/subword-embedding.html#byte-pair-encoding
+    source:
+      id: trusthlt-nlp
+      ref: lectures/lecture03/nlpwdl2025-lecture03.tex#bpe-toy-corpus
+      url: https://github.com/trusthlt/nlp-with-deep-learning-lectures/blob/751182ea7a6a6f2246bbd8313329ecd09d270dbc/lectures/lecture03/pdf/nlpwdl2025-lecture03-handout.pdf
+    status: draft
+  - id: tokenization-015
+    type: single
+    difficulty: medium
+    tags:
+      - sentencepiece
+      - whitespace
+      - detokenization
+    question: |
+      SentencePiece tokenizes "Hello world." as `[Hello] [▁wor] [ld] [.]`, writing the space before
+      "world" as the symbol `▁` inside a token. What does keeping the whitespace as `▁` achieve?
+    options:
+      - text: The original text can be restored exactly
+        correct: true
+      - text: It stops words from being split into subwords
+        why: Words are still split ("wor" + "ld"); `▁` only records where the spaces were [^1].
+      - text: It removes spaces, which makes the vocabulary smaller
+        why: The spaces are not removed but kept, as part of the tokens [^1].
+      - text: It marks the end of every word for the decoder
+        why: '`▁` stands for the space *before* a word piece; there is no end-of-word marker in this scheme [^1].'
+    explanation: |
+      Classic word-level BPE splits on whitespace first and marks word-internal splits (e.g.
+      `Net@@ any@@ ahu`), so the exact spacing of the input is lost [^1]. SentencePiece treats the
+      input as a raw character stream, escapes whitespace as `▁` and tokenizes it into an arbitrary
+      subword sequence; detokenization is lossless, because concatenating the pieces and turning `▁`
+      back into spaces reproduces the normalized text [^1][^2].
+    references:
+      - source: trusthlt-nlp
+        locator: "Lecture 3 slides, frame 'SentencePiece: A variant of byte pair encoding'"
+        url: https://github.com/trusthlt/nlp-with-deep-learning-lectures/blob/751182ea7a6a6f2246bbd8313329ecd09d270dbc/lectures/lecture03/pdf/nlpwdl2025-lecture03-handout.pdf
+      - title: Kudo & Richardson (2018), SentencePiece — a simple and language independent subword tokenizer and detokenizer for neural text processing
+        url: https://arxiv.org/abs/1808.06226
+        locator: Sec. 3.1 Lossless Tokenization
+    source:
+      id: trusthlt-nlp
+      ref: lectures/lecture03/nlpwdl2025-lecture03.tex#sentencepiece
+      url: https://github.com/trusthlt/nlp-with-deep-learning-lectures/blob/751182ea7a6a6f2246bbd8313329ecd09d270dbc/lectures/lecture03/pdf/nlpwdl2025-lecture03-handout.pdf
+    status: draft
+  - id: tokenization-016
+    type: true_false
+    difficulty: easy
+    tags:
+      - bpe
+      - out-of-vocabulary
+      - unk-token
+    question: |
+      A word-level vocabulary of the 3,000 most frequent words maps the unseen word "wampinuk" to
+      `UNK`. True or false: a BPE tokenizer whose base vocabulary contains every character of the
+      training corpus must also map "wampinuk" to a single `UNK` token.
+    options:
+      - text: 'True'
+        why: BPE starts from single characters and only adds merged units, so any word over known characters can be written as a sequence of subwords [^1].
+      - text: 'False'
+        correct: true
+    explanation: |
+      A word-level vocabulary keeps only frequent words and replaces everything else by `UNK`,
+      losing the word entirely [^1]. BPE starts from all characters and adds merged units, so an
+      unseen word is split into known pieces, in the worst case single characters; over large
+      multilingual corpora this prevents out-of-vocabulary tokens [^1]. Byte-level BPE goes further and starts
+      from the 256 byte values, so no input can be unknown [^2].
+    references:
+      - source: trusthlt-nlp
+        locator: "Lecture 3 slides, frames 'Out-of-vocabulary (UNK) tokens' and 'Subword units: Byte-pair encoding'"
+        url: https://github.com/trusthlt/nlp-with-deep-learning-lectures/blob/751182ea7a6a6f2246bbd8313329ecd09d270dbc/lectures/lecture03/pdf/nlpwdl2025-lecture03-handout.pdf
+      - source: d2l
+        locator: Sec. 15.6.2 Byte Pair Encoding
+        url: https://d2l.ai/chapter_natural-language-processing-pretraining/subword-embedding.html#byte-pair-encoding
+    source:
+      id: trusthlt-nlp
+      ref: lectures/lecture03/nlpwdl2025-lecture03.tex#unk-vs-bpe
+      url: https://github.com/trusthlt/nlp-with-deep-learning-lectures/blob/751182ea7a6a6f2246bbd8313329ecd09d270dbc/lectures/lecture03/pdf/nlpwdl2025-lecture03-handout.pdf
+    status: draft
+  - id: tokenization-017
+    type: single
+    difficulty: medium
+    tags:
+      - bpe
+      - merge-rules
+      - segmentation
+    question: |
+      A BPE tokenizer learned these merges, in this order, from a corpus of "low", "lowest",
+      "newer", "wider" and "new":
+
+      1. `e r` → `er`
+      2. `n e` → `ne`
+      3. `ne w` → `new`
+      4. `l o` → `lo`
+      5. `lo w` → `low`
+      6. `new er` → `newer`
+
+      It tokenizes a new word by splitting it into characters and applying the merges in the order
+      they were learned. How is the unseen word "lowered" tokenized?
+    options:
+      - text: '`low` `er` `e` `d`'
+        correct: true
+      - text: '`low` `e` `r` `e` `d`'
+        why: Merge 1 joins the `e r` in "lower" into `er` before anything else [^1].
+      - text: '`lo` `w` `er` `e` `d`'
+        why: Merge 5 still applies after merge 4, turning `lo w` into `low` [^1].
+      - text: '`low` `ere` `d`'
+        why: No learned merge creates `ere`; only the six listed merges can be applied [^1].
+    explanation: |
+      BPE learns merges from the training corpus and applies them to new text in the order in which
+      they were learned; this fixed order makes the tokenization deterministic [^1]. For
+      l-o-w-e-r-e-d: merge 1 gives `l o w er e d`, merges 2, 3 and 6 do not apply, merges 4 and 5
+      give `low er e d` [^1]. An unseen word is thus built from known subwords, as with "lower" =
+      `low` + `er` [^1].
+    references:
+      - source: cortal-nlp
+        locator: 'Tokenization and datasets slides, slides 15–20 (Tokenization: Byte-Pair Encoding; Applying BPE on an example; Sequence of merges)'
+        url: https://github.com/gustavecortal/natural-language-processing/blob/49945d346964022ea6003bf59a64e11966bbb863/1%20-%20Tokenization%20and%20datasets/tokenization_and_datasets.pdf
+    source:
+      id: cortal-nlp
+      ref: 1 - Tokenization and datasets/tokenization_and_datasets.pdf#bpe-apply-merges
+      url: https://github.com/gustavecortal/natural-language-processing/blob/49945d346964022ea6003bf59a64e11966bbb863/1%20-%20Tokenization%20and%20datasets/tokenization_and_datasets.pdf
+    status: draft
+  - id: tokenization-018
+    type: short_answer
+    difficulty: medium
+    tags:
+      - byte-level-bpe
+      - merges
+      - utf-8
+    question: |
+      A byte-level BPE tokenizer starts from the 256 byte values (ASCII: 116 = `t`, 104 = `h`,
+      101 = `e`, 32 = space) and learned, among others, these merges:
+
+      - `(101, 32)` → token 256
+      - `(116, 104)` → token 259
+      - `(259, 256)` → token 275
+
+      How many bytes of text does token 275 stand for?
+    answer:
+      numeric: 4
+      tolerance: 0
+      hint: a whole number
+      model: '259 = `th`, 256 = `e␣`, so 275 = `the␣`: 4 bytes'
+    explanation: |
+      Each merge replaces a pair of existing tokens by a new token id, starting at 256, and the
+      vocabulary entry of the new token is the concatenation of the two byte strings [^1]. Token 256
+      is "e" + space, token 259 is "th", so token 275 is "the " (with the trailing space), 4 bytes;
+      merges of merges build ever longer frequent strings [^1]. The vocabulary size is 256 plus the
+      number of merges [^1].
+    references:
+      - source: cortal-nlp
+        locator: "Byte-pair encoding notebook (adapted from Karpathy's minbpe): training loop with vocab_size = 276, merges dict, decoding"
+        url: https://github.com/gustavecortal/natural-language-processing/blob/49945d346964022ea6003bf59a64e11966bbb863/1%20-%20Tokenization%20and%20datasets/byte_pair_encoding_tokenization.ipynb
+    source:
+      id: cortal-nlp
+      ref: 1 - Tokenization and datasets/byte_pair_encoding_tokenization.ipynb#token-275
+      url: https://github.com/gustavecortal/natural-language-processing/blob/49945d346964022ea6003bf59a64e11966bbb863/1%20-%20Tokenization%20and%20datasets/byte_pair_encoding_tokenization.ipynb
+    status: draft
+  - id: tokenization-019
+    type: short_answer
+    difficulty: easy
+    tags:
+      - byte-level-bpe
+      - utf-8
+      - unicode
+    question: |
+      Byte-level BPE first encodes the text as UTF-8 and starts from one token per byte. In UTF-8,
+      ASCII letters take 1 byte and "é" takes 2 bytes. How many initial tokens does the word "café"
+      produce, before any merge?
+    answer:
+      numeric: 5
+      tolerance: 0
+      hint: a whole number
+      model: '`c a f` = 3 bytes, `é` = 2 bytes: 5 tokens'
+    explanation: |
+      The notebook converts text with `text.encode("utf-8")` into integers 0–255, so the initial
+      tokens are bytes, not characters [^1]. ASCII characters need one byte each, but characters
+      outside ASCII need two to four, so "café" has 4 characters but 5 byte tokens; the Korean and
+      emoji example in the notebook grows from 26 code points to 39 bytes [^1]. Merges then shorten
+      such sequences again.
+    references:
+      - source: cortal-nlp
+        locator: Byte-pair encoding notebook, Unicode code points (ord) vs. UTF-8 bytes (encode)
+        url: https://github.com/gustavecortal/natural-language-processing/blob/49945d346964022ea6003bf59a64e11966bbb863/1%20-%20Tokenization%20and%20datasets/byte_pair_encoding_tokenization.ipynb
+    source:
+      id: cortal-nlp
+      ref: 1 - Tokenization and datasets/byte_pair_encoding_tokenization.ipynb#utf-8-bytes
+      url: https://github.com/gustavecortal/natural-language-processing/blob/49945d346964022ea6003bf59a64e11966bbb863/1%20-%20Tokenization%20and%20datasets/byte_pair_encoding_tokenization.ipynb
+    status: draft

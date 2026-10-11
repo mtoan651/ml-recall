@@ -1232,3 +1232,101 @@ questions:
       ref: lectures/notes/08_llms-applications.ipynb#ex7.3
       url: https://github.com/UBC-MDS/DSCI_575_adv-mach-learn/blob/af9d47c5fdaa26aa9a50e0f50cd991cf325f1972/lectures/notes/08_llms-applications.ipynb
     status: draft
+  - id: transformers-038
+    type: short_answer
+    difficulty: easy
+    tags:
+      - causal-mask
+      - masked-self-attention
+      - gpt
+    question: |
+      A GPT-style decoder applies left-to-right (causal) masking to a sequence of 6 tokens: token
+      $t$ may attend only to tokens $1, \dots, t$. How many of the 36 entries of the
+      $6 \times 6$ attention-weight matrix can be non-zero?
+    answer:
+      numeric: 21
+      tolerance: 0
+      hint: a whole number
+      model: 'Row $t$ has $t$ allowed entries: $1 + 2 + \dots + 6 = 21$'
+    explanation: |
+      The mask is lower-triangular: $\text{mask}[t_x, t_z] = 1$ if $t_z \le t_x$ and 0 otherwise,
+      so row $t$ keeps $t$ entries [^1]. For $\ell = 6$ that is $6 \cdot 7 / 2 = 21$ entries, the
+      other 15 (the future tokens) get weight exactly 0. This is what lets the output at position
+      $t$ depend only on $\mathbf{X}[1{:}t]$ and be trained to predict token $t + 1$ [^1].
+    references:
+      - source: trusthlt-nlp
+        locator: Lecture 9 slides, frames 'Uni-directional masking for self-attention' and 'Left-to-right masked self-attention'
+        url: https://github.com/trusthlt/nlp-with-deep-learning-lectures/blob/751182ea7a6a6f2246bbd8313329ecd09d270dbc/lectures/lecture09/pdf/nlpwdl2025-lecture09-handout.pdf
+    source:
+      id: trusthlt-nlp
+      ref: lectures/lecture09/nlpwdl2025-lecture09.tex#causal-mask
+      url: https://github.com/trusthlt/nlp-with-deep-learning-lectures/blob/751182ea7a6a6f2246bbd8313329ecd09d270dbc/lectures/lecture09/pdf/nlpwdl2025-lecture09-handout.pdf
+    status: draft
+  - id: transformers-039
+    type: single
+    difficulty: medium
+    tags:
+      - causal-mask
+      - softmax
+      - masked-self-attention
+    question: |
+      To stop tokens from attending to future positions, a decoder sets the scaled scores of future
+      positions to $-\infty$ **before** the row-wise softmax. Why not instead compute the softmax
+      normally and then set the future weights to 0?
+    options:
+      - text: Each row's weights would no longer sum to 1
+        correct: true
+      - text: The softmax of $-\infty$ is undefined, so the masking must happen afterwards
+        why: $e^{-\infty} = 0$, so masked positions simply get weight 0 and the rest is renormalized; this is exactly why $-\infty$ is used [^1].
+      - text: Both ways give exactly the same attention weights
+        why: Zeroing after the softmax leaves the remaining weights unchanged, so they sum to less than 1 and differ from the renormalized ones [^1].
+      - text: Future tokens would still change the value vectors of earlier positions
+        why: Value vectors are computed per token from its own input; the problem is only in the weights, which would not be renormalized [^1].
+    explanation: |
+      The masked scores are replaced by $-\infty$ so that the softmax assigns them exactly zero
+      probability while the allowed positions share all of the probability mass [^1]. Zeroing after
+      the softmax would leave weights that were normalized over all positions, including the future
+      ones, so each row would sum to less than 1 and the output would be a shrunken average.
+    references:
+      - source: trusthlt-nlp
+        locator: Lecture 9 slides, frames 'We want to attend only to previous tokens' and 'Left-to-right masked self-attention'
+        url: https://github.com/trusthlt/nlp-with-deep-learning-lectures/blob/751182ea7a6a6f2246bbd8313329ecd09d270dbc/lectures/lecture09/pdf/nlpwdl2025-lecture09-handout.pdf
+    source:
+      id: trusthlt-nlp
+      ref: lectures/lecture09/nlpwdl2025-lecture09.tex#minus-infinity
+      url: https://github.com/trusthlt/nlp-with-deep-learning-lectures/blob/751182ea7a6a6f2246bbd8313329ecd09d270dbc/lectures/lecture09/pdf/nlpwdl2025-lecture09-handout.pdf
+    status: draft
+  - id: transformers-040
+    type: short_answer
+    difficulty: medium
+    tags:
+      - dot-product-attention
+      - softmax
+      - numerical-stability
+    question: |
+      A decoder scores four encoder states by dot product and gets the raw scores
+      $(927, 397, 148, 929)$. What attention weight does the softmax give to the first encoder
+      state?
+    answer:
+      numeric: 0.119
+      tolerance: 0.002
+      hint: a number, 3 decimals
+      model: $\frac{e^{927}}{e^{927} + e^{397} + e^{148} + e^{929}} \approx \frac{1}{1 + e^{2}} \approx 0.119$
+    explanation: |
+      Dividing numerator and denominator by $e^{929}$ gives $e^{-2}/(e^{-2} + e^{-532} + e^{-781} + 1)
+      \approx 0.119$, and the fourth state gets about 0.881 [^1]. A score difference of only 2
+      already splits the weight 12/88, and states 2 and 3 are effectively ignored [^1]. Computing
+      `np.exp(929)` directly overflows float64 to `inf` (the notebook switches to float128), which
+      is why softmax implementations subtract the maximum score first [^2].
+    references:
+      - source: udacity-dl-pytorch
+        locator: Attention Basics notebook, Attention Scoring; Softmax
+        url: https://github.com/udacity/deep-learning-v2-pytorch/blob/c9404fc86181fc3f0906b368697268257f348535/attention/Attention_Basics_Solution.ipynb
+      - source: d2l
+        locator: Sec. 4.5.2 Softmax Revisited (overflow, subtracting the maximum)
+        url: https://d2l.ai/chapter_linear-classification/softmax-regression-concise.html#softmax-revisited
+    source:
+      id: udacity-dl-pytorch
+      ref: attention/Attention_Basics_Solution.ipynb#softmax-weights
+      url: https://github.com/udacity/deep-learning-v2-pytorch/blob/c9404fc86181fc3f0906b368697268257f348535/attention/Attention_Basics_Solution.ipynb
+    status: draft

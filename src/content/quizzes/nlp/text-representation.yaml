@@ -1271,3 +1271,220 @@ questions:
       ref: lectures/notes/18_intro_to_computer-vision.ipynb#ex18.1
       url: https://github.com/UBC-CS/cpsc330-2025W1/blob/a89d6131a0e2ae5f7ab36f207a3809a5b7137aef/lectures/notes/18_intro_to_computer-vision.ipynb
     status: draft
+  - id: text-representation-038
+    type: multiple
+    difficulty: medium
+    tags:
+      - word2vec
+      - co-occurrence-matrix
+      - dot-product
+    question: |
+      Three words have these rows in a term–term co-occurrence matrix (counts with the context words
+      *data*, *fashion* and *model*):
+
+      | | data | fashion | model |
+      | --- | --- | --- | --- |
+      | word 1 | 10 | 0 | 8 |
+      | word 2 | 0 | 8 | 3 |
+      | word 3 | 6 | 1 | 4 |
+
+      Which statements are true? Select all that apply.
+    options:
+      - text: Co-occurrence rows are long and sparse, while word2vec vectors are short and dense
+        correct: true
+      - text: Passing the co-occurrence matrix to truncated SVD (LSA) gives short, dense word vectors
+        correct: true
+      - text: word2vec needs no manually labelled training data
+        correct: true
+      - text: Doing poorly on word2vec's prediction task is fine, since only the learned weights matter
+        why: The embeddings are useful only because they were trained to solve the context-prediction task; weights that fail at it have not captured word usage [^2].
+      - text: By dot product, word 1 is more similar to word 2 than to word 3
+        why: word 1 · word 2 = 0 + 0 + 24 = 24, while word 1 · word 3 = 60 + 0 + 32 = 92, so word 3 is the more similar one [^1].
+    explanation: |
+      A co-occurrence row has one entry per vocabulary word, so it is long and mostly zero; reducing
+      the matrix with truncated SVD, or training word2vec, gives short dense vectors instead [^1].
+      word2vec turns raw text into a supervised task (predict context words from a target word), so
+      the labels come from the text itself, and the learned weights are the embeddings [^2]. With
+      raw dot products, $(10, 0, 8) \cdot (6, 1, 4) = 92$ beats $(10, 0, 8) \cdot (0, 8, 3) = 24$.
+    references:
+      - source: ubc-dsci563
+        locator: Lecture 5 notes, Sec. 2.2 Term-term co-occurrence matrix and Sec. 3 Dense representations
+        url: https://github.com/UBC-MDS/DSCI_563_unsup-learn/blob/3c429ebfd480f72792fa59def4ab9c072dfa1cf1/lectures/notes/05_word-embeddings.ipynb
+      - source: ubc-dsci563
+        locator: Lecture 5 notes, Sec. 3.2 Creating dense representations (word2vec)
+        url: https://github.com/UBC-MDS/DSCI_563_unsup-learn/blob/3c429ebfd480f72792fa59def4ab9c072dfa1cf1/lectures/notes/05_word-embeddings.ipynb
+    source:
+      id: ubc-dsci563
+      ref: lectures/notes/05_word-embeddings.ipynb#ex5.1
+      url: https://github.com/UBC-MDS/DSCI_563_unsup-learn/blob/3c429ebfd480f72792fa59def4ab9c072dfa1cf1/lectures/notes/05_word-embeddings.ipynb
+    status: draft
+  - id: text-representation-039
+    type: multiple
+    difficulty: medium
+    tags:
+      - word2vec
+      - fasttext
+      - pretrained-embeddings
+      - oov
+    question: |
+      You must choose between word2vec, fastText and pretrained embeddings for a text project.
+      Which statements are true? Select all that apply.
+    options:
+      - text: With a vocabulary of 20,000 words, each word2vec embedding has 20,000 dimensions to capture the word's full meaning
+        why: The embedding size is a small hyperparameter (typically 100–300), independent of the vocabulary size; that is what makes the vectors dense [^1].
+      - text: A word2vec model has no vector for a word that was not in its training vocabulary
+        correct: true
+      - text: A fastText model can give a vector even for a word that was not in its training vocabulary
+        correct: true
+      - text: For a huge biomedical corpus full of domain terms and abbreviations, training your own embeddings beats using Google News embeddings
+        correct: true
+      - text: If new text keeps bringing unknown words, fastText (trained yourself or pretrained) is a sensible choice
+        correct: true
+    explanation: |
+      word2vec learns one dense vector of a fixed, small size per vocabulary word, so a word it never
+      saw simply has no vector [^1]. fastText represents a word by its character n-grams, so it can
+      build a vector for an unseen word from its pieces, which helps when new words keep appearing
+      [^1]. Pretrained embeddings reflect the corpus they were trained on; a large domain-specific
+      corpus is better served by embeddings trained on that domain [^1].
+    references:
+      - source: ubc-dsci563
+        locator: Lecture 5 notes, Sec. 4.1 Training word2vec embeddings, 4.2 Pre-trained embeddings, 4.5 Other popular methods (fastText)
+        url: https://github.com/UBC-MDS/DSCI_563_unsup-learn/blob/3c429ebfd480f72792fa59def4ab9c072dfa1cf1/lectures/notes/05_word-embeddings.ipynb
+    source:
+      id: ubc-dsci563
+      ref: lectures/notes/05_word-embeddings.ipynb#ex5.2
+      url: https://github.com/UBC-MDS/DSCI_563_unsup-learn/blob/3c429ebfd480f72792fa59def4ab9c072dfa1cf1/lectures/notes/05_word-embeddings.ipynb
+    status: draft
+  - id: text-representation-040
+    type: short_answer
+    difficulty: medium
+    tags:
+      - fasttext
+      - character-n-grams
+      - subword
+    question: |
+      fastText represents a word by its character $n$-grams for $3 \le n \le 6$, after adding the
+      boundary symbols `<` and `>`. For "eating" this gives 18 $n$-grams (`<ea`, `eat`, …,
+      `ating>`). How many $n$-grams with $3 \le n \le 6$ does the word "where" get?
+    answer:
+      numeric: 14
+      tolerance: 0
+      hint: a whole number
+      model: '`<where>` has 7 characters: $5 + 4 + 3 + 2 = 14$ $n$-grams for $n = 3, 4, 5, 6$'
+    explanation: |
+      A string of length $L$ has $L - n + 1$ substrings of length $n$. With boundary symbols,
+      `<where>` has $L = 7$, giving $5 + 4 + 3 + 2 = 14$ $n$-grams; `<eating>` has $L = 8$ and
+      $6 + 5 + 4 + 3 = 18$, as on the slide [^1]. The word vector is the sum of these $n$-gram
+      vectors; fastText also adds the whole word `<where>` as one extra unit [^2]. The boundary
+      symbols distinguish the 3-gram `her` inside "where" from the word `<her>` [^2].
+    references:
+      - source: trusthlt-nlp
+        locator: Lecture 5 slides, appendix frames 'FastText embeddings' and 'FastText embeddings example'
+        url: https://github.com/trusthlt/nlp-with-deep-learning-lectures/blob/751182ea7a6a6f2246bbd8313329ecd09d270dbc/lectures/lecture05/pdf/nlpwdl2025-lecture05-handout.pdf
+      - source: d2l
+        locator: Sec. 15.6.1 The fastText Model
+        url: https://d2l.ai/chapter_natural-language-processing-pretraining/subword-embedding.html#the-fasttext-model
+    source:
+      id: trusthlt-nlp
+      ref: lectures/lecture05/nlpwdl2025-lecture05.tex#fasttext-example
+      url: https://github.com/trusthlt/nlp-with-deep-learning-lectures/blob/751182ea7a6a6f2246bbd8313329ecd09d270dbc/lectures/lecture05/pdf/nlpwdl2025-lecture05-handout.pdf
+    status: draft
+  - id: text-representation-041
+    type: single
+    difficulty: medium
+    tags:
+      - word2vec
+      - distributional-hypothesis
+      - antonyms
+    question: |
+      A word2vec model trained on news text finds that "hot" and "cold" are among each other's
+      nearest neighbours. What explains this?
+    options:
+      - text: Antonyms appear in similar contexts, which is what word2vec measures
+        correct: true
+      - text: The training corpus was too small for word2vec to tell the two words apart
+        why: More data does not fix it; the contexts of antonyms really are similar, so the effect persists on large corpora [^1].
+      - text: Negative sampling pushes words with opposite meanings towards each other
+        why: Negative sampling pushes randomly sampled words *away* from the context; it knows nothing about meanings [^1].
+      - text: The two words share most of their letters, so their vectors overlap
+        why: word2vec gives each word its own vector, independent of its spelling; "hot" and "cold" share no letters anyway [^1].
+    explanation: |
+      word2vec relies on the distributional hypothesis, so its notion of similarity is purely
+      operational: words are similar if they are used in similar contexts [^1]. Things that can be
+      hot can also be cold, and things that are bought are often sold, so antonyms such as
+      hot/cold and buy/sell tend to get similar vectors [^1]. Other limitations are biases learned
+      from the corpus and one vector per word despite polysemy [^1].
+    references:
+      - source: trusthlt-nlp
+        locator: Lecture 5 slides, frames 'Distributional hypothesis' and 'Limitations of word embeddings (1)–(3)'
+        url: https://github.com/trusthlt/nlp-with-deep-learning-lectures/blob/751182ea7a6a6f2246bbd8313329ecd09d270dbc/lectures/lecture05/pdf/nlpwdl2025-lecture05-handout.pdf
+    source:
+      id: trusthlt-nlp
+      ref: lectures/lecture05/nlpwdl2025-lecture05.tex#embedding-limitations
+      url: https://github.com/trusthlt/nlp-with-deep-learning-lectures/blob/751182ea7a6a6f2246bbd8313329ecd09d270dbc/lectures/lecture05/pdf/nlpwdl2025-lecture05-handout.pdf
+    status: draft
+  - id: text-representation-042
+    type: short_answer
+    difficulty: medium
+    tags:
+      - cosine-similarity
+      - euclidean-distance
+      - dot-product
+    question: |
+      Two word embeddings $\mathbf{u}$ and $\mathbf{v}$ are unit vectors with cosine similarity
+      0.8. What is their squared Euclidean distance $\lVert \mathbf{u} - \mathbf{v} \rVert_2^2$?
+    answer:
+      numeric: 0.4
+      tolerance: 0.001
+      hint: a number, e.g. 1.5
+      model: $\lVert \mathbf{u}-\mathbf{v} \rVert^2 = \mathbf{u}\cdot\mathbf{u} + \mathbf{v}\cdot\mathbf{v} - 2\,\mathbf{u}\cdot\mathbf{v} = 2 - 2(0.8) = 0.4$
+    explanation: |
+      Expanding the square gives
+      $\lVert \mathbf{u} - \mathbf{v} \rVert^2 = \mathbf{u}\cdot\mathbf{u} + \mathbf{v}\cdot\mathbf{v} - 2\,\mathbf{u}\cdot\mathbf{v}$,
+      and for unit vectors the dot product is the cosine, so the result is $2 - 2\cos\theta = 0.4$
+      [^1]. For normalized embeddings, ranking neighbours by smallest Euclidean distance is
+      therefore the same as ranking by largest cosine similarity [^1].
+    references:
+      - source: trusthlt-nlp
+        locator: Lecture 5 slides, frames 'Dot product of unit vectors (aka. cosine similarity)' and 'Dot product vs. Euclidean distance'
+        url: https://github.com/trusthlt/nlp-with-deep-learning-lectures/blob/751182ea7a6a6f2246bbd8313329ecd09d270dbc/lectures/lecture05/pdf/nlpwdl2025-lecture05-handout.pdf
+    source:
+      id: trusthlt-nlp
+      ref: lectures/lecture05/nlpwdl2025-lecture05.tex#dot-vs-euclidean
+      url: https://github.com/trusthlt/nlp-with-deep-learning-lectures/blob/751182ea7a6a6f2246bbd8313329ecd09d270dbc/lectures/lecture05/pdf/nlpwdl2025-lecture05-handout.pdf
+    status: draft
+  - id: text-representation-043
+    type: short_answer
+    difficulty: medium
+    tags:
+      - skip-gram
+      - context-window
+      - word2vec
+    question: |
+      A skip-gram implementation picks, for every center word, a random window size $R$ uniformly
+      from $\{1, 2, 3, 4, 5\}$ and uses the $R$ words before and the $R$ words after it as
+      targets. On average, how many (center, context) training pairs does a word far from the edges
+      of the text produce?
+    answer:
+      numeric: 6
+      tolerance: 0.001
+      hint: a number
+      model: $2\,\mathbb{E}[R] = 2 \times \frac{1+2+3+4+5}{5} = 2 \times 3 = 6$
+    explanation: |
+      Following Mikolov et al., distant words are sampled less often: for $C = 5$ a random
+      $R \in [1, C]$ is drawn per word and $R$ words on each side become targets [^1]. The expected
+      count is $2\,\mathbb{E}[R] = 6$ instead of the 10 of a fixed window of 5. A word at distance
+      $j$ is used only when $R \ge j$, with probability $(6 - j)/5$, so nearby words get more
+      weight [^1][^2].
+    references:
+      - source: udacity-dl-pytorch
+        locator: Skip-gram Word2Vec notebook, Making batches (get_target)
+        url: https://github.com/udacity/deep-learning-v2-pytorch/blob/c9404fc86181fc3f0906b368697268257f348535/word2vec-embeddings/Skip_Grams_Solution.ipynb
+      - title: Mikolov et al. (2013), Efficient Estimation of Word Representations in Vector Space
+        url: https://arxiv.org/abs/1301.3781
+        locator: Sec. 3.2 Continuous Skip-gram Model
+    source:
+      id: udacity-dl-pytorch
+      ref: word2vec-embeddings/Skip_Grams_Solution.ipynb#random-window
+      url: https://github.com/udacity/deep-learning-v2-pytorch/blob/c9404fc86181fc3f0906b368697268257f348535/word2vec-embeddings/Skip_Grams_Solution.ipynb
+    status: draft

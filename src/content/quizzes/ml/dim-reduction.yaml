@@ -848,3 +848,195 @@ questions:
       ref: model-based-learning#independent-component-analysis-b
       url: https://github.com/michaelgutmann/ml-pen-and-paper-exercises/blob/571295dfe49b37d16884b2c5397e62e154ce5f88/topics/model-based-learning.tex
     status: draft
+  - id: dim-reduction-023
+    type: multiple
+    difficulty: medium
+    tags:
+      - pca
+      - reconstruction
+      - number-of-components
+    question: |
+      PCA reduces data $X$ with $d$ features to $Z = XW^\top$ with $k$ components and reconstructs
+      $\hat{X} = ZW$. Which statements are true? Select all that apply.
+    options:
+      - text: Each principal component is a $d$-dimensional vector
+        correct: true
+      - text: The first principal component is the direction with the highest variance in the data
+        correct: true
+      - text: With $k = d$, the transformed data $Z$ is exactly the same as $X$
+        why: With $k = d$ the components only rotate the coordinate system; $Z$ holds the coordinates in the new basis, which generally differ from $X$ [^1].
+      - text: With $k = d$, the reconstruction $\hat{X}$ is exactly the same as $X$
+        correct: true
+      - text: It is best to pick $k$ as large as possible, so that most of the variance is kept
+        why: The point of PCA is a compact representation; $k$ is a trade-off between explained variance and dimension, not something to maximize [^2].
+    explanation: |
+      Each principal component is a direction in the original $d$-dimensional space, and the
+      components are sorted so that the first one captures the most variance [^1]. With $k = d$ the
+      $d$ orthonormal components form a full basis: $Z$ is just $X$ expressed in that rotated basis,
+      and projecting back gives $\hat{X} = X$ with no loss [^1]. In practice $k$ is chosen to keep
+      enough of the variance (for example 90%) while still reducing the dimension [^2].
+    references:
+      - source: ubc-dsci563
+        locator: 'Lecture 3 notes, Principal Component Analysis (PCA): Intuition and terminology; PCA loss function'
+        url: https://github.com/UBC-MDS/DSCI_563_unsup-learn/blob/3c429ebfd480f72792fa59def4ab9c072dfa1cf1/lectures/notes/03_PCA-intro.ipynb
+      - source: ubc-dsci563
+        locator: Lecture 4 notes, Sec. 2 Choosing the number of components k
+        url: https://github.com/UBC-MDS/DSCI_563_unsup-learn/blob/3c429ebfd480f72792fa59def4ab9c072dfa1cf1/lectures/notes/04_More-PCA-LSA-NMF.ipynb
+    source:
+      id: ubc-dsci563
+      ref: lectures/notes/03_PCA-intro.ipynb#ex3.1
+      url: https://github.com/UBC-MDS/DSCI_563_unsup-learn/blob/3c429ebfd480f72792fa59def4ab9c072dfa1cf1/lectures/notes/03_PCA-intro.ipynb
+    status: draft
+  - id: dim-reduction-024
+    type: multiple
+    difficulty: medium
+    tags:
+      - pca
+      - linear-regression
+      - correlation
+    question: |
+      You are deciding whether PCA suits a dataset with many correlated numeric features, and you
+      wonder how it relates to fitting a line. Which statements about PCA are true? Select all that
+      apply.
+    options:
+      - text: Reducing $d$ dimensions to $k \le d$ with PCA means modelling the data with a $k$-dimensional hyperplane
+        correct: true
+      - text: PCA assumes that the variables in the dataset are uncorrelated
+        why: PCA is most useful when features are correlated, because then a few directions capture most of the variance; it makes no such assumption [^1].
+      - text: You can tell which original features dominate a principal component by looking at its weights
+        correct: true
+      - text: Since PCA and linear regression both minimize squared error, PCA is an unsupervised alternative to linear regression
+        why: Linear regression minimizes the vertical error in one target $y$; PCA has no target and minimizes the reconstruction error of all features, measured orthogonally to the subspace [^1].
+    explanation: |
+      PCA finds a $k$-dimensional subspace (a hyperplane through the mean) that best reconstructs the
+      data, and each component's weights $W$ show how much each original feature contributes to it,
+      which is how components are interpreted [^1]. Its loss is the squared distance from each point
+      to its projection on the subspace, summed over all features; linear regression instead predicts
+      one designated target and measures errors along that target only [^1].
+    references:
+      - source: ubc-dsci563
+        locator: Lecture 3 notes, PCA input/output; PCA loss function
+        url: https://github.com/UBC-MDS/DSCI_563_unsup-learn/blob/3c429ebfd480f72792fa59def4ab9c072dfa1cf1/lectures/notes/03_PCA-intro.ipynb
+    source:
+      id: ubc-dsci563
+      ref: lectures/notes/03_PCA-intro.ipynb#ex3.2
+      url: https://github.com/UBC-MDS/DSCI_563_unsup-learn/blob/3c429ebfd480f72792fa59def4ab9c072dfa1cf1/lectures/notes/03_PCA-intro.ipynb
+    status: draft
+  - id: dim-reduction-025
+    type: multiple
+    difficulty: hard
+    tags:
+      - pca
+      - multicollinearity
+      - k-means
+    question: |
+      PCA turns data $X$ ($n \times d$) into $Z$ ($n \times k$) with components $W$, and reconstructs
+      $\hat{x}_i = z_i W$. Which statements are true? Select all that apply.
+    options:
+      - text: A large magnitude of $Z_{i1}$ means component 1 has a strong influence on the reconstruction $\hat{x}_i$
+        correct: true
+      - text: K-Means assigns each example to one cluster, while PCA writes each example as a combination of all components
+        correct: true
+      - text: If two features are perfectly collinear, PCA finds only $d-1$ components that capture any variance
+        correct: true
+      - text: If two features are perfectly collinear, PCA cannot run because their covariance matrix is singular
+        why: PCA still returns $d$ orthogonal components; the component along the redundant direction simply has (almost) zero explained variance [^1].
+      - text: The principal components found by PCA are statistically uncorrelated
+        correct: true
+    explanation: |
+      The reconstruction is $\hat{x}_i = \sum_j Z_{ij} W_j$, so the size of $Z_{i1}$ says how much
+      of component 1 goes into example $i$; where K-Means represents an example by one centroid, PCA
+      uses a weighted mix of all components [^2]. With a feature that is an exact combination of
+      others, PCA still returns $d$ orthogonal vectors, but the variance along the redundant
+      direction is zero [^1]. The scores on different components are uncorrelated, since the
+      components diagonalize the covariance matrix.
+    references:
+      - source: ubc-dsci563
+        locator: Lecture 4 notes, Sec. 3.1 PCA and multicollinearity
+        url: https://github.com/UBC-MDS/DSCI_563_unsup-learn/blob/3c429ebfd480f72792fa59def4ab9c072dfa1cf1/lectures/notes/04_More-PCA-LSA-NMF.ipynb
+      - source: ubc-dsci563
+        locator: Lecture 4 notes, Sec. 1 PCA recap and Sec. 3.3 K-Means and PCA
+        url: https://github.com/UBC-MDS/DSCI_563_unsup-learn/blob/3c429ebfd480f72792fa59def4ab9c072dfa1cf1/lectures/notes/04_More-PCA-LSA-NMF.ipynb
+    source:
+      id: ubc-dsci563
+      ref: lectures/notes/04_More-PCA-LSA-NMF.ipynb#ex4.1
+      url: https://github.com/UBC-MDS/DSCI_563_unsup-learn/blob/3c429ebfd480f72792fa59def4ab9c072dfa1cf1/lectures/notes/04_More-PCA-LSA-NMF.ipynb
+    status: draft
+  - id: dim-reduction-026
+    type: multiple
+    difficulty: hard
+    tags:
+      - lsa
+      - truncated-svd
+      - nmf
+      - topics
+    question: |
+      Which statements about latent semantic analysis (LSA, i.e. truncated SVD), PCA and
+      non-negative matrix factorization (NMF) are true? Select all that apply.
+    options:
+      - text: Unlike a bag-of-words vector, LSA gives a short and dense representation of a document
+        correct: true
+      - text: In LSA, the weight vectors in $W$ can be read as topics extracted from the documents
+        correct: true
+      - text: In LSA, a document's row of the transformed data $Z$ says how strongly each topic is present in it
+        correct: true
+      - text: On a 10-dimensional dataset, PCA with 4 components and PCA with 1 component give the same first component (up to sign)
+        correct: true
+      - text: On a 10-dimensional dataset, NMF with 4 components and NMF with 1 component give the same first component
+        why: NMF components are not nested or sorted by variance; changing the number of components changes all of them [^2].
+    explanation: |
+      LSA applies truncated SVD to the (uncentered) sparse count matrix, $X \approx ZW$: the rows of
+      $W$ are word-weight vectors that act as topics, and each row of $Z$ is a short dense vector of
+      topic weights for one document [^1]. PCA components are sorted by explained variance and are
+      nested, so the first component does not depend on how many you ask for [^2]. NMF only requires
+      $Z$ and $W$ to be non-negative; its components are neither orthogonal nor ordered, so they are
+      re-estimated together for each choice of $k$ [^2].
+    references:
+      - source: ubc-dsci563
+        locator: Lecture 4 notes, Sec. 4.2 Latent Semantic Analysis (LSA)
+        url: https://github.com/UBC-MDS/DSCI_563_unsup-learn/blob/3c429ebfd480f72792fa59def4ab9c072dfa1cf1/lectures/notes/04_More-PCA-LSA-NMF.ipynb
+      - source: ubc-dsci563
+        locator: Lecture 4 notes, Sec. 4.3 Non-negative matrix factorization (NMF)
+        url: https://github.com/UBC-MDS/DSCI_563_unsup-learn/blob/3c429ebfd480f72792fa59def4ab9c072dfa1cf1/lectures/notes/04_More-PCA-LSA-NMF.ipynb
+    source:
+      id: ubc-dsci563
+      ref: lectures/notes/04_More-PCA-LSA-NMF.ipynb#ex4.2
+      url: https://github.com/UBC-MDS/DSCI_563_unsup-learn/blob/3c429ebfd480f72792fa59def4ab9c072dfa1cf1/lectures/notes/04_More-PCA-LSA-NMF.ipynb
+    status: draft
+  - id: dim-reduction-027
+    type: single
+    difficulty: medium
+    tags:
+      - lsa
+      - topic-modeling
+      - matrix-factorization
+    question: |
+      You use LSA for topic modelling: the bag-of-words matrix of $N$ documents and $V$ vocabulary
+      words is factored as $X_{N \times V} \approx Z_{N \times K}\, W_{K \times V}$ with $K$ topics.
+      Which matrix tells you how much of each topic every document contains?
+    options:
+      - text: $Z$, with one row of topic weights per document
+        correct: true
+      - text: $W$, with one row of word weights per topic
+        why: $W$ describes the topics themselves, i.e. how strongly each word belongs to each topic [^1].
+      - text: $W^\top$, with one row of topic weights per vocabulary word
+        why: The rows of $W^\top$ are indexed by words, not documents, so they cannot describe a document's topic mix [^1].
+      - text: $X$, since its counts already give each document's topic mix
+        why: $X$ holds raw word counts; topics only appear after the factorization [^1].
+    explanation: |
+      In $X \approx ZW$, row $i$ of $Z$ gives the weights of the $K$ topics for document $i$, and
+      row $k$ of $W$ gives the weights of the $V$ words for topic $k$ [^1]. So $Z$ is the
+      topic-per-document view and $W$ the word-per-topic view, the same reading used for LSA on the
+      toy fruit/city documents [^2].
+    references:
+      - source: ubc-dsci563
+        locator: 'Lecture 6 notes, Exercise: Questions for class discussion, question 2 (with solution)'
+        url: https://github.com/UBC-MDS/DSCI_563_unsup-learn/blob/3c429ebfd480f72792fa59def4ab9c072dfa1cf1/lectures/notes/06_topic-modeling.ipynb
+      - source: ubc-dsci563
+        locator: Lecture 4 notes, Sec. 4.2 Latent Semantic Analysis (LSA)
+        url: https://github.com/UBC-MDS/DSCI_563_unsup-learn/blob/3c429ebfd480f72792fa59def4ab9c072dfa1cf1/lectures/notes/04_More-PCA-LSA-NMF.ipynb
+    source:
+      id: ubc-dsci563
+      ref: lectures/notes/06_topic-modeling.ipynb#ex6-discussion2
+      url: https://github.com/UBC-MDS/DSCI_563_unsup-learn/blob/3c429ebfd480f72792fa59def4ab9c072dfa1cf1/lectures/notes/06_topic-modeling.ipynb
+    status: draft
