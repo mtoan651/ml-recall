@@ -11,6 +11,7 @@ uv run mlr check                 # validate bank + quality report (must pass bef
 uv run mlr import <source|all> [--dry-run]
 uv run mlr stats                 # Markdown stats table (README)
 uv run mlr schema                # re-export schema/*.schema.json after editing schema.py
+uv run mlr figs                  # re-render question figures from their generator scripts
 uv run pytest && uv run ruff check . && uv run ruff format --check .
 
 pnpm install && pnpm dev         # web app at http://localhost:4321/ml-recall/ (Node 24 + pnpm)
@@ -39,4 +40,5 @@ pnpm lint && pnpm test && pnpm check && pnpm build   # must pass before committi
   `docs/content-pipeline.md#writing-good-questions`. Verify facts against the cited source.
 - Do not fetch pages whose terms forbid ingestion by LLMs/AI (e.g. all OpenStax books since
   July 2026; see `docs/sources.md`), and do not cite them.
+- Keep imported questions that show pictures: redraw them from code (`docs/figures.md`), don't drop them.
 - Run `uv run mlr check` after every data change and fix all errors.

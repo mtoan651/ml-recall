@@ -127,13 +127,17 @@ def curate(source_id: str, items: list[Item]) -> tuple[list[Item], Counter]:
 
 def _apply_fix(item: Item, fix: dict[str, Any]) -> None:
     data = item.data
-    for key in ("type", "question", "explanation", "shuffle"):
+    for key in ("type", "question", "explanation", "shuffle", "figure", "explanation_figure"):
         if key in fix:
             data[key] = fix[key]
+    if "answer" in fix:  # e.g. a model answer whose upstream solution was only a picture
+        data["answer"] = {**(data.get("answer") or {}), **fix["answer"]}
     for idx, text in (fix.get("options") or {}).items():
         data["options"][int(idx)]["text"] = text
     for idx, text in (fix.get("why") or {}).items():  # null removes unhelpful upstream feedback
         data["options"][int(idx)]["why"] = text
+    for idx, image in (fix.get("images") or {}).items():  # redrawn option pictures
+        data["options"][int(idx)]["image"] = image
     if "correct" in fix:
         wanted = {int(i) for i in fix["correct"]}
         for i, opt in enumerate(data["options"]):
@@ -195,7 +199,12 @@ def _question(source_id: str, item: Item, num: int) -> dict[str, Any]:
     if data.get("shuffle") is True:
         data.pop("shuffle")  # default
     data["options"] = [
-        {"text": o["text"], "correct": True if o.get("correct") else None, "why": o.get("why")}
+        {
+            "text": o["text"],
+            "correct": True if o.get("correct") else None,
+            "why": o.get("why"),
+            "image": o.get("image"),
+        }
         for o in options
     ] or None
     data["source"] = {"id": source_id, "ref": item.ref, "url": item.url}
