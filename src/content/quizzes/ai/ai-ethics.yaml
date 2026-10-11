@@ -794,3 +794,83 @@ questions:
       ref: quiz-6/q3
       url: https://github.com/microsoft/ML-For-Beginners/blob/de2d4e12236445198213a0711855e348e7253cd4/quiz-app/src/assets/translations/en.json
     status: draft
+  - id: ai-ethics-028
+    type: single
+    difficulty: medium
+    tags:
+      - bias-measurement
+      - language-models
+      - crows-pairs
+    question: |
+      To test a masked language model for bias, you compare the probabilities it assigns to two sentences that differ
+      in one word: "The tigers are looking for their prey in the jungles." versus "The compsognathus are looking for
+      their prey in the jungles." The first gets a much higher probability. Why is this weak evidence that the model is
+      biased against long-extinct animals?
+    options:
+      - text: The swapped words differ in how common they are, and raw sentence probability rewards frequent words
+        correct: true
+      - text: Masked language models cannot score whole sentences, so the comparison is invalid
+        why: A masked model can score a sentence, e.g. by masking tokens one at a time and summing their log-probabilities, as CrowS-Pairs does.
+      - text: The second sentence is ungrammatical, and ungrammatical sentences get probability zero
+        why: Language models give unlikely sentences small, not zero, probability; the confound here is word frequency.
+      - text: Bias can only be measured for social attributes such as gender, so animals are out of scope
+        why: Bias tests can target any attribute; the problem with this test is that word frequency confounds it.
+    explanation: |
+      A rare word such as "compsognathus" lowers a sentence's probability simply because the model has seen it rarely
+      (and it may be split into several unlikely subword tokens), whatever the model "thinks" about the referent [^1].
+      The CrowS-Pairs metric therefore masks the tokens the two sentences share, one at a time, and sums their
+      log-probabilities given the rest, so the differing words are conditioned on rather than scored [^1][^2]. NMA's
+      simplified demo uses raw probabilities, which is acceptable only because its word pairs were chosen with similar
+      frequencies [^1].
+    references:
+      - source: neuromatch-dl
+        locator: W3D1 Tutorial 1, Section 8 Ethics in language models, Think! 8.1 Problems of this approach
+        url: https://github.com/NeuromatchAcademy/course-content-dl/blob/caba36c513fb8139ac3c9e7503f7a769dadde25e/tutorials/W3D1_AttentionAndTransformers/instructor/W3D1_Tutorial1.ipynb
+      - title: 'Nangia et al. (2020), CrowS-Pairs: A Challenge Dataset for Measuring Social Biases in Masked Language Models'
+        url: https://aclanthology.org/2020.emnlp-main.154/
+        locator: Bias metric (pseudo-log-likelihood over the unmodified tokens)
+    source:
+      id: neuromatch-dl
+      ref: W3D1_AttentionAndTransformers/W3D1_Tutorial1#think8.1
+      url: https://github.com/NeuromatchAcademy/course-content-dl/blob/caba36c513fb8139ac3c9e7503f7a769dadde25e/tutorials/W3D1_AttentionAndTransformers/instructor/W3D1_Tutorial1.ipynb
+    status: draft
+  - id: ai-ethics-029
+    type: single
+    difficulty: medium
+    tags:
+      - dataset-bias
+      - shortcut-learning
+      - self-supervised-learning
+    question: |
+      In a biased training set every square appears on the left of the image and every heart on the right; the test
+      set has both shapes everywhere. A supervised shape classifier drops to chance on the test set, while a linear
+      classifier on a SimCLR encoder (pretrained without labels, with random translations among its augmentations)
+      stays accurate. Why?
+    options:
+      - text: The supervised model can use horizontal position as a shortcut; translation augmentations make SimCLR features ignore position
+        correct: true
+      - text: SimCLR was pretrained on the test images, so it has seen every shape at every position
+        why: SimCLR is pretrained on augmented training images and never sees the test set; the augmentations create the robustness.
+      - text: The supervised model has too few parameters to recognize shapes, so it falls back on guessing
+        why: The same model classifies shapes well on unbiased data; on biased data, position is simply an easier cue for the label.
+      - text: Linear classifiers cannot overfit, so any linear probe is robust to biases in its training data
+        why: A linear classifier on position-sensitive features would learn the same shortcut; robustness comes from features that ignore position.
+    explanation: |
+      In the biased training set position perfectly predicts shape, so a supervised network can learn "left means
+      square" instead of the shape itself, and that rule fails on the test set [^1]. SimCLR is pretrained to give two
+      augmented views of the same image similar features; since the views differ by random translations, the encoder
+      becomes insensitive to position and cannot pass the shortcut to the classifier [^1][^2]. Choosing such
+      augmentations requires knowing which factors the task should ignore, which is easy in this toy setting and hard
+      with real data, so reducing bias in data collection still matters [^1].
+    references:
+      - source: neuromatch-dl
+        locator: W3D3 Tutorial 1, Section 7 Ethical considerations for self-supervised learning from biased datasets, Discussion 7.1.1
+        url: https://github.com/NeuromatchAcademy/course-content-dl/blob/caba36c513fb8139ac3c9e7503f7a769dadde25e/tutorials/W3D3_UnsupervisedAndSelfSupervisedLearning/instructor/W3D3_Tutorial1.ipynb
+      - title: Chen et al. (2020), A Simple Framework for Contrastive Learning of Visual Representations (SimCLR)
+        url: https://arxiv.org/abs/2002.05709
+        locator: Sec. 2.1 The Contrastive Learning Framework
+    source:
+      id: neuromatch-dl
+      ref: W3D3_UnsupervisedAndSelfSupervisedLearning/W3D3_Tutorial1#think7.1.1
+      url: https://github.com/NeuromatchAcademy/course-content-dl/blob/caba36c513fb8139ac3c9e7503f7a769dadde25e/tutorials/W3D3_UnsupervisedAndSelfSupervisedLearning/instructor/W3D3_Tutorial1.ipynb
+    status: draft

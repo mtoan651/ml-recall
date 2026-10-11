@@ -417,3 +417,195 @@ questions:
       ref: intro-to-pytorch/Part 8 - Transfer Learning (Solution).ipynb#imagenet-normalization
       url: https://github.com/udacity/deep-learning-v2-pytorch/blob/c9404fc86181fc3f0906b368697268257f348535/intro-to-pytorch/Part%208%20-%20Transfer%20Learning%20(Solution).ipynb
     status: draft
+  - id: transfer-learning-012
+    type: single
+    difficulty: medium
+    tags:
+      - fine-tuning
+      - linear-probe
+      - pretrained-models
+    question: |
+      You adapt an ImageNet-pretrained ResNet to a new image task in two ways: fine-tuning all layers, or freezing the
+      network and training only a new final linear layer (a linear readout). When should you expect the two to
+      perform about equally well?
+    options:
+      - text: When the new images are close to the pretraining domain, so the frozen features already suit the task
+        correct: true
+      - text: When the new dataset is very large, since the frozen layers then adapt to it on their own
+        why: Frozen layers never change, whatever the dataset size; with plenty of target data, full fine-tuning tends to pull ahead.
+      - text: When the new images come from a very different domain, such as medical scans
+        why: A distant domain is where frozen ImageNet features fit worst and fine-tuning the whole network helps most.
+      - text: 'Never: training only the last layer is always clearly worse than full fine-tuning'
+        why: When source and target domains are close, the readout performs similarly while being much cheaper to train.
+    explanation: |
+      Fine-tuning can adjust every weight to the new data, while a linear readout keeps the pretrained features and only
+      learns how to combine them [^1]. If the target images resemble the pretraining data, those features are already
+      suitable and the readout does about as well, at a fraction of the training cost [^1][^2]. Fine-tuning the whole
+      network pays off more as the domains drift apart, because more of the weights then need to change [^1].
+    references:
+      - source: neuromatch-dl
+        locator: W2D2 Tutorial 1, Section 5 Transfer Learning, Exercise 5.5.2 Training only the classification layer
+        url: https://github.com/NeuromatchAcademy/course-content-dl/blob/caba36c513fb8139ac3c9e7503f7a769dadde25e/tutorials/W2D2_Convnets/instructor/W2D2_Tutorial1.ipynb
+      - source: d2l
+        locator: Sec. 14.2 Fine-Tuning
+        url: https://d2l.ai/chapter_computer-vision/fine-tuning.html
+    source:
+      id: neuromatch-dl
+      ref: W2D2_Convnets/W2D2_Tutorial1#ex5.5.2
+      url: https://github.com/NeuromatchAcademy/course-content-dl/blob/caba36c513fb8139ac3c9e7503f7a769dadde25e/tutorials/W2D2_Convnets/instructor/W2D2_Tutorial1.ipynb
+    status: draft
+  - id: transfer-learning-013
+    type: single
+    difficulty: medium
+    tags:
+      - pretraining
+      - domain-shift
+      - ossification
+    question: |
+      Pretraining on ImageNet and then fine-tuning usually beats training from scratch on a small dataset. In which
+      situation is pretraining least likely to help, and may even hurt?
+    options:
+      - text: The target domain is very different from the pretraining data and plenty of target data is available
+        correct: true
+      - text: The target dataset is small and its images resemble the pretraining images
+        why: 'This is the classic case where pretraining helps most: the features transfer and there is too little data to learn them from scratch.'
+      - text: The model is large and the pretraining dataset is very large
+        why: NMA lists larger models and more pretraining data among the conditions that make pretraining work better.
+      - text: The target task uses ImageNet classes, but the images have a lower resolution
+        why: A close domain with the same classes is a favourable case for transfer, not an unfavourable one.
+    explanation: |
+      Pretraining works better the closer the pretraining and target domains are, the more pretraining data there is,
+      and the larger the model that can use it [^1]. If the source domain is very different, the pretrained features
+      may be unhelpful, and with a lot of target data, starting from pretrained weights can even leave the model in a
+      worse solution than training from scratch [^1]. The Scaling Laws for Transfer paper calls this effect
+      ossification: pretraining can make the weights adapt less well to the fine-tuning distribution in the high-data
+      regime [^2].
+    references:
+      - source: neuromatch-dl
+        locator: W2D2 Tutorial 1, Exercise 5.5.1 Pretrained ResNet vs. ResNet trained from scratch
+        url: https://github.com/NeuromatchAcademy/course-content-dl/blob/caba36c513fb8139ac3c9e7503f7a769dadde25e/tutorials/W2D2_Convnets/instructor/W2D2_Tutorial1.ipynb
+      - title: Hernandez et al. (2021), Scaling Laws for Transfer
+        url: https://arxiv.org/abs/2102.01293
+        locator: Sec. 3.1 Ossification – can pre-training harm performance?
+    source:
+      id: neuromatch-dl
+      ref: W2D2_Convnets/W2D2_Tutorial1#ex5.5.1
+      url: https://github.com/NeuromatchAcademy/course-content-dl/blob/caba36c513fb8139ac3c9e7503f7a769dadde25e/tutorials/W2D2_Convnets/instructor/W2D2_Tutorial1.ipynb
+    status: draft
+  - id: transfer-learning-014
+    type: single
+    difficulty: medium
+    tags:
+      - self-supervised-learning
+      - few-shot
+      - simclr
+    question: |
+      On a shape-classification task, NMA trains a linear classifier on top of different encoders (all with the same
+      architecture) while keeping only a fraction of the labels. With 5% of the labels, the classifier on a SimCLR
+      encoder (pretrained without labels on all images) stays above 90% accuracy, while an encoder trained jointly with
+      the classifier on the labelled images drops to about 45%. What explains the gap?
+    options:
+      - text: SimCLR pretraining uses every image without labels, so the classifier only has to map useful features to classes
+        correct: true
+      - text: SimCLR encoders have more parameters than supervised ones, so they need fewer labels
+        why: The encoders share the same architecture; the difference is the data and the objective used to train them.
+      - text: The supervised encoder sees augmented images, which confuse it when labels are scarce
+        why: 'The issue is the amount of training signal: with 5% of the labels, the supervised encoder has only 5% of the examples to learn from.'
+      - text: A contrastive loss acts like label smoothing, which makes any classifier more accurate
+        why: A contrastive loss compares augmented views of images; it neither uses nor smooths labels.
+    explanation: |
+      The supervised encoder learns only from labelled examples, so cutting the labels to 5% cuts its training set to
+      5%, and its features stop generalizing [^1]. The SimCLR objective needs no labels: the encoder is pretrained on all
+      images to give two augmented views of the same image similar features and different images different features
+      [^1][^2]. If those features already separate shapes, a linear classifier can be fitted from very few labels, which
+      is why self-supervised pretraining helps most when labels are scarce [^1].
+    references:
+      - source: neuromatch-dl
+        locator: W3D3 Tutorial 1, Bonus 3 Good representations enable few-shot learning (Bonus Discussion 3.1.1)
+        url: https://github.com/NeuromatchAcademy/course-content-dl/blob/caba36c513fb8139ac3c9e7503f7a769dadde25e/tutorials/W3D3_UnsupervisedAndSelfSupervisedLearning/instructor/W3D3_Tutorial1.ipynb
+      - title: Chen et al. (2020), A Simple Framework for Contrastive Learning of Visual Representations (SimCLR)
+        url: https://arxiv.org/abs/2002.05709
+        locator: Sec. 2.1 The Contrastive Learning Framework
+    source:
+      id: neuromatch-dl
+      ref: W3D3_UnsupervisedAndSelfSupervisedLearning/W3D3_Tutorial1#think-bonus3.1.1
+      url: https://github.com/NeuromatchAcademy/course-content-dl/blob/caba36c513fb8139ac3c9e7503f7a769dadde25e/tutorials/W3D3_UnsupervisedAndSelfSupervisedLearning/instructor/W3D3_Tutorial1.ipynb
+    status: draft
+  - id: transfer-learning-015
+    type: short_answer
+    difficulty: medium
+    tags:
+      - simclr
+      - contrastive-loss
+      - code-reading
+    question: |
+      A SimCLR loss builds a $2N \times 2N$ cosine-similarity matrix `sim` for $N$ images, each seen in two augmented views
+      (rows $i$ and $i + N$ are the two views of image $i$):
+      ```python
+      pos = torch.roll(torch.eye(2 * N), N, 1)      # 1 where the column is the other view
+      neg = torch.ones(2 * N) - torch.eye(2 * N)    # 1 everywhere except the diagonal
+      numerator = torch.exp(sim / T)[pos.bool()]
+      denominator = torch.sum(torch.exp(sim / T) * neg, dim=1)
+      loss = torch.mean(-torch.log(numerator / denominator))
+      ```
+      With a batch of $N = 4$ images, how many terms are summed in each row of `denominator`?
+    answer:
+      numeric: 7
+      tolerance: 0
+      hint: an integer
+      model: '$2N - 1 = 7$: every view except the anchor itself (its positive plus $2N - 2 = 6$ views of other images)'
+    explanation: |
+      `neg` broadcasts to a $2N \times 2N$ matrix of ones with a zero diagonal, so each row of the denominator sums
+      $\exp(\mathrm{sim}/T)$ over all $2N - 1 = 7$ other views [^1]. One of them is the positive, the other view of the same
+      image, picked out by the rolled identity matrix; the remaining $2N - 2 = 6$ are negatives [^1][^2]. The loss is
+      thus a softmax cross-entropy asking the positive to win against the negatives; with too few negatives, NMA shows
+      that the features partially collapse toward being all alike [^1].
+    references:
+      - source: neuromatch-dl
+        locator: W3D3 Tutorial 1, Section 6 Coding Exercise 6.1.1 Complete a SimCLR loss function, and Bonus 2 Avoiding representational collapse
+        url: https://github.com/NeuromatchAcademy/course-content-dl/blob/caba36c513fb8139ac3c9e7503f7a769dadde25e/tutorials/W3D3_UnsupervisedAndSelfSupervisedLearning/instructor/W3D3_Tutorial1.ipynb
+      - title: Chen et al. (2020), A Simple Framework for Contrastive Learning of Visual Representations (SimCLR)
+        url: https://arxiv.org/abs/2002.05709
+        locator: Sec. 2.1 The Contrastive Learning Framework, Eq. (1)
+    source:
+      id: neuromatch-dl
+      ref: W3D3_UnsupervisedAndSelfSupervisedLearning/W3D3_Tutorial1#ex6.1.1
+      url: https://github.com/NeuromatchAcademy/course-content-dl/blob/caba36c513fb8139ac3c9e7503f7a769dadde25e/tutorials/W3D3_UnsupervisedAndSelfSupervisedLearning/instructor/W3D3_Tutorial1.ipynb
+    status: draft
+  - id: transfer-learning-016
+    type: single
+    difficulty: medium
+    tags:
+      - simclr
+      - contrastive-learning
+      - representational-collapse
+    question: |
+      A SimCLR encoder is pretrained once with the usual many negative pairs per image and once with only 2. With few
+      negatives, the features of most images become highly similar to each other, and a shape classifier on top can no
+      longer tell ovals from squares. What role do the negative pairs play?
+    options:
+      - text: They push the features of different images apart; without enough of them, mapping everything alike satisfies the loss
+        correct: true
+      - text: They provide labels for the classifier, so fewer negatives means fewer labelled examples
+        why: SimCLR never uses labels; negatives are simply the other images in the batch.
+      - text: They are extra augmentations, so fewer negatives means fewer augmented views of each image
+        why: Each image still gets its two augmented views; negatives only change what the anchor is contrasted against.
+      - text: They only speed up training; after enough epochs two negatives give the same features
+        why: 'NMA reports a different solution, not a slower one: too few negatives give a partially collapsed feature space.'
+    explanation: |
+      The positive term rewards giving two views of the same image the same features, which a constant encoder would
+      achieve trivially [^1]. Negative pairs counter this by asking that other images be encoded differently; with only
+      2 negatives that estimate is poor, and the feature space partially collapses, with pairwise similarities piling up
+      near 1 [^1]. In the loss, the negatives are the terms in the softmax denominator that the positive must beat [^2].
+    references:
+      - source: neuromatch-dl
+        locator: W3D3 Tutorial 1, Bonus 2 Avoiding representational collapse (Bonus Discussion 2.1.1)
+        url: https://github.com/NeuromatchAcademy/course-content-dl/blob/caba36c513fb8139ac3c9e7503f7a769dadde25e/tutorials/W3D3_UnsupervisedAndSelfSupervisedLearning/instructor/W3D3_Tutorial1.ipynb
+      - title: Chen et al. (2020), A Simple Framework for Contrastive Learning of Visual Representations (SimCLR)
+        url: https://arxiv.org/abs/2002.05709
+        locator: Sec. 2.1 The Contrastive Learning Framework, Eq. (1)
+    source:
+      id: neuromatch-dl
+      ref: W3D3_UnsupervisedAndSelfSupervisedLearning/W3D3_Tutorial1#think-bonus2.1.1
+      url: https://github.com/NeuromatchAcademy/course-content-dl/blob/caba36c513fb8139ac3c9e7503f7a769dadde25e/tutorials/W3D3_UnsupervisedAndSelfSupervisedLearning/instructor/W3D3_Tutorial1.ipynb
+    status: draft

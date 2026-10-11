@@ -971,3 +971,83 @@ questions:
       ref: 2 - N-grams/n-grams.pdf#interpolation
       url: https://github.com/gustavecortal/natural-language-processing/blob/49945d346964022ea6003bf59a64e11966bbb863/2%20-%20N-grams/n-grams.pdf
     status: draft
+  - id: language-models-028
+    type: true_false
+    difficulty: medium
+    tags:
+      - greedy-decoding
+      - temperature
+      - text-generation
+    question: |
+      This loop generates 100 tokens:
+      ```python
+      input_tokens = tokenizer.encode(prompt)
+      with torch.no_grad():
+          for _ in range(100):
+              logits = model(torch.LongTensor(input_tokens).unsqueeze(0)).logits[0, -1, :]
+              probs = nn.functional.softmax(logits, dim=-1)
+              top_token = torch.argmax(probs).item()
+              input_tokens.append(top_token)
+      ```
+      True or false: dividing `logits` by a temperature of 0.2 before the softmax would change which tokens this loop
+      generates.
+    options:
+      - text: 'True'
+        why: Dividing by a positive temperature keeps the order of the logits, so the argmax, and with it the generated text, stays the same.
+      - text: 'False'
+        correct: true
+    explanation: |
+      The loop is greedy decoding: at each step it appends the single most likely next token and feeds the longer
+      sequence back into the model [^1]. Temperature rescales the logits before the softmax; any positive temperature
+      keeps their order, and softmax preserves rank order, so the argmax and the generated text do not change [^2].
+      Temperature matters only when you sample from the distribution, where a low value such as 0.2 concentrates the
+      probability on the likeliest tokens and a high value spreads it out [^1][^2].
+    references:
+      - source: neuromatch-dl
+        locator: W2D5 Tutorial 2, Section 4, Coding Exercise 4.1 Implement the code to generate text after fine-tuning (and the note on temperature)
+        url: https://github.com/NeuromatchAcademy/course-content-dl/blob/caba36c513fb8139ac3c9e7503f7a769dadde25e/tutorials/W2D5_TimeSeriesAndNaturalLanguageProcessing/instructor/W2D5_Tutorial2.ipynb
+      - title: 'Wikipedia: Softmax function'
+        url: https://en.wikipedia.org/wiki/Softmax_function
+        locator: Definition (temperature) and History (softmax preserves the rank order of its inputs)
+    source:
+      id: neuromatch-dl
+      ref: W2D5_TimeSeriesAndNaturalLanguageProcessing/W2D5_Tutorial2#ex4.1
+      url: https://github.com/NeuromatchAcademy/course-content-dl/blob/caba36c513fb8139ac3c9e7503f7a769dadde25e/tutorials/W2D5_TimeSeriesAndNaturalLanguageProcessing/instructor/W2D5_Tutorial2.ipynb
+    status: draft
+  - id: language-models-029
+    type: single
+    difficulty: easy
+    tags:
+      - evaluation
+      - code-generation
+      - metrics
+    question: |
+      You fine-tune a code model and evaluate it with token-level accuracy: the fraction of generated tokens that
+      exactly match a reference solution. Why is this a poor metric for code generation?
+    options:
+      - text: Many different programs do the same thing, so correct code can score low and similar-looking broken code high
+        correct: true
+      - text: Accuracy can only be computed for classifiers, not for models that generate sequences
+        why: Token accuracy is computable for any next-token predictor; the problem is what it measures.
+      - text: Accuracy is too slow to compute over long source files during evaluation
+        why: Comparing tokens is cheap; the issue is that matching text is not the same as correct behaviour.
+      - text: Accuracy rewards longer outputs, so the model learns to pad its code
+        why: Exact-match accuracy does not favour length; it rewards copying the surface form of the reference.
+    explanation: |
+      Exact token matching measures surface similarity to one reference, but code has many valid implementations of the
+      same function [^1]. A correct solution written differently gets a low score, while code that mimics the reference
+      but contains a logical error can score well; accuracy ignores whether the program runs and meets its
+      requirements [^1]. Execution-based metrics such as pass@k, which run unit tests on the generated code, address
+      this [^2].
+    references:
+      - source: neuromatch-dl
+        locator: W2D5 Tutorial 2, Think 4.3 Accuracy metric observations
+        url: https://github.com/NeuromatchAcademy/course-content-dl/blob/caba36c513fb8139ac3c9e7503f7a769dadde25e/tutorials/W2D5_TimeSeriesAndNaturalLanguageProcessing/instructor/W2D5_Tutorial2.ipynb
+      - title: Chen et al. (2021), Evaluating Large Language Models Trained on Code
+        url: https://arxiv.org/abs/2107.03374
+        locator: Sec. 2.1 Functional Correctness
+    source:
+      id: neuromatch-dl
+      ref: W2D5_TimeSeriesAndNaturalLanguageProcessing/W2D5_Tutorial2#think4.3
+      url: https://github.com/NeuromatchAcademy/course-content-dl/blob/caba36c513fb8139ac3c9e7503f7a769dadde25e/tutorials/W2D5_TimeSeriesAndNaturalLanguageProcessing/instructor/W2D5_Tutorial2.ipynb
+    status: draft

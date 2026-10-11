@@ -211,3 +211,43 @@ questions:
       ref: chapter_natural-language-processing-applications/finetuning-bert#ex1
       url: https://d2l.ai/chapter_natural-language-processing-applications/finetuning-bert.html#exercises
     status: draft
+  - id: fine-tuning-007
+    type: single
+    difficulty: medium
+    tags:
+      - causal-language-modeling
+      - data-collator
+      - domain-adaptation
+    question: |
+      A small GPT-2 model pretrained on Python code, given the prompt `class SimpleAdder {`, quickly falls back into
+      Python syntax. NMA fine-tunes it on JavaScript files with
+      ```python
+      data_collator = DataCollatorForLanguageModeling(tokenizer=tokenizer, mlm=False)
+      ```
+      What training objective does `mlm=False` select?
+    options:
+      - text: 'Causal language modelling: the labels are the inputs themselves, and each next token is predicted'
+        correct: true
+      - text: 'Masked language modelling: some tokens are hidden and predicted from both sides'
+        why: That is `mlm=True`, the BERT-style objective; a GPT-style decoder is trained left to right.
+      - text: 'Sequence classification: each file is labelled "JavaScript" or "Python"'
+        why: The collator builds language-modelling batches; no class labels are involved.
+      - text: Instruction tuning on prompt–answer pairs, with the loss only on the answers
+        why: Plain code files have no prompt/answer split; every token is a training target.
+    explanation: |
+      With `mlm=False` the collator prepares causal language modelling: it copies the input ids into the labels, and the
+      model shifts them internally so that each position predicts the next token, the same objective GPT-2 was
+      pretrained with [^1][^2]. Continuing this objective on JavaScript moves the model into the new domain; after a
+      short run it completes the prompt with a JavaScript `constructor` instead of Python syntax [^1].
+    references:
+      - source: neuromatch-dl
+        locator: W2D5 Tutorial 2, Section 4 NLG with GPT, Fine-Tuning
+        url: https://github.com/NeuromatchAcademy/course-content-dl/blob/caba36c513fb8139ac3c9e7503f7a769dadde25e/tutorials/W2D5_TimeSeriesAndNaturalLanguageProcessing/instructor/W2D5_Tutorial2.ipynb
+      - source: hf-llm-course
+        locator: Chapter 7, Training a causal language model from scratch (data collator with mlm=False)
+        url: https://huggingface.co/learn/llm-course/chapter7/6
+    source:
+      id: neuromatch-dl
+      ref: W2D5_TimeSeriesAndNaturalLanguageProcessing/W2D5_Tutorial2#sec4-finetuning
+      url: https://github.com/NeuromatchAcademy/course-content-dl/blob/caba36c513fb8139ac3c9e7503f7a769dadde25e/tutorials/W2D5_TimeSeriesAndNaturalLanguageProcessing/instructor/W2D5_Tutorial2.ipynb
+    status: draft

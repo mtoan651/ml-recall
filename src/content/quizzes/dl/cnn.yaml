@@ -1389,3 +1389,211 @@ questions:
       ref: convolutional-neural-networks/cifar-cnn/cifar10_cnn_solution.ipynb#fc1-parameters
       url: https://github.com/udacity/deep-learning-v2-pytorch/blob/c9404fc86181fc3f0906b368697268257f348535/convolutional-neural-networks/cifar-cnn/cifar10_cnn_solution.ipynb
     status: draft
+  - id: cnn-039
+    type: short_answer
+    difficulty: easy
+    tags:
+      - convolution
+      - cross-correlation
+      - blur
+    question: |
+      A $2 \times 2$ kernel with all entries $\tfrac14$ slides over the image below with stride 1 and no padding, as in a CNN
+      layer (cross-correlation):
+      $$\begin{bmatrix}0 & 200 & 200\\ 0 & 0 & 200\\ 0 & 0 & 0\end{bmatrix}$$
+      The output is $2 \times 2$. What is its top-right entry?
+    answer:
+      numeric: 150
+      tolerance: 0
+      hint: a number
+      model: $(200 + 200 + 0 + 200)/4 = 150$
+    explanation: |
+      Each output entry is the sum of the element-wise products of the kernel with one $2 \times 2$ window of the image
+      [^1][^2]. The top-right window is $\begin{bmatrix}200 & 200\\ 0 & 200\end{bmatrix}$, and with all weights $\tfrac14$ the
+      entry is the window's mean, $600/4 = 150$ [^1]. The full output is $\begin{bmatrix}50 & 150\\ 0 & 50\end{bmatrix}$: this
+      kernel is a box blur that averages neighbouring pixels [^1].
+    references:
+      - source: neuromatch-dl
+        locator: W2D2 Tutorial 1, Section 2, Coding Exercise 2.1 Convolution of a Simple Kernel
+        url: https://github.com/NeuromatchAcademy/course-content-dl/blob/caba36c513fb8139ac3c9e7503f7a769dadde25e/tutorials/W2D2_Convnets/instructor/W2D2_Tutorial1.ipynb
+      - source: d2l
+        locator: Sec. 7.2.1 The Cross-Correlation Operation
+        url: https://d2l.ai/chapter_convolutional-neural-networks/conv-layer.html#the-cross-correlation-operation
+    source:
+      id: neuromatch-dl
+      ref: W2D2_Convnets/W2D2_Tutorial1#ex2.1
+      url: https://github.com/NeuromatchAcademy/course-content-dl/blob/caba36c513fb8139ac3c9e7503f7a769dadde25e/tutorials/W2D2_Convnets/instructor/W2D2_Tutorial1.ipynb
+    status: draft
+  - id: cnn-040
+    type: single
+    difficulty: medium
+    tags:
+      - edge-detection
+      - kernels
+    question: |
+      The kernel $\begin{bmatrix}1 & -1\\ 1 & -1\end{bmatrix}$ responds strongly to vertical edges (a left–right change in
+      brightness). You transpose it to $\begin{bmatrix}1 & 1\\ -1 & -1\end{bmatrix}$ and apply it to an image that contains only
+      a vertical edge: bright columns on the left, dark on the right, every row identical. What does the transposed
+      kernel detect, and what does it output on this image?
+    options:
+      - text: Horizontal edges; on this image it outputs zero everywhere
+        correct: true
+      - text: Vertical edges again; it outputs the same map with the sign flipped
+        why: 'Transposing swaps rows and columns: the kernel now compares the top row of each window with the bottom row, i.e. it detects horizontal edges.'
+      - text: Horizontal edges; it outputs large values along the vertical edge
+        why: Every row is identical, so top minus bottom is zero in every window, including those on the edge.
+      - text: Diagonal edges; it outputs half the response of the original kernel
+        why: The transposed kernel subtracts the bottom row from the top row, a horizontal-edge detector, and its response here is exactly zero.
+    explanation: |
+      The transposed kernel adds the top row of each $2 \times 2$ window and subtracts the bottom row, so it responds to
+      brightness changes from top to bottom: horizontal edges [^1]. In an image with a purely vertical edge every row is
+      identical, so top and bottom cancel in every window and the output is 0 everywhere [^1][^2]. The original kernel,
+      which subtracts the right column from the left, is the one that fires on this edge [^1].
+    references:
+      - source: neuromatch-dl
+        locator: W2D2 Tutorial 1, Section 2.2 Padding and Edge Detection, Think! 2.2.1 and Think! 2.2.2 Kernel structure
+        url: https://github.com/NeuromatchAcademy/course-content-dl/blob/caba36c513fb8139ac3c9e7503f7a769dadde25e/tutorials/W2D2_Convnets/instructor/W2D2_Tutorial1.ipynb
+      - source: d2l
+        locator: Sec. 7.2.3 Object Edge Detection in Images
+        url: https://d2l.ai/chapter_convolutional-neural-networks/conv-layer.html#object-edge-detection-in-images
+    source:
+      id: neuromatch-dl
+      ref: W2D2_Convnets/W2D2_Tutorial1#think2.2.2
+      url: https://github.com/NeuromatchAcademy/course-content-dl/blob/caba36c513fb8139ac3c9e7503f7a769dadde25e/tutorials/W2D2_Convnets/instructor/W2D2_Tutorial1.ipynb
+    status: draft
+  - id: cnn-041
+    type: short_answer
+    difficulty: easy
+    tags:
+      - output-shape
+      - pooling
+      - flatten
+    question: |
+      A CNN for $28 \times 28$ grayscale letters has these layers in order (stride 1 and no padding for the
+      convolutions): `Conv2d(1, 32, kernel_size=3)`, ReLU, `Conv2d(32, 64, kernel_size=3)`, ReLU, `MaxPool2d(2)`,
+      flatten, `Linear(in_features, 128)`, ReLU, `Linear(128, 2)`. What must `in_features` be?
+    answer:
+      numeric: 9216
+      tolerance: 0
+      hint: an integer
+      model: $28 \to 26 \to 24 \to 12$; $64 \times 12 \times 12 = 9216$
+    explanation: |
+      Each 3×3 convolution without padding removes 2 rows and 2 columns ($28 \to 26 \to 24$), and 2×2 max-pooling halves the
+      size to 12 [^1][^2]. Flattening 64 channels of $12 \times 12$ gives 9216 features [^1]. This first linear layer has
+      $9216 \cdot 128 + 128 \approx 1.18$ million parameters, far more than the two convolutions together
+      ($320 + 18496$): dense layers on top of feature maps, not the convolutions, dominate the parameter count [^1].
+    references:
+      - source: neuromatch-dl
+        locator: W2D2 Tutorial 1, Section 4 Putting it all together, Coding Exercise 4 Implement your own CNN
+        url: https://github.com/NeuromatchAcademy/course-content-dl/blob/caba36c513fb8139ac3c9e7503f7a769dadde25e/tutorials/W2D2_Convnets/instructor/W2D2_Tutorial1.ipynb
+      - source: d2l
+        locator: Sec. 7.5 Pooling
+        url: https://d2l.ai/chapter_convolutional-neural-networks/pooling.html
+    source:
+      id: neuromatch-dl
+      ref: W2D2_Convnets/W2D2_Tutorial1#ex4
+      url: https://github.com/NeuromatchAcademy/course-content-dl/blob/caba36c513fb8139ac3c9e7503f7a769dadde25e/tutorials/W2D2_Convnets/instructor/W2D2_Tutorial1.ipynb
+    status: draft
+  - id: cnn-042
+    type: short_answer
+    difficulty: hard
+    tags:
+      - resnext
+      - grouped-convolution
+      - parameter-count
+    question: |
+      A ResNet bottleneck block with 256 input and output channels uses a 1×1 convolution to 64 channels, a 3×3
+      convolution from 64 to 64 channels and a 1×1 convolution back to 256: $256 \cdot 64 + 9 \cdot 64 \cdot 64 + 64 \cdot 256 = 69632$
+      weights (ignoring biases). A ResNeXt block instead has 32 parallel paths, each a 1×1 convolution from 256 to 4
+      channels, a 3×3 convolution from 4 to 4 and a 1×1 convolution from 4 to 256, with the path outputs summed. How many
+      weights does the ResNeXt block have (ignoring biases)?
+    answer:
+      numeric: 70144
+      tolerance: 0
+      hint: an integer
+      model: $32 \times (256 \cdot 4 + 9 \cdot 4 \cdot 4 + 4 \cdot 256) = 32 \times 2192 = 70144$
+    explanation: |
+      Each path costs $1024 + 144 + 1024 = 2192$ weights, and 32 paths give $70144$, almost the same as the ResNet block
+      [^1][^2]. For that budget ResNeXt has $32 \times 4 = 128$ channels in its bottleneck instead of 64, but each 3×3
+      convolution mixes only the 4 channels of its own path, which is a grouped convolution [^1][^2]. The wider bottleneck
+      tends to outweigh the restricted mixing, which is why ResNeXt usually outperforms ResNet at equal cost [^1].
+    references:
+      - source: neuromatch-dl
+        locator: W2D2 Tutorial 3, Section 4 Inception + ResNeXt, Interactive Demo 4 and Think! 4 ResNet vs. ResNeXt
+        url: https://github.com/NeuromatchAcademy/course-content-dl/blob/caba36c513fb8139ac3c9e7503f7a769dadde25e/tutorials/W2D2_Convnets/instructor/W2D2_Tutorial3.ipynb
+      - title: Xie et al. (2017), Aggregated Residual Transformations for Deep Neural Networks
+        url: https://arxiv.org/abs/1611.05431
+        locator: Sec. 3.4 Model Capacity, Eq. (4)
+    source:
+      id: neuromatch-dl
+      ref: W2D2_Convnets/W2D2_Tutorial3#think4
+      url: https://github.com/NeuromatchAcademy/course-content-dl/blob/caba36c513fb8139ac3c9e7503f7a769dadde25e/tutorials/W2D2_Convnets/instructor/W2D2_Tutorial3.ipynb
+    status: draft
+  - id: cnn-043
+    type: short_answer
+    difficulty: medium
+    tags:
+      - depthwise-separable-convolution
+      - mobilenet
+      - parameter-count
+    question: |
+      A convolution maps 64 input channels to 2 output channels with 3×3 kernels (no biases). A depthwise separable
+      version uses one 3×3 filter per input channel (depthwise step), followed by a 1×1 convolution from 64 to 2
+      channels (pointwise step). How many fewer weights does the depthwise separable version need?
+    answer:
+      numeric: 448
+      tolerance: 0
+      hint: an integer
+      model: 'Regular: $64 \cdot 3 \cdot 3 \cdot 2 = 1152$; separable: $64 \cdot 9 + 64 \cdot 2 = 704$; difference $448$'
+    explanation: |
+      A regular convolution has a 3×3 kernel for every pair of input and output channels: $64 \cdot 9 \cdot 2 = 1152$ weights
+      [^1]. The depthwise step filters each input channel separately ($64 \cdot 9 = 576$) and the pointwise 1×1 step mixes
+      the channels ($64 \cdot 2 = 128$), 704 in total [^1][^2]. With only 4 input channels the saving is $72 - 44 = 28$; it
+      grows with the number of channels, which is why MobileNets use this factorization throughout [^1][^2].
+    references:
+      - source: neuromatch-dl
+        locator: W2D2 Tutorial 3, Section 5 Depthwise separable convolutions, Coding Exercise 5.1 and Think! 5.1
+        url: https://github.com/NeuromatchAcademy/course-content-dl/blob/caba36c513fb8139ac3c9e7503f7a769dadde25e/tutorials/W2D2_Convnets/instructor/W2D2_Tutorial3.ipynb
+      - title: 'Howard et al. (2017), MobileNets: Efficient Convolutional Neural Networks for Mobile Vision Applications'
+        url: https://arxiv.org/abs/1704.04861
+        locator: Sec. 3.1 Depthwise Separable Convolution
+    source:
+      id: neuromatch-dl
+      ref: W2D2_Convnets/W2D2_Tutorial3#think5.1
+      url: https://github.com/NeuromatchAcademy/course-content-dl/blob/caba36c513fb8139ac3c9e7503f7a769dadde25e/tutorials/W2D2_Convnets/instructor/W2D2_Tutorial3.ipynb
+    status: draft
+  - id: cnn-044
+    type: single
+    difficulty: medium
+    tags:
+      - inductive-bias
+      - mlp
+      - feature-learning
+    question: |
+      An MLP is trained on images by flattening each image into a vector. When you visualize its first-layer weights as
+      images, you do not see the small edge-like filters that the first layer of a CNN typically learns. Why?
+    options:
+      - text: An MLP has no built-in bias toward local, translation-equivariant features, so nothing favours edge filters
+        correct: true
+      - text: Only the last layer of an MLP gets trained, so the first layer keeps its random initial weights
+        why: Backpropagation trains every layer; the first layer does learn features, just not localized edge filters.
+      - text: Flattening destroys the pixel values, so the first layer only receives meaningless noise
+        why: Flattening keeps every pixel value; it only discards the explicit 2-D neighbourhood structure.
+      - text: Edge detectors need more parameters than a single dense layer of an MLP has available
+        why: A dense first layer has far more parameters than a small convolution kernel; capacity is not the issue.
+    explanation: |
+      Each first-layer unit of an MLP connects to every pixel, with no weight sharing and no notion of neighbourhood, so
+      it is free to learn image-sized patterns [^1]. A CNN's small shared kernels build in locality and translation
+      equivariance, an inductive bias under which local edge detectors emerge in the first layer [^1][^2]. Without that
+      prior, an MLP does not learn a hierarchy that starts from edges by default [^1].
+    references:
+      - source: neuromatch-dl
+        locator: W1D3 Tutorial 2, Section 2 Deeper MLPs, Think! 2 Why first layer features are high level?
+        url: https://github.com/NeuromatchAcademy/course-content-dl/blob/caba36c513fb8139ac3c9e7503f7a769dadde25e/tutorials/W1D3_MultiLayerPerceptrons/instructor/W1D3_Tutorial2.ipynb
+      - source: d2l
+        locator: Sec. 7.1 From Fully Connected Layers to Convolutions
+        url: https://d2l.ai/chapter_convolutional-neural-networks/why-conv.html
+    source:
+      id: neuromatch-dl
+      ref: W1D3_MultiLayerPerceptrons/W1D3_Tutorial2#think2
+      url: https://github.com/NeuromatchAcademy/course-content-dl/blob/caba36c513fb8139ac3c9e7503f7a769dadde25e/tutorials/W1D3_MultiLayerPerceptrons/instructor/W1D3_Tutorial2.ipynb
+    status: draft

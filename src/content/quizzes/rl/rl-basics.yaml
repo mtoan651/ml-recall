@@ -821,3 +821,186 @@ questions:
       ref: chapter_reinforcement-learning/mdp#ex2
       url: https://d2l.ai/chapter_reinforcement-learning/mdp.html#exercises
     status: draft
+  - id: rl-basics-025
+    type: short_answer
+    difficulty: hard
+    tags:
+      - value-iteration
+      - bellman-equation
+      - gridworld
+    question: |
+      A grid world has 6 free cells in 2 rows of 3, surrounded by walls; the goal `g` is the top-left cell:
+      ```
+      g . .
+      . . .
+      ```
+      Actions move up, down, left or right; moving into a wall leaves the agent where it is. Every action whose next cell
+      is the goal gives reward 1 (including bumping into a wall while standing on the goal); all other actions give 0,
+      and the goal is not terminal. Value iteration with $\gamma = 0.99$ converges to the optimal values $V^*$. What is
+      $V^*$ of the bottom-right cell?
+    answer:
+      numeric: 98.01
+      tolerance: 0.02
+      hint: a number, 2 decimals
+      model: $V^*(g) = 1/(1 - \gamma) = 100$; a neighbour of the goal gets $1 + 0.99 \cdot 100 = 100$; two steps away $99$; three steps away $0.99 \cdot 99 = 98.01$
+    explanation: |
+      Value iteration repeats the Bellman backup $Q(s,a) \leftarrow R(s,a) + \gamma\sum_{s'} P(s' \mid s, a)\max_{a'} Q(s', a')$ until it stops
+      changing [^1][^2]. On the goal the agent can collect reward 1 forever by bumping into a wall, so
+      $V^*(g) = 1/(1 - 0.99) = 100$, and a cell next to the goal gets $1 + 0.99 \cdot 100 = 100$ as well [^1]. Each further step
+      multiplies by $\gamma$ without new reward: the bottom-right cell is 3 moves from the goal, so
+      $V^* = 0.99 \cdot 0.99 \cdot 100 = 98.01$. The greedy policy $\arg\max_a Q(s, a)$ then always moves toward the goal [^1].
+    references:
+      - source: neuromatch-dl
+        locator: W3D4 Tutorial 1, Section 2.2 Markov Decision Process and Section 3 Value iteration (Coding Exercise 4)
+        url: https://github.com/NeuromatchAcademy/course-content-dl/blob/caba36c513fb8139ac3c9e7503f7a769dadde25e/tutorials/W3D4_BasicReinforcementLearning/instructor/W3D4_Tutorial1.ipynb
+      - source: d2l
+        locator: Sec. 17.2 Value Iteration
+        url: https://d2l.ai/chapter_reinforcement-learning/value-iter.html
+    source:
+      id: neuromatch-dl
+      ref: W3D4_BasicReinforcementLearning/W3D4_Tutorial1#ex4
+      url: https://github.com/NeuromatchAcademy/course-content-dl/blob/caba36c513fb8139ac3c9e7503f7a769dadde25e/tutorials/W3D4_BasicReinforcementLearning/instructor/W3D4_Tutorial1.ipynb
+    status: draft
+  - id: rl-basics-026
+    type: single
+    difficulty: medium
+    tags:
+      - behavioural-cloning
+      - imitation-learning
+      - policy-network
+    question: |
+      To build an Othello player, NMA trains a policy network on a dataset of expert games: for each board the network
+      outputs log-probabilities over the board positions and is trained to maximize the log-probability of the move the
+      expert made. What kind of learning is this?
+    options:
+      - text: "Behavioural cloning: supervised learning of the expert's moves, without any rewards"
+        correct: true
+      - text: 'Q-learning: the network learns the value of each move from the final game outcome'
+        why: The targets are the expert's moves, not values or returns; no reward signal enters the loss.
+      - text: 'Policy-gradient RL: moves are reinforced in proportion to the return of each game'
+        why: Policy gradients weight log-probabilities by returns of the agent's own games; here every expert move is a fixed label.
+      - text: 'Unsupervised learning: the network clusters board positions without any targets'
+        why: Each board comes with a target move, so this is supervised learning.
+    explanation: |
+      The loss is the cross-entropy between the network's move distribution and the expert's move,
+      $-\frac1N\sum_i \log \pi_\theta(a_i^{\text{expert}} \mid s_i)$, an ordinary classification objective [^1]. Learning a policy by
+      imitating demonstrations this way is behavioural cloning [^2]. It needs no reward, but the player can only be as
+      good as the demonstrations and can stray into situations the experts never produced, which is why NMA later adds
+      planning with Monte Carlo rollouts [^1][^2].
+    references:
+      - source: neuromatch-dl
+        locator: W3D5 Tutorial 2, Section 3 Train a policy network from expert game data (Coding Exercise 3.1)
+        url: https://github.com/NeuromatchAcademy/course-content-dl/blob/caba36c513fb8139ac3c9e7503f7a769dadde25e/tutorials/W3D5_AdvancedReinforcementLearningAndDeepLearningDiscussion3/instructor/W3D5_Tutorial2.ipynb
+      - title: 'Wikipedia: Imitation learning'
+        url: https://en.wikipedia.org/wiki/Imitation_learning
+        locator: Approaches, Behavior Cloning
+    source:
+      id: neuromatch-dl
+      ref: W3D5_AdvancedReinforcementLearningAndDeepLearningDiscussion3/W3D5_Tutorial2#ex3.1
+      url: https://github.com/NeuromatchAcademy/course-content-dl/blob/caba36c513fb8139ac3c9e7503f7a769dadde25e/tutorials/W3D5_AdvancedReinforcementLearningAndDeepLearningDiscussion3/instructor/W3D5_Tutorial2.ipynb
+    status: draft
+  - id: rl-basics-027
+    type: single
+    difficulty: medium
+    tags:
+      - monte-carlo-rollouts
+      - planning
+      - board-games
+    question: NMA's Monte Carlo Othello player has a policy network and a value network. How does it choose a move?
+    options:
+      - text: For each of the few likeliest moves, it samples short continuations with the policy, scores their ends with the value net, and takes the best average
+        correct: true
+      - text: It plays the move with the highest policy probability and uses one rollout only to check that the move is legal
+        why: Legality comes from the game rules; the rollouts estimate how good each candidate move is.
+      - text: It searches every legal move exhaustively to the end of the game and plays the guaranteed winner
+        why: Rollouts are short (a few moves deep) and only for the top few moves; the full game tree is far too large to search.
+      - text: It keeps training the policy network during each game, using the rollout outcomes as new labels
+        why: The rollouts only evaluate candidate moves; the networks stay fixed while the player plays.
+    explanation: |
+      The planner keeps the $K$ moves with the highest policy probability (3 in NMA's setting) and, for each, runs several
+      rollouts (10) that sample moves from the policy for a few steps (depth 5), returning the value network's estimate at
+      the end, or the actual result if the game ends [^1]. Averaging these returns gives a Monte Carlo estimate of each
+      move's value, and the player picks the highest [^1][^2]. Simulating ahead lets the agent look beyond a single value
+      prediction, at the cost of many network evaluations per move [^2].
+    references:
+      - source: neuromatch-dl
+        locator: W3D5 Tutorial 2, Section 5 Plan using Monte Carlo Rollouts (Coding Exercises 5.1 and 5.2)
+        url: https://github.com/NeuromatchAcademy/course-content-dl/blob/caba36c513fb8139ac3c9e7503f7a769dadde25e/tutorials/W3D5_AdvancedReinforcementLearningAndDeepLearningDiscussion3/instructor/W3D5_Tutorial2.ipynb
+      - title: 'Sutton and Barto (2018), Reinforcement Learning: An Introduction, 2nd ed.'
+        url: http://incompleteideas.net/book/the-book-2nd.html
+        locator: Sec. 8.10 Rollout Algorithms
+    source:
+      id: neuromatch-dl
+      ref: W3D5_AdvancedReinforcementLearningAndDeepLearningDiscussion3/W3D5_Tutorial2#ex5.1
+      url: https://github.com/NeuromatchAcademy/course-content-dl/blob/caba36c513fb8139ac3c9e7503f7a769dadde25e/tutorials/W3D5_AdvancedReinforcementLearningAndDeepLearningDiscussion3/instructor/W3D5_Tutorial2.ipynb
+    status: draft
+  - id: rl-basics-028
+    type: short_answer
+    difficulty: easy
+    tags:
+      - td-learning
+      - value-function
+      - stochastic-rewards
+    question: |
+      In a TD-learning model of classical conditioning, a cue is followed a few steps later by a reward of 10 units that
+      arrives with probability 0.8 (otherwise nothing), after which no further rewards follow in the trial. Values are
+      learned with a small learning rate. What does the learned value of the state just before the reward converge to?
+    answer:
+      numeric: 8
+      tolerance: 0.05
+      hint: a number
+      model: $\mathbb{E}[r] = 0.8 \times 10 = 8$
+    explanation: |
+      The TD update $V(s_t) \leftarrow V(s_t) + \alpha\,[r_{t+1} + \gamma V(s_{t+1}) - V(s_t)]$ moves the value a little toward each sampled
+      target [^1][^2]. With a small $\alpha$ this averages the targets, and no reward follows afterwards, so the value converges
+      to the expected reward $0.8 \cdot 10 + 0.2 \cdot 0 = 8$ [^1]. NMA shows that a probabilistic reward and a mixture of reward
+      sizes with the same mean give the same values: TD learning tracks the average reward [^1].
+    references:
+      - source: neuromatch-cn
+        locator: W3D4 Tutorial 1, Section 1 Temporal difference learning and Section 3 TD-learning with probabilistic rewards (Think! 3)
+        url: https://github.com/NeuromatchAcademy/course-content/blob/44634e960df7a14cd0bf7398187f2d209d26b0e8/tutorials/W3D4_ReinforcementLearning/instructor/W3D4_Tutorial1.ipynb
+      - title: 'Sutton and Barto (2018), Reinforcement Learning: An Introduction, 2nd ed.'
+        url: http://incompleteideas.net/book/the-book-2nd.html
+        locator: Sec. 6.1 TD Prediction
+    source:
+      id: neuromatch-cn
+      ref: W3D4_ReinforcementLearning/W3D4_Tutorial1#think3
+      url: https://github.com/NeuromatchAcademy/course-content/blob/44634e960df7a14cd0bf7398187f2d209d26b0e8/tutorials/W3D4_ReinforcementLearning/instructor/W3D4_Tutorial1.ipynb
+    status: draft
+  - id: rl-basics-029
+    type: single
+    difficulty: medium
+    tags:
+      - td-learning
+      - learning-rate
+      - stochastic-rewards
+    question: |
+      In the same conditioning task (reward of 10 with probability 0.8, nothing afterwards), the TD learner uses learning
+      rate $\alpha = 1$. What happens to the value of the state just before the reward?
+    options:
+      - text: It keeps jumping to the latest outcome, 10 or 0, and never settles at 8
+        correct: true
+      - text: It converges to 8, faster than with a small learning rate
+        why: With $\alpha = 1$ the old estimate is discarded at every visit, so no averaging over outcomes takes place.
+      - text: It converges to 10, because the learner ignores the trials without reward
+        why: A missed reward gives a TD target of 0, which $\alpha = 1$ copies into the value just like a reward of 10.
+      - text: It diverges to infinity, because $\alpha = 1$ exceeds the stability limit
+        why: The value is overwritten by a bounded target (0 or 10), so it cannot diverge; it just fails to average.
+    explanation: |
+      With $\alpha = 1$ the update sets $V(s_t)$ equal to the latest TD target $r_{t+1} + \gamma V(s_{t+1})$, forgetting all earlier
+      experience [^1][^2]. For the state before a stochastic reward that target is 10 on 80% of trials and 0 on the rest, so
+      the value flips between them and never represents the average of 8; NMA notes that large learning rates prevent
+      the TD learner from converging and give implausible value functions [^1]. A small constant $\alpha$ makes the value an
+      exponentially weighted average of recent targets [^2].
+    references:
+      - source: neuromatch-cn
+        locator: W3D4 Tutorial 1, Section 3 TD-learning with probabilistic rewards (Think! 3)
+        url: https://github.com/NeuromatchAcademy/course-content/blob/44634e960df7a14cd0bf7398187f2d209d26b0e8/tutorials/W3D4_ReinforcementLearning/instructor/W3D4_Tutorial1.ipynb
+      - title: 'Sutton and Barto (2018), Reinforcement Learning: An Introduction, 2nd ed.'
+        url: http://incompleteideas.net/book/the-book-2nd.html
+        locator: Sec. 2.5 Tracking a Nonstationary Problem
+    source:
+      id: neuromatch-cn
+      ref: W3D4_ReinforcementLearning/W3D4_Tutorial1#think3-alpha
+      url: https://github.com/NeuromatchAcademy/course-content/blob/44634e960df7a14cd0bf7398187f2d209d26b0e8/tutorials/W3D4_ReinforcementLearning/instructor/W3D4_Tutorial1.ipynb
+    status: draft

@@ -1330,3 +1330,205 @@ questions:
       ref: attention/Attention_Basics_Solution.ipynb#softmax-weights
       url: https://github.com/udacity/deep-learning-v2-pytorch/blob/c9404fc86181fc3f0906b368697268257f348535/attention/Attention_Basics_Solution.ipynb
     status: draft
+  - id: transformers-041
+    type: single
+    difficulty: medium
+    tags:
+      - attention
+      - complexity
+      - encoder-decoder
+    question: |
+      An encoder–decoder transformer reads $n$ input words and generates $m$ output words, with key/query/value
+      dimension $p$. Counting the attention computations (encoder self-attention, decoder self-attention over the
+      output prefix, and encoder–decoder attention), what is the time complexity of encoding the input and generating
+      the whole output?
+    options:
+      - text: $\mathcal{O}(p\,(n^2 + m^2 + nm))$
+        correct: true
+      - text: $\mathcal{O}(p\,(n + m))$
+        why: Each attention layer compares every query with every key, which is quadratic in the sequence lengths, not linear.
+      - text: $\mathcal{O}(p\,nm)$
+        why: This counts only the encoder–decoder attention and leaves out self-attention over the input ($n^2$) and over the output ($m^2$).
+      - text: $\mathcal{O}(p^2\,(n + m)^2)$
+        why: A dot product of two $p$-dimensional vectors costs $\mathcal{O}(p)$, not $\mathcal{O}(p^2)$; the attention scores are linear in $p$.
+    explanation: |
+      Attention appears at three points [^1]. Self-attention among the $n$ input words compares $n$ queries with $n$ keys
+      using $p$-dimensional dot products, $\mathcal{O}(n^2 p)$ [^2]; self-attention among the $m$ output words costs
+      $\mathcal{O}(m^2 p)$, assuming each output position's attention is computed once as the sequence grows; and attention
+      from output words to input words costs $\mathcal{O}(nmp)$ [^1]. The total is $\mathcal{O}(p(n^2 + m^2 + nm))$ [^1]. The
+      linear projections and feed-forward layers add $\mathcal{O}((n + m)p^2)$, which this count of attention leaves out.
+    references:
+      - source: neuromatch-dl
+        locator: W3D1 Tutorial 1, Section 5 Transformer overview II, Think! 5 Complexity of decoding
+        url: https://github.com/NeuromatchAcademy/course-content-dl/blob/caba36c513fb8139ac3c9e7503f7a769dadde25e/tutorials/W3D1_AttentionAndTransformers/instructor/W3D1_Tutorial1.ipynb
+      - source: d2l
+        locator: Sec. 11.6.2 Comparing CNNs, RNNs, and Self-Attention
+        url: https://d2l.ai/chapter_attention-mechanisms-and-transformers/self-attention-and-positional-encoding.html#comparing-cnns-rnns-and-self-attention
+    source:
+      id: neuromatch-dl
+      ref: W3D1_AttentionAndTransformers/W3D1_Tutorial1#think5
+      url: https://github.com/NeuromatchAcademy/course-content-dl/blob/caba36c513fb8139ac3c9e7503f7a769dadde25e/tutorials/W3D1_AttentionAndTransformers/instructor/W3D1_Tutorial1.ipynb
+    status: draft
+  - id: transformers-042
+    type: short_answer
+    difficulty: medium
+    tags:
+      - multi-head-attention
+      - parameter-count
+    question: |
+      NMA's multi-head self-attention layer gives every head the full embedding size `k`:
+      ```python
+      class SelfAttention(nn.Module):
+          def __init__(self, k, heads=8):
+              super().__init__()
+              self.to_keys = nn.Linear(k, k * heads, bias=False)
+              self.to_queries = nn.Linear(k, k * heads, bias=False)
+              self.to_values = nn.Linear(k, k * heads, bias=False)
+              self.unify_heads = nn.Linear(k * heads, k)
+      ```
+      How many learnable parameters does `SelfAttention(k=64, heads=8)` have?
+    answer:
+      numeric: 131136
+      tolerance: 0
+      hint: an integer
+      model: $3 \cdot 64 \cdot 512 + 512 \cdot 64 + 64 = 131136$
+    explanation: |
+      Each of the three projections is a bias-free $64 \to 512$ map with $64 \cdot 512 = 32768$ weights, and `unify_heads`
+      maps $512 \to 64$ with $32768$ weights plus 64 biases [^1]. The total is $4 \cdot 32768 + 64 = 131136$. The original
+      transformer instead splits the model dimension across the heads (each head gets $k/h$ dimensions), so multi-head
+      attention costs about as much as one full-width head [^2][^3]; in this "wide" version the parameter count grows
+      linearly with the number of heads.
+    references:
+      - source: neuromatch-dl
+        locator: W3D1 Tutorial 1, Section 3 Multihead attention, Coding Exercise 3 Q, K, V attention
+        url: https://github.com/NeuromatchAcademy/course-content-dl/blob/caba36c513fb8139ac3c9e7503f7a769dadde25e/tutorials/W3D1_AttentionAndTransformers/instructor/W3D1_Tutorial1.ipynb
+      - source: d2l
+        locator: Sec. 11.5.1 Model
+        url: https://d2l.ai/chapter_attention-mechanisms-and-transformers/multihead-attention.html#model
+      - title: Vaswani et al. (2017), Attention Is All You Need
+        url: https://arxiv.org/abs/1706.03762
+        locator: Sec. 3.2.2 Multi-Head Attention
+    source:
+      id: neuromatch-dl
+      ref: W3D1_AttentionAndTransformers/W3D1_Tutorial1#ex3
+      url: https://github.com/NeuromatchAcademy/course-content-dl/blob/caba36c513fb8139ac3c9e7503f7a769dadde25e/tutorials/W3D1_AttentionAndTransformers/instructor/W3D1_Tutorial1.ipynb
+    status: draft
+  - id: transformers-043
+    type: single
+    difficulty: medium
+    tags:
+      - transformer-block
+      - layer-normalization
+      - residual-connections
+    question: |
+      A transformer encoder block is written as
+      ```python
+      def forward(self, x):
+          attended = self.attention(x)
+          x = self.norm_1(attended + x)
+          feedforward = self.mlp(x)
+          x = self.norm_2(feedforward + x)
+          return x
+      ```
+      Which description matches it?
+    options:
+      - text: Each sublayer output is added to its input and the sum is layer-normalized ("add & norm" after each sublayer)
+        correct: true
+      - text: Each sublayer receives a layer-normalized input, and the raw input is added back afterwards
+        why: That is the pre-norm variant, `x = x + sublayer(norm(x))`; here the norm is applied after the addition.
+      - text: Attention and the MLP both read the raw input `x` in parallel, and their outputs are summed
+        why: '`self.mlp` is applied to the updated `x = norm_1(attended + x)`, so the two sublayers run one after the other.'
+      - text: 'The block has no residual connections: sublayer outputs replace their inputs'
+        why: Each line adds the sublayer output to its own input (`attended + x`, `feedforward + x`) before normalizing.
+    explanation: |
+      The block has two sublayers, self-attention and a position-wise MLP, each followed by "add & norm": its output is
+      added to its input through a residual connection and the sum goes through `nn.LayerNorm` [^1]. This is the
+      original transformer's post-norm arrangement, $\mathrm{LayerNorm}(x + \mathrm{Sublayer}(x))$ [^2][^3]. Many later models
+      move the normalization in front of each sublayer (pre-norm), which tends to make deep stacks easier to train [^4];
+      the code here is not that variant.
+    references:
+      - source: neuromatch-dl
+        locator: W3D1 Tutorial 1, Section 4 Transformer overview I, Coding Exercise 4 Transformer encoder
+        url: https://github.com/NeuromatchAcademy/course-content-dl/blob/caba36c513fb8139ac3c9e7503f7a769dadde25e/tutorials/W3D1_AttentionAndTransformers/instructor/W3D1_Tutorial1.ipynb
+      - source: d2l
+        locator: Sec. 11.7.1 Model and Sec. 11.7.3 Residual Connection and Layer Normalization
+        url: https://d2l.ai/chapter_attention-mechanisms-and-transformers/transformer.html#residual-connection-and-layer-normalization
+      - title: Vaswani et al. (2017), Attention Is All You Need
+        url: https://arxiv.org/abs/1706.03762
+        locator: Sec. 3.1 Encoder and Decoder Stacks
+      - title: Xiong et al. (2020), On Layer Normalization in the Transformer Architecture
+        url: https://arxiv.org/abs/2002.04745
+        locator: Abstract
+    source:
+      id: neuromatch-dl
+      ref: W3D1_AttentionAndTransformers/W3D1_Tutorial1#ex4
+      url: https://github.com/NeuromatchAcademy/course-content-dl/blob/caba36c513fb8139ac3c9e7503f7a769dadde25e/tutorials/W3D1_AttentionAndTransformers/instructor/W3D1_Tutorial1.ipynb
+    status: draft
+  - id: transformers-044
+    type: short_answer
+    difficulty: easy
+    tags:
+      - pooling
+      - text-classification
+      - tensor-shapes
+    question: |
+      A transformer classifier turns the encoder output `x`, of shape `(b, t, k)` (batch, tokens, embedding size),
+      into one vector per sentence by averaging over the tokens. Fill in the non-negative dimension index so that
+      `sequence_avg` has shape `(b, k)`: `sequence_avg = x.mean(dim=`{{1}}`)`
+    answer:
+      blanks:
+        - numeric: 1
+          tolerance: 0
+          hint: an integer
+      model: '`x.mean(dim=1)` averages over the $t$ token positions'
+    explanation: |
+      Averaging over a dimension removes it, so the token dimension, index 1 in `(b, t, k)`, must be averaged away to
+      leave `(b, k)` [^1]. NMA's classifier does exactly this: the encoder outputs one vector per token, the mean over
+      tokens gives a sentence embedding, and a linear layer with `log_softmax` turns it into class log-probabilities
+      [^1]. (`dim=-2` would also work; `dim=2` would average over the embedding instead, leaving `(b, t)`.) A common
+      alternative is to use the output of a special classification token instead of the mean, as BERT does [^2].
+    references:
+      - source: neuromatch-dl
+        locator: W3D1 Tutorial 1, Section 7 Training Transformers, Coding Exercise 7 Transformer Architecture for classification
+        url: https://github.com/NeuromatchAcademy/course-content-dl/blob/caba36c513fb8139ac3c9e7503f7a769dadde25e/tutorials/W3D1_AttentionAndTransformers/instructor/W3D1_Tutorial1.ipynb
+      - source: d2l
+        locator: Sec. 11.9.1.2 Fine-Tuning BERT
+        url: https://d2l.ai/chapter_attention-mechanisms-and-transformers/large-pretraining-transformers.html#fine-tuning-bert
+    source:
+      id: neuromatch-dl
+      ref: W3D1_AttentionAndTransformers/W3D1_Tutorial1#ex7
+      url: https://github.com/NeuromatchAcademy/course-content-dl/blob/caba36c513fb8139ac3c9e7503f7a769dadde25e/tutorials/W3D1_AttentionAndTransformers/instructor/W3D1_Tutorial1.ipynb
+    status: draft
+  - id: transformers-045
+    type: short_answer
+    difficulty: medium
+    tags:
+      - positional-encoding
+      - sinusoidal
+    question: |
+      The sinusoidal positional encoding is $PE_{(pos,\,2i)} = \sin(pos/10000^{2i/d})$ and
+      $PE_{(pos,\,2i+1)} = \cos(pos/10000^{2i/d})$. With $d = 4$, what is the entry in dimension 2 (counting from 0) of
+      the encoding of position $pos = 2$?
+    answer:
+      numeric: 0.020
+      tolerance: 0.0005
+      hint: a number, 3 decimals
+      model: 'Dimension 2 is $2i$ with $i = 1$: $\sin(2/10000^{2/4}) = \sin(0.02) \approx 0.020$'
+    explanation: |
+      Dimension 2 is even, $2i = 2$, so $i = 1$ and the frequency is $1/10000^{2/4} = 1/100$; the entry is
+      $\sin(2/100) = \sin(0.02) \approx 0.020$ [^1][^2]. Dimensions 0 and 1 use frequency 1 ($\sin 2 \approx 0.909$,
+      $\cos 2 \approx -0.416$): low dimensions oscillate fast and high dimensions slowly, a continuous analogue of
+      binary counting [^2]. NMA adds this fixed encoding to the token embeddings because self-attention by itself
+      ignores word order [^1].
+    references:
+      - source: neuromatch-dl
+        locator: W3D1 Tutorial 1, Section 6 Positional encoding
+        url: https://github.com/NeuromatchAcademy/course-content-dl/blob/caba36c513fb8139ac3c9e7503f7a769dadde25e/tutorials/W3D1_AttentionAndTransformers/instructor/W3D1_Tutorial1.ipynb
+      - source: d2l
+        locator: Sec. 11.6.3 Positional Encoding
+        url: https://d2l.ai/chapter_attention-mechanisms-and-transformers/self-attention-and-positional-encoding.html#positional-encoding
+    source:
+      id: neuromatch-dl
+      ref: W3D1_AttentionAndTransformers/W3D1_Tutorial1#sec6
+      url: https://github.com/NeuromatchAcademy/course-content-dl/blob/caba36c513fb8139ac3c9e7503f7a769dadde25e/tutorials/W3D1_AttentionAndTransformers/instructor/W3D1_Tutorial1.ipynb
+    status: draft

@@ -1692,3 +1692,107 @@ questions:
       ref: lectures/tutorials/solutions/final_prep.pdf#q18
       url: https://github.com/UBC-CS/cpsc330-2025W1/blob/a89d6131a0e2ae5f7ab36f207a3809a5b7137aef/lectures/tutorials/solutions/final_prep.pdf
     status: draft
+  - id: neural-networks-056
+    type: short_answer
+    difficulty: medium
+    tags:
+      - relu
+      - universal-approximation
+      - piecewise-linear
+    question: |
+      A one-hidden-layer ReLU network can interpolate points exactly. For the points $(0, 0)$, $(1, 2)$, $(2, 1)$, $(3, 1)$
+      use the units $\mathrm{ReLU}(x - 0)$, $\mathrm{ReLU}(x - 1)$ and $\mathrm{ReLU}(x - 2)$ (one per point except the last) and
+      the output $\hat{y}(x) = \sum_i c_i\,\mathrm{ReLU}(x - x_i)$, where each weight $c_i$ is the change in slope at its point.
+      What is the weight $c_2$ of $\mathrm{ReLU}(x - 1)$?
+    answer:
+      numeric: -3
+      tolerance: 0
+      hint: an integer
+      model: Slopes are $2$, $-1$, $0$, so $c = (2, -3, 1)$ and $c_2 = -1 - 2 = -3$
+    explanation: |
+      Between consecutive points the interpolant is a line with slope $(y_{i+1} - y_i)/(x_{i+1} - x_i)$: here $2$, $-1$ and $0$
+      [^1]. A ReLU that starts at $x_i$ adds $c_i$ to the slope from that point on, so $c_1 = 2$, $c_2 = -1 - 2 = -3$ and
+      $c_3 = 0 - (-1) = 1$; for example $\hat{y}(1.5) = 2 \cdot 1.5 - 3 \cdot 0.5 = 1.5$, on the line from $(1, 2)$ to $(2, 1)$ [^1].
+      With enough units such piecewise-linear sums approximate any continuous function on an interval, the idea behind
+      the universal approximation theorem [^1][^2].
+    references:
+      - source: neuromatch-dl
+        locator: W1D3 Tutorial 1, Section 1 The Need for MLPs, Coding Exercise 1 Function approximation with ReLU
+        url: https://github.com/NeuromatchAcademy/course-content-dl/blob/caba36c513fb8139ac3c9e7503f7a769dadde25e/tutorials/W1D3_MultiLayerPerceptrons/instructor/W1D3_Tutorial1.ipynb
+      - source: d2l
+        locator: Sec. 5.1.1.4 Universal Approximators
+        url: https://d2l.ai/chapter_multilayer-perceptrons/mlp.html#universal-approximators
+    source:
+      id: neuromatch-dl
+      ref: W1D3_MultiLayerPerceptrons/W1D3_Tutorial1#ex1
+      url: https://github.com/NeuromatchAcademy/course-content-dl/blob/caba36c513fb8139ac3c9e7503f7a769dadde25e/tutorials/W1D3_MultiLayerPerceptrons/instructor/W1D3_Tutorial1.ipynb
+    status: draft
+  - id: neural-networks-057
+    type: short_answer
+    difficulty: medium
+    tags:
+      - cross-entropy
+      - softmax
+      - loss-functions
+    question: |
+      `nn.CrossEntropyLoss()` (mean reduction) receives these logits for two examples whose labels are `[0, 1]`:
+      ```python
+      x = torch.tensor([[10.0,  1.0, -1.0, -20.0],
+                        [10.0, 10.0,  2.0, -10.0]])
+      ```
+      What loss does it return? Round to 3 decimals.
+    answer:
+      numeric: 0.347
+      tolerance: 0.001
+      hint: a number, 3 decimals
+      model: $\ell_1 \approx 0.0001$, $\ell_2 = \log(2 + e^{-8} + e^{-20}) \approx 0.693$; mean $\approx 0.347$
+    explanation: |
+      For logits $\mathbf{x}_i$ and label $c$, the loss is $-x_{i,c} + \log\sum_j e^{x_{i,j}}$, averaged over the batch [^1][^2]. The
+      first example is classified confidently and correctly: $-10 + \log(e^{10} + e^{1} + e^{-1} + e^{-20}) \approx 0.0001$. The
+      second has two tied top logits, so the true class gets probability just under $\tfrac12$ and the loss is
+      $\log(2 + e^{-8} + e^{-20}) \approx 0.693$. The mean is about $0.347$: one uncertain example dominates the batch loss.
+    references:
+      - source: neuromatch-dl
+        locator: W1D3 Tutorial 1, Section 2.1 Classification with MLPs, Coding Exercise 2.1 Implement Batch Cross Entropy Loss
+        url: https://github.com/NeuromatchAcademy/course-content-dl/blob/caba36c513fb8139ac3c9e7503f7a769dadde25e/tutorials/W1D3_MultiLayerPerceptrons/instructor/W1D3_Tutorial1.ipynb
+      - title: 'PyTorch documentation: torch.nn.CrossEntropyLoss'
+        url: https://docs.pytorch.org/docs/stable/generated/torch.nn.CrossEntropyLoss.html
+        locator: Description (loss for class indices, reduction='mean')
+    source:
+      id: neuromatch-dl
+      ref: W1D3_MultiLayerPerceptrons/W1D3_Tutorial1#ex2.1
+      url: https://github.com/NeuromatchAcademy/course-content-dl/blob/caba36c513fb8139ac3c9e7503f7a769dadde25e/tutorials/W1D3_MultiLayerPerceptrons/instructor/W1D3_Tutorial1.ipynb
+    status: draft
+  - id: neural-networks-058
+    type: short_answer
+    difficulty: medium
+    tags:
+      - backpropagation
+      - chain-rule
+      - linear-networks
+    question: |
+      A "shallow narrow" linear network predicts $\hat{y} = w_1 w_2 x$ and is trained on the squared error
+      $L = (y - w_1 w_2 x)^2$. For one example with $x = 1$ and $y = 2$, and current weights $w_1 = 1.4$, $w_2 = -1.6$, what is
+      $\partial L/\partial w_1$?
+    answer:
+      numeric: 13.568
+      tolerance: 0.001
+      hint: a number, 3 decimals
+      model: $-2 w_2 x (y - w_1 w_2 x) = -2(-1.6)(1)(2 + 2.24) = 13.568$
+    explanation: |
+      By the chain rule, $\partial L/\partial w_1 = -2\,(y - w_1 w_2 x)\cdot w_2 x$ [^1]. The prediction is $1.4 \cdot (-1.6) = -2.24$,
+      so the residual is $4.24$ and the gradient is $-2 \cdot 4.24 \cdot (-1.6) = 13.568$ [^1]. Each weight's gradient is
+      scaled by the other weight; in a deeper chain it is scaled by the product of all the other weights, which is how
+      depth makes gradients vanish or explode [^2].
+    references:
+      - source: neuromatch-dl
+        locator: W1D2 Tutorial 2, Section 1.1 A Shallow Narrow Linear Net, Analytical Exercise 1.1 Loss Gradients
+        url: https://github.com/NeuromatchAcademy/course-content-dl/blob/caba36c513fb8139ac3c9e7503f7a769dadde25e/tutorials/W1D2_LinearDeepLearning/instructor/W1D2_Tutorial2.ipynb
+      - source: neuromatch-dl
+        locator: W1D2 Tutorial 2, Section 2.1 The effect of depth
+        url: https://github.com/NeuromatchAcademy/course-content-dl/blob/caba36c513fb8139ac3c9e7503f7a769dadde25e/tutorials/W1D2_LinearDeepLearning/instructor/W1D2_Tutorial2.ipynb
+    source:
+      id: neuromatch-dl
+      ref: W1D2_LinearDeepLearning/W1D2_Tutorial2#ex1.1
+      url: https://github.com/NeuromatchAcademy/course-content-dl/blob/caba36c513fb8139ac3c9e7503f7a769dadde25e/tutorials/W1D2_LinearDeepLearning/instructor/W1D2_Tutorial2.ipynb
+    status: draft

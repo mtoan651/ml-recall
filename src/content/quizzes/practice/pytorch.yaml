@@ -1732,3 +1732,207 @@ questions:
       ref: recurrent-neural-networks/char-rnn/Character_Level_RNN_Solution.ipynb#output-shape
       url: https://github.com/udacity/deep-learning-v2-pytorch/blob/c9404fc86181fc3f0906b368697268257f348535/recurrent-neural-networks/char-rnn/Character_Level_RNN_Solution.ipynb
     status: draft
+  - id: pytorch-042
+    type: true_false
+    difficulty: medium
+    tags:
+      - numpy-interop
+      - memory-sharing
+    question: |
+      ```python
+      x = torch.zeros(3)      # a CPU tensor
+      y = x.numpy()
+      x[0] = 5.0
+      ```
+      True or false: after the last line, `y[0]` is also `5.0`.
+    options:
+      - text: 'True'
+        correct: true
+      - text: 'False'
+        why: '`Tensor.numpy()` returns an array that shares storage with the CPU tensor, so in-place changes to one are visible in the other.'
+    explanation: |
+      For a CPU tensor, `Tensor.numpy()` returns a NumPy array that shares the tensor's storage, so changing `x` in place
+      also changes `y` [^1][^2]. NMA's tutorial states that the converted result does not share memory; that holds for
+      `torch.tensor(y)`, which always copies, but not for `.numpy()` or `torch.from_numpy` [^1][^3]. Use `x.numpy().copy()`
+      or `x.clone().numpy()` when you need an independent array.
+    references:
+      - title: 'PyTorch documentation: torch.Tensor.numpy'
+        url: https://docs.pytorch.org/docs/stable/generated/torch.Tensor.numpy.html
+        locator: Description (the returned ndarray and the tensor share their storage)
+      - source: d2l
+        locator: Sec. 2.1.6 Conversion to Other Python Objects
+        url: https://d2l.ai/chapter_preliminaries/ndarray.html#conversion-to-other-python-objects
+      - source: neuromatch-dl
+        locator: W1D1 Tutorial 1, Section 2.3 Manipulating Tensors in Pytorch, Conversion to Other Python Objects
+        url: https://github.com/NeuromatchAcademy/course-content-dl/blob/caba36c513fb8139ac3c9e7503f7a769dadde25e/tutorials/W1D1_BasicsAndPytorch/instructor/W1D1_Tutorial1.ipynb
+    source:
+      id: neuromatch-dl
+      ref: W1D1_BasicsAndPytorch/W1D1_Tutorial1#sec2.3-conversion
+      url: https://github.com/NeuromatchAcademy/course-content-dl/blob/caba36c513fb8139ac3c9e7503f7a769dadde25e/tutorials/W1D1_BasicsAndPytorch/instructor/W1D1_Tutorial1.ipynb
+    status: draft
+  - id: pytorch-043
+    type: short_answer
+    difficulty: easy
+    tags:
+      - tensor-creation
+      - arange
+    question: |
+      NMA asks for "a 1D tensor containing the even numbers between 4 and 40 inclusive" and gives
+      `D = torch.arange(4, 41, step=2)`. How many elements does `D` have?
+    answer:
+      numeric: 19
+      tolerance: 0
+      hint: an integer
+      model: '$4, 6, \dots, 40$: $(40 - 4)/2 + 1 = 19$; the end value 41 is excluded'
+    explanation: |
+      `torch.arange(start, end, step)` returns the values from `start` up to but not including `end`, so its size is
+      $\lceil (\text{end} - \text{start})/\text{step} \rceil = \lceil 37/2 \rceil = 19$ [^1][^2]. With end 41 the last value is 40, so
+      the tensor holds $4, 6, \dots, 40$ [^1]. Writing `torch.arange(4, 40, step=2)` would silently drop 40, a common
+      off-by-one error.
+    references:
+      - source: neuromatch-dl
+        locator: W1D1 Tutorial 1, Section 2.1 Creating Tensors, Coding Exercise 2.1
+        url: https://github.com/NeuromatchAcademy/course-content-dl/blob/caba36c513fb8139ac3c9e7503f7a769dadde25e/tutorials/W1D1_BasicsAndPytorch/instructor/W1D1_Tutorial1.ipynb
+      - title: 'PyTorch documentation: torch.arange'
+        url: https://docs.pytorch.org/docs/stable/generated/torch.arange.html
+        locator: Description (values from the interval [start, end))
+    source:
+      id: neuromatch-dl
+      ref: W1D1_BasicsAndPytorch/W1D1_Tutorial1#ex2.1
+      url: https://github.com/NeuromatchAcademy/course-content-dl/blob/caba36c513fb8139ac3c9e7503f7a769dadde25e/tutorials/W1D1_BasicsAndPytorch/instructor/W1D1_Tutorial1.ipynb
+    status: draft
+  - id: pytorch-044
+    type: short_answer
+    difficulty: easy
+    tags:
+      - indexing
+      - tensor-shapes
+    question: '`x = torch.rand(1, 2, 3, 4, 5)`. What is `x[0][0][0].shape`?'
+    answer:
+      accept:
+        - (4, 5)
+      pattern: (torch\.size\()?[\(\[]*\s*4\s*[,x×]\s*5\s*[\)\]]*
+      hint: Two numbers, e.g. (2, 3)
+      model: '$(4, 5)$: each `[0]` removes the leading dimension'
+    explanation: |
+      Indexing a tensor with a single integer selects along its first dimension and drops that dimension, as in NumPy
+      [^1][^2]. Three successive `[0]` remove the dimensions of size 1, 2 and 3, leaving shape $(4, 5)$ [^1]. Indexing does
+      not squeeze any other singleton dimensions: if `x` had shape $(1, 10)$, `x[0]` would be the whole row of 10 values,
+      not its first number [^1].
+    references:
+      - source: neuromatch-dl
+        locator: W1D1 Tutorial 1, Section 2.3 Manipulating Tensors in Pytorch (Indexing, Squeezing tensors)
+        url: https://github.com/NeuromatchAcademy/course-content-dl/blob/caba36c513fb8139ac3c9e7503f7a769dadde25e/tutorials/W1D1_BasicsAndPytorch/instructor/W1D1_Tutorial1.ipynb
+      - source: d2l
+        locator: Sec. 2.1.2 Indexing and Slicing
+        url: https://d2l.ai/chapter_preliminaries/ndarray.html#indexing-and-slicing
+    source:
+      id: neuromatch-dl
+      ref: W1D1_BasicsAndPytorch/W1D1_Tutorial1#sec2.3-indexing
+      url: https://github.com/NeuromatchAcademy/course-content-dl/blob/caba36c513fb8139ac3c9e7503f7a769dadde25e/tutorials/W1D1_BasicsAndPytorch/instructor/W1D1_Tutorial1.ipynb
+    status: draft
+  - id: pytorch-045
+    type: single
+    difficulty: medium
+    tags:
+      - permute
+      - image-tensors
+      - matplotlib
+    question: |
+      `image` is a CIFAR-10 image tensor of shape `(3, 32, 32)` (channels, height, width), as produced by
+      `transforms.ToTensor()`. `plt.imshow(image)` fails. Which call displays the image correctly?
+    options:
+      - text: '`plt.imshow(image.permute(1, 2, 0))`'
+        correct: true
+      - text: '`plt.imshow(image.permute(2, 1, 0))`'
+        why: This also gives shape (32, 32, 3) but swaps height and width, so the picture appears transposed.
+      - text: '`plt.imshow(image.reshape(32, 32, 3))`'
+        why: '`reshape` keeps the memory order, so it regroups the numbers instead of moving the channel axis; pixels and colours get scrambled.'
+      - text: '`plt.imshow(image.permute(0, 2, 1))`'
+        why: This only swaps height and width; the channel axis stays first, which `imshow` still rejects.
+    explanation: |
+      Matplotlib's `imshow` expects a colour image as (height, width, channels), while PyTorch image tensors are
+      (channels, height, width) [^1][^2]. `permute(1, 2, 0)` builds the new order from old dimensions 1, 2 and 0, giving
+      $(32, 32, 3)$ [^1]. NMA's text says that `imshow` expects C×H×W; in fact it is the tensor that has this layout, and
+      `imshow` wants H×W×C, which is why the permutation is needed [^1][^2].
+    references:
+      - source: neuromatch-dl
+        locator: W1D1 Tutorial 1, Section 2.3 (Permutation) and Coding Exercise 2.5 Display an image from the dataset
+        url: https://github.com/NeuromatchAcademy/course-content-dl/blob/caba36c513fb8139ac3c9e7503f7a769dadde25e/tutorials/W1D1_BasicsAndPytorch/instructor/W1D1_Tutorial1.ipynb
+      - title: 'Matplotlib documentation: matplotlib.pyplot.imshow'
+        url: https://matplotlib.org/stable/api/_as_gen/matplotlib.pyplot.imshow.html
+        locator: Parameters, X (shape (M, N, 3) for RGB)
+    source:
+      id: neuromatch-dl
+      ref: W1D1_BasicsAndPytorch/W1D1_Tutorial1#ex2.5
+      url: https://github.com/NeuromatchAcademy/course-content-dl/blob/caba36c513fb8139ac3c9e7503f7a769dadde25e/tutorials/W1D1_BasicsAndPytorch/instructor/W1D1_Tutorial1.ipynb
+    status: draft
+  - id: pytorch-046
+    type: single
+    difficulty: medium
+    tags:
+      - gpu
+      - performance
+    question: |
+      You time a function that multiplies small matrices many times, once on the CPU and once on a GPU. As you shrink the
+      matrices and increase the number of iterations, the CPU version eventually becomes faster. What is the main
+      reason?
+    options:
+      - text: Each GPU operation has a fixed overhead (kernel launch, synchronization, data transfer) that dominates tiny workloads
+        correct: true
+      - text: GPUs switch to lower precision for small matrices, which forces extra correction steps
+        why: Precision is set by the tensor dtype, not by matrix size; the slowdown comes from per-operation overhead.
+      - text: Small matrices do not fit into GPU memory, so they are swapped out to the CPU
+        why: Small matrices fit easily; it is large ones that can exhaust GPU memory.
+      - text: The CPU caches the result of the first iteration and skips the remaining ones
+        why: PyTorch recomputes every operation; it does not memoize results across calls.
+    explanation: |
+      A GPU wins by running thousands of arithmetic operations in parallel, but every operation also pays fixed costs:
+      launching a kernel, synchronizing with the CPU and moving data between host and device memory [^1][^2]. For large
+      matrices these costs are negligible next to the arithmetic; for tiny ones they dominate, and the CPU, with fast
+      cores and no transfers, finishes first [^1]. Fusing or batching many small operations into fewer large ones is the
+      usual remedy [^2].
+    references:
+      - source: neuromatch-dl
+        locator: W1D1 Tutorial 1, Section 2.4 GPUs, Coding Exercise 2.4 Just how much faster are GPUs? (Discuss!)
+        url: https://github.com/NeuromatchAcademy/course-content-dl/blob/caba36c513fb8139ac3c9e7503f7a769dadde25e/tutorials/W1D1_BasicsAndPytorch/instructor/W1D1_Tutorial1.ipynb
+      - title: PyTorch Performance Tuning Guide
+        url: https://docs.pytorch.org/tutorials/recipes/recipes/tuning_guide.html
+        locator: Fuse operations; Use CUDA Graphs; Avoid unnecessary CPU-GPU synchronization
+    source:
+      id: neuromatch-dl
+      ref: W1D1_BasicsAndPytorch/W1D1_Tutorial1#ex2.4
+      url: https://github.com/NeuromatchAcademy/course-content-dl/blob/caba36c513fb8139ac3c9e7503f7a769dadde25e/tutorials/W1D1_BasicsAndPytorch/instructor/W1D1_Tutorial1.ipynb
+    status: draft
+  - id: pytorch-047
+    type: true_false
+    difficulty: easy
+    tags:
+      - eval-mode
+      - train-mode
+    question: |
+      An MLP is built only from `nn.Linear` and `nn.ReLU` layers. True or false: calling `net.eval()` before computing
+      its test predictions changes the predictions compared with leaving it in training mode.
+    options:
+      - text: 'True'
+        why: '`eval()` only changes layers whose behaviour differs between training and testing, such as dropout and batch normalization; this net has none.'
+      - text: 'False'
+        correct: true
+    explanation: |
+      `net.eval()` sets the module and its children to evaluation mode, which matters only for layers with
+      mode-dependent behaviour, such as `nn.Dropout` and `nn.BatchNorm` [^1][^2]. Linear and ReLU layers compute the same
+      function in both modes, so the predictions are identical [^1]. Calling `eval()` (and `train()` again before
+      training) is still good practice, because adding dropout or batch normalization later would otherwise change the
+      results silently [^1]. `eval()` also does not turn off gradient tracking; that is what `torch.no_grad()` does [^2].
+    references:
+      - source: neuromatch-dl
+        locator: W1D3 Tutorial 1, Section 2.3 Training and Evaluation, Think! 2.3.1 What's the point of .eval() and .train()?
+        url: https://github.com/NeuromatchAcademy/course-content-dl/blob/caba36c513fb8139ac3c9e7503f7a769dadde25e/tutorials/W1D3_MultiLayerPerceptrons/instructor/W1D3_Tutorial1.ipynb
+      - title: 'PyTorch documentation: torch.nn.Module.eval'
+        url: https://docs.pytorch.org/docs/stable/generated/torch.nn.Module.html#torch.nn.Module.eval
+        locator: Module.eval
+    source:
+      id: neuromatch-dl
+      ref: W1D3_MultiLayerPerceptrons/W1D3_Tutorial1#think2.3.1
+      url: https://github.com/NeuromatchAcademy/course-content-dl/blob/caba36c513fb8139ac3c9e7503f7a769dadde25e/tutorials/W1D3_MultiLayerPerceptrons/instructor/W1D3_Tutorial1.ipynb
+    status: draft
