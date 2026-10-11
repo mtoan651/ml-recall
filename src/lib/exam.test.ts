@@ -351,38 +351,21 @@ describe("scoring", () => {
       correct: 2,
       incorrect: 1,
       unanswered: 2,
-      pending: 0,
       percent: 40,
       outcomes: { a: "correct", b: "incorrect", c: "correct", d: "unanswered", gone: "unanswered" },
     });
   });
 
-  it("leaves open answers to the learner, then counts their verdicts", () => {
-    const open: GradingInput = { type: "short_answer", answer: { accept: [] } };
-    expect(gradeExamAnswer(open, { selected: [], text: "the agent's brain" })).toBe("pending");
-    expect(gradeExamAnswer(open, { selected: [], text: " " })).toBe("unanswered");
-
-    const questions = new Map<string, GradingInput>([
-      ["a", single],
-      ["o1", open],
-      ["o2", open],
-      ["o3", open],
-    ]);
-    const state = {
-      items: ["a", "o1", "o2", "o3"].map((id) => ({ id, optionOrder: [] })),
-      answers: {
-        a: { selected: [1], text: "" },
-        o1: { selected: [], text: "answer one" },
-        o2: { selected: [], text: "answer two" },
-      },
+  it("grades a gap-fill blank by blank: right only when every blank is", () => {
+    const fill: GradingInput = {
+      type: "short_answer",
+      answer: { accept: [], blanks: [{ accept: ["off"] }, { accept: ["greedy", "max"] }] },
     };
-    const before = scoreExam(state, questions);
-    expect(before).toMatchObject({ correct: 1, pending: 2, unanswered: 1, percent: 25 });
-    expect(before.outcomes).toMatchObject({ o1: "pending", o2: "pending", o3: "unanswered" });
-
-    const after = scoreExam(state, questions, { o1: true, o2: false });
-    expect(after).toMatchObject({ correct: 2, incorrect: 1, pending: 0, percent: 50 });
-    expect(after.outcomes).toMatchObject({ o1: "correct", o2: "incorrect", o3: "unanswered" });
+    const answer = (blanks: string[]) => ({ selected: [], text: "", blanks });
+    expect(gradeExamAnswer(fill, answer(["Off", "max"]))).toBe("correct");
+    expect(gradeExamAnswer(fill, answer(["off", "random"]))).toBe("incorrect");
+    expect(gradeExamAnswer(fill, answer(["off"]))).toBe("incorrect"); // a blank left empty
+    expect(gradeExamAnswer(fill, answer(["", " "]))).toBe("unanswered");
   });
 });
 

@@ -20,7 +20,6 @@ import {
   saveSettings,
   storedExamStart,
   summarize,
-  updateExamAttempt,
 } from "./storage";
 
 function memoryStore(initial: Record<string, string> = {}): KeyValueStore & {
@@ -61,27 +60,6 @@ describe("results", () => {
       "cnn-001": { correct: true, at: 3 },
       "cnn-002": { correct: true, at: 2 },
     });
-  });
-
-  it("rescores an attempt after self-grading and recomputes the best", () => {
-    const scope = "topic:cnn";
-    const store = memoryStore();
-    const attempt = (correct: number, at: number): ExamAttempt => ({
-      correct,
-      total: 10,
-      at,
-      durationMs: 300_000,
-      reviewedOnly: false,
-      timedOut: false,
-    });
-    saveExamAttempt(scope, attempt(6, 1), store);
-    saveExamAttempt(scope, attempt(5, 2), store);
-    let history = updateExamAttempt(scope, 2, 8, store);
-    expect(history.attempts.map((a) => a.correct)).toEqual([6, 8]);
-    expect(history.best?.at).toBe(2);
-    history = updateExamAttempt(scope, 2, 4, store); // changed a verdict back
-    expect(history.best?.at).toBe(1);
-    expect(loadExamHistory(scope, store)).toEqual(history);
   });
 
   it("survives missing, corrupt and blocked storage", () => {
@@ -225,27 +203,6 @@ describe("timed tests", () => {
     expect(history.attempts.map((a) => a.at)).toEqual([1, 2]);
     expect(history.best?.correct).toBe(18);
     expect(loadExamHistory("tag:cnn", store).attempts).toHaveLength(1);
-  });
-
-  it("rescores an attempt after self-grading and recomputes the best", () => {
-    const scope = "topic:cnn";
-    const store = memoryStore();
-    const attempt = (correct: number, at: number): ExamAttempt => ({
-      correct,
-      total: 10,
-      at,
-      durationMs: 300_000,
-      reviewedOnly: false,
-      timedOut: false,
-    });
-    saveExamAttempt(scope, attempt(6, 1), store);
-    saveExamAttempt(scope, attempt(5, 2), store);
-    let history = updateExamAttempt(scope, 2, 8, store);
-    expect(history.attempts.map((a) => a.correct)).toEqual([6, 8]);
-    expect(history.best?.at).toBe(2);
-    history = updateExamAttempt(scope, 2, 4, store); // changed a verdict back
-    expect(history.best?.at).toBe(1);
-    expect(loadExamHistory(scope, store)).toEqual(history);
   });
 
   it("survives missing, corrupt and blocked storage", () => {

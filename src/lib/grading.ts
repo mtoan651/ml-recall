@@ -1,11 +1,12 @@
 /**
  * Grading rules (docs/web-app.md#grading):
  * - choice questions: the selected set must equal the set of correct options (all-or-nothing);
- * - short answers: auto-graded when the key has `numeric` (|x − value| ≤ tolerance), `accept`
- *   (text compared after normalization) or `pattern` (regex, full match); correct if any of
- *   them matches. With a `pattern`, `accept` only lists examples of it and is not compared on
- *   its own (normalization drops separators: "(323, 64, 64)" would equal "(32, 3, 64, 64)").
- *   Otherwise the learner self-grades.
+ * - short answers (always auto-graded): one input, or a gap-fill with one input per blank that
+ *   is correct only when every blank is. Each input is graded by `numeric` (|x − value| ≤
+ *   tolerance), `accept` (text compared after normalization) or `pattern` (regex, full match);
+ *   correct if any of them matches. With a `pattern`, `accept` only lists examples of it and is
+ *   not compared on its own (normalization drops separators: "(323, 64, 64)" would equal
+ *   "(32, 3, 64, 64)").
  */
 
 /** Lowercase, Unicode-normalized, without whitespace and punctuation: "Batch-Norm." → "batchnorm". */
@@ -94,12 +95,21 @@ export interface ShortAnswerKey {
   pattern?: string | null | undefined;
 }
 
-/**
- * Auto-graded keys have `numeric`, `accept` or `pattern`; the others are self-graded against
- * the model answer.
- */
-export function isAutoGraded(key: ShortAnswerKey): boolean {
-  return key.accept.length > 0 || typeof key.numeric === "number" || Boolean(key.pattern);
+/** The key of one input with its format guidance: a whole short answer or one blank. */
+export type InputKey = ShortAnswerKey & { hint?: string | null | undefined };
+
+/** A short-answer key: one input, or a gap-fill with one key per blank (`{{1}}`, `{{2}}`…). */
+export interface FillKey extends InputKey {
+  blanks?: readonly InputKey[] | null | undefined;
+}
+
+export function isGapFill(key: FillKey): boolean {
+  return (key.blanks?.length ?? 0) > 0;
+}
+
+/** The key of each input, in order: the blanks of a gap-fill, or the answer itself. */
+export function inputKeys(key: FillKey): InputKey[] {
+  return key.blanks && key.blanks.length > 0 ? [...key.blanks] : [key];
 }
 
 /** Only a number can be right: `numeric` without `accept` or `pattern`. */
@@ -125,16 +135,13 @@ export type ShortAnswerGrade =
   /** Numeric-only key and the input is not a number: ask again, do not grade. */
   | { kind: "not-a-number" }
   /** Empty input: nothing to grade. */
-  | { kind: "empty" }
-  /** No `numeric`/`accept`/`pattern`: the learner compares with the model answer. */
-  | { kind: "self-graded" };
+  | { kind: "empty" };
 
 /**
  * Tries the keys in order numeric → accept → pattern; correct if any matches. `accept` is
  * skipped when there is a `pattern` (see the module comment).
  */
 export function gradeShortAnswer(input: string, key: ShortAnswerKey): ShortAnswerGrade {
-  if (!isAutoGraded(key)) return { kind: "self-graded" };
   if (input.trim() === "") return { kind: "empty" };
 
   const numeric = typeof key.numeric === "number" ? key.numeric : null;
@@ -178,4 +185,20 @@ export function gradeChoice(
     if (i < 0 || i >= correctFlags.length) wrong.push(i);
   }
   return { correct: chosen.size > 0 && missed.length === 0 && wrong.length === 0, missed, wrong };
+}
+
+/** Grades every input of a short answer (`texts` in input order; missing ones are empty). */
+export function gradeInputs(key: FillKey, texts: readonly string[]): ShortAnswerGrade[] {
+  return inputKeys(key).map((k, i) => gradeShortAnswer(texts[i] ?? "", k));
+}
+
+/** "42 ± 0.5 · forty-two": what an input accepts, for showing the answer after grading. */
+export function describeAccepted(key: InputKey): string {
+  const values: string[] = [];
+  const tolerance = key.tolerance ?? 0;
+  if (typeof key.numeric === "number") {
+    values.push(tolerance > 0 ? `${key.numeric} ± ${tolerance}` : String(key.numeric));
+  }
+  values.push(...key.accept);
+  return values.join(" · ") + (key.pattern ? " (and equivalent spellings)" : "");
 }

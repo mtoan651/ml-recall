@@ -28,11 +28,9 @@ import {
   loadSettings,
   saveExam,
   saveExamAttempt,
-  saveResult,
   saveResults,
   saveSettings,
   storedExamStart,
-  updateExamAttempt,
 } from "../lib/storage";
 import type { ExamScopeView, QuizQuestion } from "../lib/types";
 import { ExamResults, type FinishedExam } from "./ExamResults";
@@ -69,7 +67,14 @@ export default function Exam({ questions, scope, showTopic = false }: ExamProps)
   const storedInfo = useMemo(
     () =>
       new Map<string, StoredQuestionInfo>(
-        questions.map((q) => [q.id, { type: q.type, optionCount: q.options?.length ?? 0 }]),
+        questions.map((q) => [
+          q.id,
+          {
+            type: q.type,
+            optionCount: q.options?.length ?? 0,
+            blankCount: q.answer?.blanks?.length ?? 0,
+          },
+        ]),
       ),
     [questions],
   );
@@ -174,18 +179,11 @@ export default function Exam({ questions, scope, showTopic = false }: ExamProps)
         usedMs,
         timedOut,
         newBest: previousBest !== undefined && isBetterAttempt(attempt, previousBest),
-        selfGrades: {},
-        attempt,
-        previousBest,
       });
-      const toGrade =
-        score.pending === 0
-          ? ""
-          : ` ${score.pending} open ${score.pending === 1 ? "answer is" : "answers are"} waiting for your own grade.`;
       setAnnouncement(
-        (timedOut
+        timedOut
           ? `Time is up. The test was submitted: ${score.correct} of ${score.total} correct.`
-          : `Test submitted: ${score.correct} of ${score.total} correct.`) + toGrade,
+          : `Test submitted: ${score.correct} of ${score.total} correct.`,
       );
     },
     [byId, scopeKey, takenElsewhere, yieldToOtherTab],
@@ -264,25 +262,6 @@ export default function Exam({ questions, scope, showTopic = false }: ExamProps)
     if (top < 0) rootRef.current?.scrollIntoView({ block: "start" });
   }, [questions, reviewedOnly, layout, scopeKey]);
 
-  /** The learner compared an open answer with the model answer: rescore and update history. */
-  const selfGrade = (id: string, right: boolean) => {
-    if (!finished) return;
-    const selfGrades = { ...finished.selfGrades, [id]: right };
-    const score = scoreExam(finished.state, byId, selfGrades);
-    const attempt = { ...finished.attempt, correct: score.correct };
-    setHistory(updateExamAttempt(scopeKey, finished.finishedAt, score.correct));
-    saveResult(id, right, undefined, finished.finishedAt);
-    setFinished({
-      ...finished,
-      selfGrades,
-      score,
-      attempt,
-      newBest:
-        finished.previousBest !== undefined && isBetterAttempt(attempt, finished.previousBest),
-    });
-    setAnnouncement(`Score: ${score.correct} of ${score.total} correct.`);
-  };
-
   const changeReviewedOnly = (value: boolean) => {
     setReviewedOnlySetting(value);
     // Shared with practice mode: "Reviewed only" means the same thing on both pages.
@@ -313,7 +292,6 @@ export default function Exam({ questions, scope, showTopic = false }: ExamProps)
             scope={scope}
             history={history}
             showTopic={showTopic}
-            onSelfGrade={selfGrade}
             onNewTest={() => {
               moved.current = true;
               setAnnouncement("");

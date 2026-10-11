@@ -258,23 +258,3 @@ export function saveExamAttempt(
   writeJson(store, EXAM_HISTORY_KEY, { ...all, [scope]: history });
   return history;
 }
-
-/**
- * Changes the score of the attempt submitted at `at` (the learner self-graded an open answer)
- * and returns the updated history; the best attempt is recomputed.
- */
-export function updateExamAttempt(
-  scope: string,
-  at: number,
-  correct: number,
-  store: KeyValueStore | null = browserStore(),
-): ExamHistory {
-  const all = loadAllHistory(store);
-  const old = parseHistory(all[scope]);
-  const attempts = old.attempts.map((a) => (a.at === at ? { ...a, correct } : a));
-  // The old best may be this very attempt with its previous score: rebuild it from the list.
-  const keptBest = old.best && old.best.at !== at ? [old.best] : [];
-  const history = parseHistory({ attempts, best: keptBest[0] });
-  writeJson(store, EXAM_HISTORY_KEY, { ...all, [scope]: history });
-  return history;
-}

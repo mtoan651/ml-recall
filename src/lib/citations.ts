@@ -27,6 +27,19 @@ export function citationMarkers(text: string | null | undefined): number[] {
   return [...prose.matchAll(MARKER_RE)].map((m) => Number(m[1]));
 }
 
+const BLANK_RE = /\{\{(\d+)\}\}/g;
+
+/** Gap-fill blank numbers `{{n}}` outside code and math (mirror of schema.py `blank_markers`). */
+export function blankMarkers(text: string | null | undefined): number[] {
+  if (!text) return [];
+  return [...text.replace(CODE_OR_MATH_RE, "").matchAll(BLANK_RE)].map((m) => Number(m[1]));
+}
+
+/** All `{{n}}` markers, including those (wrongly) inside code or math. */
+export function allBlankMarkers(text: string | null | undefined): number[] {
+  return text ? [...text.matchAll(BLANK_RE)].map((m) => Number(m[1])) : [];
+}
+
 export type CitationPart = { type: "text"; value: string } | { type: "cite"; numbers: number[] };
 
 /**

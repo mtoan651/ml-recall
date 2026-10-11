@@ -87,11 +87,11 @@ describe("sessionReducer", () => {
       { type: "grade", outcome: "incorrect" },
       { type: "next" },
       { type: "type", text: "my answer" },
-      { type: "reveal" },
+      { type: "type", text: "off", blank: 1 },
       { type: "grade", outcome: "correct" },
     );
     expect(score(s)).toEqual({ current: 3, total: 3, answered: 3, correct: 2 });
-    expect(answerOf(s, "a-003")).toMatchObject({ text: "my answer", revealed: true });
+    expect(answerOf(s, "a-003")).toMatchObject({ text: "my answer", blanks: ["", "off"] });
 
     const done = run(s, { type: "next" });
     expect(done.finished).toBe(true);

@@ -98,16 +98,22 @@ shows `source` title, license (linked to `license_url`) and the question id.
 - Options are shuffled per question unless `shuffle: false`. True/false questions keep
   "True, False" in file order (a fixed pair; position carries no information).
 - After **Check**: chosen and correct options are marked (icon + text, not only colour), every
-  option's `why` is shown, then the model answer, explanation, figure, references, source.
+  option's `why` is shown, then the answer (accepted values per input, and the `model` when
+  there is one), explanation, figure, references, source.
 - End of session: score, missed questions with their answers, **Retry missed**, **Practice
   again**.
 - Keyboard: `1`–`9` select the n-th option (toggle for "select all that apply"), `Enter`
   checks, then goes to the next question. Keys are ignored while typing in a text field.
-- Under an auto-graded short-answer input a muted line says how to write the answer: the
-  key's `hint`, else "Enter a number, e.g. 42, -0.5, 1/3 or 2.5e-3." for `numeric` keys and "A
-  word or short phrase" otherwise (`answerHint()`). It is the input's `aria-describedby`;
-  problems such as "Type an answer first" appear in red below it. Self-graded questions show
-  a `hint` only when the YAML has one.
+- Under a short-answer input a muted line says how to write the answer: the key's `hint`, else
+  "Enter a number, e.g. 42, -0.5, 1/3 or 2.5e-3." for `numeric` keys and "A word or short
+  phrase" otherwise (`answerHint()`). It is the input's `aria-describedby`; problems such as
+  "Type an answer first" appear in red below it.
+- **Gap-fill**: the build turns `{{n}}` in the question into `<span class="blank"
+  data-blank="n">`, and `QuestionCard` renders an input into each one (React portals, so the
+  build-time HTML is untouched). A blank's `hint` is its placeholder and part of its label
+  ("Blank 2 of 3 (one word)"); `Enter` moves to the next blank and checks on the last one.
+  **Check** needs every blank filled; after grading each blank turns green or red and the
+  answer box lists what each blank accepts.
 
 ### Grading rules (`src/lib/grading.ts`)
 
@@ -118,7 +124,7 @@ shows `source` title, license (linked to `license_url`) and the question id.
 | `short_answer` + `accept` | correct iff the input equals an accepted answer after normalization: Unicode NFKC, lowercase, whitespace and punctuation (`\p{P}`) removed — math symbols such as `+ ^ =` are kept |
 | `short_answer` + `numeric` | correct iff \|x − value\| ≤ `tolerance` (plus 1e-9 relative slack for float noise). Input may be `760`, `-0.5`, `7.6e2`, `1,000`, `0,5`, `1/3`; anything else asks for a number instead of grading (numeric-only keys) |
 | `short_answer` + `pattern` | correct iff the trimmed, NFKC-normalized input fully matches the regex, ignoring case: `new RegExp("^(?:" + pattern + ")$", "i")`, no `u` flag so identity escapes such as `\-` work as in Python (`ShortAnswer.matches_pattern`). NFKC makes full-width `（32，3）` match `\(32,3\)` |
-| `short_answer`, model only | self-graded: **Show answer** reveals the model answer, then **I got it** / **I missed it** |
+| `short_answer` gap-fill (`blanks`) | each blank is graded with its own key (rules above); correct iff every blank is |
 
 A key may combine `numeric`, `accept` and `pattern`: they are tried in that order and any
 match counts. The build fails on a `pattern` that does not compile in JavaScript, uses
@@ -170,11 +176,8 @@ the random draw happens in the browser from the questions embedded at build time
     status bar) and focuses it. The question in view — the last one whose top is above a
     line a third of the way down the window, or the one just jumped to — is "current": it is
     highlighted, saved as the position, and scrolled back to after a reload.
-- **Open short answers** (model answer only) are typed like any other answer during the test.
-  On the results screen each answered one shows the model answer and **I got it** / **I missed
-  it**; until then it is "Grade yourself" and does not count as correct. Each verdict rescores
-  the test, updates the attempt in the history (and the best score), and records the result for
-  practice progress; verdicts can be changed. Blank open answers count as not answered.
+- **Short answers** are graded exactly as in practice. A gap-fill with every blank empty is
+  "not answered"; once anything is typed, an empty blank counts as wrong.
 - **Timer.** Derived from the start timestamp (`remainingMs(startedAt, durationMs, now)`), so
   it stays right when the tab sleeps or the page reloads; at 00:00 the test submits itself.
 - **Resume.** The test in progress (question ids, option orders, answers, flags, position,

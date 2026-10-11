@@ -1,4 +1,5 @@
 import type { Ref } from "react";
+import { describeAccepted, inputKeys, isGapFill } from "../lib/grading";
 import type { Score } from "../lib/session";
 import type { QuizQuestion } from "../lib/types";
 import { url } from "../lib/url";
@@ -85,7 +86,16 @@ export function Summary({ score, missed, onRetryMissed, onRestart, ref }: Summar
 }
 
 function CorrectAnswer({ question: q }: { question: QuizQuestion }) {
-  if (q.answer) return <Html html={q.answer.modelHtml} className="mt-1" />;
+  if (q.answer) {
+    const keys = inputKeys(q.answer);
+    return (
+      <span className="mt-1 block">
+        {isGapFill(q.answer)
+          ? keys.map((k, i) => `${i + 1}: ${describeAccepted(k)}`).join(" · ")
+          : describeAccepted(q.answer)}
+      </span>
+    );
+  }
   const correct = (q.options ?? []).filter((o) => o.correct);
   if (correct.length === 1 && correct[0]) return <Html html={correct[0].html} inline />;
   return (

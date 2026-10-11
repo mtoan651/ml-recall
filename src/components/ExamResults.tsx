@@ -1,7 +1,6 @@
 import { type Ref, useEffect, useState } from "react";
 import {
   describeAttempt,
-  type ExamAttempt,
   type ExamHistory,
   type ExamOutcome,
   type ExamScore,
@@ -26,12 +25,6 @@ export interface FinishedExam {
   timedOut: boolean;
   /** Better than every earlier test of this topic or tag. */
   newBest: boolean;
-  /** The learner's verdicts on open short answers (id → right?). */
-  selfGrades: Record<string, boolean>;
-  /** The attempt as recorded in the history (its score follows the self-grades). */
-  attempt: ExamAttempt;
-  /** Best attempt before this test, to tell whether this one is a new best. */
-  previousBest: ExamAttempt | undefined;
 }
 
 interface ExamResultsProps {
@@ -40,8 +33,6 @@ interface ExamResultsProps {
   scope: ExamScopeView;
   history: ExamHistory;
   showTopic: boolean;
-  /** Mark an open short answer right or wrong after comparing it with the model answer. */
-  onSelfGrade: (id: string, right: boolean) => void;
   onNewTest: () => void;
   ref?: Ref<HTMLElement>;
 }
@@ -54,11 +45,6 @@ const OUTCOME: Record<ExamOutcome, { label: string; tone: string; Icon: typeof C
     tone: "border-dashed border-line-strong bg-canvas text-muted",
     Icon: MinusIcon,
   },
-  pending: {
-    label: "Grade yourself",
-    tone: "border-note/50 bg-note-soft text-note",
-    Icon: FlagIcon,
-  },
 };
 
 const noop = () => {};
@@ -70,21 +56,17 @@ export function ExamResults({
   scope,
   history,
   showTopic,
-  onSelfGrade,
   onNewTest,
   ref,
 }: ExamResultsProps) {
-  const { state, score, finishedAt, usedMs, timedOut, newBest, selfGrades } = result;
+  const { state, score, finishedAt, usedMs, timedOut, newBest } = result;
   // The best score so far, unless it is this very test.
   const otherBest = history.best && history.best.at !== finishedAt ? history.best : undefined;
   const [onlyIncorrect, setOnlyIncorrect] = useState(false);
   const [jumpTo, setJumpTo] = useState<string | null>(null);
-  const wrongCount = score.incorrect + score.unanswered + score.pending;
+  const wrongCount = score.incorrect + score.unanswered;
   const rows = state.items.map((item, k) => ({ item, k, outcome: score.outcomes[item.id] }));
-  // Open answers graded while the filter is on stay in view (they don't vanish on "I got it").
-  const visible = onlyIncorrect
-    ? rows.filter((r) => r.outcome !== "correct" || r.item.id in selfGrades)
-    : rows;
+  const visible = onlyIncorrect ? rows.filter((r) => r.outcome !== "correct") : rows;
 
   // Jump to a question from the grid (showing it first if the filter hides it).
   useEffect(() => {
@@ -127,8 +109,6 @@ export function ExamResults({
         <p className="mt-2 text-sm text-muted tabular-nums">
           Time used {formatClock(usedMs, "floor")} of {formatClock(state.durationMs)}
           {score.unanswered > 0 && ` · ${score.unanswered} not answered`}
-          {score.pending > 0 &&
-            ` · ${score.pending} open ${score.pending === 1 ? "answer" : "answers"} to grade yourself`}
           {state.reviewedOnly && " · reviewed questions only"}
           {otherBest && ` · best ${describeAttempt(otherBest)}`}
         </p>
@@ -190,7 +170,7 @@ export function ExamResults({
                 checked={onlyIncorrect}
                 onChange={(e) => setOnlyIncorrect(e.target.checked)}
               />
-              Show only {score.pending > 0 ? "incorrect or ungraded" : "incorrect"} ({wrongCount})
+              Show only incorrect ({wrongCount})
             </label>
           )}
         </div>
@@ -204,8 +184,6 @@ export function ExamResults({
             if (!question) return null;
             const answer = examAnswerOf(state, item.id);
             const { label, tone, Icon } = OUTCOME[outcome];
-            // Open short answers that were answered: the learner grades them against the model.
-            const open = outcome === "pending" || item.id in selfGrades;
             return (
               <li key={item.id} id={`review-${item.id}`} className="scroll-mt-4">
                 <p className="mb-2 flex flex-wrap items-center gap-2 text-sm">
@@ -228,13 +206,8 @@ export function ExamResults({
                   item={item}
                   answer={{
                     ...answer,
-                    revealed: open,
-                    outcome:
-                      outcome === "pending"
-                        ? undefined
-                        : outcome === "correct"
-                          ? "correct"
-                          : "incorrect",
+                    blanks: answer.blanks ?? [],
+                    outcome: outcome === "correct" ? "correct" : "incorrect",
                   }}
                   number={k + 1}
                   showTopic={showTopic}
@@ -243,57 +216,11 @@ export function ExamResults({
                   onText={noop}
                   onSubmitText={noop}
                 />
-                {open && (
-                  <SelfGrade
-                    verdict={selfGrades[item.id]}
-                    onGrade={(right) => onSelfGrade(item.id, right)}
-                  />
-                )}
               </li>
             );
           })}
         </ol>
       </section>
-    </div>
-  );
-}
-
-/** "Compare with the model answer": the learner's own verdict on an open short answer. */
-function SelfGrade({
-  verdict,
-  onGrade,
-}: {
-  verdict: boolean | undefined;
-  onGrade: (right: boolean) => void;
-}) {
-  const button = (right: boolean, text: string) => {
-    const chosen = verdict === right;
-    return (
-      <button
-        type="button"
-        aria-pressed={chosen}
-        onClick={() => onGrade(right)}
-        className={`rounded-lg px-4 py-2 font-medium ${
-          chosen
-            ? right
-              ? "bg-good text-white"
-              : "bg-bad text-white"
-            : "border border-line-strong bg-surface hover:bg-subtle"
-        }`}
-      >
-        {text}
-      </button>
-    );
-  };
-  return (
-    <div className="mt-3 flex flex-wrap items-center gap-2 rounded-xl border border-note/40 bg-note-soft px-4 py-3">
-      <p className="mr-auto text-sm text-note">
-        {verdict === undefined
-          ? "Open question: compare your answer with the model answer, then grade it."
-          : "Graded by you. You can change it."}
-      </p>
-      {button(false, "I missed it")}
-      {button(true, "I got it")}
     </div>
   );
 }

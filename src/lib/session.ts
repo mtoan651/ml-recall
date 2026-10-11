@@ -24,10 +24,10 @@ export interface SessionItem {
 export interface Answer {
   /** Selected options, as original option indexes. */
   selected: number[];
-  /** Typed short answer. */
+  /** Typed short answer (one input). */
   text: string;
-  /** Self-graded short answer: the model answer has been revealed. */
-  revealed: boolean;
+  /** Typed answers of a gap-fill, one per blank in order. */
+  blanks: string[];
   /** Set once the answer has been graded. */
   outcome?: Outcome;
 }
@@ -62,7 +62,23 @@ export function createSession(
   return { items, position: 0, answers: {}, finished: items.length === 0 };
 }
 
-export const EMPTY_ANSWER: Answer = { selected: [], text: "", revealed: false };
+export const EMPTY_ANSWER: Answer = { selected: [], text: "", blanks: [] };
+
+/** The typed inputs of a short answer, in order: the blanks of a gap-fill, or the one text. */
+export function typedInputs(
+  answer: { text: string; blanks?: readonly string[] | undefined },
+  gapFill: boolean,
+): string[] {
+  return gapFill ? [...(answer.blanks ?? [])] : [answer.text];
+}
+
+/** `blanks` with the input at `index` replaced (gaps filled with ""). */
+export function setBlank(blanks: readonly string[], index: number, text: string): string[] {
+  const next = [...blanks];
+  while (next.length <= index) next.push("");
+  next[index] = text;
+  return next;
+}
 
 export function currentItem(session: Session): SessionItem | undefined {
   return session.finished ? undefined : session.items[session.position];
@@ -75,8 +91,8 @@ export function answerOf(session: Session, id: string): Answer {
 export type SessionAction =
   /** Select an option (original index); toggles for "select all that apply". */
   | { type: "select"; option: number; multiple: boolean }
-  | { type: "type"; text: string }
-  | { type: "reveal" }
+  /** Type into the answer, or into blank `blank` (0-based) of a gap-fill. */
+  | { type: "type"; text: string; blank?: number }
   | { type: "grade"; outcome: Outcome }
   | { type: "next" }
   | { type: "restart"; session: Session };
@@ -108,10 +124,12 @@ export function sessionReducer(session: Session, action: SessionAction): Session
         ...a,
         selected: toggleOption(a.selected, action.option, action.multiple),
       }));
-    case "type":
-      return updateCurrent(session, (a) => ({ ...a, text: action.text }));
-    case "reveal":
-      return updateCurrent(session, (a) => ({ ...a, revealed: true }));
+    case "type": {
+      const { blank, text } = action;
+      return updateCurrent(session, (a) =>
+        blank === undefined ? { ...a, text } : { ...a, blanks: setBlank(a.blanks, blank, text) },
+      );
+    }
     case "grade":
       return updateCurrent(session, (a) => ({ ...a, outcome: action.outcome }));
     case "next": {

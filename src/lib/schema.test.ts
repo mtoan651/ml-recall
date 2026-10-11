@@ -157,7 +157,7 @@ describe("question rules (Question._consistent)", () => {
     const refs = [{ source: "d2l" }];
     const q = {
       type: "short_answer",
-      answer: { model: "x" },
+      answer: { accept: ["x"] },
       status: "reviewed",
       references: refs,
     };
@@ -168,7 +168,11 @@ describe("question rules (Question._consistent)", () => {
   });
 
   it("checks that every citation marker has a reference", () => {
-    const q = { type: "short_answer", answer: { model: "x [^2]" }, references: [{ title: "T" }] };
+    const q = {
+      type: "short_answer",
+      answer: { accept: ["x"], model: "x [^2]" },
+      references: [{ title: "T" }],
+    };
     expect(ok(q)).toBe(false);
     expect(ok({ ...q, references: [{ title: "T" }, { url: "https://example.org" }] })).toBe(true);
   });
@@ -177,6 +181,19 @@ describe("question rules (Question._consistent)", () => {
     expect(referenceSchema.safeParse({ locator: "p. 3" }).success).toBe(false);
     expect(referenceSchema.safeParse({ url: "javascript:alert(1)" }).success).toBe(false);
     expect(referenceSchema.safeParse({ url: "https://d2l.ai" }).success).toBe(true);
+  });
+
+  it("rejects open short answers and checks gap-fill blanks against the keys", () => {
+    expect(ok({ type: "short_answer", answer: { model: "Explain it" } })).toBe(false);
+    const blanks = [{ accept: ["off"] }, { accept: ["greedy"] }];
+    const fill = (question: string) => ok({ type: "short_answer", question, answer: { blanks } });
+    expect(fill("An {{1}}-policy method with a {{2}} target.")).toBe(true);
+    expect(fill("Only {{1}}.")).toBe(false);
+    expect(fill("{{2}} before {{1}}.")).toBe(false);
+    expect(fill("`np.{{1}}` and {{2}}")).toBe(false); // a blank inside code
+    expect(
+      ok({ type: "short_answer", question: "{{1}} {{2}}", answer: { blanks, accept: ["x"] } }),
+    ).toBe(false);
   });
 
   it("validates the answer key of a short answer", () => {
