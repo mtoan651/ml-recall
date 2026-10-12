@@ -10,7 +10,7 @@ from collections import Counter, defaultdict
 from dataclasses import dataclass, field
 from difflib import SequenceMatcher
 
-from . import bank
+from . import bank, notes
 from .schema import Question
 
 # Options that refer to other options break when options are shuffled.
@@ -69,6 +69,10 @@ def collect() -> Report:
         for q in quiz.questions:
             r.questions.append((quiz.domain, q))
             _check_question(r, f, q, sources)
+
+    note_errors, note_warnings = notes.check_notes(topics, set(sources))
+    r.errors += note_errors
+    r.warnings += note_warnings
 
     _check_unique(r, "question id", [q.id for _, q in r.questions])
     _check_unique(r, "source ref", [f"{q.source.id}:{q.source.ref}" for _, q in r.questions])

@@ -5,6 +5,7 @@
  * - `quizzes`  — one entry per topic file, src/content/quizzes/<domain>/<topic>.yaml
  * - `domains`  — taxonomy.yaml, one entry per domain (with its topics), in file order
  * - `sources`  — sources.yaml, the source registry
+ * - `notes`    — one Markdown note per topic, src/content/notes/<domain>/<topic>.md
  */
 
 import { defineCollection } from "astro:content";
@@ -14,6 +15,7 @@ import { parse } from "yaml";
 import {
   domainSchema,
   formatIssues,
+  noteSchema,
   quizFileSchema,
   sourceRegistrySchema,
   sourceSchema,
@@ -57,4 +59,10 @@ const sources = defineCollection({
   schema: sourceSchema,
 });
 
-export const collections = { quizzes, domains, sources };
+// The body is rendered by src/lib/markdown.ts (like question text), not by Astro's Markdown.
+const notes = defineCollection({
+  loader: glob({ pattern: "*/*.md", base: "./src/content/notes" }),
+  schema: noteSchema,
+});
+
+export const collections = { quizzes, domains, sources, notes };

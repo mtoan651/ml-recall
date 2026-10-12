@@ -222,6 +222,21 @@ export const quizFileSchema = z.strictObject({
   questions: z.array(questionSchema).default([]),
 });
 
+// --------------------------------------------------------------------------- notes
+
+/** Front matter of a topic note (src/content/notes/<domain>/<topic>.md); mirrors `Note`. */
+export const noteSchema = z
+  .strictObject({
+    topic: slug,
+    summary: z.string().min(1).max(200),
+    status: z.enum(["draft", "reviewed"]).default("draft"),
+    reviewed_by: z.enum(["owner", "claude"]).nullish(),
+    references: z.array(referenceSchema).min(2),
+  })
+  .refine((n) => n.status !== "reviewed" || Boolean(n.reviewed_by), {
+    error: "a reviewed note needs reviewed_by",
+  });
+
 // --------------------------------------------------------------------------- taxonomy
 
 export const topicSchema = z.strictObject({
