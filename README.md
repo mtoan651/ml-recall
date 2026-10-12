@@ -9,11 +9,11 @@ mock exams and spaced repetition. Free static site on GitHub Pages.
 
 ## What's inside
 
-- **2897 questions** across 10 domains — 985 imported from open-licensed quiz sets, 1110 adapted
+- **2909 questions** across 10 domains — 985 imported from open-licensed quiz sets, 1110 adapted
   from open-licensed exercises, courses, books and code (d2l, Gutmann, Deep Learning Interviews,
   UBC, Neuromatch, Kaggle Learn, forall x, LLMs-from-scratch, Tensor Puzzles, …), 374 adapted
   from non-commercial course material (MIT OpenCourseWare, NPTEL), 132 paraphrased from the
-  CE6146 course exercises and lectures, 296 original. All are reviewed: 56 by the owner and 2841
+  CE6146 course exercises and lectures, 308 original. All are reviewed: 56 by the owner and 2853
   by Claude at the owner's request (shown as "AI-checked").
 - Four question types: `single`, `multiple` (select all), `true_false`, `short_answer`
   (auto-graded fill-in: a number, a word or phrase, or a gap-fill with several blanks).
@@ -30,14 +30,14 @@ mock exams and spaced repetition. Free static site on GitHub Pages.
 | Artificial Intelligence | 6 | 303 | 303 |
 | Mathematics for ML | 5 | 372 | 372 |
 | Machine Learning | 14 | 864 | 864 |
-| Deep Learning | 8 | 474 | 474 |
+| Deep Learning | 8 | 486 | 486 |
 | Computer Vision | 3 | 119 | 119 |
 | Natural Language Processing | 5 | 212 | 212 |
 | Generative Models | 3 | 92 | 92 |
 | Large Language Models | 4 | 138 | 138 |
 | Reinforcement Learning | 3 | 93 | 93 |
 | Practical Tools | 3 | 230 | 230 |
-| **Total** | | **2897** | **2897** |
+| **Total** | | **2909** | **2909** |
 
 Questions come from 54 external sources: importers for the Hugging Face LLM, Deep RL, AI Agents
 and Audio courses, Microsoft AI, ML and Data Science for Beginners, Google's ML Crash Course and

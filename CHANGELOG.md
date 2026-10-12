@@ -12,6 +12,13 @@ versioning: [SemVer](https://semver.org) as defined in [docs/conventions.md](doc
   mixed test draws only questions with at least one chosen tag (within the chosen topics and
   difficulties). A tag page with more than 20 questions links to `/exam/?tag=<tag>` for a
   longer test or one by difficulty — e.g. all 132 `ce6146` questions, up to 50 at a time.
+- **12 questions for Deep Learning Frameworks** (18 → 30), the only topic that could not fill a
+  20-question test: eager vs. graph execution, tracing and data-dependent `if`, JAX `jit`
+  retracing and PRNG keys, float16 loss scaling, activation checkpointing (peak memory),
+  gradient accumulation, `DataLoader` workers, DDP gradient averaging, ZeRO-2 memory,
+  run-to-run nondeterminism, `state_dict` vs. pickling. Written and then reviewed by a second,
+  independent pass (every key re-run with PyTorch 2.14 / JAX 0.11 or simulated, every reference
+  opened; 10 fixed, none dropped), `reviewed_by: claude`.
 
 ### Fixed
 

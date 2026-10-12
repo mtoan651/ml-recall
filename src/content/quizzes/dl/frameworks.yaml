@@ -704,3 +704,601 @@ questions:
       ref: frameworks-018
     status: reviewed
     reviewed_by: claude
+  - id: frameworks-019
+    type: multiple
+    difficulty: easy
+    tags:
+      - computation-graph
+      - eager-execution
+      - symbolic-programming
+      - compilation
+    question: |
+      A deep learning framework can run each tensor operation as soon as Python reaches it (eager,
+      imperative or define-by-run execution), or first build the whole computation as a graph and
+      then compile and run it (symbolic or define-and-run execution). Which statements are true?
+      Select all that apply.
+    options:
+      - text: In eager mode you can `print` any intermediate tensor or inspect it in a Python debugger
+        correct: true
+      - text: A compiled graph can be optimized as a whole and run without the Python interpreter
+        correct: true
+      - text: Only a static graph can be differentiated automatically; eager code needs finite differences
+        why: PyTorch's autograd records the operations while eager code runs and backpropagates through that record, which gives exact gradients [^2].
+      - text: Eager execution is always faster, since it skips the compilation step entirely
+        why: Every eager operation goes through the Python interpreter, and on fast GPUs this overhead can dominate; a compiled program can skip the interpreter and be rewritten as a whole [^1].
+    explanation: |
+      d2l contrasts the two styles. Imperative (eager) code is easier to write and to debug, because
+      every intermediate value exists and can be printed or examined with Python's debugging tools.
+      Symbolic code is more efficient and easier to port: the compiler sees the whole program before
+      it runs, so it can rewrite and optimize it, avoid the Python interpreter's overhead and export
+      the program to run outside Python [^1]. Both styles support automatic differentiation: PyTorch's
+      autograd builds the graph while the forward pass runs and rebuilds it at every iteration, which
+      is what lets ordinary Python control flow change the graph from one step to the next [^2].
+      Hybrid programming combines them: develop and debug eagerly, then compile the finished model
+      for speed and deployment [^1].
+    references:
+      - source: d2l
+        url: https://d2l.ai/chapter_computational-performance/hybridize.html#symbolic-programming
+        locator: Sec. 13.1 Compilers and Interpreters (13.1.1 Symbolic Programming, 13.1.2 Hybrid Programming)
+      - title: 'PyTorch documentation: Autograd mechanics'
+        url: https://docs.pytorch.org/docs/stable/notes/autograd.html#how-autograd-encodes-the-history
+        locator: How autograd encodes the history
+    source:
+      id: original
+      ref: frameworks-019
+    status: reviewed
+    reviewed_by: claude
+  - id: frameworks-020
+    type: single
+    difficulty: medium
+    tags:
+      - computation-graph
+      - tracing
+      - control-flow
+      - graph-capture
+      - pytorch
+    question: |
+      A simple tracer, such as PyTorch's `torch.jit.trace`, runs a function once on an example input
+      and records the tensor operations that execute. Plain Python values, such as the outcome of an
+      `if` test, are frozen as constants, and no check on them is recorded. The function below is
+      traced with the example input `torch.ones(3)`:
+
+      ```python
+      def f(x):
+          if x.sum() > 0:
+              return x * 2
+          return -x
+      ```
+
+      What does the recorded graph return when it is then called with `-torch.ones(3)`?
+    options:
+      - text: '`tensor([-2., -2., -2.])`'
+        correct: true
+      - text: '`tensor([1., 1., 1.])`'
+        why: That is what calling `f` itself returns. The graph contains only `x * 2`, the branch taken for the example input; the `if` test was never recorded [^1].
+      - text: '`tensor([2., 2., 2.])`'
+        why: The tracer records operations, not the example's output; the recorded `x * 2` is applied to the new input, which gives −2 in every entry.
+      - text: An error, because the new input takes a different branch than the example did
+        why: A simple tracer records no check on the branch, so the graph runs and silently returns a wrong result; `torch.jit.trace` only warns while tracing. `torch.export`, in contrast, refuses to capture such data-dependent control flow in the first place [^2].
+    explanation: |
+      The test `x.sum() > 0` turned into a Python boolean during tracing, so only the operations of
+      the branch taken for `torch.ones(3)`, namely `x * 2`, are in the graph, and the traced function
+      runs that same graph on any input [^1]. Called on `-torch.ones(3)`, it gives $-2$ in every
+      entry, while `f` itself would return ones. `torch.jit.trace` (now deprecated) behaves exactly
+      like this and only emits a `TracerWarning` while tracing. The newer tools deal with the problem
+      explicitly: `torch.export` must capture a full graph, so it raises an error on data-dependent
+      control flow and asks you to rewrite it with explicit control-flow operators, while
+      `torch.compile` inserts a "graph break" and runs that part in eager Python [^2]. JAX's `jit`
+      likewise raises an error when a Python `if` depends on a traced value and points to
+      `jax.lax.cond` instead [^3].
+    references:
+      - title: 'PyTorch documentation (2.10): torch.jit.trace'
+        url: https://docs.pytorch.org/docs/2.10/generated/torch.jit.trace.html
+        locator: torch.jit.trace (warning on data-dependent control flow)
+      - title: 'PyTorch documentation: torch.export'
+        url: https://docs.pytorch.org/docs/stable/user_guide/torch_compiler/export.html#existing-frameworks
+        locator: Existing frameworks (partial vs. full graph capture; comparison with torch.jit.trace); Data/Shape-Dependent Control Flow
+      - title: 'JAX documentation: Just-in-time compilation'
+        url: https://docs.jax.dev/en/latest/201/jit.html#why-can-t-we-just-jit-everything
+        locator: Why can't we just jit everything?
+    source:
+      id: original
+      ref: frameworks-020
+    status: reviewed
+    reviewed_by: claude
+  - id: frameworks-021
+    type: true_false
+    difficulty: easy
+    tags:
+      - jax
+      - random-seed
+      - prng-key
+      - reproducibility
+      - pure-functions
+    shuffle: false
+    question: |
+      ```python
+      import jax
+
+      key = jax.random.key(0)
+      a = jax.random.normal(key, (3,))
+      b = jax.random.normal(key, (3,))
+      ```
+
+      True or false: `a` and `b` contain different random numbers.
+    options:
+      - text: 'True'
+        why: JAX has no hidden generator state that advances between calls; `normal` is a pure function of its key, so the same key gives the same sample [^1].
+      - text: 'False'
+        correct: true
+    explanation: |
+      Every function in `jax.random` is a pure, deterministic function of the key it receives: called
+      twice with the same key, it returns the same numbers, by design [^1]. This differs from NumPy's
+      global generator, which silently advances after each draw [^1]. To get new numbers you
+      derive new keys, e.g. `key, subkey = jax.random.split(key)`, and you never reuse a key unless you
+      want identical outputs [^1]. JAX avoids hidden state because its compiler must be free to
+      reorder and parallelize work, and its transformations such as `jit` only work correctly on pure
+      functions [^1][^2].
+    references:
+      - title: 'JAX documentation: Pseudorandom numbers'
+        url: https://docs.jax.dev/en/latest/101/random.html#keys-are-values
+        locator: Why not a global generator?; Keys are values; Deriving new keys
+      - title: 'JAX documentation: JAX - The Sharp Bits'
+        url: https://docs.jax.dev/en/latest/notebooks/Common_Gotchas_in_JAX.html#pure-functions
+        locator: Pure functions
+    source:
+      id: original
+      ref: frameworks-021
+    status: reviewed
+    reviewed_by: claude
+  - id: frameworks-022
+    type: short_answer
+    difficulty: hard
+    tags:
+      - jax
+      - jit
+      - tracing
+      - pure-functions
+      - side-effects
+    question: |
+      ```python
+      import jax
+      import jax.numpy as jnp
+
+      calls = []
+
+      @jax.jit
+      def f(x):
+          calls.append(1)        # a Python side effect
+          return 2 * x
+
+      for v in [1.0, 2.0, 3.0]:
+          f(jnp.array(v))
+      f(jnp.arange(3.0))
+      f(jnp.arange(4.0))
+      f(jnp.arange(4.0) + 1)
+      print(len(calls))
+      ```
+
+      What does the last line print?
+    answer:
+      numeric: 3
+      tolerance: 0
+      hint: a whole number
+      model: '3: one trace each for the float32 shapes `()`, `(3,)` and `(4,)`; the other calls reuse a cached compilation.'
+    explanation: |
+      `jax.jit` runs the Python body only to trace it: tracers record the JAX operations, and Python
+      side effects such as `calls.append(1)` happen during that trace but are not part of the compiled
+      computation [^1]. The compiled executable is cached under the JAX types of the arguments (shape
+      and dtype): later calls with the same types never run the Python function again, while a new
+      shape or dtype triggers a fresh trace [^1]. The six calls here have three distinct argument
+      types: the scalars, all created the same way by `jnp.array(v)` and hence of one type;
+      `float32[3]`; and `float32[4]`, shared by `jnp.arange(4.0)` and `jnp.arange(4.0) + 1`, whose
+      values differ but whose type does not. So the body runs 3 times. This is why
+      jitted functions must be pure: a side effect appears on the first call and then silently
+      vanishes [^1][^2].
+    references:
+      - title: 'JAX documentation: Just-in-time compilation'
+        url: https://docs.jax.dev/en/latest/201/jit.html#what-the-compiled-function-captures
+        locator: What the compiled function captures; JIT and caching
+      - title: 'JAX documentation: JAX - The Sharp Bits'
+        url: https://docs.jax.dev/en/latest/notebooks/Common_Gotchas_in_JAX.html#pure-functions
+        locator: Pure functions
+    source:
+      id: original
+      ref: frameworks-022
+    status: reviewed
+    reviewed_by: claude
+  - id: frameworks-023
+    type: single
+    difficulty: medium
+    tags:
+      - mixed-precision
+      - float16
+      - loss-scaling
+      - underflow
+      - floating-point
+    question: |
+      In float16 mixed-precision training, the loss is multiplied by a large factor $S$ (e.g. 1024)
+      before `backward()`, and the gradients are divided by $S$ again before the optimizer step. What
+      problem does this solve?
+    options:
+      - text: Small gradients would underflow to zero in float16; scaling moves them into its range
+        correct: true
+      - text: It raises the effective learning rate $S$-fold to make up for float16's low precision
+        why: The gradients are unscaled before the optimizer step, so the scale factor does not change the size of the update or interfere with the learning rate [^1][^2].
+      - text: It stops large gradients from overflowing to infinity in float16
+        why: Scaling up makes overflow more likely, not less; when `inf` or `NaN` gradients appear, the update is skipped and $S$ is lowered [^1].
+      - text: It lets the optimizer update float16 weights directly, without a float32 master copy
+        why: Loss scaling protects the gradient values; the float32 master copy of the weights is a separate technique, needed because tiny updates vanish when added to float16 weights [^1].
+    explanation: |
+      float16 has 5 exponent bits: its largest finite value is 65504 and its smallest positive
+      (subnormal) value is $2^{-24} \approx 6 \times 10^{-8}$ [^3]. Gradients smaller than that flush to
+      zero, and the updates of the corresponding parameters are lost [^2]. In Micikevicius et al.'s
+      SSD example many activation gradients fell below this range although values down to $2^{-27}$
+      mattered, and scaling by 8 was enough to match float32 accuracy [^1]. Multiplying the loss by
+      $S$ multiplies every gradient by $S$ through the chain rule at no extra cost, and dividing by $S$
+      before the update keeps the step unchanged [^1][^2]. bfloat16 keeps float32's 8 exponent bits and
+      hence its range [^4], so gradients that underflow in float16 stay representable: PyTorch's
+      float16 recipe pairs autocasting with a gradient scaler, while its bfloat16 mixed precision on
+      CPU uses autocasting alone [^2].
+    references:
+      - title: Micikevicius et al. (2018), Mixed Precision Training, ICLR, arXiv:1710.03740
+        url: https://arxiv.org/abs/1710.03740
+        locator: Sec. 3.1 FP32 Master Copy of Weights; Sec. 3.2 Loss Scaling; Sec. 5 Conclusions
+      - title: 'PyTorch documentation: Automatic Mixed Precision package (torch.amp)'
+        url: https://docs.pytorch.org/docs/stable/amp.html#gradient-scaling
+        locator: Introduction; Gradient Scaling
+      - title: 'Wikipedia: Half-precision floating-point format'
+        url: https://en.wikipedia.org/wiki/Half-precision_floating-point_format#Exponent_encoding
+        locator: 'IEEE 754 half-precision binary floating-point format: binary16; Exponent encoding'
+      - title: 'Wikipedia: bfloat16 floating-point format'
+        url: https://en.wikipedia.org/wiki/Bfloat16_floating-point_format
+        locator: Introduction
+    source:
+      id: original
+      ref: frameworks-023
+    status: reviewed
+    reviewed_by: claude
+  - id: frameworks-024
+    type: short_answer
+    difficulty: hard
+    tags:
+      - activation-checkpointing
+      - memory
+      - backpropagation
+      - compute-memory-tradeoff
+    question: |
+      A network is a chain of 100 layers. Its input and every layer output have the same size; call
+      one such tensor a unit, and count only these activations (ignore weights and gradients). Plain
+      backpropagation keeps the input and all 100 layer outputs until the backward pass has used
+      them: 101 units.
+
+      With activation checkpointing, the chain is cut into equal segments. The forward pass keeps
+      only the input of each segment and frees every other activation as soon as the next layer has
+      used it. The backward pass then handles the segments from last to first: it recomputes all
+      the layer outputs of a segment from the segment's saved input, keeps them until that segment's
+      backward pass is done, and then frees them together with the segment's saved input.
+
+      With 4 segments of 25 layers, the peak memory is {{1}} units. The number of equal segments
+      that minimizes the peak is {{2}}.
+    answer:
+      blanks:
+        - numeric: 29
+          tolerance: 0
+          hint: a whole number of units
+        - numeric: 10
+          tolerance: 0
+          hint: a whole number
+      model: "The last segment's backward pass holds the 4 saved inputs plus its 25 recomputed outputs: 29. With $m$ segments the peak is $m + 100/m$, smallest at $m = 10$ (20 units)."
+    explanation: |
+      The backward pass needs the activations of every layer, so plain backpropagation stores all of
+      them, and memory grows linearly with depth. Checkpointing trades compute for memory: tensors
+      computed inside a checkpointed segment are not kept; only the segment's input is, and the rest
+      is recomputed by running the segment again during the backward pass [^1]. The peak comes during
+      the last segment's backward pass: all 4 saved segment inputs (the network input and the outputs
+      of layers 25, 50 and 75) plus the 25 recomputed outputs, $4 + 25 = 29$ units instead of 101;
+      each earlier segment holds one saved input fewer. In general, $m$ segments of $100/m$ layers
+      peak at $m + 100/m$ units, which over the divisors of 100 is smallest at $m = 10$ (20 units),
+      while 5 or 20 segments give 25. Chen et al. describe the same trade-off: for $n$ layers in $k$
+      segments the cost is $O(n/k) + O(k)$, and $k = \sqrt{n}$ gives $O(\sqrt{n})$ memory for about
+      one extra forward pass per minibatch [^2].
+    references:
+      - title: 'PyTorch documentation: torch.utils.checkpoint'
+        url: https://docs.pytorch.org/docs/stable/checkpoint.html#torch.utils.checkpoint.checkpoint
+        locator: torch.utils.checkpoint.checkpoint; torch.utils.checkpoint.checkpoint_sequential
+      - title: Chen et al. (2016), Training Deep Nets with Sublinear Memory Cost, arXiv:1604.06174
+        url: https://arxiv.org/abs/1604.06174
+        locator: Abstract; Sec. 4.3 An O(√n) Memory Cost Algorithm, Eq. (1)
+    source:
+      id: original
+      ref: frameworks-024
+    status: reviewed
+    reviewed_by: claude
+  - id: frameworks-025
+    type: short_answer
+    difficulty: medium
+    tags:
+      - gradient-accumulation
+      - autograd
+      - effective-batch-size
+      - pytorch
+      - code-reading
+    question: |
+      A training loop emulates a batch of 4 examples with two micro-batches of 2, calling `backward()`
+      on each before a single optimizer step:
+
+      ```python
+      import torch
+
+      w = torch.tensor(1.0, requires_grad=True)
+      x = torch.tensor([1.0, 2.0, 3.0, 4.0])
+
+      for chunk in x.split(2):              # two micro-batches of 2 examples
+          loss = ((w * chunk) ** 2).mean()
+          loss.backward()
+      print(w.grad)
+      ```
+
+      What number does the last line print?
+    answer:
+      numeric: 30
+      tolerance: 0
+      hint: a number
+      model: '`tensor(30.)`: $5 + 25$, twice the full-batch gradient 15. Dividing each micro-batch loss by 2 fixes it.'
+    explanation: |
+      For a micro-batch the loss is the mean of $w^2 x_i^2$, so its gradient is $2w$ times the mean of
+      $x_i^2$: $2 \cdot (1 + 4)/2 = 5$ for the first chunk and $2 \cdot (9 + 16)/2 = 25$ for the
+      second. `backward()` adds into `.grad` instead of overwriting it [^1], so `w.grad` is 30. One
+      batch of all 4 examples would give $2 \cdot 30/4 = 15$: summing the gradients of $k$ equal-sized
+      micro-batch means gives $k$ times the gradient of the full-batch mean. PyTorch's gradient
+      accumulation example therefore divides each loss by the number of accumulation steps
+      (`loss = loss / iters_to_accumulate`); the effective batch is then the micro-batch size times
+      the accumulation steps, times the number of processes in distributed training [^2].
+    references:
+      - title: 'PyTorch documentation: torch.Tensor.backward'
+        url: https://docs.pytorch.org/docs/stable/generated/torch.Tensor.backward.html
+        locator: torch.Tensor.backward (gradients are accumulated in the leaves)
+      - title: 'PyTorch documentation: Automatic Mixed Precision examples'
+        url: https://docs.pytorch.org/docs/stable/notes/amp_examples.html#gradient-accumulation
+        locator: Gradient accumulation
+    source:
+      id: original
+      ref: frameworks-025
+    status: reviewed
+    reviewed_by: claude
+  - id: frameworks-026
+    type: short_answer
+    difficulty: medium
+    tags:
+      - data-loader
+      - num-workers
+      - data-loading
+      - gpu
+      - throughput
+    question: |
+      Loading and augmenting one batch takes exactly 30 ms of CPU time, and one training step on the
+      GPU takes exactly 10 ms. The loop calls `loss.item()` every step, so Python waits for each step
+      to finish before it asks the `DataLoader` for the next batch. Ignore all other costs, and assume
+      there are enough CPU cores for all workers.
+
+      With `num_workers=0`, one iteration takes {{1}} ms. The smallest `num_workers` for which, once
+      training is under way, an iteration takes only the 10 ms of the GPU step (the GPU never waits
+      for data) is {{2}}.
+    answer:
+      blanks:
+        - numeric: 40
+          tolerance: 0
+          hint: milliseconds
+        - numeric: 3
+          tolerance: 0
+          hint: a whole number
+      model: '$30 + 10 = 40$ ms in a single process; 3 worker processes, each needing 30 ms per batch, deliver one batch every 10 ms (2 workers: one every 15 ms).'
+    explanation: |
+      With the default `num_workers=0`, data loading runs synchronously in the main process, so the
+      training loop has to wait for every batch [^1][^2]. Because `.item()` synchronizes the CPU with
+      the GPU [^2], loading and the GPU step cannot overlap: $30 + 10 = 40$ ms per iteration, and the
+      GPU sits idle three quarters of the time. With `num_workers > 0`, separate worker processes
+      load and augment batches in the background while the GPU computes, each prefetching batches in
+      advance (`prefetch_factor`, 2 per worker by default) [^1][^2]. One worker finishes a batch
+      every 30 ms, so $w$ workers deliver $w$ batches per 30 ms; the GPU consumes one batch every
+      10 ms, so it no longer waits once $w \ge 3$, while 2 workers still leave 15 ms per iteration.
+      Worker processes, rather than threads, are used because Python's global interpreter lock would
+      keep threads from running Python code in parallel [^1].
+    references:
+      - title: 'PyTorch documentation: torch.utils.data'
+        url: https://docs.pytorch.org/docs/stable/data.html#single-and-multi-process-data-loading
+        locator: Single- and Multi-process Data Loading; DataLoader parameter prefetch_factor
+      - title: 'PyTorch Tutorials: Performance Tuning Guide'
+        url: https://docs.pytorch.org/tutorials/recipes/recipes/tuning_guide.html#enable-asynchronous-data-loading-and-augmentation
+        locator: Enable asynchronous data loading and augmentation; Avoid unnecessary CPU-GPU synchronization
+    source:
+      id: original
+      ref: frameworks-026
+    status: reviewed
+    reviewed_by: claude
+  - id: frameworks-027
+    type: single
+    difficulty: medium
+    tags:
+      - distributed-training
+      - ddp
+      - allreduce
+      - multi-gpu
+      - data-parallelism
+    question: |
+      A model is trained with PyTorch's `DistributedDataParallel` on 4 GPUs, one process per GPU, each
+      process with its own minibatch. Right after `loss.backward()` returns in every process, what
+      does each process hold in its parameters' `.grad`?
+    options:
+      - text: The mean of all 4 processes' gradients, identical in every process
+        correct: true
+      - text: Its own local gradient; rank 0 averages them in `optimizer.step()` and broadcasts new weights
+        why: DDP all-reduces the gradients during the backward pass, so they are already averaged when `backward()` returns; every process then applies the same update to its own replica, and no parameters need to be broadcast after construction [^1].
+      - text: The sum of all 4 gradients, but only on rank 0; the other ranks keep their local ones
+        why: In DDP every process receives the same averaged gradients through all-reduce. Collecting gradients on one device describes `DataParallel`, which sums the replicas' gradients into the original module [^2].
+      - text: A quarter of the averaged gradient, since each process updates a quarter of the parameters
+        why: Splitting gradients and optimizer states across processes is what ZeRO and FSDP do; plain DDP keeps a full replica and full gradients in every process.
+    explanation: |
+      DDP broadcasts the model's state from rank 0 when it is constructed, so all replicas start out
+      identical. During the backward pass it groups gradients into buckets and launches an
+      asynchronous all-reduce on each bucket as soon as its gradients are ready; the averaged
+      gradients are written to `param.grad`, so after `backward()` they are the same in every
+      process [^1]. Each process then runs an ordinary optimizer step on its own replica, and the
+      replicas stay in sync because they start equal and receive equal gradients [^1]. PyTorch
+      recommends DDP over `DataParallel` even on a single machine: one process per GPU avoids the
+      overhead of the Python GIL that `DataParallel`'s threads suffer from [^3].
+    references:
+      - title: 'PyTorch documentation: Distributed Data Parallel (design note)'
+        url: https://docs.pytorch.org/docs/stable/notes/ddp.html#internal-design
+        locator: Internal Design (Construction, Backward Pass, Optimizer Step)
+      - title: 'PyTorch documentation: torch.nn.DataParallel'
+        url: https://docs.pytorch.org/docs/stable/generated/torch.nn.DataParallel.html
+        locator: torch.nn.DataParallel (description and warning)
+      - title: 'PyTorch documentation: CUDA semantics'
+        url: https://docs.pytorch.org/docs/stable/notes/cuda.html#cuda-nn-ddp-instead
+        locator: Use nn.parallel.DistributedDataParallel instead of multiprocessing or nn.DataParallel
+    source:
+      id: original
+      ref: frameworks-027
+    status: reviewed
+    reviewed_by: claude
+  - id: frameworks-028
+    type: short_answer
+    difficulty: hard
+    tags:
+      - zero
+      - sharding
+      - memory
+      - distributed-training
+      - mixed-precision
+      - adam
+    question: |
+      A model with 2 billion parameters is trained with mixed-precision Adam on 8 GPUs. Per parameter
+      it needs 2 bytes for the fp16 weights, 2 bytes for the fp16 gradients and 12 bytes of optimizer
+      state (fp32 master weights, momentum and variance), so plain data parallelism stores 32 GB of
+      these model states on every GPU. ZeRO stage 2 splits the gradients and the optimizer states
+      evenly across the 8 GPUs, while every GPU still keeps all the fp16 weights. How many GB
+      ($10^9$ bytes) of model states does each GPU hold?
+    answer:
+      numeric: 7.5
+      tolerance: 0.05
+      hint: a number of GB
+      model: $2 \cdot 2 + (2 + 12) \cdot 2 / 8 = 4 + 3.5 = 7.5$ GB
+    explanation: |
+      In plain data parallelism every GPU holds a full copy of the model states: with mixed-precision
+      Adam that is $2\Psi + 2\Psi + 12\Psi = 16\Psi$ bytes for $\Psi$ parameters [^1], here 32 GB. ZeRO
+      removes this redundancy by partitioning the states across the $N_d$ data-parallel processes:
+      stage 1 ($P_{os}$) partitions the optimizer states, stage 2 ($P_{os+g}$) also the gradients, and
+      stage 3 ($P_{os+g+p}$) also the parameters, which leaves $4\Psi + 12\Psi/N_d$,
+      $2\Psi + 14\Psi/N_d$ and $16\Psi/N_d$ bytes per GPU [^1]. For stage 2 here:
+      $2 \cdot 2 + 14 \cdot 2/8 = 4 + 3.5 = 7.5$ GB (stage 1 would need 11 GB, stage 3 4 GB). Each
+      process updates only its own share of the parameters, and an all-gather rebuilds the full
+      weights after the step [^1]. PyTorch's `FullyShardedDataParallel` (FSDP) is inspired by ZeRO
+      stage 3 [^2].
+    references:
+      - title: 'Rajbhandari et al. (2019), ZeRO: Memory Optimizations Toward Training Trillion Parameter Models, arXiv:1910.02054'
+        url: https://arxiv.org/abs/1910.02054
+        locator: Sec. 3.1 Model States; Sec. 5.1–5.3 (Pos, Pg, Pp) and Fig. 1
+      - title: 'PyTorch documentation: FullyShardedDataParallel'
+        url: https://docs.pytorch.org/docs/stable/fsdp.html
+        locator: torch.distributed.fsdp.FullyShardedDataParallel (description)
+    source:
+      id: original
+      ref: frameworks-028
+    status: reviewed
+    reviewed_by: claude
+  - id: frameworks-029
+    type: multiple
+    difficulty: medium
+    tags:
+      - reproducibility
+      - nondeterminism
+      - floating-point
+      - gpu
+      - cudnn
+    question: |
+      You train the same model twice on the same GPU, with the same code, data and
+      `torch.manual_seed(0)`. The losses match at first but slowly drift apart over a few hundred
+      steps. Which of these can explain it? Select all that apply.
+    options:
+      - text: Some GPU kernels accumulate with atomic adds, whose order can vary from run to run
+        correct: true
+      - text: If `cudnn.benchmark` is on, cuDNN may choose a different convolution algorithm in each run
+        correct: true
+      - text: '`torch.manual_seed` seeds only the CPU generator, so GPU dropout masks differ in each run'
+        why: '`torch.manual_seed` seeds the random number generators of all devices, CPU and CUDA [^1].'
+      - text: Floating-point rounding is random, so the same additions in the same order can differ
+        why: IEEE 754 rounding is fully determined, so the same operations on the same inputs in the same order give bit-identical results; results differ only when the order of the operations or the algorithm changes [^3].
+    explanation: |
+      Each floating-point operation is rounded in a fully determined way, but addition is not
+      associative: $(a + b) + c$ can differ from $a + (b + c)$ in the last bits [^3]. Some CUDA
+      operations, such as `index_add_` and `scatter_add_`, are nondeterministic [^2], and the backward
+      pass of flash attention uses non-deterministic atomic operations by default [^1]: atomic
+      additions combine partial results in whatever order the threads finish, so the rounding, and
+      thus the result, can change from run to run, and training amplifies these tiny differences.
+      (PyTorch's note explains in the same way why its attention backends do not match bit for bit:
+      each accumulates in a different order [^1].) cuDNN's benchmark mode times several convolution
+      algorithms and keeps the fastest, which may be a different one on the next run, even on the
+      same machine [^1]. Setting `torch.backends.cudnn.benchmark = False` and
+      `torch.use_deterministic_algorithms(True)` makes PyTorch use deterministic implementations, or
+      raise an error where none exists [^1][^2].
+    references:
+      - title: 'PyTorch documentation: Reproducibility'
+        url: https://docs.pytorch.org/docs/stable/notes/randomness.html#avoiding-nondeterministic-algorithms
+        locator: PyTorch random number generator; CUDA convolution benchmarking; Avoiding nondeterministic algorithms (CUDA scaled dot product attention)
+      - title: 'PyTorch documentation: torch.use_deterministic_algorithms'
+        url: https://docs.pytorch.org/docs/stable/generated/torch.use_deterministic_algorithms.html
+        locator: torch.use_deterministic_algorithms (definition and list of nondeterministic operations)
+      - title: 'Wikipedia: Floating-point arithmetic'
+        url: https://en.wikipedia.org/wiki/Floating-point_arithmetic#Accuracy_problems
+        locator: Rounding modes (IEEE 754 results are completely determined); Accuracy problems (addition is not associative)
+    source:
+      id: original
+      ref: frameworks-029
+    status: reviewed
+    reviewed_by: claude
+  - id: frameworks-030
+    type: single
+    difficulty: easy
+    tags:
+      - state-dict
+      - saving-models
+      - serialization
+      - pickle
+      - pytorch
+    question: |
+      Why does PyTorch recommend saving `model.state_dict()` rather than the whole model with
+      `torch.save(model, PATH)`?
+    options:
+      - text: Pickle stores only a reference to the model's class, so loading breaks if that code moves
+        correct: true
+      - text: The `state_dict` also stores the architecture's code, so no class definition is needed to load it
+        why: A `state_dict` holds only named tensors; you first build the model from its class and then call `load_state_dict` [^1].
+      - text: '`torch.save(model)` keeps only the trainable weights and drops buffers such as BatchNorm statistics'
+        why: Pickling saves the entire module object, buffers included; the drawback is that the file depends on the class's code, not that data is missing [^1].
+      - text: A `state_dict` file is stored in ONNX format, so any framework can load it without PyTorch
+        why: A `state_dict` is a Python dictionary of tensors written by `torch.save`; exporting a model to ONNX is a separate step with `torch.onnx`.
+    explanation: |
+      A `state_dict` is a Python dictionary that maps each layer to its parameter tensors and
+      registered buffers [^1]. To load it you rebuild the model from its class and call
+      `load_state_dict`, the recommended method because it gives the most flexibility [^1].
+      `torch.save(model, PATH)` pickles the whole module, but pickle does not store the class itself,
+      only the path to the code that defines it, so the file is bound to those classes and that
+      directory structure and can break after a refactor or in another project [^1]. `torch.load`
+      also restricts unpickling to tensors, primitive types and dictionaries by default
+      (`weights_only=True`), so a whole pickled model needs `weights_only=False`, which should only be
+      used for files from a trusted source [^2]; even then, loading fails with an `AttributeError`
+      ("Can't get attribute …") in a script that does not define the model's class.
+    references:
+      - title: 'PyTorch Tutorials: Saving and Loading Models'
+        url: https://docs.pytorch.org/tutorials/beginner/saving_loading_models.html#save-load-entire-model
+        locator: What is a state_dict?; Save/Load state_dict (Recommended); Save/Load Entire Model
+      - title: 'PyTorch documentation: torch.load'
+        url: https://docs.pytorch.org/docs/stable/generated/torch.load.html
+        locator: torch.load (weights_only parameter and warning)
+    source:
+      id: original
+      ref: frameworks-030
+    status: reviewed
+    reviewed_by: claude
