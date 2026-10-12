@@ -33,6 +33,10 @@ def main(argv: list[str] | None = None) -> int:
     p_sync.add_argument("source", nargs="?", default="all", help="source id, or 'all'")
     p_sync.add_argument("--check", action="store_true", help="report differences, write nothing")
 
+    p_glossary = sub.add_parser(
+        "glossary", help="EN–VI glossary from d2l-vi → src/content/glossary.yaml"
+    )
+    p_glossary.add_argument("--check", action="store_true", help="fail if the file is outdated")
     p_extract = sub.add_parser(
         "extract", help="PDF → Markdown with page markers in .cache/extract/ (to write questions)"
     )
@@ -60,6 +64,10 @@ def main(argv: list[str] | None = None) -> int:
         from .curation_sync import run as sync_curation
 
         return sync_curation(args.source, check=args.check)
+    if args.command == "glossary":
+        from .glossary import run as glossary
+
+        return glossary(check=args.check)
     if args.command == "extract":
         from .extract import run as extract
 

@@ -167,6 +167,13 @@ odd-numbered exercises whose answers are printed in the book. Licensed under
 [CC BY-SA 3.0](https://creativecommons.org/licenses/by-sa/3.0/); the adapted questions are shared
 under the same licence. Stems are paraphrased; data and numbers are kept; one plot is redrawn
 from synthetic data.
+## Đắm mình vào Học Sâu (d2l-vi) — `d2l-vi`
+
+The English–Vietnamese glossary (`src/content/glossary.yaml`, shown at `/glossary/`) is generated
+from `glossary.md` of the Vietnamese edition of *Dive into Deep Learning* by the d2l-vi
+translation team (<https://github.com/d2l-ai/d2l-vi>, commit `c775d6b`, <https://d2l.aivivn.com/>).
+Licensed under [CC BY-SA 4.0](https://creativecommons.org/licenses/by-sa/4.0/); the glossary file is
+shared under the same licence. Terms are copied as published, only sorted.
 
 ## UBC CPSC 330 — `ubc-cpsc330` and UBC MDS DSCI 575 — `ubc-dsci575`
 

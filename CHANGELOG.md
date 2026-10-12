@@ -35,6 +35,9 @@ versioning: [SemVer](https://semver.org) as defined in [docs/conventions.md](doc
 - **Works offline and installs as an app**: a service worker keeps every page you open (and the
   main pages from the start), so practice, Review, Mistakes and Progress keep working without
   a connection; pages not kept yet show an offline page listing what is.
+- **English–Vietnamese glossary** (`/glossary/`): 458 terms from the glossary of *Đắm mình vào
+  Học Sâu* (d2l-vi, CC BY-SA 4.0), searchable in both languages; `uv run mlr glossary`
+  regenerates it from the pinned upstream file.
 
 ### Fixed
 
