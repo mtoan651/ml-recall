@@ -5,6 +5,13 @@ versioning: [SemVer](https://semver.org) as defined in [docs/conventions.md](doc
 
 ## [Unreleased]
 
+### Changed
+
+- Touch screens: taller tap targets (≥ 32 px) for the header links, EN | VI switch,
+  breadcrumbs, checkbox labels, standalone links, the glossary's letter index and the search
+  filters; keyboard-shortcut hints are hidden; a tap next to a domain checkbox on the mixed-test
+  form toggles it instead of opening the list. Mouse layouts are unchanged.
+
 ## [0.6.0] — 2026-10-12
 
 CE6146 exam prep: an exam-prep page, tests that draw the course's questions more often, every

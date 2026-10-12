@@ -176,7 +176,7 @@ export function ExamStart({
         </button>
         <a
           href={scope.practiceUrl}
-          className="text-sm text-muted underline-offset-2 hover:text-ink hover:underline"
+          className="text-sm text-muted underline-offset-2 hover:text-ink hover:underline pointer-coarse:py-2"
         >
           {t("Practice with instant feedback instead")}
         </a>

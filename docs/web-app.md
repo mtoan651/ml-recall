@@ -469,6 +469,19 @@ no service worker):
 - Progress is in `localStorage`, so answering, Review, Mistakes and Progress work offline as
   usual; mixed tests and review rounds need their questions' JSON (cached once fetched).
 
+## Phones, tablets and touch screens
+
+One layout from 320 px phones to wide desktops (Tailwind breakpoints; checked at 320, 360, 390,
+430, 844×390 landscape, 768, 1024, 1280 and 1920 px). Wide content never widens the page: code
+blocks, tables and display math scroll inside their own box (`.md pre`, `.md table`,
+`.md .katex-display` in global.css), long words and inline code wrap (`overflow-wrap: anywhere`),
+inline math breaks at operators. On touch screens (`pointer: coarse`, Tailwind
+`pointer-coarse:`) small controls get taller tap targets — header links, the EN | VI switch,
+breadcrumbs, checkbox labels, standalone text links, the glossary's letter index and Pagefind's
+filters, all ≥ 32 px — and the keyboard-shortcut hints are hidden; mouse layouts are unchanged.
+The domain checkboxes on the mixed-test form sit in a padded label, so a tap next to the box
+toggles it instead of opening the list.
+
 ## Figures
 
 `figure`, `explanation_figure` and option `image` paths are relative to the YAML file
