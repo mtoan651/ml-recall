@@ -22,6 +22,7 @@ import {
   type StoredQuestionInfo,
 } from "../lib/exam";
 import { fetchQuestions } from "../lib/fetch";
+import { msg } from "../lib/i18n";
 import {
   clearExam,
   loadExam,
@@ -34,25 +35,30 @@ import {
 } from "../lib/storage";
 import type { Catalog, CatalogTags, Difficulty, ExamScopeView, QuizQuestion } from "../lib/types";
 import { mistakesUrl } from "../lib/url";
+import { useT } from "../lib/use-lang";
 import Exam from "./Exam";
 import { AttemptTile, LayoutPicker } from "./ExamStart";
 import { ClockIcon } from "./Icons";
+import { DIFFICULTY_LABEL } from "./QuestionCard";
+import { DomainTitle, TopicTitle } from "./Title";
 
 const SCOPE = examScope("mixed", MIXED_ID);
 const SCOPE_VIEW: ExamScopeView = {
   kind: "mixed",
   id: MIXED_ID,
-  title: "your selection",
+  title: msg("your selection"),
   practiceUrl: mistakesUrl(),
-  practiceLabel: "Practice your mistakes",
+  practiceLabel: msg("Practice your mistakes"),
 };
-const LOAD_FAILED =
-  "Could not load the questions. Check your connection and try again — nothing was started.";
-const RESUME_FAILED =
-  "Your unfinished mixed test could not be resumed (the site has changed since), so it was closed.";
-
-const plural = (n: number, word: string) =>
-  `${n.toLocaleString("en")} ${n === 1 ? word : `${word}s`}`;
+const LOAD_FAILED = msg(
+  "Could not load the questions. Check your connection and try again — nothing was started.",
+);
+const RESUME_FAILED = msg(
+  "Your unfinished mixed test could not be resumed (the site has changed since), so it was closed.",
+);
+const OFFLINE = msg(
+  "Your unfinished mixed test could not be loaded right now. Reload to try again.",
+);
 
 type View =
   | { name: "loading" }
@@ -76,6 +82,7 @@ const SUGGESTED_TAGS = 8;
  * progress). `?tag=<tag>` (from a tag page) starts the form with that tag and every topic.
  */
 export default function MixedExam({ catalog, tags }: { catalog: Catalog; tags: CatalogTags }) {
+  const t = useT();
   const allTopics = useMemo(
     () => catalog.domains.flatMap((d) => d.topics.map((t) => t.id)),
     [catalog],
@@ -153,7 +160,7 @@ export default function MixedExam({ catalog, tags }: { catalog: Catalog; tags: C
       .catch(() => {
         if (cancelled) return;
         // Offline: keep the stored test so a reload can resume it later.
-        toBuilder("Your unfinished mixed test could not be loaded right now. Reload to try again.");
+        toBuilder(OFFLINE);
       });
     return () => {
       cancelled = true;
@@ -264,9 +271,11 @@ export default function MixedExam({ catalog, tags }: { catalog: Catalog; tags: C
   const ready = view.name !== "loading";
   const last = lastAttempt(history);
   return (
-    <section className="quiz" data-ready={ready} aria-label="Mixed test">
+    <section className="quiz" data-ready={ready} data-lang={t.lang} aria-label={t("Mixed test")}>
       <p className="sr-only" aria-live="polite">
-        {view.name === "fetching" ? `Loading ${plural(view.count, "question")}…` : ""}
+        {view.name === "fetching"
+          ? t.n(view.count, "Loading {n} question…", "Loading {n} questions…")
+          : ""}
       </p>
       <div className="quiz-stage">
         {notice && (
@@ -274,7 +283,7 @@ export default function MixedExam({ catalog, tags }: { catalog: Catalog; tags: C
             role="status"
             className="mb-4 rounded-xl border border-note/40 bg-note-soft px-4 py-3 text-sm text-note"
           >
-            {notice}
+            {t(notice)}
           </p>
         )}
         <section
@@ -289,12 +298,13 @@ export default function MixedExam({ catalog, tags }: { catalog: Catalog; tags: C
           >
             <ClockIcon className="size-6 shrink-0 text-accent" />
             {plan.count > 0
-              ? `${plural(plan.count, "question")} · ${plural(plan.count, "minute")}`
-              : "No questions selected"}
+              ? t.n(plan.count, "{n} question · {n} minute", "{n} questions · {n} minutes")
+              : t("No questions selected")}
           </h2>
           <p className="mt-2 text-muted">
-            Random questions from the topics, tags and difficulties you pick, a new set every time.
-            No feedback until you submit; then every answer is explained.
+            {t(
+              "Random questions from the topics, tags and difficulties you pick, a new set every time. No feedback until you submit; then every answer is explained.",
+            )}
           </p>
 
           <TopicPicker catalog={catalog} selected={topics} onChange={changeTopics} />
@@ -303,7 +313,7 @@ export default function MixedExam({ catalog, tags }: { catalog: Catalog; tags: C
 
           <fieldset className="mt-5 min-w-0">
             <legend className="text-xs font-semibold tracking-wide text-muted uppercase">
-              Difficulty
+              {t("Difficulty")}
             </legend>
             <div className="mt-2 flex flex-wrap gap-2">
               {DIFFICULTIES.map((d) => (
@@ -321,7 +331,7 @@ export default function MixedExam({ catalog, tags }: { catalog: Catalog; tags: C
                     checked={difficulties.has(d)}
                     onChange={() => toggleDifficulty(d)}
                   />
-                  {d}
+                  {t(DIFFICULTY_LABEL[d])}
                   <span className="text-muted tabular-nums">{perDifficulty[d]}</span>
                 </label>
               ))}
@@ -330,7 +340,7 @@ export default function MixedExam({ catalog, tags }: { catalog: Catalog; tags: C
 
           <fieldset className="mt-5 min-w-0">
             <legend className="text-xs font-semibold tracking-wide text-muted uppercase">
-              Length
+              {t("Length")}
             </legend>
             <div className="mt-2 flex flex-wrap gap-2">
               {MIXED_SIZES.map((n) => (
@@ -349,7 +359,7 @@ export default function MixedExam({ catalog, tags }: { catalog: Catalog; tags: C
                     checked={size === n}
                     onChange={() => changeSize(n)}
                   />
-                  {n} questions
+                  {t.n(n, "{n} question", "{n} questions")}
                 </label>
               ))}
             </div>
@@ -365,24 +375,32 @@ export default function MixedExam({ catalog, tags }: { catalog: Catalog; tags: C
                 checked={reviewedOnly}
                 onChange={(e) => changeReviewedOnly(e.target.checked)}
               />
-              Reviewed questions only
+              {t("Reviewed questions only")}
             </label>
           )}
 
           <p className="mt-5 rounded-xl bg-subtle px-3.5 py-2.5 text-sm tabular-nums">
             {pool.length === 0
               ? topics.size > 0 && difficulties.size > 0 && chosenTags.length > 0
-                ? "No questions match — the chosen tags have none in these topics and difficulties."
-                : "No questions match — pick at least one topic and one difficulty."
+                ? t(
+                    "No questions match — the chosen tags have none in these topics and difficulties.",
+                  )
+                : t("No questions match — pick at least one topic and one difficulty.")
               : plan.short
-                ? `${plural(pool.length, "question")} match, so this test has ${plural(plan.count, "question")}.`
-                : `${plural(pool.length, "question")} match; the test draws ${plan.count} of them.`}
+                ? t("{pool} match, so this test has {count}.", {
+                    pool: t.n(pool.length, "{n} question", "{n} questions"),
+                    count: t.n(plan.count, "{n} question", "{n} questions"),
+                  })
+                : t("{pool} match; the test draws {n} of them.", {
+                    pool: t.n(pool.length, "{n} question", "{n} questions"),
+                    n: plan.count,
+                  })}
           </p>
 
           {last && (
             <dl className="mt-5 grid grid-cols-2 gap-2.5 text-sm">
-              <AttemptTile label="Last mixed test" attempt={last} />
-              {history.best && <AttemptTile label="Best" attempt={history.best} />}
+              <AttemptTile label={msg("Last mixed test")} attempt={last} />
+              {history.best && <AttemptTile label={msg("Best")} attempt={history.best} />}
             </dl>
           )}
 
@@ -393,13 +411,13 @@ export default function MixedExam({ catalog, tags }: { catalog: Catalog; tags: C
               disabled={plan.count === 0 || view.name !== "builder"}
               className="rounded-lg bg-accent px-6 py-2.5 font-semibold text-accent-ink hover:bg-accent-hover disabled:cursor-not-allowed disabled:opacity-50"
             >
-              {view.name === "fetching" ? "Loading questions…" : "Start test"}
+              {view.name === "fetching" ? t("Loading questions…") : t("Start test")}
             </button>
             <a
               href={mistakesUrl()}
               className="text-sm text-muted underline-offset-2 hover:text-ink hover:underline"
             >
-              Practice your mistakes instead
+              {t("Practice your mistakes instead")}
             </a>
           </div>
         </section>
@@ -418,7 +436,8 @@ function TopicPicker({
   selected: ReadonlySet<string>;
   onChange: (next: ReadonlySet<string>) => void;
 }) {
-  const all = catalog.domains.flatMap((d) => d.topics.map((t) => t.id));
+  const t = useT();
+  const all = catalog.domains.flatMap((d) => d.topics.map((topic) => topic.id));
   const setMany = (ids: string[], on: boolean) => {
     const next = new Set(selected);
     for (const id of ids) {
@@ -429,41 +448,45 @@ function TopicPicker({
   };
   return (
     <fieldset className="mt-5 min-w-0">
-      <legend className="text-xs font-semibold tracking-wide text-muted uppercase">Topics</legend>
+      <legend className="text-xs font-semibold tracking-wide text-muted uppercase">
+        {t("Topics")}
+      </legend>
       <div className="mt-2 flex flex-wrap items-center gap-x-3 gap-y-1 text-sm">
         <span className="text-muted tabular-nums">
-          {selected.size} of {all.length} topics
+          {t("{selected} of {total} topics", { selected: selected.size, total: all.length })}
         </span>
         <button
           type="button"
           onClick={() => onChange(new Set(all))}
           className="rounded-md px-1.5 py-0.5 font-medium text-accent hover:bg-subtle"
         >
-          Select all
+          {t("Select all")}
         </button>
         <button
           type="button"
           onClick={() => onChange(new Set())}
           className="rounded-md px-1.5 py-0.5 font-medium text-accent hover:bg-subtle"
         >
-          Clear
+          {t("Clear")}
         </button>
       </div>
       <ul className="mt-2 divide-y divide-line rounded-xl border border-line">
         {catalog.domains.map((domain) => {
-          const ids = domain.topics.map((t) => t.id);
+          const ids = domain.topics.map((topic) => topic.id);
           const on = ids.filter((id) => selected.has(id)).length;
-          const questions = domain.topics.reduce((n, t) => n + t.ids.length, 0);
+          const questions = domain.topics.reduce((n, topic) => n + topic.ids.length, 0);
           return (
             <li key={domain.id}>
               <details className="group">
                 <summary className="flex cursor-pointer list-none items-center gap-3 px-3.5 py-2.5 hover:bg-subtle [&::-webkit-details-marker]:hidden">
                   <DomainCheckbox
-                    label={domain.title}
+                    label={t("All of {title}", { title: { domain: domain.id, en: domain.title } })}
                     state={on === 0 ? "none" : on === ids.length ? "all" : "some"}
                     onToggle={() => setMany(ids, on < ids.length)}
                   />
-                  <span className="min-w-0 flex-1 font-medium">{domain.title}</span>
+                  <span className="min-w-0 flex-1 font-medium">
+                    <DomainTitle id={domain.id} en={domain.title} />
+                  </span>
                   <span className="shrink-0 text-xs text-muted tabular-nums">
                     {on}/{ids.length} · {questions}
                   </span>
@@ -486,7 +509,9 @@ function TopicPicker({
                         checked={selected.has(topic.id)}
                         onChange={(e) => setMany([topic.id], e.target.checked)}
                       />
-                      <span className="min-w-0 flex-1">{topic.title}</span>
+                      <span className="min-w-0 flex-1">
+                        <TopicTitle id={topic.id} en={topic.title} />
+                      </span>
                       <span className="shrink-0 text-xs text-muted tabular-nums">
                         {topic.ids.length}
                       </span>
@@ -518,6 +543,7 @@ function TagPicker({
   /** Hydrated: the suggestion list (thousands of options) is not server-rendered. */
   ready: boolean;
 }) {
+  const t = useT();
   const [query, setQuery] = useState("");
   const size = useMemo(() => new Map(counts.map((c) => [c.tag, c.count])), [counts]);
   const add = (tag: string) => {
@@ -529,20 +555,22 @@ function TagPicker({
   return (
     <fieldset className="mt-5 min-w-0">
       <legend className="text-xs font-semibold tracking-wide text-muted uppercase">
-        Tags <span className="font-normal normal-case tracking-normal">· optional</span>
+        {t("Tags")}{" "}
+        <span className="font-normal normal-case tracking-normal">{t("· optional")}</span>
       </legend>
       <p className="mt-1 text-sm text-muted">
-        Only questions with at least one of these tags, from the topics above. None chosen: no tag
-        filter.
+        {t(
+          "Only questions with at least one of these tags, from the topics above. None chosen: no tag filter.",
+        )}
       </p>
       {selected.length > 0 && (
-        <ul className="mt-2 flex flex-wrap items-center gap-2" aria-label="Chosen tags">
+        <ul className="mt-2 flex flex-wrap items-center gap-2" aria-label={t("Chosen tags")}>
           {selected.map((tag) => (
             <li key={tag}>
               <button
                 type="button"
                 onClick={() => remove(tag)}
-                aria-label={`Remove tag ${tag}`}
+                aria-label={t("Remove tag {tag}", { tag })}
                 className="flex items-center gap-1.5 rounded-lg border border-accent bg-accent-soft px-2.5 py-1 text-sm hover:bg-subtle"
               >
                 #{tag}
@@ -559,7 +587,7 @@ function TagPicker({
               onClick={() => onChange([])}
               className="rounded-md px-1.5 py-0.5 text-sm font-medium text-accent hover:bg-subtle"
             >
-              Clear
+              {t("Clear")}
             </button>
           </li>
         </ul>
@@ -594,8 +622,8 @@ function TagPicker({
             }
             setQuery(value);
           }}
-          aria-label="Add a tag"
-          placeholder={`Search ${counts.length.toLocaleString("en")} tags`}
+          aria-label={t("Add a tag")}
+          placeholder={t("Search {n} tags", { n: counts.length })}
           autoComplete="off"
           className="min-w-0 flex-1 rounded-lg border border-line bg-surface px-3 py-1.5 text-sm placeholder:text-muted"
         />
@@ -604,7 +632,7 @@ function TagPicker({
           disabled={!size.has(typed) || selected.includes(typed)}
           className="shrink-0 rounded-lg border border-line px-3 py-1.5 text-sm font-medium hover:border-line-strong hover:bg-subtle disabled:cursor-not-allowed disabled:opacity-50"
         >
-          Add
+          {t("Add")}
         </button>
         {ready && (
           <datalist id="mixed-tag-list">
@@ -616,7 +644,7 @@ function TagPicker({
       </form>
       {suggestions.length > 0 && (
         <div className="mt-2 flex flex-wrap items-center gap-2 text-sm">
-          <span className="text-muted">Most used:</span>
+          <span className="text-muted">{t("Most used:")}</span>
           {suggestions.map((c) => (
             <button
               key={c.tag}
@@ -633,6 +661,7 @@ function TagPicker({
   );
 }
 
+/** `label`: the accessible name, already translated. */
 function DomainCheckbox({
   label,
   state,
@@ -651,7 +680,7 @@ function DomainCheckbox({
       ref={ref}
       type="checkbox"
       className="size-4 shrink-0"
-      aria-label={`All of ${label}`}
+      aria-label={label}
       checked={state === "all"}
       // A click on the checkbox must not also open or close the <details>.
       onClick={(e) => e.stopPropagation()}

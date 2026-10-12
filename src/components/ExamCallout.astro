@@ -5,6 +5,7 @@
  */
 import { examScope, planExam, type ScopeKind } from "../lib/exam";
 import { ClockIcon } from "./Icons";
+import T from "./T.astro";
 
 interface Props {
   kind: ScopeKind;
@@ -30,11 +31,14 @@ const { count } = planExam(available);
       <div class="min-w-0 flex-1 basis-56">
         <h2 id="exam-callout-heading" class="flex items-center gap-2 font-semibold">
           <ClockIcon className="size-5 shrink-0 text-accent" />
-          Timed test
+          <T k="Timed test" />
         </h2>
         <p class="mt-0.5 text-sm text-muted tabular-nums">
-          {count} {count === 1 ? "question" : "questions"} · {count} min · score and explanations at
-          the end
+          <T
+            k="{n} questions · {n} min · score and explanations at the end"
+            one="{n} question · {n} min · score and explanations at the end"
+            n={count}
+          />
         </p>
         <p class="mt-1 hidden text-sm tabular-nums" data-exam-status />
         <slot />
@@ -44,7 +48,7 @@ const { count } = planExam(available);
         class="shrink-0 rounded-lg bg-accent px-4 py-2 font-medium text-accent-ink hover:bg-accent-hover"
         data-exam-link
       >
-        Take a test
+        <T k="Take a test" />
       </a>
     </section>
   )
@@ -52,6 +56,7 @@ const { count } = planExam(available);
 
 <script>
   import { describeAttempt, lastAttempt } from "../lib/exam";
+  import { currentLang, LANG_EVENT, t } from "../lib/i18n";
   import { examTimeLeft, loadExamHistory } from "../lib/storage";
 
   /** "Resume test" while a test runs, otherwise the last and best score, if any. */
@@ -60,24 +65,32 @@ const { count } = planExam(available);
     const status = el.querySelector<HTMLElement>("[data-exam-status]");
     const link = el.querySelector<HTMLElement>("[data-exam-link]");
     if (!status || !link) return;
+    const lang = currentLang();
     status.classList.remove("font-medium", "text-note", "text-muted");
 
     const left = examTimeLeft(scope);
     if (left !== null) {
-      link.textContent = "Resume test";
-      status.textContent = `Test in progress · ${Math.ceil(left / 60_000)} min left`;
+      link.textContent = t(lang, "Resume test");
+      status.textContent = t(lang, "Test in progress · {n} min left", {
+        n: Math.ceil(left / 60_000),
+      });
       status.classList.add("font-medium", "text-note");
       status.classList.remove("hidden");
       return;
     }
 
-    link.textContent = "Take a test";
+    link.textContent = t(lang, "Take a test");
     const history = loadExamHistory(scope);
     const last = lastAttempt(history);
     const best = history.best;
-    status.textContent = last
-      ? `Last ${describeAttempt(last)}${best ? ` · Best ${describeAttempt(best)}` : ""}`
-      : "";
+    status.textContent = !last
+      ? ""
+      : best
+        ? t(lang, "Last {last} · Best {best}", {
+            last: describeAttempt(last),
+            best: describeAttempt(best),
+          })
+        : t(lang, "Last {last}", { last: describeAttempt(last) });
     status.classList.add("text-muted");
     status.classList.toggle("hidden", !last);
   }
@@ -86,6 +99,7 @@ const { count } = planExam(available);
     for (const el of document.querySelectorAll<HTMLElement>("[data-exam-callout]")) update(el);
   };
   updateAll();
+  window.addEventListener(LANG_EVENT, updateAll);
   // Coming back with the Back button restores the page from cache: refresh what it shows.
   window.addEventListener("pageshow", (event) => {
     if (event.persisted) updateAll();

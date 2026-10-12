@@ -8,6 +8,7 @@
  *   not compared on its own (normalization drops separators: "(323, 64, 64)" would equal
  *   "(32, 3, 64, 64)").
  */
+import { type Lang, msg, t } from "./i18n";
 
 /** Lowercase, Unicode-normalized, without whitespace and punctuation: "Batch-Norm." → "batchnorm". */
 export function normalizeAnswer(text: string): string {
@@ -117,16 +118,20 @@ export function isNumericOnly(key: ShortAnswerKey): boolean {
   return typeof key.numeric === "number" && key.accept.length === 0 && !key.pattern;
 }
 
-export const NUMBER_HINT = "Enter a number, e.g. 42, -0.5, 1/3 or 2.5e-3.";
-export const TEXT_HINT = "A word or short phrase";
+export const NUMBER_HINT = msg("Enter a number, e.g. 42, -0.5, 1/3 or 2.5e-3.");
+export const TEXT_HINT = msg("A word or short phrase");
 
 /**
- * Format guidance under an auto-graded input: the key's `hint`, else a default for numbers or
- * for text. It says how to write an answer, never whether an answer is right.
+ * Format guidance under an auto-graded input: the key's `hint` (question content, in English),
+ * else a default for numbers or for text in the interface language. It says how to write an
+ * answer, never whether an answer is right.
  */
-export function answerHint(key: ShortAnswerKey & { hint?: string | null | undefined }): string {
+export function answerHint(
+  key: ShortAnswerKey & { hint?: string | null | undefined },
+  lang: Lang = "en",
+): string {
   if (key.hint) return key.hint;
-  return typeof key.numeric === "number" ? NUMBER_HINT : TEXT_HINT;
+  return t(lang, typeof key.numeric === "number" ? NUMBER_HINT : TEXT_HINT);
 }
 
 export type ShortAnswerGrade =
@@ -193,12 +198,13 @@ export function gradeInputs(key: FillKey, texts: readonly string[]): ShortAnswer
 }
 
 /** "42 ± 0.5 · forty-two": what an input accepts, for showing the answer after grading. */
-export function describeAccepted(key: InputKey): string {
+export function describeAccepted(key: InputKey, lang: Lang = "en"): string {
   const values: string[] = [];
   const tolerance = key.tolerance ?? 0;
   if (typeof key.numeric === "number") {
     values.push(tolerance > 0 ? `${key.numeric} ± ${tolerance}` : String(key.numeric));
   }
   values.push(...key.accept);
-  return values.join(" · ") + (key.pattern ? " (and equivalent spellings)" : "");
+  const text = values.join(" · ");
+  return key.pattern ? t(lang, "{answers} (and equivalent spellings)", { answers: text }) : text;
 }

@@ -8,8 +8,10 @@ import {
   examAnswerOf,
   formatClock,
 } from "../lib/exam";
+import { msg } from "../lib/i18n";
 import type { ExamScopeView, QuizQuestion } from "../lib/types";
 import { url } from "../lib/url";
+import { useT } from "../lib/use-lang";
 import { CheckIcon, CrossIcon, FlagIcon, MinusIcon } from "./Icons";
 import { QuestionCard } from "./QuestionCard";
 
@@ -38,10 +40,18 @@ interface ExamResultsProps {
 }
 
 const OUTCOME: Record<ExamOutcome, { label: string; tone: string; Icon: typeof CheckIcon }> = {
-  correct: { label: "Correct", tone: "border-good/40 bg-good-soft text-good", Icon: CheckIcon },
-  incorrect: { label: "Incorrect", tone: "border-bad/40 bg-bad-soft text-bad", Icon: CrossIcon },
+  correct: {
+    label: msg("Correct"),
+    tone: "border-good/40 bg-good-soft text-good",
+    Icon: CheckIcon,
+  },
+  incorrect: {
+    label: msg("Incorrect"),
+    tone: "border-bad/40 bg-bad-soft text-bad",
+    Icon: CrossIcon,
+  },
   unanswered: {
-    label: "Not answered",
+    label: msg("Not answered"),
     tone: "border-dashed border-line-strong bg-canvas text-muted",
     Icon: MinusIcon,
   },
@@ -59,6 +69,7 @@ export function ExamResults({
   onNewTest,
   ref,
 }: ExamResultsProps) {
+  const t = useT();
   const { state, score, finishedAt, usedMs, timedOut, newBest } = result;
   // The best score so far, unless it is this very test.
   const otherBest = history.best && history.best.at !== finishedAt ? history.best : undefined;
@@ -92,25 +103,30 @@ export function ExamResults({
         className="scroll-mt-4 rounded-2xl border border-line bg-surface p-4 shadow-xs outline-none sm:p-6"
       >
         <h2 id="exam-results-heading" className="text-lg font-semibold">
-          {timedOut ? "Time’s up — your test was submitted" : "Test submitted"}
+          {timedOut ? t("Time’s up — your test was submitted") : t("Test submitted")}
         </h2>
         <p className="mt-3 flex flex-wrap items-baseline gap-x-3 gap-y-1">
           <span className="text-4xl font-semibold tracking-tight tabular-nums">
             {score.correct}
             <span className="text-muted"> / {score.total}</span>
           </span>
-          <span className="text-muted">correct · {score.percent}%</span>
+          <span className="text-muted">
+            {t("correct · {percent}%", { percent: score.percent })}
+          </span>
           {newBest && (
             <span className="rounded-full bg-good-soft px-2.5 py-0.5 text-sm font-medium text-good">
-              New best
+              {t("New best")}
             </span>
           )}
         </p>
         <p className="mt-2 text-sm text-muted tabular-nums">
-          Time used {formatClock(usedMs, "floor")} of {formatClock(state.durationMs)}
-          {score.unanswered > 0 && ` · ${score.unanswered} not answered`}
-          {state.reviewedOnly && " · reviewed questions only"}
-          {otherBest && ` · best ${describeAttempt(otherBest)}`}
+          {t("Time used {used} of {total}", {
+            used: formatClock(usedMs, "floor"),
+            total: formatClock(state.durationMs),
+          })}
+          {score.unanswered > 0 && t(" · {n} not answered", { n: score.unanswered })}
+          {state.reviewedOnly && t(" · reviewed questions only")}
+          {otherBest && t(" · best {score}", { score: describeAttempt(otherBest) })}
         </p>
 
         <div className="mt-5 flex flex-wrap gap-2">
@@ -119,23 +135,27 @@ export function ExamResults({
             onClick={onNewTest}
             className="rounded-lg bg-accent px-4 py-2 font-medium text-accent-ink hover:bg-accent-hover"
           >
-            New test
+            {t("New test")}
           </button>
           <a
             href={scope.practiceUrl}
             className="rounded-lg border border-line-strong px-4 py-2 font-medium hover:bg-subtle"
           >
-            {scope.practiceLabel ?? `Practice this ${scope.kind}`}
+            {scope.practiceLabel
+              ? t(scope.practiceLabel)
+              : scope.kind === "tag"
+                ? t("Practice this tag")
+                : t("Practice this topic")}
           </a>
           <a
             href={url()}
             className="rounded-lg px-4 py-2 font-medium text-muted hover:bg-subtle hover:text-ink"
           >
-            All topics
+            {t("All topics")}
           </a>
         </div>
 
-        <nav aria-label="Jump to a question" className="mt-6">
+        <nav aria-label={t("Jump to a question")} className="mt-6">
           <ol className="grid grid-cols-[repeat(auto-fill,minmax(2.75rem,1fr))] gap-1.5">
             {rows.map(({ item, k, outcome = "unanswered" }) => {
               const { label, tone, Icon } = OUTCOME[outcome];
@@ -144,7 +164,10 @@ export function ExamResults({
                   <button
                     type="button"
                     onClick={() => jump(item.id)}
-                    aria-label={`Question ${k + 1}: ${label.toLowerCase()}`}
+                    aria-label={t("Question {n}: {outcome}", {
+                      n: k + 1,
+                      outcome: t(label).toLocaleLowerCase(t.lang),
+                    })}
                     className={`flex h-10 w-full items-center justify-center gap-0.5 rounded-lg border text-sm font-medium tabular-nums transition-opacity hover:opacity-80 ${tone}`}
                   >
                     {k + 1}
@@ -160,7 +183,7 @@ export function ExamResults({
       <section aria-labelledby="exam-review-heading" className="mt-8">
         <div className="flex flex-wrap items-center justify-between gap-x-4 gap-y-2">
           <h2 id="exam-review-heading" className="text-lg font-semibold">
-            Review
+            {t("Review your answers")}
           </h2>
           {wrongCount > 0 && (
             <label className="inline-flex cursor-pointer items-center gap-2 text-sm text-muted">
@@ -170,12 +193,12 @@ export function ExamResults({
                 checked={onlyIncorrect}
                 onChange={(e) => setOnlyIncorrect(e.target.checked)}
               />
-              Show only incorrect ({wrongCount})
+              {t("Show only incorrect ({n})", { n: wrongCount })}
             </label>
           )}
         </div>
         {wrongCount === 0 && (
-          <p className="mt-2 text-sm text-muted">Every answer is correct — well done.</p>
+          <p className="mt-2 text-sm text-muted">{t("Every answer is correct — well done.")}</p>
         )}
 
         <ol className="mt-4 space-y-8">
@@ -187,17 +210,19 @@ export function ExamResults({
             return (
               <li key={item.id} id={`review-${item.id}`} className="scroll-mt-4">
                 <p className="mb-2 flex flex-wrap items-center gap-2 text-sm">
-                  <span className="font-medium tabular-nums">Question {k + 1}</span>
+                  <span className="font-medium tabular-nums">
+                    {t("Question {n}", { n: k + 1 })}
+                  </span>
                   <span
                     className={`inline-flex items-center gap-1 rounded-full border px-2 py-0.5 text-xs font-medium ${tone}`}
                   >
                     <Icon className="size-3.5" />
-                    {label}
+                    {t(label)}
                   </span>
                   {state.flagged.includes(item.id) && (
                     <span className="inline-flex items-center gap-1 text-xs text-note">
                       <FlagIcon filled className="size-3.5" />
-                      Flagged
+                      {t("Flagged")}
                     </span>
                   )}
                 </p>

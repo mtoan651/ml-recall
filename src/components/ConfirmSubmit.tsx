@@ -1,4 +1,5 @@
 import { useEffect, useRef } from "react";
+import { useT } from "../lib/use-lang";
 
 interface ConfirmSubmitProps {
   open: boolean;
@@ -16,6 +17,7 @@ export function ConfirmSubmit({
   onCancel,
   onConfirm,
 }: ConfirmSubmitProps) {
+  const t = useT();
   const ref = useRef<HTMLDialogElement>(null);
   useEffect(() => {
     const dialog = ref.current;
@@ -26,11 +28,17 @@ export function ConfirmSubmit({
 
   const parts = [];
   if (unanswered > 0) {
-    parts.push(`${unanswered} ${unanswered === 1 ? "question is" : "questions are"} unanswered`);
+    parts.push(t.n(unanswered, "{n} question is unanswered", "{n} questions are unanswered"));
   }
   if (flagged > 0) {
-    parts.push(`${flagged} ${flagged === 1 ? "is" : "are"} flagged for review`);
+    parts.push(t.n(flagged, "{n} is flagged for review", "{n} are flagged for review"));
   }
+  const [first, second] = parts;
+  const summary = second
+    ? t("{first} and {second}.", { first: first ?? "", second })
+    : first
+      ? `${first}.`
+      : "";
   return (
     <dialog
       ref={ref}
@@ -40,12 +48,12 @@ export function ConfirmSubmit({
       className="m-auto w-[min(28rem,calc(100%-2rem))] rounded-2xl border border-line bg-surface p-5 text-ink shadow-xl backdrop:bg-black/50 sm:p-6"
     >
       <h2 id="exam-confirm-title" className="text-lg font-semibold">
-        Submit the test?
+        {t("Submit the test?")}
       </h2>
       <p id="exam-confirm-text" className="mt-2 text-muted">
-        {parts.length > 0 && `${capitalize(parts.join(" and "))}. `}
-        {unanswered > 0 ? "Unanswered questions count as wrong. " : ""}
-        Answers cannot be changed after submitting.
+        {summary && `${capitalize(summary)} `}
+        {unanswered > 0 ? `${t("Unanswered questions count as wrong.")} ` : ""}
+        {t("Answers cannot be changed after submitting.")}
       </p>
       <div className="mt-5 flex flex-wrap justify-end gap-2">
         <button
@@ -55,14 +63,14 @@ export function ConfirmSubmit({
           onClick={onCancel}
           className="rounded-lg border border-line-strong bg-surface px-4 py-2 font-medium hover:bg-subtle"
         >
-          Keep working
+          {t("Keep working")}
         </button>
         <button
           type="button"
           onClick={onConfirm}
           className="rounded-lg bg-accent px-4 py-2 font-medium text-accent-ink hover:bg-accent-hover"
         >
-          Submit test
+          {t("Submit test")}
         </button>
       </div>
     </dialog>

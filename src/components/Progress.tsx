@@ -15,12 +15,16 @@ import {
   scopeTitle,
 } from "../lib/catalog";
 import { describeAttempt, type ExamHistory, lastAttempt, percentOf } from "../lib/exam";
+import { msg } from "../lib/i18n";
 import { browserStore, loadAllExamHistory, loadResults } from "../lib/storage";
 import type { Catalog } from "../lib/types";
 import { mistakesUrl, mixedExamUrl, tagExamUrl, topicExamUrl, url } from "../lib/url";
+import { type Translator, useT } from "../lib/use-lang";
+import { DomainTitle, TopicTitle } from "./Title";
 
 interface OtherScope {
   scope: string;
+  /** "#tag", or the key "Mixed tests". */
   title: string;
   href?: string;
   history: ExamHistory;
@@ -31,6 +35,7 @@ interface OtherScope {
  * correctly, how many to revisit, and the timed-test history (last, best, trend of the last 10).
  */
 export default function Progress({ catalog }: { catalog: Catalog }) {
+  const t = useT();
   const [ready, setReady] = useState(false);
   const [domains, setDomains] = useState<DomainProgress[]>(() => progressOf(catalog, {}, {}));
   const [others, setOthers] = useState<OtherScope[]>([]);
@@ -51,7 +56,8 @@ export default function Progress({ catalog }: { catalog: Catalog }) {
           const id = rest.join(":");
           const href =
             kind === "tag" ? tagExamUrl(id) : kind === "mixed" ? mixedExamUrl() : undefined;
-          return { scope, title: scopeTitle(scope, catalog), history, ...(href ? { href } : {}) };
+          const title = kind === "mixed" ? msg("Mixed tests") : scopeTitle(scope, catalog);
+          return { scope, title, history, ...(href ? { href } : {}) };
         })
         .sort((a, b) => a.title.localeCompare(b.title)),
     );
@@ -67,83 +73,86 @@ export default function Progress({ catalog }: { catalog: Catalog }) {
   const empty = answered === 0 && tests === 0;
 
   return (
-    <section className="quiz" data-ready={ready} aria-label="Progress">
+    <section className="quiz" data-ready={ready} data-lang={t.lang} aria-label={t("Progress")}>
       <div className="quiz-stage">
         {empty ? (
           <div className="rounded-2xl border border-dashed border-line px-4 py-8 text-center sm:px-6">
-            <h2 className="font-semibold">No progress yet</h2>
+            <h2 className="font-semibold">{t("No progress yet")}</h2>
             <p className="mt-2 text-muted">
-              Answer questions or take a test — your results are kept in this browser and summed up
-              here.
+              {t(
+                "Answer questions or take a test — your results are kept in this browser and summed up here.",
+              )}
             </p>
             <div className="mt-4 flex flex-wrap justify-center gap-2">
               <a
                 href={url()}
                 className="rounded-lg bg-accent px-4 py-2 font-medium text-accent-ink hover:bg-accent-hover"
               >
-                Pick a topic
+                {t("Pick a topic")}
               </a>
               <a
                 href={mixedExamUrl()}
                 className="rounded-lg border border-line-strong px-4 py-2 font-medium hover:bg-subtle"
               >
-                Take a mixed test
+                {t("Take a mixed test")}
               </a>
             </div>
           </div>
         ) : (
           <>
             <dl className="grid grid-cols-2 gap-3 sm:grid-cols-4">
-              <Tile label="Answered" value={`${answered} / ${total}`}>
-                {percentOf(answered, total)}% of the bank
+              <Tile label={t("Answered")} value={`${t.num(answered)} / ${t.num(total)}`}>
+                {t("{p}% of the bank", { p: percentOf(answered, total) })}
               </Tile>
-              <Tile label="Correct" value={String(correct)}>
-                {answered > 0 ? `${percentOf(correct, answered)}% of answered` : "—"}
+              <Tile label={t("Correct")} value={t.num(correct)}>
+                {answered > 0 ? t("{p}% of answered", { p: percentOf(correct, answered) }) : "—"}
               </Tile>
-              <Tile label="To revisit" value={String(revisit)}>
+              <Tile label={t("To revisit")} value={t.num(revisit)}>
                 {revisit > 0 ? (
                   <a
                     href={mistakesUrl()}
                     className="text-accent underline-offset-2 hover:underline"
                   >
-                    Practice them
+                    {t("Practice them")}
                   </a>
                 ) : (
-                  "nothing wrong lately"
+                  t("nothing wrong lately")
                 )}
               </Tile>
-              <Tile label="Recent tests" value={String(tests)}>
-                last 10 per topic, tag or mix
+              <Tile label={t("Recent tests")} value={t.num(tests)}>
+                {t("last 10 per topic, tag or mix")}
               </Tile>
             </dl>
 
             {domains.map((domain) => {
-              const active = domain.topics.filter((t) => t.answered > 0 || t.history.best);
+              const active = domain.topics.filter((row) => row.answered > 0 || row.history.best);
               if (active.length === 0) return null;
-              const done = domain.topics.reduce((n, t) => n + t.answered, 0);
-              const all = domain.topics.reduce((n, t) => n + t.total, 0);
+              const done = domain.topics.reduce((n, row) => n + row.answered, 0);
+              const all = domain.topics.reduce((n, row) => n + row.total, 0);
               return (
                 <section key={domain.id} aria-labelledby={`p-${domain.id}`} className="mt-8">
                   <h2
                     id={`p-${domain.id}`}
                     className="flex flex-wrap items-baseline justify-between gap-x-3 text-sm font-semibold tracking-wide text-muted uppercase"
                   >
-                    {domain.title}
+                    <span>
+                      <DomainTitle id={domain.id} en={domain.title} />
+                    </span>
                     <span className="font-normal tracking-normal normal-case tabular-nums">
-                      {done} / {all} answered
+                      {t("{done} / {all} answered", { done, all })}
                     </span>
                   </h2>
                   <ScoreTable
-                    rows={active.map((t) => ({
-                      key: t.topic.id,
-                      title: t.topic.title,
-                      href: t.topic.url,
-                      testHref: topicExamUrl(t.topic.id),
-                      total: t.total,
-                      answered: t.answered,
-                      correct: t.correct,
-                      mistakes: t.mistakes,
-                      history: t.history,
+                    rows={active.map((row) => ({
+                      key: row.topic.id,
+                      title: <TopicTitle id={row.topic.id} en={row.topic.title} />,
+                      href: row.topic.url,
+                      testHref: topicExamUrl(row.topic.id),
+                      total: row.total,
+                      answered: row.answered,
+                      correct: row.correct,
+                      mistakes: row.mistakes,
+                      history: row.history,
                     }))}
                   />
                 </section>
@@ -156,12 +165,12 @@ export default function Progress({ catalog }: { catalog: Catalog }) {
                   id="p-other"
                   className="text-sm font-semibold tracking-wide text-muted uppercase"
                 >
-                  Tag and mixed tests
+                  {t("Tag and mixed tests")}
                 </h2>
                 <ScoreTable
                   rows={others.map((o) => ({
                     key: o.scope,
-                    title: o.title,
+                    title: t(o.title),
                     ...(o.href ? { testHref: o.href } : {}),
                     history: o.history,
                   }))}
@@ -176,24 +185,28 @@ export default function Progress({ catalog }: { catalog: Catalog }) {
   );
 }
 
-const plural = (n: number, word: string) =>
-  `${n.toLocaleString("en")} ${n === 1 ? word : `${word}s`}`;
-
-function describeMerge(s: MergeSummary): string {
+function describeMerge(t: Translator, s: MergeSummary): string {
   const parts = [
-    s.results > 0 && plural(s.results, "answer"),
-    s.cards > 0 && plural(s.cards, "review card"),
-    s.tests > 0 && plural(s.tests, "test"),
-    s.preferences > 0 && "your settings",
+    s.results > 0 && t.n(s.results, "{n} answer", "{n} answers"),
+    s.cards > 0 && t.n(s.cards, "{n} review card", "{n} review cards"),
+    s.tests > 0 && t.n(s.tests, "{n} test", "{n} tests"),
+    s.preferences > 0 && t("your settings"),
   ].filter(Boolean);
   return parts.length > 0
-    ? `Imported ${parts.join(", ")}. Newer progress already here was kept.`
-    : "Nothing new in that file — everything in it is already here (or older).";
+    ? t("Imported {what}. Newer progress already here was kept.", { what: parts.join(", ") })
+    : t("Nothing new in that file — everything in it is already here (or older).");
+}
+
+/** A status line, rendered in the current language (it may stay while the language changes). */
+interface Status {
+  ok: boolean;
+  text: (t: Translator) => string;
 }
 
 /** Export everything to a JSON file; import one, merged into this browser's progress. */
 function BackupPanel({ onImported }: { onImported: () => void }) {
-  const [message, setMessage] = useState<{ ok: boolean; text: string } | null>(null);
+  const t = useT();
+  const [message, setMessage] = useState<Status | null>(null);
   const fileRef = useRef<HTMLInputElement>(null);
 
   const download = () => {
@@ -209,20 +222,19 @@ function BackupPanel({ onImported }: { onImported: () => void }) {
     a.click();
     a.remove();
     setTimeout(() => URL.revokeObjectURL(href), 1000);
-    setMessage({ ok: true, text: `Saved ${a.download}.` });
+    const file = a.download;
+    setMessage({ ok: true, text: (t) => t("Saved {file}.", { file }) });
   };
 
   const upload = async (file: File | undefined) => {
     if (!file) return;
     try {
       const summary = mergeBackup(parseBackup(await file.text()), browserStore());
-      setMessage({ ok: true, text: describeMerge(summary) });
+      setMessage({ ok: true, text: (t) => describeMerge(t, summary) });
       onImported();
     } catch (e) {
-      setMessage({
-        ok: false,
-        text: e instanceof BackupError ? e.message : "That file could not be read.",
-      });
+      const key = e instanceof BackupError ? e.message : msg("That file could not be read.");
+      setMessage({ ok: false, text: (t) => t(key) });
     } finally {
       if (fileRef.current) fileRef.current.value = "";
     }
@@ -234,12 +246,12 @@ function BackupPanel({ onImported }: { onImported: () => void }) {
       className="mt-10 rounded-2xl border border-line bg-surface p-4 sm:p-5"
     >
       <h2 id="p-backup" className="font-semibold">
-        Back up or move your progress
+        {t("Back up or move your progress")}
       </h2>
       <p className="mt-1 text-sm text-muted">
-        Everything lives only in this browser. Export it to a file to keep a copy or to open it on
-        another device; importing merges the file into what is here (the newer answer per question
-        wins), so it never overwrites recent work.
+        {t(
+          "Everything lives only in this browser. Export it to a file to keep a copy or to open it on another device; importing merges the file into what is here (the newer answer per question wins), so it never overwrites recent work.",
+        )}
       </p>
       <div className="mt-3 flex flex-wrap items-center gap-2">
         <button
@@ -247,10 +259,10 @@ function BackupPanel({ onImported }: { onImported: () => void }) {
           onClick={download}
           className="rounded-lg border border-line-strong px-4 py-2 text-sm font-medium hover:bg-subtle"
         >
-          Export progress
+          {t("Export progress")}
         </button>
         <label className="cursor-pointer rounded-lg border border-line-strong px-4 py-2 text-sm font-medium hover:bg-subtle has-[:focus-visible]:outline-2 has-[:focus-visible]:outline-accent">
-          Import progress…
+          {t("Import progress…")}
           <input
             ref={fileRef}
             type="file"
@@ -262,7 +274,7 @@ function BackupPanel({ onImported }: { onImported: () => void }) {
       </div>
       {message && (
         <p role="status" className={`mt-3 text-sm ${message.ok ? "text-good" : "text-bad"}`}>
-          {message.text}
+          {message.text(t)}
         </p>
       )}
     </section>
@@ -281,7 +293,7 @@ function Tile({ label, value, children }: { label: string; value: string; childr
 
 interface ScoreRow {
   key: string;
-  title: string;
+  title: ReactNode;
   href?: string;
   testHref?: string;
   total?: number;
@@ -292,6 +304,7 @@ interface ScoreRow {
 }
 
 function ScoreTable({ rows }: { rows: ScoreRow[] }) {
+  const t = useT();
   const practice = rows.some((r) => r.total !== undefined);
   return (
     <div className="mt-3 overflow-x-auto rounded-xl border border-line bg-surface">
@@ -299,29 +312,29 @@ function ScoreTable({ rows }: { rows: ScoreRow[] }) {
         <thead className="border-b border-line text-xs text-muted">
           <tr>
             <th scope="col" className="px-3.5 py-2 font-medium">
-              {practice ? "Topic" : "Test"}
+              {practice ? t("Topic") : t("Test")}
             </th>
             {practice && (
               <>
                 <th scope="col" className="px-2 py-2 text-right font-medium">
-                  Answered
+                  {t("Answered")}
                 </th>
                 <th scope="col" className="hidden px-2 py-2 text-right font-medium sm:table-cell">
-                  Correct
+                  {t("Correct")}
                 </th>
                 <th scope="col" className="px-2 py-2 text-right font-medium">
-                  Revisit
+                  {t("Revisit")}
                 </th>
               </>
             )}
             <th scope="col" className="px-2 py-2 text-right font-medium">
-              Last test
+              {t("Last test")}
             </th>
             <th scope="col" className="hidden px-2 py-2 text-right font-medium sm:table-cell">
-              Best
+              {t("Best")}
             </th>
             <th scope="col" className="hidden px-3.5 py-2 font-medium sm:table-cell">
-              Last 10 tests
+              {t("Last 10 tests")}
             </th>
           </tr>
         </thead>
@@ -357,7 +370,7 @@ function ScoreTable({ rows }: { rows: ScoreRow[] }) {
                     `${percentOf(last.correct, last.total)}%`
                   ) : r.testHref ? (
                     <a href={r.testHref} className="text-accent hover:underline">
-                      Take one
+                      {t("Take one")}
                     </a>
                   ) : (
                     "—"
@@ -380,6 +393,7 @@ function ScoreTable({ rows }: { rows: ScoreRow[] }) {
 
 /** Bars for the percentage of each recent test, oldest on the left. */
 function Trend({ values }: { values: Array<{ at: number; percent: number }> }) {
+  const t = useT();
   if (values.length === 0) return <span className="text-muted">—</span>;
   const w = 7;
   const gap = 3;
@@ -409,7 +423,9 @@ function Trend({ values }: { values: Array<{ at: number; percent: number }> }) {
         })}
       </svg>
       <span className="sr-only">
-        Recent test scores: {values.map((v) => `${v.percent}%`).join(", ")}
+        {t("Recent test scores: {scores}", {
+          scores: values.map((v) => `${v.percent}%`).join(", "),
+        })}
       </span>
     </>
   );

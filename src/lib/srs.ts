@@ -9,6 +9,7 @@
  * the rest of progress storage, every access tolerates a missing or broken store.
  */
 import { type Card, createEmptyCard, type FSRS, fsrs, type Grade, Rating, State } from "ts-fsrs";
+import { type Lang, t, tn } from "./i18n";
 import { endOfDay, SRS_EVENT, SRS_KEY } from "./srs-due";
 import type { KeyValueStore, Results } from "./storage";
 
@@ -203,10 +204,10 @@ export function previewDays(
 }
 
 /** "1 day", "12 days", "3 mo", "1.5 yr" — a compact interval label. */
-export function formatInterval(days: number): string {
-  if (days < 30) return `${days} ${days === 1 ? "day" : "days"}`;
-  if (days < 365) return `${Math.round(days / 30)} mo`;
-  return `${Math.round((days / 365) * 10) / 10} yr`;
+export function formatInterval(days: number, lang: Lang = "en"): string {
+  if (days < 30) return tn(lang, days, "{n} day", "{n} days");
+  if (days < 365) return t(lang, "{n} mo", { n: Math.round(days / 30) });
+  return t(lang, "{n} yr", { n: Math.round((days / 365) * 10) / 10 });
 }
 
 /** Cards whose current interval is at least 21 days (Anki's "mature"). */

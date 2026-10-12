@@ -5,6 +5,7 @@
  * (src/components/Exam.tsx) renders and dispatches, src/lib/storage.ts reads and writes.
  */
 import { type FillKey, gradeChoice, gradeInputs, isGapFill } from "./grading";
+import { type Lang, tn } from "./i18n";
 import {
   type SessionInput,
   type SessionItem,
@@ -274,15 +275,18 @@ const SEVERITY: Record<TimerLevel, number> = { normal: 0, warning: 1, critical: 
  * message only when it crosses into amber or red (not every second), null otherwise. After a
  * jump (the tab slept) it says the actual time left.
  */
-export function timerAnnouncement(previousMs: number, currentMs: number): string | null {
+export function timerAnnouncement(
+  previousMs: number,
+  currentMs: number,
+  lang: Lang = "en",
+): string | null {
   const level = timerLevel(currentMs);
   if (SEVERITY[level] <= SEVERITY[timerLevel(previousMs)] || currentMs <= 0) return null;
   const seconds = Math.ceil(currentMs / 1000);
   if (seconds >= 60) {
-    const minutes = Math.floor(seconds / 60);
-    return `${minutes} ${minutes === 1 ? "minute" : "minutes"} left.`;
+    return tn(lang, Math.floor(seconds / 60), "{n} minute left.", "{n} minutes left.");
   }
-  return `${seconds} ${seconds === 1 ? "second" : "seconds"} left.`;
+  return tn(lang, seconds, "{n} second left.", "{n} seconds left.");
 }
 
 // --------------------------------------------------------------------------- scoring
@@ -537,10 +541,13 @@ export function describeAttempt(attempt: Pick<ExamAttempt, "correct" | "total">)
   return `${attempt.correct} / ${attempt.total} (${percentOf(attempt.correct, attempt.total)}%)`;
 }
 
-// The UI is in English: a fixed locale keeps dates readable next to it ("10 Oct 2026, 14:05").
-const DATE_FORMAT = new Intl.DateTimeFormat("en-GB", { dateStyle: "medium", timeStyle: "short" });
+// A fixed locale per interface language: "10 Oct 2026, 14:05" / "14:05 10 thg 10, 2026".
+const DATE_FORMAT: Record<Lang, Intl.DateTimeFormat> = {
+  en: new Intl.DateTimeFormat("en-GB", { dateStyle: "medium", timeStyle: "short" }),
+  vi: new Intl.DateTimeFormat("vi-VN", { dateStyle: "medium", timeStyle: "short" }),
+};
 
 /** When an attempt was made, in the browser's time zone. Call in the browser only. */
-export function formatAttemptDate(at: number): string {
-  return DATE_FORMAT.format(at);
+export function formatAttemptDate(at: number, lang: Lang = "en"): string {
+  return DATE_FORMAT[lang].format(at);
 }

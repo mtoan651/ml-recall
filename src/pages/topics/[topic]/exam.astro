@@ -1,5 +1,7 @@
 ---
 import Exam from "../../../components/Exam";
+import I18nTitle from "../../../components/I18nTitle.astro";
+import T from "../../../components/T.astro";
 import Base from "../../../layouts/Base.astro";
 import { getBank, toQuizQuestions } from "../../../lib/bank";
 import { planExam } from "../../../lib/exam";
@@ -19,20 +21,24 @@ if (!topic) throw new Error(`Unknown topic ${Astro.params.topic}`);
 const topicQuestions = bank.questions.filter((q) => q.topic.id === topic.id);
 const questions = await toQuizQuestions(topicQuestions, bank);
 const { count } = planExam(questions.length);
+const title = { topic: topic.id, en: topic.title };
 ---
 
 <Base
-  title={`Test: ${topic.title}`}
+  titleKey="Test: {title}"
+  titleParams={{ title }}
   description={`Timed test on ${topic.title}: ${count} random ${count === 1 ? "question" : "questions"} in ${count} ${count === 1 ? "minute" : "minutes"}, scored and explained at the end.`}
 >
-  <nav aria-label="Breadcrumb" class="text-sm text-muted">
-    <a href={url()} class="hover:text-ink">Topics</a>
+  <nav aria-label="Breadcrumb" data-i18n="Breadcrumb" data-i18n-attr="aria-label" class="text-sm text-muted">
+    <a href={url()} class="hover:text-ink"><T k="Topics" /></a>
     <span aria-hidden="true" class="mx-1.5">/</span>
-    <span>{topic.domainTitle}</span>
+    <span><I18nTitle domain={topic.domainId} en={topic.domainTitle} /></span>
     <span aria-hidden="true" class="mx-1.5">/</span>
-    <a href={topic.url} class="hover:text-ink">{topic.title}</a>
+    <a href={topic.url} class="hover:text-ink"><I18nTitle topic={topic.id} en={topic.title} /></a>
   </nav>
-  <h1 class="mt-2 text-2xl font-semibold tracking-tight sm:text-3xl">Test: {topic.title}</h1>
+  <h1 class="mt-2 text-2xl font-semibold tracking-tight sm:text-3xl">
+    <T k="Test:" /> <I18nTitle topic={topic.id} en={topic.title} />
+  </h1>
   <noscript>
     <p class="mt-4 text-muted">The timed test needs JavaScript.</p>
   </noscript>

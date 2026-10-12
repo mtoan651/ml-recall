@@ -3,6 +3,7 @@ import { describeAccepted, inputKeys, isGapFill } from "../lib/grading";
 import type { Score } from "../lib/session";
 import type { QuizQuestion } from "../lib/types";
 import { url } from "../lib/url";
+import { useT } from "../lib/use-lang";
 import { Html } from "./Html";
 
 interface SummaryProps {
@@ -15,6 +16,7 @@ interface SummaryProps {
 
 /** End of a session: score, the questions that were missed with their answers, what next. */
 export function Summary({ score, missed, onRetryMissed, onRestart, ref }: SummaryProps) {
+  const t = useT();
   const percent = score.total > 0 ? Math.round((score.correct / score.total) * 100) : 0;
   return (
     <section
@@ -24,14 +26,14 @@ export function Summary({ score, missed, onRetryMissed, onRestart, ref }: Summar
       className="scroll-mt-4 rounded-2xl border border-line bg-surface p-4 shadow-xs outline-none sm:p-6"
     >
       <h2 id="summary-heading" className="text-lg font-semibold">
-        Session complete
+        {t("Session complete")}
       </h2>
       <p className="mt-3 flex items-baseline gap-3">
         <span className="text-4xl font-semibold tracking-tight tabular-nums">
           {score.correct}
           <span className="text-muted"> / {score.total}</span>
         </span>
-        <span className="text-muted">correct · {percent}%</span>
+        <span className="text-muted">{t("correct · {percent}%", { percent })}</span>
       </p>
 
       <div className="mt-5 flex flex-wrap gap-2">
@@ -41,7 +43,7 @@ export function Summary({ score, missed, onRetryMissed, onRestart, ref }: Summar
             onClick={onRetryMissed}
             className="rounded-lg bg-accent px-4 py-2 font-medium text-accent-ink hover:bg-accent-hover"
           >
-            Retry {missed.length} missed
+            {t("Retry {n} missed", { n: missed.length })}
           </button>
         )}
         <button
@@ -53,27 +55,27 @@ export function Summary({ score, missed, onRetryMissed, onRestart, ref }: Summar
               : "rounded-lg bg-accent px-4 py-2 font-medium text-accent-ink hover:bg-accent-hover"
           }
         >
-          Practice again
+          {t("Practice again")}
         </button>
         <a
           href={url()}
           className="rounded-lg px-4 py-2 font-medium text-muted hover:bg-subtle hover:text-ink"
         >
-          All topics
+          {t("All topics")}
         </a>
       </div>
 
       {missed.length > 0 && (
         <div className="mt-8">
           <h3 className="text-xs font-semibold tracking-wide text-muted uppercase">
-            Missed questions
+            {t("Missed questions")}
           </h3>
           <ol className="mt-3 space-y-3">
             {missed.map((q) => (
               <li key={q.id} className="rounded-xl border border-line px-4 py-3">
                 <Html html={q.questionHtml} className="text-sm" />
                 <div className="mt-2 border-t border-line pt-2 text-sm">
-                  <span className="font-medium text-good">Answer: </span>
+                  <span className="font-medium text-good">{t("Answer:")} </span>
                   <CorrectAnswer question={q} />
                 </div>
               </li>
@@ -86,13 +88,14 @@ export function Summary({ score, missed, onRetryMissed, onRestart, ref }: Summar
 }
 
 function CorrectAnswer({ question: q }: { question: QuizQuestion }) {
+  const t = useT();
   if (q.answer) {
     const keys = inputKeys(q.answer);
     return (
       <span className="mt-1 block">
         {isGapFill(q.answer)
-          ? keys.map((k, i) => `${i + 1}: ${describeAccepted(k)}`).join(" · ")
-          : describeAccepted(q.answer)}
+          ? keys.map((k, i) => `${i + 1}: ${describeAccepted(k, t.lang)}`).join(" · ")
+          : describeAccepted(q.answer, t.lang)}
       </span>
     );
   }

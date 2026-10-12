@@ -3,6 +3,8 @@
  * A topic's note (cheat sheet): src/content/notes/<domain>/<topic>.md rendered like question
  * text, its references, and links to practise. Indexed for search (`data-pagefind-body`).
  */
+import I18nTitle from "../../../components/I18nTitle.astro";
+import T from "../../../components/T.astro";
 import Base from "../../../layouts/Base.astro";
 import { getBank } from "../../../lib/bank";
 import { getNotes } from "../../../lib/notes";
@@ -17,48 +19,53 @@ const bank = await getBank();
 const note = (await getNotes(bank)).get(Astro.params.topic);
 const topic = bank.topics.get(Astro.params.topic);
 if (!note || !topic) throw new Error(`No note for ${Astro.params.topic}`);
+// The search result title (indexed data, English).
 const title = `${topic.title}: notes`;
 ---
 
-<Base title={title} description={note.summary}>
-  <nav aria-label="Breadcrumb" class="text-sm text-muted">
-    <a href={url()} class="hover:text-ink">Topics</a>
+<Base
+  titleKey="{title}: notes"
+  titleParams={{ title: { topic: topic.id, en: topic.title } }}
+  description={note.summary}
+>
+  <nav aria-label="Breadcrumb" data-i18n="Breadcrumb" data-i18n-attr="aria-label" class="text-sm text-muted">
+    <a href={url()} class="hover:text-ink"><T k="Topics" /></a>
     <span aria-hidden="true" class="mx-1.5">/</span>
-    <span>{topic.domainTitle}</span>
+    <span><I18nTitle domain={topic.domainId} en={topic.domainTitle} /></span>
     <span aria-hidden="true" class="mx-1.5">/</span>
-    <a href={topic.url} class="hover:text-ink">{topic.title}</a>
+    <a href={topic.url} class="hover:text-ink"><I18nTitle topic={topic.id} en={topic.title} /></a>
   </nav>
   <h1 class="mt-2 text-2xl font-semibold tracking-tight sm:text-3xl">
-    {topic.title} <span class="text-muted">notes</span>
+    <I18nTitle topic={topic.id} en={topic.title} /> <span class="text-muted"><T k="notes" /></span>
   </h1>
-  <p class="mt-2 text-lg text-muted">{note.summary}</p>
+  <p class="mt-2 text-lg text-muted" lang="en">{note.summary}</p>
   <p class="mt-2 flex flex-wrap items-center gap-x-2 gap-y-1 text-sm text-muted">
-    <span>{note.minutes}-min read</span>
+    <span><T k="{n}-min read" n={note.minutes} /></span>
     {
       note.reviewedBy && (
         <span class="rounded-md bg-subtle px-1.5 py-0.5 text-xs">
-          {note.reviewedBy === "owner" ? "Reviewed" : "AI-checked"}
+          {note.reviewedBy === "owner" ? <T k="Reviewed" /> : <T k="AI-checked" />}
         </span>
       )
     }
   </p>
   <div class="mt-4 flex flex-wrap gap-2">
     <a href={topic.url} class="rounded-lg bg-accent px-4 py-2 text-sm font-medium text-accent-ink hover:bg-accent-hover">
-      Practise {topic.questionIds.length} questions
+      <T k="Practise {n} questions" one="Practise {n} question" n={topic.questionIds.length} />
     </a>
     <a href={topicExamUrl(topic.id)} class="rounded-lg border border-line-strong px-4 py-2 text-sm font-medium hover:bg-subtle">
-      Take a test
+      <T k="Take a test" />
     </a>
   </div>
 
-  <article class="md note mt-8 rounded-2xl border border-line bg-surface p-4 sm:p-6" data-pagefind-body>
+  <article class="md note mt-8 rounded-2xl border border-line bg-surface p-4 sm:p-6" data-pagefind-body lang="en">
     <span hidden data-pagefind-ignore data-pagefind-meta="title">{title}</span>
     <span data-pagefind-filter={`Domain:${topic.domainTitle}`}></span>
     <span data-pagefind-filter={`Topic:${topic.title}`}></span>
     <span data-pagefind-filter="Type:Note"></span>
     <Fragment set:html={note.html} />
     <section aria-labelledby="note-refs" class="mt-8 border-t border-line pt-4" data-pagefind-ignore>
-      <h2 id="note-refs">References</h2>
+      <h2 id="note-refs"><T k="References" /></h2>
       <ol class="refs text-sm">
         {
           note.references.map((r) => (

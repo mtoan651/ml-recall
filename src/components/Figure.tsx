@@ -1,6 +1,7 @@
 import { useEffect, useRef, useState } from "react";
 import { createPortal } from "react-dom";
 import type { FigureView } from "../lib/types";
+import { useT } from "../lib/use-lang";
 import { Html } from "./Html";
 import { ExpandIcon } from "./Icons";
 
@@ -10,6 +11,7 @@ import { ExpandIcon } from "./Icons";
  * compact option images, where a click on the image selects the option).
  */
 export function Figure({ figure, compact = false }: { figure: FigureView; compact?: boolean }) {
+  const t = useT();
   const [zoomed, setZoomed] = useState(false);
   const image = (
     <img
@@ -30,7 +32,7 @@ export function Figure({ figure, compact = false }: { figure: FigureView; compac
             type="button"
             onClick={() => setZoomed(true)}
             className="block w-full cursor-zoom-in"
-            aria-label={`Enlarge figure: ${figure.alt}`}
+            aria-label={t("Enlarge figure: {alt}", { alt: figure.alt })}
           >
             {image}
           </button>
@@ -38,7 +40,9 @@ export function Figure({ figure, compact = false }: { figure: FigureView; compac
         <button
           type="button"
           onClick={() => setZoomed(true)}
-          aria-label={compact ? `Enlarge image: ${figure.alt}` : "Enlarge figure"}
+          aria-label={
+            compact ? t("Enlarge image: {alt}", { alt: figure.alt }) : t("Enlarge figure")
+          }
           tabIndex={compact ? 0 : -1}
           className="absolute top-1.5 right-1.5 rounded-md border border-slate-300 bg-white/90 p-1 text-slate-600 opacity-70 transition-opacity hover:opacity-100 focus-visible:opacity-100"
         >
@@ -58,6 +62,7 @@ export function Figure({ figure, compact = false }: { figure: FigureView; compac
 
 /** The enlarged figure in a native modal dialog (Esc, the button or a click outside closes it). */
 function Zoom({ figure, onClose }: { figure: FigureView; onClose: () => void }) {
+  const t = useT();
   const ref = useRef<HTMLDialogElement>(null);
   useEffect(() => {
     const dialog = ref.current;
@@ -95,7 +100,7 @@ function Zoom({ figure, onClose }: { figure: FigureView; onClose: () => void }) 
           onClick={() => ref.current?.close()}
           className="shrink-0 rounded-lg border border-line-strong px-3 py-1.5 text-sm font-medium hover:bg-subtle"
         >
-          Close
+          {t("Close")}
         </button>
       </div>
     </dialog>

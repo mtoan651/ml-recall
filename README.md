@@ -26,6 +26,8 @@ mock exams and spaced repetition. Free static site on GitHub Pages.
   the browser; export it to a file and import it on another device).
 - **Topic notes**: a cited cheat sheet for every topic (key ideas, formulas, pitfalls).
 - **Search** every question by its words, with filters; each question has its own page.
+- **Vietnamese interface** (EN | VI in the header): menus, buttons and messages in Vietnamese,
+  topic titles in both languages, questions in English; plus an English–Vietnamese glossary.
 - Installs as an app and **works offline** for every page you have opened.
 - Every question records its **source**; reviewed explanations **cite** references (`[^1]`).
 - Imports are reproducible: pinned upstream revisions + per-item curation with drop reasons.

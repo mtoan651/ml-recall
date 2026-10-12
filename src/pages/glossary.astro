@@ -4,6 +4,7 @@
  * d2l-vi glossary, CC BY-SA 4.0). A filter box matches either language, ignoring accents.
  */
 import { getCollection } from "astro:content";
+import T from "../components/T.astro";
 import Base from "../layouts/Base.astro";
 import { url } from "../lib/url";
 
@@ -20,22 +21,25 @@ for (const t of terms) groups.set(letterOf(t.en), [...(groups.get(letterOf(t.en)
 ---
 
 <Base
-  title="Glossary"
+  titleKey="Glossary"
   description={`${terms.length} machine-learning terms in English and Vietnamese, from the Vietnamese edition of Dive into Deep Learning.`}
 >
-  <h1 class="text-2xl font-semibold tracking-tight sm:text-3xl">Glossary</h1>
+  <h1 class="text-2xl font-semibold tracking-tight sm:text-3xl"><T k="Glossary" /></h1>
   <p class="mt-2 text-muted">
-    {terms.length} terms in English and Vietnamese (Thuật ngữ Anh – Việt), from the glossary of
-    <a href="https://github.com/d2l-ai/d2l-vi" class="text-accent underline underline-offset-2" rel="noopener">Đắm mình vào Học Sâu</a>,
-    the Vietnamese edition of Dive into Deep Learning (CC BY-SA 4.0).
+    <T
+      k="{n} terms in English and Vietnamese (Thuật ngữ Anh – Việt), from the glossary of"
+      n={terms.length}
+    />
+    <a href="https://github.com/d2l-ai/d2l-vi" class="text-accent underline underline-offset-2" rel="noopener" lang="vi">Đắm mình vào Học Sâu</a><T k=", the Vietnamese edition of Dive into Deep Learning (CC BY-SA 4.0)." />
   </p>
   <label class="mt-5 block max-w-md">
-    <span class="sr-only">Filter terms</span>
+    <span class="sr-only"><T k="Filter terms" /></span>
     <input id="glossary-filter" type="search" placeholder="Filter: softmax, hàm mất mát…" autocomplete="off"
+      data-i18n="Filter: softmax, hàm mất mát…" data-i18n-attr="placeholder"
       class="w-full rounded-lg border border-line bg-surface px-3 py-2 text-sm placeholder:text-muted" />
   </label>
   <p id="glossary-count" class="mt-2 text-sm text-muted" aria-live="polite"></p>
-  <nav aria-label="Letters" class="mt-4 flex flex-wrap gap-1 text-sm">
+  <nav aria-label="Letters" data-i18n="Letters" data-i18n-attr="aria-label" class="mt-4 flex flex-wrap gap-1 text-sm">
     {[...groups.keys()].map((letter) => <a href={`#g-${letter}`} class="rounded px-1.5 py-0.5 text-accent hover:bg-subtle">{letter}</a>)}
   </nav>
   <div class="mt-4 space-y-6">
@@ -56,10 +60,13 @@ for (const t of terms) groups.set(letterOf(t.en), [...(groups.get(letterOf(t.en)
     }
   </div>
   <p class="mt-8 text-sm text-muted">
-    Source: <code>glossary.md</code> of d2l-ai/d2l-vi, pinned commit; see
-    <a href={url("search/")} class="text-accent underline underline-offset-2">Search</a> to find questions using a term.
+    <T k="Source:" /> <code>glossary.md</code> <T k="of d2l-ai/d2l-vi, pinned commit; see" />
+    <a href={url("search/")} class="text-accent underline underline-offset-2"><T k="Search" /></a>
+    <T k="to find questions using a term." />
   </p>
   <script>
+    import { currentLang, LANG_EVENT, t } from "../lib/i18n";
+
     const fold = (s: string) =>
       s.normalize("NFD").replace(/[̀-ͯ]/g, "").replace(/đ/g, "d").replace(/Đ/g, "D").toLowerCase();
     const input = document.getElementById("glossary-filter") as HTMLInputElement | null;
@@ -79,8 +86,13 @@ for (const t of terms) groups.set(letterOf(t.en), [...(groups.get(letterOf(t.en)
       for (const g of document.querySelectorAll<HTMLElement>("[data-group]")) {
         g.hidden = !g.querySelector("[data-term]:not([hidden])");
       }
-      if (count) count.textContent = q ? `${shown} of ${rows.length} terms` : "";
+      if (count) {
+        count.textContent = q
+          ? t(currentLang(), "{shown} of {total} terms", { shown, total: rows.length })
+          : "";
+      }
     }
     input?.addEventListener("input", apply);
+    window.addEventListener(LANG_EVENT, apply);
   </script>
 </Base>
