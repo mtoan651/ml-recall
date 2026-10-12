@@ -12,7 +12,8 @@ Requires Node 24 and pnpm (see [tech-stack](tech-stack.md)); the pnpm version is
 ```bash
 pnpm install
 pnpm dev          # http://localhost:4321/ml-recall/ — reloads on YAML edits
-pnpm build        # static site in dist/ (fails on any schema / Markdown / math error)
+pnpm build        # static site in dist/ (fails on any schema / Markdown / math error),
+                  # then the Pagefind search index in dist/pagefind/
 pnpm preview      # serve dist/ locally
 pnpm lint         # Biome (lint + format check); `pnpm format` fixes what it can
 pnpm test         # Vitest: grading, shuffle, citations, session, exam, storage, schema mirror
@@ -34,7 +35,7 @@ src/content/sources.yaml ──────────────────�
                          drops retired questions, renders Markdown (src/lib/markdown.ts)
                                                      │  QuizQuestion props (src/lib/types.ts)
                                                      ▼
-              pages: /  ·  /topics/<topic>/  ·  /tags/  ·  /tags/<tag>/
+              pages: /  ·  /topics/<topic>/  ·  /tags/  ·  /tags/<tag>/  ·  /q/<id>/  ·  /search/
                      /topics/<topic>/exam/  ·  /tags/<tag>/exam/
                      /exam/ · /review/ · /mistakes/ · /progress/  (question index only: toCatalog;
                                                         /exam/ also the tag index: toCatalogTags)
@@ -309,6 +310,29 @@ test histories are joined (latest 10 attempts, the better best), and settings an
 choices are taken only when this browser has none. A line says what was imported; files that
 are not ml-recall backups, or from a newer format, are rejected with a message.
 
+## Search and question pages
+
+- **`/q/<id>/`** (`src/pages/q/[id].astro`): every visible question on its own page — title
+  and meta description from the stem as plain text (`plainText` / `texToText` in
+  `src/lib/text.ts`: code, math, links and emphasis reduced to text, common TeX such as
+  `\frac`, `\sigma`, `\mathbf` turned into characters), breadcrumb to the topic, the practice
+  quiz with that one question, links to the topic and the question's tags. Shareable and the
+  unit of search.
+- **Index**: `pnpm build` runs `pagefind --site dist --exclude-selectors .katex-html` after
+  `astro build` ([Pagefind](https://pagefind.app) 1.5, MIT; ~13 MB of index fragments, loaded on
+  demand). Only elements with `data-pagefind-body` are indexed — the question pages (and topic
+  notes) — so topic and tag pages, which repeat the same questions, don't duplicate results.
+  The quiz chrome (toolbar, sticky bar, card header, answer instructions) carries
+  `data-pagefind-ignore`; KaTeX's rendered glyphs are excluded but its TeX annotation is
+  kept, so `softmax` also finds `\operatorname{softmax}`. Filters (Domain, Topic, Type,
+  Difficulty) are attribute values (`data-pagefind-filter="Topic:…"`, not indexed as text;
+  titles contain no `,` or `:`); the result title is a `data-pagefind-meta="title"` element
+  that is itself ignored as text.
+- **`/search/`** (`src/pages/search.astro`): Pagefind's default UI loaded from
+  `dist/pagefind/`, themed with the site tokens (`.search-ui` in `global.css`, long words wrap
+  on phones); `?q=` pre-fills the query. Under `astro dev` there is no index, and the page says
+  so. "Search" is in the header (GitHub moved to the footer).
+
 ## Figures
 
 `figure`, `explanation_figure` and option `image` paths are relative to the YAML file
@@ -356,6 +380,7 @@ Actions**.
 | Question index, mixed-test pool, mistakes, progress | `src/lib/catalog.ts` (+ `catalog.test.ts`); index built by `toCatalog()` in `bank.ts` |
 | Fetching questions; per-question JSON | `src/lib/fetch.ts` (+ `fetch.test.ts`); `src/pages/data/q/[id].json.ts` |
 | Mixed test, My mistakes, Progress UI | `src/components/MixedExam.tsx`, `Mistakes.tsx`, `Progress.tsx`; pages `exam.astro`, `mistakes.astro`, `progress.astro` |
+| Question pages, search index, search UI | `src/pages/q/[id].astro`, `src/lib/text.ts` (+ `text.test.ts`), `src/pages/search.astro`; `build` script in `package.json`; `.search-ui` in `global.css` |
 | Export / import of progress | `src/lib/backup.ts` (+ `backup.test.ts`); panel in `src/components/Progress.tsx` |
 | Spaced repetition: cards, due, forecast, rating; review UI; due badge | `src/lib/srs.ts` (+ `srs.test.ts`), `src/lib/srs-due.ts`; `src/components/Review.tsx`, page `review.astro`; badge script in `Base.astro` |
 | Figure zoom, picture-option grid | `src/components/Figure.tsx`; `OptionList` in `QuestionCard.tsx` |

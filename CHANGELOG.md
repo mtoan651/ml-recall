@@ -15,6 +15,9 @@ versioning: [SemVer](https://semver.org) as defined in [docs/conventions.md](doc
 - **Export and import progress** (on `/progress/`): download everything this browser stores
   as a JSON file and import it elsewhere. Importing merges — the newer answer and review card
   per question win, test histories are joined — so an old file never overwrites recent work.
+- **Search** (`/search/`): full-text search over every question with filters for domain,
+  topic, type and difficulty (Pagefind, built with the site), and a page per question
+  (`/q/<id>/`) to answer or share it.
 
 ## [0.4.1] — 2026-10-12
 
