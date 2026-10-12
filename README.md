@@ -23,7 +23,7 @@ mock exams and spaced repetition. Free static site on GitHub Pages.
   you would forget it, sooner after a wrong answer.
 - **My mistakes** collects every question you last answered wrong, to practice until it is right;
   **Progress** shows answered / correct per topic and your test scores over time (all stored in
-  the browser).
+  the browser; export it to a file and import it on another device).
 - Every question records its **source**; reviewed explanations **cite** references (`[^1]`).
 - Imports are reproducible: pinned upstream revisions + per-item curation with drop reasons.
 

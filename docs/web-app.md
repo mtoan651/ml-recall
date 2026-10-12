@@ -300,6 +300,15 @@ to revisit, last test, best test and a bar chart of the last 10 test scores (old
 scores are also in screen-reader text) — and a table of tag and mixed tests. At phone width
 "Correct", "Best" and the chart are hidden.
 
+**Back up or move your progress** (always shown, also on an empty page; `src/lib/backup.ts`):
+**Export progress** downloads `ml-recall-progress-<date>.json` — `{ app: "ml-recall", format: 1,
+exportedAt, data }` with every key of the storage table except tests in progress (they are tied
+to a running clock). **Import progress…** merges a file into this browser rather than replacing
+it: results and review cards keep the more recent one per question (by `at` / last review),
+test histories are joined (latest 10 attempts, the better best), and settings and mixed-test
+choices are taken only when this browser has none. A line says what was imported; files that
+are not ml-recall backups, or from a newer format, are rejected with a message.
+
 ## Figures
 
 `figure`, `explanation_figure` and option `image` paths are relative to the YAML file
@@ -347,6 +356,7 @@ Actions**.
 | Question index, mixed-test pool, mistakes, progress | `src/lib/catalog.ts` (+ `catalog.test.ts`); index built by `toCatalog()` in `bank.ts` |
 | Fetching questions; per-question JSON | `src/lib/fetch.ts` (+ `fetch.test.ts`); `src/pages/data/q/[id].json.ts` |
 | Mixed test, My mistakes, Progress UI | `src/components/MixedExam.tsx`, `Mistakes.tsx`, `Progress.tsx`; pages `exam.astro`, `mistakes.astro`, `progress.astro` |
+| Export / import of progress | `src/lib/backup.ts` (+ `backup.test.ts`); panel in `src/components/Progress.tsx` |
 | Spaced repetition: cards, due, forecast, rating; review UI; due badge | `src/lib/srs.ts` (+ `srs.test.ts`), `src/lib/srs-due.ts`; `src/components/Review.tsx`, page `review.astro`; badge script in `Base.astro` |
 | Figure zoom, picture-option grid | `src/components/Figure.tsx`; `OptionList` in `QuestionCard.tsx` |
 | Short-answer format hints | `answerHint()` in `src/lib/grading.ts`; shown by `QuestionCard.tsx` |

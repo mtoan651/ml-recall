@@ -12,6 +12,9 @@ versioning: [SemVer](https://semver.org) as defined in [docs/conventions.md](doc
   lists what is due today, most overdue first, by topic, with a 7-day forecast, and after a
   right answer lets you rate it Hard, Good or Easy (with the next interval shown). Past
   results become cards on first visit. A badge on "Review" in the header shows today's count.
+- **Export and import progress** (on `/progress/`): download everything this browser stores
+  as a JSON file and import it elsewhere. Importing merges — the newer answer and review card
+  per question win, test histories are joined — so an old file never overwrites recent work.
 
 ## [0.4.1] — 2026-10-12
 

@@ -1,4 +1,12 @@
-import { type ReactNode, useEffect, useState } from "react";
+import { type ReactNode, useCallback, useEffect, useRef, useState } from "react";
+import {
+  BackupError,
+  backupFileName,
+  createBackup,
+  type MergeSummary,
+  mergeBackup,
+  parseBackup,
+} from "../lib/backup";
 import {
   attemptPercents,
   type DomainProgress,
@@ -7,7 +15,7 @@ import {
   scopeTitle,
 } from "../lib/catalog";
 import { describeAttempt, type ExamHistory, lastAttempt, percentOf } from "../lib/exam";
-import { loadAllExamHistory, loadResults } from "../lib/storage";
+import { browserStore, loadAllExamHistory, loadResults } from "../lib/storage";
 import type { Catalog } from "../lib/types";
 import { mistakesUrl, mixedExamUrl, tagExamUrl, topicExamUrl, url } from "../lib/url";
 
@@ -29,7 +37,7 @@ export default function Progress({ catalog }: { catalog: Catalog }) {
   const [revisit, setRevisit] = useState(0);
   const [tests, setTests] = useState(0);
 
-  useEffect(() => {
+  const load = useCallback(() => {
     const results = loadResults();
     const histories = loadAllExamHistory();
     setDomains(progressOf(catalog, results, histories));
@@ -49,6 +57,8 @@ export default function Progress({ catalog }: { catalog: Catalog }) {
     );
     setReady(true);
   }, [catalog]);
+
+  useEffect(load, [load]);
 
   const rows = domains.flatMap((d) => d.topics);
   const total = rows.reduce((n, r) => n + r.total, 0);
@@ -160,7 +170,101 @@ export default function Progress({ catalog }: { catalog: Catalog }) {
             )}
           </>
         )}
+        <BackupPanel onImported={load} />
       </div>
+    </section>
+  );
+}
+
+const plural = (n: number, word: string) =>
+  `${n.toLocaleString("en")} ${n === 1 ? word : `${word}s`}`;
+
+function describeMerge(s: MergeSummary): string {
+  const parts = [
+    s.results > 0 && plural(s.results, "answer"),
+    s.cards > 0 && plural(s.cards, "review card"),
+    s.tests > 0 && plural(s.tests, "test"),
+    s.preferences > 0 && "your settings",
+  ].filter(Boolean);
+  return parts.length > 0
+    ? `Imported ${parts.join(", ")}. Newer progress already here was kept.`
+    : "Nothing new in that file — everything in it is already here (or older).";
+}
+
+/** Export everything to a JSON file; import one, merged into this browser's progress. */
+function BackupPanel({ onImported }: { onImported: () => void }) {
+  const [message, setMessage] = useState<{ ok: boolean; text: string } | null>(null);
+  const fileRef = useRef<HTMLInputElement>(null);
+
+  const download = () => {
+    const now = Date.now();
+    const blob = new Blob([JSON.stringify(createBackup(browserStore(), now))], {
+      type: "application/json",
+    });
+    const href = URL.createObjectURL(blob);
+    const a = document.createElement("a");
+    a.href = href;
+    a.download = backupFileName(now);
+    document.body.append(a);
+    a.click();
+    a.remove();
+    setTimeout(() => URL.revokeObjectURL(href), 1000);
+    setMessage({ ok: true, text: `Saved ${a.download}.` });
+  };
+
+  const upload = async (file: File | undefined) => {
+    if (!file) return;
+    try {
+      const summary = mergeBackup(parseBackup(await file.text()), browserStore());
+      setMessage({ ok: true, text: describeMerge(summary) });
+      onImported();
+    } catch (e) {
+      setMessage({
+        ok: false,
+        text: e instanceof BackupError ? e.message : "That file could not be read.",
+      });
+    } finally {
+      if (fileRef.current) fileRef.current.value = "";
+    }
+  };
+
+  return (
+    <section
+      aria-labelledby="p-backup"
+      className="mt-10 rounded-2xl border border-line bg-surface p-4 sm:p-5"
+    >
+      <h2 id="p-backup" className="font-semibold">
+        Back up or move your progress
+      </h2>
+      <p className="mt-1 text-sm text-muted">
+        Everything lives only in this browser. Export it to a file to keep a copy or to open it on
+        another device; importing merges the file into what is here (the newer answer per question
+        wins), so it never overwrites recent work.
+      </p>
+      <div className="mt-3 flex flex-wrap items-center gap-2">
+        <button
+          type="button"
+          onClick={download}
+          className="rounded-lg border border-line-strong px-4 py-2 text-sm font-medium hover:bg-subtle"
+        >
+          Export progress
+        </button>
+        <label className="cursor-pointer rounded-lg border border-line-strong px-4 py-2 text-sm font-medium hover:bg-subtle has-[:focus-visible]:outline-2 has-[:focus-visible]:outline-accent">
+          Import progress…
+          <input
+            ref={fileRef}
+            type="file"
+            accept="application/json,.json"
+            className="sr-only"
+            onChange={(e) => upload(e.target.files?.[0])}
+          />
+        </label>
+      </div>
+      {message && (
+        <p role="status" className={`mt-3 text-sm ${message.ok ? "text-good" : "text-bad"}`}>
+          {message.text}
+        </p>
+      )}
     </section>
   );
 }
