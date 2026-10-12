@@ -76,7 +76,7 @@ Versions follow [conventions.md#versioning](conventions.md#versioning).
 - [x] Vietnamese UI (EN | VI switch; questions stay in English, topic titles in both languages)
 - [x] English–Vietnamese glossary from d2l-vi (`/glossary/`, 458 terms)
 
-## v0.6.0 — CE6146 exam prep
+## v0.6.0 — CE6146 exam prep ✅
 
 - [x] CE6146 page (`/ce6146/`): per-lecture and per-exercise practice and tests, later weeks mapped to topics
 - [x] Tests draw CE6146 course questions more often (As often / 4× / 16×)

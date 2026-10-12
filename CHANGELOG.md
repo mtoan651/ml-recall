@@ -5,6 +5,16 @@ versioning: [SemVer](https://semver.org) as defined in [docs/conventions.md](doc
 
 ## [Unreleased]
 
+## [0.6.0] — 2026-10-12
+
+CE6146 exam prep: an exam-prep page, tests that draw the course's questions more often, every
+content slide of Lectures 1–3 tested, a twin for every exercise question, and topics for the later
+syllabus weeks (graph neural networks, explainable AI).
+
+Bank: 3327 questions, all reviewed (56 by the owner, 3271 by Claude, "AI-checked"), 8 retired —
+ml 963, dl 677, math 481, ai 307, practice 236, nlp 213, llm 138, cv 121, rl 96, gen 95; 369 from
+the CE6146 slides and exercises; 56 topics, each with a note; 458 glossary terms.
+
 ### Added
 
 - 302 reviewed questions for CE6146 exam prep (bank 3025 → 3327):
@@ -23,7 +33,8 @@ versioning: [SemVer](https://semver.org) as defined in [docs/conventions.md](doc
 - Mixed-test topic preset: `/exam/?topics=<id>,<id>` opens the form with those topics.
 - Timed and mixed tests draw CE6146 course questions more often: **As often as others / More
   (4×) / Mostly (16×)** on the start screen and the mixed-test form (default 4×, remembered).
-  On `neural-networks` a 20-question test now has about 13 course questions instead of 7.
+  Measured on `neural-networks` before the new questions (45 of 123 from the course): a
+  20-question test went from about 7 to about 13 course questions.
 
 ## [0.5.0] — 2026-10-12
 
@@ -377,7 +388,8 @@ llm 20, rl 12, cv 10, gen 10.
 Bank: 333 questions (328 draft, 5 reviewed) — ml 97, dl 77, nlp 47, practice 27, ai 20, llm 20,
 math 13, rl 12, cv 10, gen 10.
 
-[Unreleased]: https://github.com/mtoan651/ml-recall/compare/v0.5.0...HEAD
+[Unreleased]: https://github.com/mtoan651/ml-recall/compare/v0.6.0...HEAD
+[0.6.0]: https://github.com/mtoan651/ml-recall/releases/tag/v0.6.0
 [0.5.0]: https://github.com/mtoan651/ml-recall/releases/tag/v0.5.0
 [0.4.1]: https://github.com/mtoan651/ml-recall/releases/tag/v0.4.1
 [0.4.0]: https://github.com/mtoan651/ml-recall/releases/tag/v0.4.0
