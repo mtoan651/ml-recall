@@ -16,7 +16,10 @@ mock exams and spaced repetition. Free static site on GitHub Pages.
 - Four question types: `single`, `multiple` (select all), `true_false`, `short_answer`
   (auto-graded fill-in: a number, a word or phrase, or a gap-fill with several blanks).
 - **Timed tests** for every topic and tag: up to 20 random questions, one minute each, scored and
-  explained at the end.
+  explained at the end. **Mixed tests** draw 10–50 questions from any topics and difficulties.
+- **My mistakes** collects every question you last answered wrong, to practice until it is right;
+  **Progress** shows answered / correct per topic and your test scores over time (all stored in
+  the browser).
 - Every question records its **source**; reviewed explanations **cite** references (`[^1]`).
 - Imports are reproducible: pinned upstream revisions + per-item curation with drop reasons.
 

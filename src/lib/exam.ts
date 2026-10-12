@@ -93,7 +93,7 @@ export function isExamLayout(value: unknown): value is ExamLayout {
 
 /** A test in progress. Everything needed to resume it after a reload is in here. */
 export interface ExamState {
-  /** What the test is about: `topic:<id>` or `tag:<tag>` (see `examScope`). */
+  /** What the test is about: `topic:<id>`, `tag:<tag>` or `mixed:custom` (see `examScope`). */
   scope: string;
   items: SessionItem[];
   answers: Record<string, ExamAnswer>;
@@ -111,12 +111,15 @@ export interface ExamState {
   layout: ExamLayout;
 }
 
-export type ScopeKind = "topic" | "tag";
+export type ScopeKind = "topic" | "tag" | "mixed";
 
 /** Storage scope of a topic or tag. Prefixed: a topic and a tag may share a name (`pytorch`). */
 export function examScope(kind: ScopeKind, id: string): string {
   return `${kind}:${id}`;
 }
+
+/** Id of the mixed test (one test in progress and one history for every selection). */
+export const MIXED_ID = "custom";
 
 export interface CreateExamOptions {
   scope: string;

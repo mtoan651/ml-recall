@@ -125,7 +125,7 @@ export function ExamResults({
             href={scope.practiceUrl}
             className="rounded-lg border border-line-strong px-4 py-2 font-medium hover:bg-subtle"
           >
-            Practice this {scope.kind}
+            {scope.practiceLabel ?? `Practice this ${scope.kind}`}
           </a>
           <a
             href={url()}

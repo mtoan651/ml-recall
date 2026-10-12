@@ -12,7 +12,7 @@ import { referenceAnchor } from "./citations";
 import { renderMarkdown } from "./markdown";
 import type { AnswerKey, Figure, Question, Source } from "./schema";
 import { shufflesOptions } from "./shuffle";
-import type { FigureView, InputKeyView, QuizQuestion, ReferenceView } from "./types";
+import type { Catalog, FigureView, InputKeyView, QuizQuestion, ReferenceView } from "./types";
 import { topicUrl } from "./url";
 
 /** Figures next to the YAML files, bundled by Vite: "/src/content/quizzes/dl/cnn/x.svg" → URL. */
@@ -186,6 +186,35 @@ export function getBank(): Promise<Bank> {
   if (!import.meta.env.PROD) return loadBank();
   cached ??= loadBank();
   return cached;
+}
+
+/**
+ * The question index embedded by the cross-topic pages (mixed tests, My mistakes, Progress):
+ * ids per topic with one-letter difficulty and status codes — about 30 bytes per question.
+ */
+export function toCatalog(bank: Bank): Catalog {
+  const byId = new Map(bank.questions.map((bq) => [bq.question.id, bq.question]));
+  return {
+    domains: bank.domains
+      .map((domain) => ({
+        id: domain.id,
+        title: domain.title,
+        topics: domain.topics
+          .filter((t) => t.questionIds.length > 0)
+          .map((t) => {
+            const questions = t.questionIds.map((id) => byId.get(id));
+            return {
+              id: t.id,
+              title: t.title,
+              url: t.url,
+              ids: t.questionIds,
+              difficulty: questions.map((q) => q?.difficulty?.[0] ?? "-").join(""),
+              status: questions.map((q) => (q?.status === "reviewed" ? "r" : "d")).join(""),
+            };
+          }),
+      }))
+      .filter((d) => d.topics.length > 0),
+  };
 }
 
 // --------------------------------------------------------------------------- rendering

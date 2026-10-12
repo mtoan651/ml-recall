@@ -88,13 +88,42 @@ export interface QuizQuestion {
   provenance: ProvenanceView;
 }
 
-/** The topic or tag a timed test is about. */
+/** The topic or tag a timed test is about, or a mixed test over a chosen selection. */
 export interface ExamScopeView {
-  kind: "topic" | "tag";
-  /** Topic id or tag. */
+  kind: "topic" | "tag" | "mixed";
+  /** Topic id, tag, or the id of a mixed selection. */
   id: string;
-  /** For headings: the topic title or `#tag`. */
+  /** For headings: the topic title, `#tag` or "your selection". */
   title: string;
-  /** Practice page of the same topic or tag. */
+  /** Practice page of the same topic or tag (for a mixed test: "My mistakes"). */
   practiceUrl: string;
+  /** Label of the practice link; default "Practice this <kind>". */
+  practiceLabel?: string;
+}
+
+/**
+ * The question index that cross-topic pages (mixed tests, My mistakes, Progress) embed: ids
+ * grouped by domain and topic, with what filters need. Questions themselves are fetched one
+ * by one from `data/q/<id>.json` (src/pages/data/q/[id].json.ts).
+ */
+export interface Catalog {
+  domains: CatalogDomain[];
+}
+
+export interface CatalogDomain {
+  id: string;
+  title: string;
+  topics: CatalogTopic[];
+}
+
+export interface CatalogTopic {
+  id: string;
+  title: string;
+  url: string;
+  /** Visible question ids, in file order. */
+  ids: string[];
+  /** One letter per id: difficulty `e` / `m` / `h`, or `-` when unset. */
+  difficulty: string;
+  /** One letter per id: `r` reviewed, `d` draft. */
+  status: string;
 }
