@@ -43,6 +43,12 @@ interface ExamProps {
   scope: ExamScopeView;
   /** Show each question's topic (cross-topic sets such as tag pages). */
   showTopic?: boolean;
+  /** Questions per test (default `EXAM_MAX_QUESTIONS`). */
+  maxQuestions?: number;
+  /** Start a test as soon as the page is ready, unless one is resumed (mixed tests). */
+  autoStart?: boolean;
+  /** "New test" on the results: default back to the start screen. */
+  onNewTest?: () => void;
 }
 
 const SUBMITTED_ELSEWHERE =
@@ -61,7 +67,14 @@ const toInput = (q: QuizQuestion): SessionInput => ({
  * against the clock, no feedback → results with every answer explained. The test in progress
  * is saved in localStorage after every change, so a reload resumes it.
  */
-export default function Exam({ questions, scope, showTopic = false }: ExamProps) {
+export default function Exam({
+  questions,
+  scope,
+  showTopic = false,
+  maxQuestions,
+  autoStart = false,
+  onNewTest,
+}: ExamProps) {
   const scopeKey = examScope(scope.kind, scope.id);
   const byId = useMemo(() => new Map(questions.map((q) => [q.id, q])), [questions]);
   const storedInfo = useMemo(
@@ -106,7 +119,7 @@ export default function Exam({ questions, scope, showTopic = false }: ExamProps)
   /** Move focus to the new view (start screen or results) after a user action. */
   const moved = useRef(false);
 
-  const plan = planExam(reviewedOnly ? reviewedCount : poolCount);
+  const plan = planExam(reviewedOnly ? reviewedCount : poolCount, maxQuestions);
 
   const dispatch = useCallback(
     (action: ExamAction) => setExam((state) => (state ? examReducer(state, action) : state)),
@@ -189,6 +202,30 @@ export default function Exam({ questions, scope, showTopic = false }: ExamProps)
     [byId, scopeKey, takenElsewhere, yieldToOtherTab],
   );
 
+  /** A new test drawn from the pool. */
+  const begin = useCallback(
+    (only: boolean, chosenLayout: ExamLayout) => {
+      const pool = examPool(questions, only).map(toInput);
+      const state = createExam(pool, {
+        scope: scopeKey,
+        reviewedOnly: only,
+        layout: chosenLayout,
+        now: Date.now(),
+        max: maxQuestions,
+      });
+      if (state.items.length === 0) return;
+      setFinished(null);
+      setNotice("");
+      setAnnouncement("");
+      setStartedHere(true);
+      setExam(state);
+      const top = rootRef.current?.getBoundingClientRect().top ?? 0;
+      if (top < 0) rootRef.current?.scrollIntoView({ block: "start" });
+    },
+    [questions, scopeKey, maxQuestions],
+  );
+  const autoStarted = useRef(false);
+
   // Restore settings, history and a test in progress; an expired test is submitted now.
   useEffect(() => {
     const settings = loadSettings();
@@ -208,9 +245,12 @@ export default function Exam({ questions, scope, showTopic = false }: ExamProps)
       setAnnouncement(
         `Test resumed at question ${stored.position + 1} of ${stored.items.length}. The timer kept running.`,
       );
+    } else if (autoStart && !autoStarted.current) {
+      autoStarted.current = true;
+      begin(settings.reviewedOnly && reviewedCount > 0, settings.examLayout);
     }
     setReady(true);
-  }, [scopeKey, storedInfo, finish]);
+  }, [scopeKey, storedInfo, finish, autoStart, begin, reviewedCount]);
 
   // Save the test in progress after every change. The first save of a new test claims the
   // storage key; later saves stop if another tab has written or cleared it meanwhile.
@@ -249,18 +289,7 @@ export default function Exam({ questions, scope, showTopic = false }: ExamProps)
     if (top < 0) rootRef.current?.scrollIntoView({ block: "start" });
   }, [view]);
 
-  const start = useCallback(() => {
-    const pool = examPool(questions, reviewedOnly).map(toInput);
-    const state = createExam(pool, { scope: scopeKey, reviewedOnly, layout, now: Date.now() });
-    if (state.items.length === 0) return;
-    setFinished(null);
-    setNotice("");
-    setAnnouncement("");
-    setStartedHere(true);
-    setExam(state);
-    const top = rootRef.current?.getBoundingClientRect().top ?? 0;
-    if (top < 0) rootRef.current?.scrollIntoView({ block: "start" });
-  }, [questions, reviewedOnly, layout, scopeKey]);
+  const start = useCallback(() => begin(reviewedOnly, layout), [begin, reviewedOnly, layout]);
 
   const changeReviewedOnly = (value: boolean) => {
     setReviewedOnlySetting(value);
@@ -293,6 +322,10 @@ export default function Exam({ questions, scope, showTopic = false }: ExamProps)
             history={history}
             showTopic={showTopic}
             onNewTest={() => {
+              if (onNewTest) {
+                onNewTest();
+                return;
+              }
               moved.current = true;
               setAnnouncement("");
               setFinished(null);

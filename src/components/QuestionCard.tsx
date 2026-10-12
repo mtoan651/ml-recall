@@ -151,6 +151,8 @@ function OptionList({
   const options = q.options ?? [];
   const multiple = q.type === "multiple";
   const graded = Boolean(answer.outcome);
+  // Picture options (every option has an image) are laid out as a grid, two per row.
+  const pictures = options.length >= 2 && options.every((o) => o.image);
   const result = graded
     ? gradeChoice(
         options.map((o) => o.correct),
@@ -163,7 +165,7 @@ function OptionList({
       <legend className="sr-only">
         {multiple ? "Select all options that apply" : "Choose one option"}
       </legend>
-      <ul className="space-y-2.5">
+      <ul className={pictures ? "grid gap-2.5 sm:grid-cols-2" : "space-y-2.5"}>
         {item.optionOrder.map((original, k) => {
           const option = options[original];
           if (!option) return null;

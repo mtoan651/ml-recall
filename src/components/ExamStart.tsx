@@ -60,6 +60,7 @@ export function ExamStart({
   const size = `${plural(n, "question")} · ${plural(n, "minute")}`;
   const last = lastAttempt(history);
   const poolWord = `${reviewedOnly ? "reviewed " : ""}question`;
+  const noun = scope.kind === "mixed" ? "selection" : scope.kind;
   return (
     <section
       ref={ref}
@@ -81,7 +82,7 @@ export function ExamStart({
 
       {plan.short && n > 0 && (
         <p className="mt-4 rounded-xl bg-subtle px-3.5 py-2.5 text-sm">
-          {`This ${scope.kind} has ${plural(plan.available, poolWord)}, so this test has ${size}.`}
+          {`This ${noun} has ${plural(plan.available, poolWord)}, so this test has ${size}.`}
         </p>
       )}
       {n === 0 && (
@@ -103,34 +104,7 @@ export function ExamStart({
         </li>
       </ul>
 
-      <fieldset className="mt-5 min-w-0">
-        <legend className="text-xs font-semibold tracking-wide text-muted uppercase">Layout</legend>
-        <div className="mt-2 grid gap-2 sm:grid-cols-2">
-          {LAYOUTS.map(({ value, title, description }) => (
-            <label
-              key={value}
-              className={`flex cursor-pointer items-start gap-3 rounded-xl border px-3.5 py-3 transition-colors ${
-                layout === value
-                  ? "border-accent bg-accent-soft"
-                  : "border-line hover:border-line-strong hover:bg-subtle"
-              }`}
-            >
-              <input
-                type="radio"
-                name="exam-layout"
-                value={value}
-                checked={layout === value}
-                onChange={() => onLayout(value)}
-                className="mt-1 size-4 shrink-0"
-              />
-              <span className="min-w-0">
-                <span className="block font-medium">{title}</span>
-                <span className="block text-sm text-muted">{description}</span>
-              </span>
-            </label>
-          ))}
-        </div>
-      </fieldset>
+      <LayoutPicker layout={layout} onLayout={onLayout} className="mt-5" />
 
       {draftCount > 0 && (
         <label
@@ -175,7 +149,49 @@ export function ExamStart({
   );
 }
 
-function AttemptTile({ label, attempt }: { label: string; attempt: ExamAttempt }) {
+/** One question at a time, or all on one page (remembered in the settings). */
+export function LayoutPicker({
+  layout,
+  onLayout,
+  className = "",
+}: {
+  layout: ExamLayout;
+  onLayout: (value: ExamLayout) => void;
+  className?: string;
+}) {
+  return (
+    <fieldset className={`min-w-0 ${className}`}>
+      <legend className="text-xs font-semibold tracking-wide text-muted uppercase">Layout</legend>
+      <div className="mt-2 grid gap-2 sm:grid-cols-2">
+        {LAYOUTS.map(({ value, title, description }) => (
+          <label
+            key={value}
+            className={`flex cursor-pointer items-start gap-3 rounded-xl border px-3.5 py-3 transition-colors ${
+              layout === value
+                ? "border-accent bg-accent-soft"
+                : "border-line hover:border-line-strong hover:bg-subtle"
+            }`}
+          >
+            <input
+              type="radio"
+              name="exam-layout"
+              value={value}
+              checked={layout === value}
+              onChange={() => onLayout(value)}
+              className="mt-1 size-4 shrink-0"
+            />
+            <span className="min-w-0">
+              <span className="block font-medium">{title}</span>
+              <span className="block text-sm text-muted">{description}</span>
+            </span>
+          </label>
+        ))}
+      </div>
+    </fieldset>
+  );
+}
+
+export function AttemptTile({ label, attempt }: { label: string; attempt: ExamAttempt }) {
   return (
     <div className="min-w-0 rounded-xl border border-line px-3 py-2.5 sm:px-3.5">
       <dt className="text-xs text-muted">{label}</dt>

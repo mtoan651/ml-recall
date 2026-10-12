@@ -7,6 +7,17 @@ versioning: [SemVer](https://semver.org) as defined in [docs/conventions.md](doc
 
 ### Added
 
+- **Mixed tests** (`/exam/`): pick topics (by domain), difficulties and a length of 10–50
+  questions; a timed test draws from all of them with the usual test rules, its own history
+  and resume after a reload. The form remembers its choices.
+- **My mistakes** (`/mistakes/`): every question whose latest answer was wrong, by topic, to
+  practice again (all, the 50 most recent, or one topic); a correct answer removes it.
+- **Progress** (`/progress/`): answered / correct / to revisit per topic, last and best test
+  and a chart of the last 10 test scores, plus tag and mixed tests.
+- Per-question JSON (`/data/q/<id>.json`) and a compact question index, so the cross-topic
+  pages fetch only the questions they show instead of embedding the bank.
+- Figures can be enlarged (click, or the corner button on option images; Esc closes), and
+  questions whose options are all pictures show them as a 2 × 2 grid.
 - `mlr extract <pdf|dir> [--colors]`: PDF → Markdown in the git-ignored `.cache/extract/`, one
   `## Page N` section per page (so questions can cite slides), via pdfminer.six. `--colors`
   marks coloured text as `[red: …]`, which recovers answer keys printed in red (CE6146

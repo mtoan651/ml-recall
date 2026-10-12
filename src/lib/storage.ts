@@ -22,13 +22,16 @@ import {
   type StoredQuestionInfo,
   serializeExam,
 } from "./exam";
+import type { Difficulty } from "./types";
 
 export const RESULTS_KEY = "ml-recall:results:v1";
 export const SETTINGS_KEY = "ml-recall:settings:v1";
 /** Test in progress for one topic or tag: `ml-recall:exam:v1:topic:cnn`. */
 export const EXAM_KEY_PREFIX = "ml-recall:exam:v1:";
-/** Scope (`topic:cnn`, `tag:softmax`) → past tests. */
+/** Scope (`topic:cnn`, `tag:softmax`, `mixed:custom`) → past tests. */
 export const EXAM_HISTORY_KEY = "ml-recall:exam-history:v1";
+/** Last choices on the mixed-test form (topics, difficulties, length). */
+export const MIXED_KEY = "ml-recall:mixed:v1";
 
 /** Last result of one question. */
 export interface QuestionResult {
@@ -257,4 +260,68 @@ export function saveExamAttempt(
   const history = addAttempt(parseHistory(all[scope]), attempt);
   writeJson(store, EXAM_HISTORY_KEY, { ...all, [scope]: history });
   return history;
+}
+
+/** Every stored test history, by scope (scopes without a valid attempt are left out). */
+export function loadAllExamHistory(
+  store: KeyValueStore | null = browserStore(),
+): Record<string, ExamHistory> {
+  const out: Record<string, ExamHistory> = {};
+  for (const [scope, raw] of Object.entries(loadAllHistory(store))) {
+    const history = parseHistory(raw);
+    if (history.attempts.length > 0 || history.best) out[scope] = history;
+  }
+  return out;
+}
+
+/**
+ * Question ids of the stored test of `scope`, without validating them, or null when none is
+ * stored. A mixed test page fetches these questions before it can resume the test.
+ */
+export function storedExamIds(
+  scope: string,
+  store: KeyValueStore | null = browserStore(),
+): string[] | null {
+  const data = readJson(store, examKey(scope));
+  if (typeof data !== "object" || data === null) return null;
+  const { v, items } = data as Record<string, unknown>;
+  if (v !== EXAM_STATE_VERSION || !Array.isArray(items) || items.length === 0) return null;
+  const ids = items.map((item) =>
+    typeof item === "object" && item !== null ? (item as Record<string, unknown>).id : undefined,
+  );
+  return ids.every((id): id is string => typeof id === "string") ? ids : null;
+}
+
+// --------------------------------------------------------------------------- mixed tests
+
+/** What the mixed-test form remembers. */
+export interface MixedPrefs {
+  topics: string[];
+  difficulties: Difficulty[];
+  /** Questions per test. */
+  size: number;
+}
+
+const isDifficulty = (v: unknown): v is Difficulty =>
+  v === "easy" || v === "medium" || v === "hard";
+
+/** The last mixed-test choices, or null when none are stored (or they are malformed). */
+export function loadMixedPrefs(store: KeyValueStore | null = browserStore()): MixedPrefs | null {
+  const data = readJson(store, MIXED_KEY);
+  if (typeof data !== "object" || data === null || Array.isArray(data)) return null;
+  const { topics, difficulties, size } = data as Record<string, unknown>;
+  if (!Array.isArray(topics) || !Array.isArray(difficulties)) return null;
+  if (typeof size !== "number" || !Number.isInteger(size) || size <= 0) return null;
+  return {
+    topics: [...new Set(topics.filter((t): t is string => typeof t === "string"))],
+    difficulties: [...new Set(difficulties.filter(isDifficulty))],
+    size,
+  };
+}
+
+export function saveMixedPrefs(
+  prefs: MixedPrefs,
+  store: KeyValueStore | null = browserStore(),
+): void {
+  writeJson(store, MIXED_KEY, prefs);
 }

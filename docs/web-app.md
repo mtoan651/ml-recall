@@ -36,11 +36,15 @@ src/content/sources.yaml ──────────────────�
                                                      ▼
               pages: /  ·  /topics/<topic>/  ·  /tags/  ·  /tags/<tag>/
                      /topics/<topic>/exam/  ·  /tags/<tag>/exam/
+                     /exam/ · /mistakes/ · /progress/  (question index only: toCatalog)
+              data:  /data/q/<id>.json  (one rendered question each, fetched by those three)
                                                      │  client:load
                                                      ▼
-              React islands: src/components/Quiz.tsx (practice) and Exam.tsx (timed test) —
-              session state (src/lib/session.ts, src/lib/exam.ts), grading (src/lib/grading.ts),
-              shuffling (src/lib/shuffle.ts), progress in localStorage (src/lib/storage.ts)
+              React islands: src/components/Quiz.tsx (practice) and Exam.tsx (timed test),
+              MixedExam.tsx, Mistakes.tsx, Progress.tsx — session state (src/lib/session.ts,
+              src/lib/exam.ts), grading (src/lib/grading.ts), shuffling (src/lib/shuffle.ts),
+              index logic (src/lib/catalog.ts), fetching (src/lib/fetch.ts), progress in
+              localStorage (src/lib/storage.ts)
 ```
 
 1. **Load + validate.** `src/content.config.ts` defines three collections: `quizzes` (glob over
@@ -75,7 +79,9 @@ Shiki → rehype-stringify.
 - **Math** is rendered by KaTeX at build time; an unsupported command fails the build with the
   question id and field. KaTeX "strict" findings are printed as warnings. The KaTeX CSS
   (fonts bundled, no CDN) must come from the same KaTeX version that rehype-katex renders
-  with — keep the `katex` dependency on rehype-katex's range (currently `^0.16`).
+  with: `rehype-katex` and `remark-math` ask for `^0.16`, so `pnpm.overrides` in
+  `package.json` (`"katex": "$katex"`) makes every package use the version of our own `katex`
+  dependency — `pnpm why katex` must list one version.
 - **Code** fences are highlighted by Shiki (`github-light` / `github-dark` via CSS variables);
   languages load on demand, unknown ones fall back to plain text.
 - **Citations.** `[^n]` markers in the question, options, `why`, explanation or model answer
@@ -137,11 +143,12 @@ entries (the Zod mirror in `src/lib/schema.ts`; `mlr check` checks the same in P
 | --- | --- |
 | `ml-recall:results:v1` | question id → `{ correct, at }`, the latest result (practice and tests) |
 | `ml-recall:settings:v1` | `{ shuffleQuestions, reviewedOnly, examLayout }`; "Reviewed only" is shared with tests; `examLayout` (`"one"` · `"all"`, default `"one"`) is the test layout last chosen — settings saved without it get the default |
-| `ml-recall:exam:v1:<scope>` | the [test in progress](#timed-tests) of one topic or tag |
+| `ml-recall:exam:v1:<scope>` | the [test in progress](#timed-tests) of one topic, tag or the mixed test |
 | `ml-recall:exam-history:v1` | scope → `{ attempts, best }`: the last 10 tests and the best one |
+| `ml-recall:mixed:v1` | `{ topics, difficulties, size }`: the last choices on the [mixed test](#mixed-tests) form |
 
-`<scope>` is `topic:<id>` or `tag:<tag>` (prefixed: a topic and a tag may share a name, e.g.
-`pytorch`). All access is wrapped in `try/catch`; the app works without storage. The index
+`<scope>` is `topic:<id>`, `tag:<tag>` or `mixed:custom` (prefixed: a topic and a tag may share
+a name, e.g. `pytorch`). All access is wrapped in `try/catch`; the app works without storage. The index
 page reads the results to show "answered / total" per topic. Changing a stored format is a
 breaking change (bump the key, migrate).
 
@@ -205,6 +212,57 @@ Pure logic (eligibility, draw with an injectable RNG, reducer, timer, scoring, v
 the stored test, history) is in `src/lib/exam.ts` with tests in `exam.test.ts`; the storage
 I/O is in `src/lib/storage.ts`.
 
+## Cross-topic pages
+
+The topic, tag and test pages embed their questions. Pages that span the whole bank cannot (the
+bank renders to ~32 MB of HTML), so they embed only the **question index** — `toCatalog()` in
+`bank.ts`: per domain and topic the visible ids plus one letter per id for the difficulty
+(`e` / `m` / `h` / `-`) and status (`r` / `d`), about 100 KB (19 KB gzipped) — and fetch the
+questions they show from **`/data/q/<id>.json`**: one file per visible question with exactly the
+`QuizQuestion` props of the islands (src/pages/data/q/[id].json.ts, ~12 KB on average).
+`fetchQuestions()` (src/lib/fetch.ts) loads them six at a time, in order, and fails as a whole
+(`QuestionFetchError` with the failed ids) when one is missing or the network is down.
+
+### Mixed tests
+
+`/exam/` (`MixedExam.tsx`): a timed test drawn from the topics and difficulties the learner
+picks.
+
+- **Form.** Topics grouped by domain (a checkbox per domain — all / some / none of its topics —
+  and the topics inside a `<details>`), **Select all** / **Clear**; difficulty (easy, medium,
+  hard, with the count in the chosen topics); length **10 / 20 / 30 / 40 / 50** questions
+  (default 20; N minutes); the [layout](#timed-tests); "Reviewed questions only" when the
+  selection has drafts. A line says how many questions match. Topics, difficulties and length
+  are remembered (`ml-recall:mixed:v1`; unknown topic ids are dropped). Default: everything.
+- **Pool** (`selectionPool` in src/lib/catalog.ts): questions of the chosen topics whose
+  difficulty is chosen; a question without a difficulty is drawn only when all three are
+  chosen. **Draw:** `drawIds` picks N ids uniformly at random, the page fetches them, and the
+  usual `Exam` island starts at once (`autoStart`, `maxQuestions = N`) — the
+  [timed test](#timed-tests) rules apply unchanged, with the topic shown on each question.
+- **Scope** `mixed:custom`: one test in progress and one history for all mixed tests. On load
+  the page reads the stored test's ids (`storedExamIds`), fetches them and resumes; if they
+  cannot be loaded (offline) the test is kept for a later reload, and if it no longer matches
+  the site it is discarded with a notice. **New test** returns to the form; the results link
+  to **Practice your mistakes**.
+
+### My mistakes
+
+`/mistakes/` (`Mistakes.tsx`): every question whose **latest** result (`ml-recall:results:v1`,
+written by practice and tests) is wrong, most recent first, grouped by topic (`mistakesOf`,
+`mistakesByTopic`). **Practice all** — or the 50 most recent when there are more — or one
+topic: the page fetches those questions and runs the practice `Quiz` with topics shown.
+Answering a question correctly anywhere removes it; **← All mistakes** re-reads the results.
+Retired ids are ignored.
+
+### Progress
+
+`/progress/` (`Progress.tsx`), from the browser's storage only: totals (answered / bank,
+correct and its share of answered, questions to revisit with a link to My mistakes, tests
+kept), then per domain a table of the topics with any activity — answered / total, correct,
+to revisit, last test, best test and a bar chart of the last 10 test scores (oldest left; the
+scores are also in screen-reader text) — and a table of tag and mixed tests. At phone width
+"Correct", "Best" and the chart are hidden.
+
 ## Figures
 
 `figure`, `explanation_figure` and option `image` paths are relative to the YAML file
@@ -213,12 +271,19 @@ I/O is in `src/lib/storage.ts`.
 inlined) and the URLs already include the base path. A missing file fails the build. Figures
 render on a white card in both themes, lazy-loaded, with `alt` and an optional caption.
 
+- **Zoom.** A click on a question or explanation figure — or the corner button, the only way
+  for option images, where a click selects the option — opens it enlarged in a native modal
+  `<dialog>` (portal to `<body>`, so clicks inside never reach the option's `<label>`); Esc,
+  **Close** or a click outside closes it. Quiz and test shortcuts ignore keys inside a dialog.
+- **Picture options.** When every option of a question has an `image`, the options are laid out
+  as a grid, two per row from the `sm` breakpoint.
+
 ## URLs and base path
 
 The site is built for `https://mtoan651.github.io` with `base: '/ml-recall'` and
 `trailingSlash: 'always'` (`astro.config.mjs`). Build internal links with `url()`,
-`topicUrl()`, `tagUrl()`, `topicExamUrl()` and `tagExamUrl()` from `src/lib/url.ts`, never with
-a hard-coded `/…`.
+`topicUrl()`, `tagUrl()`, `topicExamUrl()`, `tagExamUrl()`, `mixedExamUrl()`, `mistakesUrl()`,
+`progressUrl()` and `questionDataUrl()` from `src/lib/url.ts`, never with a hard-coded `/…`.
 
 ## Deploy
 
@@ -242,6 +307,10 @@ Actions**.
 | Question / feedback / summary UI | `src/components/QuestionCard.tsx`, `Feedback.tsx`, `Summary.tsx` |
 | Timed tests: pool, size, timer, scoring, stored test, history | `src/lib/exam.ts` (+ `exam.test.ts`); keys in `src/lib/storage.ts` |
 | Timed test UI | `src/components/Exam.tsx` (flow), `ExamStart.tsx`, `ExamRunner.tsx` (both layouts, timer, keys), `ExamNavigator.tsx`, `ConfirmSubmit.tsx`, `ExamResults.tsx`; "Take a test" box: `ExamCallout.astro` |
+| Question index, mixed-test pool, mistakes, progress | `src/lib/catalog.ts` (+ `catalog.test.ts`); index built by `toCatalog()` in `bank.ts` |
+| Fetching questions; per-question JSON | `src/lib/fetch.ts` (+ `fetch.test.ts`); `src/pages/data/q/[id].json.ts` |
+| Mixed test, My mistakes, Progress UI | `src/components/MixedExam.tsx`, `Mistakes.tsx`, `Progress.tsx`; pages `exam.astro`, `mistakes.astro`, `progress.astro` |
+| Figure zoom, picture-option grid | `src/components/Figure.tsx`; `OptionList` in `QuestionCard.tsx` |
 | Short-answer format hints | `answerHint()` in `src/lib/grading.ts`; shown by `QuestionCard.tsx` |
 | Colours, dark mode | tokens at the top of `src/styles/global.css` |
 | Header, footer, `<head>` | `src/layouts/Base.astro` |

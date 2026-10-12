@@ -156,7 +156,7 @@ export default function Quiz({ questions, scope, showTopic = false }: QuizProps)
     const onKey = (event: KeyboardEvent) => {
       if (event.defaultPrevented || event.altKey || event.ctrlKey || event.metaKey) return;
       const target = event.target as HTMLElement | null;
-      if (target?.closest("textarea, select, [contenteditable]")) return;
+      if (target?.closest("textarea, select, [contenteditable], dialog")) return;
       const typing = target instanceof HTMLInputElement && target.type === "text";
       if (typing) return; // the short-answer form handles Enter itself
       // Buttons and links handle Enter natively; checkboxes and radios have no Enter action.

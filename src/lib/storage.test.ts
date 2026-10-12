@@ -7,17 +7,22 @@ import {
   examKey,
   examTimeLeft,
   type KeyValueStore,
+  loadAllExamHistory,
   loadExam,
   loadExamHistory,
+  loadMixedPrefs,
   loadResults,
   loadSettings,
+  MIXED_KEY,
   RESULTS_KEY,
   SETTINGS_KEY,
   saveExam,
   saveExamAttempt,
+  saveMixedPrefs,
   saveResult,
   saveResults,
   saveSettings,
+  storedExamIds,
   storedExamStart,
   summarize,
 } from "./storage";
@@ -223,5 +228,60 @@ describe("timed tests", () => {
         brokenStore,
       ),
     ).not.toThrow();
+  });
+});
+
+describe("cross-topic pages", () => {
+  const attempt = (correct: number, at: number): ExamAttempt => ({
+    correct,
+    total: 10,
+    at,
+    durationMs: 60_000,
+    reviewedOnly: false,
+    timedOut: false,
+  });
+
+  it("loads every test history by scope, dropping malformed ones", () => {
+    const store = memoryStore();
+    saveExamAttempt("topic:cnn", attempt(7, 1), store);
+    saveExamAttempt("mixed:custom", attempt(9, 2), store);
+    const raw = JSON.parse(store.data[EXAM_HISTORY_KEY] ?? "{}");
+    store.setItem(EXAM_HISTORY_KEY, JSON.stringify({ ...raw, "tag:x": { attempts: ["junk"] } }));
+    const all = loadAllExamHistory(store);
+    expect(Object.keys(all).sort()).toEqual(["mixed:custom", "topic:cnn"]);
+    expect(all["mixed:custom"]?.best?.correct).toBe(9);
+    expect(loadAllExamHistory(memoryStore())).toEqual({});
+  });
+
+  it("reads the question ids of a stored test without validating them", () => {
+    const store = memoryStore();
+    expect(storedExamIds("mixed:custom", store)).toBeNull();
+    store.setItem(
+      examKey("mixed:custom"),
+      JSON.stringify({ v: 1, items: [{ id: "a-001", optionOrder: [] }, { id: "b-002" }] }),
+    );
+    expect(storedExamIds("mixed:custom", store)).toEqual(["a-001", "b-002"]);
+    store.setItem(examKey("mixed:custom"), JSON.stringify({ v: 1, items: [{ id: 3 }] }));
+    expect(storedExamIds("mixed:custom", store)).toBeNull();
+    store.setItem(examKey("mixed:custom"), JSON.stringify({ v: 99, items: [{ id: "a-001" }] }));
+    expect(storedExamIds("mixed:custom", store)).toBeNull();
+  });
+
+  it("remembers the mixed-test form and sanitizes what it reads back", () => {
+    const store = memoryStore();
+    expect(loadMixedPrefs(store)).toBeNull();
+    saveMixedPrefs({ topics: ["cnn", "rnn"], difficulties: ["easy", "hard"], size: 30 }, store);
+    expect(loadMixedPrefs(store)).toEqual({
+      topics: ["cnn", "rnn"],
+      difficulties: ["easy", "hard"],
+      size: 30,
+    });
+    store.setItem(
+      MIXED_KEY,
+      JSON.stringify({ topics: ["cnn", 4, "cnn"], difficulties: ["extreme", "medium"], size: 20 }),
+    );
+    expect(loadMixedPrefs(store)).toEqual({ topics: ["cnn"], difficulties: ["medium"], size: 20 });
+    store.setItem(MIXED_KEY, JSON.stringify({ topics: [], difficulties: [], size: -1 }));
+    expect(loadMixedPrefs(store)).toBeNull();
   });
 });
