@@ -5,6 +5,17 @@ versioning: [SemVer](https://semver.org) as defined in [docs/conventions.md](doc
 
 ## [Unreleased]
 
+## [0.5.0] — 2026-10-12
+
+Retention: spaced repetition, topic notes, search, offline use, export/import and a Vietnamese
+interface — every v0.5.0 roadmap item — plus the backlog sources (OpenIntro Statistics,
+Hands-On ML notebooks, the d2l-vi glossary).
+
+Bank: 3025 questions, all reviewed (56 by the owner, 2969 by Claude, "AI-checked"), 8 retired —
+ml 907, dl 502, math 422, ai 303, practice 231, nlp 213, llm 138, cv 119, rl 95, gen 95;
+questions from 56 external sources (68 registered, 9 of them reference-only); 54 topic notes;
+458 glossary terms.
+
 ### Added
 
 - **Topic notes** (`/topics/<topic>/notes/`): a cheat sheet for each of the 54 topics — key ideas,
@@ -346,7 +357,8 @@ llm 20, rl 12, cv 10, gen 10.
 Bank: 333 questions (328 draft, 5 reviewed) — ml 97, dl 77, nlp 47, practice 27, ai 20, llm 20,
 math 13, rl 12, cv 10, gen 10.
 
-[Unreleased]: https://github.com/mtoan651/ml-recall/compare/v0.4.1...HEAD
+[Unreleased]: https://github.com/mtoan651/ml-recall/compare/v0.5.0...HEAD
+[0.5.0]: https://github.com/mtoan651/ml-recall/releases/tag/v0.5.0
 [0.4.1]: https://github.com/mtoan651/ml-recall/releases/tag/v0.4.1
 [0.4.0]: https://github.com/mtoan651/ml-recall/releases/tag/v0.4.0
 [0.3.0]: https://github.com/mtoan651/ml-recall/releases/tag/v0.3.0

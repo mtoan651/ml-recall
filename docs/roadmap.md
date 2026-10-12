@@ -64,7 +64,7 @@ Versions follow [conventions.md#versioning](conventions.md#versioning).
 - [x] Every topic fills a 20-question test: Deep Learning Frameworks 18 → 30 (v0.4.1)
 - [x] CI checked on `ubuntu-26.04` before `ubuntu-latest` moves (2026-10-19)
 
-## v0.5.0 — Retention
+## v0.5.0 — Retention ✅
 
 - [x] OpenIntro Statistics exercises (59 questions)
 - [x] Hands-On ML notebook exercises (57 questions)
@@ -74,3 +74,9 @@ Versions follow [conventions.md#versioning](conventions.md#versioning).
 - [x] Export/import progress (merging, on `/progress/`)
 - [x] PWA offline (service worker generated at build, installable)
 - [x] Vietnamese UI (EN | VI switch; questions stay in English, topic titles in both languages)
+- [x] English–Vietnamese glossary from d2l-vi (`/glossary/`, 458 terms)
+
+## Next
+
+- [ ] CE6146 lecture questions for lectures 4+ (Path B, as the slides are published)
+- [ ] Owner review of AI-checked questions, topic by topic (`reviewed_by: owner`)
