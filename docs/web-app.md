@@ -363,7 +363,10 @@ dates and numbers. Questions, options, explanations, references and notes are th
 material and stay in English (they carry `lang="en"`). Topic and domain titles show the
 Vietnamese title followed by the English one in muted text — "Mạng nơ-ron tích chập ·
 Convolutional Neural Networks" — so the English terms stay in view. Search filter *values*
-(topic titles, "Single choice") are index data and stay in English; filter names are relabelled.
+(topic titles, "Single choice") are index data and stay in English; filter names are relabelled. A
+note's five fixed section headings (Key ideas … Common pitfalls) are interface, not content:
+`translatableSections` in `src/lib/notes.ts` marks them with `data-i18n` (keys declared with
+`msg`).
 
 - **Choice** (`src/lib/i18n.ts`): `ml-recall:lang:v1` in localStorage (`"en"` · `"vi"`, plain
   string; access wrapped like `storage.ts`); without one, a browser language starting with `vi`
