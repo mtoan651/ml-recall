@@ -56,11 +56,13 @@ are helpers.
 ```bash
 uv run mlr figs            # re-render generators newer than their SVG (or whose helpers changed)
 uv run mlr figs --force    # re-render everything
-uv run mlr figs --check    # list stale figures, exit 1 if any
+uv run mlr figs --check    # list stale figures (by file time), exit 1 if any
 FIGSTYLE_PREVIEW=/tmp/prev uv run mlr figs --force   # also write PNG previews to look at
 ```
 
-matplotlib is a dev dependency (`uv sync`); the site build only needs the committed SVGs.
+matplotlib is a dev dependency (`uv sync`); the site build only needs the committed SVGs. CI runs
+`mlr figs --force` and fails if any SVG under `src/content/quizzes/` changes, so a generator edited
+without re-rendering (or an SVG edited by hand) is caught.
 
 ```python
 import numpy as np
