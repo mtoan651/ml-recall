@@ -14,6 +14,7 @@ import {
   isBetterAttempt,
   parseHistory,
 } from "./exam";
+import { msg } from "./i18n";
 import { SRS_EVENT, SRS_KEY } from "./srs-due";
 import {
   EXAM_HISTORY_KEY,
@@ -67,7 +68,9 @@ function write(store: KeyValueStore, key: string, value: unknown): void {
   try {
     store.setItem(key, JSON.stringify(value));
   } catch {
-    throw new BackupError("This browser's storage is full or blocked, so nothing more was saved.");
+    throw new BackupError(
+      msg("This browser's storage is full or blocked, so nothing more was saved."),
+    );
   }
 }
 
@@ -96,13 +99,13 @@ export function parseBackup(text: string): Backup {
   try {
     data = JSON.parse(text);
   } catch {
-    throw new BackupError("That file is not JSON — choose a file exported from this page.");
+    throw new BackupError(msg("That file is not JSON — choose a file exported from this page."));
   }
   if (!isRecord(data) || data.app !== BACKUP_APP || !isRecord(data.data)) {
-    throw new BackupError("That file is not an ml-recall progress file.");
+    throw new BackupError(msg("That file is not an ml-recall progress file."));
   }
   if (data.format !== BACKUP_FORMAT) {
-    throw new BackupError("That progress file comes from a newer version of the site.");
+    throw new BackupError(msg("That progress file comes from a newer version of the site."));
   }
   const exportedAt = typeof data.exportedAt === "string" ? data.exportedAt : "";
   return { app: BACKUP_APP, format: BACKUP_FORMAT, exportedAt, data: data.data };
@@ -158,7 +161,8 @@ export function mergeHistories(local: ExamHistory, incoming: ExamHistory): ExamH
 
 /** Merges `backup` into `store` (see the module comment) and says what changed. */
 export function mergeBackup(backup: Backup, store: KeyValueStore | null): MergeSummary {
-  if (!store) throw new BackupError("This browser blocks storage, so progress can't be saved.");
+  if (!store)
+    throw new BackupError(msg("This browser blocks storage, so progress can't be saved."));
   const summary: MergeSummary = { results: 0, cards: 0, tests: 0, preferences: 0 };
   const data = backup.data;
 

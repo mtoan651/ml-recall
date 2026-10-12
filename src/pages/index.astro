@@ -1,4 +1,6 @@
 ---
+import I18nTitle from "../components/I18nTitle.astro";
+import T from "../components/T.astro";
 import Base from "../layouts/Base.astro";
 import { getBank } from "../lib/bank";
 import { planExam } from "../lib/exam";
@@ -19,29 +21,32 @@ const testSize = new Map(
 
 <Base wide>
   <section class="max-w-2xl">
-    <h1 class="text-3xl font-semibold tracking-tight sm:text-4xl">Practice AI, ML and deep learning by recalling, not rereading.</h1>
+    <h1 class="text-3xl font-semibold tracking-tight sm:text-4xl">
+      <T k="Practice AI, ML and deep learning by recalling, not rereading." />
+    </h1>
     <p class="mt-4 text-lg leading-relaxed text-muted">
-      Exam-style questions with instant feedback, worked explanations and cited sources. Pick a
-      topic and answer one question at a time, or take a timed test — your last result per
-      question stays in this browser.
+      <T k="Exam-style questions with instant feedback, worked explanations and cited sources. Pick a topic and answer one question at a time, or take a timed test — your last result per question stays in this browser." />
     </p>
     <p class="mt-4 text-sm text-muted">
-      {totalQuestions} questions · {activeTopics} topics · {totalReviewed} reviewed ·
-      <a href={url("tags/")} class="text-accent underline underline-offset-2">browse by tag</a> ·
-      <a href={url("glossary/")} class="text-accent underline underline-offset-2">EN–VI glossary</a>
+      <T
+        k="{questions} questions · {topics} topics · {reviewed} reviewed"
+        params={{ questions: totalQuestions, topics: activeTopics, reviewed: totalReviewed }}
+      /> ·
+      <a href={url("tags/")} class="text-accent underline underline-offset-2"><T k="browse by tag" /></a> ·
+      <a href={url("glossary/")} class="text-accent underline underline-offset-2"><T k="EN–VI glossary" /></a>
     </p>
     <div class="mt-5 flex flex-wrap gap-2">
       <a href={reviewUrl()} class="inline-flex items-center gap-1.5 rounded-lg border border-line-strong px-4 py-2 text-sm font-medium hover:bg-subtle">
-        Review<span data-due-badge hidden class="rounded-full bg-accent px-1.5 text-xs leading-5 font-semibold text-accent-ink tabular-nums"></span>
+        <T k="Review" /><span data-due-badge hidden class="rounded-full bg-accent px-1.5 text-xs leading-5 font-semibold text-accent-ink tabular-nums"></span>
       </a>
       <a href={mixedExamUrl()} class="rounded-lg bg-accent px-4 py-2 text-sm font-medium text-accent-ink hover:bg-accent-hover">
-        Mixed test across topics
+        <T k="Mixed test across topics" />
       </a>
       <a href={mistakesUrl()} class="rounded-lg border border-line-strong px-4 py-2 text-sm font-medium hover:bg-subtle">
-        My mistakes
+        <T k="My mistakes" />
       </a>
       <a href={progressUrl()} class="rounded-lg border border-line-strong px-4 py-2 text-sm font-medium hover:bg-subtle">
-        Progress
+        <T k="Progress" />
       </a>
     </div>
   </section>
@@ -51,16 +56,17 @@ const testSize = new Map(
       bank.domains.map((domain) => (
         <section aria-labelledby={`domain-${domain.id}`}>
           <h2 id={`domain-${domain.id}`} class="text-sm font-semibold tracking-wide text-muted uppercase">
-            {domain.title}
+            <I18nTitle domain={domain.id} en={domain.title} />
           </h2>
           <ul class="mt-3 grid gap-3 sm:grid-cols-2">
             {domain.topics.map((topic) => {
               const total = topic.questionIds.length;
+              const title = { topic: topic.id, en: topic.title };
               if (total === 0) {
                 return (
                   <li class="rounded-xl border border-dashed border-line px-4 py-3 text-muted">
-                    <span class="font-medium">{topic.title}</span>
-                    <span class="mt-1 block text-sm">No questions yet</span>
+                    <span class="font-medium"><I18nTitle topic={topic.id} en={topic.title} /></span>
+                    <span class="mt-1 block text-sm"><T k="No questions yet" /></span>
                   </li>
                 );
               }
@@ -72,18 +78,21 @@ const testSize = new Map(
                     href={topic.url}
                     class="card-link block font-medium text-ink group-hover:text-accent after:absolute after:inset-0 after:rounded-xl focus-visible:outline-none"
                   >
-                    {topic.title}
+                    <I18nTitle topic={topic.id} en={topic.title} />
                   </a>
                   <span class="mt-1 flex flex-wrap items-baseline justify-between gap-x-3 gap-y-1 text-sm text-muted">
-                    <span>
-                      {total} {total === 1 ? "question" : "questions"} · {topic.reviewed} reviewed
-                    </span>
+                    <T
+                      k="{n} questions · {reviewed} reviewed"
+                      one="{n} question · {reviewed} reviewed"
+                      n={total}
+                      params={{ reviewed: topic.reviewed }}
+                    />
                     {test > 0 && (
                       <a
                         href={topicExamUrl(topic.id)}
                         class="relative z-10 -my-1 rounded-md px-1.5 py-1 font-medium text-accent underline-offset-2 hover:underline"
                       >
-                        Test · {test} min<span class="sr-only"> on {topic.title}</span>
+                        <T k="Test · {n} min" n={test} /><span class="sr-only"> <T k="on {title}" params={{ title }} /></span>
                       </a>
                     )}
                   </span>
@@ -108,18 +117,30 @@ const testSize = new Map(
 </Base>
 
 <script>
+  import { currentLang, LANG_EVENT, t } from "../lib/i18n";
   import { loadResults, summarize } from "../lib/storage";
 
   // Fill in "answered / total" per topic from this browser's stored results.
-  const results = loadResults();
-  for (const el of document.querySelectorAll<HTMLElement>("[data-topic-progress]")) {
-    const ids = (el.dataset.ids ?? "").split(" ").filter(Boolean);
-    const { answered, correct } = summarize(results, ids);
-    if (answered === 0) continue;
-    const label = el.querySelector<HTMLElement>("[data-label]");
-    const bar = el.querySelector<HTMLElement>("[data-bar]");
-    if (label) label.textContent = `${answered} / ${ids.length} answered · ${correct} correct`;
-    if (bar) bar.style.width = `${Math.round((answered / ids.length) * 100)}%`;
-    el.classList.replace("hidden", "flex");
+  function showProgress() {
+    const results = loadResults();
+    const lang = currentLang();
+    for (const el of document.querySelectorAll<HTMLElement>("[data-topic-progress]")) {
+      const ids = (el.dataset.ids ?? "").split(" ").filter(Boolean);
+      const { answered, correct } = summarize(results, ids);
+      if (answered === 0) continue;
+      const label = el.querySelector<HTMLElement>("[data-label]");
+      const bar = el.querySelector<HTMLElement>("[data-bar]");
+      if (label) {
+        label.textContent = t(lang, "{answered} / {total} answered · {correct} correct", {
+          answered,
+          total: ids.length,
+          correct,
+        });
+      }
+      if (bar) bar.style.width = `${Math.round((answered / ids.length) * 100)}%`;
+      el.classList.replace("hidden", "flex");
+    }
   }
+  showProgress();
+  window.addEventListener(LANG_EVENT, showProgress);
 </script>

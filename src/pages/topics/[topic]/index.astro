@@ -1,6 +1,8 @@
 ---
 import ExamCallout from "../../../components/ExamCallout.astro";
+import I18nTitle from "../../../components/I18nTitle.astro";
 import Quiz from "../../../components/Quiz";
+import T from "../../../components/T.astro";
 import Base from "../../../layouts/Base.astro";
 import { getBank, toQuizQuestions } from "../../../lib/bank";
 import { getNotes } from "../../../lib/notes";
@@ -23,24 +25,32 @@ const note = (await getNotes(bank)).get(topic.id);
 ---
 
 <Base
-  title={topic.title}
+  titleKey="{title}"
+  titleParams={{ title: { topic: topic.id, en: topic.title } }}
   description={`${total} practice questions on ${topic.title} (${topic.domainTitle}) with instant feedback and cited explanations.`}
 >
-  <nav aria-label="Breadcrumb" class="text-sm text-muted">
-    <a href={url()} class="hover:text-ink">Topics</a>
+  <nav aria-label="Breadcrumb" data-i18n="Breadcrumb" data-i18n-attr="aria-label" class="text-sm text-muted">
+    <a href={url()} class="hover:text-ink"><T k="Topics" /></a>
     <span aria-hidden="true" class="mx-1.5">/</span>
-    <span>{topic.domainTitle}</span>
+    <span><I18nTitle domain={topic.domainId} en={topic.domainTitle} /></span>
   </nav>
-  <h1 class="mt-2 text-2xl font-semibold tracking-tight sm:text-3xl">{topic.title}</h1>
-  {topic.description && <p class="mt-2 text-muted">{topic.description}</p>}
+  <h1 class="mt-2 text-2xl font-semibold tracking-tight sm:text-3xl">
+    <I18nTitle topic={topic.id} en={topic.title} />
+  </h1>
+  {topic.description && <p class="mt-2 text-muted" lang="en">{topic.description}</p>}
   <p class="mt-2 text-sm text-muted">
-    {total} {total === 1 ? "question" : "questions"} · {topic.reviewed} reviewed
+    <T
+      k="{n} questions · {reviewed} reviewed"
+      one="{n} question · {reviewed} reviewed"
+      n={total}
+      params={{ reviewed: topic.reviewed }}
+    />
     {
       note && (
         <>
           {" · "}
           <a href={`${topic.url}notes/`} class="font-medium text-accent hover:underline">
-            Read the notes ({note.minutes} min)
+            <T k="Read the notes ({n} min)" n={note.minutes} />
           </a>
         </>
       )
@@ -55,6 +65,6 @@ const note = (await getNotes(bank)).get(topic.id);
   />
 
   <div class="mt-6">
-    <Quiz client:load questions={questions} scope={topic.title} />
+    <Quiz client:load questions={questions} scope={{ topic: topic.id, en: topic.title }} />
   </div>
 </Base>

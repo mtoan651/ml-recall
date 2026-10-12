@@ -163,6 +163,7 @@ export function mistakesOf(
 
 export interface MistakeGroup {
   topic: CatalogTopic;
+  domainId: string;
   domainTitle: string;
   /** Most recent first. */
   ids: string[];
@@ -180,7 +181,7 @@ export function groupIdsByTopic(catalog: Catalog, ids: readonly string[]): Mista
   return catalog.domains.flatMap((domain) =>
     domain.topics.flatMap((topic) => {
       const group = byTopic.get(topic.id);
-      return group ? [{ topic, domainTitle: domain.title, ids: group }] : [];
+      return group ? [{ topic, domainId: domain.id, domainTitle: domain.title, ids: group }] : [];
     }),
   );
 }
@@ -196,7 +197,7 @@ export function mistakesByTopic(catalog: Catalog, mistakes: readonly Mistake[]):
   return catalog.domains.flatMap((domain) =>
     domain.topics.flatMap((topic) => {
       const ids = byTopic.get(topic.id);
-      return ids ? [{ topic, domainTitle: domain.title, ids }] : [];
+      return ids ? [{ topic, domainId: domain.id, domainTitle: domain.title, ids }] : [];
     }),
   );
 }

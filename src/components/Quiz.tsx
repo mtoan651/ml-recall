@@ -8,6 +8,7 @@ import {
   useState,
 } from "react";
 import { gradeChoice, gradeInputs, isGapFill } from "../lib/grading";
+import { msg, type Params, type TitleRef } from "../lib/i18n";
 import {
   answerOf,
   createSession,
@@ -27,17 +28,24 @@ import {
   saveSettings,
 } from "../lib/storage";
 import type { QuizQuestion } from "../lib/types";
+import { useT } from "../lib/use-lang";
 import { QuestionCard } from "./QuestionCard";
 import { Summary } from "./Summary";
 
 interface QuizProps {
   questions: QuizQuestion[];
-  /** What is being practised, e.g. a topic title or "#tag" (for screen-reader labels). */
-  scope: string;
+  /** What is being practised: a topic, "#tag", a question id (for screen-reader labels). */
+  scope: string | TitleRef;
   /** Show each question's topic (cross-topic sets such as tag pages). */
   showTopic?: boolean;
   /** Extra controls next to "Next" once a question is graded (the review page's rating). */
   rating?: (id: string, outcome: Outcome) => ReactNode;
+}
+
+/** A message kept as its key, so it follows a change of language while it is shown. */
+interface Message {
+  key: string;
+  params?: Params;
 }
 
 const toInput = (q: QuizQuestion): SessionInput => ({
@@ -54,6 +62,7 @@ function pool(questions: QuizQuestion[], settings: QuizSettings, onlyIds?: Reado
 
 /** Interactive practice over a list of questions: one question at a time, instant feedback. */
 export default function Quiz({ questions, scope, showTopic = false, rating }: QuizProps) {
+  const t = useT();
   const byId = useMemo(() => new Map(questions.map((q) => [q.id, q])), [questions]);
   const reviewedCount = useMemo(
     () => questions.filter((q) => q.status === "reviewed").length,
@@ -67,7 +76,7 @@ export default function Quiz({ questions, scope, showTopic = false, rating }: Qu
   const [session, dispatch] = useReducer(sessionReducer, undefined, () =>
     createSession(questions.map(toInput), { shuffleQuestions: false, shuffleOptions: false }),
   );
-  const [inputError, setInputError] = useState<string | null>(null);
+  const [inputError, setInputError] = useState<Message | null>(null);
   const [announcement, setAnnouncement] = useState("");
   const focusRef = useRef<HTMLElement>(null);
   const moved = useRef(false);
@@ -111,7 +120,7 @@ export default function Quiz({ questions, scope, showTopic = false, rating }: Qu
   const grade = useCallback((id: string, outcome: Outcome) => {
     dispatch({ type: "grade", outcome });
     saveResult(id, outcome === "correct");
-    setAnnouncement(outcome === "correct" ? "Correct." : "Not quite.");
+    setAnnouncement(outcome === "correct" ? msg("Correct.") : msg("Not quite."));
   }, []);
 
   const check = useCallback(() => {
@@ -128,13 +137,20 @@ export default function Quiz({ questions, scope, showTopic = false, rating }: Qu
     if (!question.answer) return;
     const gapFill = isGapFill(question.answer);
     const grades = gradeInputs(question.answer, typedInputs(answer, gapFill));
-    const which = (i: number) => (gapFill ? `Blank ${i + 1}` : "That");
     const empty = grades.findIndex((g) => g.kind === "empty");
     const notNumber = grades.findIndex((g) => g.kind === "not-a-number");
     if (empty >= 0) {
-      setInputError(gapFill ? `Fill in blank ${empty + 1} first.` : "Type an answer first.");
+      setInputError(
+        gapFill
+          ? { key: msg("Fill in blank {n} first."), params: { n: empty + 1 } }
+          : { key: msg("Type an answer first.") },
+      );
     } else if (notNumber >= 0) {
-      setInputError(`${which(notNumber)} is not a number.`);
+      setInputError(
+        gapFill
+          ? { key: msg("Blank {n} is not a number."), params: { n: notNumber + 1 } }
+          : { key: msg("That is not a number.") },
+      );
     } else {
       const correct = grades.every((g) => g.kind === "graded" && g.correct);
       grade(question.id, correct ? "correct" : "incorrect");
@@ -201,17 +217,27 @@ export default function Quiz({ questions, scope, showTopic = false, rating }: Qu
   const typed = question?.answer && answer ? typedInputs(answer, isGapFill(question.answer)) : [];
   const canCheck = question?.options
     ? (answer?.selected.length ?? 0) > 0
-    : typed.some((t) => t.trim() !== "");
+    : typed.some((text) => text.trim() !== "");
 
   return (
-    <section className="quiz" data-ready={ready} aria-label={`Practice: ${scope}`}>
+    <section
+      className="quiz"
+      data-ready={ready}
+      data-lang={t.lang}
+      aria-label={t("Practice: {scope}", { scope })}
+    >
       <div data-pagefind-ignore className="mb-4 space-y-3">
         <div className="flex items-center justify-between gap-4 text-sm">
           <span className="font-medium tabular-nums">
-            {session.finished ? "Done" : `Q ${score.current} / ${score.total}`}
+            {session.finished
+              ? t("Done")
+              : t("Q {current} / {total}", { current: score.current, total: score.total })}
           </span>
           <span className="text-muted tabular-nums">
-            Score {score.correct} / {score.answered}
+            {t("Score {correct} / {answered}", {
+              correct: score.correct,
+              answered: score.answered,
+            })}
           </span>
         </div>
         <div className="h-1.5 overflow-hidden rounded-full bg-subtle" aria-hidden="true">
@@ -228,12 +254,12 @@ export default function Quiz({ questions, scope, showTopic = false, rating }: Qu
               checked={settings.shuffleQuestions}
               onChange={(e) => updateSettings({ shuffleQuestions: e.target.checked })}
             />
-            Shuffle questions
+            {t("Shuffle questions")}
           </label>
           {draftCount > 0 && (
             <label
               className={`inline-flex items-center gap-2 ${reviewedCount === 0 ? "opacity-60" : "cursor-pointer"}`}
-              title={reviewedCount === 0 ? "No reviewed questions here yet" : undefined}
+              title={reviewedCount === 0 ? t("No reviewed questions here yet") : undefined}
             >
               <input
                 type="checkbox"
@@ -242,26 +268,26 @@ export default function Quiz({ questions, scope, showTopic = false, rating }: Qu
                 disabled={reviewedCount === 0 && !settings.reviewedOnly}
                 onChange={(e) => updateSettings({ reviewedOnly: e.target.checked })}
               />
-              Reviewed only ({reviewedCount})
+              {t("Reviewed only ({n})", { n: reviewedCount })}
             </label>
           )}
         </div>
       </div>
 
       <p className="sr-only" aria-live="polite">
-        {announcement}
+        {announcement && t(announcement)}
       </p>
 
       <div className="quiz-stage">
         {session.items.length === 0 ? (
           <div className="rounded-2xl border border-dashed border-line px-4 py-8 text-center sm:px-6">
-            <p className="text-muted">No reviewed questions in this set yet.</p>
+            <p className="text-muted">{t("No reviewed questions in this set yet.")}</p>
             <button
               type="button"
               onClick={() => updateSettings({ reviewedOnly: false })}
               className="mt-4 rounded-lg bg-accent px-4 py-2 font-medium text-accent-ink hover:bg-accent-hover"
             >
-              Include unreviewed questions
+              {t("Include unreviewed questions")}
             </button>
           </div>
         ) : session.finished ? (
@@ -291,7 +317,7 @@ export default function Quiz({ questions, scope, showTopic = false, rating }: Qu
                 answer={answer}
                 number={score.current}
                 showTopic={showTopic}
-                inputError={inputError}
+                inputError={inputError && t(inputError.key, inputError.params)}
                 onSelect={select}
                 onText={(text, blank) => {
                   setInputError(null);
@@ -310,8 +336,8 @@ export default function Quiz({ questions, scope, showTopic = false, rating }: Qu
                 <div className="flex items-center justify-end gap-2">
                   <span className="mr-auto hidden text-xs text-muted sm:inline">
                     {question.options
-                      ? "Keys: 1–9 select · Enter check / next"
-                      : "Enter: check / next"}
+                      ? t("Keys: 1–9 select · Enter check / next")
+                      : t("Enter: check / next")}
                   </span>
                   {answer.outcome ? (
                     <button
@@ -319,7 +345,7 @@ export default function Quiz({ questions, scope, showTopic = false, rating }: Qu
                       onClick={next}
                       className="rounded-lg bg-accent px-5 py-2 font-medium text-accent-ink hover:bg-accent-hover"
                     >
-                      {isLast ? "See results" : "Next question"}
+                      {isLast ? t("See results") : t("Next question")}
                     </button>
                   ) : (
                     <button
@@ -328,7 +354,7 @@ export default function Quiz({ questions, scope, showTopic = false, rating }: Qu
                       disabled={!canCheck}
                       className="rounded-lg bg-accent px-5 py-2 font-medium text-accent-ink hover:bg-accent-hover disabled:cursor-not-allowed disabled:opacity-50"
                     >
-                      Check
+                      {t("Check")}
                     </button>
                   )}
                 </div>

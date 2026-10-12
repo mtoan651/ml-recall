@@ -16,7 +16,8 @@ pnpm build        # static site in dist/ (fails on any schema / Markdown / math 
                   # then dist/sw.js (offline support) and the Pagefind search index
 pnpm preview      # serve dist/ locally
 pnpm lint         # Biome (lint + format check); `pnpm format` fixes what it can
-pnpm test         # Vitest: grading, shuffle, citations, session, exam, storage, schema mirror
+pnpm test         # Vitest: grading, shuffle, citations, session, exam, storage, schema mirror,
+                  # translations (every key translated, no dead keys)
 pnpm check        # astro check (TypeScript, strict)
 ```
 
@@ -354,6 +355,72 @@ box that matches either language and ignores Vietnamese accents (NFD, `đ` → `
 pinned for `d2l-vi` in sources.yaml (CI runs `mlr glossary --check`); collection `glossary` in
 `content.config.ts`. Linked from the footer and the index.
 
+## Vietnamese interface
+
+**EN | VI** in the header switches the interface language. Only the interface is translated —
+navigation, headings, buttons, labels, hints, messages, empty states, results, aria-labels,
+dates and numbers. Questions, options, explanations, references and notes are the study
+material and stay in English (they carry `lang="en"`). Topic and domain titles show the
+Vietnamese title followed by the English one in muted text — "Mạng nơ-ron tích chập ·
+Convolutional Neural Networks" — so the English terms stay in view. Search filter *values*
+(topic titles, "Single choice") are index data and stay in English; filter names are relabelled. A
+note's five fixed section headings (Key ideas … Common pitfalls) are interface, not content:
+`translatableSections` in `src/lib/notes.ts` marks them with `data-i18n` (keys declared with
+`msg`).
+
+- **Choice** (`src/lib/i18n.ts`): `ml-recall:lang:v1` in localStorage (`"en"` · `"vi"`, plain
+  string; access wrapped like `storage.ts`); without one, a browser language starting with `vi`
+  (`navigator.language`) means Vietnamese, anything else English (`loadLang`). `saveLang` stores
+  it, sets `<html lang data-lang>` and fires the `ml-recall:lang` window event; another tab's
+  choice arrives through the `storage` event, a back/forward-cache page re-reads it on `pageshow`.
+- **Keys are the English text.** `t(lang, key, params?)` returns the key with `{name}`
+  placeholders filled in for English, and `VI[key]` (`src/lib/i18n-vi.ts`) for Vietnamese,
+  falling back to English. Numbers are formatted for the language (7,512 / 7.512). A parameter
+  may be a title reference `{ topic: id, en }` / `{ domain: id, en }`, rendered "Vietnamese ·
+  English" (titles in `src/lib/i18n-titles.ts`, keyed by taxonomy id, terms from the d2l-vi
+  glossary). Plurals are separate English keys picked by `tn(lang, n, "{n} question", "{n}
+  questions")` — both may map to the one Vietnamese form. `msg("…")` marks a key written away
+  from its `t` call (constants, tables, error messages in `src/lib/backup.ts`); such values are
+  translated where they are shown, so a message on screen follows a switch.
+- **Islands** (`useLang` / `useT` in `src/lib/use-lang.ts`): `useSyncExternalStore` with an
+  English server snapshot, so the server render and hydration are English (no hydration
+  mismatch) and the island re-renders in the page's language right after — a re-render, not a
+  remount, so a test in progress or a half-answered question survives a switch. `useT()` returns
+  `t` bound to the language with `t.n` (plurals), `t.rich` (React nodes as parameters, e.g. a
+  link inside a sentence), `t.title` and `t.num`. Titles: `<TopicTitle>` / `<DomainTitle>`
+  (`Title.tsx`). The lib functions that produce visible text take a language (`answerHint`,
+  `describeAccepted`, `timerAnnouncement`, `formatAttemptDate`, `formatInterval`).
+- **Astro markup**: `<T k="…" />` (`src/components/T.astro`) renders the English text in a
+  `<span data-i18n="key" data-i18n-params='{…}'>`; with `n` and `one="…"` it picks the plural
+  key at build time. Attributes: `data-i18n="key" data-i18n-attr="aria-label"` on the element
+  (also `placeholder`, `title`). Titles: `<I18nTitle topic={id} en={title} />` →
+  `data-i18n-topic`. Page titles: `<Base titleKey="…" titleParams={…}>`. The script in
+  `Base.astro` (`translatePage` in `src/lib/i18n-dom.ts`) applies them on load and on every
+  switch; page scripts that write text (index progress, test callout, glossary count, offline
+  list) use `t(currentLang(), …)` and re-render on `ml-recall:lang`.
+- **No flash of English.** A ~300-byte inline script at the top of `<head>` sets
+  `html[data-lang]` (and `lang`) from storage / `navigator.language` before the first paint. For
+  Vietnamese, CSS (`global.css`) hides marked text (`visibility: hidden`, so nothing moves) until
+  the page script sets `html[data-i18n-ready]` (after 4 s regardless, should the script fail),
+  and hides each island root (`.quiz`) until it renders Vietnamese (`.quiz[data-lang="vi"]`).
+  English pages are never hidden.
+- **Search**: Pagefind UI gets Vietnamese `translations` (its own string keys, in
+  `search.astro`) and is re-created on a switch, keeping the query.
+
+**Adding a string**: write the English text as the key — `t("…")` / `t.n(n, "…", "…")` in an
+island, `t(lang, "…")` in lib code, `<T k="…" />` or `data-i18n="…"` in Astro (always a string
+literal, or `msg("…")` for a constant) — and add its Vietnamese text to `src/lib/i18n-vi.ts`
+with the same placeholders. Use the glossary's terms (`/glossary/`). A new topic or domain needs
+its Vietnamese title in `src/lib/i18n-titles.ts`.
+
+**Tests** (`src/lib/i18n.test.ts`): `t` (parameters, fallback, number formatting, titles),
+plural keys, `loadLang` / `saveLang` (stored, browser language, blocked storage), the Vietnamese
+variants of the lib messages; a **key check** that scans `src/**/*.{ts,tsx,astro}` for keys
+(`src/lib/i18n-keys.ts`: string-literal arguments of `t`, `tn`, `t.n`, `t.rich`, `msg`, and
+`data-i18n`, `<T k one>`, `titleKey` in Astro) and fails on a key without a translation, a
+translation no code uses, or a translation that changes the placeholders; and a **taxonomy
+check** that every domain and topic id has a Vietnamese title.
+
 ## Offline (PWA)
 
 The site installs as an app and works offline (only in the built site; `astro dev` registers
@@ -432,6 +499,7 @@ Actions**.
 | Spaced repetition: cards, due, forecast, rating; review UI; due badge | `src/lib/srs.ts` (+ `srs.test.ts`), `src/lib/srs-due.ts`; `src/components/Review.tsx`, page `review.astro`; badge script in `Base.astro` |
 | Figure zoom, picture-option grid | `src/components/Figure.tsx`; `OptionList` in `QuestionCard.tsx` |
 | Short-answer format hints | `answerHint()` in `src/lib/grading.ts`; shown by `QuestionCard.tsx` |
+| Vietnamese interface: strings, topic titles, switch, no-flash rules | `src/lib/i18n-vi.ts` (strings), `src/lib/i18n-titles.ts` (titles), `src/lib/i18n.ts` (`t`, `tn`, language choice), `src/lib/use-lang.ts` (islands), `src/lib/i18n-dom.ts` + `T.astro` / `I18nTitle.astro` (Astro text), switch and inline script in `Base.astro`, CSS in `global.css`; tests in `i18n.test.ts` |
 | Colours, dark mode | tokens at the top of `src/styles/global.css` |
 | Header, footer, `<head>` | `src/layouts/Base.astro` |
 | Pages | `src/pages/` |

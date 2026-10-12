@@ -8,7 +8,9 @@ import {
   formatAttemptDate,
   lastAttempt,
 } from "../lib/exam";
+import { msg, scopeName } from "../lib/i18n";
 import type { ExamScopeView } from "../lib/types";
+import { useT } from "../lib/use-lang";
 import { ClockIcon } from "./Icons";
 
 interface ExamStartProps {
@@ -27,20 +29,25 @@ interface ExamStartProps {
   ref?: Ref<HTMLElement>;
 }
 
-const plural = (n: number, word: string) => `${n} ${n === 1 ? word : `${word}s`}`;
-
 const LAYOUTS: Array<{ value: ExamLayout; title: string; description: string }> = [
   {
     value: "one",
-    title: "One at a time",
-    description: "One question per screen, with Previous / Next.",
+    title: msg("One at a time"),
+    description: msg("One question per screen, with Previous / Next."),
   },
   {
     value: "all",
-    title: "All on one page",
-    description: "Every question on one page, like a paper exam. Submit at the bottom.",
+    title: msg("All on one page"),
+    description: msg("Every question on one page, like a paper exam. Submit at the bottom."),
   },
 ];
+
+/** "This topic has 8 questions, so this test has …", by what the test is about. */
+const SHORT_POOL = {
+  topic: msg("This topic has {count}, so this test has {size}."),
+  tag: msg("This tag has {count}, so this test has {size}."),
+  mixed: msg("This selection has {count}, so this test has {size}."),
+} as const;
 
 /** Before the clock starts: size, time limit, rules, layout, last and best score. */
 export function ExamStart({
@@ -56,11 +63,14 @@ export function ExamStart({
   onStart,
   ref,
 }: ExamStartProps) {
+  const t = useT();
   const n = plan.count;
-  const size = `${plural(n, "question")} · ${plural(n, "minute")}`;
+  const size = t.n(n, "{n} question · {n} minute", "{n} questions · {n} minutes");
   const last = lastAttempt(history);
-  const poolWord = `${reviewedOnly ? "reviewed " : ""}question`;
-  const noun = scope.kind === "mixed" ? "selection" : scope.kind;
+  const available = reviewedOnly
+    ? t.n(plan.available, "{n} reviewed question", "{n} reviewed questions")
+    : t.n(plan.available, "{n} question", "{n} questions");
+  const name = <span className="text-ink">{scopeName(t.lang, scope)}</span>;
   return (
     <section
       ref={ref}
@@ -76,31 +86,40 @@ export function ExamStart({
         {size}
       </h2>
       <p className="mt-2 text-muted">
-        Random questions from {scope.kind === "tag" ? "the tag " : ""}
-        <span className="text-ink">{scope.title}</span>, a new set every time.
+        {scope.kind === "tag"
+          ? t.rich("Random questions from the tag {title}, a new set every time.", { title: name })
+          : t.rich("Random questions from {title}, a new set every time.", { title: name })}
       </p>
 
       {plan.short && n > 0 && (
         <p className="mt-4 rounded-xl bg-subtle px-3.5 py-2.5 text-sm">
-          {`This ${noun} has ${plural(plan.available, poolWord)}, so this test has ${size}.`}
+          {t(SHORT_POOL[scope.kind], { count: available, size })}
         </p>
       )}
       {n === 0 && (
         <p className="mt-4 rounded-xl bg-note-soft px-3.5 py-2.5 text-sm text-note">
-          No questions to draw from{reviewedOnly ? " with “Reviewed questions only”" : ""}.
+          {reviewedOnly
+            ? t("No questions to draw from with “Reviewed questions only”.")
+            : t("No questions to draw from.")}
         </p>
       )}
 
-      <h3 className="mt-5 text-xs font-semibold tracking-wide text-muted uppercase">Rules</h3>
+      <h3 className="mt-5 text-xs font-semibold tracking-wide text-muted uppercase">
+        {t("Rules")}
+      </h3>
       <ul className="mt-2 list-disc space-y-1.5 pl-5 text-sm leading-relaxed marker:text-muted">
-        <li>One minute per question. Move freely between questions and flag any to revisit.</li>
         <li>
-          No feedback until you submit — then you get your score and every answer explained.
-          Unanswered questions count as wrong.
+          {t("One minute per question. Move freely between questions and flag any to revisit.")}
         </li>
         <li>
-          The timer keeps running if you leave or reload the page, and the test is submitted
-          automatically when it reaches 00:00.
+          {t(
+            "No feedback until you submit — then you get your score and every answer explained. Unanswered questions count as wrong.",
+          )}
+        </li>
+        <li>
+          {t(
+            "The timer keeps running if you leave or reload the page, and the test is submitted automatically when it reaches 00:00.",
+          )}
         </li>
       </ul>
 
@@ -109,7 +128,7 @@ export function ExamStart({
       {draftCount > 0 && (
         <label
           className={`mt-5 inline-flex items-center gap-2 text-sm ${reviewedCount === 0 ? "text-muted opacity-60" : "cursor-pointer"}`}
-          title={reviewedCount === 0 ? "No reviewed questions here yet" : undefined}
+          title={reviewedCount === 0 ? t("No reviewed questions here yet") : undefined}
         >
           <input
             type="checkbox"
@@ -118,14 +137,14 @@ export function ExamStart({
             disabled={reviewedCount === 0}
             onChange={(e) => onReviewedOnly(e.target.checked)}
           />
-          Reviewed questions only ({reviewedCount})
+          {t("Reviewed questions only ({n})", { n: reviewedCount })}
         </label>
       )}
 
       {last && (
         <dl className="mt-5 grid grid-cols-2 gap-2.5 text-sm">
-          <AttemptTile label="Last test" attempt={last} />
-          {history.best && <AttemptTile label="Best" attempt={history.best} />}
+          <AttemptTile label={msg("Last test")} attempt={last} />
+          {history.best && <AttemptTile label={msg("Best")} attempt={history.best} />}
         </dl>
       )}
 
@@ -136,13 +155,13 @@ export function ExamStart({
           disabled={n === 0}
           className="rounded-lg bg-accent px-6 py-2.5 font-semibold text-accent-ink hover:bg-accent-hover disabled:cursor-not-allowed disabled:opacity-50"
         >
-          Start test
+          {t("Start test")}
         </button>
         <a
           href={scope.practiceUrl}
           className="text-sm text-muted underline-offset-2 hover:text-ink hover:underline"
         >
-          Practice with instant feedback instead
+          {t("Practice with instant feedback instead")}
         </a>
       </div>
     </section>
@@ -159,9 +178,12 @@ export function LayoutPicker({
   onLayout: (value: ExamLayout) => void;
   className?: string;
 }) {
+  const t = useT();
   return (
     <fieldset className={`min-w-0 ${className}`}>
-      <legend className="text-xs font-semibold tracking-wide text-muted uppercase">Layout</legend>
+      <legend className="text-xs font-semibold tracking-wide text-muted uppercase">
+        {t("Layout")}
+      </legend>
       <div className="mt-2 grid gap-2 sm:grid-cols-2">
         {LAYOUTS.map(({ value, title, description }) => (
           <label
@@ -181,8 +203,8 @@ export function LayoutPicker({
               className="mt-1 size-4 shrink-0"
             />
             <span className="min-w-0">
-              <span className="block font-medium">{title}</span>
-              <span className="block text-sm text-muted">{description}</span>
+              <span className="block font-medium">{t(title)}</span>
+              <span className="block text-sm text-muted">{t(description)}</span>
             </span>
           </label>
         ))}
@@ -191,12 +213,14 @@ export function LayoutPicker({
   );
 }
 
+/** Last or best test: `label` is a translation key. */
 export function AttemptTile({ label, attempt }: { label: string; attempt: ExamAttempt }) {
+  const t = useT();
   return (
     <div className="min-w-0 rounded-xl border border-line px-3 py-2.5 sm:px-3.5">
-      <dt className="text-xs text-muted">{label}</dt>
+      <dt className="text-xs text-muted">{t(label)}</dt>
       <dd className="mt-0.5 font-semibold tabular-nums">{describeAttempt(attempt)}</dd>
-      <dd className="mt-0.5 text-xs text-muted">{formatAttemptDate(attempt.at)}</dd>
+      <dd className="mt-0.5 text-xs text-muted">{formatAttemptDate(attempt.at, t.lang)}</dd>
     </div>
   );
 }

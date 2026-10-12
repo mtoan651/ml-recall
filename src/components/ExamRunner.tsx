@@ -11,8 +11,10 @@ import {
   timerLevel,
 } from "../lib/exam";
 import { isGapFill, isNumericOnly, parseNumber } from "../lib/grading";
+import { msg } from "../lib/i18n";
 import type { SessionItem } from "../lib/session";
 import type { QuizQuestion } from "../lib/types";
+import { useT } from "../lib/use-lang";
 import { ConfirmSubmit } from "./ConfirmSubmit";
 import { Navigator, QuestionStrip } from "./ExamNavigator";
 import { ClockIcon, FlagIcon } from "./Icons";
@@ -36,7 +38,7 @@ const TIMER_TONE: Record<TimerLevel, string> = {
 };
 
 /** Shown on Enter when a numeric-only answer cannot be read. About the format, not the answer. */
-const NOT_A_NUMBER = "This does not read as a number.";
+const NOT_A_NUMBER = msg("This does not read as a number.");
 
 /** Keys go to the page unless the learner is typing (or scrolling wide code / math). */
 function ignoresShortcuts(target: EventTarget | null): boolean {
@@ -67,6 +69,7 @@ export function ExamRunner({
   dispatch,
   onSubmit,
 }: ExamRunnerProps) {
+  const t = useT();
   const all = exam.layout === "all";
   const { items, startedAt, durationMs } = exam;
   const total = items.length;
@@ -94,8 +97,11 @@ export function ExamRunner({
    */
   const pin = useRef<{ k: number; y: number } | null>(null);
   const submitRef = useRef(onSubmit);
+  /** The interface language, for the timer announcements made from the ticking effect. */
+  const langRef = useRef(t.lang);
   useEffect(() => {
     submitRef.current = onSubmit;
+    langRef.current = t.lang;
     position.current = exam.position;
   });
 
@@ -105,7 +111,7 @@ export function ExamRunner({
     let previous = remainingMs(startedAt, durationMs, Date.now());
     const tick = () => {
       const left = remainingMs(startedAt, durationMs, Date.now());
-      const message = timerAnnouncement(previous, left);
+      const message = timerAnnouncement(previous, left, langRef.current);
       previous = left;
       if (message) setTimerAlert(message);
       setSecondsLeft(Math.ceil(left / 1000));
@@ -308,7 +314,8 @@ export function ExamRunner({
       <>
         <div className="mb-2 flex items-center justify-between gap-3">
           <p className="text-sm font-medium tabular-nums">
-            Question {k + 1} <span className="text-muted">of {total}</span>
+            {t("Question {n}", { n: k + 1 })}{" "}
+            <span className="text-muted">{t("of {total}", { total })}</span>
           </p>
           <button
             type="button"
@@ -321,8 +328,8 @@ export function ExamRunner({
             }`}
           >
             <FlagIcon filled={flagged} />
-            Flag for review
-            {all && <span className="sr-only">: question {k + 1}</span>}
+            {t("Flag for review")}
+            {all && <span className="sr-only">{t(": question {n}", { n: k + 1 })}</span>}
           </button>
         </div>
         <QuestionCard
@@ -332,7 +339,7 @@ export function ExamRunner({
           answer={{ ...answer, blanks: answer.blanks ?? [] }}
           number={k + 1}
           showTopic={showTopic}
-          inputError={inputError?.id === item.id ? inputError.message : null}
+          inputError={inputError?.id === item.id ? t(inputError.message) : null}
           onSelect={(option) => select(item.id, option)}
           onText={(text, blank) => {
             if (inputError?.id === item.id) setInputError(null);
@@ -361,20 +368,20 @@ export function ExamRunner({
             className={`inline-flex items-center gap-1.5 rounded-lg px-2.5 py-1 font-semibold tabular-nums transition-colors ${TIMER_TONE[level]}`}
           >
             <ClockIcon />
-            <span className="sr-only">Time left: </span>
+            <span className="sr-only">{t("Time left: ")}</span>
             {formatClock(secondsLeft * 1000)}
           </span>
           <span className="text-sm text-muted tabular-nums">
-            <span className="hidden min-[360px]:inline">Answered </span>
+            <span className="hidden min-[360px]:inline">{t("Answered")} </span>
             {answered} / {total}
-            <span className="sr-only"> answered</span>
+            <span className="sr-only">{t(" answered")}</span>
           </span>
           <button
             type="button"
             onClick={requestSubmit}
             className="ml-auto rounded-lg border border-line-strong bg-surface px-3.5 py-1.5 text-sm font-medium hover:bg-subtle"
           >
-            Submit
+            {t("Submit")}
           </button>
         </div>
         <div className="mt-2 h-1 overflow-hidden rounded-full bg-subtle" aria-hidden="true">
@@ -392,7 +399,9 @@ export function ExamRunner({
       {all ? (
         <>
           <p className="mt-3 hidden text-xs text-muted md:block">
-            Keys act on the question in view: 1–9 select · ←/→ previous / next question · F flag
+            {t(
+              "Keys act on the question in view: 1–9 select · ←/→ previous / next question · F flag",
+            )}
           </p>
           <ol className="mt-4 space-y-10">
             {items.map((item, k) => (
@@ -405,15 +414,15 @@ export function ExamRunner({
           <Navigator exam={exam} onGo={goTo} />
           <div className="mt-4 flex flex-wrap items-center justify-between gap-3 rounded-2xl border border-line bg-surface px-4 py-3.5 shadow-xs sm:px-5">
             <p className="text-sm text-muted tabular-nums">
-              Answered {answered} of {total}
-              {flaggedCount > 0 && ` · ${flaggedCount} flagged`}
+              {t("Answered {answered} of {total}", { answered, total })}
+              {flaggedCount > 0 && t(" · {n} flagged", { n: flaggedCount })}
             </p>
             <button
               type="button"
               onClick={requestSubmit}
               className="rounded-lg bg-accent px-5 py-2 font-medium text-accent-ink hover:bg-accent-hover"
             >
-              Submit test
+              {t("Submit test")}
             </button>
           </div>
         </>
@@ -433,10 +442,13 @@ export function ExamRunner({
                   disabled={exam.position === 0}
                   className="rounded-lg border border-line-strong bg-surface px-4 py-2 font-medium hover:bg-subtle disabled:cursor-not-allowed disabled:opacity-50"
                 >
-                  <span aria-hidden="true">← </span>Previous
+                  <span aria-hidden="true">← </span>
+                  {t("Previous")}
                 </button>
                 <span className="mx-auto hidden text-center text-xs text-muted md:inline">
-                  Keys: {currentQuestion.options ? "1–9 select · " : ""}←/→ move · F flag
+                  {currentQuestion.options
+                    ? t("Keys: 1–9 select · ←/→ move · F flag")
+                    : t("Keys: ←/→ move · F flag")}
                 </span>
                 {isLast ? (
                   <button
@@ -444,7 +456,7 @@ export function ExamRunner({
                     onClick={requestSubmit}
                     className="ml-auto rounded-lg bg-accent px-5 py-2 font-medium text-accent-ink hover:bg-accent-hover md:ml-0"
                   >
-                    Submit test
+                    {t("Submit test")}
                   </button>
                 ) : (
                   <button
@@ -452,7 +464,8 @@ export function ExamRunner({
                     onClick={() => goTo(exam.position + 1)}
                     className="ml-auto rounded-lg bg-accent px-5 py-2 font-medium text-accent-ink hover:bg-accent-hover md:ml-0"
                   >
-                    Next<span aria-hidden="true"> →</span>
+                    {t("Next")}
+                    <span aria-hidden="true"> →</span>
                   </button>
                 )}
               </div>

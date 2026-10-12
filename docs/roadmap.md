@@ -73,4 +73,4 @@ Versions follow [conventions.md#versioning](conventions.md#versioning).
 - [x] Pagefind search (`/search/`) and a page per question (`/q/<id>/`)
 - [x] Export/import progress (merging, on `/progress/`)
 - [x] PWA offline (service worker generated at build, installable)
-- [ ] Vietnamese UI
+- [x] Vietnamese UI (EN | VI switch; questions stay in English, topic titles in both languages)

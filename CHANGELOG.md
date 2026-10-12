@@ -38,6 +38,12 @@ versioning: [SemVer](https://semver.org) as defined in [docs/conventions.md](doc
 - **English–Vietnamese glossary** (`/glossary/`): 458 terms from the glossary of *Đắm mình vào
   Học Sâu* (d2l-vi, CC BY-SA 4.0), searchable in both languages; `uv run mlr glossary`
   regenerates it from the pinned upstream file.
+- **Vietnamese interface**: an EN | VI switch in the header (remembered; a browser set to
+  Vietnamese starts in Vietnamese) translates the whole interface — navigation, buttons,
+  feedback, tests, Review, Mistakes, Progress, search, dates and numbers — using the d2l-vi
+  terms. Questions, explanations and notes stay in English; topic and domain titles show the
+  Vietnamese title next to the English one ("Mạng nơ-ron tích chập · Convolutional Neural
+  Networks"). Switching keeps a test in progress, and Vietnamese pages show no English first.
 
 ### Fixed
 

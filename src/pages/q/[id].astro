@@ -4,7 +4,9 @@
  * question) and the unit of the search index — `data-pagefind-body` marks what Pagefind indexes
  * (see docs/web-app.md#search), with the topic, domain, type and difficulty as filters.
  */
+import I18nTitle from "../../components/I18nTitle.astro";
 import Quiz from "../../components/Quiz";
+import T from "../../components/T.astro";
 import Base from "../../layouts/Base.astro";
 import { type BankQuestion, getBank, toQuizQuestion } from "../../lib/bank";
 import { getNotes } from "../../lib/notes";
@@ -16,6 +18,7 @@ export async function getStaticPaths() {
   return bank.questions.map((bq) => ({ params: { id: bq.question.id }, props: { bq } }));
 }
 
+// Search filter values: indexed data, so they stay in English.
 const TYPE_LABEL = {
   single: "Single choice",
   multiple: "Multiple choice",
@@ -29,18 +32,19 @@ const question = await toQuizQuestion(bq, bank);
 const q = bq.question;
 const title = plainText(q.question, 90);
 const note = (await getNotes(bank)).get(bq.topic.id);
+const topicTitle = { topic: bq.topic.id, en: bq.topic.title };
 ---
 
 <Base title={title} description={`${bq.topic.title}: ${plainText(q.question, 150)}`}>
-  <nav aria-label="Breadcrumb" class="text-sm text-muted">
-    <a href={url()} class="hover:text-ink">Topics</a>
+  <nav aria-label="Breadcrumb" data-i18n="Breadcrumb" data-i18n-attr="aria-label" class="text-sm text-muted">
+    <a href={url()} class="hover:text-ink"><T k="Topics" /></a>
     <span aria-hidden="true" class="mx-1.5">/</span>
-    <span>{bq.topic.domainTitle}</span>
+    <span><I18nTitle domain={bq.topic.domainId} en={bq.topic.domainTitle} /></span>
     <span aria-hidden="true" class="mx-1.5">/</span>
-    <a href={bq.topic.url} class="hover:text-ink">{bq.topic.title}</a>
+    <a href={bq.topic.url} class="hover:text-ink"><I18nTitle topic={bq.topic.id} en={bq.topic.title} /></a>
   </nav>
   <h1 class="mt-2 text-lg font-semibold tracking-tight text-muted">
-    Question <span class="font-mono text-base">{q.id}</span>
+    <T k="Question" /> <span class="font-mono text-base">{q.id}</span>
   </h1>
 
   <article class="mt-4" data-pagefind-body>
@@ -56,12 +60,12 @@ const note = (await getNotes(bank)).get(bq.topic.id);
 
   <p class="mt-6 flex flex-wrap items-center gap-x-3 gap-y-2 text-sm text-muted">
     <a href={bq.topic.url} class="font-medium text-accent hover:underline">
-      Practice all of {bq.topic.title}
+      <T k="Practice all of {title}" params={{ title: topicTitle }} />
     </a>
     {
       note && (
         <a href={`${bq.topic.url}notes/`} class="font-medium text-accent hover:underline">
-          Notes on {bq.topic.title}
+          <T k="Notes on {title}" params={{ title: topicTitle }} />
         </a>
       )
     }

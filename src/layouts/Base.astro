@@ -1,24 +1,32 @@
 ---
 import "katex/dist/katex.min.css";
 import "../styles/global.css";
+import T from "../components/T.astro";
+import { type Params, t } from "../lib/i18n";
 import { mistakesUrl, mixedExamUrl, progressUrl, reviewUrl, url } from "../lib/url";
 
 interface Props {
-  /** Page title; the site name is appended. */
+  /** Page title (English, not translated: e.g. a question); the site name is appended. */
   title?: string;
+  /** Translatable page title instead of `title`: a literal key, as for `<T k="…">`. */
+  titleKey?: string;
+  titleParams?: Params;
   description?: string;
   /** Wider container for overview pages. */
   wide?: boolean;
 }
 
 const SITE = "ml-recall";
+const SUFFIX = ` · ${SITE}`;
 const DEFAULT_DESCRIPTION =
   "Active-recall quiz bank for AI/ML/DL: exam-style questions with LaTeX and cited explanations.";
-const { title, description = DEFAULT_DESCRIPTION, wide = false } = Astro.props;
-const fullTitle = title ? `${title} · ${SITE}` : `${SITE} — active recall for AI/ML/DL`;
+const { titleKey, titleParams, description = DEFAULT_DESCRIPTION, wide = false } = Astro.props;
+const title = titleKey ? t("en", titleKey, titleParams) : Astro.props.title;
+const fullTitle = title ? `${title}${SUFFIX}` : `${SITE} — active recall for AI/ML/DL`;
 const canonical = new URL(Astro.url.pathname, Astro.site);
 const container = wide ? "max-w-5xl" : "max-w-3xl";
 const repo = "https://github.com/mtoan651/ml-recall";
+const link = "underline underline-offset-2 hover:text-ink";
 ---
 
 <!doctype html>
@@ -26,7 +34,26 @@ const repo = "https://github.com/mtoan651/ml-recall";
   <head>
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
-    <title>{fullTitle}</title>
+    {/* Interface language before the first paint (src/lib/i18n.ts: loadLang); until the page
+        script has translated, marked text is hidden for Vietnamese (global.css). */}
+    <script is:inline>
+      (function(){var d=document.documentElement,l;try{l=localStorage.getItem("ml-recall:lang:v1")}catch(e){}if(l!=="en"&&l!=="vi")l=/^vi\b/i.test(navigator.language||"")?"vi":"en";d.dataset.lang=l;d.lang=l;if(l==="vi")setTimeout(function(){d.setAttribute("data-i18n-ready","")},4e3)})();
+    </script>
+    {
+      titleKey ? (
+        <title
+          data-i18n={titleKey}
+          data-i18n-params={titleParams ? JSON.stringify(titleParams) : undefined}
+          data-i18n-suffix={SUFFIX}
+        >
+          {fullTitle}
+        </title>
+      ) : title ? (
+        <title>{fullTitle}</title>
+      ) : (
+        <title data-i18n="ml-recall — active recall for AI/ML/DL">{fullTitle}</title>
+      )
+    }
     <meta name="description" content={description} />
     <link rel="canonical" href={canonical} />
     <link rel="icon" type="image/svg+xml" href={url("favicon.svg")} />
@@ -45,28 +72,42 @@ const repo = "https://github.com/mtoan651/ml-recall";
       href="#main"
       class="sr-only focus:not-sr-only focus:fixed focus:top-2 focus:left-2 focus:z-50 focus:rounded-md focus:bg-surface focus:px-3 focus:py-2 focus:shadow"
     >
-      Skip to content
+      <T k="Skip to content" />
     </a>
     <header class="border-b border-line bg-surface/80 backdrop-blur supports-[backdrop-filter]:bg-surface/70">
-      <div class:list={["mx-auto flex flex-wrap items-center justify-between gap-x-4 gap-y-2 px-4 py-3 sm:px-6", container]}>
-        <a href={url()} class="flex items-center gap-2 font-semibold tracking-tight text-ink">
+      <div class:list={["mx-auto flex flex-wrap items-center gap-x-4 gap-y-2 px-4 py-3 sm:px-6", container]}>
+        <a href={url()} class="mr-auto flex items-center gap-2 font-semibold tracking-tight text-ink">
           <svg aria-hidden="true" viewBox="0 0 32 32" class="size-6">
             <rect width="32" height="32" rx="8" fill="var(--accent)"></rect>
             <path d="M9 21.5 14 11l4 7.5 2.5-4L24 21.5" fill="none" stroke="var(--accent-ink)" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"></path>
           </svg>
           <span>ml-recall</span>
         </a>
-        <nav aria-label="Main" class="flex flex-wrap items-center gap-x-4 gap-y-1 text-sm text-muted">
-          <a href={url()} class="hover:text-ink">Topics</a>
+        <nav
+          aria-label="Main"
+          data-i18n="Main"
+          data-i18n-attr="aria-label"
+          class="order-3 flex w-full flex-wrap items-center gap-x-4 gap-y-1 text-sm text-muted sm:order-2 sm:w-auto"
+        >
+          <a href={url()} class="hover:text-ink"><T k="Topics" /></a>
           <a href={reviewUrl()} class="inline-flex items-center gap-1 hover:text-ink">
-            Review<span data-due-badge hidden class="rounded-full bg-accent px-1.5 text-[11px] leading-[18px] font-semibold text-accent-ink tabular-nums"></span>
+            <T k="Review" /><span data-due-badge hidden class="rounded-full bg-accent px-1.5 text-[11px] leading-[18px] font-semibold text-accent-ink tabular-nums"></span>
           </a>
-          <a href={mixedExamUrl()} class="hover:text-ink">Mixed test</a>
-          <a href={mistakesUrl()} class="hover:text-ink">Mistakes</a>
-          <a href={progressUrl()} class="hover:text-ink">Progress</a>
-          <a href={url("tags/")} class="hover:text-ink">Tags</a>
-          <a href={url("search/")} class="hover:text-ink">Search</a>
+          <a href={mixedExamUrl()} class="hover:text-ink"><T k="Mixed test" /></a>
+          <a href={mistakesUrl()} class="hover:text-ink"><T k="Mistakes" /></a>
+          <a href={progressUrl()} class="hover:text-ink"><T k="Progress" /></a>
+          <a href={url("tags/")} class="hover:text-ink"><T k="Tags" /></a>
+          <a href={url("search/")} class="hover:text-ink"><T k="Search" /></a>
         </nav>
+        {/* Bilingual label on purpose: findable whichever language is showing. */}
+        <div
+          role="group"
+          aria-label="Language / Ngôn ngữ"
+          class="lang-switch order-2 flex shrink-0 rounded-lg border border-line p-0.5 text-xs font-semibold sm:order-3"
+        >
+          <button type="button" data-set-lang="en" lang="en" title="English" aria-pressed="true">EN</button>
+          <button type="button" data-set-lang="vi" lang="vi" title="Tiếng Việt" aria-pressed="false">VI</button>
+        </div>
       </div>
     </header>
 
@@ -77,18 +118,20 @@ const repo = "https://github.com/mtoan651/ml-recall";
     <footer class="border-t border-line text-sm text-muted">
       <div class:list={["mx-auto space-y-1 px-4 py-6 sm:px-6", container]}>
         <p>
-          Code <a class="underline underline-offset-2 hover:text-ink" href={`${repo}/blob/main/LICENSE`}>MIT</a>.
-          Questions keep their source's license (shown under each answer); original questions
-          <a class="underline underline-offset-2 hover:text-ink" href={`${repo}/blob/main/LICENSE-CONTENT.md`}>CC BY-SA 4.0</a>.
+          <T k="Code" /> <a class={link} href={`${repo}/blob/main/LICENSE`}>MIT</a>.
+          <T k="Questions keep their source's license (shown under each answer); original questions" />
+          <a class={link} href={`${repo}/blob/main/LICENSE-CONTENT.md`}>CC BY-SA 4.0</a>.
         </p>
         <p>
-          <a class="underline underline-offset-2 hover:text-ink" href={url("glossary/")}>Glossary (English – Vietnamese)</a>.
-          Progress is stored only in this browser.
-          <a class="underline underline-offset-2 hover:text-ink" href={repo} rel="noopener">Source on GitHub</a>
+          <a class={link} href={url("glossary/")}><T k="Glossary (English – Vietnamese)" /></a>.
+          <T k="Progress is stored only in this browser." />
+          <a class={link} href={repo} rel="noopener"><T k="Source on GitHub" /></a>
         </p>
       </div>
     </footer>
     <script>
+      import { currentLang, isLang, LANG_EVENT, LANG_KEY, loadLang, saveLang, t } from "../lib/i18n";
+      import { translatePage } from "../lib/i18n-dom";
       import { countDue, SRS_EVENT } from "../lib/srs-due";
 
       /** "Review" badges: questions due today in this browser (hidden when none). */
@@ -102,12 +145,41 @@ const repo = "https://github.com/mtoan651/ml-recall";
         const n = countDue(store);
         for (const el of document.querySelectorAll<HTMLElement>("[data-due-badge]")) {
           el.textContent = n > 99 ? "99+" : String(n);
-          el.title = `${n} due today`;
+          el.title = t(currentLang(), "{n} due today", { n });
           el.hidden = n === 0;
         }
       }
-      showDue();
+
+      /** Static text, the language switch and the badges in the page's language. */
+      function applyLang() {
+        const lang = currentLang();
+        translatePage(lang);
+        for (const button of document.querySelectorAll<HTMLElement>("[data-set-lang]")) {
+          button.setAttribute("aria-pressed", String(button.dataset.setLang === lang));
+        }
+        document.documentElement.setAttribute("data-i18n-ready", "");
+        showDue();
+      }
+
+      applyLang();
+      window.addEventListener(LANG_EVENT, applyLang);
       window.addEventListener(SRS_EVENT, showDue);
+      for (const button of document.querySelectorAll<HTMLElement>("[data-set-lang]")) {
+        button.addEventListener("click", () => {
+          const lang = button.dataset.setLang;
+          if (isLang(lang)) saveLang(lang);
+        });
+      }
+      // Chosen in another tab, or on another page while this one was in the back/forward cache.
+      window.addEventListener("storage", (event) => {
+        if (event.key === LANG_KEY && isLang(event.newValue)) saveLang(event.newValue);
+      });
+      window.addEventListener("pageshow", (event) => {
+        if (!event.persisted) return;
+        const lang = loadLang();
+        if (lang !== currentLang()) saveLang(lang);
+        showDue();
+      });
 
       // Offline support (tools/web/sw.template.js), only in the built site.
       if (import.meta.env.PROD && "serviceWorker" in navigator) {
@@ -116,9 +188,6 @@ const repo = "https://github.com/mtoan651/ml-recall";
           navigator.serviceWorker.register(`${base}sw.js`, { scope: base }).catch(() => {});
         });
       }
-      window.addEventListener("pageshow", (event) => {
-        if (event.persisted) showDue();
-      });
     </script>
   </body>
 </html>

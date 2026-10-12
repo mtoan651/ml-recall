@@ -6,6 +6,7 @@
 import { getCollection } from "astro:content";
 import type { Bank } from "./bank";
 import { referenceAnchor } from "./citations";
+import { msg } from "./i18n";
 import { renderMarkdown } from "./markdown";
 import type { ReferenceView } from "./types";
 
@@ -26,6 +27,22 @@ export function proseWords(markdown: string): number {
     .replace(/^```[\s\S]*?^```/gm, "")
     .replace(/\$\$[\s\S]*?\$\$|\$[^$\n]*\$/g, "");
   return text.match(/[A-Za-z][A-Za-z'-]*/g)?.length ?? 0;
+}
+
+/** The fixed section headings (data-format.md#topic-notes), translated in the interface. */
+const SECTION_KEYS = [
+  msg("Key ideas"),
+  msg("Formulas"),
+  msg("Worked example"),
+  msg("In code"),
+  msg("Common pitfalls"),
+];
+
+/** Marks the section headings for the interface language (src/lib/i18n-dom.ts). */
+export function translatableSections(html: string): string {
+  return html.replace(/<h2>([^<]+)<\/h2>/g, (whole, title: string) =>
+    SECTION_KEYS.includes(title) ? `<h2><span data-i18n="${title}">${title}</span></h2>` : whole,
+  );
 }
 
 /** Anchor prefix of a note's references (`ref-note-cnn-1`), distinct from question ids. */
@@ -49,11 +66,12 @@ async function loadNotes(bank: Bank): Promise<Map<string, NoteView>> {
     }
     const prefix = noteCitePrefix(topic.id);
     const body = entry.body ?? "";
-    const html = await renderMarkdown(body, {
+    const rendered = await renderMarkdown(body, {
       citePrefix: prefix,
       refCount: n.references.length,
       context: where,
     });
+    const html = translatableSections(rendered);
     const references: ReferenceView[] = n.references.map((r, i) => {
       const registered = r.source ? bank.sources.get(r.source) : undefined;
       if (r.source && !registered) problems.push(`${where}: unknown source '${r.source}'`);

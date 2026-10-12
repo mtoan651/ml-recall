@@ -4,6 +4,7 @@
  * after `astro build` (`pnpm build` runs `pagefind --site dist`), so this page searches only
  * in a built site, not under `astro dev`.
  */
+import T from "../components/T.astro";
 import Base from "../layouts/Base.astro";
 import { url } from "../lib/url";
 
@@ -11,24 +12,25 @@ const bundle = url("pagefind/");
 ---
 
 <Base
-  title="Search"
+  titleKey="Search"
   description="Search every question and topic note by its words, filtered by domain, topic, type and difficulty."
 >
   <link rel="stylesheet" href={`${bundle}pagefind-ui.css`} />
-  <h1 class="text-2xl font-semibold tracking-tight sm:text-3xl">Search</h1>
+  <h1 class="text-2xl font-semibold tracking-tight sm:text-3xl"><T k="Search" /></h1>
   <p class="mt-2 text-muted">
-    Every question and topic note, by the words in it. Filter by domain, topic, type and
-    difficulty; open a result to answer the question.
+    <T k="Every question and topic note, by the words in it. Filter by domain, topic, type and difficulty; open a result to answer the question." />
   </p>
   <noscript>
     <p class="mt-4 text-muted">Search needs JavaScript.</p>
   </noscript>
   <div id="search" class="search-ui mt-6" data-bundle={bundle}></div>
   <p id="search-missing" hidden class="mt-6 rounded-xl border border-dashed border-line px-4 py-6 text-center text-muted">
-    The search index is created by <code>pnpm build</code>; it is not available in
+    <T k="The search index is created by" /> <code>pnpm build</code><T k="; it is not available in" />
     <code>astro dev</code>.
   </p>
   <script>
+    import { currentLang, LANG_EVENT, type Lang, msg, t } from "../lib/i18n";
+
     interface PagefindUIOptions {
       element: string;
       bundlePath: string;
@@ -37,37 +39,112 @@ const bundle = url("pagefind/");
       resetStyles: boolean;
       pageSize: number;
       autofocus: boolean;
+      translations: Record<string, string>;
     }
-    type PagefindUIConstructor = new (options: PagefindUIOptions) => unknown;
+    interface PagefindUIInstance {
+      destroy(): void;
+    }
+    type PagefindUIConstructor = new (options: PagefindUIOptions) => PagefindUIInstance;
+
+    /**
+     * Pagefind UI strings in Vietnamese (its own keys; English is built in). Pagefind ships a
+     * Vietnamese set too, picked from <html lang>; these are passed explicitly so the UI follows
+     * the switch, with the wording of the rest of the site.
+     */
+    const PAGEFIND_VI: Record<string, string> = {
+      placeholder: "Tìm kiếm",
+      clear_search: "Xóa",
+      load_more: "Thêm kết quả",
+      search_label: "Tìm kiếm trên trang này",
+      filters_label: "Bộ lọc",
+      zero_results: "Không có kết quả cho [SEARCH_TERM]",
+      many_results: "[COUNT] kết quả cho [SEARCH_TERM]",
+      one_result: "[COUNT] kết quả cho [SEARCH_TERM]",
+      total_zero_results: "Không có kết quả",
+      total_one_result: "[COUNT] kết quả",
+      total_many_results: "[COUNT] kết quả",
+      alt_search: "Không có kết quả cho [SEARCH_TERM]. Đang hiển thị kết quả cho [DIFFERENT_TERM]",
+      search_suggestion: "Không có kết quả cho [SEARCH_TERM]. Hãy thử một trong các từ khóa sau:",
+      searching: "Đang tìm [SEARCH_TERM]…",
+      results_label: "Kết quả tìm kiếm",
+      keyboard_navigate: "di chuyển",
+      keyboard_select: "chọn",
+      keyboard_clear: "xóa",
+      keyboard_close: "đóng",
+      keyboard_search: "tìm kiếm",
+      error_search: "Tìm kiếm thất bại",
+      filter_selected_one: "Đã chọn [COUNT]",
+      filter_selected_many: "Đã chọn [COUNT]",
+      input_hint: "Kết quả sẽ hiện ra khi bạn gõ",
+      loading: "Đang tải",
+    };
+
+    /**
+     * Filter names are index data (`data-pagefind-filter` on the question pages), in English;
+     * Pagefind sets each once, so they are relabelled in place. Values stay as indexed.
+     */
+    const FILTER_NAMES: Record<string, string> = {
+      Difficulty: msg("Difficulty"),
+      Domain: msg("Domain"),
+      Topic: msg("Topic"),
+      Type: msg("Type"),
+    };
 
     const root = document.getElementById("search");
     const bundle = root?.dataset.bundle ?? "";
+    let ui: PagefindUIInstance | null = null;
+
     const missing = () => {
       document.getElementById("search-missing")?.removeAttribute("hidden");
     };
-    const script = document.createElement("script");
-    script.src = `${bundle}pagefind-ui.js`;
-    script.onerror = missing;
-    script.onload = () => {
+
+    /** Types `query` into the search box, as a learner would. */
+    function search(query: string) {
+      const input = root?.querySelector<HTMLInputElement>("input");
+      if (!input) return;
+      input.value = query;
+      input.dispatchEvent(new Event("input", { bubbles: true }));
+    }
+
+    function translateFilterNames() {
+      const lang = currentLang();
+      if (lang === "en" || !root) return;
+      for (const el of root.querySelectorAll<HTMLElement>(
+        ".pagefind-ui__filter-name, .pagefind-ui__filter-group-label",
+      )) {
+        const key = FILTER_NAMES[el.textContent?.trim() ?? ""];
+        if (key) el.textContent = t(lang, key);
+      }
+    }
+
+    /** (Re)creates the search UI in `lang`, keeping the query. */
+    function mount(lang: Lang, query: string, autofocus: boolean) {
       const PagefindUI = (window as unknown as { PagefindUI?: PagefindUIConstructor }).PagefindUI;
       if (!PagefindUI) return missing();
-      new PagefindUI({
+      ui?.destroy();
+      ui = new PagefindUI({
         element: "#search",
         bundlePath: bundle,
         showSubResults: false,
         showImages: false,
         resetStyles: false,
         pageSize: 10,
-        autofocus: true,
+        autofocus,
+        translations: lang === "vi" ? PAGEFIND_VI : {},
       });
-      const query = new URLSearchParams(window.location.search).get("q");
-      if (query) {
-        const input = root?.querySelector<HTMLInputElement>("input");
-        if (input) {
-          input.value = query;
-          input.dispatchEvent(new Event("input", { bubbles: true }));
-        }
-      }
+      if (query) search(query);
+    }
+
+    const script = document.createElement("script");
+    script.src = `${bundle}pagefind-ui.js`;
+    script.onerror = missing;
+    script.onload = () => {
+      if (root) new MutationObserver(translateFilterNames).observe(root, { childList: true, subtree: true });
+      mount(currentLang(), new URLSearchParams(window.location.search).get("q") ?? "", true);
+      window.addEventListener(LANG_EVENT, () => {
+        const query = root?.querySelector<HTMLInputElement>("input")?.value ?? "";
+        mount(currentLang(), query, false);
+      });
     };
     document.head.append(script);
   </script>

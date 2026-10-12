@@ -9,18 +9,28 @@ import {
   isGapFill,
   isNumericOnly,
 } from "../lib/grading";
+import { msg } from "../lib/i18n";
 import type { Answer, SessionItem } from "../lib/session";
-import type { QuestionType, QuizQuestion } from "../lib/types";
+import type { Difficulty, QuestionType, QuizQuestion } from "../lib/types";
+import { useT } from "../lib/use-lang";
 import { Feedback } from "./Feedback";
 import { Figure } from "./Figure";
 import { Html } from "./Html";
 import { CheckIcon, CrossIcon } from "./Icons";
+import { TopicTitle } from "./Title";
 
 const TYPE_LABEL: Record<QuestionType, string> = {
-  single: "Single choice",
-  multiple: "Select all that apply",
-  true_false: "True or false",
-  short_answer: "Short answer",
+  single: msg("Single choice"),
+  multiple: msg("Select all that apply"),
+  true_false: msg("True or false"),
+  short_answer: msg("Short answer"),
+};
+
+/** Difficulty names (translation keys), also on the mixed-test form. */
+export const DIFFICULTY_LABEL: Record<Difficulty, string> = {
+  easy: msg("easy"),
+  medium: msg("medium"),
+  hard: msg("hard"),
 };
 
 interface QuestionCardProps {
@@ -55,6 +65,7 @@ export function QuestionCard({
   onSubmitText,
   ref,
 }: QuestionCardProps) {
+  const t = useT();
   const headingId = `q-${q.id}-heading`;
   const showFeedback = Boolean(answer.outcome);
   const gapFill = q.answer ? isGapFill(q.answer) : false;
@@ -71,26 +82,30 @@ export function QuestionCard({
         className="flex flex-wrap items-center gap-x-2 gap-y-1.5 text-xs"
       >
         <h2 id={headingId} className="font-medium text-muted">
-          <span className="sr-only">Question {number}: </span>
-          {TYPE_LABEL[q.type]}
+          <span className="sr-only">{t("Question {n}: ", { n: number })}</span>
+          {t(TYPE_LABEL[q.type])}
         </h2>
         {q.difficulty && (
-          <span className="rounded-full bg-subtle px-2 py-0.5 text-muted">{q.difficulty}</span>
+          <span className="rounded-full bg-subtle px-2 py-0.5 text-muted">
+            {t(DIFFICULTY_LABEL[q.difficulty])}
+          </span>
         )}
         {q.status === "draft" && (
           <span
             className="rounded-full bg-note-soft px-2 py-0.5 text-note"
-            title="Imported or generated and not yet checked; may contain errors."
+            title={t("Imported or generated and not yet checked; may contain errors.")}
           >
-            unreviewed
+            {t("unreviewed")}
           </span>
         )}
         {q.reviewedBy === "claude" && (
           <span
             className="rounded-full bg-subtle px-2 py-0.5 text-muted"
-            title="Checked by Claude (an AI model) at the owner's request: key re-derived, explanation cited. Not yet verified by a human."
+            title={t(
+              "Checked by Claude (an AI model) at the owner's request: key re-derived, explanation cited. Not yet verified by a human.",
+            )}
           >
-            AI-checked
+            {t("AI-checked")}
           </span>
         )}
         {showTopic && (
@@ -98,7 +113,7 @@ export function QuestionCard({
             href={q.topic.url}
             className="ml-auto text-muted underline-offset-2 hover:text-ink hover:underline"
           >
-            {q.topic.title}
+            <TopicTitle id={q.topic.id} en={q.topic.title} />
           </a>
         )}
       </header>
@@ -151,6 +166,7 @@ function OptionList({
   answer: Answer;
   onSelect: (option: number) => void;
 }) {
+  const t = useT();
   const options = q.options ?? [];
   const multiple = q.type === "multiple";
   const graded = Boolean(answer.outcome);
@@ -166,7 +182,7 @@ function OptionList({
   return (
     <fieldset className="min-w-0">
       <legend data-pagefind-ignore className="sr-only">
-        {multiple ? "Select all options that apply" : "Choose one option"}
+        {multiple ? t("Select all options that apply") : t("Choose one option")}
       </legend>
       <ul className={pictures ? "grid gap-2.5 sm:grid-cols-2" : "space-y-2.5"}>
         {item.optionOrder.map((original, k) => {
@@ -239,11 +255,12 @@ function OptionVerdict({
   selected: boolean;
   missed: boolean;
 }) {
+  const t = useT();
   if (correct) {
     return (
       <span className="flex shrink-0 items-center gap-1 text-xs font-medium text-good">
         <CheckIcon />
-        {selected ? "Your answer" : missed ? "Missed" : "Correct"}
+        {selected ? t("Your answer") : missed ? t("Missed") : t("Correct")}
       </span>
     );
   }
@@ -251,7 +268,7 @@ function OptionVerdict({
     return (
       <span className="flex shrink-0 items-center gap-1 text-xs font-medium text-bad">
         <CrossIcon />
-        Your answer
+        {t("Your answer")}
       </span>
     );
   }
@@ -277,6 +294,7 @@ function ShortAnswerInput({
   onText: (text: string) => void;
   onSubmit: () => void;
 }) {
+  const t = useT();
   const key = q.answer;
   if (!key) return null;
   const numericOnly = isNumericOnly(key);
@@ -295,7 +313,7 @@ function ShortAnswerInput({
       }}
     >
       <label htmlFor={inputId} className="mb-1.5 block text-sm font-medium text-muted">
-        Your answer
+        {t("Your answer")}
       </label>
       <input
         id={inputId}
@@ -309,12 +327,12 @@ function ShortAnswerInput({
         readOnly={locked}
         aria-describedby={describedBy}
         aria-invalid={inputError ? true : undefined}
-        placeholder={numericOnly ? "Type a number" : "Type your answer"}
+        placeholder={numericOnly ? t("Type a number") : t("Type your answer")}
         onChange={(event) => onText(event.target.value)}
         className={`w-full rounded-xl border px-3.5 py-2.5 text-base text-ink placeholder:text-muted/70 focus:outline-none ${tone}`}
       />
-      <p id={formatId} className="mt-1.5 text-sm text-muted">
-        {answerHint(key)}
+      <p id={formatId} lang={key.hint ? "en" : undefined} className="mt-1.5 text-sm text-muted">
+        {answerHint(key, t.lang)}
       </p>
       {inputError && (
         <p id={errorId} className="mt-1 text-sm text-bad">
@@ -335,13 +353,14 @@ function InputMessages({
   inputError: string | null;
   graded: boolean;
 }) {
+  const t = useT();
   if (graded) return null;
   return (
     <div id={`q-${q.id}-blanks-help`} data-pagefind-ignore className="text-sm">
       <p className="text-muted">
-        Fill in every blank
-        {q.answer && inputKeys(q.answer).some((k) => k.hint) ? " (hints in the boxes)" : ""}. Enter
-        moves to the next blank.
+        {q.answer && inputKeys(q.answer).some((k) => k.hint)
+          ? t("Fill in every blank (hints in the boxes). Enter moves to the next blank.")
+          : t("Fill in every blank. Enter moves to the next blank.")}
       </p>
       {inputError && <p className="mt-1 text-bad">{inputError}</p>}
     </div>
@@ -365,6 +384,7 @@ function GapFillInputs({
   onText: (text: string, blank: number) => void;
   onSubmit: () => void;
 }) {
+  const t = useT();
   const [slots, setSlots] = useState<HTMLElement[]>([]);
   const inputs = useRef<(HTMLInputElement | null)[]>([]);
   // biome-ignore lint/correctness/useExhaustiveDependencies: the slots belong to this question's HTML.
@@ -402,9 +422,14 @@ function GapFillInputs({
             spellCheck={false}
             value={answer.blanks[i] ?? ""}
             readOnly={locked}
-            aria-label={`Blank ${i + 1} of ${keys.length}${k.hint ? ` (${k.hint})` : ""}`}
+            lang={t.lang}
+            aria-label={
+              k.hint
+                ? t("Blank {i} of {n} ({hint})", { i: i + 1, n: keys.length, hint: k.hint })
+                : t("Blank {i} of {n}", { i: i + 1, n: keys.length })
+            }
             aria-describedby={`q-${q.id}-blanks-help`}
-            placeholder={k.hint ?? (numeric ? "number" : "")}
+            placeholder={k.hint ?? (numeric ? t("number") : "")}
             onChange={(event) => onText(event.target.value, i)}
             onKeyDown={(event) => {
               if (event.key !== "Enter") return;

@@ -18,6 +18,7 @@ import {
   scoreExam,
   timeUsedMs,
 } from "../lib/exam";
+import { msg, type Params, scopeName } from "../lib/i18n";
 import type { SessionInput } from "../lib/session";
 import {
   browserStore,
@@ -33,6 +34,7 @@ import {
   storedExamStart,
 } from "../lib/storage";
 import type { ExamScopeView, QuizQuestion } from "../lib/types";
+import { useT } from "../lib/use-lang";
 import { ExamResults, type FinishedExam } from "./ExamResults";
 import { ExamRunner } from "./ExamRunner";
 import { ExamStart } from "./ExamStart";
@@ -51,10 +53,18 @@ interface ExamProps {
   onNewTest?: () => void;
 }
 
-const SUBMITTED_ELSEWHERE =
-  "This test was submitted in another tab. Its result is in your history.";
-const OPEN_ELSEWHERE =
-  "This test is open in another tab, so it was closed here. Reload the page to continue it in this tab.";
+const SUBMITTED_ELSEWHERE = msg(
+  "This test was submitted in another tab. Its result is in your history.",
+);
+const OPEN_ELSEWHERE = msg(
+  "This test is open in another tab, so it was closed here. Reload the page to continue it in this tab.",
+);
+
+/** A message kept as its key, so it follows a change of language while it is shown. */
+interface Message {
+  key: string;
+  params?: Params;
+}
 
 const toInput = (q: QuizQuestion): SessionInput => ({
   id: q.id,
@@ -75,6 +85,7 @@ export default function Exam({
   autoStart = false,
   onNewTest,
 }: ExamProps) {
+  const t = useT();
   const scopeKey = examScope(scope.kind, scope.id);
   const byId = useMemo(() => new Map(questions.map((q) => [q.id, q])), [questions]);
   const storedInfo = useMemo(
@@ -103,7 +114,7 @@ export default function Exam({
   const [history, setHistory] = useState<ExamHistory>(EMPTY_HISTORY);
   const [exam, setExam] = useState<ExamState | null>(null);
   const [finished, setFinished] = useState<FinishedExam | null>(null);
-  const [announcement, setAnnouncement] = useState("");
+  const [announcement, setAnnouncement] = useState<Message | null>(null);
   const [startedHere, setStartedHere] = useState(false);
   /** Shown on the start screen after another tab took the test over. */
   const [notice, setNotice] = useState("");
@@ -145,7 +156,7 @@ export default function Exam({
       setExam(null);
       setHistory(loadExamHistory(scopeKey));
       setNotice(message);
-      setAnnouncement(message);
+      setAnnouncement({ key: message });
     },
     [scopeKey],
   );
@@ -193,11 +204,12 @@ export default function Exam({
         timedOut,
         newBest: previousBest !== undefined && isBetterAttempt(attempt, previousBest),
       });
-      setAnnouncement(
-        timedOut
-          ? `Time is up. The test was submitted: ${score.correct} of ${score.total} correct.`
-          : `Test submitted: ${score.correct} of ${score.total} correct.`,
-      );
+      setAnnouncement({
+        key: timedOut
+          ? msg("Time is up. The test was submitted: {correct} of {total} correct.")
+          : msg("Test submitted: {correct} of {total} correct."),
+        params: { correct: score.correct, total: score.total },
+      });
     },
     [byId, scopeKey, takenElsewhere, yieldToOtherTab],
   );
@@ -216,7 +228,7 @@ export default function Exam({
       if (state.items.length === 0) return;
       setFinished(null);
       setNotice("");
-      setAnnouncement("");
+      setAnnouncement(null);
       setStartedHere(true);
       setExam(state);
       const top = rootRef.current?.getBoundingClientRect().top ?? 0;
@@ -242,9 +254,10 @@ export default function Exam({
       moved.current = false; // nothing was clicked: leave focus where the page put it
     } else if (stored) {
       setExam(stored);
-      setAnnouncement(
-        `Test resumed at question ${stored.position + 1} of ${stored.items.length}. The timer kept running.`,
-      );
+      setAnnouncement({
+        key: msg("Test resumed at question {n} of {total}. The timer kept running."),
+        params: { n: stored.position + 1, total: stored.items.length },
+      });
     } else if (autoStart && !autoStarted.current) {
       autoStarted.current = true;
       begin(settings.reviewedOnly && reviewedCount > 0, settings.examLayout);
@@ -307,10 +320,11 @@ export default function Exam({
       ref={rootRef}
       className="quiz scroll-mt-4"
       data-ready={ready}
-      aria-label={`Timed test: ${scope.title}`}
+      data-lang={t.lang}
+      aria-label={t("Timed test: {title}", { title: scopeName(t.lang, scope) })}
     >
       <p className="sr-only" aria-live="polite">
-        {announcement}
+        {announcement && t(announcement.key, announcement.params)}
       </p>
       <div className="quiz-stage">
         {finished ? (
@@ -327,7 +341,7 @@ export default function Exam({
                 return;
               }
               moved.current = true;
-              setAnnouncement("");
+              setAnnouncement(null);
               setFinished(null);
             }}
           />
@@ -347,7 +361,7 @@ export default function Exam({
                 role="status"
                 className="mb-4 rounded-xl border border-note/40 bg-note-soft px-4 py-3 text-sm text-note"
               >
-                {notice}
+                {t(notice)}
               </p>
             )}
             <ExamStart
