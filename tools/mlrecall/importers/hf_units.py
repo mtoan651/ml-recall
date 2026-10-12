@@ -1,8 +1,9 @@
 """Importer for Hugging Face courses with quiz pages per unit/chapter (Deep RL, Agents, Audio).
 
 Quiz pages mix `<Question choices={[...]} />` blocks (multiple choice) with open questions whose
-answer sits in `<details><summary>Solution</summary>...</details>`; the latter become self-graded
-`short_answer` questions. Questions whose text relies on an image are flagged so curation decides.
+answer sits in `<details><summary>Solution</summary>...</details>`; the latter become open
+`short_answer` questions (the solution as model answer), which curation turns into fill-ins — the
+site grades only those. Questions whose text relies on an image are flagged so curation decides.
 """
 
 from __future__ import annotations

@@ -52,7 +52,7 @@ describe("pool", () => {
     const questions: Array<{ id: string; type: QuestionType; status: string }> = [
       { id: "a", type: "single", status: "reviewed" },
       { id: "b", type: "true_false", status: "draft" },
-      { id: "c", type: "short_answer", status: "reviewed" }, // open, self-graded
+      { id: "c", type: "short_answer", status: "reviewed" },
       { id: "d", type: "short_answer", status: "draft" },
     ];
     expect(examPool(questions, false).map((q) => q.id)).toEqual(["a", "b", "c", "d"]);

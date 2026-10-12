@@ -13,6 +13,14 @@ versioning: [SemVer](https://semver.org) as defined in [docs/conventions.md](doc
   difficulties). A tag page with more than 20 questions links to `/exam/?tag=<tag>` for a
   longer test or one by difficulty — e.g. all 132 `ce6146` questions, up to 50 at a time.
 
+### Fixed
+
+- Roadmap: items shipped in a later version showed an open box (exam mode, NCU lecture
+  questions, `mlr extract`); v0.2.0 was not marked done; keyboard shortcuts were missing; the
+  v0.4.0 mixed-test line had been narrowed to what shipped. Source `plan` notes and
+  `docs/sources.md` carried import counts from before the v0.3 keep-and-fix re-review and
+  still described self-graded answers, which v0.3.0 replaced with fill-ins.
+
 ## [0.4.0] — 2026-10-12
 
 ### Added
