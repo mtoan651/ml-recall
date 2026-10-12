@@ -79,8 +79,7 @@ numpy-100 97/100).
 
 ## Path B — generate from course materials
 
-For lecture slides, PDFs and notes (`ncu-intro-dl`, and `adapt` books such as d2l). Planned to be
-scripted in v0.3; the manual flow works today:
+For lecture slides, PDFs and notes (`ncu-intro-dl`, and `adapt` books such as d2l):
 
 1. Keep the raw files **outside the repository** — locally next to it:
 
@@ -90,13 +89,16 @@ scripted in v0.3; the manual flow works today:
    └── ml-recall/        # this repository
    ```
 
-   Extracted text/images go to `.cache/extracted/<source-id>/` (git-ignored).
+2. **Extract** to Markdown with `uv run mlr extract ../materials/CE6146_Lecture_2.pdf` (files or
+   folders of PDFs). It writes `.cache/extract/<file stem>.md` (git-ignored) with one
+   `## Page N` section per page, so questions can cite "Lecture 2, slides 24–25". It uses
+   pdfminer.six, the PDF backend of markitdown; convert PPTX/DOCX with `uvx markitdown <file>`,
+   and render pages to PNG when a diagram matters (Claude can read images).
 
    **Answer keys marked by colour** (CE6146 exercises mark the correct option in red) are lost by
-   plain-text extraction. Read the pages visually or with a colour-aware extractor (PyMuPDF
-   spans), cross-check both, and verify every key — Exercise 2 Q1's key was wrong in the PDF.
-2. **Extract** to Markdown — `markitdown` for PDF/PPTX/DOCX; `docling` when slides are
-   formula/table heavy; render pages to PNG (PyMuPDF) when diagrams matter (Claude can read images).
+   plain-text extraction: `mlr extract --colors` wraps coloured text as `[red: …]` (also
+   `orange`, `green`, `blue`, … — titles and bullets are often coloured too). Still verify every
+   key — Exercise 2 Q1's key was wrong in the PDF.
 3. **Generate** with Claude Code using [`prompts/generate-questions.md`](../prompts/generate-questions.md):
    one lecture/section per run, output appended to the right topic files as `draft`, with
    `source: {id: <source>, ref: lecture-05/slide-14}` and precise `references`.

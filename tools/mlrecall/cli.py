@@ -5,6 +5,7 @@ from __future__ import annotations
 import argparse
 import json
 import sys
+from pathlib import Path
 
 from . import check, paths
 
@@ -32,6 +33,13 @@ def main(argv: list[str] | None = None) -> int:
     p_sync.add_argument("source", nargs="?", default="all", help="source id, or 'all'")
     p_sync.add_argument("--check", action="store_true", help="report differences, write nothing")
 
+    p_extract = sub.add_parser(
+        "extract", help="PDF → Markdown with page markers in .cache/extract/ (to write questions)"
+    )
+    p_extract.add_argument("paths", nargs="+", type=Path, help="PDF files or folders of PDFs")
+    p_extract.add_argument("--out", type=Path, help="output folder (default .cache/extract/)")
+    p_extract.add_argument("--colors", action="store_true", help="mark coloured text: [red: …]")
+
     p_stats = sub.add_parser("stats", help="print bank statistics as a Markdown table")
     p_stats.add_argument("--topics", action="store_true", help="one row per topic")
 
@@ -52,6 +60,10 @@ def main(argv: list[str] | None = None) -> int:
         from .curation_sync import run as sync_curation
 
         return sync_curation(args.source, check=args.check)
+    if args.command == "extract":
+        from .extract import run as extract
+
+        return extract(args.paths, out=args.out, colors=args.colors)
     if args.command == "stats":
         from .stats import markdown_table
 
