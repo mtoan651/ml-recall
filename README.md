@@ -3,8 +3,8 @@
 Active-recall quiz bank for AI/ML/DL: exam-style questions with LaTeX, cited explanations, timed
 mock exams and spaced repetition. Free static site on GitHub Pages.
 
-> **Status: v0.4.0 — 2897 questions, all reviewed, with mixed tests, My mistakes and Progress; live
-> at <https://mtoan651.github.io/ml-recall/>.** Next: retention — spaced repetition, topic notes,
+> **Status: v0.4.1 — 2909 questions, all reviewed, with mixed tests (by topic, tag and
+> difficulty), My mistakes and Progress; live at <https://mtoan651.github.io/ml-recall/>.** Next: retention — spaced repetition, topic notes,
 > search ([roadmap](docs/roadmap.md)).
 
 ## What's inside
