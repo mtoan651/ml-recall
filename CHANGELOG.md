@@ -48,8 +48,12 @@ versioning: [SemVer](https://semver.org) as defined in [docs/conventions.md](doc
   1,000 questions were improved (stems that pointed at another question or "the lesson",
   missing feedback, wrong locators, a few factual slips in explanations, graders that rejected
   natural answer variants). 2567 questions are now `reviewed` with `reviewed_by: claude`
-  ("AI-checked" in the quiz); 11 stay drafts for the owner (9 Hugging Face API-trivia items, the
-  disputed MLCC bucketing key in data-prep-018, a smolagents trivia item).
+  ("AI-checked" in the quiz). The 11 items left for the owner were then settled with the owner:
+  data-prep-018 is re-keyed to the four latitude buckets its own plot shows (Google's key,
+  "Don't bucket", contradicted the stem); huggingface-007 and -021 are rewritten as concept
+  questions (the tokenizer's steps; why seq2seq label padding is −100); eight Hugging Face /
+  smolagents API-trivia or duplicate items are retired. No drafts remain: 2626 active questions,
+  all reviewed.
 - `reviewed_by` (`owner` | `claude`) on reviewed questions, with an "AI-checked" badge.
 - `mlr sync-curation [--check]`: records bank edits of imported questions as curation fixes; the
   ~900 imported questions whose explanations lived only in the bank are now reproducible.
