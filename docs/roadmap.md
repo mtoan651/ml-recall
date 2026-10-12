@@ -61,6 +61,7 @@ Versions follow [conventions.md#versioning](conventions.md#versioning).
 - [x] Image options (2×2 grid), zoomable figures
 - [x] Code-reading questions from Tensor Puzzles / LLMs-from-scratch / NumPy (55)
 - [x] Thin topics: computer vision 51 → 119, AI intro 12 → 34, NLP 162 → 212
+- [x] Every topic fills a 20-question test: Deep Learning Frameworks 18 → 30 (v0.4.1)
 - [x] CI checked on `ubuntu-26.04` before `ubuntu-latest` moves (2026-10-19)
 
 ## v0.5.0 — Retention
