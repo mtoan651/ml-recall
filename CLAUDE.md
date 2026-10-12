@@ -13,6 +13,7 @@ uv run mlr sync-curation [--check]  # record bank edits of imported questions as
 uv run mlr stats                 # Markdown stats table (README)
 uv run mlr schema                # re-export schema/*.schema.json after editing schema.py
 uv run mlr figs                  # re-render question figures from their generator scripts
+uv run mlr extract <pdf|dir> [--colors]  # PDF → .cache/extract/<name>.md, one section per page
 uv run pytest && uv run ruff check . && uv run ruff format --check .
 
 pnpm install && pnpm dev         # web app at http://localhost:4321/ml-recall/ (Node 24 + pnpm)

@@ -5,6 +5,13 @@ versioning: [SemVer](https://semver.org) as defined in [docs/conventions.md](doc
 
 ## [Unreleased]
 
+### Added
+
+- `mlr extract <pdf|dir> [--colors]`: PDF → Markdown in the git-ignored `.cache/extract/`, one
+  `## Page N` section per page (so questions can cite slides), via pdfminer.six. `--colors`
+  marks coloured text as `[red: …]`, which recovers answer keys printed in red (CE6146
+  exercises) that plain text extraction loses.
+
 ## [0.3.0] — 2026-10-12
 
 ### Changed
