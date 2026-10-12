@@ -1,4 +1,12 @@
-import { useCallback, useEffect, useMemo, useReducer, useRef, useState } from "react";
+import {
+  type ReactNode,
+  useCallback,
+  useEffect,
+  useMemo,
+  useReducer,
+  useRef,
+  useState,
+} from "react";
 import { gradeChoice, gradeInputs, isGapFill } from "../lib/grading";
 import {
   answerOf,
@@ -28,6 +36,8 @@ interface QuizProps {
   scope: string;
   /** Show each question's topic (cross-topic sets such as tag pages). */
   showTopic?: boolean;
+  /** Extra controls next to "Next" once a question is graded (the review page's rating). */
+  rating?: (id: string, outcome: Outcome) => ReactNode;
 }
 
 const toInput = (q: QuizQuestion): SessionInput => ({
@@ -43,7 +53,7 @@ function pool(questions: QuizQuestion[], settings: QuizSettings, onlyIds?: Reado
 }
 
 /** Interactive practice over a list of questions: one question at a time, instant feedback. */
-export default function Quiz({ questions, scope, showTopic = false }: QuizProps) {
+export default function Quiz({ questions, scope, showTopic = false, rating }: QuizProps) {
   const byId = useMemo(() => new Map(questions.map((q) => [q.id, q])), [questions]);
   const reviewedCount = useMemo(
     () => questions.filter((q) => q.status === "reviewed").length,
@@ -291,6 +301,9 @@ export default function Quiz({ questions, scope, showTopic = false }: QuizProps)
               />
 
               <div className="sticky bottom-0 z-10 -mx-4 mt-4 border-t border-line bg-canvas/90 px-4 py-3 backdrop-blur sm:mx-0 sm:rounded-b-xl sm:border-t-0 sm:px-0">
+                {rating && answer.outcome && (
+                  <div className="mb-2.5">{rating(question.id, answer.outcome)}</div>
+                )}
                 <div className="flex items-center justify-end gap-2">
                   <span className="mr-auto hidden text-xs text-muted sm:inline">
                     {question.options

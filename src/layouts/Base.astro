@@ -1,7 +1,7 @@
 ---
 import "katex/dist/katex.min.css";
 import "../styles/global.css";
-import { mistakesUrl, mixedExamUrl, progressUrl, url } from "../lib/url";
+import { mistakesUrl, mixedExamUrl, progressUrl, reviewUrl, url } from "../lib/url";
 
 interface Props {
   /** Page title; the site name is appended. */
@@ -56,10 +56,13 @@ const repo = "https://github.com/mtoan651/ml-recall";
         </a>
         <nav aria-label="Main" class="flex flex-wrap items-center gap-x-4 gap-y-1 text-sm text-muted">
           <a href={url()} class="hover:text-ink">Topics</a>
-          <a href={url("tags/")} class="hover:text-ink">Tags</a>
+          <a href={reviewUrl()} class="inline-flex items-center gap-1 hover:text-ink">
+            Review<span data-due-badge hidden class="rounded-full bg-accent px-1.5 text-[11px] leading-[18px] font-semibold text-accent-ink tabular-nums"></span>
+          </a>
           <a href={mixedExamUrl()} class="hover:text-ink">Mixed test</a>
           <a href={mistakesUrl()} class="hover:text-ink">Mistakes</a>
           <a href={progressUrl()} class="hover:text-ink">Progress</a>
+          <a href={url("tags/")} class="hover:text-ink">Tags</a>
           <a href={repo} class="hidden hover:text-ink sm:inline" rel="noopener">GitHub</a>
         </nav>
       </div>
@@ -82,5 +85,29 @@ const repo = "https://github.com/mtoan651/ml-recall";
         </p>
       </div>
     </footer>
+    <script>
+      import { countDue, SRS_EVENT } from "../lib/srs-due";
+
+      /** "Review" badges: questions due today in this browser (hidden when none). */
+      function showDue() {
+        let store: Storage | null = null;
+        try {
+          store = window.localStorage;
+        } catch {
+          // blocked storage: no badge
+        }
+        const n = countDue(store);
+        for (const el of document.querySelectorAll<HTMLElement>("[data-due-badge]")) {
+          el.textContent = n > 99 ? "99+" : String(n);
+          el.title = `${n} due today`;
+          el.hidden = n === 0;
+        }
+      }
+      showDue();
+      window.addEventListener(SRS_EVENT, showDue);
+      window.addEventListener("pageshow", (event) => {
+        if (event.persisted) showDue();
+      });
+    </script>
   </body>
 </html>

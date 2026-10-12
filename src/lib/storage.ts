@@ -119,15 +119,23 @@ export function saveResult(
   return saveResults([[id, correct]], store, now);
 }
 
-/** Records several results at once (one read and one write), e.g. a submitted test. */
+/**
+ * Records several results at once (one read and one write), e.g. a submitted test. Each one is
+ * also a spaced-repetition review (src/lib/srs.ts), recorded once the scheduler has loaded —
+ * it is fetched on the first answer, so pages without answers never download it.
+ */
 export function saveResults(
   entries: Iterable<readonly [id: string, correct: boolean]>,
   store: KeyValueStore | null = browserStore(),
   now: number = Date.now(),
 ): Results {
+  const graded = [...entries];
   const results = loadResults(store);
-  for (const [id, correct] of entries) results[id] = { correct, at: now };
+  for (const [id, correct] of graded) results[id] = { correct, at: now };
   writeJson(store, RESULTS_KEY, results);
+  if (store && graded.length > 0) {
+    import("./srs").then((srs) => srs.recordReviews(graded, now, store)).catch(() => {});
+  }
   return results;
 }
 

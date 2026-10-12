@@ -5,6 +5,14 @@ versioning: [SemVer](https://semver.org) as defined in [docs/conventions.md](doc
 
 ## [Unreleased]
 
+### Added
+
+- **Review with spaced repetition** (`/review/`): every answered question gets an FSRS card
+  (wrong = Again, right = Good, from practice, tests, My mistakes and reviews alike); the page
+  lists what is due today, most overdue first, by topic, with a 7-day forecast, and after a
+  right answer lets you rate it Hard, Good or Easy (with the next interval shown). Past
+  results become cards on first visit. A badge on "Review" in the header shows today's count.
+
 ## [0.4.1] — 2026-10-12
 
 Finishes what the v0.4.0 roadmap promised. The tag filter is a new capability, which the
