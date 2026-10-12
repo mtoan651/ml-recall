@@ -5,6 +5,8 @@ versioning: [SemVer](https://semver.org) as defined in [docs/conventions.md](doc
 
 ## [Unreleased]
 
+## [0.3.0] — 2026-10-12
+
 ### Changed
 
 - Citation checks (Python and Zod) find `[^n]` after inline math that wraps onto a second line
@@ -167,6 +169,10 @@ versioning: [SemVer](https://semver.org) as defined in [docs/conventions.md](doc
   low severity). A pnpm override makes `rehype-katex` and `remark-math`, which ask for `^0.16`,
   use the same version; every question still renders, with no KaTeX warnings.
 
+Bank: 2626 questions, all reviewed (56 by the owner, 2570 by Claude, "AI-checked"), 8 retired —
+ml 851, dl 419, math 351, ai 281, practice 195, nlp 162, llm 131, rl 93, gen 92, cv 51; questions
+from 52 external sources (66 registered, 9 of them reference-only).
+
 ## [0.2.0] — 2026-10-10
 
 ### Added
@@ -215,6 +221,7 @@ llm 20, rl 12, cv 10, gen 10.
 Bank: 333 questions (328 draft, 5 reviewed) — ml 97, dl 77, nlp 47, practice 27, ai 20, llm 20,
 math 13, rl 12, cv 10, gen 10.
 
-[Unreleased]: https://github.com/mtoan651/ml-recall/compare/v0.2.0...HEAD
+[Unreleased]: https://github.com/mtoan651/ml-recall/compare/v0.3.0...HEAD
+[0.3.0]: https://github.com/mtoan651/ml-recall/releases/tag/v0.3.0
 [0.2.0]: https://github.com/mtoan651/ml-recall/releases/tag/v0.2.0
 [0.1.0]: https://github.com/mtoan651/ml-recall/releases/tag/v0.1.0

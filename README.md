@@ -3,8 +3,8 @@
 Active-recall quiz bank for AI/ML/DL: exam-style questions with LaTeX, cited explanations, timed
 mock exams and spaced repetition. Free static site on GitHub Pages.
 
-> **Status: v0.2.0 — the quiz site is live at <https://mtoan651.github.io/ml-recall/>.**
-> Next: review the drafted explanations, more exercise sources and course material ([roadmap](docs/roadmap.md)).
+> **Status: v0.3.0 — 2626 questions, all reviewed, live at <https://mtoan651.github.io/ml-recall/>.**
+> Next: review features — mixed exams across topics and a "my mistakes" deck ([roadmap](docs/roadmap.md)).
 
 ## What's inside
 
@@ -34,10 +34,12 @@ mock exams and spaced repetition. Free static site on GitHub Pages.
 | Practical Tools | 3 | 195 | 195 |
 | **Total** | | **2626** | **2626** |
 
-Imported so far: Hugging Face LLM, Deep RL and AI Agents courses; Microsoft AI, ML and Data
-Science for Beginners; Google's ML Crash Course and ML courses; MMLU-Redux; 100 NumPy exercises;
-exercises from *Dive into Deep Learning*; and the CE6146 course exercises. See [docs/sources.md](docs/sources.md) for all 26 registered
-external sources and their licenses.
+Questions come from 52 external sources: importers for the Hugging Face LLM, Deep RL, AI Agents
+and Audio courses, Microsoft AI, ML and Data Science for Beginners, Google's ML Crash Course and
+ML courses, MMLU-Redux and 100 NumPy exercises; exercises adapted from *Dive into Deep Learning*,
+Gutmann's pen-and-paper exercises, *Deep Learning Interviews*, MIT OpenCourseWare, NPTEL,
+Neuromatch Academy, Kaggle Learn, UBC courses and more; and the CE6146 course exercises. See
+[docs/sources.md](docs/sources.md) for all 66 registered external sources and their licenses.
 
 ## Quick start
 

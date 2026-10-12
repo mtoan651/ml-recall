@@ -23,12 +23,13 @@ Versions follow [conventions.md#versioning](conventions.md#versioning).
 - [x] End-of-session summary (score, missed questions, retry missed); "unreviewed" badge + filter; dark mode; mobile
 - [x] Progress per question id in `localStorage`; answered / total per topic on the index
 
-## v0.3.0 — Content I
+## v0.3.0 — Content I ✅
 
 - [x] Timed tests per topic and tag (N questions, 1 min/question, max 20) — see [web-app](web-app.md#timed-tests)
 - [x] Explanations with citations for imported drafts (all 395 imported drafts)
-- [ ] Review the first topics → `reviewed`
-- [ ] NCU Intro to DL lecture questions (Path B: extract → generate → review)
+- [x] Review every question → `reviewed` (2626: 56 by the owner, 2570 AI-checked with
+  `reviewed_by: claude`); `mlr sync-curation` keeps imported edits reproducible
+- [ ] NCU Intro to DL lecture questions (Path B: extract → generate → review) → moved to v0.4.0
 - [x] Google MLCC and Google ML courses quizzes; numpy-100 exercises
 - [x] d2l exercises → auto-graded questions for the thin topics (information theory, logistic
   regression, learning theory, dimensionality reduction: 36 from d2l + 31 original); Deep Learning
@@ -44,10 +45,12 @@ Versions follow [conventions.md#versioning](conventions.md#versioning).
 - [x] Second survey round under the non-commercial licence policy: MIT OCW, NPTEL, Neuromatch,
   Kaggle Learn, smaller open courses, MMLU keep-lists and original questions for the remaining
   thin topics (+879 questions, 2520 in all); `graph_figure` helper
-- [ ] `mlr extract` (markitdown/docling)
+- [ ] `mlr extract` (markitdown/docling) → moved to v0.4.0
+- [x] Maintenance: KaTeX 0.19, CI checks that every figure re-renders byte-identical
 
 ## v0.4.0 — Review features
 
+- [ ] NCU Intro to DL lecture questions via `mlr extract` (markitdown/docling)
 - [ ] Mixed exams: N random questions across topics/difficulty/tags
 - [ ] "My mistakes" deck, score history per topic (keyboard shortcuts 1–9 / Enter shipped in v0.2)
 - [ ] Image options (2×2 grid), zoomable figures
