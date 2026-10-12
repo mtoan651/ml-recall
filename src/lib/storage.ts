@@ -297,6 +297,8 @@ export function storedExamIds(
 /** What the mixed-test form remembers. */
 export interface MixedPrefs {
   topics: string[];
+  /** Chosen tags; none means no tag filter. Absent in prefs stored before v0.4.1. */
+  tags: string[];
   difficulties: Difficulty[];
   /** Questions per test. */
   size: number;
@@ -309,11 +311,15 @@ const isDifficulty = (v: unknown): v is Difficulty =>
 export function loadMixedPrefs(store: KeyValueStore | null = browserStore()): MixedPrefs | null {
   const data = readJson(store, MIXED_KEY);
   if (typeof data !== "object" || data === null || Array.isArray(data)) return null;
-  const { topics, difficulties, size } = data as Record<string, unknown>;
+  const { topics, tags, difficulties, size } = data as Record<string, unknown>;
   if (!Array.isArray(topics) || !Array.isArray(difficulties)) return null;
   if (typeof size !== "number" || !Number.isInteger(size) || size <= 0) return null;
+  const strings = (list: unknown[]) => [
+    ...new Set(list.filter((t): t is string => typeof t === "string")),
+  ];
   return {
-    topics: [...new Set(topics.filter((t): t is string => typeof t === "string"))],
+    topics: strings(topics),
+    tags: Array.isArray(tags) ? strings(tags) : [],
     difficulties: [...new Set(difficulties.filter(isDifficulty))],
     size,
   };
