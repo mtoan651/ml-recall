@@ -25,6 +25,7 @@ mock exams and spaced repetition. Free static site on GitHub Pages.
   **Progress** shows answered / correct per topic and your test scores over time (all stored in
   the browser; export it to a file and import it on another device).
 - **Search** every question by its words, with filters; each question has its own page.
+- Installs as an app and **works offline** for every page you have opened.
 - Every question records its **source**; reviewed explanations **cite** references (`[^1]`).
 - Imports are reproducible: pinned upstream revisions + per-item curation with drop reasons.
 

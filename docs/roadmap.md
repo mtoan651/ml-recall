@@ -70,5 +70,5 @@ Versions follow [conventions.md#versioning](conventions.md#versioning).
 - [ ] Topic notes / cheat sheets
 - [x] Pagefind search (`/search/`) and a page per question (`/q/<id>/`)
 - [x] Export/import progress (merging, on `/progress/`)
-- [ ] PWA offline
+- [x] PWA offline (service worker generated at build, installable)
 - [ ] Vietnamese UI

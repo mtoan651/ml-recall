@@ -30,6 +30,8 @@ const repo = "https://github.com/mtoan651/ml-recall";
     <meta name="description" content={description} />
     <link rel="canonical" href={canonical} />
     <link rel="icon" type="image/svg+xml" href={url("favicon.svg")} />
+    <link rel="manifest" href={url("manifest.webmanifest")} />
+    <link rel="apple-touch-icon" href={url("apple-touch-icon.png")} />
     <meta name="theme-color" content="#f7f7f5" media="(prefers-color-scheme: light)" />
     <meta name="theme-color" content="#111214" media="(prefers-color-scheme: dark)" />
     <meta property="og:title" content={fullTitle} />
@@ -105,6 +107,14 @@ const repo = "https://github.com/mtoan651/ml-recall";
       }
       showDue();
       window.addEventListener(SRS_EVENT, showDue);
+
+      // Offline support (tools/web/sw.template.js), only in the built site.
+      if (import.meta.env.PROD && "serviceWorker" in navigator) {
+        window.addEventListener("load", () => {
+          const base = import.meta.env.BASE_URL.replace(/\/*$/, "/");
+          navigator.serviceWorker.register(`${base}sw.js`, { scope: base }).catch(() => {});
+        });
+      }
       window.addEventListener("pageshow", (event) => {
         if (event.persisted) showDue();
       });
