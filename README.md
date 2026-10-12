@@ -24,6 +24,7 @@ mock exams and spaced repetition. Free static site on GitHub Pages.
 - **My mistakes** collects every question you last answered wrong, to practice until it is right;
   **Progress** shows answered / correct per topic and your test scores over time (all stored in
   the browser; export it to a file and import it on another device).
+- **Topic notes**: a cited cheat sheet for every topic (key ideas, formulas, pitfalls).
 - **Search** every question by its words, with filters; each question has its own page.
 - Installs as an app and **works offline** for every page you have opened.
 - Every question records its **source**; reviewed explanations **cite** references (`[^1]`).

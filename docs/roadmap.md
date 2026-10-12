@@ -69,7 +69,7 @@ Versions follow [conventions.md#versioning](conventions.md#versioning).
 - [x] OpenIntro Statistics exercises (59 questions)
 - [x] Hands-On ML notebook exercises (57 questions)
 - [x] Spaced repetition (FSRS) over question ids (`/review/`)
-- [ ] Topic notes / cheat sheets
+- [x] Topic notes / cheat sheets for all 54 topics (`/topics/<topic>/notes/`)
 - [x] Pagefind search (`/search/`) and a page per question (`/q/<id>/`)
 - [x] Export/import progress (merging, on `/progress/`)
 - [x] PWA offline (service worker generated at build, installable)

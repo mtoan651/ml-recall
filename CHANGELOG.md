@@ -7,6 +7,11 @@ versioning: [SemVer](https://semver.org) as defined in [docs/conventions.md](doc
 
 ### Added
 
+- **Topic notes** (`/topics/<topic>/notes/`): a cheat sheet for each of the 54 topics — key ideas,
+  formulas, a worked example, a short code sample and the common pitfalls the questions probe —
+  with 2–8 cited references each. Written by one agent per group of topics and reviewed by a
+  second, independent pass (every formula, example and code output re-derived, every source
+  opened; all 54 revised). Topic pages link "Read the notes"; notes are searchable.
 - **57 questions from the Hands-On Machine Learning notebooks** (Apache-2.0 notebooks only, never
   the book's text): written from the exercise solutions of 18 chapters across 24 topics, 22 of
   them code reading (TensorFlow ideas rewritten in PyTorch or scikit-learn), every snippet run;
