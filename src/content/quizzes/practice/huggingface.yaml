@@ -220,31 +220,38 @@ questions:
     reviewed_by: claude
   - id: huggingface-007
     type: single
-    difficulty: easy
-    question: What method is most of the tokenizer API centered around?
+    difficulty: medium
+    question: |
+      Calling a 🤗 Transformers tokenizer on a batch of raw sentences returns tensors that the model
+      can use directly. In which order does it do the work?
     options:
-      - text: '`encode`, as it can encode text into IDs and IDs into predictions'
-        why: Wrong! While the `encode` method does exist on tokenizers, it does not exist on models.
-      - text: Calling the tokenizer object directly.
+      - text: Split into tokens → map tokens to IDs → add special tokens → pad or truncate and build the attention mask
         correct: true
-      - text: '`pad`'
-        why: Wrong! Padding is very useful, but it's just one part of the tokenizer API.
-      - text: '`tokenize`'
-        why: The `tokenize` method is arguably one of the most useful methods, but it isn't the core of the tokenizer API.
+      - text: Map words to IDs → split the IDs into subword tokens → pad to equal length → add special tokens
+        why: IDs are looked up in the vocabulary of tokens, so the text must be split into tokens first; special tokens are added before padding, so that the padded length includes them.
+      - text: Add special tokens → pad every sentence to equal length → split into tokens → map tokens to IDs
+        why: Padding works on token sequences, so it can only happen after tokenization; the tokenizer pads the finished ID sequences.
+      - text: Split into tokens → pad to equal length → map tokens to IDs → the model adds its own special tokens
+        why: Special tokens such as `[CLS]` and `[SEP]` are inserted by the tokenizer, not by the model, and padding comes last.
     explanation: |
-      Calling the tokenizer directly (its `__call__` method) is the main API: in one step it splits the
-      text into tokens, converts them to IDs and adds the model's special tokens, and it can also pad,
-      truncate and return framework tensors ready for the model [^1]. Methods such as `tokenize` or
-      `pad` each cover only one of those steps.
+      The tokenizer first splits text into tokens and converts them to input IDs with its
+      vocabulary [^1]. It then adds the special tokens the model was pretrained with (for BERT,
+      `[CLS]` at the start and `[SEP]` at the end) and finally pads or truncates the sequences of
+      a batch to a common length, returning an attention mask that marks the real tokens [^2].
+      Calling the tokenizer object directly runs all of these steps at once [^2].
     references:
       - source: hf-llm-course
+        locator: Chapter 2.4 Tokenizers — Encoding
+        url: https://huggingface.co/learn/llm-course/chapter2/4
+      - source: hf-llm-course
+        locator: Chapter 2.6 Putting it all together — Special tokens
         url: https://huggingface.co/learn/llm-course/chapter2/6
-        locator: Chapter 2.6 Putting it all together
     source:
       id: hf-llm-course
       ref: chapter2/9#q8
       url: https://huggingface.co/learn/llm-course/chapter2/9
-    status: draft
+    status: reviewed
+    reviewed_by: claude
   - id: huggingface-008
     type: single
     difficulty: easy
@@ -382,7 +389,7 @@ questions:
       id: hf-llm-course
       ref: chapter3/2#q4
       url: https://huggingface.co/learn/llm-course/chapter3/2
-    status: draft
+    status: retired
   - id: huggingface-012
     type: single
     difficulty: easy
@@ -449,7 +456,7 @@ questions:
       id: hf-llm-course
       ref: chapter3/3#q1
       url: https://huggingface.co/learn/llm-course/chapter3/3
-    status: draft
+    status: retired
   - id: huggingface-014
     type: single
     difficulty: easy
@@ -477,7 +484,7 @@ questions:
       id: hf-llm-course
       ref: chapter3/3#q2
       url: https://huggingface.co/learn/llm-course/chapter3/3
-    status: draft
+    status: retired
   - id: huggingface-015
     type: single
     difficulty: easy
@@ -542,7 +549,7 @@ questions:
       id: hf-llm-course
       ref: chapter3/3#q5
       url: https://huggingface.co/learn/llm-course/chapter3/3
-    status: draft
+    status: retired
   - id: huggingface-017
     type: single
     difficulty: easy
@@ -602,7 +609,7 @@ questions:
       id: hf-llm-course
       ref: chapter3/4#q7
       url: https://huggingface.co/learn/llm-course/chapter3/4
-    status: draft
+    status: retired
   - id: huggingface-019
     type: single
     difficulty: medium
@@ -664,34 +671,38 @@ questions:
   - id: huggingface-021
     type: single
     difficulty: medium
-    question: What is the proper way to preprocess the data for a sequence-to-sequence problem with a 🤗 Transformers tokenizer?
+    question: |
+      When fine-tuning a sequence-to-sequence model such as a translator, the tokenized targets of a
+      batch are padded to the same length, and the padding positions in `labels` are set to −100
+      rather than to the tokenizer's padding ID. Why −100?
     options:
-      - text: Pass the inputs as usual and the targets through the tokenizer's `text_target` argument.
+      - text: PyTorch's cross-entropy skips targets equal to −100, its default `ignore_index`
         correct: true
-      - text: Tokenize the inputs and the targets with two ordinary calls, treating both the same way.
-        why: Then the targets go through the input tokenizer; for a Marian translation model, a French target gets split into many meaningless pieces. Mark them as targets with `text_target`.
-      - text: As usual, we just have to tokenize the inputs.
-        why: Not in a sequence-to-sequence problem; the targets are also texts we need to convert into numbers!
-      - text: Concatenate each input with its target and tokenize the result as one sequence.
-        why: That is how data is prepared for a decoder-only (causal) language model; an encoder-decoder model takes the inputs and the labels separately.
+      - text: −100 is the ID that the vocabulary reserves for the padding token
+        why: The padding token has its own ordinary vocabulary ID; −100 is not a valid token ID at all, it is a flag for the loss function.
+      - text: It tells the decoder to stop generating text at that position
+        why: Generation stops at the end-of-sequence token; label values are only used to compute the training loss.
+      - text: It hides those positions from the encoder's self-attention
+        why: Attention is masked with the 0/1 `attention_mask`, not through the values in `labels`.
     explanation: |
-      Call the tokenizer as `tokenizer(inputs, text_target=targets, ...)`: the targets are processed as
-      targets (for a translation model, with the target-language tokenizer) and returned under
-      `labels` [^1]. Older versions of the course used the `as_target_tokenizer()` context manager
-      instead; it was deprecated in favour of `text_target` and removed in Transformers v5 [^2].
+      Padding positions are not real targets, so they must not count in the loss. The course's
+      seq2seq data collator pads the labels with −100 instead of the padding token "to make sure
+      those padded values are ignored in the loss computation" [^1]. This works because PyTorch's
+      `CrossEntropyLoss` skips every target equal to its `ignore_index`, which defaults to −100
+      [^2].
     references:
       - source: hf-llm-course
+        locator: Chapter 7.4 Translation — Fine-tuning the model with the Trainer API (data collation)
         url: https://huggingface.co/learn/llm-course/chapter7/4
-        locator: Chapter 7.4 Translation, "Processing the data"
-      - title: transformers v4.46.0 source, tokenization_utils_base.py
-        url: https://github.com/huggingface/transformers/blob/v4.46.0/src/transformers/tokenization_utils_base.py#L4109
-        locator: PreTrainedTokenizerBase.as_target_tokenizer, deprecation warning
-        quote: '`as_target_tokenizer` is deprecated and will be removed in v5 of Transformers.'
+      - title: 'PyTorch documentation: torch.nn.CrossEntropyLoss'
+        locator: Parameters — ignore_index (default −100)
+        url: https://pytorch.org/docs/stable/generated/torch.nn.CrossEntropyLoss.html
     source:
       id: hf-llm-course
       ref: chapter7/9#q7
       url: https://huggingface.co/learn/llm-course/chapter7/9
-    status: draft
+    status: reviewed
+    reviewed_by: claude
   - id: huggingface-022
     type: single
     difficulty: medium
@@ -890,7 +901,7 @@ questions:
       id: hf-llm-course
       ref: chapter4/6#q5
       url: https://huggingface.co/learn/llm-course/chapter4/6
-    status: draft
+    status: retired
   - id: huggingface-028
     type: multiple
     difficulty: easy
@@ -921,7 +932,7 @@ questions:
       id: hf-llm-course
       ref: chapter4/6#q6
       url: https://huggingface.co/learn/llm-course/chapter4/6
-    status: draft
+    status: retired
   - id: huggingface-029
     type: multiple
     difficulty: easy
