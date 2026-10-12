@@ -17,6 +17,9 @@ export const tagExamUrl = (tag: string): string => url(`tags/${tag}/exam/`);
 /** Timed test over a chosen mix of topics, tags and difficulties; `tag` preselects one tag. */
 export const mixedExamUrl = (tag?: string): string =>
   url(tag ? `exam/?tag=${encodeURIComponent(tag)}` : "exam/");
+/** Mixed test preset to these topics, all difficulties, no tag. */
+export const mixedExamTopicsUrl = (topics: readonly string[]): string =>
+  url(`exam/?topics=${topics.map(encodeURIComponent).join(",")}`);
 /** Questions answered wrong last time, to practise again. */
 export const mistakesUrl = (): string => url("mistakes/");
 export const progressUrl = (): string => url("progress/");

@@ -1,0 +1,189 @@
+---
+/**
+ * Exam prep for the owner's course CE6146 (src/lib/course.ts): practice and timed tests per
+ * lecture and exercise, then the bank topics for the syllabus weeks still to come.
+ */
+import I18nTitle from "../components/I18nTitle.astro";
+import T from "../components/T.astro";
+import Base from "../layouts/Base.astro";
+import { getBank } from "../lib/bank";
+import { COURSE_EXERCISES, COURSE_LECTURES, COURSE_TAG, COURSE_UPCOMING } from "../lib/course";
+import { planExam } from "../lib/exam";
+import { msg } from "../lib/i18n";
+import { getNotes } from "../lib/notes";
+import { mixedExamTopicsUrl, mixedExamUrl, tagExamUrl, tagUrl, topicExamUrl } from "../lib/url";
+
+const bank = await getBank();
+const notes = await getNotes(bank);
+const tagIds = (tag: string) => (bank.tags.get(tag) ?? []).map((q) => q.question.id);
+const courseIds = tagIds(COURSE_TAG);
+const courseTest = planExam(courseIds.length).count;
+const units = (list: typeof COURSE_LECTURES) =>
+  list
+    .map((u) => ({ ...u, ids: tagIds(u.tag) }))
+    .filter((u) => u.ids.length > 0)
+    .map((u) => ({ ...u, test: planExam(u.ids.length).count }));
+const groups = [
+  { id: "lectures", heading: msg("From the lecture slides"), units: units(COURSE_LECTURES) },
+  { id: "exercises", heading: msg("From the in-class exercises"), units: units(COURSE_EXERCISES) },
+];
+const weeks = COURSE_UPCOMING.map((w) => {
+  const topics = w.topics.flatMap((id) => {
+    const topic = bank.topics.get(id);
+    return topic && topic.questionIds.length > 0 ? [topic] : [];
+  });
+  return { ...w, topics, ids: topics.flatMap((t) => t.questionIds) };
+}).filter((w) => w.topics.length > 0);
+const upcomingTopics = weeks.flatMap((w) => w.topics.map((t) => t.id));
+
+const card = "relative h-full rounded-xl border border-line bg-surface px-4 py-3 shadow-xs";
+const button = "rounded-lg border border-line-strong px-4 py-2 text-sm font-medium hover:bg-subtle";
+---
+
+<Base
+  titleKey="CE6146 exam prep"
+  description="Exam prep for NCU CE6146 Introduction to Deep Learning: questions written from the lecture slides and in-class exercises, by lecture, plus the topics of the weeks still to come."
+>
+  <section class="max-w-2xl">
+    <h1 class="text-2xl font-semibold tracking-tight sm:text-3xl">
+      <T k="CE6146 exam prep" />
+    </h1>
+    <p class="mt-3 leading-relaxed text-muted">
+      <T k="Questions written from the lecture slides and in-class exercises of NCU CE6146 Introduction to Deep Learning — paraphrased, each also citing an open source — and the bank's topics for the weeks still to come." />
+    </p>
+    <p class="mt-3 text-sm text-muted tabular-nums">
+      <T k="{n} course questions" one="{n} course question" n={courseIds.length} />
+    </p>
+    <div class="mt-5 flex flex-wrap gap-2">
+      {
+        courseTest > 0 && (
+          <a href={tagExamUrl(COURSE_TAG)} class="rounded-lg bg-accent px-4 py-2 text-sm font-medium text-accent-ink hover:bg-accent-hover">
+            <T k="Timed test · {n} min" n={courseTest} />
+          </a>
+        )
+      }
+      <a href={mixedExamUrl(COURSE_TAG)} class={button}>
+        <T k="Longer test or by difficulty" />
+      </a>
+      <a href={tagUrl(COURSE_TAG)} class={button}>
+        <T k="Practise all" />
+      </a>
+    </div>
+  </section>
+
+  {
+    groups.map((group) => (
+      <section aria-labelledby={`ce6146-${group.id}`} class="mt-10">
+        <h2 id={`ce6146-${group.id}`} class="text-sm font-semibold tracking-wide text-muted uppercase">
+          <T k={group.heading} />
+        </h2>
+        <ul class="mt-3 grid gap-3 sm:grid-cols-2">
+          {group.units.map((u) => (
+            <li class={card}>
+              <a href={tagUrl(u.tag)} class="font-medium text-ink hover:text-accent">
+                <T k={u.label} />
+              </a>
+              <span class="mt-1 flex flex-wrap items-baseline justify-between gap-x-3 gap-y-1 text-sm text-muted">
+                <T k="{n} questions" one="{n} question" n={u.ids.length} />
+                {u.test > 0 && (
+                  <a href={tagExamUrl(u.tag)} class="-my-1 rounded-md px-1.5 py-1 font-medium text-accent underline-offset-2 hover:underline">
+                    <T k="Test · {n} min" n={u.test} />
+                  </a>
+                )}
+              </span>
+              <span class="mt-2 hidden items-center gap-2 text-xs text-muted" data-topic-progress data-ids={u.ids.join(" ")}>
+                <span class="h-1.5 flex-1 overflow-hidden rounded-full bg-subtle">
+                  <span class="block h-full rounded-full bg-accent" data-bar style="width: 0%"></span>
+                </span>
+                <span class="tabular-nums" data-label></span>
+              </span>
+            </li>
+          ))}
+        </ul>
+      </section>
+    ))
+  }
+
+  {
+    weeks.length > 0 && (
+      <section aria-labelledby="ce6146-upcoming" class="mt-10">
+        <h2 id="ce6146-upcoming" class="text-sm font-semibold tracking-wide text-muted uppercase">
+          <T k="Later weeks of the syllabus" />
+        </h2>
+        <p class="mt-2 max-w-2xl text-sm text-muted">
+          <T k="No questions from these slides yet — practise the bank's topics that cover them." />{" "}
+          <a href={mixedExamTopicsUrl(upcomingTopics)} class="font-medium text-accent underline-offset-2 hover:underline">
+            <T k="Mixed test over these topics" />
+          </a>
+        </p>
+        <ul class="mt-3 grid gap-3 sm:grid-cols-2">
+          {weeks.map((w) => {
+            const single = w.topics.length === 1 ? w.topics[0] : undefined;
+            return (
+            <li class={card}>
+              {single ? (
+                <a href={single.url} class="font-medium text-ink hover:text-accent">
+                  <I18nTitle topic={single.id} en={single.title} />
+                </a>
+              ) : (
+                <span class="font-medium text-ink"><T k={w.label} /></span>
+              )}
+              <ul class="mt-1 space-y-1 text-sm text-muted">
+                {w.topics.map((topic) => {
+                  const note = notes.get(topic.id);
+                  const test = planExam(topic.questionIds.length).count;
+                  return (
+                    <li class="flex flex-wrap items-baseline justify-between gap-x-3">
+                      <span>
+                        {!single && (
+                          <>
+                            <a href={topic.url} class="text-ink underline-offset-2 hover:text-accent hover:underline">
+                              <I18nTitle topic={topic.id} en={topic.title} />
+                            </a>
+                            {" · "}
+                          </>
+                        )}
+                        <span class="whitespace-nowrap">
+                          <T k="{n} questions" one="{n} question" n={topic.questionIds.length} />
+                        </span>
+                      </span>
+                      <span class="flex gap-x-3 whitespace-nowrap">
+                        {note && (
+                          <a href={`${topic.url}notes/`} class="-my-1 rounded-md py-1 font-medium text-accent underline-offset-2 hover:underline">
+                            <T k="Notes" />
+                          </a>
+                        )}
+                        {test > 0 && (
+                          <a href={topicExamUrl(topic.id)} class="-my-1 rounded-md py-1 font-medium text-accent underline-offset-2 hover:underline">
+                            <T k="Test · {n} min" n={test} />
+                          </a>
+                        )}
+                      </span>
+                    </li>
+                  );
+                })}
+              </ul>
+              <span class="mt-2 hidden items-center gap-2 text-xs text-muted" data-topic-progress data-ids={w.ids.join(" ")}>
+                <span class="h-1.5 flex-1 overflow-hidden rounded-full bg-subtle">
+                  <span class="block h-full rounded-full bg-accent" data-bar style="width: 0%"></span>
+                </span>
+                <span class="tabular-nums" data-label></span>
+              </span>
+            </li>
+            );
+          })}
+        </ul>
+      </section>
+    )
+  }
+
+  <p class="mt-10 max-w-2xl text-xs text-muted">
+    <T k="The course's slides and exercises are not published here: the questions only paraphrase them and cite slide numbers." />
+  </p>
+</Base>
+
+<script>
+  import { initTopicProgress } from "../lib/topic-progress";
+
+  initTopicProgress();
+</script>

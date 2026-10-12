@@ -249,6 +249,9 @@ learner picks.
 - **Link from a tag page.** A tag with more questions than a tag test uses (20) links to
   `/exam/?tag=<tag>`: the form opens with that tag, every topic and every difficulty (saved as
   the form's choices), and the query is removed from the address.
+- **Topic preset.** `/exam/?topics=<id>,<id>` (`mixedExamTopicsUrl`) opens the form with those
+  topics, no tag and every difficulty — the [CE6146 page](#ce6146-exam-prep) links one for the
+  syllabus weeks still to come.
 - **Pool** (`selectionPool` in src/lib/catalog.ts): questions of the chosen topics that carry
   at least one chosen tag (when any is chosen) and whose difficulty is chosen; a question
   without a difficulty is drawn only when all three are chosen. **Draw:** `drawIds` picks N ids uniformly at random, the page fetches them, and the
@@ -310,6 +313,18 @@ it: results and review cards keep the more recent one per question (by `at` / la
 test histories are joined (latest 10 attempts, the better best), and settings and mixed-test
 choices are taken only when this browser has none. A line says what was imported; files that
 are not ml-recall backups, or from a newer format, are rejected with a message.
+
+### CE6146 exam prep
+
+`/ce6146/` (`src/pages/ce6146.astro`, data in `src/lib/course.ts`): the owner's course
+*Introduction to Deep Learning* (NCU). Questions written from its slides and in-class exercises
+(source `ncu-intro-dl`) carry the tag `ce6146` plus `ce6146-l01`… per lecture and
+`ce6146-ex01`… per exercise. The page has a timed test and a mixed-test link over all of them,
+one card per lecture and exercise (practice = the tag page, a tag test, a progress bar), and the
+later syllabus weeks mapped to bank topics (`COURSE_UPCOMING`, with notes and test links and a
+[topic preset](#mixed-tests) over them). When questions from a new lecture's slides are added,
+move its week from `COURSE_UPCOMING` to `COURSE_LECTURES`. Linked from the header and the home
+page. Progress bars: `src/lib/topic-progress.ts` (shared with the home page).
 
 ## Search and question pages
 
@@ -463,7 +478,8 @@ render on a white card in both themes, lazy-loaded, with `alt` and an optional c
 
 The site is built for `https://mtoan651.github.io` with `base: '/ml-recall'` and
 `trailingSlash: 'always'` (`astro.config.mjs`). Build internal links with `url()`,
-`topicUrl()`, `tagUrl()`, `topicExamUrl()`, `tagExamUrl()`, `mixedExamUrl()`, `mistakesUrl()`,
+`topicUrl()`, `tagUrl()`, `topicExamUrl()`, `tagExamUrl()`, `mixedExamUrl()`,
+`mixedExamTopicsUrl()`, `mistakesUrl()`,
 `progressUrl()` and `questionDataUrl()` from `src/lib/url.ts`, never with a hard-coded `/…`.
 
 ## Deploy
@@ -497,6 +513,7 @@ Actions**.
 | Offline support, install | `tools/web/sw.template.js`, `tools/web/build-sw.mjs`, `src/pages/manifest.webmanifest.ts`, `src/pages/offline.astro`, icons in `public/`; registration in `Base.astro` |
 | Export / import of progress | `src/lib/backup.ts` (+ `backup.test.ts`); panel in `src/components/Progress.tsx` |
 | Spaced repetition: cards, due, forecast, rating; review UI; due badge | `src/lib/srs.ts` (+ `srs.test.ts`), `src/lib/srs-due.ts`; `src/components/Review.tsx`, page `review.astro`; badge script in `Base.astro` |
+| CE6146 page: lectures, exercises, later weeks | `src/lib/course.ts`, `src/pages/ce6146.astro` |
 | Figure zoom, picture-option grid | `src/components/Figure.tsx`; `OptionList` in `QuestionCard.tsx` |
 | Short-answer format hints | `answerHint()` in `src/lib/grading.ts`; shown by `QuestionCard.tsx` |
 | Vietnamese interface: strings, topic titles, switch, no-flash rules | `src/lib/i18n-vi.ts` (strings), `src/lib/i18n-titles.ts` (titles), `src/lib/i18n.ts` (`t`, `tn`, language choice), `src/lib/use-lang.ts` (islands), `src/lib/i18n-dom.ts` + `T.astro` / `I18nTitle.astro` (Astro text), switch and inline script in `Base.astro`, CSS in `global.css`; tests in `i18n.test.ts` |

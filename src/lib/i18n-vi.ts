@@ -104,6 +104,37 @@ export const VI: Readonly<Record<string, string>> = {
   "The search index is created by": "Chỉ mục tìm kiếm được tạo bởi",
   "; it is not available in": "; không có sẵn khi chạy",
 
+  // ------------------------------------------------------------------ CE6146 exam prep
+  "CE6146 exam prep": "Ôn thi CE6146",
+  "Questions written from the lecture slides and in-class exercises of NCU CE6146 Introduction to Deep Learning — paraphrased, each also citing an open source — and the bank's topics for the weeks still to come.":
+    "Câu hỏi soạn từ slide bài giảng và bài tập trên lớp của môn CE6146 Nhập môn học sâu (NCU) — được diễn đạt lại, mỗi câu kèm một nguồn mở — cùng các chủ đề trong ngân hàng cho những tuần học tiếp theo.",
+  "{n} course questions": "{n} câu hỏi của môn học",
+  "{n} course question": "{n} câu hỏi của môn học",
+  "Timed test · {n} min": "Kiểm tra tính giờ · {n} phút",
+  "Longer test or by difficulty": "Đề dài hơn hoặc theo độ khó",
+  "Practise all": "Luyện tập tất cả",
+  "From the lecture slides": "Từ slide bài giảng",
+  "From the in-class exercises": "Từ bài tập trên lớp",
+  "Lecture 1 · Deep learning basics": "Bài 1 · Cơ bản về học sâu",
+  "Lecture 2 · Feedforward neural networks": "Bài 2 · Mạng truyền xuôi",
+  "Lecture 3 · Optimization and regularization": "Bài 3 · Tối ưu hóa và điều chuẩn",
+  "Exercise 1": "Bài tập 1",
+  "Exercise 2": "Bài tập 2",
+  "Exercise 3": "Bài tập 3",
+  "Later weeks of the syllabus": "Các tuần sau trong đề cương",
+  "No questions from these slides yet — practise the bank's topics that cover them.":
+    "Chưa có câu hỏi từ slide của các tuần này — hãy luyện các chủ đề tương ứng trong ngân hàng.",
+  "Mixed test over these topics": "Kiểm tra tổng hợp các chủ đề này",
+  Notes: "Ghi chú",
+  "Convolutional neural networks": "Mạng nơ-ron tích chập",
+  "Recurrent neural networks": "Mạng nơ-ron hồi tiếp",
+  "Attention and transformers": "Cơ chế tập trung và Transformer",
+  "Graph neural networks": "Mạng nơ-ron đồ thị",
+  "Autoencoders and GANs": "Bộ tự mã hóa và GAN",
+  "Explainable AI": "AI khả giải thích",
+  "Reinforcement learning": "Học tăng cường",
+  "The course's slides and exercises are not published here: the questions only paraphrase them and cite slide numbers.":
+    "Slide và bài tập của môn học không được đăng ở đây: các câu hỏi chỉ diễn đạt lại và ghi số slide.",
   // ------------------------------------------------------------------ practice (Quiz)
   "Practice: {scope}": "Luyện tập: {scope}",
   Done: "Hoàn thành",
