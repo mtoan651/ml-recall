@@ -19,6 +19,13 @@ Quizzes from <https://github.com/huggingface/deep-rl-class>,
 <https://github.com/huggingface/mcp-course>. Licensed under the Apache License, Version 2.0 —
 full text in [LICENSES/Apache-2.0.txt](LICENSES/Apache-2.0.txt).
 
+## Build a Large Language Model (From Scratch) — `llms-from-scratch`
+
+Code from <https://github.com/rasbt/LLMs-from-scratch> (Copyright 2023-2026 Sebastian Raschka),
+adapted into code-reading questions: short excerpts, shortened or with changed inputs (the book's
+text is not used). Licensed under the Apache License, Version 2.0 — full text in
+[LICENSES/Apache-2.0.txt](LICENSES/Apache-2.0.txt).
+
 ## Kaggle Learn — `kaggle-learn`
 
 Exercises and tutorial notebooks from <https://github.com/Kaggle/learntools> (the Kaggle Learn
@@ -185,7 +192,8 @@ Beginners* and *Generative AI with JavaScript* (`ms-genai-for-beginners`,
 `ms-ai-agents-for-beginners`, `ms-genai-javascript`, © Microsoft Corporation); *Learn PyTorch
 for Deep Learning* (`learn-pytorch`, © Daniel Bourke); *Spinning Up in Deep RL*
 (`spinning-up`, © OpenAI); Udacity *deep-learning-v2-pytorch* (`udacity-dl-pytorch`,
-© Udacity); Gustave Cortal's *Natural Language Processing* (`cortal-nlp`).
+© Udacity); Gustave Cortal's *Natural Language Processing* (`cortal-nlp`); Sasha Rush's
+*Tensor Puzzles* (`tensor-puzzles`, © 2022 Sasha Rush; puzzle statements, solutions written here).
 
 ## NonCommercial sources (CC BY-NC-SA)
 

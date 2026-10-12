@@ -1129,3 +1129,112 @@ questions:
       ref: fine-tuning-027
     status: reviewed
     reviewed_by: claude
+  - id: fine-tuning-028
+    type: short_answer
+    difficulty: hard
+    tags:
+      - instruction-tuning
+      - padding
+      - ignore-index
+      - llms-from-scratch
+    question: |
+      A simplified version of the book's collate function for instruction fine-tuning. What does the
+      last line print?
+
+      ```python
+      pad_token_id, ignore_index = 50256, -100
+      batch = [[0, 1, 2, 3, 4], [5, 6], [7, 8, 9]]           # token IDs of 3 examples
+      batch_max_length = max(len(item) + 1 for item in batch)
+      targets_lst = []
+      for item in batch:
+          padded = item + [pad_token_id] * (batch_max_length - len(item))
+          targets = torch.tensor(padded[1:])                  # shift by one
+          indices = torch.nonzero(targets == pad_token_id).squeeze()
+          if indices.numel() > 1:
+              targets[indices[1:]] = ignore_index             # keep the first pad token
+          targets_lst.append(targets)
+      targets_tensor = torch.stack(targets_lst)
+      print((targets_tensor == ignore_index).sum().item())
+      ```
+    answer:
+      numeric: 5
+      tolerance: 0
+      hint: an integer
+      model: '5: none in the first row, 3 in the second, 2 in the third.'
+    explanation: |
+      `batch_max_length` is 6, so every example is padded to 6 tokens and its target (shifted by one)
+      has 5 entries: `[1, 2, 3, 4, P]`, `[6, P, P, P, P]` and `[8, 9, P, P, P]`, with
+      `P = 50256` [^1]. In each row the *first* `P` stays: it is the `<|endoftext|>` the model must
+      learn to emit at the end of a response. Every later `P` becomes −100, which gives 0 + 3 + 2 = 5.
+      `F.cross_entropy` skips targets equal to its `ignore_index`, whose default is −100, so padding
+      adds nothing to the loss [^2].
+    references:
+      - source: llms-from-scratch
+        locator: pkg/llms_from_scratch/ch07.py, custom_collate_fn (lines 154-197)
+        url: https://github.com/rasbt/LLMs-from-scratch/blob/cdbd33e6d57a71e20ea31434841095fac50cecd8/pkg/llms_from_scratch/ch07.py#L154-L197
+      - title: 'PyTorch documentation: torch.nn.functional.cross_entropy'
+        locator: Parameter ignore_index
+        url: https://docs.pytorch.org/docs/stable/generated/torch.nn.functional.cross_entropy.html
+    source:
+      id: llms-from-scratch
+      ref: ch07/collate-ignore-index
+      url: https://github.com/rasbt/LLMs-from-scratch/blob/cdbd33e6d57a71e20ea31434841095fac50cecd8/pkg/llms_from_scratch/ch07.py#L154-L197
+    status: reviewed
+    reviewed_by: claude
+  - id: fine-tuning-029
+    type: short_answer
+    difficulty: medium
+    tags:
+      - lora
+      - peft
+      - parameter-count
+      - llms-from-scratch
+    question: |
+      `LinearWithLoRA(linear, rank, alpha)` keeps the given `linear` layer and adds a LoRA branch with
+      two new trainable matrices, `A` of shape `(in_features, rank)` and `B` of shape
+      `(rank, out_features)`. What does the last line print?
+
+      ```python
+      def replace_linear_with_lora(model, rank, alpha):
+          for name, module in model.named_children():
+              if isinstance(module, nn.Linear):
+                  setattr(model, name, LinearWithLoRA(module, rank, alpha))
+              else:
+                  replace_linear_with_lora(module, rank, alpha)
+
+      model = nn.Sequential(
+          nn.Embedding(100, 16),
+          nn.Sequential(nn.Linear(16, 32), nn.ReLU(), nn.Linear(32, 16)),
+          nn.Linear(16, 100),
+      )
+      for p in model.parameters():
+          p.requires_grad = False
+      replace_linear_with_lora(model, rank=4, alpha=8)
+      print(sum(p.numel() for p in model.parameters() if p.requires_grad))
+      ```
+    answer:
+      numeric: 848
+      tolerance: 0
+      hint: an integer
+      model: $4(16 + 32) + 4(32 + 16) + 4(16 + 100) = 848$
+    explanation: |
+      The base weights were frozen *before* the replacement, so only the new `A` and `B` matrices are
+      trainable. The function recurses into child modules, so it also reaches the two `nn.Linear`
+      layers inside the nested `Sequential`; the embedding is not a `Linear` and is left alone [^1].
+      Each wrapped layer adds $r \cdot (\text{in} + \text{out})$ parameters: $4 \cdot 48 = 192$,
+      $4 \cdot 48 = 192$ and $4 \cdot 116 = 464$, in total 848, while the 4,372 original parameters
+      stay frozen. The update `A @ B` is an in × out matrix of rank at most $r$ (written
+      $\Delta W = BA$ in the LoRA paper), so a small rank keeps it cheap to train [^2].
+    references:
+      - source: llms-from-scratch
+        locator: pkg/llms_from_scratch/appendix_e.py, LoRALayer, LinearWithLoRA, replace_linear_with_lora (lines 10-44)
+        url: https://github.com/rasbt/LLMs-from-scratch/blob/cdbd33e6d57a71e20ea31434841095fac50cecd8/pkg/llms_from_scratch/appendix_e.py#L10-L44
+      - title: 'LoRA: Low-Rank Adaptation of Large Language Models (Hu et al., 2021)'
+        locator: Sec. 4.1 Low-Rank-Parametrized Update Matrices
+        url: https://arxiv.org/abs/2106.09685
+    source:
+      id: llms-from-scratch
+      ref: appendix-E/replace-linear-with-lora-count
+      url: https://github.com/rasbt/LLMs-from-scratch/blob/cdbd33e6d57a71e20ea31434841095fac50cecd8/pkg/llms_from_scratch/appendix_e.py#L10-L44
+    status: reviewed
+    reviewed_by: claude

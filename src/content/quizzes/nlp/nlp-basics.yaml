@@ -783,3 +783,588 @@ questions:
       url: https://archive.nptel.ac.in/content/storage2/courses/downloads_new/106102576/noc25_cs45_assignment_Week_1.png
     status: reviewed
     reviewed_by: claude
+  - id: nlp-basics-023
+    type: single
+    difficulty: easy
+    tags:
+      - lemmatization
+      - stemming
+      - normalization
+    question: |
+      A lemmatizer maps the adjective "better" to "good", while the Porter stemmer returns
+      "better" unchanged. What does the lemmatizer use that a suffix-stripping stemmer does not?
+    options:
+      - text: A dictionary of word forms plus the word's part of speech in context
+        correct: true
+      - text: A longer list of suffixes, so that more endings can be cut off
+        why: No suffix rule turns "better" into "good"; the link is irregular and must be looked up in a dictionary.
+      - text: The character n-grams of the word, compared with those of its neighbours
+        why: Character n-grams are a subword representation; "better" and "good" share none, so they could not link the two.
+      - text: The corpus frequency of the word, replacing rare forms by frequent ones
+        why: Frequency says nothing about which forms belong to the same lemma.
+    explanation: |
+      A lemma is the dictionary form that groups the inflected forms of a word, and finding it
+      depends on identifying the word's part of speech and meaning in context [^1]. "better" → "good"
+      is an irregular form, so the link is missed by stemming and needs a dictionary look-up [^1].
+      A stemmer works on a single word with spelling rules only, without context, so it is
+      faster and simpler but cannot make such links; the Porter stemmer leaves "better" as it is [^1][^2].
+    references:
+      - title: 'Wikipedia: Lemmatization'
+        url: https://en.wikipedia.org/wiki/Lemmatization#Description
+        locator: Introduction and Description ("better" has "good" as its lemma)
+      - title: 'Wikipedia: Stemming'
+        url: https://en.wikipedia.org/wiki/Stemming#Examples
+        locator: Introduction and Examples (rule-based suffix stripping, Porter stemmer)
+    source:
+      id: original
+      ref: nlp-basics-023
+    status: reviewed
+    reviewed_by: claude
+  - id: nlp-basics-024
+    type: single
+    difficulty: medium
+    tags:
+      - stemming
+      - porter-stemmer
+      - overstemming
+      - information-retrieval
+    question: |
+      A search engine stems every query and document word with the Porter stemmer before matching.
+      Which pair of words would it wrongly treat as the same term (an *overstemming* error)?
+    options:
+      - text: '"generous" and "general"'
+        correct: true
+      - text: '"running" and "ran"'
+        why: Porter gives "run" and "ran", so these forms of the same verb are *not* conflated; that is understemming, the opposite error.
+      - text: '"connected" and "connecting"'
+        why: Both become "connect", which is a correct conflation of two forms of one verb.
+      - text: '"alumnus" and "alumni"'
+        why: Porter gives "alumnu" and "alumni", so the related forms stay apart; that is understemming.
+    explanation: |
+      Overstemming conflates two words that should stay apart (a false positive), and
+      understemming fails to conflate forms of the same word (a false negative); reducing one error
+      type tends to increase the other [^1]. The Porter stemmer strips suffixes by rule, and
+      "generous" and "general" both come out as "gener", so a query for one retrieves the other.
+      "running"/"ran" ("run"/"ran") and "alumnus"/"alumni" ("alumnu"/"alumni") are understemming
+      cases, while "connected"/"connecting" → "connect" is a correct match [^1]. Stems need not be
+      real words, which is why outputs such as "gener" look odd [^1].
+    references:
+      - title: 'Wikipedia: Stemming'
+        url: https://en.wikipedia.org/wiki/Stemming#Error_metrics
+        locator: Error metrics (overstemming and understemming); Examples
+    source:
+      id: original
+      ref: nlp-basics-024
+    status: reviewed
+    reviewed_by: claude
+  - id: nlp-basics-025
+    type: short_answer
+    difficulty: medium
+    tags:
+      - regular-expressions
+      - word-boundary
+      - precision-recall
+    question: |
+      Python's `re.findall` returns all non-overlapping matches of a pattern. For
+
+      ```python
+      s = "Then the other one is there, the end. The rest?"
+      ```
+
+      `re.findall(r"[tT]he", s)` returns {{1}} matches, and `re.findall(r"\b[tT]he\b", s)` returns
+      {{2}} matches.
+    answer:
+      blanks:
+        - numeric: 6
+          tolerance: 0
+          hint: a whole number
+        - numeric: 3
+          tolerance: 0
+          hint: a whole number
+      model: '`[tT]he` also matches inside "Then", "other" and "there" (6 matches); with `\b` on both sides only "the", "the" and "The" remain (3).'
+    explanation: |
+      Without anchors, `[tT]he` matches the three letters wherever they occur, including inside
+      "Then", "other" and "there": 6 matches, 3 of them false positives. `\b` matches a word
+      boundary, so `\b[tT]he\b` keeps only the stand-alone words "the", "the" and "The" [^1].
+      The character class `[tT]` already avoids the false negative "The" that `the` alone would
+      miss. Removing false positives raises precision and removing false negatives raises recall,
+      and writing a pattern usually means trading one against the other [^1]. `findall` scans the
+      string from left to right and returns the non-overlapping matches [^2].
+    references:
+      - title: Jurafsky & Martin, Speech and Language Processing, 3rd ed. draft (Aug 2026), Ch. 2 Words and Tokens
+        url: https://web.stanford.edu/~jurafsky/slp3/2.pdf
+        locator: Sec. 2.6.3 Anchors and Boundaries; Sec. 2.6.5 A Simple Example
+      - title: 'Python documentation: re — Regular expression operations'
+        url: https://docs.python.org/3/library/re.html#re.findall
+        locator: Module contents, re.findall
+    source:
+      id: original
+      ref: nlp-basics-025
+    status: reviewed
+    reviewed_by: claude
+  - id: nlp-basics-026
+    type: short_answer
+    difficulty: hard
+    tags:
+      - regular-expressions
+      - tokenization
+      - abbreviations
+      - alternation
+    question: |
+      A regex tokenizer is meant to keep abbreviations such as "U.S.A." as one token:
+
+      ```python
+      import re
+      t = "The U.S.A. sent 2.5 tons."
+      print(len(re.findall(r"\w+|(?:[A-Z]\.)+|[^\w\s]", t)))
+      ```
+
+      What does it print?
+    answer:
+      numeric: 13
+      tolerance: 0
+      hint: a whole number
+      model: "`['The', 'U', '.', 'S', '.', 'A', '.', 'sent', '2', '.', '5', 'tons', '.']`: 13 tokens"
+    explanation: |
+      In Python, the branches of `A|B` are tried in order from the left, and the first branch that
+      matches wins, even when a later branch would match more text [^1]. At "U" the first branch `\w+` already matches the single letter, so `(?:[A-Z]\.)+` never gets
+      a chance; the periods then come out one by one through `[^\w\s]`, and "2.5" splits the same
+      way. The result is `The U . S . A . sent 2 . 5 tons .`, 13 tokens. Putting the abbreviation
+      branch first keeps `'U.S.A.'` (8 tokens), and a branch for numbers such as `\d+(?:\.\d+)?`
+      placed before `\w+` would also keep "2.5". This is why the NLTK-style regex tokenizer in the
+      textbook puts its abbreviation branch first, before the branch for ordinary words [^2].
+    references:
+      - title: 'Python documentation: re — Regular expression operations'
+        url: https://docs.python.org/3/library/re.html#regular-expression-syntax
+        locator: Regular expression syntax, `|` (alternation)
+      - title: Jurafsky & Martin, Speech and Language Processing, 3rd ed. draft (Aug 2026), Ch. 2 Words and Tokens
+        url: https://web.stanford.edu/~jurafsky/slp3/2.pdf
+        locator: Sec. 2.8 Rule-based Tokenization (Fig. 2.16, regex tokenizer with abbreviations first)
+    source:
+      id: original
+      ref: nlp-basics-026
+    status: reviewed
+    reviewed_by: claude
+  - id: nlp-basics-027
+    type: short_answer
+    difficulty: medium
+    tags:
+      - edit-distance
+      - levenshtein
+      - dynamic-programming
+    question: |
+      What is the Levenshtein distance between "rain" and "shine", where each insertion,
+      deletion and substitution of one letter costs 1?
+    answer:
+      numeric: 3
+      tolerance: 0
+      hint: a whole number
+      model: 'rain → sain (r→s) → shin (a→h) → shine (insert e): 3 edits'
+    explanation: |
+      The Levenshtein distance is the minimum number of single-symbol insertions, deletions and
+      substitutions that turn one string into the other [^1]. Aligning r–s, a–h, i–i, n–n and
+      inserting the final e uses two substitutions and one insertion, so the distance is at most 3.
+      It cannot be less: every letter that is not kept as a match costs at least one edit, an
+      alignment needs at least 5 columns for the 5 letters of "shine", and at most 2 letters can be
+      kept, since the longest common subsequence of the two words is "in"; so at least
+      $5 - 2 = 3$ edits are needed. The dynamic program $D(i, j) = \min\{D(i-1, j) + 1,\ D(i, j-1) + 1,\ D(i-1, j-1) + \delta\}$,
+      with $\delta = 0$ when the two letters match and 1 otherwise, fills the table and also returns
+      3 [^1][^2].
+    references:
+      - title: 'Wikipedia: Levenshtein distance'
+        url: https://en.wikipedia.org/wiki/Levenshtein_distance#Definition
+        locator: Definition (recurrence and kitten/sitting example)
+      - title: Jurafsky & Martin, Speech and Language Processing, 3rd ed. draft (Aug 2026), Ch. 2 Words and Tokens
+        url: https://web.stanford.edu/~jurafsky/slp3/2.pdf
+        locator: Sec. 2.9 Minimum Edit Distance and Sec. 2.9.1 The Minimum Edit Distance Algorithm
+    source:
+      id: original
+      ref: nlp-basics-027
+    status: reviewed
+    reviewed_by: claude
+  - id: nlp-basics-028
+    type: short_answer
+    difficulty: hard
+    tags:
+      - edit-distance
+      - levenshtein
+      - longest-common-subsequence
+    question: |
+      In one version of Levenshtein distance, insertions and deletions cost 1 and a substitution
+      costs 2 (copying an identical letter costs 0). What is the distance between "listen" and
+      "silent" under these costs?
+    answer:
+      numeric: 6
+      tolerance: 0
+      hint: a whole number
+      model: A substitution is never cheaper than a deletion plus an insertion, so the distance is $m + n - 2\,\mathrm{LCS} = 6 + 6 - 2 \cdot 3 = 6$.
+    explanation: |
+      This weighting appears in the textbook version of the minimum edit distance algorithm: with a
+      substitution costing 2, it is equivalent to allowing only insertions and deletions [^1]. With
+      insertions and deletions only, the distance between strings of lengths $m$ and $n$ is
+      $m + n - 2L$, where $L$ is the length of their longest common subsequence [^2]. "listen" and
+      "silent" have $L = 3$ (for example "len"), so the distance is $6 + 6 - 6 = 6$: delete the three
+      letters outside the common subsequence and insert three. With unit substitution cost the
+      distance would be only 4, which shows that the answer depends on the cost model [^1][^2].
+    references:
+      - title: Jurafsky & Martin, Speech and Language Processing, 3rd ed. draft (Aug 2026), Ch. 2 Words and Tokens
+        url: https://web.stanford.edu/~jurafsky/slp3/2.pdf
+        locator: Sec. 2.9 Minimum Edit Distance (the two Levenshtein versions, Eq. 2.20)
+      - title: 'Wikipedia: Levenshtein distance'
+        url: https://en.wikipedia.org/wiki/Levenshtein_distance#Properties_and_bounds
+        locator: Properties and bounds (insertion/deletion-only distance m + n − 2L)
+    source:
+      id: original
+      ref: nlp-basics-028
+    status: reviewed
+    reviewed_by: claude
+  - id: nlp-basics-029
+    type: true_false
+    difficulty: medium
+    tags:
+      - edit-distance
+      - levenshtein
+      - hamming-distance
+    question: |
+      True or false: for two words of the same length, the Levenshtein distance (unit costs) always
+      equals the number of positions at which they differ.
+    options:
+      - text: 'True'
+        why: Counting differing positions (the Hamming distance) only allows substitutions; insertions and deletions can be cheaper, as "stop" vs "tops" shows.
+      - text: 'False'
+        correct: true
+    explanation: |
+      The number of differing positions is the Hamming distance, which only uses substitutions. For
+      equal lengths it is an upper bound on the Levenshtein distance, not always equal to it [^1].
+      "stop" and "tops" differ in all 4 positions, yet deleting the leading s and appending an s
+      turns one into the other in 2 edits. Levenshtein distance can shift letters by combining an
+      insertion with a deletion, which the position-by-position count cannot [^1][^2].
+    references:
+      - title: 'Wikipedia: Levenshtein distance'
+        url: https://en.wikipedia.org/wiki/Levenshtein_distance#Properties_and_bounds
+        locator: Properties and bounds (Hamming distance as upper bound, flaw/lawn example)
+      - title: Jurafsky & Martin, Speech and Language Processing, 3rd ed. draft (Aug 2026), Ch. 2 Words and Tokens
+        url: https://web.stanford.edu/~jurafsky/slp3/2.pdf
+        locator: Sec. 2.9 Minimum Edit Distance (alignment with insertions, deletions, substitutions)
+    source:
+      id: original
+      ref: nlp-basics-029
+    status: reviewed
+    reviewed_by: claude
+  - id: nlp-basics-030
+    type: short_answer
+    difficulty: easy
+    tags:
+      - n-grams
+      - bigrams
+      - types-and-tokens
+    question: |
+      The text "a rose is a rose is a rose" is split on spaces into 8 tokens. It contains {{1}}
+      bigram tokens (occurrences of adjacent word pairs), which belong to {{2}} distinct bigram types.
+    answer:
+      blanks:
+        - numeric: 7
+          tolerance: 0
+          hint: a whole number
+        - numeric: 3
+          tolerance: 0
+          hint: a whole number
+      model: 8 − 1 = 7 bigram tokens; the types are "a rose" (3 times), "rose is" (2) and "is a" (2).
+    explanation: |
+      An n-gram is a run of $n$ adjacent tokens [^1]. One starts at every position except the last
+      $n - 1$, so a text of $T$ tokens has $T - n + 1$ n-gram occurrences: $8 - 2 + 1 = 7$ bigrams.
+      Counting types instead of tokens groups repeated n-grams: "a rose" occurs 3 times, "rose is"
+      and "is a" twice each, so there are only 3 distinct bigrams. The same type/instance distinction
+      is used for words, where counting the distinct word types gives the vocabulary size [^2].
+    references:
+      - title: 'Wikipedia: n-gram'
+        url: https://en.wikipedia.org/wiki/N-gram
+        locator: Introduction (definition of an n-gram)
+      - title: Jurafsky & Martin, Speech and Language Processing, 3rd ed. draft (Aug 2026), Ch. 2 Words and Tokens
+        url: https://web.stanford.edu/~jurafsky/slp3/2.pdf
+        locator: Sec. 2.1 Words (word types vs instances)
+    source:
+      id: original
+      ref: nlp-basics-030
+    status: reviewed
+    reviewed_by: claude
+  - id: nlp-basics-031
+    type: short_answer
+    difficulty: easy
+    tags:
+      - zipfs-law
+      - word-frequency
+    question: |
+      In a corpus whose word frequencies follow Zipf's law with exponent 1 (frequency inversely
+      proportional to rank), the most frequent word occurs 12,000 times. How many occurrences does
+      the law predict for the 8th most frequent word?
+    answer:
+      numeric: 1500
+      tolerance: 0
+      hint: a whole number, no separators
+      model: $n_8 = n_1 / 8 = 12000 / 8 = 1500$
+    explanation: |
+      Zipf's law states that the frequency of the $i$-th most frequent word is
+      $n_i \propto 1 / i^{\alpha}$ [^1]. With $\alpha = 1$ the most common word occurs about twice
+      as often as the second, three times as often as the third, and so on [^2], so
+      $n_8 = 12000 / 8 = 1500$. On a log–log plot of frequency against rank this is a straight line
+      with slope $-\alpha$; real corpora follow it roughly, with deviations at the head and the
+      tail [^1][^2].
+    references:
+      - source: d2l
+        url: https://d2l.ai/chapter_recurrent-neural-networks/text-sequence.html#exploratory-language-statistics
+        locator: Sec. 9.2.5 Exploratory Language Statistics (Eqs. 9.2.1–9.2.2)
+      - title: "Wikipedia: Zipf's law"
+        url: https://en.wikipedia.org/wiki/Zipf%27s_law#Word_frequencies_in_human_languages
+        locator: Introduction; Word frequencies in human languages
+    source:
+      id: original
+      ref: nlp-basics-031
+    status: reviewed
+    reviewed_by: claude
+  - id: nlp-basics-032
+    type: short_answer
+    difficulty: medium
+    tags:
+      - heaps-law
+      - vocabulary-size
+      - types-and-tokens
+    question: |
+      Heaps' (Herdan's) law models the vocabulary size as $|V| = kN^{\beta}$ for a text of $N$
+      tokens. A corpus of 1 million tokens contains 40,000 word types. If $\beta = 0.5$, how many
+      word types do you expect in 100 million tokens of similar text?
+    answer:
+      numeric: 400000
+      tolerance: 0
+      hint: a whole number, no separators
+      model: $|V_2| = |V_1| \cdot (N_2/N_1)^{\beta} = 40000 \cdot 100^{0.5} = 400000$
+    explanation: |
+      Under $|V| = kN^{\beta}$, the constant $k$ cancels in a ratio:
+      $|V_2|/|V_1| = (N_2/N_1)^{\beta} = 100^{0.5} = 10$, so 40,000 types grow to 400,000 [^1].
+      Reported values of $\beta$ lie roughly between 0.4 and 0.6, so the vocabulary grows a bit
+      like the square root of the text length: it never stops growing, but each new token adds
+      fewer new types [^1][^2]. This open-ended growth is one reason word-level vocabularies run
+      into unknown words and modern tokenizers use subwords [^1].
+    references:
+      - title: Jurafsky & Martin, Speech and Language Processing, 3rd ed. draft (Aug 2026), Ch. 2 Words and Tokens
+        url: https://web.stanford.edu/~jurafsky/slp3/2.pdf
+        locator: Sec. 2.1 Words (Herdan's / Heaps' law, Eq. 2.5)
+      - title: "Wikipedia: Heaps's law"
+        url: https://en.wikipedia.org/wiki/Heaps%27s_law
+        locator: Introduction (K and β for English corpora; diminishing returns)
+    source:
+      id: original
+      ref: nlp-basics-032
+    status: reviewed
+    reviewed_by: claude
+  - id: nlp-basics-033
+    type: single
+    difficulty: medium
+    tags:
+      - tf-idf
+      - term-weighting
+    question: |
+      A corpus has three documents:
+
+      - d1: "the cat sat on the mat"
+      - d2: "the dog sat on the log"
+      - d3: "the cat chased the dog"
+
+      Weights are $\textrm{tf-idf}(t, d) = \mathrm{count}(t, d) \cdot \log_{10}(N/\mathrm{df}_t)$,
+      with $N = 3$ and $\mathrm{df}_t$ the number of documents that contain $t$. Which word of d1 gets
+      the highest weight?
+    options:
+      - text: mat
+        correct: true
+      - text: the
+        why: '"the" occurs twice in d1 but appears in all 3 documents, so its idf is $\log_{10}(3/3) = 0$ and its weight is 0.'
+      - text: cat
+        why: '"cat" also occurs in d3, so its weight is $1 \cdot \log_{10}(3/2) \approx 0.18$, lower than that of "mat".'
+      - text: sat
+        why: '"sat" also occurs in d2, so its weight is $\log_{10}(3/2) \approx 0.18$, lower than that of "mat".'
+    explanation: |
+      The idf rewards words that occur in few documents and gives weight 0 to a word that occurs in
+      every document [^1][^2]. In d1, "the" has the highest count but $\mathrm{df} = 3$, so
+      $\mathrm{idf} = 0$. "cat", "sat" and "on" each occur once and in 2 documents:
+      $\log_{10}(3/2) \approx 0.176$. "mat" occurs once and only in d1:
+      $\log_{10}(3/1) \approx 0.477$, the highest weight. tf-idf thus picks out the word that best
+      distinguishes d1 from the other documents [^1].
+    references:
+      - title: Jurafsky & Martin, Speech and Language Processing, 3rd ed. draft (Aug 2026), Ch. 11 Information Retrieval and Retrieval-Augmented Generation
+        url: https://web.stanford.edu/~jurafsky/slp3/11.pdf
+        locator: 'Sec. 11.1.2 Term weighting: tf-idf and BM25 (Eqs. 11.5–11.6)'
+      - title: 'Wikipedia: tf–idf'
+        url: https://en.wikipedia.org/wiki/Tf%E2%80%93idf#Example_of_tf%E2%80%93idf
+        locator: Inverse document frequency; Example of tf–idf
+    source:
+      id: original
+      ref: nlp-basics-033
+    status: reviewed
+    reviewed_by: claude
+  - id: nlp-basics-034
+    type: short_answer
+    difficulty: medium
+    tags:
+      - tf-idf
+      - scikit-learn
+      - smoothing
+    question: |
+      scikit-learn's `TfidfVectorizer` (default `smooth_idf=True`) computes
+      $\mathrm{idf}(t) = \ln\frac{1 + n}{1 + \mathrm{df}(t)} + 1$, where $n$ is the number of
+      documents. It is fitted on the three documents "the cat sat on the mat", "the dog sat on the
+      log" and "the cat chased the dog". The idf of "the" is {{1}} and the idf of "cat" is {{2}}.
+    answer:
+      blanks:
+        - numeric: 1
+          tolerance: 0.001
+          hint: a number
+        - numeric: 1.288
+          tolerance: 0.005
+          hint: a number, 3 decimals
+      model: '"the": $\ln(4/4) + 1 = 1$; "cat" ($\mathrm{df} = 2$): $\ln(4/3) + 1 \approx 1.288$'
+    explanation: |
+      With $n = 3$, "the" occurs in all 3 documents, so $\mathrm{idf} = \ln(4/4) + 1 = 1$, and "cat"
+      occurs in 2, so $\mathrm{idf} = \ln(4/3) + 1 \approx 1.288$ [^1]. Because of the "+1" outside
+      the log, a word that occurs in every document still gets idf 1, whereas the textbook
+      $\log(N/\mathrm{df})$ gives it 0 [^1][^2]. Adding 1 inside the fraction acts as if one extra
+      document contained every term once, which avoids division by zero [^1]. scikit-learn then
+      multiplies the idf by the raw counts and scales each document vector to unit length [^1].
+    references:
+      - title: 'scikit-learn User Guide: Feature extraction'
+        url: https://scikit-learn.org/stable/modules/feature_extraction.html#tfidf-term-weighting
+        locator: Sec. 8.2.3.5 Tf–idf term weighting
+      - title: Jurafsky & Martin, Speech and Language Processing, 3rd ed. draft (Aug 2026), Ch. 11 Information Retrieval and Retrieval-Augmented Generation
+        url: https://web.stanford.edu/~jurafsky/slp3/11.pdf
+        locator: 'Sec. 11.1.2 Term weighting: tf-idf and BM25 (Eq. 11.5)'
+    source:
+      id: original
+      ref: nlp-basics-034
+    status: reviewed
+    reviewed_by: claude
+  - id: nlp-basics-035
+    type: short_answer
+    difficulty: medium
+    tags:
+      - stop-words
+      - bag-of-words
+      - sentiment-analysis
+      - scikit-learn
+    question: |
+      ```python
+      import numpy as np
+      from sklearn.feature_extraction.text import CountVectorizer
+
+      docs = ["The food was not good", "The food was good"]
+      X = CountVectorizer(stop_words="english").fit_transform(docs).toarray()
+      print(X[0] @ X[1] / (np.linalg.norm(X[0]) * np.linalg.norm(X[1])))
+      ```
+
+      scikit-learn's built-in English stop list contains "the", "was" and "not". What cosine
+      similarity does the code print (to 2 decimals)?
+    answer:
+      numeric: 1
+      tolerance: 0.005
+      hint: a number between 0 and 1
+      model: 'Both reviews become "food good": identical count vectors, cosine 1.00'
+    explanation: |
+      With `stop_words="english"`, the vectorizer drops "the", "was" and "not", so both reviews
+      are reduced to the vocabulary {food, good} with counts (1, 1) and their cosine similarity is 1
+      [^1]. A negative and a positive review have become indistinguishable. Stop words are removed
+      because they are presumed uninformative, but scikit-learn warns that its English list has known
+      issues and that popular lists can contain words that matter for a task; negations are such
+      words for sentiment [^1]. Without the stop list the two vectors differ in "not" and the cosine
+      is about 0.89. Modern neural models usually keep stop words, since they carry meaning [^2].
+    references:
+      - title: 'scikit-learn User Guide: Feature extraction'
+        url: https://scikit-learn.org/stable/modules/feature_extraction.html#using-stop-words
+        locator: Sec. 8.2.3.4 Using stop words
+      - source: d2l
+        url: https://d2l.ai/chapter_recurrent-neural-networks/text-sequence.html#exploratory-language-statistics
+        locator: Sec. 9.2.5 Exploratory Language Statistics (stop words)
+    source:
+      id: original
+      ref: nlp-basics-035
+    status: reviewed
+    reviewed_by: claude
+  - id: nlp-basics-036
+    type: short_answer
+    difficulty: medium
+    tags:
+      - sentence-segmentation
+      - abbreviations
+      - regular-expressions
+    question: |
+      A naive sentence splitter breaks the text after every ".", "?" or "!" that is followed by
+      whitespace:
+
+      ```python
+      import re
+      txt = "Dr. Lee paid 3.50 euros for tea. She left at 5 p.m. on Monday. Was it worth it? Yes."
+      print(len(re.split(r"(?<=[.?!])\s+", txt)))
+      ```
+
+      What does it print? (The text has 4 real sentences.)
+    answer:
+      numeric: 6
+      tolerance: 0
+      hint: a whole number
+      model: "'Dr.' | 'Lee paid 3.50 euros for tea.' | 'She left at 5 p.m.' | 'on Monday.' | 'Was it worth it?' | 'Yes.' — 6 pieces"
+    explanation: |
+      The lookbehind splits at every whitespace that follows a period, question mark or exclamation
+      mark. "Dr." and "p.m." end in a period followed by a space, so the splitter wrongly cuts after
+      them, giving 6 pieces instead of 4; the period in "3.50" is not followed by whitespace, so it
+      survives. A period can end a sentence or mark an abbreviation, whereas "?" and "!" are fairly
+      reliable sentence ends [^1]. Real splitters therefore decide whether a period
+      belongs to a word, using an abbreviation dictionary or a learned model, and often tokenize words
+      and sentences jointly [^1][^2].
+    references:
+      - title: Jurafsky & Martin, Speech and Language Processing, 3rd ed. draft (Aug 2026), Ch. 2 Words and Tokens
+        url: https://web.stanford.edu/~jurafsky/slp3/2.pdf
+        locator: Sec. 2.8.1 Sentence Segmentation
+      - title: 'Wikipedia: Sentence boundary disambiguation'
+        url: https://en.wikipedia.org/wiki/Sentence_boundary_disambiguation#Strategies
+        locator: Introduction and Strategies (abbreviation list, capitalization rule)
+    source:
+      id: original
+      ref: nlp-basics-036
+    status: reviewed
+    reviewed_by: claude
+  - id: nlp-basics-037
+    type: single
+    difficulty: medium
+    tags:
+      - case-folding
+      - normalization
+      - named-entity-recognition
+    question: |
+      Lowercasing all text helps a search engine match "Apple" with "apple". For which task is
+      this case folding most likely to *hurt*?
+    options:
+      - text: Named-entity recognition, where capitalization is a strong cue for names
+        correct: true
+      - text: Counting word frequencies for a Zipf plot, where case variants are the same word
+        why: Merging "The" and "the" is usually what you want when counting words; case is irrelevant to the plot.
+      - text: Keyword search over news articles, where queries are often typed in lower case
+        why: This is the use case the question mentions; case folding raises recall for search.
+      - text: Building a vocabulary for a topic model, where case variants should share a topic
+        why: Topic models gain from merging case variants, which reduces sparsity without losing topic information.
+    explanation: |
+      Normalizing text to a single case lets a search for "john" match "John", which is why it is
+      common before indexing [^1]. But case carries information: NER systems rely on word-shape
+      features that map upper-case letters to X and lower-case letters to x, because capitalization
+      helps recognize unknown names (an initial capital, "Xx", hints at a name) [^2]. After case folding
+      "US" (the country) and "us" (the pronoun), or "Apple" (the company) and "apple" (the fruit),
+      become the same token, which removes that cue. Whether to fold case depends on the task, as
+      with any normalization [^1].
+    references:
+      - title: 'Wikipedia: Text normalization'
+        url: https://en.wikipedia.org/wiki/Text_normalization#Applications
+        locator: Introduction and Applications (single case for searching)
+      - title: Jurafsky & Martin, Speech and Language Processing, 3rd ed. draft (Aug 2026), Ch. 18 Sequence Labeling for Parts of Speech and Named Entities
+        url: https://web.stanford.edu/~jurafsky/slp3/18.pdf
+        locator: Sec. 18.5.1 Features in a CRF POS Tagger (word shape); Sec. 18.5.2 Features for CRF Named Entity Recognizers
+    source:
+      id: original
+      ref: nlp-basics-037
+    status: reviewed
+    reviewed_by: claude

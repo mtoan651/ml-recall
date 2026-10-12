@@ -828,3 +828,632 @@ questions:
       url: https://ocw.mit.edu/courses/6-864-advanced-natural-language-processing-fall-2005/resources/hw5/
     status: reviewed
     reviewed_by: claude
+  - id: nlp-tasks-025
+    type: short_answer
+    difficulty: medium
+    tags:
+      - bio-tagging
+      - named-entity-recognition
+      - span-decoding
+    question: |
+      An NER model outputs these BIO (IOB2) tags:
+
+      | Yesterday | Ana | Ben | and | Carl | Diaz | visited | New | York | City |
+      | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- |
+      | O | B-PER | B-PER | O | B-PER | I-PER | O | B-LOC | I-LOC | I-LOC |
+
+      How many entity spans do the tags encode?
+    answer:
+      numeric: 4
+      tolerance: 0
+      hint: a whole number
+      model: '[PER Ana] [PER Ben] [PER Carl Diaz] [LOC New York City]: 4 spans'
+    explanation: |
+      In BIO tagging, B marks the first token of a span, I a token inside the current span, and O a
+      token outside any span [^1][^2]. Every B starts a new entity, so "Ana" and "Ben" are two separate
+      one-word persons even though they are adjacent and share the type; "Carl Diaz" is one person
+      (B then I) and "New York City" one location. That gives 4 spans: 3 PER and 1 LOC [^1].
+    references:
+      - title: Jurafsky & Martin, Speech and Language Processing, 3rd ed. draft (Aug 2026), Ch. 18 Sequence Labeling for Parts of Speech and Named Entities
+        url: https://web.stanford.edu/~jurafsky/slp3/18.pdf
+        locator: Sec. 18.3 Named Entities and Named Entity Tagging (BIO tagging, Fig. 18.7)
+      - source: hf-llm-course
+        url: https://huggingface.co/learn/llm-course/chapter7/2#the-conll-2003-dataset
+        locator: Chapter 7.2 Token classification, sec. The CoNLL-2003 dataset (B-/I- labels)
+    source:
+      id: original
+      ref: nlp-tasks-025
+    status: reviewed
+    reviewed_by: claude
+  - id: nlp-tasks-026
+    type: single
+    difficulty: medium
+    tags:
+      - io-tagging
+      - bio-tagging
+      - named-entity-recognition
+    question: |
+      IO tagging drops the B tag: every token of an entity of type X gets I-X, and all other tokens
+      get O. What information does it lose compared with BIO tagging?
+    options:
+      - text: Where one entity ends and the next begins, for adjacent entities of the same type
+        correct: true
+      - text: The type of each entity, since I tags no longer name a class
+        why: IO keeps the type in each tag (I-PER, I-LOC); only the boundary marker is gone.
+      - text: Whether a token belongs to any entity at all
+        why: O still marks tokens outside every entity, so membership is preserved.
+      - text: The position of single-token entities, which need a B tag to be represented at all
+        why: A one-token entity is simply one I-X token between O tags, so IO can represent it.
+    explanation: |
+      BIO marks the first token of a span with B, so "Ana Ben" tagged B-PER B-PER is two persons
+      while B-PER I-PER is one. IO tagging eliminates the B tag and with it some information [^1]:
+      two adjacent same-type entities both become I-PER I-PER and read as one span. The entity type
+      and the inside/outside distinction remain. BIOES goes the other way and adds E (end) and S
+      (single-token span) tags [^1][^2].
+    references:
+      - title: Jurafsky & Martin, Speech and Language Processing, 3rd ed. draft (Aug 2026), Ch. 18 Sequence Labeling for Parts of Speech and Named Entities
+        url: https://web.stanford.edu/~jurafsky/slp3/18.pdf
+        locator: Sec. 18.3 Named Entities and Named Entity Tagging (IO, BIO and BIOES, Fig. 18.7)
+      - title: 'Wikipedia: IOB tagging'
+        url: https://en.wikipedia.org/wiki/IOB_tagging#Example
+        locator: Example (BIOES / BILOU variants)
+    source:
+      id: original
+      ref: nlp-tasks-026
+    status: reviewed
+    reviewed_by: claude
+  - id: nlp-tasks-027
+    type: short_answer
+    difficulty: easy
+    tags:
+      - bio-tagging
+      - bioes
+      - named-entity-recognition
+      - label-set
+    question: |
+      An NER dataset has 4 entity types (PER, ORG, LOC, MISC). A BIO tagger then needs {{1}}
+      output labels, and a BIOES tagger (adding E for the last token of a span and S for a
+      single-token span) needs {{2}}.
+    answer:
+      blanks:
+        - numeric: 9
+          tolerance: 0
+          hint: a whole number
+        - numeric: 17
+          tolerance: 0
+          hint: a whole number
+      model: 'BIO: $2n + 1 = 9$; BIOES: $4n + 1 = 17$ (one O tag is shared by all types)'
+    explanation: |
+      BIO has one O tag and a B and an I tag per entity type, so $2n + 1$ tags: 9 for 4 types [^1].
+      This matches the 9 labels of CoNLL-2003, from O to B-MISC and I-MISC [^2]. BIOES has B, I, E
+      and S per type plus O, so $4n + 1 = 17$ [^1]. The tagger is a token classifier with this many
+      output classes.
+    references:
+      - title: Jurafsky & Martin, Speech and Language Processing, 3rd ed. draft (Aug 2026), Ch. 18 Sequence Labeling for Parts of Speech and Named Entities
+        url: https://web.stanford.edu/~jurafsky/slp3/18.pdf
+        locator: Sec. 18.3 Named Entities and Named Entity Tagging (2n + 1 tags; BIOES)
+      - source: hf-llm-course
+        url: https://huggingface.co/learn/llm-course/chapter7/2#the-conll-2003-dataset
+        locator: Chapter 7.2 Token classification, sec. The CoNLL-2003 dataset (9 NER labels)
+    source:
+      id: original
+      ref: nlp-tasks-027
+    status: reviewed
+    reviewed_by: claude
+  - id: nlp-tasks-028
+    type: short_answer
+    difficulty: hard
+    tags:
+      - named-entity-recognition
+      - f1-score
+      - entity-level-evaluation
+    question: |
+      Gold and predicted BIO tags for a 12-token sentence:
+
+      | Token | Gold | Predicted |
+      | --- | --- | --- |
+      | Ada | B-PER | B-PER |
+      | Lovelace | I-PER | O |
+      | met | O | O |
+      | the | O | O |
+      | Royal | B-ORG | B-ORG |
+      | Astronomical | I-ORG | I-ORG |
+      | Society | I-ORG | I-ORG |
+      | in | O | O |
+      | London | B-LOC | O |
+      | and | O | O |
+      | Hyde | B-LOC | B-PER |
+      | Park | I-LOC | I-PER |
+
+      Entities count as correct only if both the span and the type match exactly. What is the
+      entity-level F1 score?
+    answer:
+      numeric: 0.2857
+      tolerance: 0.005
+      hint: a number between 0 and 1, e.g. 0.42
+      model: 'Gold: 4 entities, predicted: 3, correct: 1 (the ORG). $P = 1/3$, $R = 1/4$, $F_1 = 2PR/(P+R) = 2/7 \approx 0.286$'
+    explanation: |
+      For NER the entity, not the token, is the unit of evaluation, and a span counts only if it
+      lines up exactly with a gold span of the same type [^1][^2]. Gold has 4 entities (Ada Lovelace,
+      Royal Astronomical Society, London, Hyde Park). The prediction has 3: "Ada" (wrong boundary),
+      the ORG (correct) and "Hyde Park" as PER (wrong type). So $P = 1/3$, $R = 1/4$ and
+      $F_1 = \frac{2 \cdot \frac13 \cdot \frac14}{\frac13 + \frac14} = \frac{2}{7} \approx 0.286$.
+      The truncated "Ada" costs both a false positive and a false negative [^1]. Token accuracy
+      is $8/12 \approx 0.67$ here, much more flattering, because most tokens are O [^2].
+    references:
+      - title: Jurafsky & Martin, Speech and Language Processing, 3rd ed. draft (Aug 2026), Ch. 18 Sequence Labeling for Parts of Speech and Named Entities
+        url: https://web.stanford.edu/~jurafsky/slp3/18.pdf
+        locator: Sec. 18.6 Evaluation of Named Entity Recognition
+      - title: 'Wikipedia: Named-entity recognition'
+        url: https://en.wikipedia.org/wiki/Named-entity_recognition#Formal_evaluation
+        locator: Formal evaluation (CoNLL exact-match precision, recall and F1)
+    source:
+      id: original
+      ref: nlp-tasks-028
+    status: reviewed
+    reviewed_by: claude
+  - id: nlp-tasks-029
+    type: single
+    difficulty: medium
+    tags:
+      - named-entity-recognition
+      - accuracy
+      - baseline
+      - evaluation
+    question: |
+      An NER test set has 1,000 tokens, and 920 of them are tagged O. A trivial model tags every
+      token O. What are its token-level accuracy and its entity-level F1?
+    options:
+      - text: Accuracy 92%, entity-level F1 0
+        correct: true
+      - text: Accuracy 92%, entity-level F1 92%
+        why: The model finds no entity, so entity-level recall is 0 and F1 is 0, whatever the token accuracy.
+      - text: Accuracy 8%, entity-level F1 0
+        why: Every O token is tagged correctly, so 920 of 1,000 tokens (92%) are right, not 8%.
+      - text: Accuracy 0%, entity-level F1 0
+        why: Accuracy counts the O tokens too, and all 920 of them are correct.
+    explanation: |
+      Most tokens in real text are not part of any entity, so the baseline "always predict not an
+      entity" has a very high token accuracy, typically over 90% [^1]. Here it is $920/1000 = 92\%$.
+      It recognizes no entity, so entity-level recall is 0 and so is F1. That is why NER is
+      scored with precision, recall and F1 over entities rather than with token accuracy [^1][^2].
+    references:
+      - title: 'Wikipedia: Named-entity recognition'
+        url: https://en.wikipedia.org/wiki/Named-entity_recognition#Formal_evaluation
+        locator: Formal evaluation (token accuracy baseline over 90%)
+      - title: Jurafsky & Martin, Speech and Language Processing, 3rd ed. draft (Aug 2026), Ch. 18 Sequence Labeling for Parts of Speech and Named Entities
+        url: https://web.stanford.edu/~jurafsky/slp3/18.pdf
+        locator: Sec. 18.6 Evaluation of Named Entity Recognition
+    source:
+      id: original
+      ref: nlp-tasks-029
+    status: reviewed
+    reviewed_by: claude
+  - id: nlp-tasks-030
+    type: single
+    difficulty: medium
+    tags:
+      - pos-tagging
+      - ambiguity
+      - word-frequency
+    question: |
+      In English treebanks only about 14–15% of word *types* can take more than one part-of-speech
+      tag, yet about 55–67% of the *tokens* in running text are such ambiguous words. What explains
+      the gap?
+    options:
+      - text: The ambiguous words, such as "that", "back", "down" and "set", are very frequent
+        correct: true
+      - text: Punctuation marks are counted as tokens, and they are usually ambiguous
+        why: Punctuation tags are almost always unambiguous; the gap comes from frequent ambiguous words.
+      - text: Rare words are ambiguous more often, and rare words make up most of the tokens
+        why: Rare words make up most of the types, not of the tokens, and most of them are unambiguous.
+      - text: The type counts come from a dictionary, while the token counts come from a corpus
+        why: Both counts come from the same tagged corpora; the difference is type vs. token frequency.
+    explanation: |
+      Most word types are unambiguous ("hesitantly" is always an adverb), but the ambiguous ones
+      include very common words such as "that", "back", "down", "put" and "set" [^1]. Each type
+      counts once in the vocabulary but many times in running text, so a small share of types makes
+      up the majority of tokens. "back" alone can be an adjective, noun, verb, particle or adverb
+      depending on context [^1]. Many ambiguous words still have one dominant tag, which is why the
+      most-frequent-tag baseline is strong [^1][^2].
+    references:
+      - title: Jurafsky & Martin, Speech and Language Processing, 3rd ed. draft (Aug 2026), Ch. 18 Sequence Labeling for Parts of Speech and Named Entities
+        url: https://web.stanford.edu/~jurafsky/slp3/18.pdf
+        locator: Sec. 18.2 Part-of-Speech Tagging (Fig. 18.4 tag ambiguity)
+      - title: 'Wikipedia: Part-of-speech tagging'
+        url: https://en.wikipedia.org/wiki/Part-of-speech_tagging#Principle
+        locator: Principle; Use of hidden Markov models (most-common-tag baseline)
+    source:
+      id: original
+      ref: nlp-tasks-030
+    status: reviewed
+    reviewed_by: claude
+  - id: nlp-tasks-031
+    type: single
+    difficulty: easy
+    tags:
+      - pos-tagging
+      - baseline
+      - accuracy
+    question: |
+      A new part-of-speech tagger reaches 93% token accuracy on English news text. How should this
+      result be judged?
+    options:
+      - text: It is weak, since giving each word its most frequent tag already scores about 92%
+        correct: true
+      - text: It is excellent, since human annotators agree with each other on only about 85% of tags
+        why: Human agreement on English POS tags is about 97%, the same as good taggers.
+      - text: It is average, since random guessing among the 45 tags already scores about 50%
+        why: Random guessing over dozens of tags would score far lower; the relevant baseline is the most-frequent-tag one.
+      - text: It cannot be judged, because POS taggers are evaluated with entity-level F1
+        why: POS tagging assigns one tag per word and is evaluated by accuracy; entity-level F1 is for span tasks such as NER.
+    explanation: |
+      Always compare a tagger with the most-frequent-class baseline: give each word the tag it had
+      most often in training [^1]. For English POS tagging this baseline reaches about 92%, while
+      HMM, CRF and BERT taggers and human annotators all reach about 97% [^1]. A rough baseline
+      of the same kind (most common tag for known words, proper noun for unknown ones) gets close to
+      90% [^2]. So 93% is barely above the baseline. POS taggers are scored by accuracy because each
+      word receives exactly one tag [^1].
+    references:
+      - title: Jurafsky & Martin, Speech and Language Processing, 3rd ed. draft (Aug 2026), Ch. 18 Sequence Labeling for Parts of Speech and Named Entities
+        url: https://web.stanford.edu/~jurafsky/slp3/18.pdf
+        locator: Sec. 18.2 Part-of-Speech Tagging (accuracy and Most Frequent Class Baseline)
+      - title: 'Wikipedia: Part-of-speech tagging'
+        url: https://en.wikipedia.org/wiki/Part-of-speech_tagging#Use_of_hidden_Markov_models
+        locator: Use of hidden Markov models (Charniak's baseline)
+    source:
+      id: original
+      ref: nlp-tasks-031
+    status: reviewed
+    reviewed_by: claude
+  - id: nlp-tasks-032
+    type: single
+    difficulty: medium
+    tags:
+      - sequence-labeling
+      - sequence-to-sequence
+      - machine-translation
+      - task-framing
+    question: |
+      Part-of-speech tagging is framed as sequence labeling (one output label per input token),
+      but machine translation is framed as sequence-to-sequence generation. Why can't translation
+      be done by labeling each source word with its translation?
+    options:
+      - text: Input and output can differ in length and word order, with no one-to-one alignment
+        correct: true
+      - text: A sequence labeler cannot look at neighbouring words, so it cannot use context
+        why: Sequence labelers (CRFs, bidirectional RNNs, BERT) do use context; the obstacle is the missing one-to-one alignment.
+      - text: Translation needs a softmax over the whole target vocabulary, which a tagger cannot have
+        why: A tagger's label set could in principle be a vocabulary; the problem is the alignment, not the number of classes.
+      - text: Sequence labeling is only defined for a single language, not for pairs of languages
+        why: Nothing in sequence labeling ties it to one language; it requires aligned inputs and outputs.
+    explanation: |
+      In tagging, inputs and outputs are aligned: there are as many labels as tokens, in the same
+      order [^1][^2]. In machine translation the input and output sequences can have different
+      lengths, and corresponding parts can appear in a different order; German, for example, often
+      puts the verb at the end. A model must therefore read the source and generate a target
+      sequence of its own length, which is sequence-to-sequence learning [^1].
+    references:
+      - source: d2l
+        url: https://d2l.ai/chapter_introduction/index.html#sequence-learning
+        locator: Sec. 1.3.1.6 Sequence Learning (Tagging and Parsing; Machine Translation)
+      - title: Jurafsky & Martin, Speech and Language Processing, 3rd ed. draft (Aug 2026), Ch. 18 Sequence Labeling for Parts of Speech and Named Entities
+        url: https://web.stanford.edu/~jurafsky/slp3/18.pdf
+        locator: Ch. 18 introduction (output sequence of the same length as the input)
+    source:
+      id: original
+      ref: nlp-tasks-032
+    status: reviewed
+    reviewed_by: claude
+  - id: nlp-tasks-033
+    type: single
+    difficulty: easy
+    tags:
+      - question-answering
+      - extractive-qa
+      - generative-qa
+    question: |
+      Context: "The bridge opened in 1932 after eight years of construction."
+      Question: "How long did it take to build the bridge?"
+
+      Which answer could come only from a generative (abstractive) QA system, not from an
+      extractive one?
+    options:
+      - text: '"Eight years, finishing in 1932"'
+        correct: true
+      - text: '"eight years"'
+        why: This is a span of the context, exactly what an extractive model returns.
+      - text: '"1932"'
+        why: This span answers the question wrongly, but an extractive model can still return it, since it is part of the context.
+      - text: '"after eight years of construction"'
+        why: This is also a contiguous span of the context, so an extractive model can return it.
+    explanation: |
+      Extractive QA answers by selecting a span of the given document: the model predicts start
+      and end positions, so its answer is always a contiguous piece of the context [^1]. "Eight
+      years, finishing in 1932" rearranges the text and adds a word ("finishing") that is not in it,
+      so it must have been generated. Generative QA uses encoder-decoder models such as T5 or BART
+      that write the answer, much like summarization [^1][^2].
+    references:
+      - source: hf-llm-course
+        url: https://huggingface.co/learn/llm-course/chapter7/7
+        locator: Chapter 7.7 Question answering, introduction (extractive vs generative QA)
+      - title: 'Wikipedia: Automatic summarization'
+        url: https://en.wikipedia.org/wiki/Automatic_summarization#Approaches
+        locator: Approaches (extraction-based vs abstractive-based)
+    source:
+      id: original
+      ref: nlp-tasks-033
+    status: reviewed
+    reviewed_by: claude
+  - id: nlp-tasks-034
+    type: short_answer
+    difficulty: medium
+    tags:
+      - question-answering
+      - f1-score
+      - evaluation
+    question: |
+      Extractive QA is often scored by token F1: treat the predicted and gold answers as bags of
+      tokens and compute precision, recall and their harmonic mean. The gold answer is "summer 1905"
+      and the model predicts "early summer of 1905". What is the token F1?
+    answer:
+      numeric: 0.667
+      tolerance: 0.005
+      hint: a number between 0 and 1, e.g. 0.42
+      model: '2 shared tokens: $P = 2/4$, $R = 2/2$, $F_1 = 2 \cdot 0.5 \cdot 1 / 1.5 = 2/3$'
+    explanation: |
+      Exact match would give 0 here, so free-text answers are usually also scored with token F1,
+      which rewards partial overlap [^1]. The prediction has 4 tokens, of which "summer" and "1905"
+      are in the gold answer: $P = 2/4 = 0.5$. Both gold tokens are found: $R = 2/2 = 1$. Then
+      $F_1 = 2PR/(P + R) = 1/1.5 \approx 0.667$. The extra words "early" and "of" lower precision
+      only [^1][^2].
+    references:
+      - title: Jurafsky & Martin, Speech and Language Processing, 3rd ed. draft (Aug 2026), Ch. 11 Information Retrieval and Retrieval-Augmented Generation
+        url: https://web.stanford.edu/~jurafsky/slp3/11.pdf
+        locator: Sec. 11.6 Evaluating Question Answering (exact match and token F1)
+      - title: 'Wikipedia: F-score'
+        url: https://en.wikipedia.org/wiki/F-score#Definition
+        locator: Definition (F1 as harmonic mean of precision and recall)
+    source:
+      id: original
+      ref: nlp-tasks-034
+    status: reviewed
+    reviewed_by: claude
+  - id: nlp-tasks-035
+    type: short_answer
+    difficulty: medium
+    tags:
+      - summarization
+      - rouge
+      - evaluation
+    question: |
+      Reference summary: "the storm closed every school in the city"
+
+      Generated summary: "the storm closed schools in the city"
+
+      Words are compared exactly (no stemming). What is the ROUGE-2 recall, i.e. the fraction of the
+      reference's bigrams that also appear in the generated summary?
+    answer:
+      numeric: 0.571
+      tolerance: 0.005
+      hint: a number between 0 and 1, e.g. 0.42
+      model: 'Reference bigrams: 7; shared: "the storm", "storm closed", "in the", "the city" = 4; recall $4/7 \approx 0.571$'
+    explanation: |
+      ROUGE compares a generated summary with human references; its recall counts how much of the
+      reference is captured by the generated text, and ROUGE-2 does so with bigrams [^1]. The
+      reference has 7 bigrams. Four of them, "the storm", "storm closed", "in the" and "the city",
+      also occur in the generated summary, while "closed every", "every school" and "school in" do
+      not, because "every" is missing and "schools" ≠ "school". Recall is $4/7 \approx 0.571$. The
+      ROUGE-2 precision is $4/6$, since the generated summary has 6 bigrams [^1]. ROUGE is the most
+      common way to evaluate summaries and is recall-oriented: it measures how well a summary covers
+      the n-grams of human references [^2].
+    references:
+      - source: hf-llm-course
+        url: https://huggingface.co/learn/llm-course/chapter7/5#metrics-for-text-summarization
+        locator: Chapter 7.5 Summarization, sec. Metrics for text summarization (ROUGE recall, precision, rouge2)
+      - title: 'Wikipedia: Automatic summarization'
+        url: https://en.wikipedia.org/wiki/Automatic_summarization#Evaluation
+        locator: Evaluation, Inter-textual versus intra-textual (ROUGE)
+    source:
+      id: original
+      ref: nlp-tasks-035
+    status: reviewed
+    reviewed_by: claude
+  - id: nlp-tasks-036
+    type: short_answer
+    difficulty: medium
+    tags:
+      - bleu
+      - machine-translation
+      - modified-precision
+      - clipping
+    question: |
+      Reference translation: "the cat is on the mat"
+
+      Candidate translation: "the cat the cat on the mat"
+
+      BLEU clips the count of each candidate word at the largest number of times it occurs in a
+      reference. What is the candidate's modified unigram precision?
+    answer:
+      numeric: 0.714
+      tolerance: 0.005
+      hint: a number between 0 and 1, e.g. 0.42
+      model: 'Clipped counts: the 2 (of 3), cat 1 (of 2), on 1, mat 1 → $5/7 \approx 0.714$'
+    explanation: |
+      Plain unigram precision would be $7/7 = 1$, because every candidate word occurs in the
+      reference. BLEU's modified precision clips each word's count at its maximum count in a single
+      reference [^1][^2]: "the" occurs 3 times but only twice in the reference, so it counts 2; "cat"
+      occurs twice but once in the reference, so it counts 1; "on" and "mat" count 1 each. The
+      clipped total 5 is divided by the 7 candidate words: $5/7 \approx 0.714$. Clipping is what
+      stops a system from scoring well by repeating common words [^1][^3].
+    references:
+      - title: 'Papineni et al. (2002), BLEU: a Method for Automatic Evaluation of Machine Translation'
+        url: https://aclanthology.org/P02-1040.pdf
+        locator: Sec. 2.1 Modified n-gram precision (Count_clip)
+      - title: 'Wikipedia: BLEU'
+        url: https://en.wikipedia.org/wiki/BLEU#Modified_n-gram_precision
+        locator: Mathematical definition, Modified n-gram precision
+      - source: hf-llm-course
+        url: https://huggingface.co/learn/llm-course/chapter7/4#metrics
+        locator: Chapter 7.4 Translation, sec. Metrics (BLEU penalizes repeated words)
+    source:
+      id: original
+      ref: nlp-tasks-036
+    status: reviewed
+    reviewed_by: claude
+  - id: nlp-tasks-037
+    type: short_answer
+    difficulty: hard
+    tags:
+      - bleu
+      - brevity-penalty
+      - machine-translation
+    question: |
+      Reference: "a small cat sat on the warm mat" (8 words)
+
+      Candidate: "the cat sat on the mat" (6 words)
+
+      Compute BLEU with unigrams and bigrams only, uniform weights $w_1 = w_2 = \tfrac12$:
+      $\mathrm{BLEU} = \mathrm{BP} \cdot \exp\big(\tfrac12 \ln p_1 + \tfrac12 \ln p_2\big)$, where
+      $p_n$ are the clipped (modified) n-gram precisions and $\mathrm{BP} = e^{1 - r/c}$ if the
+      candidate length $c$ is at most the reference length $r$ (else 1).
+    answer:
+      numeric: 0.507
+      tolerance: 0.005
+      hint: a number between 0 and 1, 3 decimals
+      model: $p_1 = 5/6$, $p_2 = 3/5$, $\mathrm{BP} = e^{1 - 8/6} \approx 0.717$, BLEU $= 0.717 \cdot \sqrt{0.5} \approx 0.507$
+    explanation: |
+      Unigrams: "the" occurs twice in the candidate but once in the reference, so it is clipped to
+      1; "cat", "sat", "on" and "mat" match, so $p_1 = 5/6$ [^1]. Bigrams: of "the cat", "cat sat",
+      "sat on", "on the", "the mat", three ("cat sat", "sat on", "on the") occur in the reference,
+      so $p_2 = 3/5$. The geometric mean is $\sqrt{(5/6)(3/5)} = \sqrt{0.5} \approx 0.707$. The
+      candidate is shorter than the reference ($c = 6 < r = 8$), so $\mathrm{BP} = e^{1 - 8/6}
+      \approx 0.717$, and BLEU $\approx 0.717 \times 0.707 \approx 0.507$ [^1][^2]. Without the
+      brevity penalty a short candidate could get high precision by leaving words out; longer
+      candidates are already penalized by the precisions [^1].
+    references:
+      - title: 'Papineni et al. (2002), BLEU: a Method for Automatic Evaluation of Machine Translation'
+        url: https://aclanthology.org/P02-1040.pdf
+        locator: Sec. 2.1 Modified n-gram precision; Sec. 2.2.2 Sentence brevity penalty; Sec. 2.3 BLEU details
+      - title: 'Wikipedia: BLEU'
+        url: https://en.wikipedia.org/wiki/BLEU#Brevity_penalty
+        locator: Mathematical definition, Brevity penalty and Final formula
+    source:
+      id: original
+      ref: nlp-tasks-037
+    status: reviewed
+    reviewed_by: claude
+  - id: nlp-tasks-038
+    type: single
+    difficulty: medium
+    tags:
+      - bleu
+      - sacrebleu
+      - tokenization
+      - chrf
+      - evaluation
+    question: |
+      Two papers report BLEU on the same test set, 27.1 and 28.4, but they tokenized the outputs
+      differently (for example, one splits "don't" and hyphenated words, the other does not). Why
+      can't the two numbers be compared directly?
+    options:
+      - text: BLEU counts word n-gram matches, so its value depends on the tokenization
+        correct: true
+      - text: BLEU is only defined for a single reference, and the papers may have used several
+        why: BLEU supports several references per sentence; the problem here is the tokenization.
+      - text: BLEU scores above 25 are saturated and no longer distinguish systems
+        why: There is no such saturation point; the comparison fails because of the different tokenization.
+      - text: BLEU measures recall, and recall changes when the candidate length changes
+        why: BLEU is based on precision (plus a brevity penalty), not recall.
+    explanation: |
+      BLEU counts matching word n-grams, and the tokenizer decides which n-grams exist, so scores
+      computed with different tokenization standards cannot be compared [^1][^2].
+      Word-based BLEU also works less well for languages with complex morphology. SacreBLEU fixes
+      the comparison problem by standardizing the tokenization step [^1][^2], and the character-based
+      metric chrF, which ignores spaces, is described as simple and robust; BLEU is still reported
+      in some work, especially for translation into English [^1].
+    references:
+      - title: Jurafsky & Martin, Speech and Language Processing, 3rd ed. draft (Aug 2026), Ch. 13 Machine Translation
+        url: https://web.stanford.edu/~jurafsky/slp3/13.pdf
+        locator: 'Sec. 13.6.2 Automatic Evaluation (chrF; Alternative overlap metric: BLEU)'
+      - source: hf-llm-course
+        url: https://huggingface.co/learn/llm-course/chapter7/4#metrics
+        locator: Chapter 7.4 Translation, sec. Metrics (BLEU needs tokenized text; SacreBLEU)
+    source:
+      id: original
+      ref: nlp-tasks-038
+    status: reviewed
+    reviewed_by: claude
+  - id: nlp-tasks-039
+    type: short_answer
+    difficulty: medium
+    tags:
+      - chrf
+      - machine-translation
+      - f-score
+      - evaluation
+    question: |
+      chrF combines character n-gram precision chrP and recall chrR as
+      $\mathrm{chrF}_\beta = (1 + \beta^2)\,\frac{\mathrm{chrP} \cdot \mathrm{chrR}}{\beta^2\,\mathrm{chrP} + \mathrm{chrR}}$,
+      usually with $\beta = 2$. A system has chrP = 0.8 and chrR = 0.6. What is its chrF2?
+    answer:
+      numeric: 0.632
+      tolerance: 0.005
+      hint: a number between 0 and 1, 3 decimals
+      model: $5 \cdot 0.8 \cdot 0.6 / (4 \cdot 0.8 + 0.6) = 2.4 / 3.8 \approx 0.632$
+    explanation: |
+      With $\beta = 2$, $\mathrm{chrF}_2 = 5\,\mathrm{chrP}\,\mathrm{chrR} / (4\,\mathrm{chrP} + \mathrm{chrR})
+      = 2.4 / 3.8 \approx 0.632$ [^1]. This setting counts recall twice as much as precision:
+      a system with the values swapped (chrP = 0.6, chrR = 0.8) scores $2.4/3.2 = 0.75$. chrP and
+      chrR are averages over character 1-grams up to $k$-grams, computed with spaces removed, which
+      makes chrF less sensitive to tokenization than BLEU [^1][^2].
+    references:
+      - title: Jurafsky & Martin, Speech and Language Processing, 3rd ed. draft (Aug 2026), Ch. 13 Machine Translation
+        url: https://web.stanford.edu/~jurafsky/slp3/13.pdf
+        locator: 'Sec. 13.6.2 Automatic Evaluation: Automatic Evaluation by Character Overlap: chrF (Eq. 13.20)'
+      - title: 'Wikipedia: F-score'
+        url: https://en.wikipedia.org/wiki/F-score#F%CE%B2_score
+        locator: Definition, Fβ score (recall considered β times as important as precision)
+    source:
+      id: original
+      ref: nlp-tasks-039
+    status: reviewed
+    reviewed_by: claude
+  - id: nlp-tasks-040
+    type: single
+    difficulty: medium
+    tags:
+      - bio-tagging
+      - chunking
+      - nested-entities
+    question: |
+      Chunking and NER are usually done by tagging each token with one BIO label. Which annotation
+      can plain BIO tags *not* represent?
+    options:
+      - text: An entity nested inside another, e.g. a location inside an organization name
+        correct: true
+      - text: An entity that spans several tokens, such as "New York City"
+        why: Multi-token spans are what B and I are for (B-LOC I-LOC I-LOC).
+      - text: Two adjacent entities of the same type, such as two person names in a row
+        why: BIO separates them by starting each one with a B tag (B-PER B-PER).
+      - text: Entities of several different types in the same sentence
+        why: Each token carries its own type in its label (B-PER, B-ORG, ...), so mixed types are no problem.
+    explanation: |
+      Chunking splits a sentence into non-overlapping chunks rather than a tree of nested
+      constituents, and BIO encodes exactly such flat, non-overlapping spans with one label per
+      token [^1]. Since a token gets a single label, BIO syntax does not permit nesting, so a nested
+      entity such as "University of Wisconsin Dept. of Computer Science" cannot be represented
+      without extensions [^1]. Multi-token spans, adjacent same-type spans and mixed types are all
+      fine [^1][^2].
+    references:
+      - title: 'Wikipedia: IOB tagging'
+        url: https://en.wikipedia.org/wiki/IOB_tagging#Drawbacks
+        locator: Example (non-overlapping chunks) and Drawbacks (no nesting)
+      - title: Jurafsky & Martin, Speech and Language Processing, 3rd ed. draft (Aug 2026), Ch. 18 Sequence Labeling for Parts of Speech and Named Entities
+        url: https://web.stanford.edu/~jurafsky/slp3/18.pdf
+        locator: Sec. 18.3 Named Entities and Named Entity Tagging (BIO tagging)
+    source:
+      id: original
+      ref: nlp-tasks-040
+    status: reviewed
+    reviewed_by: claude

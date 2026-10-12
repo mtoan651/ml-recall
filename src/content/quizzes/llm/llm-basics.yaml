@@ -1055,3 +1055,244 @@ questions:
       url: https://archive.nptel.ac.in/content/storage2/courses/downloads_new/106102576/noc25_cs45_assignment_Week_10.png
     status: reviewed
     reviewed_by: claude
+  - id: llm-basics-032
+    type: short_answer
+    difficulty: medium
+    tags:
+      - next-token-prediction
+      - sliding-window
+      - data-loading
+      - llms-from-scratch
+    question: |
+      The book's dataset cuts a tokenized text into input/target pairs with a sliding window:
+
+      ```python
+      token_ids = list(range(100, 110))          # 10 token IDs
+      max_length, stride = 4, 2
+      inputs, targets = [], []
+      for i in range(0, len(token_ids) - max_length, stride):
+          inputs.append(token_ids[i:i + max_length])
+          targets.append(token_ids[i + 1:i + max_length + 1])
+      print(len(inputs), targets[1])
+      ```
+
+      The last line prints {{1}} (the number of pairs) and a list whose first element is {{2}}.
+    answer:
+      blanks:
+        - numeric: 3
+          hint: an integer
+        - numeric: 103
+          hint: an integer
+      model: '`3 [103, 104, 105, 106]`: windows start at 0, 2 and 4; each target is its input shifted by one.'
+    explanation: |
+      `range(0, 10 - 4, 2)` yields the start positions 0, 2 and 4, so there are 3 pairs [^1]. A window
+      starting at 6 is excluded: its input `[106, …, 109]` would need the target token at index 10,
+      which does not exist. The second pair starts at 2: input `[102, 103, 104, 105]` and target
+      `[103, 104, 105, 106]`, the same tokens shifted one position to the right, so that position
+      `j` of the target is the next token after position `j` of the input [^1]. A stride smaller than
+      `max_length` makes consecutive windows overlap [^2].
+    references:
+      - source: llms-from-scratch
+        locator: pkg/llms_from_scratch/ch02.py, GPTDatasetV1 (lines 11-31)
+        url: https://github.com/rasbt/LLMs-from-scratch/blob/cdbd33e6d57a71e20ea31434841095fac50cecd8/pkg/llms_from_scratch/ch02.py#L11-L31
+      - source: llms-from-scratch
+        locator: ch02/01_main-chapter-code/ch02.ipynb, Sec. 2.6 Data sampling with a sliding window
+        url: https://github.com/rasbt/LLMs-from-scratch/blob/cdbd33e6d57a71e20ea31434841095fac50cecd8/ch02/01_main-chapter-code/ch02.ipynb
+    source:
+      id: llms-from-scratch
+      ref: ch02/sliding-window-pairs
+      url: https://github.com/rasbt/LLMs-from-scratch/blob/cdbd33e6d57a71e20ea31434841095fac50cecd8/pkg/llms_from_scratch/ch02.py#L11-L31
+    status: reviewed
+    reviewed_by: claude
+  - id: llm-basics-033
+    type: short_answer
+    difficulty: medium
+    tags:
+      - parameter-count
+      - weight-tying
+      - gpt-2
+      - llms-from-scratch
+    question: |
+      The book's `GPTModel` with the GPT-2 small configuration has separate input-embedding and output
+      layers. What does the last line print?
+
+      ```python
+      GPT_CONFIG_124M = {"vocab_size": 50257, "context_length": 1024, "emb_dim": 768,
+                         "n_heads": 12, "n_layers": 12, "drop_rate": 0.1, "qkv_bias": False}
+      model = GPTModel(GPT_CONFIG_124M)
+      total = sum(p.numel() for p in model.parameters())
+      print(total)                                    # 163009536
+      print(model.tok_emb.weight.shape)               # torch.Size([50257, 768])
+      print(model.out_head)                           # Linear(in_features=768, out_features=50257, bias=False)
+      print(total - sum(p.numel() for p in model.out_head.parameters()))
+      ```
+    answer:
+      numeric: 124412160
+      tolerance: 0
+      hint: an integer
+      model: $163{,}009{,}536 - 768 \cdot 50{,}257 = 124{,}412{,}160$
+    explanation: |
+      The output head is a bias-free linear layer with a $50{,}257 \times 768$ weight, i.e.
+      $38{,}597{,}376$ parameters, and $163{,}009{,}536 - 38{,}597{,}376 = 124{,}412{,}160$ [^1]. That
+      is the "124M" of GPT-2 small: the original GPT-2 *ties* the output layer to the token-embedding
+      matrix, which has exactly the same shape, so the large vocabulary matrix is stored and counted
+      only once [^1]. The book keeps the two layers separate, which costs about 38.6 million extra
+      parameters [^2].
+    references:
+      - source: llms-from-scratch
+        locator: ch04/01_main-chapter-code/ch04.ipynb, Sec. 4.6 Coding the GPT model (parameter count and weight tying)
+        url: https://github.com/rasbt/LLMs-from-scratch/blob/cdbd33e6d57a71e20ea31434841095fac50cecd8/ch04/01_main-chapter-code/ch04.ipynb
+      - source: llms-from-scratch
+        locator: pkg/llms_from_scratch/ch04.py, GPTModel (lines 82-104)
+        url: https://github.com/rasbt/LLMs-from-scratch/blob/cdbd33e6d57a71e20ea31434841095fac50cecd8/pkg/llms_from_scratch/ch04.py#L82-L104
+    source:
+      id: llms-from-scratch
+      ref: ch04/gpt2-weight-tying-count
+      url: https://github.com/rasbt/LLMs-from-scratch/blob/cdbd33e6d57a71e20ea31434841095fac50cecd8/ch04/01_main-chapter-code/ch04.ipynb
+    status: reviewed
+    reviewed_by: claude
+  - id: llm-basics-034
+    type: short_answer
+    difficulty: easy
+    tags:
+      - text-generation
+      - greedy-decoding
+      - context-window
+      - llms-from-scratch
+    question: |
+      `idx` holds 2 prompts of 5 token IDs each, shape (2, 5). What is the shape of
+      `generate_text_simple(model, idx, max_new_tokens=3, context_size=4)`?
+
+      ```python
+      def generate_text_simple(model, idx, max_new_tokens, context_size):
+          for _ in range(max_new_tokens):
+              idx_cond = idx[:, -context_size:]
+              with torch.no_grad():
+                  logits = model(idx_cond)            # (batch, n_tokens, vocab_size)
+              logits = logits[:, -1, :]
+              idx_next = torch.argmax(logits, dim=-1, keepdim=True)
+              idx = torch.cat((idx, idx_next), dim=1)
+          return idx
+      ```
+    answer:
+      accept:
+        - (2, 8)
+      pattern: (torch\.size)?\(?\[?\s*2\s*[,x×]\s*8\s*\]?\)?
+      hint: Two dimensions in order, e.g. (5, 6)
+      model: '$(2, 8)$: the 5 prompt tokens plus 3 generated ones.'
+    explanation: |
+      Each iteration picks the most likely next token from the logits of the **last** position
+      (`argmax` with `keepdim=True` gives shape (2, 1)) and appends it to the full sequence along
+      dimension 1 [^1]. Cropping to the last `context_size` tokens only limits what the model *sees*
+      (it supports at most 4 positions); it does not shorten `idx` itself. After 3 steps the result is
+      (2, 5 + 3) = (2, 8), and the first 5 columns are still the prompts [^1][^2].
+    references:
+      - source: llms-from-scratch
+        locator: pkg/llms_from_scratch/ch04.py, generate_text_simple (lines 107-130)
+        url: https://github.com/rasbt/LLMs-from-scratch/blob/cdbd33e6d57a71e20ea31434841095fac50cecd8/pkg/llms_from_scratch/ch04.py#L107-L130
+      - title: 'PyTorch documentation: torch.cat'
+        locator: torch.cat
+        url: https://docs.pytorch.org/docs/stable/generated/torch.cat.html
+    source:
+      id: llms-from-scratch
+      ref: ch04/generate-simple-shape
+      url: https://github.com/rasbt/LLMs-from-scratch/blob/cdbd33e6d57a71e20ea31434841095fac50cecd8/pkg/llms_from_scratch/ch04.py#L107-L130
+    status: reviewed
+    reviewed_by: claude
+  - id: llm-basics-035
+    type: short_answer
+    difficulty: hard
+    tags:
+      - top-k-sampling
+      - temperature
+      - decoding
+      - llms-from-scratch
+    question: |
+      The book's `generate` first applies top-k filtering and then temperature scaling. What does the
+      last line print? Round to 3 decimals.
+
+      ```python
+      logits = torch.tensor([[1.0, 6.0, 3.0, 4.0, 2.0]])     # next-token logits, 5-token vocabulary
+      top_k, temperature = 3, 2.0
+
+      top_logits, _ = torch.topk(logits, top_k)
+      min_val = top_logits[:, -1]
+      logits = torch.where(logits < min_val, torch.tensor(float("-inf")), logits)
+      logits = logits / temperature
+      probs = torch.softmax(logits, dim=-1)
+      print(probs[0, 1].item())
+      ```
+    answer:
+      numeric: 0.629
+      tolerance: 0.001
+      hint: a number between 0 and 1, 3 decimals
+      model: '0.629: $e^{3}/(e^{3} + e^{2} + e^{1.5})$'
+    explanation: |
+      `torch.topk` returns the 3 largest logits in descending order, `[6, 4, 3]` [^1], so `min_val`
+      is 3 and the logits 1 and 2 are replaced by $-\infty$; those tokens get probability 0 [^2].
+      Dividing by the temperature 2 gives 3, 1.5 and 2 for tokens 1, 2 and 3, and the softmax gives
+      token 1 the probability $e^{3}/(e^{3} + e^{1.5} + e^{2}) \approx 20.09/31.96 \approx 0.629$.
+      Without temperature scaling it would be $e^{6}/(e^{6} + e^{3} + e^{4}) \approx 0.844$: a
+      temperature above 1 flattens the distribution over the tokens that survive top-k [^2].
+    references:
+      - title: 'PyTorch documentation: torch.topk'
+        locator: torch.topk
+        url: https://docs.pytorch.org/docs/stable/generated/torch.topk.html
+      - source: llms-from-scratch
+        locator: pkg/llms_from_scratch/ch05.py, generate (lines 19-59)
+        url: https://github.com/rasbt/LLMs-from-scratch/blob/cdbd33e6d57a71e20ea31434841095fac50cecd8/pkg/llms_from_scratch/ch05.py#L19-L59
+    source:
+      id: llms-from-scratch
+      ref: ch05/top-k-then-temperature
+      url: https://github.com/rasbt/LLMs-from-scratch/blob/cdbd33e6d57a71e20ea31434841095fac50cecd8/pkg/llms_from_scratch/ch05.py#L19-L59
+    status: reviewed
+    reviewed_by: claude
+  - id: llm-basics-036
+    type: single
+    difficulty: medium
+    tags:
+      - text-generation
+      - end-of-sequence
+      - batching
+      - llms-from-scratch
+    question: |
+      The book's `generate` stops early with `if idx_next == eos_id: break`. You call it with a batch
+      of two prompts, and at some step the next tokens are:
+
+      ```python
+      eos_id = 50256
+      idx_next = torch.tensor([[50256], [13]])   # shape (2, 1): one sequence just ended
+      if idx_next == eos_id:
+          print("stop")
+      ```
+
+      What happens?
+    options:
+      - text: It raises a `RuntimeError` (ambiguous truth value)
+        correct: true
+      - text: It prints "stop", because at least one sequence produced the end token
+        why: '`if` does not apply "any" implicitly; that would need `(idx_next == eos_id).any()`.'
+      - text: It prints nothing, because not every sequence produced the end token
+        why: '`if` does not apply "all" implicitly either; that would need `(idx_next == eos_id).all()`.'
+      - text: It prints "stop", because `if` looks only at the first element
+        why: PyTorch refuses to pick an element; converting a multi-element tensor to `bool` is an error.
+    explanation: |
+      `idx_next == eos_id` is an element-wise comparison with shape (2, 1). An `if` needs a single
+      Python bool, and PyTorch only converts a tensor with exactly one element (like `.item()` [^1]),
+      so it raises `RuntimeError: Boolean value of Tensor with more than one value is ambiguous`. The
+      book's check [^2] therefore only works for a batch of one prompt, where `idx_next` has a single
+      element. For batches you must say what you mean, for example stop when
+      `(idx_next == eos_id).all()`, and keep padding the sequences that already ended.
+    references:
+      - title: 'PyTorch documentation: torch.Tensor.item'
+        locator: torch.Tensor.item
+        url: https://docs.pytorch.org/docs/stable/generated/torch.Tensor.item.html
+      - source: llms-from-scratch
+        locator: pkg/llms_from_scratch/ch05.py, generate (line 53)
+        url: https://github.com/rasbt/LLMs-from-scratch/blob/cdbd33e6d57a71e20ea31434841095fac50cecd8/pkg/llms_from_scratch/ch05.py#L53
+    source:
+      id: llms-from-scratch
+      ref: ch05/eos-check-batch
+      url: https://github.com/rasbt/LLMs-from-scratch/blob/cdbd33e6d57a71e20ea31434841095fac50cecd8/pkg/llms_from_scratch/ch05.py#L53
+    status: reviewed
+    reviewed_by: claude

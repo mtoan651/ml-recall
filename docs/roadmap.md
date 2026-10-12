@@ -48,13 +48,16 @@ Versions follow [conventions.md#versioning](conventions.md#versioning).
 - [ ] `mlr extract` (markitdown/docling) → moved to v0.4.0
 - [x] Maintenance: KaTeX 0.19, CI checks that every figure re-renders byte-identical
 
-## v0.4.0 — Review features
+## v0.4.0 — Review features ✅
 
-- [ ] NCU Intro to DL lecture questions via `mlr extract` (markitdown/docling)
-- [ ] Mixed exams: N random questions across topics/difficulty/tags
-- [ ] "My mistakes" deck, score history per topic (keyboard shortcuts 1–9 / Enter shipped in v0.2)
-- [ ] Image options (2×2 grid), zoomable figures
-- [ ] Code-reading questions from Tensor Puzzles / LLMs-from-scratch / numpy-100
+- [x] NCU Intro to DL lecture questions via `mlr extract` (pdfminer.six, page markers, `--colors`
+  for answers printed in red): 81 questions from Lectures 1–3
+- [x] Mixed exams: N random questions across topics and difficulties (`/exam/`)
+- [x] "My mistakes" deck (`/mistakes/`), score history per topic (`/progress/`)
+- [x] Image options (2×2 grid), zoomable figures
+- [x] Code-reading questions from Tensor Puzzles / LLMs-from-scratch / NumPy (55)
+- [x] Thin topics: computer vision 51 → 119, AI intro 12 → 34, NLP 162 → 212
+- [x] CI checked on `ubuntu-26.04` before `ubuntu-latest` moves (2026-10-19)
 
 ## v0.5.0 — Retention
 
