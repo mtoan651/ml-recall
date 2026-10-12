@@ -36,9 +36,9 @@ src/content/sources.yaml ──────────────────�
                                                      ▼
               pages: /  ·  /topics/<topic>/  ·  /tags/  ·  /tags/<tag>/
                      /topics/<topic>/exam/  ·  /tags/<tag>/exam/
-                     /exam/ · /mistakes/ · /progress/  (question index only: toCatalog;
+                     /exam/ · /review/ · /mistakes/ · /progress/  (question index only: toCatalog;
                                                         /exam/ also the tag index: toCatalogTags)
-              data:  /data/q/<id>.json  (one rendered question each, fetched by those three)
+              data:  /data/q/<id>.json  (one rendered question each, fetched by those pages)
                                                      │  client:load
                                                      ▼
               React islands: src/components/Quiz.tsx (practice) and Exam.tsx (timed test),
@@ -147,6 +147,7 @@ entries (the Zod mirror in `src/lib/schema.ts`; `mlr check` checks the same in P
 | `ml-recall:exam:v1:<scope>` | the [test in progress](#timed-tests) of one topic, tag or the mixed test |
 | `ml-recall:exam-history:v1` | scope → `{ attempts, best }`: the last 10 tests and the best one |
 | `ml-recall:mixed:v1` | `{ topics, tags, difficulties, size }`: the last choices on the [mixed test](#mixed-tests) form (`tags` absent before v0.4.1: no tag filter) |
+| `ml-recall:srs:v1` | question id → `[due, stability, difficulty, scheduledDays, reps, lapses, state, lastReview]` (times in ms): the [spaced-repetition](#review-spaced-repetition) card (`src/lib/srs.ts`) |
 
 `<scope>` is `topic:<id>`, `tag:<tag>` or `mixed:custom` (prefixed: a topic and a tag may share
 a name, e.g. `pytorch`). All access is wrapped in `try/catch`; the app works without storage. The index
@@ -257,6 +258,30 @@ learner picks.
   the site it is discarded with a notice. **New test** returns to the form; the results link
   to **Practice your mistakes**.
 
+### Review (spaced repetition)
+
+`/review/` (`Review.tsx`, scheduling in `src/lib/srs.ts` with [ts-fsrs](https://github.com/open-spaced-repetition/ts-fsrs), MIT):
+
+- **Cards.** Every graded answer — practice, test, My mistakes, review — is a review of that
+  question's FSRS card: wrong = **Again**, right = **Good** (`saveResults` → `recordReviews`;
+  the scheduler module is loaded with a dynamic `import()` on the first answer, so pages
+  without answers don't download it). FSRS defaults (90 % target retention), days-based
+  (`enable_short_term: false`: no same-day learning steps), with fuzz. A card is **due** on the
+  local day of its due date or later (`dueIds`, `endOfDay`).
+- **Backfill.** Results stored before scheduling existed (or imported from another browser)
+  get a card on first visit: one review at the time of the stored result (`withBackfill`).
+- **Page.** "N questions due", **Review N now** (at most 50 per round, most overdue first),
+  tiles (due today, tomorrow, next 7 days, tracked and mature ≥ 21 days), a 7-day forecast and
+  the due questions per topic with a **Review** button each. A round fetches the questions and
+  runs the practice `Quiz` with topics shown.
+- **Rating.** After a right answer the sticky bar offers **Hard · Good · Easy** with the next
+  interval each gives (`previewDays`, fuzz-free); Good is already recorded and selected, and a
+  click re-rates from the card as it was when the round started (`rateAnswer`). A wrong answer
+  shows "Again: it comes back tomorrow".
+- **Badge.** "Review" in the header (and on the index) shows today's due count, read from
+  storage by a tiny script (`src/lib/srs-due.ts`, no scheduler); it refreshes when cards are
+  saved (`ml-recall:srs` window event) and on back/forward navigation.
+
 ### My mistakes
 
 `/mistakes/` (`Mistakes.tsx`): every question whose **latest** result (`ml-recall:results:v1`,
@@ -322,6 +347,7 @@ Actions**.
 | Question index, mixed-test pool, mistakes, progress | `src/lib/catalog.ts` (+ `catalog.test.ts`); index built by `toCatalog()` in `bank.ts` |
 | Fetching questions; per-question JSON | `src/lib/fetch.ts` (+ `fetch.test.ts`); `src/pages/data/q/[id].json.ts` |
 | Mixed test, My mistakes, Progress UI | `src/components/MixedExam.tsx`, `Mistakes.tsx`, `Progress.tsx`; pages `exam.astro`, `mistakes.astro`, `progress.astro` |
+| Spaced repetition: cards, due, forecast, rating; review UI; due badge | `src/lib/srs.ts` (+ `srs.test.ts`), `src/lib/srs-due.ts`; `src/components/Review.tsx`, page `review.astro`; badge script in `Base.astro` |
 | Figure zoom, picture-option grid | `src/components/Figure.tsx`; `OptionList` in `QuestionCard.tsx` |
 | Short-answer format hints | `answerHint()` in `src/lib/grading.ts`; shown by `QuestionCard.tsx` |
 | Colours, dark mode | tokens at the top of `src/styles/global.css` |

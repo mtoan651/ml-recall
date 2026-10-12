@@ -66,6 +66,6 @@ Versions follow [conventions.md#versioning](conventions.md#versioning).
 
 ## v0.5.0 — Retention
 
-- [ ] Spaced repetition (FSRS) over question ids
+- [x] Spaced repetition (FSRS) over question ids (`/review/`)
 - [ ] Topic notes / cheat sheets (MDX), Pagefind search
 - [ ] Export/import progress; PWA offline; Vietnamese UI

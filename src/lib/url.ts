@@ -20,5 +20,7 @@ export const mixedExamUrl = (tag?: string): string =>
 /** Questions answered wrong last time, to practise again. */
 export const mistakesUrl = (): string => url("mistakes/");
 export const progressUrl = (): string => url("progress/");
+/** Questions due for spaced repetition. */
+export const reviewUrl = (): string => url("review/");
 /** One rendered question as JSON (`QuizQuestion`), fetched by the cross-topic pages. */
 export const questionDataUrl = (id: string): string => url(`data/q/${id}.json`);

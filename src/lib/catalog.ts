@@ -168,6 +168,23 @@ export interface MistakeGroup {
   ids: string[];
 }
 
+/** `ids` per topic, topics in catalog order, ids in the given order; unknown ids dropped. */
+export function groupIdsByTopic(catalog: Catalog, ids: readonly string[]): MistakeGroup[] {
+  const topicOf = new Map(catalogEntries(catalog).map((e) => [e.id, e.topic.id]));
+  const byTopic = new Map<string, string[]>();
+  for (const id of ids) {
+    const topic = topicOf.get(id);
+    if (!topic) continue;
+    byTopic.set(topic, [...(byTopic.get(topic) ?? []), id]);
+  }
+  return catalog.domains.flatMap((domain) =>
+    domain.topics.flatMap((topic) => {
+      const group = byTopic.get(topic.id);
+      return group ? [{ topic, domainTitle: domain.title, ids: group }] : [];
+    }),
+  );
+}
+
 /** Mistakes per topic, topics in catalog order. */
 export function mistakesByTopic(catalog: Catalog, mistakes: readonly Mistake[]): MistakeGroup[] {
   const byTopic = new Map<string, string[]>();
