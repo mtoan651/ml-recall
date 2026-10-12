@@ -85,7 +85,7 @@ public), and sites whose terms forbid feeding content to AI/LLM tools.
 
 NPTEL *Computer Vision* and *Responsible & Safe AI* also publish their assignments (not fetched:
 NPTEL's terms bar bulk downloading) · the LLM Course `chapter_1_exam` dataset (no licence on its
-card) · OpenIntro Statistics (row 16).
+card).
 
 Citation targets for original questions (no quizzes): CS231n notes (MIT) · aima-python (MIT) ·
 Hugging Face smol-course, Diffusion course (Apache-2.0) and Computer Vision course (MIT).
