@@ -3,6 +3,7 @@ import ExamCallout from "../../../components/ExamCallout.astro";
 import Quiz from "../../../components/Quiz";
 import Base from "../../../layouts/Base.astro";
 import { getBank, toQuizQuestions } from "../../../lib/bank";
+import { getNotes } from "../../../lib/notes";
 import { topicExamUrl, url } from "../../../lib/url";
 
 export async function getStaticPaths() {
@@ -18,6 +19,7 @@ if (!topic) throw new Error(`Unknown topic ${Astro.params.topic}`);
 const topicQuestions = bank.questions.filter((q) => q.topic.id === topic.id);
 const questions = await toQuizQuestions(topicQuestions, bank);
 const total = questions.length;
+const note = (await getNotes(bank)).get(topic.id);
 ---
 
 <Base
@@ -33,6 +35,16 @@ const total = questions.length;
   {topic.description && <p class="mt-2 text-muted">{topic.description}</p>}
   <p class="mt-2 text-sm text-muted">
     {total} {total === 1 ? "question" : "questions"} · {topic.reviewed} reviewed
+    {
+      note && (
+        <>
+          {" · "}
+          <a href={`${topic.url}notes/`} class="font-medium text-accent hover:underline">
+            Read the notes ({note.minutes} min)
+          </a>
+        </>
+      )
+    }
   </p>
 
   <ExamCallout

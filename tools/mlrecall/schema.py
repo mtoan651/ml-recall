@@ -279,6 +279,31 @@ class QuizFile(_Strict):
     questions: list[Question] = []
 
 
+# --------------------------------------------------------------------------- notes
+
+
+class Note(_Strict):
+    """Front matter of a topic note: src/content/notes/<domain>/<topic>.md (body: Markdown)."""
+
+    topic: Slug = Field(description="Topic id from taxonomy.yaml; one note per topic")
+    summary: Annotated[str, StringConstraints(min_length=1, max_length=200)] = Field(
+        description="One sentence on what the topic is about (shown under the title)"
+    )
+    status: Literal["draft", "reviewed"] = "draft"
+    reviewed_by: Literal["owner", "claude"] | None = Field(
+        None, description="Required when reviewed: the owner, or Claude at the owner's request"
+    )
+    references: list[Reference] = Field(
+        min_length=2, description="Cited in the body as [^1], [^2], … (1-based)"
+    )
+
+    @model_validator(mode="after")
+    def _reviewer(self) -> Note:
+        if self.status == "reviewed" and self.reviewed_by is None:
+            raise ValueError("a reviewed note needs reviewed_by")
+        return self
+
+
 # --------------------------------------------------------------------------- taxonomy
 
 

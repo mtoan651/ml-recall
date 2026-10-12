@@ -333,6 +333,18 @@ are not ml-recall backups, or from a newer format, are rejected with a message.
   on phones); `?q=` pre-fills the query. Under `astro dev` there is no index, and the page says
   so. "Search" is in the header (GitHub moved to the footer).
 
+## Topic notes
+
+`/topics/<topic>/notes/` (`src/pages/topics/[topic]/notes.astro`) for every topic with a note
+([format](data-format.md#topic-notes)): breadcrumb, the summary, reading time (prose words /
+200, `proseWords`), an AI-checked / Reviewed badge, **Practise N questions** and **Take a test**,
+then the note in a card and its numbered references. `src/lib/notes.ts` loads the `notes`
+collection (`content.config.ts`, validated by `noteSchema`), checks topic and path, and renders
+the body with `renderMarkdown` (citations link to `#ref-note-<topic>-<n>`); Astro's own
+Markdown rendering is not used. The topic page shows **Read the notes (N min)** next to its
+counts, and each question page links to its topic's notes. Notes are indexed for search
+(`data-pagefind-body`, filter `Type: Note`; the reference list is ignored).
+
 ## Offline (PWA)
 
 The site installs as an app and works offline (only in the built site; `astro dev` registers
@@ -404,6 +416,7 @@ Actions**.
 | Fetching questions; per-question JSON | `src/lib/fetch.ts` (+ `fetch.test.ts`); `src/pages/data/q/[id].json.ts` |
 | Mixed test, My mistakes, Progress UI | `src/components/MixedExam.tsx`, `Mistakes.tsx`, `Progress.tsx`; pages `exam.astro`, `mistakes.astro`, `progress.astro` |
 | Question pages, search index, search UI | `src/pages/q/[id].astro`, `src/lib/text.ts` (+ `text.test.ts`), `src/pages/search.astro`; `build` script in `package.json`; `.search-ui` in `global.css` |
+| Topic notes: loading, page, links | `src/lib/notes.ts`, `src/pages/topics/[topic]/notes.astro`; schema `noteSchema` / `Note`; checks in `tools/mlrecall/notes.py` |
 | Offline support, install | `tools/web/sw.template.js`, `tools/web/build-sw.mjs`, `src/pages/manifest.webmanifest.ts`, `src/pages/offline.astro`, icons in `public/`; registration in `Base.astro` |
 | Export / import of progress | `src/lib/backup.ts` (+ `backup.test.ts`); panel in `src/components/Progress.tsx` |
 | Spaced repetition: cards, due, forecast, rating; review UI; due badge | `src/lib/srs.ts` (+ `srs.test.ts`), `src/lib/srs-due.ts`; `src/components/Review.tsx`, page `review.astro`; badge script in `Base.astro` |

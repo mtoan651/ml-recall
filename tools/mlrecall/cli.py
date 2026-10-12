@@ -73,13 +73,14 @@ def main(argv: list[str] | None = None) -> int:
 
 
 def export_schemas() -> int:
-    from .schema import QuizFile, SourceRegistry, Taxonomy
+    from .schema import Note, QuizFile, SourceRegistry, Taxonomy
 
     paths.SCHEMA_DIR.mkdir(exist_ok=True)
     for name, model in [
         ("quiz", QuizFile),
         ("taxonomy", Taxonomy),
         ("sources", SourceRegistry),
+        ("note", Note),
     ]:
         out = paths.SCHEMA_DIR / f"{name}.schema.json"
         out.write_text(json.dumps(model.model_json_schema(), indent=2) + "\n", encoding="utf-8")

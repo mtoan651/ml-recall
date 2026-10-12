@@ -164,9 +164,41 @@ marker in its explanation. Prefer precise locators (section, page, slide) over a
   `usage` (`adapt` · `reference` · `original` · `private`), `pinned` (upstream revision used by the
   importer), `covers`, `plan`, `notes`. See [sources.md](sources.md).
 
+## Topic notes
+
+One cheat sheet per topic: `src/content/notes/<domain>/<topic>.md` — YAML front matter
+(model `Note`, `schema/note.schema.json`) and a Markdown body with the same rules as question
+text (KaTeX, fenced code, `[^n]` citations; no raw HTML, no `{{`).
+
+```markdown
+---
+topic: cnn                    # topic id; the file name and folder must match the taxonomy
+summary: One sentence (≤ 200 characters) on what the topic is about.
+status: reviewed              # draft (default) | reviewed
+reviewed_by: claude           # owner | claude — required when reviewed
+references:                   # at least 2, cited in the body as [^1], [^2], …
+  - source: d2l               # registry id, or `title:` for other works
+    url: https://d2l.ai/chapter_convolutional-neural-networks/padding-and-strides.html
+    locator: Sec. 7.3 Padding and Stride
+  - title: 'Wikipedia: Convolutional neural network'
+    url: https://en.wikipedia.org/wiki/Convolutional_neural_network
+---
+## Key ideas
+…
+## Common pitfalls
+…
+```
+
+Sections are `##` headings from `Key ideas`, `Formulas`, `Worked example`, `In code`, `Common
+pitfalls`, in that order; `Key ideas` and `Common pitfalls` are required. Aim for 400–1300
+words of prose (code and math don't count); every reference must be cited.
+
 ## Validation
 
 `uv run mlr check` fails on: schema errors, path/topic mismatch, unknown topic or source,
 reference-only provenance, duplicate ids or source refs, missing figure files, citation markers
-without references. It warns on: options that break shuffling, unbalanced `$`, near-duplicate
+without references. For topic notes it also fails on a bad front matter, a path that doesn't
+match the taxonomy, a second note for a topic, unknown or misordered sections, uncited
+references, citations without a reference, unbalanced `$` and raw HTML (and warns on the
+length). It warns on: options that break shuffling, unbalanced `$`, near-duplicate
 questions; and reports answer-position and "longest option is correct" bias.

@@ -10,6 +10,7 @@ import { parse } from "yaml";
 import {
   domainSchema,
   figureSchema,
+  noteSchema,
   optionSchema,
   provenanceSchema,
   questionSchema,
@@ -41,6 +42,7 @@ const loadJsonSchema = (name: string): JsonSchemaFile =>
 const quiz = loadJsonSchema("quiz");
 const taxonomy = loadJsonSchema("taxonomy");
 const sources = loadJsonSchema("sources");
+const note = loadJsonSchema("note");
 const defs = { ...quiz.$defs, ...taxonomy.$defs, ...sources.$defs };
 
 type AnyObject = z.ZodObject<z.ZodRawShape>;
@@ -57,6 +59,7 @@ const PAIRS: Array<[string, JsonSchemaObject | undefined, AnyObject]> = [
   ["Taxonomy", taxonomy, taxonomySchema],
   ["Source", defs.Source, sourceSchema],
   ["SourceRegistry", sources, sourceRegistrySchema],
+  ["Note", note, noteSchema],
 ] as unknown as Array<[string, JsonSchemaObject | undefined, AnyObject]>;
 
 const accepts = (schema: z.core.$ZodType | undefined, value: unknown): boolean =>

@@ -23,6 +23,7 @@ pnpm lint && pnpm test && pnpm check && pnpm build   # must pass before committi
 ## Where things are
 
 - Questions: `src/content/quizzes/<domain>/<topic>.yaml`; taxonomy and source registry next to them.
+- Topic notes (cheat sheets): `src/content/notes/<domain>/<topic>.md` (`docs/data-format.md#topic-notes`).
 - Schema (source of truth): `tools/mlrecall/schema.py` → spec in `docs/data-format.md`;
   mirrored in Zod for the web build (`src/lib/schema.ts`) — change both together.
 - Web app: `src/pages/`, `src/components/` (React quiz island), pure logic in `src/lib/`.
