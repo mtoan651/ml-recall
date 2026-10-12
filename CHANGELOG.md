@@ -7,6 +7,11 @@ versioning: [SemVer](https://semver.org) as defined in [docs/conventions.md](doc
 
 ### Added
 
+- **57 questions from the Hands-On Machine Learning notebooks** (Apache-2.0 notebooks only, never
+  the book's text): written from the exercise solutions of 18 chapters across 24 topics, 22 of
+  them code reading (TensorFlow ideas rewritten in PyTorch or scikit-learn), every snippet run;
+  reviewed by a second, independent pass (25 fixed, e.g. the deprecated `SVC(probability=True)`
+  and version-dependent numbers).
 - **59 questions from OpenIntro Statistics** (CC BY-SA 3.0, from its GitHub LaTeX source):
   odd-numbered exercises with printed answers — probability 19, statistics 30 (sampling, inference,
   power, χ², ANOVA), linear regression 10 — keys re-derived with scipy and tolerances that reject
@@ -28,6 +33,8 @@ versioning: [SemVer](https://semver.org) as defined in [docs/conventions.md](doc
 
 ### Fixed
 
+- `object-detection-005` linked the PASCAL VOC paper on a host that now disallows crawlers; it
+  uses the DOI instead (curation fix).
 - Three imported questions whose wording made the key debatable, found while reviewing the topic
   notes (each recorded as a curation fix): `gans-006` (Google calls GAN training alternating,
   Goodfellow et al. "simultaneous" — now asks about updating both in every step),

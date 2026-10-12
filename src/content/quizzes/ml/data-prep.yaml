@@ -2988,3 +2988,148 @@ questions:
       ref: lecture-01/q11
     status: reviewed
     reviewed_by: claude
+  - id: data-prep-088
+    type: single
+    difficulty: medium
+    tags:
+      - custom-transformer
+      - scikit-learn-api
+      - fit-transform
+    question: |
+      What happens when this code runs?
+
+      ```python
+      import numpy as np
+      from sklearn.base import BaseEstimator, TransformerMixin
+
+      class Centerer(TransformerMixin, BaseEstimator):
+          def fit(self, X, y=None):
+              self.mean_ = X.mean(axis=0)      # no return statement
+
+          def transform(self, X):
+              return X - self.mean_
+
+      X = np.array([[1.0, 2.0], [3.0, 6.0]])
+      print(Centerer().fit_transform(X))
+      ```
+    options:
+      - text: '`fit_transform` raises an `AttributeError`, because `fit` returned `None`'
+        correct: true
+      - text: It prints the centered array `[[-1. -2.] [ 1.  2.]]`
+        why: That would be the output if `fit` ended with `return self`. The inherited `fit_transform` calls `.transform` on whatever `fit` returns.
+      - text: It prints `None`
+        why: '`fit_transform` does not return the result of `fit`; it calls `transform` on it, and calling a method on `None` fails.'
+      - text: '`TransformerMixin` notices the missing `return self`, warns, and prints the centered array'
+        why: Nothing checks the return value at run time; only a test suite such as `check_estimator` would flag it.
+    explanation: |
+      `TransformerMixin` provides `fit_transform` as `self.fit(X, ...).transform(X)`, so it relies on
+      the scikit-learn convention that `fit` returns the estimator itself [^2]. This `fit` returns
+      `None`, and Python raises `AttributeError: 'NoneType' object has no attribute 'transform'`.
+      The same convention is what makes one-liners such as `model.fit(X, y).predict(X_new)` work,
+      and the custom transformers in the handson-ml3 solutions end `fit` with `return self` for this
+      reason [^1].
+    references:
+      - source: handson-ml3
+        locator: 02_end_to_end_machine_learning_project.ipynb, Exercise solutions, 4. (FeatureFromRegressor.fit)
+        url: https://github.com/ageron/handson-ml3/blob/ef1c9f5ab11083584635b9b3a7846f49c58a6084/02_end_to_end_machine_learning_project.ipynb
+      - title: 'scikit-learn developer guide: Developing scikit-learn estimators'
+        locator: APIs of scikit-learn objects, Fitting
+        url: https://scikit-learn.org/stable/developers/develop.html#fitting
+    source:
+      id: handson-ml3
+      ref: 02_end_to_end_machine_learning_project#ex4
+      url: https://github.com/ageron/handson-ml3/blob/ef1c9f5ab11083584635b9b3a7846f49c58a6084/02_end_to_end_machine_learning_project.ipynb
+    status: reviewed
+    reviewed_by: claude
+  - id: data-prep-089
+    type: short_answer
+    difficulty: medium
+    tags:
+      - standardization
+      - standard-scaler
+      - ddof
+    question: |
+      What does this print? Give 3 decimals.
+
+      ```python
+      import numpy as np
+      from sklearn.preprocessing import StandardScaler
+
+      X = np.array([[0.0], [2.0], [4.0]])
+      print(StandardScaler().fit_transform(X)[2, 0])
+      ```
+    answer:
+      numeric: 1.2247
+      tolerance: 0.001
+      hint: A number with 3 decimals, e.g. 0.816
+      model: $\dfrac{4 - 2}{\sqrt{8/3}} \approx 1.225$ (population standard deviation, `ddof=0`)
+    explanation: |
+      The column has mean 2. `StandardScaler` divides by the *biased* (population) standard
+      deviation, the same as `numpy.std(x, ddof=0)` [^2]:
+      $\sigma = \sqrt{(4 + 0 + 4)/3} = \sqrt{8/3} \approx 1.633$, so the last value becomes
+      $(4 - 2)/1.633 \approx 1.2247$. Dividing by the sample standard deviation ($n - 1 = 2$ in the
+      denominator, $\sigma = 2$) would give exactly 1.0 instead. The from-scratch
+      `StandardScalerClone` in the handson-ml3 solutions uses `np.std(X, axis=0, ddof=0)` to match
+      scikit-learn [^1].
+    references:
+      - source: handson-ml3
+        locator: 02_end_to_end_machine_learning_project.ipynb, Exercise solutions, 6. (StandardScalerClone)
+        url: https://github.com/ageron/handson-ml3/blob/ef1c9f5ab11083584635b9b3a7846f49c58a6084/02_end_to_end_machine_learning_project.ipynb
+      - title: 'scikit-learn API reference: StandardScaler'
+        locator: Notes
+        url: https://scikit-learn.org/stable/modules/generated/sklearn.preprocessing.StandardScaler.html
+    source:
+      id: handson-ml3
+      ref: 02_end_to_end_machine_learning_project#ex6
+      url: https://github.com/ageron/handson-ml3/blob/ef1c9f5ab11083584635b9b3a7846f49c58a6084/02_end_to_end_machine_learning_project.ipynb
+    status: reviewed
+    reviewed_by: claude
+  - id: data-prep-090
+    type: short_answer
+    difficulty: easy
+    tags:
+      - imputation
+      - simple-imputer
+      - data-leakage
+    question: |
+      What does this print?
+
+      ```python
+      import numpy as np
+      from sklearn.impute import SimpleImputer
+
+      train = np.array([[22.0], [38.0], [np.nan], [26.0], [35.0]])   # ages
+      test = np.array([[np.nan], [50.0]])
+
+      imputer = SimpleImputer(strategy="median").fit(train)
+      print(imputer.transform(test)[0, 0])
+      ```
+    answer:
+      numeric: 30.5
+      tolerance: 0
+      hint: A number, e.g. 12.5
+      model: 30.5, the median of the four known training ages 22, 26, 35, 38
+    explanation: |
+      `fit` ignores the missing value and stores the median of each training column in
+      `statistics_`: the median of 22, 26, 35 and 38 is $(26 + 35)/2 = 30.5$ [^2]. `transform` then
+      fills every missing entry, including those of the test set, with that stored value; it does not
+      look at the test data (whose only known age is 50), and it does not use the mean (30.25).
+      Fitting the imputer on the training split only and reusing it on new data is what the
+      numerical pipeline of the Titanic solution does [^1], and it avoids leaking test information
+      into preprocessing [^3].
+    references:
+      - source: handson-ml3
+        locator: 03_classification.ipynb, Exercise solutions, 3. Tackle the Titanic dataset (num_pipeline)
+        url: https://github.com/ageron/handson-ml3/blob/ef1c9f5ab11083584635b9b3a7846f49c58a6084/03_classification.ipynb
+      - title: 'scikit-learn API reference: SimpleImputer'
+        locator: Parameters (strategy="median"); Attributes (statistics_)
+        url: https://scikit-learn.org/stable/modules/generated/sklearn.impute.SimpleImputer.html
+      - title: 'scikit-learn user guide: Common pitfalls and recommended practices'
+        locator: Sec. 12.2.1 How to avoid data leakage
+        url: https://scikit-learn.org/stable/common_pitfalls.html#how-to-avoid-data-leakage
+    source:
+      id: handson-ml3
+      ref: 03_classification#ex3
+      url: https://github.com/ageron/handson-ml3/blob/ef1c9f5ab11083584635b9b3a7846f49c58a6084/03_classification.ipynb
+    status: reviewed
+    reviewed_by: claude

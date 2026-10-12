@@ -1008,3 +1008,63 @@ questions:
       ref: policy-gradient-027
     status: reviewed
     reviewed_by: claude
+  - id: policy-gradient-028
+    type: short_answer
+    difficulty: hard
+    tags:
+      - reinforce
+      - discounted-return
+      - return-normalization
+      - baseline
+    question: |
+      A REINFORCE agent weights the gradient of each action's log-probability by its discounted,
+      normalized return; actions with a positive value are made more likely, the others less likely.
+
+      ```python
+      import numpy as np
+
+      def discount_rewards(rewards, gamma):
+          discounted = np.array(rewards, dtype=float)
+          for step in range(len(rewards) - 2, -1, -1):
+              discounted[step] += discounted[step + 1] * gamma
+          return discounted
+
+      def discount_and_normalize_rewards(all_rewards, gamma):
+          all_discounted = [discount_rewards(r, gamma) for r in all_rewards]
+          flat = np.concatenate(all_discounted)
+          return [(d - flat.mean()) / flat.std() for d in all_discounted]
+
+      # two episodes, with the reward received after each action
+      advantages = discount_and_normalize_rewards([[10, 0, -50], [-10, -10]], gamma=0.8)
+      ```
+
+      How many of the five actions get a positive value in `advantages`?
+    answer:
+      numeric: 3
+      tolerance: 0
+      hint: An integer from 0 to 5
+      model: 'Returns $[-22, -40, -50]$ and $[-18, -10]$, mean $-28$: the three returns above the mean ($-22, -18, -10$) get positive values.'
+    explanation: |
+      `discount_rewards` accumulates from the end: episode 1 gives $-50$, $0 + 0.8(-50) = -40$,
+      $10 + 0.8(-40) = -22$, i.e. `[-22, -40, -50]`; episode 2 gives `[-18, -10]`. All five returns
+      are negative, but normalization subtracts their mean, $-28$, and divides by their standard
+      deviation, giving about `[0.41, -0.81, -1.49]` and `[0.68, 1.22]`: three actions are
+      encouraged. Normalizing across all episodes of the batch is what the handson-ml3 LunarLander
+      solution does [^1]. Subtracting a baseline that does not depend on the action leaves the
+      policy gradient unchanged in expectation but can greatly reduce its variance; intuitively, an
+      outcome that matches what the agent expected should leave it neutral [^2]. Dividing by the
+      standard deviation only rescales the step size of each batch; it does not change which
+      actions are encouraged.
+    references:
+      - source: handson-ml3
+        locator: 18_reinforcement_learning.ipynb, Exercise Solutions, 8. (discount_rewards, discount_and_normalize_rewards)
+        url: https://github.com/ageron/handson-ml3/blob/ef1c9f5ab11083584635b9b3a7846f49c58a6084/18_reinforcement_learning.ipynb
+      - source: spinning-up
+        locator: 'Part 3: Intro to Policy Optimization, Baselines in Policy Gradients'
+        url: https://spinningup.openai.com/en/latest/spinningup/rl_intro3.html#baselines-in-policy-gradients
+    source:
+      id: handson-ml3
+      ref: 18_reinforcement_learning#ex8
+      url: https://github.com/ageron/handson-ml3/blob/ef1c9f5ab11083584635b9b3a7846f49c58a6084/18_reinforcement_learning.ipynb
+    status: reviewed
+    reviewed_by: claude

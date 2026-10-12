@@ -3158,3 +3158,85 @@ questions:
       url: https://github.com/OpenIntroStat/openintro-statistics/blob/fee25091fb24e89c36296fd67c48c1fcf7a93b6e/ch_regr_mult_and_log/TeX/review_exercises.tex
     status: reviewed
     reviewed_by: claude
+  - id: linear-regression-087
+    type: single
+    difficulty: easy
+    tags:
+      - normal-equation
+      - gradient-descent
+      - computational-complexity
+    question: |
+      You want to train a linear regression model on a training set with millions of features.
+      Which training method is impractical here?
+    options:
+      - text: The closed-form Normal Equation (or SVD) solution
+        correct: true
+      - text: Stochastic gradient descent
+        why: Each SGD step touches one instance, so its cost grows only linearly with the number of features; it is the usual choice for very wide, sparse data.
+      - text: Mini-batch gradient descent
+        why: Like SGD, a mini-batch step costs time linear in the number of features, so millions of features are fine.
+      - text: Full-batch gradient descent, when all the data fit in RAM
+        why: A full-batch gradient step is a pass over the data, also linear in the number of features; it is slow per step but feasible.
+    explanation: |
+      The closed-form solutions scale badly with the number of features $n$: the Normal Equation
+      inverts the $n \times n$ matrix $\mathbf{X}^\top\mathbf{X}$, and the SVD-based solver used by
+      scikit-learn's `LinearRegression` costs $O(m\,n^2)$ for $m \geq n$ instances [^2], which is out
+      of reach when $n$ is in the millions. Gradient descent variants only need matrix–vector
+      products, so their cost per epoch is linear in the number of (non-zero) features [^3]; that is
+      why SGD or mini-batch GD (and batch GD if the data fit in memory) are the options left [^1].
+    references:
+      - source: handson-ml3
+        locator: 04_training_linear_models.ipynb, Exercise solutions, 1.
+        url: https://github.com/ageron/handson-ml3/blob/ef1c9f5ab11083584635b9b3a7846f49c58a6084/04_training_linear_models.ipynb
+      - title: 'scikit-learn user guide: Linear Models'
+        locator: Sec. 1.1.1.2 Ordinary Least Squares Complexity
+        url: https://scikit-learn.org/stable/modules/linear_model.html#ordinary-least-squares-complexity
+      - title: 'scikit-learn user guide: Stochastic Gradient Descent'
+        locator: Sec. 1.5.5 Complexity
+        url: https://scikit-learn.org/stable/modules/sgd.html#complexity
+    source:
+      id: handson-ml3
+      ref: 04_training_linear_models#ex1
+      url: https://github.com/ageron/handson-ml3/blob/ef1c9f5ab11083584635b9b3a7846f49c58a6084/04_training_linear_models.ipynb
+    status: reviewed
+    reviewed_by: claude
+  - id: linear-regression-088
+    type: single
+    difficulty: medium
+    tags:
+      - lasso
+      - elastic-net
+      - correlated-features
+      - regularization
+    question: |
+      You suspect that only a few features matter, so you want a sparse linear model. However,
+      several of your features are strongly correlated with each other, and Lasso picks among
+      them erratically from one run or data sample to the next. What is the usual remedy?
+    options:
+      - text: Elastic Net with `l1_ratio` close to 1
+        correct: true
+      - text: Ridge regression with a large `alpha`
+        why: An ℓ2 penalty shrinks weights but almost never sets them exactly to zero, so you lose the sparsity you wanted.
+      - text: Lasso with a smaller `alpha`
+        why: A weaker ℓ1 penalty keeps more features but does not change how Lasso chooses arbitrarily among correlated ones.
+      - text: Plain least squares followed by dropping the smallest weights
+        why: Unregularized weights of correlated features are unstable (they can trade off against each other), so thresholding them is just as erratic.
+    explanation: |
+      Elastic Net adds both an ℓ1 and an ℓ2 penalty, mixed by `l1_ratio`. The ℓ1 part still drives
+      many weights to exactly zero, while the ℓ2 part adds Ridge-like stability: with a group of
+      correlated features, Lasso tends to keep one of them at random, whereas Elastic Net tends to
+      keep them together [^2]. Setting `l1_ratio` close to 1 gives "Lasso without the erratic
+      behaviour" at the cost of one more hyperparameter [^1].
+    references:
+      - source: handson-ml3
+        locator: 04_training_linear_models.ipynb, Exercise solutions, 10.
+        url: https://github.com/ageron/handson-ml3/blob/ef1c9f5ab11083584635b9b3a7846f49c58a6084/04_training_linear_models.ipynb
+      - title: 'scikit-learn user guide: Linear Models'
+        locator: Sec. 1.1.5 Elastic-Net
+        url: https://scikit-learn.org/stable/modules/linear_model.html#elastic-net
+    source:
+      id: handson-ml3
+      ref: 04_training_linear_models#ex10
+      url: https://github.com/ageron/handson-ml3/blob/ef1c9f5ab11083584635b9b3a7846f49c58a6084/04_training_linear_models.ipynb
+    status: reviewed
+    reviewed_by: claude

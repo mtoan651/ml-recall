@@ -2543,3 +2543,237 @@ questions:
       url: https://arxiv.org/abs/2201.00650v2
     status: reviewed
     reviewed_by: claude
+  - id: trees-ensembles-068
+    type: short_answer
+    difficulty: easy
+    tags:
+      - decision-tree
+      - tree-depth
+      - logarithm
+    question: |
+      A decision tree with binary splits is grown without restrictions on 1,000,000 distinct
+      training instances, so it ends up with roughly one instance per leaf. If the tree were
+      perfectly balanced, what would its depth be (rounded up to an integer)?
+    answer:
+      numeric: 20
+      tolerance: 0
+      hint: An integer
+      model: $\lceil \log_2 10^6 \rceil = \lceil 19.93 \rceil = 20$
+    explanation: |
+      Each level of a balanced binary tree doubles the number of nodes, so $m$ leaves need a depth
+      of $\lceil \log_2 m \rceil$. For $m = 10^6$, $\log_2 10^6 = 6 \log_2 10 \approx 19.93$, so the
+      depth is about 20 [^1]. Real trees are not perfectly balanced, so they end up somewhat deeper.
+      The same halving argument gives the $O(\log n_{\text{samples}})$ depth, and hence the cheap
+      prediction cost, of a fully grown balanced tree [^2].
+    references:
+      - source: handson-ml3
+        locator: 06_decision_trees.ipynb, Exercise solutions, 1.
+        url: https://github.com/ageron/handson-ml3/blob/ef1c9f5ab11083584635b9b3a7846f49c58a6084/06_decision_trees.ipynb
+      - title: 'scikit-learn user guide: Decision Trees'
+        locator: Sec. 1.10.4 Complexity
+        url: https://scikit-learn.org/stable/modules/tree.html#complexity
+    source:
+      id: handson-ml3
+      ref: 06_decision_trees#ex1
+      url: https://github.com/ageron/handson-ml3/blob/ef1c9f5ab11083584635b9b3a7846f49c58a6084/06_decision_trees.ipynb
+    status: reviewed
+    reviewed_by: claude
+  - id: trees-ensembles-069
+    type: short_answer
+    difficulty: hard
+    tags:
+      - decision-tree
+      - gini-impurity
+      - cart
+      - scikit-learn
+    question: |
+      ```python
+      from sklearn.tree import DecisionTreeClassifier
+
+      X = [[0], [1], [2], [3], [4]]
+      y = ["A", "B", "A", "A", "A"]
+      tree = DecisionTreeClassifier(max_depth=1, random_state=0).fit(X, y)
+
+      print(tree.tree_.threshold[0])          # split threshold of the root
+      print(tree.tree_.impurity.round(2))     # Gini impurity: [root, left child, right child]
+      ```
+
+      The first line prints {{1}}. The second line prints `[0.32 ... 0.]`, where the left child's
+      impurity, hidden here, is {{2}}.
+    answer:
+      blanks:
+        - numeric: 1.5
+          tolerance: 0
+          hint: a number, e.g. 2.5
+        - numeric: 0.5
+          tolerance: 0.001
+          hint: a number, e.g. 0.25
+      model: 'Threshold 1.5 (left: A, B; right: A, A, A); left Gini $1 - 0.5^2 - 0.5^2 = 0.5$'
+    explanation: |
+      CART picks the split that minimizes the size-weighted impurity of the two children [^2]. The
+      root holds four A and one B, so its Gini impurity is $1 - (4/5)^2 - (1/5)^2 = 0.32$. The
+      candidate thresholds (midpoints) give weighted impurities $0.5 \to 0.3$, $1.5 \to 0.2$,
+      $2.5 \to 0.267$ and $3.5 \to 0.3$, so the tree splits at 1.5 into {A, B} and {A, A, A}. The
+      left child has Gini $1 - 0.5^2 - 0.5^2 = 0.5$, **higher** than its parent's 0.32; this is
+      allowed because the pure right child brings the weighted sum down to
+      $\tfrac25 \cdot 0.5 + \tfrac35 \cdot 0 = 0.2$. A node's impurity is usually, but not always,
+      lower than its parent's [^1].
+    references:
+      - source: handson-ml3
+        locator: 06_decision_trees.ipynb, Exercise solutions, 2.
+        url: https://github.com/ageron/handson-ml3/blob/ef1c9f5ab11083584635b9b3a7846f49c58a6084/06_decision_trees.ipynb
+      - title: 'scikit-learn user guide: Decision Trees'
+        locator: Sec. 1.10.7 Mathematical formulation; Sec. 1.10.7.1 Classification criteria
+        url: https://scikit-learn.org/stable/modules/tree.html#mathematical-formulation
+    source:
+      id: handson-ml3
+      ref: 06_decision_trees#ex2
+      url: https://github.com/ageron/handson-ml3/blob/ef1c9f5ab11083584635b9b3a7846f49c58a6084/06_decision_trees.ipynb
+    status: reviewed
+    reviewed_by: claude
+  - id: trees-ensembles-070
+    type: short_answer
+    difficulty: hard
+    tags:
+      - decision-tree
+      - training-complexity
+      - scaling
+    question: |
+      Training a decision tree costs about $O(n \times m \log_2 m)$ for $m$ instances and $n$
+      features. Training on 1 million instances takes 1 hour. Roughly how many hours should you
+      expect for 10 million instances with the same features? Give one decimal.
+    answer:
+      numeric: 11.667
+      tolerance: 0.05
+      hint: A number of hours with one decimal, e.g. 13.2
+      model: $10 \times \log_2(10^7) / \log_2(10^6) = 10 \times 7/6 \approx 11.7$
+    explanation: |
+      The time ratio is
+
+      $$K = \frac{n \cdot 10m \log_2(10m)}{n \cdot m \log_2 m} = 10 \cdot \frac{\log_2 10^7}{\log_2 10^6} = 10 \cdot \frac{7}{6} \approx 11.7$$
+
+      (the base of the logarithm cancels) [^1]. So ten times more data costs a bit more than ten times the time,
+      about 11.7 hours. The $O(n_{\text{features}}\, n_{\text{samples}} \log n_{\text{samples}})$
+      cost is that of implementations such as scikit-learn's, which avoid re-sorting the features at
+      every node [^2]. By the same formula, doubling the number of features roughly doubles the
+      training time.
+    references:
+      - source: handson-ml3
+        locator: 06_decision_trees.ipynb, Exercise solutions, 5.
+        url: https://github.com/ageron/handson-ml3/blob/ef1c9f5ab11083584635b9b3a7846f49c58a6084/06_decision_trees.ipynb
+      - title: 'scikit-learn user guide: Decision Trees'
+        locator: Sec. 1.10.4 Complexity
+        url: https://scikit-learn.org/stable/modules/tree.html#complexity
+    source:
+      id: handson-ml3
+      ref: 06_decision_trees#ex5
+      url: https://github.com/ageron/handson-ml3/blob/ef1c9f5ab11083584635b9b3a7846f49c58a6084/06_decision_trees.ipynb
+    status: reviewed
+    reviewed_by: claude
+  - id: trees-ensembles-071
+    type: single
+    difficulty: medium
+    tags:
+      - voting-classifier
+      - soft-voting
+      - svc
+      - predict-proba
+    question: |
+      What happens when this code runs?
+
+      ```python
+      from sklearn.datasets import make_moons
+      from sklearn.ensemble import VotingClassifier
+      from sklearn.linear_model import LogisticRegression
+      from sklearn.svm import SVC
+
+      X, y = make_moons(n_samples=100, noise=0.2, random_state=0)
+      vote = VotingClassifier([("lr", LogisticRegression()), ("svc", SVC())],
+                              voting="soft")
+      vote.fit(X, y)
+      print(vote.predict(X[:3]))
+      ```
+    options:
+      - text: '`predict` raises an `AttributeError`: this `SVC` has no `predict_proba`'
+        correct: true
+      - text: '`fit` raises an error, because soft voting is checked when the ensemble is trained'
+        why: Training just fits clones of both classifiers; the missing `predict_proba` only matters when probabilities are requested.
+      - text: It prints three labels, using the SVC's `decision_function` scores as probabilities
+        why: Soft voting averages `predict_proba` outputs; it does not substitute decision scores, which are not probabilities.
+      - text: It prints three labels after silently falling back to hard voting for the SVC
+        why: There is no automatic fallback; you must give the SVC probabilities (for example by wrapping it in `CalibratedClassifierCV`) or use `voting="hard"`.
+    explanation: |
+      Soft voting predicts the class with the highest average predicted probability, so every
+      estimator must support `predict_proba` [^2]. An `SVC` only provides it when created with
+      `probability=True`, an option deprecated since scikit-learn 1.9 in favour of wrapping the model
+      in `CalibratedClassifierCV` [^3]. Here `fit` succeeds, and `predict` fails with an
+      `AttributeError` saying that this `SVC` has no `predict_proba`. The handson-ml3 solution makes
+      the same point: soft voting often beats hard voting, but only works if every classifier can
+      estimate class probabilities, which for SVMs means `probability=True` [^1].
+    references:
+      - source: handson-ml3
+        locator: 07_ensemble_learning_and_random_forests.ipynb, Exercise solutions, 2.
+        url: https://github.com/ageron/handson-ml3/blob/ef1c9f5ab11083584635b9b3a7846f49c58a6084/07_ensemble_learning_and_random_forests.ipynb
+      - title: 'scikit-learn user guide: Ensembles'
+        locator: Sec. 1.11.4.3 Weighted Average Probabilities (Soft Voting); Sec. 1.11.4.4 Usage
+        url: https://scikit-learn.org/stable/modules/ensemble.html#voting-classifier
+      - title: 'scikit-learn API reference: SVC'
+        locator: Parameters (probability, deprecated in 1.9)
+        url: https://scikit-learn.org/stable/modules/generated/sklearn.svm.SVC.html
+    source:
+      id: handson-ml3
+      ref: 07_ensemble_learning_and_random_forests#ex2
+      url: https://github.com/ageron/handson-ml3/blob/ef1c9f5ab11083584635b9b3a7846f49c58a6084/07_ensemble_learning_and_random_forests.ipynb
+    status: reviewed
+    reviewed_by: claude
+  - id: trees-ensembles-072
+    type: short_answer
+    difficulty: hard
+    tags:
+      - stacking
+      - cross-validation
+      - scikit-learn
+    question: |
+      How many models in total does `stack.fit(X, y)` train (count every call to a `fit` method of
+      a base estimator, a clone of one, or the final estimator)?
+
+      ```python
+      from sklearn.ensemble import StackingClassifier
+      from sklearn.linear_model import LogisticRegression
+      from sklearn.neighbors import KNeighborsClassifier
+      from sklearn.tree import DecisionTreeClassifier
+
+      stack = StackingClassifier(
+          estimators=[("lr", LogisticRegression()),
+                      ("tree", DecisionTreeClassifier()),
+                      ("knn", KNeighborsClassifier())],
+          final_estimator=LogisticRegression(),
+          cv=5)
+      ```
+    answer:
+      numeric: 19
+      tolerance: 0
+      hint: An integer
+      model: $3 \times 5$ (cross-validated predictions) $+\ 3$ (refit on all data) $+\ 1$ (final estimator) $= 19$
+    explanation: |
+      `StackingClassifier` builds the training set of the final estimator with
+      `cross_val_predict`: each of the 3 base estimators is trained 5 times, once per fold, to
+      predict the held-out fold, which is 15 fits. The base estimators kept for prediction,
+      `estimators_`, are fitted separately on the full `X` (3 fits), and the final estimator is
+      trained on the cross-validated predictions (1 fit) [^2]: 19 in total, which counting calls to
+      `fit` confirms. The handson-ml3 solution does the same count for its MNIST stack (4 base
+      models, 5 folds: 25 models) and notes that this lets the stack use all the training data
+      instead of a separate hold-out set [^1].
+    references:
+      - source: handson-ml3
+        locator: 07_ensemble_learning_and_random_forests.ipynb, Exercise solutions, 9. Stacking Ensemble
+        url: https://github.com/ageron/handson-ml3/blob/ef1c9f5ab11083584635b9b3a7846f49c58a6084/07_ensemble_learning_and_random_forests.ipynb
+      - title: 'scikit-learn API reference: StackingClassifier'
+        locator: Description and parameter cv
+        url: https://scikit-learn.org/stable/modules/generated/sklearn.ensemble.StackingClassifier.html
+    source:
+      id: handson-ml3
+      ref: 07_ensemble_learning_and_random_forests#ex9
+      url: https://github.com/ageron/handson-ml3/blob/ef1c9f5ab11083584635b9b3a7846f49c58a6084/07_ensemble_learning_and_random_forests.ipynb
+    status: reviewed
+    reviewed_by: claude

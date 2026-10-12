@@ -1198,3 +1198,282 @@ questions:
       url: https://ocw.mit.edu/courses/9-520-statistical-learning-theory-and-applications-spring-2003/resources/problem_set1/
     status: reviewed
     reviewed_by: claude
+  - id: svm-033
+    type: true_false
+    difficulty: medium
+    tags:
+      - support-vectors
+      - scikit-learn
+      - linear-svm
+    question: |
+      ```python
+      import numpy as np
+      from sklearn.svm import SVC
+
+      X = np.array([[0, 0], [1, 1], [0, 2], [3, 3], [4, 2], [5, 5]], dtype=float)
+      y = np.array([0, 0, 0, 1, 1, 1])
+
+      svm = SVC(kernel="linear", C=1000).fit(X, y)
+      sv = svm.support_                        # indices of the support vectors
+      svm2 = SVC(kernel="linear", C=1000).fit(X[sv], y[sv])
+
+      print(np.allclose(svm.coef_, svm2.coef_),
+            np.allclose(svm.intercept_, svm2.intercept_))
+      ```
+
+      True or false: the last line prints `True True`, i.e. retraining on the support vectors alone
+      gives the same decision boundary.
+    options:
+      - text: 'True'
+        correct: true
+      - text: 'False'
+        why: "Points off the \"street\" have zero dual coefficients: removing them leaves the optimization problem's solution unchanged, so the same weights and intercept come out."
+    explanation: |
+      Only the support vectors, the instances on or inside the margin, have non-zero dual
+      coefficients, and the decision function is a sum over them; points beyond the margin do not
+      affect the cost [^2]. Here the support vectors are $(1, 1)$, $(0, 2)$ and $(3, 3)$, and both
+      fits give $\mathbf{w} \approx (0.5, 0.5)$, $b \approx -2$, so the script prints `True True`.
+      You could remove, add or move any instance that stays off the street without changing the
+      boundary [^1]. This is also why a kernel SVM's predictions only involve the support vectors.
+    references:
+      - source: handson-ml3
+        locator: 05_support_vector_machines.ipynb, Exercise solutions, 2.
+        url: https://github.com/ageron/handson-ml3/blob/ef1c9f5ab11083584635b9b3a7846f49c58a6084/05_support_vector_machines.ipynb
+      - title: 'scikit-learn user guide: Support Vector Machines'
+        locator: Sec. 1.4.2 Regression (intro paragraph); Sec. 1.4.7.1 SVC
+        url: https://scikit-learn.org/stable/modules/svm.html#svc
+    source:
+      id: handson-ml3
+      ref: 05_support_vector_machines#ex2
+      url: https://github.com/ageron/handson-ml3/blob/ef1c9f5ab11083584635b9b3a7846f49c58a6084/05_support_vector_machines.ipynb
+    status: reviewed
+    reviewed_by: claude
+  - id: svm-034
+    type: single
+    difficulty: medium
+    tags:
+      - svc
+      - predict-proba
+      - platt-scaling
+      - calibration
+    question: |
+      How does scikit-learn's `SVC(probability=True)` obtain the class probabilities returned by
+      `predict_proba`?
+    options:
+      - text: It fits a logistic regression on the SVM scores, using extra cross-validation during training
+        correct: true
+      - text: It applies a sigmoid to the distance from the boundary at prediction time, with no extra fitting
+        why: A fixed sigmoid of the distance would not be calibrated; Platt scaling learns the sigmoid's slope and offset from out-of-sample scores.
+      - text: It counts the fraction of support vectors of each class among the nearest training points
+        why: That is a nearest-neighbour style estimate; SVC does nothing of the sort.
+      - text: The SVM margin directly defines exact posterior probabilities, so nothing has to be fitted
+        why: An SVM decision score is not a probability; that is why calibration is needed, and why `probability=True` makes training slower.
+    explanation: |
+      `decision_function` returns scores (signed distances to the boundary), not probabilities.
+      With `probability=True`, scikit-learn calibrates these scores with Platt scaling: a logistic
+      regression on the SVM's scores, fit through an additional cross-validation on the training data
+      [^2]. The handson-ml3 solution describes the same: 5-fold cross-validation produces
+      out-of-sample scores, and a logistic model maps them to probabilities [^1]. This makes training
+      more expensive, and the probabilities can even disagree with `predict` near the boundary [^2].
+      scikit-learn 1.9 deprecated the `probability` parameter (removal planned for 1.11) in favour of
+      `CalibratedClassifierCV(SVC(), ensemble=False)`, which does the same thing explicitly: its
+      default `method="sigmoid"` is Platt scaling, fitted on cross-validated predictions [^3].
+    references:
+      - source: handson-ml3
+        locator: 05_support_vector_machines.ipynb, Exercise solutions, 4.
+        url: https://github.com/ageron/handson-ml3/blob/ef1c9f5ab11083584635b9b3a7846f49c58a6084/05_support_vector_machines.ipynb
+      - title: 'scikit-learn user guide: Support Vector Machines'
+        locator: Sec. 1.4.1.2 Scores and probabilities
+        url: https://scikit-learn.org/stable/modules/svm.html#scores-and-probabilities
+      - title: 'scikit-learn API reference: CalibratedClassifierCV'
+        locator: Description and parameters method, ensemble (ensemble=False is what SVC(probability=True) implements)
+        url: https://scikit-learn.org/stable/modules/generated/sklearn.calibration.CalibratedClassifierCV.html
+    source:
+      id: handson-ml3
+      ref: 05_support_vector_machines#ex4
+      url: https://github.com/ageron/handson-ml3/blob/ef1c9f5ab11083584635b9b3a7846f49c58a6084/05_support_vector_machines.ipynb
+    status: reviewed
+    reviewed_by: claude
+  - id: svm-035
+    type: multiple
+    difficulty: easy
+    tags:
+      - rbf-kernel
+      - underfitting
+      - hyperparameters
+      - gamma
+    question: |
+      An RBF-kernel `SVC` is underfitting: even its accuracy on the training data is poor. Which
+      changes reduce the underfitting? Select all that apply.
+    options:
+      - text: Increase `gamma`
+        correct: true
+      - text: Increase `C`
+        correct: true
+      - text: Decrease `gamma`
+        why: A smaller `gamma` widens each training point's influence, giving an even smoother decision boundary, i.e. more underfitting.
+      - text: Decrease `C`
+        why: A smaller `C` tolerates more margin violations, which regularizes the model further.
+    explanation: |
+      Underfitting means too much regularization. A larger `C` penalizes misclassified training
+      points more, so the model tries harder to classify them all correctly; a larger `gamma` makes
+      each training example's influence more local, so the boundary can bend more [^2]. Increasing
+      either (or both) gives a more flexible model [^1]. On a noisy two-moons dataset, for example, a
+      heavily regularized `SVC(gamma=0.01, C=0.1)` reaches a clearly higher training accuracy once
+      `gamma` or `C` is raised, while lowering either of them gains nothing.
+    references:
+      - source: handson-ml3
+        locator: 05_support_vector_machines.ipynb, Exercise solutions, 6.
+        url: https://github.com/ageron/handson-ml3/blob/ef1c9f5ab11083584635b9b3a7846f49c58a6084/05_support_vector_machines.ipynb
+      - title: 'scikit-learn user guide: Support Vector Machines'
+        locator: Sec. 1.4.6.1 Parameters of the RBF Kernel
+        url: https://scikit-learn.org/stable/modules/svm.html#parameters-of-the-rbf-kernel
+    source:
+      id: handson-ml3
+      ref: 05_support_vector_machines#ex6
+      url: https://github.com/ageron/handson-ml3/blob/ef1c9f5ab11083584635b9b3a7846f49c58a6084/05_support_vector_machines.ipynb
+    status: reviewed
+    reviewed_by: claude
+  - id: svm-036
+    type: true_false
+    difficulty: medium
+    tags:
+      - svr
+      - epsilon-insensitive
+      - support-vectors
+    question: |
+      ```python
+      import numpy as np
+      from sklearn.svm import SVR
+
+      X = np.array([[0.0], [1.0], [2.0], [3.0], [4.0]])
+      y = np.array([0.0, 1.2, 1.9, 3.1, 4.0])
+      svr = SVR(kernel="linear", epsilon=0.5, C=10).fit(X, y)
+
+      # add one point whose target is 0.2 above the current prediction
+      x_new = 2.5
+      X2 = np.vstack([X, [[x_new]]])
+      y2 = np.append(y, svr.predict([[x_new]])[0] + 0.2)
+      svr2 = SVR(kernel="linear", epsilon=0.5, C=10).fit(X2, y2)
+
+      print(np.allclose(svr.predict(X), svr2.predict(X)))
+      ```
+
+      True or false: the last line prints `True`.
+    options:
+      - text: 'True'
+        correct: true
+      - text: 'False'
+        why: The new point lies within 0.5 of the current prediction, inside the ε-tube, where the loss is zero; it adds no cost and no constraint, so the fitted line does not move.
+    explanation: |
+      An SVR fits a tube of half-width ε around its predictions and only penalizes points outside
+      it; its cost function ignores samples whose prediction is within ε of the target [^2]. The new
+      point is 0.2 above the old line, inside the 0.5-wide tube, so the old solution stays optimal and
+      both models predict the same values (here $\hat{y} = 0.75x + 0.5$, with the support vectors
+      $x = 0$ and $x = 4$ on the tube's border). This is what "ε-insensitive" means [^1].
+    references:
+      - source: handson-ml3
+        locator: 05_support_vector_machines.ipynb, Exercise solutions, 7.
+        url: https://github.com/ageron/handson-ml3/blob/ef1c9f5ab11083584635b9b3a7846f49c58a6084/05_support_vector_machines.ipynb
+      - title: 'scikit-learn user guide: Support Vector Machines'
+        locator: Sec. 1.4.2 Regression; Sec. 1.4.7.2 SVR
+        url: https://scikit-learn.org/stable/modules/svm.html#regression
+    source:
+      id: handson-ml3
+      ref: 05_support_vector_machines#ex7
+      url: https://github.com/ageron/handson-ml3/blob/ef1c9f5ab11083584635b9b3a7846f49c58a6084/05_support_vector_machines.ipynb
+    status: reviewed
+    reviewed_by: claude
+  - id: svm-037
+    type: multiple
+    difficulty: hard
+    tags:
+      - linearsvc
+      - sgdclassifier
+      - hinge-loss
+      - scikit-learn
+    question: |
+      On a linearly separable, standardized dataset you want `LinearSVC`, `SVC` and
+      `SGDClassifier` to learn roughly the same linear SVM. Which settings are needed? Select all
+      that apply.
+    options:
+      - text: '`LinearSVC(loss="hinge")`'
+        correct: true
+      - text: '`SVC(kernel="linear")`'
+        correct: true
+      - text: Tune `SGDClassifier`'s `alpha` instead of `C`
+        correct: true
+      - text: '`SGDClassifier(loss="log_loss")`'
+        why: The log loss turns `SGDClassifier` into logistic regression. Its default loss, `"hinge"`, is the one that gives a linear SVM.
+    explanation: |
+      The three classes differ in their defaults. `LinearSVC` uses the squared hinge loss unless you
+      pass `loss="hinge"`, the standard SVM loss that `SVC` uses [^2]; `SVC` uses the RBF kernel by
+      default, so you need `kernel="linear"` [^1]; and `SGDClassifier` (hinge loss by default)
+      minimizes $\frac{1}{n}\sum_i L(y_i, f(x_i)) + \alpha R(w)$, with a regularization strength
+      `alpha` instead of `C` [^3]. Dividing the SVC objective
+      $\frac12 \lVert w \rVert^2 + C\sum_i \zeta_i$ by $Cn$ shows that $\alpha$ plays the role of
+      $1/(Cn)$, but in practice you just tune it until the boundaries match, as the handson-ml3
+      solution does [^1].
+    references:
+      - source: handson-ml3
+        locator: 05_support_vector_machines.ipynb, Exercise solutions, 9.
+        url: https://github.com/ageron/handson-ml3/blob/ef1c9f5ab11083584635b9b3a7846f49c58a6084/05_support_vector_machines.ipynb
+      - title: 'scikit-learn API reference: LinearSVC'
+        locator: Parameters (loss, default 'squared_hinge')
+        url: https://scikit-learn.org/stable/modules/generated/sklearn.svm.LinearSVC.html
+      - title: 'scikit-learn user guide: Stochastic Gradient Descent'
+        locator: Sec. 1.5.8 Mathematical formulation
+        url: https://scikit-learn.org/stable/modules/sgd.html#mathematical-formulation
+    source:
+      id: handson-ml3
+      ref: 05_support_vector_machines#ex9
+      url: https://github.com/ageron/handson-ml3/blob/ef1c9f5ab11083584635b9b3a7846f49c58a6084/05_support_vector_machines.ipynb
+    status: reviewed
+    reviewed_by: claude
+  - id: svm-038
+    type: single
+    difficulty: easy
+    tags:
+      - feature-scaling
+      - linearsvc
+      - convergence
+    question: |
+      You train `LinearSVC(dual=True, max_iter=1_000_000)` on the Wine dataset
+      (`sklearn.datasets.load_wine()`), whose 13 chemical features have very different ranges (from
+      below 1 to over 1,000). It warns that it failed to converge despite the million iterations,
+      and its cross-validated accuracy is mediocre. What is the most likely fix?
+    options:
+      - text: Standardize the features, e.g. with `StandardScaler`
+        correct: true
+      - text: Raise `max_iter` further until the warning disappears
+        why: With a million iterations it still does not converge; the badly scaled features are the problem, not the iteration budget.
+      - text: Switch the multiclass strategy from one-versus-the-rest to one-versus-one
+        why: The multiclass strategy does not change how each binary problem is conditioned; every sub-problem still sees the unscaled features.
+      - text: Give it more training data
+        why: More instances with the same feature scales leave the optimization just as ill-conditioned.
+    explanation: |
+      SVM algorithms are not scale invariant, so scikit-learn strongly recommends scaling the
+      inputs, for example standardizing them [^2]; without scaling, an SVM tends to neglect the
+      features with small values [^1]. In the handson-ml3 run, the unscaled model kept warning even
+      with a million iterations and reached about 91% cross-validated accuracy, while
+      `make_pipeline(StandardScaler(), LinearSVC(dual=True))` converged without warnings and reached
+      about 98% [^1]. The stem pins `dual=True`, the solver used there: since scikit-learn 1.5 the
+      default `dual="auto"` picks the primal solver when there are more samples than features, as
+      here, and that solver copes much better with the unscaled data; scaling remains the
+      recommended fix either way [^2][^3].
+    references:
+      - source: handson-ml3
+        locator: 05_support_vector_machines.ipynb, Exercise solutions, 10. (and 3.)
+        url: https://github.com/ageron/handson-ml3/blob/ef1c9f5ab11083584635b9b3a7846f49c58a6084/05_support_vector_machines.ipynb
+      - title: 'scikit-learn user guide: Support Vector Machines'
+        locator: Sec. 1.4.5 Tips on Practical Use
+        url: https://scikit-learn.org/stable/modules/svm.html#tips-on-practical-use
+      - title: 'scikit-learn API reference: LinearSVC'
+        locator: Parameters (dual, default "auto" since version 1.5)
+        url: https://scikit-learn.org/stable/modules/generated/sklearn.svm.LinearSVC.html
+    source:
+      id: handson-ml3
+      ref: 05_support_vector_machines#ex10
+      url: https://github.com/ageron/handson-ml3/blob/ef1c9f5ab11083584635b9b3a7846f49c58a6084/05_support_vector_machines.ipynb
+    status: reviewed
+    reviewed_by: claude
