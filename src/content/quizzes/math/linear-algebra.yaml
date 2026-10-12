@@ -1589,3 +1589,404 @@ questions:
       ref: lecture-01/q02
     status: reviewed
     reviewed_by: claude
+  - id: linear-algebra-049
+    type: single
+    difficulty: medium
+    tags:
+      - ce6146
+      - ce6146-ex01
+      - ce6146-l01
+      - ce6146-l03
+      - tensor-shapes
+    question: |
+      Some course notes store each example as a **column** of the input matrix $X$ (as in
+      $Z = WX + b$). A mini-batch has 6 examples with 3 features each. What is the shape of $X$?
+    options:
+      - text: $3 \times 6$
+        correct: true
+      - text: $6 \times 3$
+        why: That is the one-example-per-row layout; here each example is a column.
+      - text: $6 \times 6$
+        why: There are only 3 features, so $X$ cannot have 6 rows.
+      - text: $3 \times 3$
+        why: This keeps only half of the examples.
+    explanation: |
+      With one example per column, the number of columns is the batch size (6) and the number of rows is
+      the number of features (3), so $X$ is $3 \times 6$ [^1]. With the row layout used for $Z = XW + b$,
+      the same batch would be $6 \times 3$ [^1][^2] — always check which axis holds the examples.
+    references:
+      - source: ncu-intro-dl
+        locator: Exercise 1, question 8; Lecture 1, slide 33; Lecture 3, slide 17
+      - source: d2l
+        locator: Sec. 2.3.3 Matrices
+        url: https://d2l.ai/chapter_preliminaries/linear-algebra.html#matrices
+    source:
+      id: ncu-intro-dl
+      ref: exercise-01/q08-v2
+    status: reviewed
+    reviewed_by: claude
+  - id: linear-algebra-050
+    type: single
+    difficulty: easy
+    tags:
+      - ce6146
+      - ce6146-ex01
+      - ce6146-l01
+      - vectors
+      - tensors
+    question: |
+      One example is stored as the array $x = [3.1,\ 0.4,\ 7.0,\ 2.2,\ 5.5]$. Which description of it is
+      correct?
+    options:
+      - text: A 1-D array (one axis) with 5 entries, i.e. a 5-dimensional vector
+        correct: true
+      - text: A 5-D array, because each of its 5 numbers adds another axis
+        why: All 5 numbers lie along the same single axis; a 5-D array would need 5 axes, like a batch of video clips (clip, frame, channel, height, width).
+      - text: A 1-dimensional vector, because all of its numbers sit in a single row
+        why: A vector's dimension is its number of entries, here 5; "one axis" describes the array, not the vector's dimension.
+      - text: A matrix rather than a vector, because it lists several different features
+        why: A matrix has two axes (rows and columns); a list of features for one example is a vector.
+    explanation: |
+      A vector is an ordered list of numbers, held in an array with a single axis [^1][^2]. Its
+      dimension (dimensionality) is the number of entries, so $x \in \mathbb{R}^5$ is a 5-dimensional
+      vector even though the array has only one axis — d2l calls the number of axes the *order* to keep
+      the two meanings of "dimension" apart [^2].
+    references:
+      - source: ncu-intro-dl
+        locator: Exercise 1, question 19; Lecture 1, slides 31–32
+      - source: d2l
+        locator: Sec. 2.3.2 Vectors
+        url: https://d2l.ai/chapter_preliminaries/linear-algebra.html#vectors
+    source:
+      id: ncu-intro-dl
+      ref: exercise-01/q19-v2
+    status: reviewed
+    reviewed_by: claude
+  - id: linear-algebra-051
+    type: short_answer
+    difficulty: easy
+    tags:
+      - ce6146
+      - ce6146-ex01
+      - ce6146-l01
+      - ce6146-l03
+      - tensors
+    question: |
+      In deep learning software, what is the general name for an array with any number of axes, such as
+      a batch of colour images stored with shape $(16, 3, 128, 128)$?
+    answer:
+      accept:
+        - tensor
+        - a tensor
+        - tensors
+        - 4d tensor
+        - 4-dimensional tensor
+        - rank-4 tensor
+        - order-4 tensor
+        - n-dimensional tensor
+      hint: one word
+      model: A tensor — here with 4 axes (examples, channels, height, width).
+    explanation: |
+      Scalars, vectors and matrices are tensors with 0, 1 and 2 axes; a tensor generalizes them to any
+      number of axes [^1][^2]. The image batch is a tensor with 4 axes.
+    references:
+      - source: ncu-intro-dl
+        locator: Exercise 1, question 20; Lecture 1, slide 38; Lecture 3, slide 9
+      - source: d2l
+        locator: Sec. 2.3.4 Tensors
+        url: https://d2l.ai/chapter_preliminaries/linear-algebra.html#tensors
+    source:
+      id: ncu-intro-dl
+      ref: exercise-01/q20-v2
+    status: reviewed
+    reviewed_by: claude
+  - id: linear-algebra-052
+    type: single
+    difficulty: medium
+    tags:
+      - ce6146
+      - ce6146-ex03
+      - ce6146-l01
+      - matrix-multiplication
+      - tensor-shapes
+      - transpose
+    question: |
+      PyTorch's `nn.Linear` stores one row of weights per unit, so a layer with 3 inputs and 4 units holds
+      $W$ of shape $4 \times 3$. A batch $X$ has one example per row and shape $5 \times 3$. Which product
+      gives the $5 \times 4$ matrix of pre-activations (before the bias is added)?
+    options:
+      - text: $XW^\top$
+        correct: true
+      - text: $XW$
+        why: The inner dimensions do not match ($5 \times 3$ times $4 \times 3$), so the product is undefined.
+      - text: $WX^\top$
+        why: This is defined but $4 \times 5$, with one column per example — the transpose of what is wanted.
+      - text: $W^\top X$
+        why: $(3 \times 4)(5 \times 3)$ is undefined, because 4 does not match 5.
+    explanation: |
+      A product $AB$ is defined when the columns of $A$ match the rows of $B$, and its shape comes from the
+      outer dimensions [^1][^2]. Transposing $W$ gives $3 \times 4$, so
+      $(5 \times 3)(3 \times 4) = 5 \times 4$: one row per example and one column per unit. This is
+      exactly what `nn.Linear` computes, $y = xW^\top + b$ [^3].
+    references:
+      - source: ncu-intro-dl
+        locator: Exercise 3, question 8; Lecture 1, slides 35–36
+      - source: d2l
+        locator: Sec. 2.3.10 Matrix–Matrix Multiplication
+        url: https://d2l.ai/chapter_preliminaries/linear-algebra.html#matrixmatrix-multiplication
+      - title: PyTorch documentation
+        url: https://docs.pytorch.org/docs/stable/generated/torch.nn.Linear.html
+        locator: torch.nn.Linear (y = xA^T + b; weight of shape (out_features, in_features))
+    source:
+      id: ncu-intro-dl
+      ref: exercise-03/q08-v2
+    status: reviewed
+    reviewed_by: claude
+  - id: linear-algebra-053
+    type: single
+    difficulty: easy
+    tags:
+      - ce6146
+      - ce6146-l01
+      - dot-product
+      - affine-map
+    question: |
+      A trip has distance 3 km and passes 2 traffic lights, $x = [3, 2]$. A model uses the weights
+      $w = [2.5, 1.5]$ (minutes per km, minutes per light) and the bias $b = 2$ minutes. What is
+      $z = x \cdot w + b$?
+    options:
+      - text: 12.5 minutes
+        correct: true
+      - text: 10.5 minutes
+        why: This is only the dot product; the bias $b = 2$ is missing.
+      - text: 11.5 minutes
+        why: This pairs each feature with the other feature's weight, $3 \cdot 1.5 + 2 \cdot 2.5 + 2$.
+      - text: 22 minutes
+        why: This multiplies the sums, $(3 + 2)(2.5 + 1.5) + 2$, which is not a dot product.
+    explanation: |
+      The dot product sums the products of matching coordinates, $3 \cdot 2.5 + 2 \cdot 1.5 =
+      7.5 + 3 = 10.5$, and adding the bias gives the affine output $z = 12.5$ [^1][^2]. The units
+      agree: km times min/km and lights times min/light are both minutes, like $b$ [^1].
+    references:
+      - source: ncu-intro-dl
+        locator: Lecture 1, slides 34, 43
+      - source: d2l
+        url: https://d2l.ai/chapter_preliminaries/linear-algebra.html#dot-products
+        locator: Sec. 2.3.8 Dot Products
+    source:
+      id: ncu-intro-dl
+      ref: lecture-01/q48
+    status: reviewed
+    reviewed_by: claude
+  - id: linear-algebra-054
+    type: true_false
+    difficulty: easy
+    tags:
+      - ce6146
+      - ce6146-l01
+      - affine-map
+    question: |
+      True or false: for a fixed nonzero bias $b$, the map $f(x) = x \cdot w + b$ is linear in $x$
+      in the linear-algebra sense (a linear map).
+    options:
+      - text: 'True'
+        why: A linear map must send 0 to 0, but $f(0) = b \ne 0$; with a bias the map is affine.
+      - text: 'False'
+        correct: true
+    explanation: |
+      A linear map satisfies $f(x + x') = f(x) + f(x')$ and $f(cx) = c\,f(x)$, so in particular
+      $f(0) = 0$; here $f(0) = b \ne 0$. Adding a bias to a linear map gives an affine
+      transformation, a weighted sum followed by a translation, and it is linear only when
+      $b = 0$ [^1][^2]. (Machine-learning texts often call such models "linear" loosely.)
+    references:
+      - source: ncu-intro-dl
+        locator: Lecture 1, slide 34
+      - source: d2l
+        url: https://d2l.ai/chapter_linear-regression/linear-regression.html#model
+        locator: Sec. 3.1.1.1 Model
+    source:
+      id: ncu-intro-dl
+      ref: lecture-01/q49
+    status: reviewed
+    reviewed_by: claude
+  - id: linear-algebra-055
+    type: single
+    difficulty: easy
+    tags:
+      - ce6146
+      - ce6146-l01
+      - shapes
+      - dense-layer
+    question: |
+      A batch holds 16 examples with 6 features each, one example per row of $X$. A dense layer
+      $Z = XW + b$ must produce 4 numbers per example. Which shapes are correct?
+    options:
+      - text: '$W$: $6 \times 4$, $Z$: $16 \times 4$, $b$: 4 entries'
+        correct: true
+      - text: '$W$: $4 \times 6$, $Z$: $16 \times 4$, $b$: 4 entries'
+        why: For $XW$ the rows of $W$ must match the 6 columns of $X$, so $W$ is $6 \times 4$.
+      - text: '$W$: $6 \times 4$, $Z$: $16 \times 4$, $b$: 16 entries'
+        why: There is one bias per output feature, broadcast to every row; it does not depend on the batch size.
+      - text: '$W$: $16 \times 4$, $Z$: $6 \times 4$, $b$: 4 entries'
+        why: $W$ does not depend on the batch size, and the rows of $Z$ correspond to the 16 examples.
+    explanation: |
+      With $X$ of shape $(n, d) = (16, 6)$ and $h = 4$ outputs, $W$ has shape $(d, h) = (6, 4)$
+      and $XW$ has shape $(n, h) = (16, 4)$ [^1][^2]. The bias has one entry per output feature and
+      is broadcast to every row, and $W$ holds $6 \cdot 4 = 24$ weights whatever the batch size
+      [^1][^2].
+    references:
+      - source: ncu-intro-dl
+        locator: Lecture 1, slides 36–37, 43
+      - source: d2l
+        url: https://d2l.ai/chapter_multilayer-perceptrons/mlp.html#from-linear-to-nonlinear
+        locator: Sec. 5.1.1.3 From Linear to Nonlinear (shapes of X, W and b)
+    source:
+      id: ncu-intro-dl
+      ref: lecture-01/q50
+    status: reviewed
+    reviewed_by: claude
+  - id: linear-algebra-056
+    type: short_answer
+    difficulty: easy
+    tags:
+      - ce6146
+      - ce6146-l01
+      - norms
+      - l2-penalty
+    question: |
+      A weight vector is $w = (2, -1, 2)$. Its Euclidean norm is $\lVert w \rVert_2 =$ {{1}}, and
+      the L2 penalty $\lambda \lVert w \rVert_2^2$ with $\lambda = 0.01$ equals {{2}}.
+    answer:
+      blanks:
+        - numeric: 3
+          tolerance: 0.001
+          hint: a number
+        - numeric: 0.09
+          tolerance: 0.0005
+          hint: a number
+      model: $\sqrt{4 + 1 + 4} = 3$; $0.01 \cdot 3^2 = 0.09$.
+    explanation: |
+      The L2 norm is the Euclidean length of the vector, the square root of the sum of its squared
+      entries [^1][^2]. The usual weight penalty uses the squared norm, which has no square root and
+      an easy derivative, scaled by a nonnegative hyperparameter $\lambda$ [^3]. A common slip is
+      to multiply $\lambda$ by the norm itself (0.03). Some texts write
+      $\tfrac{\lambda}{2}\lVert w \rVert_2^2$; the stem fixes the convention.
+    references:
+      - source: ncu-intro-dl
+        locator: Lecture 1, slide 40
+      - source: d2l
+        url: https://d2l.ai/chapter_preliminaries/linear-algebra.html#norms
+        locator: Sec. 2.3.11 Norms
+      - source: d2l
+        url: https://d2l.ai/chapter_linear-regression/weight-decay.html#norms-and-weight-decay
+        locator: Sec. 3.7.1 Norms and Weight Decay
+    source:
+      id: ncu-intro-dl
+      ref: lecture-01/q52
+    status: reviewed
+    reviewed_by: claude
+  - id: linear-algebra-057
+    type: single
+    difficulty: medium
+    tags:
+      - ce6146
+      - ce6146-l01
+      - dot-product
+      - cosine-similarity
+    question: |
+      A recommender scores items by their dot product with a user vector $u = (1, 0)$. Item A is
+      $(0.8, 0.6)$ and item B is $(2, 4)$. Which statement is correct?
+    options:
+      - text: B scores higher (2 vs 0.8) although A points closer to the direction of $u$
+        correct: true
+      - text: A scores higher, because the dot product rewards the item best aligned with $u$
+        why: $u \cdot A = 0.8 < u \cdot B = 2$; the dot product also grows with the vectors' lengths.
+      - text: Both get the same score, because a dot product ignores the vectors' lengths
+        why: Only the cosine similarity divides out the lengths; the raw dot product does not.
+      - text: B scores higher, which shows that B is the item better aligned with $u$
+        why: The cosine with $u$ is 0.8 for A but only about 0.45 for B, so A is better aligned.
+    explanation: |
+      $u \cdot A = 0.8$ and $u \cdot B = 2$, but the cosines of the angles with $u$ are
+      $0.8/(1 \cdot 1) = 0.8$ and $2/(1 \cdot \sqrt{20}) \approx 0.45$ [^1][^2]. A dot product mixes
+      alignment and length, so a high score may simply come from a long vector; normalizing
+      both vectors to unit length turns the dot product into the cosine, which measures alignment
+      alone [^2].
+    references:
+      - source: ncu-intro-dl
+        locator: Lecture 1, slide 40
+      - source: d2l
+        url: https://d2l.ai/chapter_preliminaries/linear-algebra.html#dot-products
+        locator: Sec. 2.3.8 Dot Products
+    source:
+      id: ncu-intro-dl
+      ref: lecture-01/q53
+    status: reviewed
+    reviewed_by: claude
+  - id: linear-algebra-058
+    type: single
+    difficulty: easy
+    tags:
+      - ce6146
+      - ce6146-l01
+      - eigenvectors
+    question: |
+      Let $A = \begin{bmatrix} 4 & 1 \\ 2 & 3 \end{bmatrix}$ and $v = \begin{bmatrix} 1 \\ -2 \end{bmatrix}$.
+      What can you conclude?
+    options:
+      - text: $v$ is an eigenvector of $A$ with eigenvalue 2
+        correct: true
+      - text: $v$ is an eigenvector of $A$ with eigenvalue 5
+        why: 5 is the other eigenvalue of $A$, belonging to $(1, 1)$; here $Av = (2, -4) = 2v$.
+      - text: $v$ is an eigenvector of $A$ with eigenvalue $-2$
+        why: $Av = (2, -4)$ points the same way as $v$, so the factor is $+2$; a negative eigenvalue would reverse $v$.
+      - text: $v$ is not an eigenvector, because $Av \ne v$
+        why: An eigenvector only needs $Av = \lambda v$ for some scalar $\lambda$, not $\lambda = 1$.
+    explanation: |
+      $Av = (4 - 2,\ 2 - 6) = (2, -4) = 2v$, so $v$ stays on its own line and is stretched by 2: it
+      is an eigenvector with $\lambda = 2$ [^1][^2]. The other eigenvalue is 5, with eigenvector
+      $(1, 1)$; the two eigenvalues add up to the trace, $4 + 3 = 7$.
+    references:
+      - source: ncu-intro-dl
+        locator: Lecture 1, slide 41
+      - source: d2l
+        url: https://d2l.ai/chapter_appendix-mathematics-for-deep-learning/eigendecomposition.html
+        locator: Sec. 22.2 Eigendecompositions (introduction, Eq. 22.2.2)
+    source:
+      id: ncu-intro-dl
+      ref: lecture-01/q54
+    status: reviewed
+    reviewed_by: claude
+  - id: linear-algebra-059
+    type: single
+    difficulty: medium
+    tags:
+      - ce6146
+      - ce6146-l01
+      - eigenvectors
+    question: Which of these $2 \times 2$ matrices has no real eigenvector?
+    options:
+      - text: $\begin{bmatrix} 0 & -1 \\ 1 & 0 \end{bmatrix}$, a rotation by 90°
+        correct: true
+      - text: $\begin{bmatrix} -1 & 0 \\ 0 & -1 \end{bmatrix}$, which reverses every vector
+        why: Every nonzero vector satisfies $Av = -v$; a reversed vector stays on its line, so all are eigenvectors with $\lambda = -1$.
+      - text: $\begin{bmatrix} 2 & 0 \\ 0 & 3 \end{bmatrix}$, a scaling along the axes
+        why: $(1, 0)$ and $(0, 1)$ are eigenvectors, with eigenvalues 2 and 3.
+      - text: $\begin{bmatrix} 1 & 1 \\ 0 & 1 \end{bmatrix}$, a shear
+        why: $(1, 0)$ is mapped to itself, so it is an eigenvector with $\lambda = 1$; the shear only lacks a second independent one.
+    explanation: |
+      An eigenvector keeps its line under the map, $Av = \lambda v$ with $v \ne 0$; a negative
+      $\lambda$ flips its direction but leaves it on the same line [^1][^2]. A 90° rotation moves
+      every nonzero vector off its line: its eigenvalues are the complex pair $\pm i$, so it has no
+      real eigenvector [^2]. A general square matrix therefore need not have a full set of real
+      eigenvectors [^1].
+    references:
+      - source: ncu-intro-dl
+        locator: Lecture 1, slide 41
+      - title: 'Wikipedia: Eigenvalues and eigenvectors'
+        url: https://en.wikipedia.org/wiki/Eigenvalues_and_eigenvectors#Geometric_transformations
+        locator: Overview; Applications > Geometric transformations (rotation)
+    source:
+      id: ncu-intro-dl
+      ref: lecture-01/q55
+    status: reviewed
+    reviewed_by: claude

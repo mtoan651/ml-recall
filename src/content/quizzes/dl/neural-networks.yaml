@@ -4439,3 +4439,2786 @@ questions:
       url: https://github.com/ageron/handson-ml3/blob/ef1c9f5ab11083584635b9b3a7846f49c58a6084/10_neural_nets_with_keras.ipynb
     status: reviewed
     reviewed_by: claude
+  - id: neural-networks-124
+    type: single
+    difficulty: easy
+    tags:
+      - ce6146
+      - ce6146-ex01
+      - ce6146-l01
+      - representation-learning
+    question: |
+      A deep network that tells shoes from bags is trained on raw product photos, with no hand-designed
+      features. Which of its parts have their parameters adjusted during training?
+    options:
+      - text: All layers, so the feature extractors are learned along with the classifier
+        correct: true
+      - text: Only the last layer; the earlier layers apply fixed edge filters chosen in advance
+        why: Fixed, pre-chosen filters would be hand-designed features; in a deep network the early layers are trained too.
+      - text: Only the early layers; the final decision rule is written by an engineer
+        why: The output layer is trained on the same loss as the rest of the network.
+      - text: None; the network stores the training photos and compares new ones with them
+        why: Training fits weights that compute reusable features; it does not build a lookup table of stored images.
+    explanation: |
+      In representation learning the features and the predictor are trained together on one objective
+      [^1]: the loss gradient reaches every layer, so the early layers learn useful features (edges,
+      textures, parts) while the last layer learns to classify them [^2]. This is why a deep network
+      needs far fewer manually designed image features than a conventional model on engineered
+      features.
+    references:
+      - source: ncu-intro-dl
+        locator: Exercise 1, question 2; Lecture 1, slides 8, 10
+      - source: d2l
+        locator: Sec. 8.1.1 Representation Learning
+        url: https://d2l.ai/chapter_convolutional-modern/alexnet.html#representation-learning
+    source:
+      id: ncu-intro-dl
+      ref: exercise-01/q02-v2
+    status: reviewed
+    reviewed_by: claude
+  - id: neural-networks-125
+    type: single
+    difficulty: easy
+    tags:
+      - ce6146
+      - ce6146-ex01
+      - ce6146-l01
+      - activation-functions
+      - relu
+    question: ReLU is applied elementwise to the vector $z = [-3,\ 0.5,\ 0,\ 2]$. What is the result?
+    options:
+      - text: $[0,\ 0.5,\ 0,\ 2]$
+        correct: true
+      - text: $[3,\ 0.5,\ 0,\ 2]$
+        why: That is the absolute value; ReLU sets negative inputs to 0 instead of flipping their sign.
+      - text: $[-3,\ 0.5,\ 0,\ 2]$
+        why: That is the identity; ReLU clips the negative entry.
+      - text: $[0,\ 1,\ 0,\ 1]$
+        why: That is a 0/1 step pattern (ReLU's derivative); ReLU itself passes positive values through unchanged.
+    explanation: |
+      $\mathrm{ReLU}(z) = \max(0, z)$ leaves non-negative entries unchanged and maps every negative entry
+      to 0, so only $-3$ changes [^1][^2].
+    references:
+      - source: ncu-intro-dl
+        locator: Exercise 1, question 11; Lecture 1, slides 45–46
+      - source: d2l
+        locator: Sec. 5.1.2.1 ReLU Function
+        url: https://d2l.ai/chapter_multilayer-perceptrons/mlp.html#relu-function
+    source:
+      id: ncu-intro-dl
+      ref: exercise-01/q11-v2
+    status: reviewed
+    reviewed_by: claude
+  - id: neural-networks-126
+    type: single
+    difficulty: easy
+    tags:
+      - ce6146
+      - ce6146-ex01
+      - ce6146-l01
+      - ce6146-l02
+      - backpropagation
+    question: |
+      One training step runs: (1) forward pass, (2) loss computation, (3) backpropagation, (4) parameter
+      update. What does step (3) produce?
+    options:
+      - text: The loss gradient for each weight and bias
+        correct: true
+      - text: The new parameter values $\theta - \eta \nabla_\theta L$
+        why: That is step (4), done by the optimizer; backpropagation only supplies the gradients.
+      - text: The network's predictions for the current mini-batch
+        why: Predictions come from the forward pass, step (1).
+      - text: A fresh split of the data into training and validation sets
+        why: The data is split before training starts.
+    explanation: |
+      Backpropagation applies the chain rule from the loss back through the network to obtain
+      $\partial L / \partial \theta$ for all parameters; it does not change them itself [^1][^2]. The
+      optimizer then uses these gradients in step (4) to update the parameters [^3].
+    references:
+      - source: ncu-intro-dl
+        locator: Exercise 1, question 14; Lecture 1, slide 51; Lecture 2, slide 70
+      - source: d2l
+        locator: Sec. 5.3.3 Backpropagation
+        url: https://d2l.ai/chapter_multilayer-perceptrons/backprop.html#backpropagation
+      - source: d2l
+        locator: Sec. 5.3.4 Training Neural Networks
+        url: https://d2l.ai/chapter_multilayer-perceptrons/backprop.html#training-neural-networks
+    source:
+      id: ncu-intro-dl
+      ref: exercise-01/q14-v2
+    status: reviewed
+    reviewed_by: claude
+  - id: neural-networks-127
+    type: single
+    difficulty: easy
+    tags:
+      - ce6146
+      - ce6146-ex02
+      - ce6146-l01
+      - ce6146-l02
+      - loss-function
+    question: |
+      A house-price model is trained with the mean squared error. On the training set, parameter setting
+      A gives an average loss of 0.8 and setting B gives 0.3. What does B's lower loss tell you?
+    options:
+      - text: B's predictions match the training targets more closely on average
+        correct: true
+      - text: B is guaranteed to predict new, unseen houses more accurately than A
+        why: The training loss only measures the fit to the training data; a lower value can also come from overfitting.
+      - text: B outputs smaller prices than A, which is why its loss is lower
+        why: The loss measures the gap between prediction and target, not the size of the predictions.
+      - text: B's weights are smaller than A's, since the loss measures their size
+        why: The mean squared error compares predictions with targets; it contains no term for the weights (an L2 penalty would).
+    explanation: |
+      A loss $\ell(\hat y, y)$ scores each prediction against its target, smaller being better, and the
+      training objective averages it over the training examples [^1][^2]. So B's predictions match the
+      recorded prices more closely on average. Whether B also does better on new houses must be checked
+      on held-out data, since a low training loss can come from overfitting [^1].
+    references:
+      - source: ncu-intro-dl
+        locator: Exercise 2, question 4; Lecture 2, slide 45; Lecture 1, slide 82
+      - source: google-mlcc
+        url: https://developers.google.com/machine-learning/crash-course/linear-regression/loss
+        locator: 'Linear regression: Loss — Distance of loss; Types of loss'
+    source:
+      id: ncu-intro-dl
+      ref: exercise-02/q04-v2
+    status: reviewed
+    reviewed_by: claude
+  - id: neural-networks-128
+    type: single
+    difficulty: medium
+    tags:
+      - ce6146
+      - ce6146-ex02
+      - ce6146-l02
+      - bias
+      - relu
+    question: |
+      A ReLU unit computes $a = \mathrm{ReLU}(x + b)$ for a scalar input $x$ (its weight is 1). With
+      $b = -2$ it is active only for $x > 2$. Which bias makes it active exactly for $x > -1$?
+    options:
+      - text: $b = 1$
+        correct: true
+      - text: $b = -1$
+        why: This makes the unit active for $x > 1$ — the sign is flipped.
+      - text: $b = -5$
+        why: Lowering the bias moves the switch-on point to larger $x$ (here $x > 5$), not smaller.
+      - text: $b = 0$
+        why: Without a bias the unit switches on at $x = 0$.
+    explanation: |
+      The unit is active when $x + b > 0$, that is for $x > -b$: the bias sets the input at which the
+      unit switches on [^1]. Activity for $x > -1$ needs $-b = -1$, so $b = 1$. Without a bias the
+      affine part would be forced through the origin [^2].
+    references:
+      - source: ncu-intro-dl
+        locator: Exercise 2, question 5; Lecture 2, slides 11, 13
+      - source: d2l
+        locator: Sec. 3.1.1.1 Model
+        url: https://d2l.ai/chapter_linear-regression/linear-regression.html#model
+    source:
+      id: ncu-intro-dl
+      ref: exercise-02/q05-v2
+    status: reviewed
+    reviewed_by: claude
+  - id: neural-networks-129
+    type: single
+    difficulty: easy
+    tags:
+      - ce6146
+      - ce6146-ex02
+      - ce6146-l02
+      - perceptron
+    question: |
+      A perceptron with binary inputs $x_1, x_2 \in \{0, 1\}$ outputs 1 when $x_1 + x_2 - 1.5 > 0$ and 0
+      otherwise. Which logical function does it compute?
+    options:
+      - text: AND
+        correct: true
+      - text: OR
+        why: For $(1, 0)$ the score is $-0.5$, so the output is 0; OR would need a threshold below 1.
+      - text: XOR
+        why: For $(1, 1)$ the score is $0.5$, so the output is 1; XOR needs 0 there and cannot be computed by one perceptron.
+      - text: NAND
+        why: NAND is 0 only for $(1, 1)$ — the exact opposite of this unit.
+    explanation: |
+      The scores for $(0,0), (0,1), (1,0), (1,1)$ are $-1.5, -0.5, -0.5, 0.5$, so only $(1, 1)$ gives 1:
+      AND [^1]. Its decision boundary $x_1 + x_2 = 1.5$ is one straight line separating $(1, 1)$ from the
+      other points — a single perceptron can represent exactly such linearly separable functions
+      [^1][^2].
+    references:
+      - source: ncu-intro-dl
+        locator: Exercise 2, question 6; Lecture 2, slide 24
+      - title: 'Wikipedia: Perceptron'
+        url: https://en.wikipedia.org/wiki/Perceptron#Perceptrons_(1969)
+        locator: History — Perceptrons (1969)
+    source:
+      id: ncu-intro-dl
+      ref: exercise-02/q06-v2
+    status: reviewed
+    reviewed_by: claude
+  - id: neural-networks-130
+    type: single
+    difficulty: medium
+    tags:
+      - ce6146
+      - ce6146-ex02
+      - ce6146-l02
+      - perceptron
+      - xor
+    question: |
+      The XNOR function of two binary inputs outputs 1 when the inputs are equal, at $(0, 0)$ and
+      $(1, 1)$, and 0 otherwise. Can a single perceptron represent it?
+    options:
+      - text: No — no line separates $(0,0), (1,1)$ from $(0,1), (1,0)$
+        correct: true
+      - text: Yes, with $w_1 = w_2 = 1$ and $b = -1.5$
+        why: Those weights compute AND, which outputs 0 at $(0, 0)$ where XNOR needs 1.
+      - text: Yes, if it is trained long enough with a small learning rate
+        why: The obstacle is representational — no weights exist — so no amount of training helps.
+      - text: No, because a perceptron cannot take binary inputs
+        why: Binary inputs are fine; a perceptron computes AND or OR on them.
+    explanation: |
+      Output 1 at $(0,0)$ and $(1,1)$ needs $b > 0$ and $w_1 + w_2 + b > 0$, so $w_1 + w_2 + 2b > 0$.
+      Output 0 at $(1,0)$ and $(0,1)$ needs $w_1 + b \le 0$ and $w_2 + b \le 0$, so
+      $w_1 + w_2 + 2b \le 0$ — a contradiction [^1]. Like XOR, XNOR is not linearly separable, so it needs
+      a hidden layer with a nonlinear activation [^1][^2].
+    references:
+      - source: ncu-intro-dl
+        locator: Exercise 2, question 7; Lecture 2, slides 24–25, 27
+      - title: 'Wikipedia: Perceptron'
+        url: https://en.wikipedia.org/wiki/Perceptron#Perceptrons_(1969)
+        locator: History — Perceptrons (1969)
+    source:
+      id: ncu-intro-dl
+      ref: exercise-02/q07-v2
+    status: reviewed
+    reviewed_by: claude
+  - id: neural-networks-131
+    type: single
+    difficulty: medium
+    tags:
+      - ce6146
+      - ce6146-ex02
+      - ce6146-l02
+      - feedforward
+    question: Which change would make a network stop being feedforward?
+    options:
+      - text: Feeding a layer's output back into that layer at the next step
+        correct: true
+      - text: Adding a skip connection from the input layer straight to the output layer
+        why: The graph still has no directed cycle, so the network remains feedforward.
+      - text: Connecting each hidden unit to a few inputs rather than to every input
+        why: A feedforward network does not have to be fully connected.
+      - text: Replacing the sigmoid activations with ReLU
+        why: The activation function does not change how units are connected.
+    explanation: |
+      Feedforward means the forward computation has no directed cycle: values only move from the inputs
+      towards the outputs [^1][^2]. A connection that feeds an output back into the same layer creates a
+      loop, which is what recurrent networks do. Skip connections and sparse connections keep the graph
+      acyclic [^1].
+    references:
+      - source: ncu-intro-dl
+        locator: Exercise 2, question 8; Lecture 2, slides 7–8
+      - title: 'Wikipedia: Feedforward neural network'
+        url: https://en.wikipedia.org/wiki/Feedforward_neural_network
+        locator: Lead
+    source:
+      id: ncu-intro-dl
+      ref: exercise-02/q08-v2
+    status: reviewed
+    reviewed_by: claude
+  - id: neural-networks-132
+    type: true_false
+    difficulty: easy
+    tags:
+      - ce6146
+      - ce6146-ex02
+      - ce6146-l01
+      - ce6146-l02
+      - backpropagation
+      - pytorch
+    question: |
+      True or false: in a PyTorch training loop, calling `loss.backward()` already changes the values of
+      the model's weights.
+    options:
+      - text: 'True'
+        why: "`backward()` only computes gradients and stores them in each parameter's `.grad`; the weights stay the same."
+      - text: 'False'
+        correct: true
+    explanation: |
+      The backward pass runs backpropagation: it computes the gradient of the loss for every parameter but
+      does not update anything [^1]. In PyTorch, `loss.backward()` accumulates these gradients in the
+      parameters' `.grad` attributes [^2], and the weights change only when `optimizer.step()` applies an
+      update rule such as $w \leftarrow w - \eta \, \partial L / \partial w$ [^3].
+    references:
+      - source: ncu-intro-dl
+        locator: Exercise 2, question 9; Lecture 1, slide 51; Lecture 2, slides 70, 93
+      - title: PyTorch documentation
+        url: https://docs.pytorch.org/docs/stable/generated/torch.Tensor.backward.html
+        locator: torch.Tensor.backward
+      - title: PyTorch documentation
+        url: https://docs.pytorch.org/docs/stable/optim.html#taking-an-optimization-step
+        locator: torch.optim — Taking an optimization step
+    source:
+      id: ncu-intro-dl
+      ref: exercise-02/q09-v2
+    status: reviewed
+    reviewed_by: claude
+  - id: neural-networks-133
+    type: single
+    difficulty: easy
+    tags:
+      - ce6146
+      - ce6146-ex02
+      - ce6146-l02
+      - backpropagation
+      - chain-rule
+    question: |
+      A weight $w$ enters a network as $z = g(w)$, $a = \varphi(z)$, $L = \ell(a)$. What does the chain
+      rule give for $\partial L / \partial w$?
+    options:
+      - text: $\ell'(a)\,\varphi'(z)\,g'(w)$
+        correct: true
+      - text: $\ell'(a) + \varphi'(z) + g'(w)$
+        why: Local derivatives along one chain multiply; contributions add only across different paths.
+      - text: $\ell'(a)$ alone, because $L$ depends directly only on $a$
+        why: This ignores how $a$ depends on $w$ through $z$.
+      - text: $\ell'(\varphi'(g'(w)))$
+        why: This nests derivatives inside each other instead of multiplying derivatives evaluated at the forward values.
+    explanation: |
+      The derivative of a composition is the product of the local derivatives, each evaluated at the value
+      computed in the forward pass [^1][^2]. Backpropagation applies this stage by stage, from $L$ back
+      to $w$: the gradient arriving from the later stages is multiplied by each stage's own derivative
+      [^1].
+    references:
+      - source: ncu-intro-dl
+        locator: Exercise 2, question 13; Lecture 2, slide 72
+      - source: d2l
+        locator: Sec. 2.4.4 Chain Rule
+        url: https://d2l.ai/chapter_preliminaries/calculus.html#chain-rule
+    source:
+      id: ncu-intro-dl
+      ref: exercise-02/q13-v2
+    status: reviewed
+    reviewed_by: claude
+  - id: neural-networks-134
+    type: single
+    difficulty: easy
+    tags:
+      - ce6146
+      - ce6146-ex02
+      - ce6146-l02
+      - neuron
+      - relu
+    question: |
+      A ReLU neuron has inputs $x = (2, 1, 4)$, weights $w = (0.5, -3, 0.25)$ and bias $b = -0.5$. What is
+      its output $a = \mathrm{ReLU}(w \cdot x + b)$?
+    options:
+      - text: '0'
+        correct: true
+      - text: −1.5
+        why: That is the pre-activation $z$; ReLU still has to be applied.
+      - text: '1.5'
+        why: ReLU does not take absolute values; negative inputs become 0.
+      - text: −1
+        why: This drops the bias and also skips the activation.
+    explanation: |
+      The weighted sum is $z = 2(0.5) + 1(-3) + 4(0.25) - 0.5 = -1.5$ [^1]. ReLU maps every negative
+      pre-activation to 0, so the output is $a = 0$ [^1][^2].
+    references:
+      - source: ncu-intro-dl
+        locator: Exercise 2, question 16; Lecture 2, slides 11–12
+      - source: d2l
+        locator: Sec. 5.1.2.1 ReLU Function
+        url: https://d2l.ai/chapter_multilayer-perceptrons/mlp.html#relu-function
+    source:
+      id: ncu-intro-dl
+      ref: exercise-02/q16-v2
+    status: reviewed
+    reviewed_by: claude
+  - id: neural-networks-135
+    type: short_answer
+    difficulty: easy
+    tags:
+      - ce6146
+      - ce6146-ex02
+      - ce6146-l01
+      - ce6146-l02
+      - sigmoid
+    question: |
+      The output unit of a binary classifier produces the logit $z = \ln 3 \approx 1.0986$. What
+      probability does the sigmoid $\sigma(z) = 1/(1 + e^{-z})$ give to the positive class?
+    answer:
+      numeric: 0.75
+      tolerance: 0.001
+      hint: a probability, e.g. 0.42
+      model: $e^{-\ln 3} = 1/3$, so $\sigma(z) = 1/(1 + 1/3) = 0.75$.
+    explanation: |
+      The sigmoid squashes any real logit into $(0, 1)$, and the result is read as $P(y = 1 \mid x)$
+      [^1][^2]. Here $e^{-z} = 1/3$, so $p = 3/4$. Equivalently, the logit is the log-odds:
+      $\ln\big(p/(1 - p)\big) = \ln 3$ [^1].
+    references:
+      - source: ncu-intro-dl
+        locator: Exercise 2, question 18; Lecture 1, slide 65; Lecture 2, slide 52
+      - source: d2l
+        locator: Sec. 5.1.2.2 Sigmoid Function
+        url: https://d2l.ai/chapter_multilayer-perceptrons/mlp.html#sigmoid-function
+    source:
+      id: ncu-intro-dl
+      ref: exercise-02/q18-v2
+    status: reviewed
+    reviewed_by: claude
+  - id: neural-networks-136
+    type: true_false
+    difficulty: easy
+    tags:
+      - ce6146
+      - ce6146-ex03
+      - ce6146-l02
+      - feedforward
+    question: |
+      True or false: because gradients travel from the output back towards the input during
+      backpropagation, a feedforward network contains a feedback loop and is therefore recurrent.
+    options:
+      - text: 'True'
+        why: '"Feedforward" describes the forward computation; the backward pass only differentiates that same acyclic graph during training.'
+      - text: 'False'
+        correct: true
+    explanation: |
+      "Feedforward" describes how the network computes its output: values pass from the inputs to the
+      outputs with no directed cycle [^1]. Backpropagation walks that same acyclic graph in reverse to
+      compute gradients during training [^2]; it adds no connection that feeds an output back in as an
+      input, which is what makes a network recurrent [^3].
+    references:
+      - source: ncu-intro-dl
+        locator: Exercise 3, question 4; Lecture 2, slides 7, 70
+      - source: d2l
+        locator: Sec. 5.3.3 Backpropagation
+        url: https://d2l.ai/chapter_multilayer-perceptrons/backprop.html#backpropagation
+      - title: 'Wikipedia: Feedforward neural network'
+        url: https://en.wikipedia.org/wiki/Feedforward_neural_network
+        locator: Lead
+    source:
+      id: ncu-intro-dl
+      ref: exercise-03/q04-v2
+    status: reviewed
+    reviewed_by: claude
+  - id: neural-networks-137
+    type: single
+    difficulty: easy
+    tags:
+      - ce6146
+      - ce6146-ex03
+      - ce6146-l02
+      - bias
+    question: |
+      A neuron computes $z = w_1 x_1 + w_2 x_2$, without a bias term. What is $z$ for the input
+      $x = (0, 0)$, whatever the weights are?
+    options:
+      - text: '0'
+        correct: true
+      - text: '1'
+        why: Without a bias nothing adds a constant to the weighted sum.
+      - text: It depends on $w_1$ and $w_2$
+        why: Every term is a weight times 0, so the weights do not matter here.
+      - text: The mean of the training targets
+        why: Only a learned bias could shift the output like that, and there is none.
+    explanation: |
+      Without a bias, $z$ is a pure weighted sum — a linear map — so it is 0 at the origin for any weights,
+      and the neuron's function is forced through the origin [^1][^2]. The bias is a learnable term that
+      does not depend on the input; it shifts $z$ and removes this restriction.
+    references:
+      - source: ncu-intro-dl
+        locator: Exercise 3, question 5; Lecture 2, slide 11
+      - source: d2l
+        locator: Sec. 3.1.1.1 Model
+        url: https://d2l.ai/chapter_linear-regression/linear-regression.html#model
+    source:
+      id: ncu-intro-dl
+      ref: exercise-03/q05-v2
+    status: reviewed
+    reviewed_by: claude
+  - id: neural-networks-138
+    type: short_answer
+    difficulty: easy
+    tags:
+      - ce6146
+      - ce6146-ex03
+      - ce6146-l01
+      - ce6146-l02
+      - backpropagation
+    question: |
+      Name the algorithm that obtains the gradient of the loss with respect to every parameter in one
+      reverse sweep through the network, applying the chain rule and reusing values cached during the
+      forward pass.
+    answer:
+      accept:
+        - backpropagation
+        - backprop
+        - back propagation
+        - backward propagation
+        - backpropagation algorithm
+        - error backpropagation
+        - backpropagation of errors
+        - reverse-mode automatic differentiation
+        - reverse-mode autodiff
+        - reverse-mode differentiation
+      hint: one word
+      model: Backpropagation (reverse-mode automatic differentiation applied to a network).
+    explanation: |
+      Backpropagation visits the operations in reverse order, multiplies the gradient arriving from later
+      operations by each operation's own derivative (the chain rule) and reuses cached forward values, so one backward pass yields all
+      parameter gradients [^1][^2]. It is reverse-mode automatic differentiation applied to a neural
+      network [^1].
+    references:
+      - source: ncu-intro-dl
+        locator: Exercise 3, question 6; Lecture 1, slide 51; Lecture 2, slides 86, 89
+      - source: d2l
+        locator: Sec. 5.3.3 Backpropagation; 5.3.4 Training Neural Networks
+        url: https://d2l.ai/chapter_multilayer-perceptrons/backprop.html#backpropagation
+    source:
+      id: ncu-intro-dl
+      ref: exercise-03/q06-v2
+    status: reviewed
+    reviewed_by: claude
+  - id: neural-networks-139
+    type: short_answer
+    difficulty: medium
+    tags:
+      - ce6146
+      - ce6146-ex03
+      - ce6146-l02
+      - dense-layer
+      - parameter-count
+    question: |
+      A fully connected layer receives 8 input features and has 45 trainable parameters in total, with one
+      bias per unit. How many units does it have?
+    answer:
+      numeric: 5
+      tolerance: 0
+      hint: an integer
+      model: $d$ inputs and $h$ units give $dh + h = 9h = 45$ parameters, so $h = 5$.
+    explanation: |
+      A dense layer mapping $d$ inputs to $h$ units stores a $d \times h$ weight matrix plus one bias per
+      unit, so it has $(d + 1)h$ parameters [^1][^2]. With $d = 8$ this is $9h = 45$, so $h = 5$.
+    references:
+      - source: ncu-intro-dl
+        locator: Exercise 3, question 7; Lecture 2, slides 15, 17
+      - title: PyTorch documentation
+        url: https://docs.pytorch.org/docs/stable/generated/torch.nn.Linear.html
+        locator: torch.nn.Linear (shapes of weight and bias)
+    source:
+      id: ncu-intro-dl
+      ref: exercise-03/q07-v2
+    status: reviewed
+    reviewed_by: claude
+  - id: neural-networks-140
+    type: single
+    difficulty: medium
+    tags:
+      - ce6146
+      - ce6146-ex03
+      - ce6146-l01
+      - ce6146-l02
+      - activation-functions
+      - affine
+    question: |
+      A network stacks five dense layers (weights and biases) with identity activations, so as a whole it
+      can only compute an affine function of its input. Which single change lets it represent nonlinear
+      functions?
+    options:
+      - text: Put a ReLU after each hidden layer
+        correct: true
+      - text: Make every hidden layer ten times wider
+        why: A wider identity-activated layer is still an affine map, and so is the whole stack.
+      - text: Stack ten identity-activated layers instead
+        why: Composing more affine maps still gives a single affine map.
+      - text: Train longer with a smaller learning rate
+        why: Training only changes the values of the weights and biases, not the affine form of the function.
+    explanation: |
+      Two identity-activated layers give $x(W^1W^2) + (b^1W^2 + b^2)$, again one weight matrix and one
+      bias, so any stack of them, however wide or deep, collapses to a single affine map [^1][^2]. A
+      nonlinear activation such as ReLU between the layers prevents this collapse, which is what lets
+      hidden layers represent nonlinear relationships [^1][^2].
+    references:
+      - source: ncu-intro-dl
+        locator: Exercise 3, question 9; Lecture 1, slide 45; Lecture 2, slide 23
+      - source: d2l
+        locator: Sec. 5.1.1.3 From Linear to Nonlinear
+        url: https://d2l.ai/chapter_multilayer-perceptrons/mlp.html#from-linear-to-nonlinear
+    source:
+      id: ncu-intro-dl
+      ref: exercise-03/q09-v2
+    status: reviewed
+    reviewed_by: claude
+  - id: neural-networks-141
+    type: single
+    difficulty: medium
+    tags:
+      - ce6146
+      - ce6146-ex03
+      - ce6146-l01
+      - ce6146-l02
+      - loss-function
+      - binary-cross-entropy
+      - relu
+    question: |
+      A spam classifier ends in a single ReLU output unit, whose value is read as the probability of spam,
+      and it is trained with binary cross-entropy. What is wrong with this design?
+    options:
+      - text: ReLU outputs can be 0 or above 1, so they are not probabilities
+        correct: true
+      - text: Nothing is wrong; any output activation works with any loss function
+        why: Binary cross-entropy takes $\ln p$ and $\ln(1 - p)$, which need $0 < p < 1$; the output activation has to deliver that.
+      - text: Binary cross-entropy needs a real-valued target, not a 0/1 label
+        why: Binary cross-entropy is made for a 0/1 label; real-valued targets go with squared error.
+      - text: ReLU has zero gradient everywhere, so no weight can ever be updated
+        why: ReLU has slope 1 for positive inputs; the problem is its output range, not its gradient.
+    explanation: |
+      Binary cross-entropy, $-y \ln p - (1 - y)\ln(1 - p)$, is the negative log-likelihood of a
+      Bernoulli label and needs a probability $0 < p < 1$ [^1][^2]. ReLU outputs lie in $[0, \infty)$: an
+      output of 0 for a spam email gives an infinite loss, and an output above 1 makes $\ln(1 - p)$
+      undefined. A sigmoid output, which maps the logit into $(0, 1)$, is the matching choice [^1].
+    references:
+      - source: ncu-intro-dl
+        locator: Exercise 3, question 10; Lecture 1, slide 65; Lecture 2, slides 26, 52–53, 67
+      - source: google-mlcc
+        url: https://developers.google.com/machine-learning/crash-course/logistic-regression/loss-regularization
+        locator: 'Logistic regression: Loss and regularization — Log Loss'
+    source:
+      id: ncu-intro-dl
+      ref: exercise-03/q10-v2
+    status: reviewed
+    reviewed_by: claude
+  - id: neural-networks-142
+    type: single
+    difficulty: medium
+    tags:
+      - ce6146
+      - ce6146-ex03
+      - ce6146-l02
+      - softmax
+      - sigmoid
+    question: |
+      An input belongs to exactly one of three classes. Which property does a softmax output layer
+      guarantee that three independent sigmoid outputs do not?
+    options:
+      - text: The three outputs always add up to 1
+        correct: true
+      - text: Each output lies between 0 and 1
+        why: Independent sigmoids guarantee this too.
+      - text: Each output depends only on its own logit
+        why: That holds for sigmoids; softmax couples all outputs through its shared denominator.
+      - text: The outputs can be negative for unlikely classes
+        why: Softmax outputs are always positive.
+    explanation: |
+      Softmax, $p_j = e^{z_j} / \sum_r e^{z_r}$, divides all exponentiated logits by the same sum, so the
+      outputs are positive and add up to 1 — a distribution over mutually exclusive classes [^1][^2].
+      Independent sigmoids each lie in $(0, 1)$ but can add up to anything, which suits multilabel tasks
+      where several labels may hold at once [^1].
+    references:
+      - source: ncu-intro-dl
+        locator: Exercise 3, question 11; Lecture 2, slides 58, 63
+      - source: d2l
+        locator: Sec. 4.1.1.2 The Softmax
+        url: https://d2l.ai/chapter_linear-classification/softmax-regression.html#the-softmax
+    source:
+      id: ncu-intro-dl
+      ref: exercise-03/q11-v2
+    status: reviewed
+    reviewed_by: claude
+  - id: neural-networks-143
+    type: single
+    difficulty: medium
+    tags:
+      - ce6146
+      - ce6146-ex03
+      - ce6146-l01
+      - derivatives
+      - squared-error
+    question: |
+      For the loss $L = (\hat y - y)^2$, without the factor $\tfrac12$, what is $\partial L / \partial \hat y$
+      when $\hat y = 5$ and $y = 2$?
+    options:
+      - text: '6'
+        correct: true
+      - text: '3'
+        why: That would be the derivative of $\tfrac12(\hat y - y)^2$; here the factor 2 does not cancel.
+      - text: −6
+        why: 'Sign error: the derivative is $2(\hat y - y)$, which is positive when the prediction is too high.'
+      - text: '9'
+        why: That is the value of the loss, not its derivative.
+    explanation: |
+      $\partial L / \partial \hat y = 2(\hat y - y) = 2 \cdot 3 = 6$ [^1]. With $\tfrac12(\hat y - y)^2$
+      the 2 would cancel and give 3, which is why that factor is often included [^2]. The positive sign
+      says that lowering $\hat y$ reduces the loss.
+    references:
+      - source: ncu-intro-dl
+        locator: Exercise 3, question 12; Lecture 1, slides 48–49
+      - source: d2l
+        locator: Sec. 3.1.1.2 Loss Function
+        url: https://d2l.ai/chapter_linear-regression/linear-regression.html#loss-function
+    source:
+      id: ncu-intro-dl
+      ref: exercise-03/q12-v2
+    status: reviewed
+    reviewed_by: claude
+  - id: neural-networks-144
+    type: single
+    difficulty: medium
+    tags:
+      - ce6146
+      - ce6146-ex03
+      - ce6146-l02
+      - backpropagation
+      - relu
+    question: |
+      A ReLU layer has the pre-activations $z = (2, -1, 0.5)$ and receives the upstream gradient
+      $\partial L / \partial a = (0.4, 3, -1)$. What is $\partial L / \partial z$?
+    options:
+      - text: $(0.4,\ 0,\ -1)$
+        correct: true
+      - text: $(0.4,\ 3,\ -1)$
+        why: This ignores ReLU's local derivative, which is 0 for the inactive second unit.
+      - text: $(0.8,\ -3,\ -0.5)$
+        why: This multiplies by $z$ instead of by $\mathrm{ReLU}'(z)$.
+      - text: $(0,\ 3,\ 0)$
+        why: This keeps the gradient of the inactive unit and blocks the active ones — the mask is inverted.
+    explanation: |
+      $\mathrm{ReLU}'(z)$ is 1 for $z > 0$ and 0 for $z < 0$, giving the mask $(1, 0, 1)$ [^1]. The chain
+      rule multiplies elementwise: $(0.4, 3, -1) \odot (1, 0, 1) = (0.4, 0, -1)$ [^1][^2]. Active units
+      pass the gradient through unchanged; the inactive unit blocks it.
+    references:
+      - source: ncu-intro-dl
+        locator: Exercise 3, question 13; Lecture 2, slides 26, 77
+      - source: d2l
+        locator: Sec. 5.1.2.1 ReLU Function
+        url: https://d2l.ai/chapter_multilayer-perceptrons/mlp.html#relu-function
+    source:
+      id: ncu-intro-dl
+      ref: exercise-03/q13-v2
+    status: reviewed
+    reviewed_by: claude
+  - id: neural-networks-145
+    type: single
+    difficulty: easy
+    tags:
+      - ce6146
+      - ce6146-l01
+      - representation-learning
+    question: |
+      In a deep network trained to recognize objects in photos, how are the learned features
+      typically organized across the layers?
+    options:
+      - text: Early layers capture local patterns like edges; later layers combine them into object-level features
+        correct: true
+      - text: Early layers detect whole objects, and the later layers then split them into their edges and textures
+        why: The order is reversed; simple local patterns come first and are combined into larger structures later.
+      - text: Every layer learns the same features, so extra depth only adds redundant copies of them
+        why: Each layer builds on the previous layer's output, so different layers capture different levels of detail.
+      - text: Engineers design the features before training, and only the final classification layer is learned
+        why: That describes a classical pipeline with hand-crafted features; a deep network learns its features together with the classifier.
+    explanation: |
+      In representation learning the features are learned jointly with the predictor, rather than
+      being designed by hand beforehand [^1][^2]. In image models the lowest layers come to detect edges,
+      colours and textures, and higher layers build on them to represent larger structures and,
+      finally, whole objects [^2].
+    references:
+      - source: ncu-intro-dl
+        locator: Lecture 1, slide 8
+      - source: d2l
+        url: https://d2l.ai/chapter_convolutional-modern/alexnet.html#representation-learning
+        locator: Sec. 8.1.1 Representation Learning
+    source:
+      id: ncu-intro-dl
+      ref: lecture-01/q33
+    status: reviewed
+    reviewed_by: claude
+  - id: neural-networks-146
+    type: single
+    difficulty: easy
+    tags:
+      - ce6146
+      - ce6146-l01
+      - parameter-count
+      - mlp
+    question: |
+      An online shop's MLP takes 6 input features per product, has one hidden layer of 8 units and
+      outputs scores for 3 product categories. Every hidden and output unit has its own bias. How
+      many trainable parameters does the network have?
+    options:
+      - text: '83'
+        correct: true
+      - text: '72'
+        why: This counts only the weights (6·8 + 8·3) and forgets the 8 + 3 biases.
+      - text: '144'
+        why: Multiplying the three layer widths (6·8·3) does not count any actual connection.
+      - text: '17'
+        why: This is the number of units (6 + 8 + 3); parameters are the connection weights plus the biases.
+    explanation: |
+      In a fully connected layer every input connects to every unit, so a layer from $m$ inputs to
+      $n$ units has $mn$ weights plus $n$ biases [^1][^2]. Hidden layer: $6 \cdot 8 + 8 = 56$;
+      output layer: $8 \cdot 3 + 3 = 27$; total $83$. The input layer only holds the features and
+      has no parameters.
+    references:
+      - source: ncu-intro-dl
+        locator: Lecture 1, slide 9
+      - source: d2l
+        url: https://d2l.ai/chapter_multilayer-perceptrons/mlp.html#incorporating-hidden-layers
+        locator: Sec. 5.1.1.2 Incorporating Hidden Layers; Sec. 5.1.1.3 From Linear to Nonlinear (weight and bias shapes)
+    source:
+      id: ncu-intro-dl
+      ref: lecture-01/q34
+    status: reviewed
+    reviewed_by: claude
+  - id: neural-networks-147
+    type: single
+    difficulty: medium
+    tags:
+      - ce6146
+      - ce6146-l01
+      - relu
+      - piecewise-linear
+    question: With $\mathrm{ReLU}(z) = \max(0, z)$, which expression equals $|x|$ for every real $x$?
+    options:
+      - text: $\mathrm{ReLU}(x) + \mathrm{ReLU}(-x)$
+        correct: true
+      - text: $\mathrm{ReLU}(x) - \mathrm{ReLU}(-x)$
+        why: This equals $x$ itself; for $x < 0$ it gives $0 - (-x) = x$.
+      - text: $\mathrm{ReLU}(x) \cdot \mathrm{ReLU}(-x)$
+        why: At least one factor is always 0, so the product is 0 everywhere.
+      - text: $\mathrm{ReLU}(2x) - \mathrm{ReLU}(x)$
+        why: This equals $\mathrm{ReLU}(x)$; it is $x$ for $x > 0$ and 0 otherwise.
+    explanation: |
+      ReLU is piecewise linear: 0 for $z \le 0$ and $z$ for $z > 0$ [^1][^2]. For $x \ge 0$ the
+      sum gives $x + 0$, and for $x < 0$ it gives $0 + (-x)$, so it equals $|x|$, a function with a
+      bend that no single affine map can produce. This is how ReLU units let compositions of
+      affine maps describe nonlinear relationships: a hidden layer with two ReLU units (weights
+      $+1$ and $-1$) and output weights $(1, 1)$ computes $|x|$ [^1][^2].
+    references:
+      - source: ncu-intro-dl
+        locator: Lecture 1, slides 45–46
+      - source: d2l
+        url: https://d2l.ai/chapter_multilayer-perceptrons/mlp.html#relu-function
+        locator: Sec. 5.1.1.3 From Linear to Nonlinear; Sec. 5.1.2.1 ReLU Function
+    source:
+      id: ncu-intro-dl
+      ref: lecture-01/q57
+    status: reviewed
+    reviewed_by: claude
+  - id: neural-networks-148
+    type: single
+    difficulty: easy
+    tags:
+      - ce6146
+      - ce6146-l01
+      - softmax
+    question: |
+      A three-class model produces the logits $z = (3, 1, 0)$. What probability does softmax
+      assign to the first class?
+    options:
+      - text: About 0.844
+        correct: true
+      - text: '0.75'
+        why: This divides each logit by the sum of the logits; softmax exponentiates first.
+      - text: About 0.953
+        why: This is the sigmoid of 3, which treats the class on its own and ignores the other logits.
+      - text: About 0.333
+        why: Softmax gives equal probabilities only when all logits are equal.
+    explanation: |
+      Softmax exponentiates each logit and normalizes: $p_1 = e^3/(e^3 + e^1 + e^0) = 20.09/23.80
+      \approx 0.844$, and the other two classes get about 0.114 and 0.042 [^1][^2]. The outputs are
+      nonnegative, sum to 1 and keep the order of the logits, which suits mutually exclusive classes
+      [^1][^2].
+    references:
+      - source: ncu-intro-dl
+        locator: Lecture 1, slide 67
+      - source: d2l
+        url: https://d2l.ai/chapter_linear-classification/softmax-regression.html#the-softmax
+        locator: Sec. 4.1.1.2 The Softmax
+    source:
+      id: ncu-intro-dl
+      ref: lecture-01/q70
+    status: reviewed
+    reviewed_by: claude
+  - id: neural-networks-149
+    type: true_false
+    difficulty: easy
+    tags:
+      - ce6146
+      - ce6146-l02
+      - artificial-neural-network
+    question: |
+      True or false: an artificial neural network is a simulation of real brain cells — each of its
+      units reproduces how a biological neuron behaves.
+    options:
+      - text: 'True'
+        why: The resemblance is loose; a unit only forms a weighted sum plus a bias and applies a fixed activation function.
+      - text: 'False'
+        correct: true
+    explanation: |
+      Artificial networks borrow the idea of many simple, connected units from neuroscience, but they
+      are mathematical models rather than biological ones [^1]. Each unit computes a weighted sum of
+      its inputs plus a bias and passes it through an activation function; today deep learning draws
+      at least as much on mathematics, statistics and computer science as on neuroscience, much as
+      aircraft design no longer follows the study of birds [^2].
+    references:
+      - source: ncu-intro-dl
+        locator: Lecture 2, slides 5–6
+      - source: d2l
+        url: https://d2l.ai/chapter_linear-regression/linear-regression.html#biology
+        locator: Sec. 3.1.4.1 Biology
+    source:
+      id: ncu-intro-dl
+      ref: lecture-02/q31
+    status: reviewed
+    reviewed_by: claude
+  - id: neural-networks-150
+    type: single
+    difficulty: easy
+    tags:
+      - ce6146
+      - ce6146-l02
+      - parameters
+      - architecture
+    question: |
+      Two networks with the same 3–5–1 architecture are trained on the same data, each starting from
+      different random initial weights. What are they guaranteed to have in common after training?
+    options:
+      - text: The number and shapes of their parameters
+        correct: true
+      - text: The same prediction for every possible input
+        why: Runs that end at different parameter values compute different functions, so their predictions can differ.
+      - text: The same weight values, up to rounding errors
+        why: The loss surface has many local optima; runs from different starting points usually stop at different weights.
+      - text: The same final value of the training loss
+        why: Runs that end at different parameter values generally reach different loss values as well.
+    explanation: |
+      The architecture — layer widths, activations and connections — fixes how many weights and biases
+      there are and the shape of each weight matrix: here $(3 \cdot 5 + 5) + (5 \cdot 1 + 1) = 26$
+      parameters, with $W^1$ of shape $3 \times 5$ and $W^2$ of shape $5 \times 1$ [^1][^2]. Training
+      only decides their numerical values, and because a network's loss has many local optima, runs
+      from different starting points generally end at different values and can make different
+      predictions [^3].
+    references:
+      - source: ncu-intro-dl
+        locator: Lecture 2, slides 17, 94
+      - source: d2l
+        url: https://d2l.ai/chapter_multilayer-perceptrons/mlp.html#from-linear-to-nonlinear
+        locator: Sec. 5.1.1.3 From Linear to Nonlinear (shapes of W(1), b(1), W(2), b(2) set by the layer widths)
+      - source: d2l
+        url: https://d2l.ai/chapter_optimization/optimization-intro.html#local-minima
+        locator: Sec. 12.1.2.1 Local Minima
+    source:
+      id: ncu-intro-dl
+      ref: lecture-02/q32
+    status: reviewed
+    reviewed_by: claude
+  - id: neural-networks-151
+    type: single
+    difficulty: easy
+    tags:
+      - ce6146
+      - ce6146-l02
+      - mlp
+    question: Which of these networks meets the full definition of a multilayer perceptron (MLP)?
+    options:
+      - text: A fully connected feedforward network with one hidden layer of ReLU units
+        correct: true
+      - text: A single dense layer that maps the inputs directly to a sigmoid output unit
+        why: There is no hidden layer; this is logistic regression, a one-layer model.
+      - text: A fully connected network whose two hidden layers both use the identity activation
+        why: Without nonlinear hidden activations the stack collapses to one affine map; an MLP needs nonlinear hidden units.
+      - text: A network that feeds its own output back in as an input at the next time step
+        why: Feeding outputs back creates a cycle over time — that is a recurrent network, not a feedforward one.
+    explanation: |
+      An MLP is a dense (fully connected) feedforward network with at least one hidden layer whose
+      activations are nonlinear [^1][^2][^3]. The name is sometimes used loosely for any feedforward
+      network with a hidden layer, but identity hidden units add nothing — the stack collapses to one
+      affine map — so only the ReLU network meets every requirement. "Feedforward" describes the
+      acyclic connection pattern and "deep" the number of learned layers; an MLP is one particular
+      kind of feedforward network.
+    references:
+      - source: ncu-intro-dl
+        locator: Lecture 2, slide 8
+      - title: 'Wikipedia: Multilayer perceptron'
+        url: https://en.wikipedia.org/wiki/Multilayer_perceptron
+        locator: Lead; Terminology; Architecture — Layer structure
+      - source: d2l
+        url: https://d2l.ai/chapter_multilayer-perceptrons/mlp.html#incorporating-hidden-layers
+        locator: Sec. 5.1.1.2 Incorporating Hidden Layers
+    source:
+      id: ncu-intro-dl
+      ref: lecture-02/q33
+    status: reviewed
+    reviewed_by: claude
+  - id: neural-networks-152
+    type: single
+    difficulty: easy
+    tags:
+      - ce6146
+      - ce6146-l02
+      - hidden-layer
+      - representation
+    question: Which statement about the hidden layers of a feedforward network is correct?
+    options:
+      - text: Their units have no targets in the data; they learn whatever features help reduce the output loss.
+        correct: true
+      - text: They pass the raw input features on unchanged, without applying any learned weights or biases.
+        why: That describes the input layer (layer 0), which only holds the features.
+      - text: Each hidden unit is trained against its own labelled target that is supplied with the data.
+        why: Datasets only supply targets for the output; hidden units are trained indirectly, through backpropagated gradients.
+      - text: They must contain exactly as many units as the input layer so that the matrix shapes match.
+        why: The width is a free design choice; a $d \times h$ weight matrix connects $d$ inputs to any number $h$ of units.
+    explanation: |
+      Layer 0 just holds the input $x$; hidden layers apply learned transformations whose outputs —
+      learned representations — are never compared with targets directly; the output layer turns the
+      last representation into the task-specific prediction [^1]. The earlier layers can be seen as
+      the representation and the final layer as the predictor built on it [^2], and hidden units get
+      their training signal only through the gradient of the output loss.
+    references:
+      - source: ncu-intro-dl
+        locator: Lecture 2, slide 14
+      - source: d2l
+        url: https://d2l.ai/chapter_multilayer-perceptrons/mlp.html#incorporating-hidden-layers
+        locator: Sec. 5.1.1.2 Incorporating Hidden Layers
+    source:
+      id: ncu-intro-dl
+      ref: lecture-02/q35
+    status: reviewed
+    reviewed_by: claude
+  - id: neural-networks-153
+    type: single
+    difficulty: easy
+    tags:
+      - ce6146
+      - ce6146-l02
+      - dense-layer
+      - weight-matrix
+    question: |
+      A dense layer computes $z = xW + b$ for a row vector $x$ of 5 input features and has 3 units.
+      Where in $W$ are the weights that feed unit 2?
+    options:
+      - text: 'In column 2: one weight for each of the 5 inputs'
+        correct: true
+      - text: 'In row 2: one weight for each of the 3 units'
+        why: Row $i$ holds the weights leaving input $i$; with $xW$, entry $W_{ij}$ is the weight from input $i$ into unit $j$.
+      - text: In the single entry $W_{22}$ of the matrix
+        why: $W_{22}$ only links input 2 to unit 2; unit 2 receives a weight from every one of the 5 inputs.
+      - text: On the diagonal $W_{11}, W_{22}, W_{33}$
+        why: These three entries feed three different units; unit 2 needs a weight from each of the 5 inputs.
+    explanation: |
+      With row vectors, $W$ has one row per input and one column per unit ($5 \times 3$), and $W_{ij}$
+      is the weight from input $i$ into unit $j$ [^1]. Unit 2 computes $z_2 = \sum_{i=1}^{5} x_i W_{i2} + b_2$, so
+      all of its incoming weights sit in column 2, and its bias is $b_2$ [^1][^2]. In the column-vector
+      convention $z = Wx + b$ the roles of rows and columns are swapped.
+    references:
+      - source: ncu-intro-dl
+        locator: Lecture 2, slide 15
+      - source: d2l
+        url: https://d2l.ai/chapter_multilayer-perceptrons/mlp.html#from-linear-to-nonlinear
+        locator: Sec. 5.1.1.3 From Linear to Nonlinear
+    source:
+      id: ncu-intro-dl
+      ref: lecture-02/q36
+    status: reviewed
+    reviewed_by: claude
+  - id: neural-networks-154
+    type: short_answer
+    difficulty: medium
+    tags:
+      - ce6146
+      - ce6146-l02
+      - batch
+      - forward-pass
+    question: |
+      A 2–2–1 network (ReLU in the hidden layer, no activation at the output) processes a batch of three
+      examples, one per row of $X$, using the same parameters for every row:
+
+      $$X = \begin{bmatrix} 1 & 0 \\ 0 & 2 \\ 3 & 1 \end{bmatrix},\quad W^1 = \begin{bmatrix} 1 & -1 \\ -0.5 & 1 \end{bmatrix},\quad b^1 = \begin{bmatrix} 0 & 0 \end{bmatrix},\quad v = \begin{bmatrix} 2 \\ 1.5 \end{bmatrix},\quad c = 0.5,$$
+
+      with $A^1 = \mathrm{ReLU}(XW^1 + b^1)$ and $\hat Y = A^1 v + c$. The prediction for the first
+      example is {{1}}, for the second {{2}} and for the third {{3}}.
+    answer:
+      blanks:
+        - numeric: 2.5
+          tolerance: 0.001
+          hint: a number
+        - numeric: 3.5
+          tolerance: 0.001
+          hint: a number
+        - numeric: 5.5
+          tolerance: 0.001
+          hint: a number
+      model: $Z^1$ has rows $[1, -1]$, $[-1, 2]$, $[2.5, -2]$; $A^1$ has rows $[1, 0]$, $[0, 2]$, $[2.5, 0]$; $\hat Y = [2.5, 3.5, 5.5]^\top$.
+    explanation: |
+      Every row is multiplied by the same $W^1$, the bias row is broadcast to every row of $XW^1$,
+      and the same $v$ and $c$ are applied at the output [^1][^2]. Row by row,
+      $Z^1 = [1, -1],\ [-1, 2],\ [2.5, -2]$, so $A^1 = [1, 0],\ [0, 2],\ [2.5, 0]$ and the predictions
+      are $2 + 0.5 = 2.5$, $3 + 0.5 = 3.5$ and $5 + 0.5 = 5.5$.
+    references:
+      - source: ncu-intro-dl
+        locator: Lecture 2, slides 20–21
+      - source: d2l
+        url: https://d2l.ai/chapter_multilayer-perceptrons/mlp.html#from-linear-to-nonlinear
+        locator: Sec. 5.1.1.3 From Linear to Nonlinear (each row of X is one example of the minibatch)
+    source:
+      id: ncu-intro-dl
+      ref: lecture-02/q39
+    status: reviewed
+    reviewed_by: claude
+  - id: neural-networks-155
+    type: short_answer
+    difficulty: medium
+    tags:
+      - ce6146
+      - ce6146-l02
+      - linear-collapse
+      - parameter-count
+    question: |
+      A dense network with layer widths 3–4–4–2 has a bias in every unit and uses the identity
+      activation in every layer. It has {{1}} trainable parameters. Every function it can compute can
+      also be computed by a single dense layer with only {{2}} parameters.
+    answer:
+      blanks:
+        - numeric: 46
+          tolerance: 0
+          hint: an integer
+        - numeric: 8
+          tolerance: 0
+          hint: an integer
+      model: '$(3 \cdot 4 + 4) + (4 \cdot 4 + 4) + (4 \cdot 2 + 2) = 16 + 20 + 10 = 46$; the collapsed map $x(W^1W^2W^3) + b$ is one layer from 3 inputs to 2 outputs: $3 \cdot 2 + 2 = 8$.'
+    explanation: |
+      Each layer needs (inputs × units) weights plus one bias per unit, so the network has
+      $16 + 20 + 10 = 46$ parameters [^1]. With identity activations each layer substitutes into the
+      next: $\hat y = x(W^1W^2W^3) + \big((b^1W^2 + b^2)W^3 + b^3\big)$, a single $3 \times 2$ weight
+      matrix plus a bias row of 2 — one dense layer with 8 parameters [^1][^2]. The extra layers add
+      parameters but no new input–output behaviour; a nonlinear activation is what prevents the
+      collapse.
+    references:
+      - source: ncu-intro-dl
+        locator: Lecture 2, slides 17, 23
+      - source: d2l
+        url: https://d2l.ai/chapter_multilayer-perceptrons/mlp.html#from-linear-to-nonlinear
+        locator: Sec. 5.1.1.3 From Linear to Nonlinear (W = W(1)W(2), b = b(1)W(2) + b(2))
+    source:
+      id: ncu-intro-dl
+      ref: lecture-02/q40
+    status: reviewed
+    reviewed_by: claude
+  - id: neural-networks-156
+    type: single
+    difficulty: easy
+    tags:
+      - ce6146
+      - ce6146-l02
+      - perceptron
+      - linear-separability
+    question: |
+      A perceptron on binary inputs $x_1, x_2 \in \{0, 1\}$ outputs 1 when $w_1x_1 + w_2x_2 + b > 0$
+      and 0 otherwise. Which parameters make it compute OR (output 1 unless both inputs are 0)?
+    options:
+      - text: $w = (1, 1)$, $b = -0.5$
+        correct: true
+      - text: $w = (1, 1)$, $b = -1.5$
+        why: Only $(1, 1)$ then gets a positive score, so this computes AND.
+      - text: $w = (1, 1)$, $b = 0.5$
+        why: Even $(0, 0)$ gets the score $0.5 > 0$, so the output is always 1.
+      - text: $w = (1, -1)$, $b = 0$
+        why: Only $(1, 0)$ gets a positive score; this computes "$x_1$ and not $x_2$".
+    explanation: |
+      With $w = (1, 1)$ and $b = -0.5$ the scores are $-0.5, 0.5, 0.5, 1.5$ for
+      $(0,0), (0,1), (1,0), (1,1)$, so only $(0, 0)$ lands on the 0 side — that is OR [^1]. A
+      perceptron applies a step function to a weighted sum plus bias, so its decision boundary, here
+      $x_1 + x_2 = 0.5$, is a straight line, and the bias decides where that line sits [^2]. Moving the
+      bias to $-1.5$ shifts the line past $(0, 1)$ and $(1, 0)$ and gives AND instead.
+    references:
+      - source: ncu-intro-dl
+        locator: Lecture 2, slide 24
+      - title: 'Wikipedia: Perceptron'
+        url: https://en.wikipedia.org/wiki/Perceptron
+        locator: Definition
+    source:
+      id: ncu-intro-dl
+      ref: lecture-02/q41
+    status: reviewed
+    reviewed_by: claude
+  - id: neural-networks-157
+    type: single
+    difficulty: medium
+    tags:
+      - ce6146
+      - ce6146-l02
+      - perceptron
+      - xor
+    question: |
+      A perceptron predicts 1 exactly when $w_1x_1 + w_2x_2 + b > 0$. To prove that it cannot compute
+      XOR, the four constraints are added up in pairs. Which contradiction results?
+    options:
+      - text: Inputs labeled 0 force $w_1 + w_2 + 2b \le 0$; inputs labeled 1 force $w_1 + w_2 + 2b > 0$.
+        correct: true
+      - text: The input $(0, 0)$ forces $b > 0$, while the input $(1, 1)$ forces $b < 0$ at the same time.
+        why: Label 0 at $(0, 0)$ gives $b \le 0$; no single constraint forces $b > 0$.
+      - text: The inputs $(1, 0)$ and $(0, 1)$ force both $w_1 > w_2$ and $w_2 > w_1$ at the same time.
+        why: They give $w_1 + b > 0$ and $w_2 + b > 0$, which say nothing about the order of the two weights.
+      - text: The four constraints can only be satisfied when the weights grow infinitely large.
+        why: They cannot be satisfied at all; rescaling the weights does not change the signs that matter.
+    explanation: |
+      Label 0 at $(0,0)$ and $(1,1)$ requires $b \le 0$ and $w_1 + w_2 + b \le 0$; their sum is
+      $w_1 + w_2 + 2b \le 0$. Label 1 at $(1,0)$ and $(0,1)$ requires $w_1 + b > 0$ and $w_2 + b > 0$;
+      their sum is $w_1 + w_2 + 2b > 0$ [^1]. No weights satisfy both, so XOR is not linearly
+      separable and no single perceptron represents it — the classic result of Minsky and Papert [^2].
+    references:
+      - source: ncu-intro-dl
+        locator: Lecture 2, slide 25
+      - title: 'Wikipedia: Perceptron'
+        url: https://en.wikipedia.org/wiki/Perceptron
+        locator: History — Perceptrons (1969)
+    source:
+      id: ncu-intro-dl
+      ref: lecture-02/q42
+    status: reviewed
+    reviewed_by: claude
+  - id: neural-networks-158
+    type: true_false
+    difficulty: easy
+    tags:
+      - ce6146
+      - ce6146-l02
+      - perceptron
+      - capacity
+    question: |
+      True or false: a single perceptron gets some XOR inputs wrong only because its learning rule is
+      too crude; trained long enough with a better optimizer, it could classify all four XOR inputs
+      correctly.
+    options:
+      - text: 'True'
+        why: No weights classify all four points, so no optimizer can find them; the limit lies in what the model can represent.
+      - text: 'False'
+        correct: true
+    explanation: |
+      Representational capacity concerns which input–output maps a model family can represent for some
+      parameter values; training concerns finding good values [^1]. For XOR the set of valid perceptron
+      weights is empty, so the perceptron learning algorithm cannot converge — there is no solution
+      to converge to [^2]. Fixing it needs a nonlinear hidden layer, not a better optimizer.
+    references:
+      - source: ncu-intro-dl
+        locator: Lecture 2, slides 25, 42
+      - title: 'Wikipedia: Perceptron'
+        url: https://en.wikipedia.org/wiki/Perceptron
+        locator: Learning algorithm for a single-layer perceptron — Convergence of one perceptron on a linearly separable dataset
+    source:
+      id: ncu-intro-dl
+      ref: lecture-02/q43
+    status: reviewed
+    reviewed_by: claude
+  - id: neural-networks-159
+    type: single
+    difficulty: medium
+    tags:
+      - ce6146
+      - ce6146-l02
+      - xor
+      - representation
+    question: |
+      A hidden layer maps binary inputs to $h_1 = \mathrm{ReLU}(x_1 - x_2)$ and
+      $h_2 = \mathrm{ReLU}(x_2 - x_1)$. Which statement about the four XOR inputs in the
+      $(h_1, h_2)$ plane is correct?
+    options:
+      - text: Both class-0 inputs land on $(0, 0)$, so a line such as $h_1 + h_2 = 0.5$ separates the classes.
+        correct: true
+      - text: Both class-1 inputs land on one point while the class-0 inputs stay apart, so no line separates them.
+        why: The class-1 inputs go to $(1, 0)$ and $(0, 1)$, and both class-0 inputs go to $(0, 0)$.
+      - text: The input $(1, 1)$ lands on $(1, 1)$, so the points keep the XOR layout and stay inseparable.
+        why: For $(1, 1)$ both differences are 0, so it lands on $(0, 0)$.
+      - text: All four inputs land on the same point, so the information needed for XOR is lost.
+        why: Only the two class-0 inputs coincide; the class-1 inputs land on $(1, 0)$ and $(0, 1)$.
+    explanation: |
+      $(0,0)$ and $(1,1)$ both give $h = (0, 0)$, while $(1,0) \mapsto (1, 0)$ and $(0,1) \mapsto (0, 1)$
+      [^1]. In the hidden coordinates the classes are linearly separable: $\hat y = h_1 + h_2$
+      already reproduces XOR, and thresholding at 0.5 gives the decision. A nonlinear hidden layer
+      can turn data that is not linearly separable into data that is [^2].
+    references:
+      - source: ncu-intro-dl
+        locator: Lecture 2, slides 27–28
+      - title: 'Wikipedia: Multilayer perceptron'
+        url: https://en.wikipedia.org/wiki/Multilayer_perceptron
+        locator: Lead
+    source:
+      id: ncu-intro-dl
+      ref: lecture-02/q44
+    status: reviewed
+    reviewed_by: claude
+  - id: neural-networks-160
+    type: single
+    difficulty: medium
+    tags:
+      - ce6146
+      - ce6146-l02
+      - sigmoid
+      - saturation
+    question: |
+      A sigmoid unit receives the pre-activation $z = 4$, where $\sigma(4) \approx 0.98201$. What is
+      its local derivative $\sigma'(4)$, to four decimals?
+    options:
+      - text: '0.0177'
+        correct: true
+      - text: '0.0180'
+        why: This is only $1 - \sigma(4)$; the derivative also multiplies by $\sigma(4)$.
+      - text: '0.2500'
+        why: 0.25 is the largest value of $\sigma'$, reached only at $z = 0$.
+      - text: '0.9644'
+        why: This is $\sigma(4)^2$, not $\sigma(4)\,[1 - \sigma(4)]$.
+    explanation: |
+      $\sigma'(z) = \sigma(z)\,[1 - \sigma(z)] = 0.98201 \times 0.01799 \approx 0.0177$ [^1]. The
+      derivative peaks at 0.25 for $z = 0$ and shrinks toward 0 in both tails [^2]; at $z = 4$ it is
+      already about 14 times smaller than the peak, so the unit is saturating and passes little
+      gradient backward.
+    references:
+      - source: ncu-intro-dl
+        locator: Lecture 2, slide 29
+      - source: d2l
+        url: https://d2l.ai/chapter_multilayer-perceptrons/mlp.html#sigmoid-function
+        locator: Sec. 5.1.2.2 Sigmoid Function
+    source:
+      id: ncu-intro-dl
+      ref: lecture-02/q45
+    status: reviewed
+    reviewed_by: claude
+  - id: neural-networks-161
+    type: single
+    difficulty: medium
+    tags:
+      - ce6146
+      - ce6146-l02
+      - tanh
+      - activation-functions
+    question: Which statement about the hyperbolic tangent activation is correct?
+    options:
+      - text: It is a scaled and shifted sigmoid, $\tanh(z) = 2\sigma(2z) - 1$, with outputs in $(-1, 1)$.
+        correct: true
+      - text: Its derivative never drops below $1/4$, so tanh units cannot saturate.
+        why: Its derivative $1 - \tanh^2(z)$ is 1 at 0 but tends to 0 in both tails, so tanh saturates.
+      - text: Its outputs are symmetric about 0, so a tanh layer always has zero-mean activations over a dataset.
+        why: A symmetric range is not a zero mean; if most pre-activations are positive, most outputs are positive too.
+      - text: It is an even function, $\tanh(-z) = \tanh(z)$, with outputs in $[0, 1)$.
+        why: tanh is odd, $\tanh(-z) = -\tanh(z)$, and takes values in $(-1, 1)$.
+    explanation: |
+      tanh is the logistic sigmoid stretched to the range $(-1, 1)$: $\tanh(z) = 2\sigma(2z) - 1$
+      [^1][^2]. It is odd, and its slope $1 - \tanh^2(z)$ equals 1 at the origin and vanishes in both
+      tails, so it saturates like the sigmoid [^3]. A range centred on 0 does not by itself make the
+      activations zero-mean — that depends on the distribution of the inputs.
+    references:
+      - source: ncu-intro-dl
+        locator: Lecture 2, slide 31
+      - title: 'Wikipedia: Logistic function'
+        url: https://en.wikipedia.org/wiki/Logistic_function
+        locator: Mathematical properties — Hyperbolic tangent
+      - source: d2l
+        url: https://d2l.ai/chapter_multilayer-perceptrons/mlp.html#tanh-function
+        locator: Sec. 5.1.2.3 Tanh Function
+    source:
+      id: ncu-intro-dl
+      ref: lecture-02/q46
+    status: reviewed
+    reviewed_by: claude
+  - id: neural-networks-162
+    type: single
+    difficulty: easy
+    tags:
+      - ce6146
+      - ce6146-l02
+      - maxout
+      - activation-functions
+    question: |
+      A maxout unit with $k = 3$ pieces computes, for a scalar input $x$,
+      $a = \max(2x + 1,\; -x + 4,\; 0.5x)$. What is $a$ at $x = 0$ and at $x = 3$?
+    options:
+      - text: 4 at $x = 0$ and 7 at $x = 3$
+        correct: true
+      - text: 1 at $x = 0$ and 7 at $x = 3$
+        why: This always uses the first piece; at $x = 0$ the second piece, 4, is larger.
+      - text: 4 at $x = 0$ and 1 at $x = 3$
+        why: This always uses the second piece; at $x = 3$ the first piece, 7, is larger.
+      - text: 5 at $x = 0$ and 9.5 at $x = 3$
+        why: This adds the three responses; maxout keeps only the largest one.
+    explanation: |
+      At $x = 0$ the three responses are $1, 4, 0$, so $a = 4$; at $x = 3$ they are $7, 1, 1.5$, so
+      $a = 7$ [^1]. Each piece has its own learned weights and bias, and the unit outputs the largest
+      response, which makes a single maxout unit a piecewise-linear approximation of a convex
+      function [^2]; ReLU is the special case $\max(0, z)$ with two pieces.
+    references:
+      - source: ncu-intro-dl
+        locator: Lecture 2, slide 32
+      - title: Goodfellow et al. (2013), Maxout Networks, arXiv:1302.4389
+        url: https://arxiv.org/abs/1302.4389
+        locator: Sec. 3 Description of maxout
+    source:
+      id: ncu-intro-dl
+      ref: lecture-02/q47
+    status: reviewed
+    reviewed_by: claude
+  - id: neural-networks-163
+    type: single
+    difficulty: easy
+    tags:
+      - ce6146
+      - ce6146-l02
+      - leaky-relu
+      - prelu
+    question: |
+      Leaky ReLU and PReLU both output $z$ for $z \ge 0$ and $\alpha z$ for $z < 0$. What is the
+      difference between them?
+    options:
+      - text: PReLU learns $\alpha$ from the data; leaky ReLU fixes $\alpha$ before training
+        correct: true
+      - text: Leaky ReLU learns $\alpha$ from the data; PReLU fixes $\alpha$ before training
+        why: This swaps the two; the "P" in PReLU stands for parametric, a learned slope.
+      - text: PReLU outputs exactly 0 for every negative input, just like ReLU
+        why: Zero output for negative inputs is plain ReLU, the case $\alpha = 0$.
+      - text: PReLU outputs the largest of several learned linear responses
+        why: Taking the maximum of several learned responses is maxout.
+    explanation: |
+      Leaky ReLU keeps a small fixed negative slope so that inactive units still pass some gradient;
+      PReLU makes that slope a trainable parameter updated together with the weights [^1][^2].
+      For example, with $\alpha = 0.2$ at $z = -2$ both give $-0.4$ with local slope 0.2, whereas
+      plain ReLU outputs 0 and has slope 0.
+    references:
+      - source: ncu-intro-dl
+        locator: Lecture 2, slides 32–33
+      - title: 'Wikipedia: Rectifier (neural networks)'
+        url: https://en.wikipedia.org/wiki/Rectifier_(neural_networks)
+        locator: Variants — Piecewise-linear variants (Leaky ReLU, Parametric ReLU)
+      - title: He et al. (2015), Delving Deep into Rectifiers, arXiv:1502.01852
+        url: https://arxiv.org/abs/1502.01852
+        locator: Abstract (PReLU generalizes the rectified unit)
+    source:
+      id: ncu-intro-dl
+      ref: lecture-02/q48
+    status: reviewed
+    reviewed_by: claude
+  - id: neural-networks-164
+    type: single
+    difficulty: medium
+    tags:
+      - ce6146
+      - ce6146-l02
+      - softplus
+      - activation-functions
+    question: |
+      The softplus activation is $\phi(z) = \log(1 + e^{z})$ (natural log). What is its derivative
+      $\phi'(z)$?
+    options:
+      - text: $\sigma(z) = 1/(1 + e^{-z})$
+        correct: true
+      - text: 1 for $z > 0$ and 0 for $z < 0$
+        why: That is the derivative of ReLU; softplus is smooth, and its slope only approaches 0 and 1 in the tails.
+      - text: $\sigma(z)\,[1 - \sigma(z)]$
+        why: That is $\sigma'(z)$, the second derivative of softplus.
+      - text: $1/(1 + e^{z})$
+        why: That is $\sigma(-z) = 1 - \sigma(z)$; the chain rule gives $e^{z}/(1 + e^{z})$.
+    explanation: |
+      By the chain rule, $\phi'(z) = e^{z}/(1 + e^{z}) = 1/(1 + e^{-z}) = \sigma(z)$ [^1][^2].
+      Softplus is a smooth approximation of ReLU: for very negative $z$ it is near 0 with slope near
+      0, and for very positive $z$ it is near $z$ with slope near 1.
+    references:
+      - source: ncu-intro-dl
+        locator: Lecture 2, slide 34
+      - title: 'Wikipedia: Rectifier (neural networks)'
+        url: https://en.wikipedia.org/wiki/Rectifier_(neural_networks)
+        locator: Variants — Smooth variants — Softplus
+    source:
+      id: ncu-intro-dl
+      ref: lecture-02/q49
+    status: reviewed
+    reviewed_by: claude
+  - id: neural-networks-165
+    type: single
+    difficulty: medium
+    tags:
+      - ce6146
+      - ce6146-l02
+      - relu
+      - piecewise-linear
+    question: |
+      A network with one hidden layer of ReLU units and an identity output computes a function
+      $f(x)$ of a scalar input. Which description of $f$ is correct?
+    options:
+      - text: Continuous and piecewise affine, with kinks where a hidden unit switches on or off
+        correct: true
+      - text: Differentiable everywhere, since every hidden unit takes a weighted sum of the input
+        why: Each ReLU has a kink at $x = -b_j/w_j$, so $f$ generally has corners there.
+      - text: Piecewise constant, a staircase, because each ReLU unit is either on or off
+        why: An active ReLU passes a linear function of $x$, not a constant, so the pieces have slopes.
+      - text: Affine on the whole real line, exactly like a network without a hidden layer
+        why: Different regions have different sets of active units and therefore different slopes.
+    explanation: |
+      While the set of active units stays the same, every ReLU behaves either as the identity or as
+      zero, so $f$ is affine on that region; crossing a breakpoint $x = -b_j/w_j$ changes which
+      units contribute and hence the slope [^1][^2]. ReLU is continuous, so the pieces join without jumps. The complexity of
+      such networks can be measured by their number of linear regions [^3].
+    references:
+      - source: ncu-intro-dl
+        locator: Lecture 2, slide 35
+      - source: d2l
+        url: https://d2l.ai/chapter_multilayer-perceptrons/mlp.html#relu-function
+        locator: Sec. 5.1.2.1 ReLU Function
+      - title: Montúfar et al. (2014), On the Number of Linear Regions of Deep Neural Networks, arXiv:1402.1869
+        url: https://arxiv.org/abs/1402.1869
+        locator: Abstract
+    source:
+      id: ncu-intro-dl
+      ref: lecture-02/q50
+    status: reviewed
+    reviewed_by: claude
+  - id: neural-networks-166
+    type: short_answer
+    difficulty: medium
+    tags:
+      - ce6146
+      - ce6146-l02
+      - relu
+      - piecewise-linear
+    question: |
+      For a scalar input, a network combines three ReLU features into
+      $f(x) = \mathrm{ReLU}(x) - 3\,\mathrm{ReLU}(x - 1) + 2\,\mathrm{ReLU}(x - 2)$. Then
+      $f(1.25) =$ {{1}}, the slope of $f$ for $1 < x < 2$ is {{2}}, and the slope for $x > 2$ is
+      {{3}}.
+    answer:
+      blanks:
+        - numeric: 0.5
+          tolerance: 0.001
+          hint: a number
+        - numeric: -2
+          tolerance: 0.001
+          hint: a number
+        - numeric: 0
+          tolerance: 0.001
+          hint: a number
+      model: $f(1.25) = 1.25 - 3(0.25) = 0.5$; slope $1 - 3 = -2$ on $(1, 2)$ and $1 - 3 + 2 = 0$ for $x > 2$.
+    explanation: |
+      The hidden biases put the breakpoints at 0, 1 and 2; to the right of a breakpoint the
+      corresponding unit is active and adds its output weight to the slope, since ReLU has slope 1
+      on its active side [^1][^2]. The slopes are therefore 0, 1, $1 - 3 = -2$ and $1 - 3 + 2 = 0$
+      on the four regions, and $f(1.25) = 1.25 - 3 \cdot 0.25 = 0.5$.
+    references:
+      - source: ncu-intro-dl
+        locator: Lecture 2, slide 36
+      - source: d2l
+        url: https://d2l.ai/chapter_multilayer-perceptrons/mlp.html#relu-function
+        locator: Sec. 5.1.2.1 ReLU Function
+    source:
+      id: ncu-intro-dl
+      ref: lecture-02/q51
+    status: reviewed
+    reviewed_by: claude
+  - id: neural-networks-167
+    type: single
+    difficulty: medium
+    tags:
+      - ce6146
+      - ce6146-l02
+      - depth
+      - universal-approximation
+    question: Which statement about making a feedforward network deeper is correct?
+    options:
+      - text: Later layers can recombine earlier features, so some functions need far fewer units in a deep network
+        correct: true
+      - text: Each extra hidden layer is guaranteed to lower the error on new data, provided training converges
+        why: More depth can overfit or be harder to optimize; it guarantees no improvement.
+      - text: Every unit of a deep network ends up detecting a concept that a person can name and interpret
+        why: Learned units need not correspond to recognizable concepts.
+      - text: Some continuous functions on a closed, bounded domain can be approximated by deep but by no shallow network
+        why: One hidden layer of enough width can already approximate any continuous function there; depth changes efficiency, not what is reachable.
+    explanation: |
+      Composition lets a later layer reuse many earlier features, and for some functions a deep
+      network needs exponentially fewer units than a shallow one [^1][^2]. Depth is about efficiency,
+      not about what can be approximated at all: a single wide hidden layer is already a universal
+      approximator for continuous functions on closed, bounded domains, even if very many units may be
+      needed [^3]. Extra depth guarantees neither better generalization nor interpretable units.
+    references:
+      - source: ncu-intro-dl
+        locator: Lecture 2, slides 37, 39
+      - title: Telgarsky (2016), Benefits of depth in neural networks, arXiv:1602.04485
+        url: https://arxiv.org/abs/1602.04485
+        locator: Abstract
+      - source: d2l
+        url: https://d2l.ai/chapter_multilayer-perceptrons/mlp.html#universal-approximators
+        locator: Sec. 5.1.1.4 Universal Approximators
+    source:
+      id: ncu-intro-dl
+      ref: lecture-02/q52
+    status: reviewed
+    reviewed_by: claude
+  - id: neural-networks-168
+    type: single
+    difficulty: easy
+    tags:
+      - ce6146
+      - ce6146-l02
+      - architecture
+      - bottleneck
+    question: |
+      In a dense network with layer widths 784–64–8–64–784, the 8-unit layer is much narrower than the
+      layers on either side of it. What is such a layer called?
+    options:
+      - text: A bottleneck
+        correct: true
+      - text: A skip connection
+        why: A skip connection is an edge that bypasses layers, not a narrow layer.
+      - text: A sparsely connected layer
+        why: Sparse connectivity removes individual connections; this layer is still fully connected.
+      - text: A parameter-sharing layer
+        why: Sharing means several computations reuse the same weights; width has nothing to do with it.
+    explanation: |
+      A bottleneck is a layer narrower than its neighbours: everything the later layers see must pass
+      through its few features, which forces a compressed representation [^1]. Autoencoders rely on
+      this — their code layer has fewer dimensions than the input, so the network cannot simply copy
+      the input [^2]. Bottlenecks, skips, sparse connections and parameter sharing all keep a network
+      feedforward as long as its graph stays acyclic.
+    references:
+      - source: ncu-intro-dl
+        locator: Lecture 2, slide 41
+      - title: 'Wikipedia: Autoencoder'
+        url: https://en.wikipedia.org/wiki/Autoencoder
+        locator: Mathematical principles — Interpretation (undercomplete autoencoders)
+    source:
+      id: ncu-intro-dl
+      ref: lecture-02/q53
+    status: reviewed
+    reviewed_by: claude
+  - id: neural-networks-169
+    type: multiple
+    difficulty: easy
+    tags:
+      - ce6146
+      - ce6146-l02
+      - multilabel
+      - output-layer
+    question: Which of these are multilabel classification tasks? Select all that apply.
+    options:
+      - text: Tagging a photo with every kind of object that is visible in it
+        correct: true
+      - text: Assigning a film all of the genres that describe it
+        correct: true
+      - text: Recognising which digit, 0 to 9, a handwritten image shows
+        why: Each image shows exactly one of ten digits — multiclass classification with a softmax.
+      - text: Predicting the maximum temperature for tomorrow
+        why: The target is a real number, so this is regression.
+    explanation: |
+      In multilabel classification several labels can be true at once, so the output gives one
+      probability per label (a sigmoid each), and these need not sum to 1 [^1][^2]. A digit belongs
+      to exactly one of ten classes (multiclass: softmax over 10 outputs), and a temperature is a
+      real-valued target (regression).
+    references:
+      - source: ncu-intro-dl
+        locator: Lecture 2, slide 44
+      - title: scikit-learn User Guide, Multiclass and multioutput algorithms
+        url: https://scikit-learn.org/stable/modules/multiclass.html
+        locator: Sec. 1.12.1 Multiclass classification; Sec. 1.12.2 Multilabel classification
+    source:
+      id: ncu-intro-dl
+      ref: lecture-02/q55
+    status: reviewed
+    reviewed_by: claude
+  - id: neural-networks-170
+    type: single
+    difficulty: medium
+    tags:
+      - ce6146
+      - ce6146-l02
+      - gaussian-nll
+      - mse
+    question: |
+      A regression network outputs the mean $\mu(x)$ of a Gaussian whose variance $\sigma^2$ is fixed
+      and shared by all examples, and it is trained by minimizing the mean negative log-likelihood.
+      If $\sigma^2 = 4$ is used instead of $\sigma^2 = 1$, how do the optimal network parameters
+      change?
+    options:
+      - text: They do not change; the loss is only rescaled and shifted by a constant
+        correct: true
+      - text: The optimal weights become 4 times smaller
+        why: The variance scales the loss, not the predictions; the best mean is the same for every fixed variance.
+      - text: The prediction moves from the conditional mean to the conditional median
+        why: A median would come from a Laplace model (absolute error), not from a different Gaussian variance.
+      - text: The loss becomes the mean absolute error
+        why: A Gaussian likelihood always gives a squared residual, whatever its fixed variance.
+    explanation: |
+      The per-example NLL is $\dfrac{(y - \mu)^2}{2\sigma^2} + \tfrac12\log(2\pi\sigma^2)$ [^1]. With
+      $\sigma^2$ fixed, the second term is a constant and the first is the squared error times
+      $1/(2\sigma^2)$, so every choice of $\sigma^2$ has the same minimizer as plain squared error
+      [^2]. Only the size of the loss, and hence of its gradients, changes.
+    references:
+      - source: ncu-intro-dl
+        locator: Lecture 2, slide 47
+      - source: d2l
+        url: https://d2l.ai/chapter_linear-regression/linear-regression.html#the-normal-distribution-and-squared-loss
+        locator: Sec. 3.1.3 The Normal Distribution and Squared Loss
+    source:
+      id: ncu-intro-dl
+      ref: lecture-02/q59
+    status: reviewed
+    reviewed_by: claude
+  - id: neural-networks-171
+    type: single
+    difficulty: medium
+    tags:
+      - ce6146
+      - ce6146-l02
+      - mse
+      - units
+    question: |
+      A delivery model measures durations in units of 10 minutes. For two trips it predicts 2.5 and 1,
+      while the observed durations are 2 and 2. What is the mean squared error in minutes²?
+    options:
+      - text: '62.5'
+        correct: true
+      - text: '0.625'
+        why: This is the MSE in scaled units; squared errors must be multiplied by $(10\ \text{min})^2$.
+      - text: '31.25'
+        why: This converts the mean half-squared loss; the ½ is a training convenience, not part of the MSE.
+      - text: '6.25'
+        why: This multiplies by 10 instead of $10^2$; squared errors carry squared units.
+    explanation: |
+      In scaled units the squared errors are $0.5^2 = 0.25$ and $1^2 = 1$, so the MSE is $0.625$
+      (the mean half-squared loss used for training is half of it, $0.3125$) [^1]. Squared errors
+      carry squared units, so converting back multiplies by $(10\ \text{min})^2$:
+      $0.625 \times 100 = 62.5\ \text{min}^2$. The ½ in the training loss only simplifies the
+      derivative [^2].
+    references:
+      - source: ncu-intro-dl
+        locator: Lecture 2, slide 49
+      - source: d2l
+        url: https://d2l.ai/chapter_linear-regression/linear-regression.html#loss-function
+        locator: Sec. 3.1.1.2 Loss Function
+    source:
+      id: ncu-intro-dl
+      ref: lecture-02/q60
+    status: reviewed
+    reviewed_by: claude
+  - id: neural-networks-172
+    type: single
+    difficulty: medium
+    tags:
+      - ce6146
+      - ce6146-l02
+      - mae
+      - laplace
+    question: |
+      A regression network models the target given $x$ as a Laplace distribution with location
+      $\mu(x)$ and a fixed scale $s$, density proportional to $\exp(-|y - \mu|/s)$. Minimizing the NLL
+      is equivalent to minimizing which loss, and what does $\mu(x)$ then estimate?
+    options:
+      - text: Absolute error; the conditional median
+        correct: true
+      - text: Squared error; the conditional mean
+        why: That pair belongs to a Gaussian model with fixed variance.
+      - text: Absolute error; the conditional mean
+        why: The expected absolute error is minimized by a median, not by the mean.
+      - text: Squared error; the conditional median
+        why: The Laplace NLL contains $|y - \mu|$, not $(y - \mu)^2$, and squared error targets the mean.
+    explanation: |
+      The NLL is $|y - \mu|/s + \log(2s)$; with $s$ fixed this is the absolute error up to a scale and
+      a constant [^1]. The expected absolute error is minimized by a median, so the network estimates
+      the conditional median — just as the maximum-likelihood location of a Laplace sample is its
+      median [^2][^3]. A Gaussian assumption would instead lead to squared error and an estimate of
+      the conditional mean.
+    references:
+      - source: ncu-intro-dl
+        locator: Lecture 2, slide 50
+      - title: 'Wikipedia: Laplace distribution'
+        url: https://en.wikipedia.org/wiki/Laplace_distribution
+        locator: Statistical inference
+      - title: 'Wikipedia: Median'
+        url: https://en.wikipedia.org/wiki/Median
+        locator: Properties — Optimality property
+    source:
+      id: ncu-intro-dl
+      ref: lecture-02/q61
+    status: reviewed
+    reviewed_by: claude
+  - id: neural-networks-173
+    type: single
+    difficulty: easy
+    tags:
+      - ce6146
+      - ce6146-l02
+      - logit
+      - odds
+    question: |
+      A sigmoid output unit predicts $p = 0.9$ for class 1. What are the odds of class 1 and the
+      logit $z$ (natural logarithm)?
+    options:
+      - text: Odds 9, logit $\approx 2.197$
+        correct: true
+      - text: Odds 0.9, logit $\approx -0.105$
+        why: The odds are $p/(1 - p)$, not $p$; $-0.105$ is just $\ln 0.9$.
+      - text: Odds 9, logit $\approx 0.954$
+        why: 0.954 is $\log_{10} 9$; the logit uses the natural logarithm.
+      - text: Odds $1/9$, logit $\approx -2.197$
+        why: These are the odds and log-odds of class 0, $(1 - p)/p$.
+    explanation: |
+      Odds compare the event with the non-event: $p/(1 - p) = 0.9/0.1 = 9$ [^1]. For a sigmoid unit the
+      logit is the log-odds, $z = \ln 9 \approx 2.197$, and indeed
+      $\sigma(2.197) = 1/(1 + 1/9) = 0.9$ — the logit is the inverse of the sigmoid [^2].
+    references:
+      - source: ncu-intro-dl
+        locator: Lecture 2, slide 52
+      - title: 'Wikipedia: Logit'
+        url: https://en.wikipedia.org/wiki/Logit
+        locator: Definition
+    source:
+      id: ncu-intro-dl
+      ref: lecture-02/q63
+    status: reviewed
+    reviewed_by: claude
+  - id: neural-networks-174
+    type: single
+    difficulty: easy
+    tags:
+      - ce6146
+      - ce6146-l02
+      - binary-cross-entropy
+    question: |
+      An untrained spam filter outputs $p = 0.5$ for every email. On a set of 1000 emails, 300 of which
+      are spam, what is its mean binary cross-entropy (natural log)?
+    options:
+      - text: About 0.693
+        correct: true
+      - text: About 0.611
+        why: That is the loss of predicting the spam rate, $p = 0.3$, for every email; this model predicts 0.5.
+      - text: About 0.301
+        why: That is $\log_{10} 2$; the loss uses the natural logarithm.
+      - text: '0.25'
+        why: That is the squared error $(p - y)^2$ at $p = 0.5$, not the cross-entropy.
+    explanation: |
+      The loss is $-\ln p$ for a spam email ($y = 1$) and $-\ln(1 - p)$ for a legitimate one
+      ($y = 0$) [^1][^2]. At $p = 0.5$ both equal $\ln 2 \approx 0.693$, so every email costs the same
+      and the 300/700 class mix does not matter: the mean is 0.693. This is why a binary classifier
+      whose initial outputs are close to 0.5 typically starts training with a loss near 0.693.
+    references:
+      - source: ncu-intro-dl
+        locator: Lecture 2, slides 53–54
+      - title: torch.nn.BCEWithLogitsLoss (PyTorch documentation)
+        url: https://docs.pytorch.org/docs/2.14/generated/torch.nn.BCEWithLogitsLoss.html
+        locator: Class description (loss formula)
+    source:
+      id: ncu-intro-dl
+      ref: lecture-02/q64
+    status: reviewed
+    reviewed_by: claude
+  - id: neural-networks-175
+    type: short_answer
+    difficulty: medium
+    tags:
+      - ce6146
+      - ce6146-l02
+      - forward-pass
+      - binary-cross-entropy
+    question: |
+      A spam filter uses $x = [\text{links}, \text{promo-term matches}]$, two ReLU hidden units and a
+      sigmoid output: $z^1 = xW^1 + b^1$, $a^1 = \mathrm{ReLU}(z^1)$, $z^2 = a^1 v + c$,
+      $p = \sigma(z^2)$, with
+
+      $$W^1 = \begin{bmatrix} 0.5 & -1 \\ 1 & 0.5 \end{bmatrix},\quad b^1 = \begin{bmatrix} -1 & 0.5 \end{bmatrix},\quad v = \begin{bmatrix} 1 \\ -2 \end{bmatrix},\quad c = 0.5.$$
+
+      A legitimate email ($y = 0$) has $x = [3, 1]$. The model gives $p =$ {{1}}, and its binary
+      cross-entropy (natural log) is {{2}}. Give 3 decimals.
+    answer:
+      blanks:
+        - numeric: 0.881
+          tolerance: 0.001
+          hint: 3 decimals
+        - numeric: 2.127
+          tolerance: 0.002
+          hint: 3 decimals
+      model: $z^1 = [1.5, -2]$, $a^1 = [1.5, 0]$, $z^2 = 2$, $p = \sigma(2) \approx 0.881$, $\ell = -\ln(1 - 0.881) \approx 2.127$.
+    explanation: |
+      Forward pass: $z^1 = [3 \cdot 0.5 + 1 \cdot 1 - 1,\; 3 \cdot (-1) + 1 \cdot 0.5 + 0.5] = [1.5, -2]$,
+      so $a^1 = [1.5, 0]$ and $z^2 = 1.5 \cdot 1 + 0 + 0.5 = 2$ [^1]. Then
+      $p = 1/(1 + e^{-2}) \approx 0.881$, and with $y = 0$ the loss is $-\ln(1 - p) \approx 2.127$
+      [^2]. At threshold 0.5 the email would be flagged as spam — a confident mistake, hence the
+      large loss.
+    references:
+      - source: ncu-intro-dl
+        locator: Lecture 2, slide 56
+      - title: torch.nn.BCEWithLogitsLoss (PyTorch documentation)
+        url: https://docs.pytorch.org/docs/2.14/generated/torch.nn.BCEWithLogitsLoss.html
+        locator: Class description (loss formula)
+    source:
+      id: ncu-intro-dl
+      ref: lecture-02/q67
+    status: reviewed
+    reviewed_by: claude
+  - id: neural-networks-176
+    type: single
+    difficulty: medium
+    tags:
+      - ce6146
+      - ce6146-l02
+      - softmax
+    question: |
+      A three-class softmax output has logits $z = (2, 1, 0)$. Only $z_1$ is raised to 3. What
+      happens to the probabilities?
+    options:
+      - text: $p_1$ rises; $p_2$ and $p_3$ shrink by the same factor, so $p_2/p_3$ stays fixed
+        correct: true
+      - text: $p_1$ rises; $p_2$ and $p_3$ stay the same, because their logits did not change
+        why: All probabilities share the denominator $\sum_r e^{z_r}$, which grows when $z_1$ grows.
+      - text: $p_1$ rises; $p_2$ and $p_3$ both drop by the same amount, keeping their difference
+        why: They drop by about 0.131 and 0.048 — different amounts; it is their ratio that stays fixed.
+      - text: All three probabilities rise, because the sum of the logits has increased
+        why: The probabilities always sum to 1, so they cannot all rise.
+    explanation: |
+      Every softmax probability is $e^{z_j}$ divided by the shared sum $\sum_r e^{z_r}$, so changing
+      one logit changes all outputs [^1][^2]. Here $p$ goes from about $(0.665, 0.245, 0.090)$ to
+      $(0.844, 0.114, 0.042)$: $p_2$ and $p_3$ are both multiplied by about 0.467, and their ratio
+      stays $e^{z_2 - z_3} = e$.
+    references:
+      - source: ncu-intro-dl
+        locator: Lecture 2, slides 57–58
+      - source: d2l
+        url: https://d2l.ai/chapter_linear-classification/softmax-regression.html#the-softmax
+        locator: Sec. 4.1.1.2 The Softmax
+    source:
+      id: ncu-intro-dl
+      ref: lecture-02/q68
+    status: reviewed
+    reviewed_by: claude
+  - id: neural-networks-177
+    type: short_answer
+    difficulty: medium
+    tags:
+      - ce6146
+      - ce6146-l02
+      - softmax
+      - cross-entropy
+    question: |
+      An inspection model gives each item one of three mutually exclusive labels, ordered
+      (scratch, crack, stain). The last hidden features are $a = [2, 1]$, and the output layer
+      computes the logits $z = aW + b$ followed by a softmax, with
+
+      $$W = \begin{bmatrix} 0.5 & -1 & 0 \\ 1 & 1 & -0.5 \end{bmatrix},\quad b = \begin{bmatrix} 0 & 0.5 & 1 \end{bmatrix}.$$
+
+      The item actually has a stain. Its logit for stain is {{1}}, the predicted probability of stain
+      is {{2}}, and the categorical cross-entropy (natural log) is {{3}}. Give 3 decimals.
+    answer:
+      blanks:
+        - numeric: 0.5
+          tolerance: 0.001
+          hint: a number
+        - numeric: 0.171
+          tolerance: 0.001
+          hint: 3 decimals
+        - numeric: 1.766
+          tolerance: 0.002
+          hint: 3 decimals
+      model: $z = [2, -0.5, 0.5]$; $p \approx [0.766, 0.063, 0.171]$; $\ell = -\ln 0.171 \approx 1.766$. The largest probability is scratch, so the decision is wrong.
+    explanation: |
+      The logits are $z = [2 \cdot 0.5 + 1 \cdot 1 + 0,\; 2 \cdot (-1) + 1 \cdot 1 + 0.5,\; 0 - 0.5 + 1] = [2, -0.5, 0.5]$
+      [^1]. The softmax denominator is $e^{2} + e^{-0.5} + e^{0.5} \approx 9.644$, so
+      $p_{\text{stain}} = e^{0.5}/9.644 \approx 0.171$. With a one-hot target the cross-entropy keeps
+      only the observed class's term, $-\ln 0.171 \approx 1.766$ [^2].
+    references:
+      - source: ncu-intro-dl
+        locator: Lecture 2, slides 59–60
+      - source: d2l
+        url: https://d2l.ai/chapter_linear-classification/softmax-regression.html#softmax-and-cross-entropy-loss
+        locator: Sec. 4.1.2.2 Softmax and Cross-Entropy Loss
+    source:
+      id: ncu-intro-dl
+      ref: lecture-02/q69
+    status: reviewed
+    reviewed_by: claude
+  - id: neural-networks-178
+    type: single
+    difficulty: medium
+    tags:
+      - ce6146
+      - ce6146-l02
+      - softmax
+      - numerical-stability
+      - numpy
+    question: |
+      What does this code print?
+
+      ```python
+      import numpy as np
+
+      z = np.array([1000.0, 1000.0])
+      with np.errstate(over="ignore", invalid="ignore"):
+          naive = np.exp(z) / np.exp(z).sum()
+      stable = np.exp(z - z.max()) / np.exp(z - z.max()).sum()
+      print(naive, stable)
+      ```
+    options:
+      - text: '`[nan nan] [0.5 0.5]`'
+        correct: true
+      - text: '`[0.5 0.5] [nan nan]`'
+        why: This swaps the results; it is the shifted version that stays finite, because $e^{1000}$ overflows in float64.
+      - text: '`[inf inf] [0.5 0.5]`'
+        why: Each exponential overflows to `inf`, but the division `inf / inf` is undefined and gives `nan`.
+      - text: '`[0. 0.] [0.5 0.5]`'
+        why: Large positive logits overflow rather than underflow, so the result is not 0.
+    explanation: |
+      $e^{1000}$ is far beyond the largest float64 (about $1.8 \times 10^{308}$), so `np.exp`
+      returns `inf`, and `inf / inf` is `nan` [^1][^2]. Subtracting the largest logit first leaves the
+      softmax unchanged — it depends only on differences between logits — and makes every exponent
+      at most 0, which gives $[0.5, 0.5]$ [^2]. Cross-entropy computed from logits uses the same
+      shift through the log-sum-exp trick.
+    references:
+      - source: ncu-intro-dl
+        locator: Lecture 2, slide 61
+      - source: d2l
+        url: https://d2l.ai/chapter_linear-classification/softmax-regression-concise.html#softmax-revisited
+        locator: Sec. 4.5.2 Softmax Revisited
+    source:
+      id: ncu-intro-dl
+      ref: lecture-02/q70
+    status: reviewed
+    reviewed_by: claude
+  - id: neural-networks-179
+    type: single
+    difficulty: medium
+    tags:
+      - ce6146
+      - ce6146-l02
+      - multilabel
+      - binary-cross-entropy
+    question: |
+      A defect detector has a separate sigmoid output for scratch, crack and stain. For one part the
+      targets are $y = (1, 0, 1)$ and the predicted probabilities are $p = (0.9, 0.2, 0.6)$. What is
+      the loss, the sum of the three binary cross-entropies (natural log)?
+    options:
+      - text: About 0.839
+        correct: true
+      - text: About 0.280
+        why: This is the mean of the three terms; the question asks for their sum.
+      - text: About 0.616
+        why: This drops the crack term; an absent defect also contributes $-\ln(1 - p)$.
+      - text: About 2.226
+        why: This uses $-\ln p$ for the crack label even though its target is 0.
+    explanation: |
+      Each label is its own Bernoulli variable, so the loss is
+      $-\ln 0.9 - \ln(1 - 0.2) - \ln 0.6 \approx 0.105 + 0.223 + 0.511 = 0.839$ [^1][^2]. The three
+      probabilities add up to 1.7, which is fine: the defects can occur together, so the outputs do
+      not form a distribution over mutually exclusive classes.
+    references:
+      - source: ncu-intro-dl
+        locator: Lecture 2, slide 63
+      - title: torch.nn.BCEWithLogitsLoss (PyTorch documentation)
+        url: https://docs.pytorch.org/docs/2.14/generated/torch.nn.BCEWithLogitsLoss.html
+        locator: Class description (multi-label case, one binary term per class)
+    source:
+      id: ncu-intro-dl
+      ref: lecture-02/q74
+    status: reviewed
+    reviewed_by: claude
+  - id: neural-networks-180
+    type: true_false
+    difficulty: medium
+    tags:
+      - ce6146
+      - ce6146-l02
+      - gaussian-nll
+      - heteroscedastic
+    question: |
+      True or false: a regression network that predicts both a mean $\mu(x)$ and a variance
+      $\sigma^2(x)$ and is trained with the Gaussian negative log-likelihood can never reach a
+      negative loss, because a probability density cannot exceed 1.
+    options:
+      - text: 'True'
+        why: Densities can exceed 1; on an exactly fitted example, shrinking $\sigma^2$ drives the NLL below 0 and on to $-\infty$.
+      - text: 'False'
+        correct: true
+    explanation: |
+      A density is a probability per unit of $y$, not a probability, and it can be larger than 1
+      [^2]. With residual 0 the NLL is $\tfrac12(\log\sigma^2 + \log 2\pi)$, which is negative once
+      $\sigma^2 < 1/(2\pi)$ and tends to $-\infty$ as $\sigma^2 \to 0$, so the loss is unbounded
+      below [^1]. Implementations therefore clamp the predicted variance from below for stability
+      [^3].
+    references:
+      - source: ncu-intro-dl
+        locator: Lecture 2, slide 64
+      - title: 'Wikipedia: Probability density function'
+        url: https://en.wikipedia.org/wiki/Probability_density_function
+        locator: Further details
+      - title: torch.nn.GaussianNLLLoss (PyTorch documentation)
+        url: https://docs.pytorch.org/docs/2.14/generated/torch.nn.GaussianNLLLoss.html
+        locator: Class description (eps clamps the variance for stability)
+    source:
+      id: ncu-intro-dl
+      ref: lecture-02/q75
+    status: reviewed
+    reviewed_by: claude
+  - id: neural-networks-181
+    type: short_answer
+    difficulty: hard
+    tags:
+      - ce6146
+      - ce6146-l02
+      - mixture-density-network
+      - gaussian-nll
+    question: |
+      A mixture density network outputs, for one input, two Gaussian components with weights
+      $\pi = (0.6, 0.4)$, means $\mu = (10, 16)$ and standard deviations $\sigma = (2, 4)$. What is
+      the negative log-likelihood (natural log) of the observed target $y = 12$? Give 3 decimals.
+    answer:
+      numeric: 2.335
+      tolerance: 0.002
+      hint: 3 decimals
+      model: $\mathcal N(12; 10, 2^2) \approx 0.12099$, $\mathcal N(12; 16, 4^2) \approx 0.06049$; $p(12) = 0.6 \cdot 0.12099 + 0.4 \cdot 0.06049 \approx 0.09679$; $-\ln p \approx 2.335$.
+    explanation: |
+      The model density is the weighted sum of the component densities,
+      $p(y \mid x) = \sum_k \pi_k\,\mathcal N(y; \mu_k, \sigma_k^2)$, and the loss takes $-\log$ of
+      that sum [^1][^2][^3]. Here $y = 12$ is one standard deviation from each mean, so each density is
+      $e^{-1/2}/(\sigma_k\sqrt{2\pi})$: about 0.1210 and 0.0605. The mixture density is
+      $0.6 \cdot 0.1210 + 0.4 \cdot 0.0605 \approx 0.0968$, giving an NLL of 2.335. Averaging the two
+      component NLLs instead (2.389) would be wrong: the logarithm applies to the sum.
+    references:
+      - source: ncu-intro-dl
+        locator: Lecture 2, slide 65
+      - title: Graves (2013), Generating Sequences With Recurrent Neural Networks, arXiv:1308.0850
+        url: https://arxiv.org/abs/1308.0850
+        locator: Sec. 4.1 Mixture Density Outputs
+      - title: 'Wikipedia: Mixture distribution'
+        url: https://en.wikipedia.org/wiki/Mixture_distribution
+        locator: Finite and countable mixtures
+    source:
+      id: ncu-intro-dl
+      ref: lecture-02/q76
+    status: reviewed
+    reviewed_by: claude
+  - id: neural-networks-182
+    type: single
+    difficulty: easy
+    tags:
+      - ce6146
+      - ce6146-l02
+      - computational-graph
+    question: |
+      Why is it important that the computational graph of a feedforward network is a directed acyclic
+      graph (DAG)?
+    options:
+      - text: Its nodes can be ordered so that each is computed after everything it depends on
+        correct: true
+      - text: It ensures that every node feeds exactly one later node, so that paths never branch
+        why: Branching is allowed in a DAG; when a value feeds several nodes, their gradients are added.
+      - text: It ensures that the graph is a single chain leading from the input to the loss
+        why: A DAG can contain skips and parallel branches; it only excludes directed cycles.
+      - text: It ensures that every operation in the graph is differentiable at every input
+        why: Acyclicity says nothing about differentiability; ReLU, for example, has a kink at 0.
+    explanation: |
+      Nodes are quantities and directed edges are dependencies [^1]. A graph without directed cycles
+      always has a topological order, so the forward pass can evaluate nodes in that order and
+      backpropagation can visit them in reverse [^2]. Branches and skip connections are fine;
+      feedforward networks are a standard example of DAGs [^2].
+    references:
+      - source: ncu-intro-dl
+        locator: Lecture 2, slide 71
+      - title: 'Wikipedia: Directed acyclic graph'
+        url: https://en.wikipedia.org/wiki/Directed_acyclic_graph
+        locator: Mathematical properties — Topological ordering; Applications — Data processing networks
+    source:
+      id: ncu-intro-dl
+      ref: lecture-02/q80
+    status: reviewed
+    reviewed_by: claude
+  - id: neural-networks-183
+    type: short_answer
+    difficulty: medium
+    tags:
+      - ce6146
+      - ce6146-l02
+      - backpropagation
+      - chain-rule
+    question: |
+      One neuron computes $z = w_1x_1 + w_2x_2 + b$ and $a = \sigma(z)$ with $x = (2, -1)$,
+      $w = (0.5, 1.5)$ and $b = 0.5$. The upstream gradient is $\partial L/\partial a = 2$. Then
+      $\partial L/\partial w_1 =$ {{1}}, $\partial L/\partial b =$ {{2}} and
+      $\partial L/\partial x_2 =$ {{3}}.
+    answer:
+      blanks:
+        - numeric: 1
+          tolerance: 0.001
+          hint: a number
+        - numeric: 0.5
+          tolerance: 0.001
+          hint: a number
+        - numeric: 0.75
+          tolerance: 0.001
+          hint: a number
+      model: $z = 0$, $\delta = 2\,\sigma'(0) = 0.5$; $\partial L/\partial w_1 = \delta x_1 = 1$, $\partial L/\partial b = \delta = 0.5$, $\partial L/\partial x_2 = \delta w_2 = 0.75$.
+    explanation: |
+      First the pre-activation gradient: $z = 1 - 1.5 + 0.5 = 0$, so
+      $\delta = \partial L/\partial z = 2 \cdot \sigma'(0) = 2 \cdot 0.25 = 0.5$ [^1]. The local
+      derivatives of $z$ are $x_i$ for $w_i$, 1 for $b$ and $w_i$ for $x_i$, which gives
+      $0.5 \cdot 2 = 1$, $0.5$ and $0.5 \cdot 1.5 = 0.75$ [^2]. The input gradient $\delta w_i$ is
+      what the neuron passes back to the layer before it.
+    references:
+      - source: ncu-intro-dl
+        locator: Lecture 2, slide 73
+      - source: d2l
+        url: https://d2l.ai/chapter_multilayer-perceptrons/backprop.html#backpropagation
+        locator: Sec. 5.3.3 Backpropagation
+    source:
+      id: ncu-intro-dl
+      ref: lecture-02/q81
+    status: reviewed
+    reviewed_by: claude
+  - id: neural-networks-184
+    type: single
+    difficulty: medium
+    tags:
+      - ce6146
+      - ce6146-l02
+      - backpropagation
+      - memory
+    question: |
+      A layer computes $z = xW + b$ and $a = \mathrm{ReLU}(z)$. Which values, cached during the forward
+      pass, are enough for the backward pass to compute $\partial L/\partial W$ and to pass the
+      gradient through the ReLU?
+    options:
+      - text: The layer input $x$ and the pre-activation $z$
+        correct: true
+      - text: Only the final loss value $L$ of this training step
+        why: A single number cannot give the per-weight derivatives, which need layer-local values.
+      - text: Only the prediction $\hat y$ produced by the output layer
+        why: The output gives the output gradient, but this layer's gradients also need its own input and pre-activation.
+      - text: The gradients computed during the previous training step
+        why: Each backward pass uses the forward values of its own step, not old gradients.
+    explanation: |
+      $\partial L/\partial W = x^\top\delta$ needs the layer input $x$, and
+      $\delta = (\partial L/\partial a) \odot \mathrm{ReLU}'(z)$ needs to know which units were active —
+      the sign of $z$ [^1]. (Storing the output $a$ instead would also do, since $a > 0$ exactly where
+      $z > 0$; the loss, the prediction or old gradients cannot replace these layer-local values.)
+      Frameworks therefore keep intermediate forward values until backpropagation has finished, which
+      is one reason training needs much more memory than prediction [^2].
+    references:
+      - source: ncu-intro-dl
+        locator: Lecture 2, slides 73, 75
+      - source: d2l
+        url: https://d2l.ai/chapter_multilayer-perceptrons/backprop.html#training-neural-networks
+        locator: Sec. 5.3.4 Training Neural Networks
+    source:
+      id: ncu-intro-dl
+      ref: lecture-02/q82
+    status: reviewed
+    reviewed_by: claude
+  - id: neural-networks-185
+    type: short_answer
+    difficulty: medium
+    tags:
+      - ce6146
+      - ce6146-l02
+      - backpropagation
+      - relu
+    question: |
+      The 2–2–1 network $z^1 = xW^1 + b^1$, $a^1 = \mathrm{ReLU}(z^1)$, $\hat y = a^1 v + c$ has
+
+      $$W^1 = \begin{bmatrix} 1 & -2 \\ 0.5 & 1 \end{bmatrix},\quad b^1 = \begin{bmatrix} 0 & 1 \end{bmatrix},\quad v = \begin{bmatrix} 1.5 \\ -1 \end{bmatrix},\quad c = 0.5,$$
+
+      and is trained with $L = \tfrac12(\hat y - y)^2$. For $x = [2, 1]$ and $y = 3$:
+      $\partial L/\partial v_1 =$ {{1}}, the gradient reaching the second hidden activation is
+      $\partial L/\partial a^1_2 =$ {{2}}, and the gradient of its pre-activation is
+      $\partial L/\partial z^1_2 =$ {{3}}.
+    answer:
+      blanks:
+        - numeric: 3.125
+          tolerance: 0.001
+          hint: a number
+        - numeric: -1.25
+          tolerance: 0.001
+          hint: a number
+        - numeric: 0
+          tolerance: 0.001
+          hint: a number
+      model: $z^1 = [2.5, -2]$, $a^1 = [2.5, 0]$, $\hat y = 4.25$, $\delta^2 = 1.25$; $\partial L/\partial v_1 = a^1_1\delta^2 = 3.125$; $\partial L/\partial a^1 = \delta^2 v^\top = [1.875, -1.25]$; unit 2 is inactive ($z^1_2 = -2$), so $\partial L/\partial z^1_2 = -1.25 \cdot 0 = 0$.
+    explanation: |
+      Forward: $z^1 = [2.5, -2]$, $a^1 = [2.5, 0]$ and $\hat y = 2.5 \cdot 1.5 + 0 + 0.5 = 4.25$, so the
+      output gradient is $\delta^2 = \hat y - y = 1.25$ [^1]. At the output layer
+      $\partial L/\partial v_j = a^1_j\,\delta^2$, which is $2.5 \cdot 1.25 = 3.125$ for $v_1$, and the
+      gradient sent back to the hidden activations is $\delta^2 v^\top = [1.875, -1.25]$ [^1][^2]. It is
+      nonzero even for the inactive second unit, but the ReLU's local slope there is 0, so
+      $\partial L/\partial z^1_2 = 0$ and the weights into that unit get no gradient from this example.
+    references:
+      - source: ncu-intro-dl
+        locator: Lecture 2, slides 73, 76–77
+      - source: d2l
+        url: https://d2l.ai/chapter_multilayer-perceptrons/backprop.html#backpropagation
+        locator: Sec. 5.3.3 Backpropagation
+    source:
+      id: ncu-intro-dl
+      ref: lecture-02/q83
+    status: reviewed
+    reviewed_by: claude
+  - id: neural-networks-186
+    type: single
+    difficulty: medium
+    tags:
+      - ce6146
+      - ce6146-l02
+      - backpropagation
+      - parameter-sharing
+    question: |
+      A scalar weight $w$ is used by two connections: $z_1 = w\,a_1$ and $z_2 = w\,a_2$, with
+      $a_1 = 3$ and $a_2 = -1$. Backpropagation gives $\partial L/\partial z_1 = 0.5$ and
+      $\partial L/\partial z_2 = 2$. What is $\partial L/\partial w$?
+    options:
+      - text: −0.5
+        correct: true
+      - text: '1.5'
+        why: This counts only the first use of $w$; a shared weight collects the contributions of all its uses.
+      - text: −2
+        why: This counts only the second use of $w$.
+      - text: −0.25
+        why: This averages the two contributions; the chain rule adds them.
+    explanation: |
+      Each use of the weight contributes (incoming activation) × (gradient of the pre-activation it
+      feeds): $3 \cdot 0.5 = 1.5$ and $(-1) \cdot 2 = -2$ [^1]. A shared parameter receives the sum of
+      the contributions from all its uses, $1.5 - 2 = -0.5$ [^2]. The same rule turns a layer's weight
+      gradient into a sum over the examples of a batch.
+    references:
+      - source: ncu-intro-dl
+        locator: Lecture 2, slide 78
+      - source: d2l
+        url: https://d2l.ai/chapter_builders-guide/parameters.html#tied-parameters
+        locator: Sec. 6.2.2 Tied Parameters
+    source:
+      id: ncu-intro-dl
+      ref: lecture-02/q84
+    status: reviewed
+    reviewed_by: claude
+  - id: neural-networks-187
+    type: true_false
+    difficulty: medium
+    tags:
+      - ce6146
+      - ce6146-l02
+      - jacobian
+      - backpropagation
+    question: |
+      True or false: for an elementwise activation $a = \phi(z)$ on a vector with $n$ entries, the
+      Jacobian $\partial a/\partial z$ is an $n \times n$ diagonal matrix, so the vector–Jacobian
+      product reduces to multiplying the upstream gradient entrywise by $\phi'(z)$.
+    options:
+      - text: 'True'
+        correct: true
+      - text: 'False'
+        why: Each $a_i$ depends only on $z_i$, so every off-diagonal entry $\partial a_i/\partial z_j$ with $i \ne j$ is 0.
+    explanation: |
+      The Jacobian of a map from $n$ to $m$ coordinates is the $m \times n$ matrix of partial
+      derivatives $\partial a_i/\partial z_j$ [^2]. With an elementwise activation, $a_i$ depends only
+      on $z_i$, so the off-diagonal entries vanish and the diagonal holds $\phi'(z_i)$ [^1].
+      Multiplying a row gradient by this matrix is the Hadamard product
+      $(\partial L/\partial a) \odot \phi'(z)$ that appears in backpropagation [^3].
+    references:
+      - source: ncu-intro-dl
+        locator: Lecture 2, slide 79
+      - title: 'Wikipedia: Jacobian matrix and determinant'
+        url: https://en.wikipedia.org/wiki/Jacobian_matrix_and_determinant
+        locator: Definition
+      - source: d2l
+        url: https://d2l.ai/chapter_multilayer-perceptrons/backprop.html#backpropagation
+        locator: Sec. 5.3.3 Backpropagation
+    source:
+      id: ncu-intro-dl
+      ref: lecture-02/q85
+    status: reviewed
+    reviewed_by: claude
+  - id: neural-networks-188
+    type: short_answer
+    difficulty: medium
+    tags:
+      - ce6146
+      - ce6146-l02
+      - jacobian
+      - vjp
+    question: |
+      A layer $g$ maps $x \in \mathbb{R}^2$ to $y \in \mathbb{R}^3$. At the current point its Jacobian
+      (rows = outputs, $J_{ji} = \partial y_j/\partial x_i$) and the upstream gradient are
+
+      $$J = \begin{bmatrix} 1 & 2 \\ 0 & -1 \\ 3 & 1 \end{bmatrix},\qquad \nabla_y L = \begin{bmatrix} 1 & 2 & -1 \end{bmatrix}.$$
+
+      The vector–Jacobian product gives $\partial L/\partial x_1 =$ {{1}} and
+      $\partial L/\partial x_2 =$ {{2}}.
+    answer:
+      blanks:
+        - numeric: -2
+          tolerance: 0.001
+          hint: a number
+        - numeric: -1
+          tolerance: 0.001
+          hint: a number
+      model: $\nabla_x L = (\nabla_y L)\,J = [1 + 0 - 3,\; 2 - 2 - 1] = [-2, -1]$.
+    explanation: |
+      By the chain rule $\partial L/\partial x_i = \sum_j (\partial L/\partial y_j)(\partial y_j/\partial x_i)$,
+      i.e. the row gradient times the Jacobian [^1]. Column 1 gives
+      $1 \cdot 1 + 2 \cdot 0 + (-1) \cdot 3 = -2$ and column 2 gives
+      $1 \cdot 2 + 2 \cdot (-1) + (-1) \cdot 1 = -1$. Autograd computes such vector–Jacobian products
+      directly, without forming the full Jacobian of a large layer [^2].
+    references:
+      - source: ncu-intro-dl
+        locator: Lecture 2, slide 79
+      - source: d2l
+        url: https://d2l.ai/chapter_preliminaries/autograd.html#backward-for-non-scalar-variables
+        locator: Sec. 2.5.2 Backward for Non-Scalar Variables
+    source:
+      id: ncu-intro-dl
+      ref: lecture-02/q86
+    status: reviewed
+    reviewed_by: claude
+  - id: neural-networks-189
+    type: single
+    difficulty: medium
+    tags:
+      - ce6146
+      - ce6146-l02
+      - backpropagation
+      - shapes
+      - batch
+    question: |
+      A dense layer computes $Z = AW + b$ for a batch, with $A$ of shape $32 \times 100$ and $W$ of
+      shape $100 \times 10$. Given $D = \partial L/\partial Z$ of shape $32 \times 10$, which
+      expression is $\partial L/\partial W$?
+    options:
+      - text: $A^\top D$, of shape $100 \times 10$
+        correct: true
+      - text: $DW^\top$, of shape $32 \times 100$
+        why: This is $\partial L/\partial A$, the gradient sent back to the layer input.
+      - text: $D^\top A$, of shape $10 \times 100$
+        why: This is the transpose of the weight gradient; a gradient has the same shape as its parameter.
+      - text: $D$ summed over its rows, of shape $1 \times 10$
+        why: Summing $D$ over the rows gives the bias gradient $\partial L/\partial b$.
+    explanation: |
+      Entry by entry, $\partial L/\partial W_{ij} = \sum_n A_{ni}D_{nj}$, which is $A^\top D$ — a
+      $100 \times 10$ matrix like $W$, summing the contributions of all 32 examples [^1]. $DW^\top$ is
+      the gradient passed to the layer input, and the row sum of $D$ is the bias gradient. A
+      derivative with respect to a matrix has that matrix's shape, which tells you how the factors
+      must be transposed and ordered [^2].
+    references:
+      - source: ncu-intro-dl
+        locator: Lecture 2, slide 80
+      - source: d2l
+        url: https://d2l.ai/chapter_appendix-mathematics-for-deep-learning/multivariable-calculus.html#a-little-matrix-calculus
+        locator: Sec. 22.4.7 A Little Matrix Calculus
+    source:
+      id: ncu-intro-dl
+      ref: lecture-02/q87
+    status: reviewed
+    reviewed_by: claude
+  - id: neural-networks-190
+    type: true_false
+    difficulty: medium
+    tags:
+      - ce6146
+      - ce6146-l02
+      - backpropagation
+      - batch
+    question: |
+      True or false: when the training loss is the mean over a batch of $B$ examples and the output
+      gradient already contains the factor $1/B$, the weight gradient $A^\top D$ must be divided by
+      $B$ once more, because it sums over the examples.
+    options:
+      - text: 'True'
+        why: That applies $1/B$ twice; summing rows that already carry $1/B$ gives the average contribution.
+      - text: 'False'
+        correct: true
+    explanation: |
+      For a batch-mean loss, $1/B$ is applied to the upstream gradient exactly once, for example
+      $D = (\hat Y - Y)/B$ for the half-squared error [^1]. The sum over rows in $A^\top D$ then
+      produces the average of the per-example contributions; dividing again would shrink the gradient
+      by an extra factor $B$, like a learning rate $B$ times smaller. Minibatch SGD normalizes by the
+      batch size once [^2].
+    references:
+      - source: ncu-intro-dl
+        locator: Lecture 2, slides 80–81
+      - source: d2l
+        url: https://d2l.ai/chapter_linear-regression/linear-regression.html#minibatch-stochastic-gradient-descent
+        locator: Sec. 3.1.1.4 Minibatch Stochastic Gradient Descent
+    source:
+      id: ncu-intro-dl
+      ref: lecture-02/q88
+    status: reviewed
+    reviewed_by: claude
+  - id: neural-networks-191
+    type: single
+    difficulty: medium
+    tags:
+      - ce6146
+      - ce6146-l02
+      - backpropagation
+    question: |
+      Backpropagation through a deep network uses the recursion
+      $D^l = [D^{l+1}(W^{l+1})^\top] \odot (\phi^l)'(Z^l)$. Why are the weights updated only after the
+      whole backward pass has finished?
+    options:
+      - text: The recursion must use the same weights that produced the forward values
+        correct: true
+      - text: The optimizer needs the loss of the next mini-batch before it can update
+        why: The update uses the gradients of the current batch only.
+      - text: Updating a layer early would change the targets seen by the earlier layers
+        why: The targets come from the data and never change during the backward pass.
+      - text: Gradients of the last layer can only be found after those of the first layer
+        why: It is the reverse; backpropagation starts at the output and moves toward the input.
+    explanation: |
+      Each step of the recursion multiplies by $(W^{l+1})^\top$ and evaluates $\phi'$ at the cached
+      $Z^l$ [^1]. These must be the values that produced the forward pass; if some weights changed
+      midway, the gradients of earlier layers would mix two parameter settings and would no longer be
+      the gradient of the loss that was computed. Training therefore alternates a forward pass, a
+      complete backward pass and then the parameter update [^2].
+    references:
+      - source: ncu-intro-dl
+        locator: Lecture 2, slide 81
+      - source: d2l
+        url: https://d2l.ai/chapter_multilayer-perceptrons/backprop.html#training-neural-networks
+        locator: Sec. 5.3.4 Training Neural Networks
+    source:
+      id: ncu-intro-dl
+      ref: lecture-02/q89
+    status: reviewed
+    reviewed_by: claude
+  - id: neural-networks-192
+    type: short_answer
+    difficulty: hard
+    tags:
+      - ce6146
+      - ce6146-l02
+      - backpropagation
+      - batch
+    question: |
+      A 2–2–1 network $\hat y = \mathrm{ReLU}(xW^1 + b^1)\,v + c$ with
+
+      $$W^1 = \begin{bmatrix} 1 & -1 \\ -0.5 & 1 \end{bmatrix},\quad b^1 = \begin{bmatrix} 0 & 0 \end{bmatrix},\quad v = \begin{bmatrix} 2 \\ 1.5 \end{bmatrix},\quad c = 0.5$$
+
+      is trained on the batch $X = \begin{bmatrix} 1 & 0 \\ 0 & 2 \end{bmatrix}$,
+      $Y = \begin{bmatrix} 3 \\ 2.5 \end{bmatrix}$ with the mean loss
+      $L = \frac{1}{B}\sum_n \tfrac12(\hat y_n - y_n)^2$. Then $\partial L/\partial c =$ {{1}},
+      $\partial L/\partial v_2 =$ {{2}} and $\partial L/\partial b^1_2 =$ {{3}}.
+    answer:
+      blanks:
+        - numeric: 0.25
+          tolerance: 0.001
+          hint: a number
+        - numeric: 1
+          tolerance: 0.001
+          hint: a number
+        - numeric: 0.75
+          tolerance: 0.001
+          hint: a number
+      model: $\hat Y = [2.5, 3.5]^\top$, $D^2 = (\hat Y - Y)/2 = [-0.25, 0.5]^\top$; $\partial L/\partial c = 0.25$; $\partial L/\partial v = (A^1)^\top D^2 = [-0.25, 1]^\top$; $D^1$ has rows $[-0.5, 0]$ and $[0, 0.75]$, so $\partial L/\partial b^1 = [-0.5, 0.75]$.
+    explanation: |
+      Forward: $Z^1$ has rows $[1, -1]$ and $[-1, 2]$, so $A^1$ has rows $[1, 0]$ and $[0, 2]$ and
+      $\hat Y = [2.5, 3.5]^\top$. The output gradient carries $1/B$ once:
+      $D^2 = [-0.5, 1]^\top/2 = [-0.25, 0.5]^\top$ [^1]. Then $\partial L/\partial c = -0.25 + 0.5 = 0.25$
+      and $\partial L/\partial v = (A^1)^\top D^2 = [-0.25, 1]^\top$. Going back,
+      $D^1 = (D^2 v^\top) \odot \mathrm{ReLU}'(Z^1)$ has rows $[-0.5, 0]$ and $[0, 0.75]$, and its
+      column sums give $\partial L/\partial b^1 = [-0.5, 0.75]$ [^2].
+    references:
+      - source: ncu-intro-dl
+        locator: Lecture 2, slides 80–82
+      - source: d2l
+        url: https://d2l.ai/chapter_multilayer-perceptrons/backprop.html#backpropagation
+        locator: Sec. 5.3.3 Backpropagation
+    source:
+      id: ncu-intro-dl
+      ref: lecture-02/q90
+    status: reviewed
+    reviewed_by: claude
+  - id: neural-networks-193
+    type: short_answer
+    difficulty: hard
+    tags:
+      - ce6146
+      - ce6146-l02
+      - backpropagation
+      - binary-cross-entropy
+    question: |
+      Use the spam network $z^1 = xW^1 + b^1$, $a^1 = \mathrm{ReLU}(z^1)$, $z^2 = a^1 v + c$,
+      $p = \sigma(z^2)$ with
+
+      $$W^1 = \begin{bmatrix} 0.5 & -1 \\ 1 & 0.5 \end{bmatrix},\quad b^1 = \begin{bmatrix} -1 & 0.5 \end{bmatrix},\quad v = \begin{bmatrix} 1 \\ -2 \end{bmatrix},\quad c = 0.5,$$
+
+      binary cross-entropy loss, and the legitimate email $x = [3, 1]$, $y = 0$ (so $z^1 = [1.5, -2]$
+      and $z^2 = 2$). Give 3 decimals: $\partial \ell/\partial z^2 =$ {{1}},
+      $\partial \ell/\partial v_1 =$ {{2}} and $\partial \ell/\partial W^1_{11} =$ {{3}}.
+    answer:
+      blanks:
+        - numeric: 0.881
+          tolerance: 0.001
+          hint: 3 decimals
+        - numeric: 1.321
+          tolerance: 0.002
+          hint: 3 decimals
+        - numeric: 2.642
+          tolerance: 0.002
+          hint: 3 decimals
+      model: $\delta^2 = p - y = \sigma(2) \approx 0.881$; $\partial\ell/\partial v_1 = a^1_1\delta^2 = 1.5 \cdot 0.881 \approx 1.321$; $\delta^1_1 = \delta^2 v_1 = 0.881$; $\partial\ell/\partial W^1_{11} = x_1\delta^1_1 = 3 \cdot 0.881 \approx 2.642$.
+    explanation: |
+      With a sigmoid output and binary cross-entropy the logit gradient is simply $p - y$, here
+      $\sigma(2) - 0 \approx 0.881$ [^1][^2]. The rest is the same chain rule as for regression:
+      $\partial\ell/\partial v_1 = a^1_1\,\delta^2 = 1.5 \cdot 0.881 \approx 1.321$; the active first
+      hidden unit gets $\delta^1_1 = \delta^2 v_1 = 0.881$, so
+      $\partial\ell/\partial W^1_{11} = x_1\,\delta^1_1 = 3 \cdot 0.881 \approx 2.642$. The inactive
+      second unit passes no gradient to its incoming weights.
+    references:
+      - source: ncu-intro-dl
+        locator: Lecture 2, slides 83–84
+      - title: 'Wikipedia: Cross-entropy'
+        url: https://en.wikipedia.org/wiki/Cross-entropy
+        locator: Relation to linear regression (gradient of the log loss is Xᵀ(ŷ − y))
+    source:
+      id: ncu-intro-dl
+      ref: lecture-02/q91
+    status: reviewed
+    reviewed_by: claude
+  - id: neural-networks-194
+    type: single
+    difficulty: medium
+    tags:
+      - ce6146
+      - ce6146-l02
+      - automatic-differentiation
+      - reverse-mode
+    question: |
+      A scalar loss depends on 10 million parameters. Why is its gradient computed with reverse-mode
+      rather than forward-mode automatic differentiation?
+    options:
+      - text: One reverse pass yields all partial derivatives; forward mode needs one pass per parameter
+        correct: true
+      - text: Forward mode only approximates derivatives from function values, as finite differences do
+        why: Forward mode is exact up to floating-point rounding; it applies the chain rule, not finite differences.
+      - text: Reverse mode needs no stored forward values, so it uses less memory than forward mode
+        why: It is the other way round; reverse mode must keep the intermediate values of the forward pass.
+      - text: Forward mode only works for networks in which every activation function is linear
+        why: Forward mode handles any differentiable operation; its drawback here is cost, not applicability.
+    explanation: |
+      Forward mode pushes one input direction through the computation per pass (a Jacobian–vector
+      product); reverse mode pulls one output weighting back per pass (a vector–Jacobian product)
+      [^1]. For $f: \mathbb{R}^n \to \mathbb{R}^m$ forward mode needs $n$ sweeps and reverse mode $m$;
+      a scalar loss has $m = 1$, so a single reverse sweep — backpropagation — gives the whole
+      gradient [^2]. The price is memory for the stored intermediate values.
+    references:
+      - source: ncu-intro-dl
+        locator: Lecture 2, slides 86–87
+      - title: 'Wikipedia: Automatic differentiation'
+        url: https://en.wikipedia.org/wiki/Automatic_differentiation
+        locator: Forward and reverse accumulation
+    source:
+      id: ncu-intro-dl
+      ref: lecture-02/q93
+    status: reviewed
+    reviewed_by: claude
+  - id: neural-networks-195
+    type: single
+    difficulty: medium
+    tags:
+      - ce6146
+      - ce6146-l02
+      - gradient-checking
+    question: |
+      You check backpropagation with central finite differences on a mini-batch of 4 examples. For
+      every weight, the finite-difference estimate is exactly 4 times the backpropagated value. What
+      is the most likely cause?
+    options:
+      - text: One computation used the mean loss over the batch and the other the summed loss
+        correct: true
+      - text: The step $\varepsilon$ is too large, so the finite differences are inaccurate
+        why: A too-large step adds curvature-dependent errors that differ from weight to weight, not one exact factor.
+      - text: Some ReLU units sit exactly at their kink, where the derivative is undefined
+        why: A kink would disturb only the few weights it affects, not every weight by the same factor.
+      - text: Backpropagation contains a bug in the first layer only
+        why: Then only first-layer weights would disagree; here every weight is off by the same factor.
+    explanation: |
+      The check is only meaningful if both calculations differentiate the same loss, including the
+      same reduction [^1]. A mean over $B = 4$ examples is the sum divided by 4, so every derivative
+      of the sum is exactly 4 times the corresponding derivative of the mean [^2]. Step-size error,
+      ReLU kinks or a bug in one layer would not produce the same factor for every parameter.
+    references:
+      - source: ncu-intro-dl
+        locator: Lecture 2, slide 88
+      - title: torch.nn.MSELoss (PyTorch documentation)
+        url: https://docs.pytorch.org/docs/2.14/generated/torch.nn.MSELoss.html
+        locator: Parameters — reduction ('mean' divides the sum by the number of elements)
+    source:
+      id: ncu-intro-dl
+      ref: lecture-02/q94
+    status: reviewed
+    reviewed_by: claude
+  - id: neural-networks-196
+    type: single
+    difficulty: medium
+    tags:
+      - ce6146
+      - ce6146-l03
+      - shapes
+      - mini-batch
+    question: |
+      A mini-batch is stored column-wise, $X \in \mathbb{R}^{3 \times 64}$ (3 features, 64
+      examples). A hidden layer of 5 ReLU units computes $Z^1 = W^1X + b^1\mathbf{1}_B$, and a single
+      sigmoid output unit computes $Z^2 = W^2A^1 + b^2\mathbf{1}_B$, where $A^1 = \mathrm{ReLU}(Z^1)$
+      and $\mathbf{1}_B$ is a $1 \times 64$ row of ones. What are the shapes of $W^1$ and $Z^2$?
+    options:
+      - text: '$W^1$: $5 \times 3$, $Z^2$: $1 \times 64$'
+        correct: true
+      - text: '$W^1$: $3 \times 5$, $Z^2$: $64 \times 1$'
+        why: That is the row-per-example convention $XW$; with examples in columns the weight matrix is (units × inputs).
+      - text: '$W^1$: $5 \times 3$, $Z^2$: $5 \times 64$'
+        why: The output layer has a single unit, so $W^2$ is $1 \times 5$ and gives one logit per example.
+      - text: '$W^1$: $5 \times 64$, $Z^2$: $1 \times 64$'
+        why: Weights do not depend on the batch size; $W^1$ connects 3 inputs to 5 units.
+    explanation: |
+      With one example per column, $W^1$ maps 3 inputs to 5 units, so it is $5 \times 3$ and
+      $Z^1 = W^1X$ is $5 \times 64$; the product $b^1\mathbf{1}_B$ copies the bias into every column
+      [^1][^2]. The output layer multiplies $A^1$ ($5 \times 64$) by $W^2$ ($1 \times 5$), giving
+      one logit per example, a $1 \times 64$ row [^3]. The batch size appears only in the
+      activations, never in the shapes of the parameters.
+    references:
+      - source: ncu-intro-dl
+        locator: Lecture 3, slide 17
+      - source: d2l
+        url: https://d2l.ai/chapter_multilayer-perceptrons/backprop.html#forward-propagation
+        locator: Sec. 5.3.1 Forward Propagation
+      - source: d2l
+        url: https://d2l.ai/chapter_preliminaries/linear-algebra.html#matrixmatrix-multiplication
+        locator: Sec. 2.3.10 Matrix–Matrix Multiplication
+    source:
+      id: ncu-intro-dl
+      ref: lecture-03/q35
+    status: reviewed
+    reviewed_by: claude
+  - id: neural-networks-197
+    type: short_answer
+    difficulty: medium
+    tags:
+      - ce6146
+      - ce6146-l03
+      - binary-cross-entropy
+      - mini-batch
+    question: |
+      A pass/fail model outputs the probabilities $\hat y = (0.95,\ 0.3,\ 0.5,\ 0.1)$ for a mini-batch
+      of four students whose labels are $y = (1,\ 0,\ 1,\ 1)$. What is the binary cross-entropy loss
+      averaged over the batch (natural log)? Give 3 decimals.
+    answer:
+      numeric: 0.851
+      tolerance: 0.002
+      hint: 3 decimals
+      model: $-\tfrac14\left[\ln 0.95 + \ln 0.7 + \ln 0.5 + \ln 0.1\right] = \tfrac14(0.051 + 0.357 + 0.693 + 2.303) \approx 0.851$
+    explanation: |
+      Each example contributes $-\ln\hat y$ if its label is 1 and $-\ln(1 - \hat y)$ if it is 0, and
+      the mini-batch loss is the mean of these terms [^1][^2]. The second student failed ($y = 0$),
+      so the model is scored on $1 - 0.3 = 0.7$. The confident miss on the last student
+      ($\hat y = 0.1$ for a pass) contributes $2.303$, about twice as much as the other three
+      together: cross-entropy punishes confident mistakes hardest.
+    references:
+      - source: ncu-intro-dl
+        locator: Lecture 3, slides 17, 21
+      - title: 'PyTorch documentation: torch.nn.BCELoss'
+        url: https://docs.pytorch.org/docs/stable/generated/torch.nn.BCELoss.html
+        locator: Description (per-element loss and `reduction='mean'`)
+    source:
+      id: ncu-intro-dl
+      ref: lecture-03/q36
+    status: reviewed
+    reviewed_by: claude

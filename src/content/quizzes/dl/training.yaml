@@ -3683,3 +3683,1168 @@ questions:
       url: https://github.com/ageron/handson-ml3/blob/ef1c9f5ab11083584635b9b3a7846f49c58a6084/19_training_and_deploying_at_scale.ipynb
     status: reviewed
     reviewed_by: claude
+  - id: training-100
+    type: single
+    difficulty: easy
+    tags:
+      - ce6146
+      - ce6146-ex01
+      - ce6146-l01
+      - gradient-descent
+      - learning-rate
+    question: |
+      A weight $w = 1$ has the gradient $\partial L / \partial w = -6$. One gradient-descent step with
+      $\eta = 0.1$ moves it to $w = 1.6$. Where does the same step move it with $\eta = 0.3$?
+    options:
+      - text: '2.8'
+        correct: true
+      - text: '1.6'
+        why: The learning rate scales the step, so a larger $\eta$ gives a larger move for the same gradient.
+      - text: −0.8
+        why: 'Sign error: subtracting $\eta$ times a negative gradient increases $w$.'
+      - text: '1.8'
+        why: That is the size of the step, $0.3 \times 6$, not the new value of $w$.
+    explanation: |
+      $w \leftarrow w - \eta \, \partial L / \partial w = 1 - 0.3 \cdot (-6) = 2.8$ [^1]. For a fixed
+      gradient the step is proportional to $\eta$: tripling $\eta$ triples the move from 0.6 to 1.8. Too
+      large a step can overshoot the minimum [^2].
+    references:
+      - source: ncu-intro-dl
+        locator: Exercise 1, question 15; Lecture 1, slides 52–53
+      - source: d2l
+        locator: Sec. 12.3.1.1 Learning Rate
+        url: https://d2l.ai/chapter_optimization/gd.html#learning-rate
+    source:
+      id: ncu-intro-dl
+      ref: exercise-01/q15-v2
+    status: reviewed
+    reviewed_by: claude
+  - id: training-101
+    type: short_answer
+    difficulty: medium
+    tags:
+      - ce6146
+      - ce6146-ex02
+      - ce6146-l01
+      - epoch
+      - mini-batch
+    question: |
+      A training run made 1,500 parameter updates in 5 epochs, using mini-batches of 40 examples (every
+      batch is full, one update per batch). How many examples does the training set contain?
+    answer:
+      numeric: 12000
+      tolerance: 0
+      hint: an integer
+      model: $1500 / 5 = 300$ updates per epoch, i.e. 300 batches of 40, so $300 \times 40 = 12{,}000$ examples.
+    explanation: |
+      An epoch is one full pass over the training set, and mini-batch training makes one update per batch
+      [^1][^2]. So each epoch had $1500 / 5 = 300$ batches, and the training set holds
+      $300 \times 40 = 12{,}000$ examples.
+    references:
+      - source: ncu-intro-dl
+        locator: Exercise 2, question 14; Lecture 1, slide 54
+      - source: d2l
+        locator: Sec. 12.5.2 Minibatches; 12.5.6 Summary (each example once per epoch)
+        url: https://d2l.ai/chapter_optimization/minibatch-sgd.html#minibatches
+    source:
+      id: ncu-intro-dl
+      ref: exercise-02/q14-v2
+    status: reviewed
+    reviewed_by: claude
+  - id: training-102
+    type: single
+    difficulty: easy
+    tags:
+      - ce6146
+      - ce6146-ex02
+      - ce6146-l03
+      - regularization
+    question: Which of these changes to a training setup is a form of regularization?
+    options:
+      - text: Adding $\lambda \sum_i w_i^2$ to the loss
+        correct: true
+      - text: Doubling the number of hidden units
+        why: More units raise the model's capacity — the opposite of restraining it.
+      - text: Continuing training after the validation loss has started to rise
+        why: That is the opposite of early stopping and makes overfitting worse.
+      - text: Raising the learning rate so that training converges faster
+        why: The learning rate affects how the optimizer moves, not how complex the learned function may be.
+    explanation: |
+      Regularization techniques restrain the model's effective complexity so that it generalizes better to
+      unseen data; an L2 penalty does this by making large weights costly [^1][^2]. More units or extra
+      epochs past the validation minimum increase the risk of overfitting instead.
+    references:
+      - source: ncu-intro-dl
+        locator: Exercise 2, question 15; Lecture 3, slides 59, 62
+      - source: d2l
+        locator: Sec. 3.7.1 Norms and Weight Decay
+        url: https://d2l.ai/chapter_linear-regression/weight-decay.html#norms-and-weight-decay
+    source:
+      id: ncu-intro-dl
+      ref: exercise-02/q15-v2
+    status: reviewed
+    reviewed_by: claude
+  - id: training-103
+    type: single
+    difficulty: medium
+    tags:
+      - ce6146
+      - ce6146-ex02
+      - ce6146-l01
+      - ce6146-l03
+      - early-stopping
+      - patience
+    question: |
+      Early stopping ends training once the validation loss has not improved for a number of epochs
+      called the patience, and then restores the best checkpoint. What changes if the patience is raised
+      from 2 to 10 epochs?
+    options:
+      - text: Short plateaus no longer end training, so it may run more epochs
+        correct: true
+      - text: Training ends sooner, because ten epochs are now checked at once
+        why: A longer patience waits longer for an improvement, so training stops at the same epoch or later.
+      - text: The restored checkpoint can only have a higher validation loss
+        why: The best validation loss is taken over at least as many epochs, so it can only stay the same or get lower.
+      - text: The model can no longer overfit during the extra epochs it trains
+        why: The extra epochs can still overfit; restoring the best checkpoint is what discards them.
+    explanation: |
+      Early stopping monitors the validation loss after each epoch and stops once it has not improved
+      for the patience window, keeping the best checkpoint [^1][^2]. A patience of 2 can end training
+      during a brief plateau or bump although the loss would improve again later; a patience of 10 rides
+      through such stretches, at the cost of more epochs before stopping. Either way, the restored
+      weights are those with the lowest validation loss seen.
+    references:
+      - source: ncu-intro-dl
+        locator: Exercise 2, question 19; Lecture 1, slide 83; Lecture 3, slides 58, 67
+      - source: d2l
+        locator: Sec. 5.5.3 Early Stopping
+        url: https://d2l.ai/chapter_multilayer-perceptrons/generalization-deep.html#early-stopping
+    source:
+      id: ncu-intro-dl
+      ref: exercise-02/q19-v2
+    status: reviewed
+    reviewed_by: claude
+  - id: training-104
+    type: short_answer
+    difficulty: easy
+    tags:
+      - ce6146
+      - ce6146-ex02
+      - ce6146-l01
+      - ce6146-l02
+      - epoch
+      - iteration
+    question: |
+      One parameter update computed from a single mini-batch is called a step or an {{1}}. With 1,200
+      training examples and mini-batches of 100, one epoch consists of {{2}} of them.
+    answer:
+      blanks:
+        - accept:
+            - iteration
+            - iterations
+            - training iteration
+          hint: one word
+        - numeric: 12
+          tolerance: 0
+          hint: an integer
+      model: An iteration (training step); one epoch over 1,200 examples in batches of 100 takes $1200/100 = 12$ iterations.
+    explanation: |
+      An iteration (or step) is one execution of the update rule, usually on one mini-batch, while an
+      epoch is a complete sweep over all training examples [^1][^2]. Covering 1,200 examples in batches of 100
+      takes $1200 / 100 = 12$ iterations per epoch.
+    references:
+      - source: ncu-intro-dl
+        locator: Exercise 2, question 20; Lecture 1, slide 54; Lecture 2, slide 93
+      - source: d2l
+        locator: Sec. 12.5.2 Minibatches; 12.5.6 Summary (each example once per epoch)
+        url: https://d2l.ai/chapter_optimization/minibatch-sgd.html#minibatches
+    source:
+      id: ncu-intro-dl
+      ref: exercise-02/q20-v2
+    status: reviewed
+    reviewed_by: claude
+  - id: training-105
+    type: single
+    difficulty: easy
+    tags:
+      - ce6146
+      - ce6146-ex03
+      - ce6146-l03
+      - learning-rate
+    question: |
+      From the first epoch on, a network's training loss jumps up and down and then grows to very large
+      values. Which change is the most likely fix?
+    options:
+      - text: Lower the learning rate
+        correct: true
+      - text: Raise the learning rate
+        why: Larger steps overshoot even more.
+      - text: Train for more epochs
+        why: A run that diverges only gets worse with more steps.
+      - text: Use a larger validation set
+        why: The validation set does not affect the training updates.
+    explanation: |
+      The learning rate sets the step size: if it is too large, updates overshoot the minimum, so the loss
+      oscillates or diverges, and reducing it is the first fix to try [^1][^2][^3]. A rate that is too
+      small converges slowly but stays stable.
+    references:
+      - source: ncu-intro-dl
+        locator: Exercise 3, question 15; Lecture 3, slide 15; Lecture 1, slide 53
+      - source: d2l
+        locator: Sec. 12.3.1.1 Learning Rate
+        url: https://d2l.ai/chapter_optimization/gd.html#learning-rate
+      - source: google-mlcc
+        url: https://developers.google.com/machine-learning/crash-course/overfitting/interpreting-loss-curves
+        locator: 'Overfitting: Interpreting loss curves — Exercise 1: Oscillating loss curve'
+    source:
+      id: ncu-intro-dl
+      ref: exercise-03/q15-v2
+    status: reviewed
+    reviewed_by: claude
+  - id: training-106
+    type: single
+    difficulty: medium
+    tags:
+      - ce6146
+      - ce6146-ex03
+      - ce6146-l03
+      - momentum
+      - optimizers
+    question: |
+      An optimizer updates every parameter $\theta$ with
+      $$v_t = \beta\,v_{t-1} + (1 - \beta)\,g_t, \qquad \theta \leftarrow \theta - \eta\,v_t,$$
+      where $g_t$ is the current gradient and $\beta \approx 0.9$. Which optimizer is this?
+    options:
+      - text: Momentum
+        correct: true
+      - text: RMSProp
+        why: RMSProp averages squared gradients and divides the step by their root.
+      - text: AdaGrad
+        why: AdaGrad sums all squared gradients and divides the step by the root of that sum.
+      - text: Adam
+        why: Adam keeps this average too, but also divides by the root of an average of squared gradients, with bias correction.
+    explanation: |
+      $v_t$ is a velocity: a running average of past gradients in which older gradients count
+      geometrically less, and the parameters move along it — the momentum method [^1]. d2l writes the same idea without the factor $(1 - \beta)$, as
+      $v_t = \beta v_{t-1} + g_t$; in both forms consistent gradient directions add up while oscillating
+      components cancel [^2].
+    references:
+      - source: ncu-intro-dl
+        locator: Exercise 3, question 16; Lecture 3, slides 37–38
+      - source: d2l
+        locator: Sec. 12.6.1.3 The Momentum Method
+        url: https://d2l.ai/chapter_optimization/momentum.html#the-momentum-method
+    source:
+      id: ncu-intro-dl
+      ref: exercise-03/q16-v2
+    status: reviewed
+    reviewed_by: claude
+  - id: training-107
+    type: single
+    difficulty: easy
+    tags:
+      - ce6146
+      - ce6146-ex03
+      - ce6146-l03
+      - adam
+      - optimizers
+    question: Adam combines the ideas of which two earlier optimizers?
+    options:
+      - text: Momentum and RMSProp
+        correct: true
+      - text: AdaGrad and Nesterov momentum
+        why: Adam averages squared gradients with decay like RMSProp, not AdaGrad's growing sum, and uses plain momentum.
+      - text: Mini-batch SGD and early stopping
+        why: Early stopping is a regularization procedure, not part of an update rule.
+      - text: Dropout and batch normalization
+        why: These are layers used for regularization and normalization, not optimizers.
+    explanation: |
+      Adam keeps an exponential moving average of the gradients (the first moment, as in momentum) and of
+      the squared gradients (the second moment, as in RMSProp), corrects both for their zero
+      initialization, and scales each parameter's step by $\hat m_t / \sqrt{\hat v_t}$ [^1][^2].
+    references:
+      - source: ncu-intro-dl
+        locator: Exercise 3, question 17; Lecture 3, slide 46
+      - source: d2l
+        locator: Sec. 12.10.1 The Algorithm
+        url: https://d2l.ai/chapter_optimization/adam.html#the-algorithm
+    source:
+      id: ncu-intro-dl
+      ref: exercise-03/q17-v2
+    status: reviewed
+    reviewed_by: claude
+  - id: training-108
+    type: single
+    difficulty: medium
+    tags:
+      - ce6146
+      - ce6146-ex03
+      - ce6146-l03
+      - regularization
+      - underfitting
+      - dropout
+    question: |
+      A network has 30% training error and 31% validation error, far worse than similar models reach on
+      this task. A teammate proposes adding dropout. What is the most likely result?
+    options:
+      - text: No real gain; the model underfits, and dropout restricts it further
+        correct: true
+      - text: A clear gain, because dropout lowers the validation error of any model
+        why: Regularization helps only when the model overfits; it does not improve a model that is already too restricted.
+      - text: Lower training error, because dropout makes the network more flexible
+        why: Dropout restrains the network during training, so the training error usually rises.
+      - text: A clear gain, because a 1-point gap is a strong sign of overfitting
+        why: Overfitting means a low training error with a much higher validation error; here both are high.
+    explanation: |
+      Regularization such as dropout restrains effective model capacity to reduce overfitting and improve
+      generalization [^1][^2]. With 30% training and 31% validation error the model is not overfitting
+      but underfitting — it does not even fit the training data — so restraining it further brings no
+      real gain; more capacity, longer training or better features address underfitting [^1][^3].
+    references:
+      - source: ncu-intro-dl
+        locator: Exercise 3, question 18; Lecture 3, slides 59–60, 65
+      - source: d2l
+        locator: Sec. 3.7.5 Summary
+        url: https://d2l.ai/chapter_linear-regression/weight-decay.html#summary
+      - source: d2l
+        locator: Sec. 3.6.2 Underfitting or Overfitting?
+        url: https://d2l.ai/chapter_linear-regression/generalization.html#underfitting-or-overfitting
+    source:
+      id: ncu-intro-dl
+      ref: exercise-03/q18-v2
+    status: reviewed
+    reviewed_by: claude
+  - id: training-109
+    type: true_false
+    difficulty: easy
+    tags:
+      - ce6146
+      - ce6146-ex03
+      - ce6146-l03
+      - early-stopping
+    question: 'True or false: early stopping halts training as soon as the training loss stops decreasing.'
+    options:
+      - text: 'True'
+        why: Early stopping watches validation performance; the training loss often keeps falling while the model starts to overfit.
+      - text: 'False'
+        correct: true
+    explanation: |
+      Early stopping evaluates the model on validation data, typically after every epoch, and stops when
+      validation performance has not improved for a set number of epochs — even if the training loss is
+      still decreasing [^1][^2]. Only the validation curve reveals overfitting.
+    references:
+      - source: ncu-intro-dl
+        locator: Exercise 3, question 19; Lecture 3, slide 67
+      - source: d2l
+        locator: Sec. 5.5.3 Early Stopping
+        url: https://d2l.ai/chapter_multilayer-perceptrons/generalization-deep.html#early-stopping
+    source:
+      id: ncu-intro-dl
+      ref: exercise-03/q19-v2
+    status: reviewed
+    reviewed_by: claude
+  - id: training-110
+    type: true_false
+    difficulty: easy
+    tags:
+      - ce6146
+      - ce6146-ex03
+      - ce6146-l01
+      - ce6146-l03
+      - dropout
+    question: |
+      True or false: dropout picks one random subset of units at the start of training and keeps exactly
+      those units switched off for the whole training run.
+    options:
+      - text: 'True'
+        why: A new random mask is drawn at every training step, so each unit is dropped in some steps and kept in others.
+      - text: 'False'
+        correct: true
+    explanation: |
+      During each training iteration dropout zeroes every unit independently with probability $p$, so the
+      dropped subset changes from step to step [^1][^2]. Because any unit may be missing, no unit can rely
+      on particular others, which is what reduces overfitting; a fixed subset would merely give a smaller
+      network. At evaluation time no unit is dropped, and PyTorch's `nn.Dropout` computes the identity [^3].
+    references:
+      - source: ncu-intro-dl
+        locator: Exercise 3, question 20; Lecture 1, slide 85; Lecture 3, slide 66
+      - source: d2l
+        locator: Sec. 5.6 Dropout (opening paragraphs, units zeroed on each iteration); 5.6.1 Dropout in Practice
+        url: https://d2l.ai/chapter_multilayer-perceptrons/dropout.html#dropout
+      - title: PyTorch documentation
+        url: https://docs.pytorch.org/docs/stable/generated/torch.nn.Dropout.html
+        locator: torch.nn.Dropout
+    source:
+      id: ncu-intro-dl
+      ref: exercise-03/q20-v2
+    status: reviewed
+    reviewed_by: claude
+  - id: training-111
+    type: short_answer
+    difficulty: medium
+    tags:
+      - ce6146
+      - ce6146-l01
+      - early-stopping
+    question: |
+      A run that was allowed to train for 8 epochs logged these validation losses for epochs 1–8:
+
+      $$0.92,\quad 0.75,\quad 0.61,\quad 0.62,\quad 0.58,\quad 0.60,\quad 0.63,\quad 0.55$$
+
+      With early stopping and a patience of 2 (stop as soon as the validation loss has failed to
+      beat its best value for 2 epochs in a row, then restore the best checkpoint), training would
+      have stopped after epoch {{1}}, and the weights of epoch {{2}} would be restored.
+    answer:
+      blanks:
+        - numeric: 7
+          tolerance: 0
+          hint: an epoch number
+        - numeric: 5
+          tolerance: 0
+          hint: an epoch number
+      model: Best 0.61 (epoch 3); epoch 4 no gain; epoch 5 new best 0.58; epochs 6 and 7 no gain → stop after epoch 7, restore epoch 5. Epoch 8 is never run.
+    explanation: |
+      Early stopping monitors the validation loss and halts when it has not improved for a set
+      number of epochs, the patience [^2]; the best checkpoint is then kept or restored [^1].
+      Epoch 4 (0.62) does not beat 0.61, but epoch 5 sets a new best (0.58) and resets the count;
+      epochs 6 and 7 do not beat 0.58, so training stops after epoch 7 and the weights of epoch 5
+      are restored. The lower loss of epoch 8 is never seen, which is the price of a small patience.
+    references:
+      - source: ncu-intro-dl
+        locator: Lecture 1, slides 83–84
+      - source: d2l
+        url: https://d2l.ai/chapter_multilayer-perceptrons/generalization-deep.html#early-stopping
+        locator: Sec. 5.5.3 Early Stopping
+    source:
+      id: ncu-intro-dl
+      ref: lecture-01/q81
+    status: reviewed
+    reviewed_by: claude
+  - id: training-112
+    type: single
+    difficulty: medium
+    tags:
+      - ce6146
+      - ce6146-l02
+      - memory
+      - checkpointing
+    question: |
+      Training a deep network runs out of GPU memory because the activations cached for
+      backpropagation are too large. Which technique trades extra computation for less memory?
+    options:
+      - text: Keep only some activations and recompute the others during the backward pass
+        correct: true
+      - text: Double the batch size so that fewer optimizer steps are needed per epoch
+        why: A larger batch means more cached activations per step, so memory use grows.
+      - text: Run the backward pass before the forward pass so nothing has to be cached
+        why: The backward pass needs the forward values and the loss, so it cannot come first.
+      - text: Raise the learning rate so that training finishes in fewer epochs
+        why: The learning rate does not change how much is cached in each step.
+    explanation: |
+      Backpropagation reuses forward values instead of recomputing them, but the cache costs memory
+      that grows with depth and batch size [^1]. Activation (gradient) checkpointing stores only
+      selected tensors and re-runs parts of the forward computation during the backward pass [^2];
+      for an $n$-layer network this can cut the memory to $O(\sqrt n)$ for about one extra forward
+      pass per mini-batch [^3].
+    references:
+      - source: ncu-intro-dl
+        locator: Lecture 2, slide 89
+      - title: torch.utils.checkpoint (PyTorch documentation)
+        url: https://docs.pytorch.org/docs/2.14/checkpoint.html
+        locator: Page description (trades compute for memory)
+      - title: Chen et al. (2016), Training Deep Nets with Sublinear Memory Cost, arXiv:1604.06174
+        url: https://arxiv.org/abs/1604.06174
+        locator: Abstract
+    source:
+      id: ncu-intro-dl
+      ref: lecture-02/q95
+    status: reviewed
+    reviewed_by: claude
+  - id: training-113
+    type: single
+    difficulty: medium
+    tags:
+      - ce6146
+      - ce6146-l02
+      - vanishing-gradients
+      - relu
+    question: Which statement about ReLU and the stability of gradients in deep networks is correct?
+    options:
+      - text: ReLU has slope 1 on active units, yet gradients can still vanish or explode through the weights
+        correct: true
+      - text: ReLU has derivative 1 everywhere, so a ReLU network cannot suffer from vanishing gradients
+        why: The slope is 0 for negative inputs, so inactive units block the gradient completely.
+      - text: ReLU is bounded, so a ReLU network cannot suffer from exploding gradients at all
+        why: ReLU is unbounded above, and large weights can still amplify the backward products.
+      - text: Sigmoid units avoid vanishing gradients, because their derivative is never exactly 0
+        why: The sigmoid derivative is at most 0.25 and tiny in saturation, so products of many of them shrink fast.
+    explanation: |
+      A backpropagated gradient is a product of weight matrices and activation derivatives across the
+      layers [^1][^2]. Saturating sigmoid and tanh units shrink it, which is why ReLU, with slope 1
+      when active, helps; but inactive ReLUs pass nothing, a unit that is inactive on every input is
+      dead, and the weight factors can still make the product explode or vanish [^1].
+    references:
+      - source: ncu-intro-dl
+        locator: Lecture 2, slide 91
+      - source: d2l
+        url: https://d2l.ai/chapter_multilayer-perceptrons/numerical-stability-and-init.html#vanishing-and-exploding-gradients
+        locator: Sec. 5.4.1 Vanishing and Exploding Gradients
+    source:
+      id: ncu-intro-dl
+      ref: lecture-02/q97
+    status: reviewed
+    reviewed_by: claude
+  - id: training-114
+    type: short_answer
+    difficulty: medium
+    tags:
+      - ce6146
+      - ce6146-l02
+      - vanishing-gradients
+      - exploding-gradients
+    question: |
+      In a scalar chain, each of $k$ local derivatives equals $q$, so the input gradient is $q^k$ times
+      the upstream gradient. With $q = 0.5$ it first falls below $10^{-6}$ times the upstream gradient
+      after $k =$ {{1}} layers; with $q = 1.5$ it first exceeds $10^{6}$ times the upstream gradient
+      after $k =$ {{2}} layers.
+    answer:
+      blanks:
+        - numeric: 20
+          tolerance: 0
+          hint: an integer
+        - numeric: 35
+          tolerance: 0
+          hint: an integer
+      model: '$\log_{10}|g| = k\log_{10} q$ must pass $\mp 6$: $k > 6/\log_{10} 2 \approx 19.9$, so 20 ($0.5^{20} \approx 9.5 \times 10^{-7}$); $k > 6/\log_{10} 1.5 \approx 34.1$, so 35 ($1.5^{35} \approx 1.46 \times 10^{6}$).'
+    explanation: |
+      On a log scale the gradient changes linearly with depth, $\log_{10}|g| = k\log_{10} q$ [^1]. To
+      reach $10^{-6}$ with $q = 0.5$ needs $k \log_{10} 2 > 6$, i.e. $k > 19.9$, so 20 layers
+      ($0.5^{19} \approx 1.9 \times 10^{-6}$ is not yet below); to reach $10^{6}$ with $q = 1.5$ needs
+      $k > 6/\log_{10} 1.5 \approx 34.1$, so 35 layers. Per-layer factors only moderately different
+      from 1 change the gradient by many orders of magnitude over a few dozen layers — vanishing below
+      1, exploding above [^2][^3].
+    references:
+      - source: ncu-intro-dl
+        locator: Lecture 2, slides 91–92
+      - source: d2l
+        url: https://d2l.ai/chapter_multilayer-perceptrons/numerical-stability-and-init.html#vanishing-and-exploding-gradients
+        locator: Sec. 5.4.1 Vanishing and Exploding Gradients
+      - title: 'Wikipedia: Vanishing gradient problem'
+        url: https://en.wikipedia.org/wiki/Vanishing_gradient_problem
+        locator: Lead
+    source:
+      id: ncu-intro-dl
+      ref: lecture-02/q98
+    status: reviewed
+    reviewed_by: claude
+  - id: training-115
+    type: single
+    difficulty: easy
+    tags:
+      - ce6146
+      - ce6146-l02
+      - inference
+      - learning-rate
+    question: |
+      A trained network is used for inference on new inputs, with its parameters fixed. Which setting
+      chosen during training has no effect on how it computes its predictions?
+    options:
+      - text: The learning rate
+        correct: true
+      - text: The activation function of the hidden layer
+        why: The hidden activation is part of the function $f(x; \theta)$ evaluated at inference.
+      - text: The number of hidden units
+        why: The width is part of the architecture, so it shapes every forward computation.
+      - text: The activation function of the output layer
+        why: The output activation determines what the prediction means, e.g. a probability.
+    explanation: |
+      Inference only evaluates $f(x; \theta)$ with the fitted parameters [^1]. The learning rate
+      belongs to the update procedure: it scaled each parameter step during training (and so
+      influenced which $\theta$ was reached) but plays no part in evaluating the trained network
+      [^2]. Activations and widths define $f$ itself.
+    references:
+      - source: ncu-intro-dl
+        locator: Lecture 2, slide 93
+      - source: d2l
+        url: https://d2l.ai/chapter_linear-regression/linear-regression.html#minibatch-stochastic-gradient-descent
+        locator: Sec. 3.1.1.4 Minibatch Stochastic Gradient Descent (learning rate as a hyperparameter); Sec. 3.1.1.5 Predictions
+    source:
+      id: ncu-intro-dl
+      ref: lecture-02/q99
+    status: reviewed
+    reviewed_by: claude
+  - id: training-116
+    type: single
+    difficulty: easy
+    tags:
+      - ce6146
+      - ce6146-l02
+      - training-loop
+    question: In what order does one training iteration of a feedforward network proceed?
+    options:
+      - text: Forward pass, loss, backward pass for the gradients, parameter update
+        correct: true
+      - text: Backward pass for the gradients, forward pass, loss, parameter update
+        why: The backward pass needs the cached forward values and the loss, so it cannot come first.
+      - text: Forward pass, parameter update, loss, backward pass for the gradients
+        why: The update needs the gradients, which only the backward pass provides.
+      - text: Loss, forward pass, parameter update, backward pass for the gradients
+        why: The loss compares predictions with targets, so the forward pass must come before it.
+    explanation: |
+      The forward pass computes the prediction $\hat y = f(x; \theta)$, the loss compares it with the
+      target, backpropagation uses the chain rule to obtain $\nabla_\theta L$, and only then does
+      the optimizer update $\theta$ [^1][^2]. Each stage needs the result of the one before it.
+    references:
+      - source: ncu-intro-dl
+        locator: Lecture 2, slides 70, 94
+      - source: d2l
+        url: https://d2l.ai/chapter_multilayer-perceptrons/backprop.html#training-neural-networks
+        locator: Sec. 5.3.4 Training Neural Networks
+    source:
+      id: ncu-intro-dl
+      ref: lecture-02/q100
+    status: reviewed
+    reviewed_by: claude
+  - id: training-117
+    type: single
+    difficulty: easy
+    tags:
+      - ce6146
+      - ce6146-l03
+      - mini-batch
+      - epoch
+    question: |
+      A training set has 12,800 examples. How many parameter updates does one epoch take with
+      full-batch gradient descent, with SGD (one example per update) and with mini-batch gradient
+      descent using batches of 64, respectively?
+    options:
+      - text: 1, 12,800 and 200
+        correct: true
+      - text: 12,800, 1 and 200
+        why: Full-batch gradient descent makes a single update per pass over the data, while SGD makes one per example.
+      - text: 1, 12,800 and 64
+        why: The number of mini-batch updates is the dataset size divided by the batch size, $12{,}800/64$, not the batch size itself.
+      - text: 1, 200 and 12,800
+        why: SGD updates after every single example, so it makes the most updates per epoch; the mini-batch method makes 200.
+    explanation: |
+      All three variants apply the same update rule and differ only in how many examples go into
+      each gradient estimate [^1]. Full-batch gradient descent averages over all 12,800 examples and
+      updates once per epoch; SGD updates after every example, 12,800 times; mini-batch gradient
+      descent updates once per batch, $12{,}800/64 = 200$ times [^2]. More frequent updates are
+      cheaper and noisier, fewer updates are costlier and more stable [^1][^3].
+    references:
+      - source: ncu-intro-dl
+        locator: Lecture 3, slides 29–34
+      - source: google-mlcc
+        url: https://developers.google.com/machine-learning/crash-course/linear-regression/hyperparameters
+        locator: Linear regression — Hyperparameters, secs. Batch size and Epochs
+      - source: d2l
+        url: https://d2l.ai/chapter_optimization/minibatch-sgd.html#minibatches
+        locator: Sec. 12.5.2 Minibatches
+    source:
+      id: ncu-intro-dl
+      ref: lecture-03/q39
+    status: reviewed
+    reviewed_by: claude
+  - id: training-118
+    type: single
+    difficulty: easy
+    tags:
+      - ce6146
+      - ce6146-l03
+      - vanishing-gradients
+      - training-challenges
+    question: |
+      A 20-layer network with sigmoid activations is being trained. Logging the gradient norm of each
+      layer's weights gives about $10^{-1}$ for the last layer, $10^{-4}$ for a middle layer and
+      $10^{-8}$ for the first layer, whose weights barely change. Which training challenge is this?
+    options:
+      - text: Vanishing gradients
+        correct: true
+      - text: Exploding gradients
+        why: Exploding gradients grow on their way back to the first layers and make the updates there huge and unstable, not tiny.
+      - text: A saddle point or plateau
+        why: Near a saddle point the whole gradient is small; here the last layer still gets sizable gradients and only the early layers starve.
+      - text: A non-stationary objective
+        why: Drifting data move the best parameters over time; they do not make the gradients shrink layer by layer toward the input.
+    explanation: |
+      Backpropagation multiplies the gradient by each layer's local derivatives on its way to the
+      input, and the sigmoid's derivative is at most 0.25, so over many layers the product shrinks
+      geometrically [^2][^3]. The earliest layers then receive gradients many orders of magnitude
+      smaller than the last ones, and their parameters hardly move [^2]. Deep networks and recurrent
+      networks unrolled over long sequences are prone to this [^1]. ReLU activations, careful
+      initialization, batch normalization and residual connections reduce it; the mirror image,
+      exploding gradients, is usually tamed by gradient clipping [^3].
+    references:
+      - source: ncu-intro-dl
+        locator: Lecture 3, slide 52
+      - source: d2l
+        url: https://d2l.ai/chapter_multilayer-perceptrons/numerical-stability-and-init.html#vanishing-and-exploding-gradients
+        locator: Sec. 5.4.1 Vanishing and Exploding Gradients, 5.4.1.1 Vanishing Gradients
+      - title: 'Wikipedia: Vanishing gradient problem'
+        url: https://en.wikipedia.org/wiki/Vanishing_gradient_problem
+        locator: Introduction; Solutions
+    source:
+      id: ncu-intro-dl
+      ref: lecture-03/q54
+    status: reviewed
+    reviewed_by: claude
+  - id: training-119
+    type: single
+    difficulty: easy
+    tags:
+      - ce6146
+      - ce6146-l03
+      - regularization
+      - weight-decay
+    question: Which regularization technique works by adding an explicit term to the training objective?
+    options:
+      - text: L2 regularization
+        correct: true
+      - text: Dropout
+        why: Dropout randomly zeroes units during training; it is a stochastic method that leaves the loss formula unchanged.
+      - text: Data augmentation
+        why: Augmentation changes the training data, not the objective.
+      - text: Early stopping
+        why: Early stopping limits how many epochs are trained; it is a procedural control, not a term in the loss.
+    explanation: |
+      Regularizers differ in how they restrict the model. Explicit penalties such as L2 (or L1) add a
+      term like $\lambda\sum_i w_i^2$ to the loss, so the optimizer trades data fit against weight
+      size [^1][^2][^4]. Dropout and data augmentation act through randomness in the network or the
+      data, and early stopping constrains the number of training epochs instead of the weights [^3];
+      they restrict the learned function only implicitly [^1][^4].
+    references:
+      - source: ncu-intro-dl
+        locator: Lecture 3, slide 59
+      - source: d2l
+        url: https://d2l.ai/chapter_linear-regression/weight-decay.html#norms-and-weight-decay
+        locator: Sec. 3.7.1 Norms and Weight Decay
+      - source: d2l
+        url: https://d2l.ai/chapter_multilayer-perceptrons/generalization-deep.html#early-stopping
+        locator: Sec. 5.5.3 Early Stopping
+      - title: 'Wikipedia: Regularization (mathematics)'
+        url: https://en.wikipedia.org/wiki/Regularization_(mathematics)
+        locator: Introduction (explicit vs implicit regularization)
+    source:
+      id: ncu-intro-dl
+      ref: lecture-03/q59
+    status: reviewed
+    reviewed_by: claude
+  - id: training-120
+    type: true_false
+    difficulty: easy
+    tags:
+      - ce6146
+      - ce6146-l03
+      - regularization
+      - overfitting
+    question: |
+      True or false: adding a weight penalty such as L2 regularization aims to push the training
+      loss below what the unpenalized model reaches.
+    options:
+      - text: 'True'
+        why: The penalty restrains how closely the model can fit the training data; its target is a lower error on unseen data.
+      - text: 'False'
+        correct: true
+    explanation: |
+      Overfitting means fitting the noise and quirks of the training sample, so that a small
+      training error comes with a large error on new data [^1]. A penalty discourages the large
+      weights such a fit needs, so with it the training error usually ends up somewhat *higher*,
+      while the validation and test error fall [^2]. Judging a regularizer by its training loss
+      would therefore always favour using none; it is judged on held-out data.
+    references:
+      - source: ncu-intro-dl
+        locator: Lecture 3, slides 60, 64, 74
+      - source: d2l
+        url: https://d2l.ai/chapter_linear-regression/weight-decay.html#using-weight-decay
+        locator: Sec. 3.7.3.3 Training without Regularization; Sec. 3.7.3.4 Using Weight Decay
+    source:
+      id: ncu-intro-dl
+      ref: lecture-03/q60
+    status: reviewed
+    reviewed_by: claude
+  - id: training-121
+    type: short_answer
+    difficulty: medium
+    tags:
+      - ce6146
+      - ce6146-l03
+      - l1-regularization
+      - l2-regularization
+      - sparsity
+    question: |
+      A weight $w = 0.1$ currently gets zero gradient from the data loss. One SGD step with
+      $\eta = 0.5$ is taken on the penalized loss. With the L1 penalty $\lambda\sum_i |w_i|$ and
+      $\lambda = 0.05$, the weight becomes {{1}}; with the L2 penalty $\lambda\sum_i w_i^2$ and the
+      same $\lambda$, it becomes {{2}}.
+    answer:
+      blanks:
+        - numeric: 0.075
+          tolerance: 0.0005
+          hint: a number
+        - numeric: 0.095
+          tolerance: 0.0005
+          hint: a number
+      model: 'L1: $0.1 - 0.5 \cdot 0.05 \cdot \operatorname{sign}(0.1) = 0.075$. L2: $0.1 - 0.5 \cdot 2 \cdot 0.05 \cdot 0.1 = 0.095$.'
+    explanation: |
+      The L1 penalty's (sub)gradient is $\lambda\,\operatorname{sign}(w)$, a constant pull of $0.05$
+      however small the weight is, while the L2 penalty's gradient $2\lambda w = 0.01$ shrinks in
+      proportion to the weight [^1]. For this small weight, L1 therefore moves it five times farther
+      toward zero. Repeated over many steps, L1 drives unhelpful weights to exactly zero, which
+      selects features, whereas L2 only makes them small [^2][^3].
+    references:
+      - source: ncu-intro-dl
+        locator: Lecture 3, slides 62, 71
+      - source: d2l
+        url: https://d2l.ai/chapter_linear-regression/weight-decay.html#norms-and-weight-decay
+        locator: Sec. 3.7.1 Norms and Weight Decay
+      - title: 'Wikipedia: Regularization (mathematics)'
+        url: https://en.wikipedia.org/wiki/Regularization_(mathematics)
+        locator: Regularization in machine learning — L1 and L2 regularization
+    source:
+      id: ncu-intro-dl
+      ref: lecture-03/q61
+    status: reviewed
+    reviewed_by: claude
+  - id: training-122
+    type: single
+    difficulty: easy
+    tags:
+      - ce6146
+      - ce6146-l03
+      - l1-regularization
+      - feature-selection
+    question: |
+      A model predicts machine failures from 400 sensor features. The engineers believe that only a
+      handful of sensors matter and want a model that ignores the rest. Which regularizer fits best?
+    options:
+      - text: L1 regularization (lasso)
+        correct: true
+      - text: L2 regularization (ridge)
+        why: L2 shrinks all weights but rarely makes any exactly zero, so every sensor stays in the model.
+      - text: Dropout on the input layer
+        why: Dropout randomly hides features during training but removes none of them from the final model.
+      - text: A max-norm constraint
+        why: Max-norm caps the length of weight vectors; it does not make individual weights zero.
+    explanation: |
+      The L1 penalty $\lambda\sum_i |w_i|$ pulls every weight toward zero with a constant force, so
+      the weights of unhelpful features end up exactly zero and those features drop out of the model:
+      L1 performs feature selection [^1][^2]. L2, in contrast, spreads weight evenly over many
+      features [^2]. When several useful sensors are strongly correlated, elastic net (L1 plus L2) is
+      a common compromise [^1][^3].
+    references:
+      - source: ncu-intro-dl
+        locator: Lecture 3, slides 62–63, 71, 73
+      - source: d2l
+        url: https://d2l.ai/chapter_linear-regression/weight-decay.html#norms-and-weight-decay
+        locator: Sec. 3.7.1 Norms and Weight Decay
+      - title: 'Wikipedia: Regularization (mathematics)'
+        url: https://en.wikipedia.org/wiki/Regularization_(mathematics)
+        locator: Regularizers for sparsity (elastic net paragraph)
+    source:
+      id: ncu-intro-dl
+      ref: lecture-03/q62
+    status: reviewed
+    reviewed_by: claude
+  - id: training-123
+    type: single
+    difficulty: medium
+    tags:
+      - ce6146
+      - ce6146-l03
+      - l2-regularization
+      - overfitting
+    question: |
+      A degree-15 polynomial is fitted to 30 noisy points, once without regularization and once with
+      an L2 penalty:
+
+      | Model | Training RMSE | Test RMSE |
+      |---|---|---|
+      | Unpenalized | 0.09 | 3.4 |
+      | L2-penalized | 0.24 | 0.47 |
+
+      What is the best interpretation?
+    options:
+      - text: The penalty gave up a little training fit for a smoother curve that generalizes far better
+        correct: true
+      - text: The penalty failed, because it made the training error higher
+        why: A slightly higher training error is the expected price of a penalty; what matters is the large drop in test error.
+      - text: The penalized model underfits, since its training error is the higher of the two
+        why: Underfitting means high error on training and test data alike; the penalized model has by far the lower test error.
+      - text: The unpenalized model learned the true function more accurately, as its training error shows
+        why: Its tiny training error comes from fitting the noise; its huge test error shows the curve is far from the true function.
+    explanation: |
+      Without a penalty, a degree-15 polynomial can bend through almost every noisy point, giving a
+      tiny training error and wild swings between the points: overfitting [^2]. The L2 penalty keeps
+      the coefficients small, which yields a smoother function; it fits the training points slightly
+      worse, but the test error drops from 3.4 to 0.47 [^3]. The benefit of regularization is judged
+      by comparing penalized and unpenalized models on held-out data [^1].
+    references:
+      - source: ncu-intro-dl
+        locator: Lecture 3, slide 64
+      - source: d2l
+        url: https://d2l.ai/chapter_linear-regression/generalization.html#polynomial-curve-fitting
+        locator: Sec. 3.6.2.1 Polynomial Curve Fitting
+      - source: d2l
+        url: https://d2l.ai/chapter_linear-regression/weight-decay.html#using-weight-decay
+        locator: Sec. 3.7.3.3 Training without Regularization; Sec. 3.7.3.4 Using Weight Decay
+    source:
+      id: ncu-intro-dl
+      ref: lecture-03/q63
+    status: reviewed
+    reviewed_by: claude
+  - id: training-124
+    type: single
+    difficulty: easy
+    tags:
+      - ce6146
+      - ce6146-l03
+      - regularization-strength
+      - model-selection
+    question: |
+      An L2 penalty is tuned over five strengths:
+
+      | $\lambda$ | 0 | 0.0001 | 0.001 | 0.01 | 0.1 |
+      |---|---|---|---|---|---|
+      | Training loss | 0.05 | 0.12 | 0.25 | 0.36 | 0.70 |
+      | Validation loss | 0.61 | 0.52 | 0.44 | 0.49 | 0.73 |
+
+      Which $\lambda$ should be chosen?
+    options:
+      - text: $\lambda = 0.001$, which has the lowest validation loss
+        correct: true
+      - text: $\lambda = 0$, which has the lowest training loss
+        why: Without the penalty the model overfits; its low training loss comes with a high validation loss.
+      - text: $\lambda = 0.1$, which has the smallest gap between training and validation loss
+        why: A small gap with both losses high is underfitting; the aim is a low validation loss, not a small gap.
+      - text: $\lambda = 0.0001$, since the weakest penalty changes the model least
+        why: Its validation loss of 0.52 is clearly worse than the 0.44 reached at $\lambda = 0.001$.
+    explanation: |
+      $\lambda$ sets how strongly the weights are pushed toward zero: too small and the model
+      overfits (low training loss, high validation loss), too large and it underfits (both losses
+      high) [^1][^2]. Such hyperparameters are chosen by the loss on validation data, or by
+      cross-validation, and the test set is used only once at the end [^3]. Here the validation loss
+      is lowest at $\lambda = 0.001$.
+    references:
+      - source: ncu-intro-dl
+        locator: Lecture 3, slide 65
+      - source: d2l
+        url: https://d2l.ai/chapter_linear-regression/weight-decay.html#norms-and-weight-decay
+        locator: Sec. 3.7.1 Norms and Weight Decay
+      - source: d2l
+        url: https://d2l.ai/chapter_linear-regression/generalization.html#model-selection
+        locator: Sec. 3.6.3 Model Selection
+    source:
+      id: ncu-intro-dl
+      ref: lecture-03/q64
+    status: reviewed
+    reviewed_by: claude
+  - id: training-125
+    type: short_answer
+    difficulty: easy
+    tags:
+      - ce6146
+      - ce6146-l03
+      - data-augmentation
+    question: |
+      Name the regularization technique that enlarges the training set with label-preserving,
+      randomly transformed copies of existing examples, such as flipped, cropped or rotated images.
+    answer:
+      accept:
+        - data augmentation
+        - augmentation
+        - image augmentation
+        - data augmentations
+        - augmenting the data
+        - augmenting the training data
+        - augmenting training data
+        - training data augmentation
+      hint: a two-word term
+      model: Data augmentation.
+    explanation: |
+      Data augmentation applies random changes that keep the label, such as flips, crops, rotations
+      or colour shifts for images, to create new variants of the training examples [^1][^2]. The
+      model sees more variation of each class and relies less on incidental details such as an
+      object's exact position or colour, which reduces overfitting, especially on small datasets
+      [^2][^3].
+    references:
+      - source: ncu-intro-dl
+        locator: Lecture 3, slide 68
+      - source: d2l
+        url: https://d2l.ai/chapter_computer-vision/image-augmentation.html
+        locator: Sec. 14.1 Image Augmentation (introduction)
+      - title: 'Wikipedia: Data augmentation'
+        url: https://en.wikipedia.org/wiki/Data_augmentation
+        locator: Introduction
+    source:
+      id: ncu-intro-dl
+      ref: lecture-03/q66
+    status: reviewed
+    reviewed_by: claude
+  - id: training-126
+    type: single
+    difficulty: easy
+    tags:
+      - ce6146
+      - ce6146-l03
+      - data-augmentation
+      - overfitting
+    question: |
+      A team trains a CNN on only 1,500 labelled photos of plant leaves and cannot collect more.
+      Training accuracy quickly approaches 100%, while validation accuracy stalls near 70%. Which
+      regularization technique tackles the shortage of training data itself?
+    options:
+      - text: Random flips, crops and colour shifts of the training photos
+        correct: true
+      - text: Adding an L2 penalty to the weights of every layer
+        why: It restrains the weights and can narrow the gap, but the network still learns from the same 1,500 images.
+      - text: Stopping training at the epoch with the best validation accuracy
+        why: Early stopping limits how long the network fits the same images; it adds no new variation to learn from.
+      - text: Applying dropout to the units of the fully connected layers
+        why: Dropout injects noise into the network's units, not into the data; the set of training images stays the same.
+    explanation: |
+      The large gap between training and validation accuracy signals overfitting, and its root cause
+      here is the small dataset [^1][^2]. An L2 penalty, early stopping and dropout restrain the model
+      and can shrink the gap, but only data augmentation works on the data: it creates new,
+      label-preserving variants of each photo every epoch, so the network sees more variety and
+      depends less on incidental details such as position or lighting [^1][^3]. Augmentation is
+      applied to the training data only; validation and test images stay unchanged [^4].
+    references:
+      - source: ncu-intro-dl
+        locator: Lecture 3, slides 68, 72–73
+      - source: d2l
+        url: https://d2l.ai/chapter_linear-regression/generalization.html#underfitting-or-overfitting
+        locator: Sec. 3.6.2 Underfitting or Overfitting?
+      - source: d2l
+        url: https://d2l.ai/chapter_computer-vision/image-augmentation.html
+        locator: Sec. 14.1 Image Augmentation (introduction)
+      - source: d2l
+        url: https://d2l.ai/chapter_computer-vision/image-augmentation.html#training-with-image-augmentation
+        locator: Sec. 14.1.2 Training with Image Augmentation
+    source:
+      id: ncu-intro-dl
+      ref: lecture-03/q67
+    status: reviewed
+    reviewed_by: claude
+  - id: training-127
+    type: single
+    difficulty: easy
+    tags:
+      - ce6146
+      - ce6146-l03
+      - batch-normalization
+    question: |
+      In evaluation mode, a batch-normalization layer uses the running estimates collected during
+      training. For one feature these are a mean of 2 and a variance of 4 (ignore $\varepsilon$), and
+      the learned scale and shift are $\gamma = 1.5$ and $\beta = -1$. What does the layer output for
+      the input $x = 5$?
+    options:
+      - text: '1.25'
+        correct: true
+      - text: '0.125'
+        why: This divides by the variance 4 instead of the standard deviation 2.
+      - text: '1.5'
+        why: That is the normalized value; the layer still applies the scale and the shift.
+      - text: '0.75'
+        why: The scale multiplies the normalized value before the shift is added, $1.5 \cdot 1.5 - 1$, not $(1.5 - 1) \cdot 1.5$.
+    explanation: |
+      At prediction time, batch statistics would make an example's output depend on the other
+      examples in its batch, so batch normalization switches to fixed estimates gathered during
+      training [^2][^3]. The output is
+      $\gamma(x - \mu)/\sqrt{\sigma^2 + \varepsilon} + \beta = 1.5 \cdot (5 - 2)/2 - 1 = 1.25$. In
+      training mode the same layer would instead normalize with statistics computed from the
+      current mini-batch [^1].
+    references:
+      - source: ncu-intro-dl
+        locator: Lecture 3, slide 69
+      - title: 'PyTorch documentation: torch.nn.BatchNorm1d'
+        url: https://docs.pytorch.org/docs/stable/generated/torch.nn.BatchNorm1d.html
+        locator: Description (running estimates used during evaluation)
+      - source: d2l
+        url: https://d2l.ai/chapter_convolutional-modern/batch-norm.html#batch-normalization-during-prediction
+        locator: Sec. 8.5.2.4 Batch Normalization During Prediction
+    source:
+      id: ncu-intro-dl
+      ref: lecture-03/q68
+    status: reviewed
+    reviewed_by: claude
+  - id: training-128
+    type: true_false
+    difficulty: medium
+    tags:
+      - ce6146
+      - ce6146-l03
+      - batch-normalization
+      - internal-covariate-shift
+    question: |
+      Batch normalization was introduced as a way to reduce *internal covariate shift*, the change in
+      each layer's input distribution during training. True or false: later controlled experiments
+      confirmed that reducing this shift is the main reason batch normalization speeds up training.
+    options:
+      - text: 'True'
+        why: Experiments found that stabilizing the layers' input distributions has little to do with batch normalization's success.
+      - text: 'False'
+        correct: true
+    explanation: |
+      The original paper motivated batch normalization by reducing internal covariate shift [^1][^2].
+      Santurkar et al. found that this distributional stability has little to do with its success
+      and argued that batch normalization mainly makes the optimization landscape smoother, giving
+      more predictive gradients and allowing faster training [^3]. The practical effects are not in
+      doubt, faster and more stable training and a mild regularizing effect [^2], but the
+      explanation remains debated [^4].
+    references:
+      - source: ncu-intro-dl
+        locator: Lecture 3, slide 69
+      - title: 'Ioffe & Szegedy (2015), Batch Normalization: Accelerating Deep Network Training by Reducing Internal Covariate Shift, arXiv:1502.03167'
+        url: https://arxiv.org/abs/1502.03167
+        locator: Abstract
+      - title: Santurkar et al. (2018), How Does Batch Normalization Help Optimization?, arXiv:1805.11604
+        url: https://arxiv.org/abs/1805.11604
+        locator: Abstract
+      - source: d2l
+        url: https://d2l.ai/chapter_convolutional-modern/batch-norm.html#discussion
+        locator: Sec. 8.5.6 Discussion
+    source:
+      id: ncu-intro-dl
+      ref: lecture-03/q69
+    status: reviewed
+    reviewed_by: claude
+  - id: training-129
+    type: single
+    difficulty: medium
+    tags:
+      - ce6146
+      - ce6146-l03
+      - regularization
+      - dropout
+    question: Which pairing of a regularization method with its main effect is correct?
+    options:
+      - text: Dropout — no unit can count on particular other units being present
+        correct: true
+      - text: L2 penalty — many weights become exactly zero, so irrelevant features drop out of the model
+        why: Exact zeros and feature selection are the effect of L1; L2 shrinks weights smoothly.
+      - text: Early stopping — the training data gain more variety
+        why: Adding variety is data augmentation; early stopping limits how long the model trains.
+      - text: Max-norm — each layer's inputs are normalized over the mini-batch
+        why: Normalizing layer inputs is batch normalization; max-norm caps the length of each weight vector.
+    explanation: |
+      Each regularizer limits overfitting in its own way [^1]: L1 removes features and L2 shrinks all
+      weights [^2], dropout randomly removes units so that no unit can depend on specific others
+      (breaking co-adaptation) [^3], early stopping halts training at the right time, data
+      augmentation adds variety, batch normalization stabilizes layer inputs and max-norm keeps
+      weight vectors from growing too large. Knowing these effects is what lets you pick a suitable
+      combination for a problem.
+    references:
+      - source: ncu-intro-dl
+        locator: Lecture 3, slides 71–72
+      - source: d2l
+        url: https://d2l.ai/chapter_linear-regression/weight-decay.html#norms-and-weight-decay
+        locator: Sec. 3.7.1 Norms and Weight Decay
+      - source: d2l
+        url: https://d2l.ai/chapter_multilayer-perceptrons/dropout.html
+        locator: Sec. 5.6 Dropout (introduction) and 5.6.1 Dropout in Practice
+    source:
+      id: ncu-intro-dl
+      ref: lecture-03/q70
+    status: reviewed
+    reviewed_by: claude

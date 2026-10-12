@@ -54,8 +54,10 @@ export const TOPIC_VI: Readonly<Record<string, string>> = {
   cnn: "Mạng nơ-ron tích chập",
   rnn: "Mạng nơ-ron hồi tiếp",
   transformers: "Cơ chế tập trung và Transformer",
+  gnn: "Mạng nơ-ron đồ thị",
   architectures: "Các kiến trúc tiêu biểu",
   "transfer-learning": "Học truyền tải",
+  xai: "AI khả giải thích",
   // cv
   "cv-basics": "Cơ bản về thị giác máy tính",
   "object-detection": "Phát hiện vật thể",

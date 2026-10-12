@@ -1120,3 +1120,216 @@ questions:
       ref: lecture-01/q14
     status: reviewed
     reviewed_by: claude
+  - id: information-theory-031
+    type: short_answer
+    difficulty: easy
+    tags:
+      - ce6146
+      - ce6146-l01
+      - cross-entropy
+    question: |
+      A classifier assigns the probabilities 0.8, 0.5 and 0.2 to the true classes of three
+      examples. What is the mean cross-entropy loss over these examples, using natural logarithms?
+      Give 3 decimals.
+    answer:
+      numeric: 0.842
+      tolerance: 0.002
+      hint: 3 decimals
+      model: $-(\ln 0.8 + \ln 0.5 + \ln 0.2)/3 = (0.223 + 0.693 + 1.609)/3 \approx 0.842$
+    explanation: |
+      With a one-hot target, cross-entropy keeps only the term of the observed class,
+      $L = -\log p_{\text{true}}$ [^1][^2]. The three losses are 0.223, 0.693 and 1.609 (the
+      smaller the true-class probability, the larger the loss), and their mean is 0.842. Taking
+      logs turns the product of the probabilities into a sum, so this is the average negative
+      log-likelihood [^2]. With base-10 logs the result would be 0.366, so the base matters.
+    references:
+      - source: ncu-intro-dl
+        locator: Lecture 1, slides 64, 68
+      - source: d2l
+        url: https://d2l.ai/chapter_linear-classification/softmax-regression.html#log-likelihood
+        locator: Sec. 4.1.2.1 Log-Likelihood; Sec. 4.1.2.2 Softmax and Cross-Entropy Loss
+    source:
+      id: ncu-intro-dl
+      ref: lecture-01/q71
+    status: reviewed
+    reviewed_by: claude
+  - id: information-theory-032
+    type: true_false
+    difficulty: easy
+    tags:
+      - ce6146
+      - ce6146-l01
+      - entropy
+    question: |
+      True or false: if a classifier's predicted class distribution has low entropy, its
+      prediction is correct.
+    options:
+      - text: 'True'
+        why: Entropy measures only how concentrated the prediction is; a confident prediction can still be wrong.
+      - text: 'False'
+        correct: true
+    explanation: |
+      Entropy, $H(p) = -\sum_k p_k \log p_k$, measures how spread out the predicted distribution
+      is and never looks at the true label [^1][^2]. The prediction $(0.95, 0.05)$ has an entropy of
+      only about 0.199 nats, yet if the true class is the second one its cross-entropy loss is
+      $-\ln 0.05 \approx 3.0$: confident and wrong. Correctness has to be judged against the labels.
+    references:
+      - source: ncu-intro-dl
+        locator: Lecture 1, slide 69
+      - source: d2l
+        url: https://d2l.ai/chapter_appendix-mathematics-for-deep-learning/information-theory.html#entropy
+        locator: Sec. 22.11.2 Entropy (22.11.2.2 Definition)
+    source:
+      id: ncu-intro-dl
+      ref: lecture-01/q72
+    status: reviewed
+    reviewed_by: claude
+  - id: information-theory-033
+    type: short_answer
+    difficulty: medium
+    tags:
+      - ce6146
+      - ce6146-l01
+      - cross-entropy
+      - kl-divergence
+    question: |
+      For a reference distribution $p = (0.5, 0.5)$ and a model distribution $q = (0.8, 0.2)$,
+      using natural logarithms, the cross-entropy is $H(p, q) =$ {{1}} and the KL divergence is
+      $D_{\mathrm{KL}}(p \parallel q) =$ {{2}}. Give 3 decimals.
+    answer:
+      blanks:
+        - numeric: 0.916
+          tolerance: 0.002
+          hint: 3 decimals
+        - numeric: 0.223
+          tolerance: 0.002
+          hint: 3 decimals
+      model: $H(p, q) = -\tfrac12(\ln 0.8 + \ln 0.2) \approx 0.916$; $H(p) = \ln 2 \approx 0.693$; $D_{\mathrm{KL}} = 0.916 - 0.693 = 0.223$.
+    explanation: |
+      Cross-entropy, $H(p, q) = -\sum_k p_k \log q_k$, splits into $H(p) + D_{\mathrm{KL}}(p
+      \parallel q)$ [^1][^2]. Here $H(p, q) = 0.5\,(0.223 + 1.609) = 0.916$ and $H(p) = \ln 2 =
+      0.693$, so $D_{\mathrm{KL}} = 0.223$; directly, $0.5 \ln(0.5/0.8) + 0.5 \ln(0.5/0.2) \approx
+      0.223$. Because $H(p)$ does not depend on $q$, minimizing cross-entropy over $q$ also
+      minimizes the KL divergence [^2].
+    references:
+      - source: ncu-intro-dl
+        locator: Lecture 1, slide 70
+      - source: d2l
+        url: https://d2l.ai/chapter_appendix-mathematics-for-deep-learning/information-theory.html#cross-entropy
+        locator: Sec. 22.11.4 Kullback–Leibler Divergence; Sec. 22.11.5 Cross-Entropy
+    source:
+      id: ncu-intro-dl
+      ref: lecture-01/q73
+    status: reviewed
+    reviewed_by: claude
+  - id: information-theory-034
+    type: single
+    difficulty: medium
+    tags:
+      - ce6146
+      - ce6146-l02
+      - cross-entropy
+      - kl-divergence
+      - soft-targets
+    question: |
+      A training example has the soft target $q = (0.8, 0.2, 0)$ over three classes. What is the
+      smallest cross-entropy $H(q, p)$ (natural log) that any predicted distribution $p$ can reach,
+      and at which $p$?
+    options:
+      - text: About 0.500, at $p = q$
+        correct: true
+      - text: 0, at $p = (1, 0, 0)$
+        why: With $q_2 = 0.2 > 0$ and $p_2 = 0$ the term $-0.2\ln p_2$ is infinite; a loss of 0 needs a one-hot target.
+      - text: About 0.223, at $p = q$
+        why: That is only $-\ln 0.8$; the cross-entropy weights $-\ln p_j$ by $q_j$ for every class and adds the terms.
+      - text: About 0.722, at $p = q$
+        why: That is the entropy of $q$ in bits ($\log_2$); in natural-log units (nats) it is 0.500.
+    explanation: |
+      Cross-entropy splits as $H(q, p) = H(q) + D_{\mathrm{KL}}(q \parallel p)$ [^1][^2], and
+      Gibbs' inequality gives $D_{\mathrm{KL}} \ge 0$ with equality only at $p = q$ [^3]. The floor is
+      therefore the target's own entropy,
+      $H(q) = -(0.8\ln 0.8 + 0.2\ln 0.2) \approx 0.179 + 0.322 = 0.500$, reached at $p = q$. With a
+      soft target the cross-entropy loss cannot reach 0; only a one-hot target has $H(q) = 0$.
+    references:
+      - source: ncu-intro-dl
+        locator: Lecture 2, slide 62
+      - source: d2l
+        url: https://d2l.ai/chapter_appendix-mathematics-for-deep-learning/information-theory.html#formal-definition
+        locator: Sec. 22.11.5.1 Formal Definition, Eq. (22.11.26)
+      - source: d2l
+        url: https://d2l.ai/chapter_appendix-mathematics-for-deep-learning/information-theory.html#kl-divergence-properties
+        locator: Sec. 22.11.4.2 KL Divergence Properties (non-negative, zero only when P = Q)
+    source:
+      id: ncu-intro-dl
+      ref: lecture-02/q71
+    status: reviewed
+    reviewed_by: claude
+  - id: information-theory-035
+    type: single
+    difficulty: medium
+    tags:
+      - ce6146
+      - ce6146-l02
+      - cross-entropy
+      - kl-divergence
+    question: |
+      A classifier is trained with cross-entropy against fixed targets $q$. Why does minimizing
+      $H(q, p)$ over the model's prediction $p$ also minimize $D_{\mathrm{KL}}(q \parallel p)$?
+    options:
+      - text: $H(q, p) = H(q) + D_{\mathrm{KL}}(q \parallel p)$, and $H(q)$ does not depend on $p$
+        correct: true
+      - text: KL divergence is symmetric, so it equals the cross-entropy taken in either order
+        why: KL divergence is not symmetric, and it differs from the cross-entropy by $H(q)$.
+      - text: Cross-entropy and KL divergence are equal for every pair of distributions
+        why: They differ by the entropy $H(q)$; they coincide only when $H(q) = 0$, as for a one-hot target.
+      - text: Both become zero as soon as $p$ gives the true class its largest probability
+        why: Both reach their minimum only at $p = q$; ranking the true class first is not enough.
+    explanation: |
+      Cross-entropy splits into the target's own entropy plus the KL divergence [^1][^2][^3]. With $q$
+      fixed, $H(q)$ is a constant, so both objectives have the same minimizer, $p = q$; for a one-hot
+      target $H(q) = 0$ and the two are even numerically equal. KL divergence is not symmetric, so it
+      is not a true distance.
+    references:
+      - source: ncu-intro-dl
+        locator: Lecture 2, slide 62
+      - source: d2l
+        url: https://d2l.ai/chapter_appendix-mathematics-for-deep-learning/information-theory.html#cross-entropy
+        locator: Sec. 22.11.5.1 Formal Definition, Eq. (22.11.26); Sec. 22.11.5.2 Properties
+      - title: 'Wikipedia: Cross-entropy'
+        url: https://en.wikipedia.org/wiki/Cross-entropy
+        locator: Definition
+    source:
+      id: ncu-intro-dl
+      ref: lecture-02/q72
+    status: reviewed
+    reviewed_by: claude
+  - id: information-theory-036
+    type: true_false
+    difficulty: medium
+    tags:
+      - ce6146
+      - ce6146-l02
+      - kl-divergence
+    question: |
+      True or false: if the target distribution $q$ gives positive probability to a class to which
+      the model assigns $p_j = 0$, then $D_{\mathrm{KL}}(q \parallel p)$ is infinite.
+    options:
+      - text: 'True'
+        correct: true
+      - text: 'False'
+        why: The term $q_j \log(q_j/p_j)$ with $q_j > 0$ grows without bound as $p_j \to 0$; only terms with $q_j = 0$ drop out.
+    explanation: |
+      Each class contributes $q_j \log(q_j/p_j)$ [^1]. Terms with $q_j = 0$ count as 0, but a term
+      with $q_j > 0$ and $p_j = 0$ is infinite, so the whole divergence is infinite [^2]. Softmax
+      outputs are always strictly positive, which keeps the cross-entropy loss finite.
+    references:
+      - source: ncu-intro-dl
+        locator: Lecture 2, slide 62
+      - source: d2l
+        url: https://d2l.ai/chapter_appendix-mathematics-for-deep-learning/information-theory.html#kl-divergence-properties
+        locator: Sec. 22.11.4.2 KL Divergence Properties
+    source:
+      id: ncu-intro-dl
+      ref: lecture-02/q73
+    status: reviewed
+    reviewed_by: claude

@@ -3676,3 +3676,212 @@ questions:
       url: https://github.com/ageron/handson-ml3/blob/ef1c9f5ab11083584635b9b3a7846f49c58a6084/12_custom_models_and_training_with_tensorflow.ipynb
     status: reviewed
     reviewed_by: claude
+  - id: pytorch-087
+    type: single
+    difficulty: medium
+    tags:
+      - ce6146
+      - ce6146-l02
+      - autograd
+      - gradient-accumulation
+    question: |
+      What does this code print?
+
+      ```python
+      import torch
+
+      w = torch.tensor(3.0, requires_grad=True)
+      for _ in range(2):
+          loss = w ** 2
+          loss.backward()
+      print(w.grad)
+      ```
+    options:
+      - text: '`tensor(12.)`'
+        correct: true
+      - text: '`tensor(6.)`'
+        why: The second `backward()` does not overwrite `w.grad`; it adds another 6 to it.
+      - text: '`tensor(9.)`'
+        why: 9 is the value of the loss $w^2$, not its gradient.
+      - text: '`tensor(36.)`'
+        why: Accumulation adds the two gradients, it does not multiply them.
+    explanation: |
+      Each `backward()` call computes $d(w^2)/dw = 2w = 6$ and adds it to the accumulator `w.grad`
+      instead of replacing it [^1][^2]. After two calls the stored gradient is $6 + 6 = 12$. That is
+      why training loops reset gradients (`optimizer.zero_grad()` or `w.grad.zero_()`) before each
+      backward pass — and it is the same add-into-the-accumulator rule that reverse-mode
+      differentiation uses inside one pass when a value feeds several operations.
+    references:
+      - source: ncu-intro-dl
+        locator: Lecture 2, slide 86
+      - source: d2l
+        url: https://d2l.ai/chapter_preliminaries/autograd.html#a-simple-function
+        locator: Sec. 2.5.1 A Simple Function (gradients accumulate unless reset)
+    source:
+      id: ncu-intro-dl
+      ref: lecture-02/q92
+    status: reviewed
+    reviewed_by: claude
+  - id: pytorch-088
+    type: short_answer
+    difficulty: easy
+    tags:
+      - ce6146
+      - ce6146-l03
+      - tensors
+      - batch-matmul
+    question: |
+      `A` and `B` each hold a batch of two $2 \times 2$ matrices, with the batch dimension first:
+
+      ```python
+      import torch
+      A = torch.tensor([[[1., 0.], [2., 1.]],
+                        [[0., 3.], [1., 2.]]])
+      B = torch.tensor([[[2., 1.], [1., 4.]],
+                        [[1., 0.], [2., 5.]]])
+      C = A @ B
+      print(C[0, 1, 1].item(), C[1, 1, 0].item())
+      ```
+
+      The code prints {{1}} followed by {{2}}.
+    answer:
+      blanks:
+        - numeric: 6
+          tolerance: 0
+          hint: a number
+        - numeric: 5
+          tolerance: 0
+          hint: a number
+      model: '`C[i] = A[i] @ B[i]`. `C[0, 1, 1]`: row $(2, 1)$ of $A_0$ times column $(1, 4)$ of $B_0$ gives $2 + 4 = 6$. `C[1, 1, 0]`: row $(1, 2)$ of $A_1$ times column $(1, 2)$ of $B_1$ gives $1 + 4 = 5$. The line prints `6.0 5.0`.'
+    explanation: |
+      For tensors with more than two dimensions, `@` (`torch.matmul`) performs a batched matrix
+      product: the leading dimensions are batch dimensions, and each pair of matrices is multiplied
+      separately, `C[i] = A[i] @ B[i]`, so the result has shape $(2, 2, 2)$ [^1][^2]. Entry
+      `[0, 1, 1]` is row 1, column 1 of $A_0B_0$: $(2, 1) \cdot (1, 4) = 6$. Entry `[1, 1, 0]` is
+      row 1, column 0 of $A_1B_1$: $(1, 2) \cdot (1, 2) = 5$. The batches never mix: $A_0$ only
+      meets $B_0$ [^3].
+    references:
+      - source: ncu-intro-dl
+        locator: Lecture 3, slide 9
+      - title: 'PyTorch documentation: torch.matmul'
+        url: https://docs.pytorch.org/docs/stable/generated/torch.matmul.html
+        locator: Description (batched matrix multiply)
+      - title: 'PyTorch documentation: torch.bmm'
+        url: https://docs.pytorch.org/docs/stable/generated/torch.bmm.html
+        locator: Description
+    source:
+      id: ncu-intro-dl
+      ref: lecture-03/q28
+    status: reviewed
+    reviewed_by: claude
+  - id: pytorch-089
+    type: single
+    difficulty: medium
+    tags:
+      - ce6146
+      - ce6146-l03
+      - dropout
+      - inverted-dropout
+    question: |
+      Which values can the entries of `a` take after this code runs?
+
+      ```python
+      import torch
+      from torch import nn
+
+      drop = nn.Dropout(p=0.25)
+      drop.train()
+      a = drop(torch.full((8,), 3.0))
+      ```
+    options:
+      - text: 0 or 4
+        correct: true
+      - text: 0 or 3
+        why: PyTorch does not leave the kept entries unchanged; during training it divides them by the keep probability $1 - p = 0.75$.
+      - text: 0 or 2.25
+        why: This multiplies the kept entries by the keep probability 0.75; `nn.Dropout` divides by it, so that each entry keeps an expected value of 3.
+      - text: 0 or 12
+        why: This divides by the drop probability $p = 0.25$; the rescaling uses the keep probability $1 - p$.
+    explanation: |
+      In training mode, `nn.Dropout` zeroes each element independently with probability $p = 0.25$
+      and multiplies the survivors by $1/(1 - p) = 4/3$, so every kept 3 becomes 4 [^2][^3]. The
+      expected value of each entry, $0.75 \cdot 4 = 3$, therefore equals the input, which is why the
+      module can simply compute the identity in evaluation mode [^2]. Randomly removing units during
+      training keeps the network from relying on any single unit, which is how dropout regularizes
+      [^1].
+    references:
+      - source: ncu-intro-dl
+        locator: Lecture 3, slide 66
+      - title: 'PyTorch documentation: torch.nn.Dropout'
+        url: https://docs.pytorch.org/docs/stable/generated/torch.nn.Dropout.html
+        locator: Description
+      - source: d2l
+        url: https://d2l.ai/chapter_multilayer-perceptrons/dropout.html
+        locator: Sec. 5.6 Dropout (introduction), eq. (5.6.1)
+    source:
+      id: ncu-intro-dl
+      ref: lecture-03/q65
+    status: reviewed
+    reviewed_by: claude
+  - id: pytorch-090
+    type: single
+    difficulty: medium
+    tags:
+      - ce6146
+      - ce6146-l03
+      - training-loop
+      - optimizer
+    question: |
+      One training iteration should run the forward pass, compute the loss, backpropagate and then
+      update the weights. This loop swaps the last two steps:
+
+      ```python
+      import torch
+      from torch import nn
+
+      torch.manual_seed(0)
+      model = nn.Linear(3, 1)
+      opt = torch.optim.SGD(model.parameters(), lr=0.1)
+      w0 = model.weight.detach().clone()
+      x, y = torch.randn(8, 3), torch.randn(8, 1)
+      for _ in range(5):
+          opt.zero_grad()
+          loss = ((model(x) - y) ** 2).mean()
+          opt.step()
+          loss.backward()
+      print(torch.equal(model.weight, w0))
+      ```
+
+      What happens?
+    options:
+      - text: It prints `True`, because every update finds the gradients freshly cleared
+        correct: true
+      - text: It prints `False`, because step and backward may run in either order within one iteration
+        why: The update needs the gradients of the current loss, so it must come after the backward pass.
+      - text: It prints `False`, because each update just uses the gradients of the previous iteration
+        why: Those gradients are wiped by `zero_grad()` at the top of the next iteration, before `step()` could use them.
+      - text: It raises a `RuntimeError`, because `backward()` is called after `step()`
+        why: Nothing forbids that order; the loop runs without error but never changes the weights.
+    explanation: |
+      Training repeats forward pass, loss, backward pass and parameter update, in that order,
+      because the update needs the gradients that backpropagation computes from the current loss
+      [^1][^3]. Here `zero_grad()` resets the gradients (to `None` by default), so `step()` finds no
+      gradient and skips every parameter [^2]; the gradients that `backward()` computes afterwards
+      are discarded by the next `zero_grad()`. With `zero_grad(set_to_none=False)` the gradients
+      would be zeros instead, and plain SGD would take zero-length steps: the result is the same. The
+      weights therefore never change and the comparison prints `True`. The correct loop calls
+      `loss.backward()` and then `opt.step()`.
+    references:
+      - source: ncu-intro-dl
+        locator: Lecture 3, slide 7
+      - title: 'PyTorch documentation: torch.optim.Optimizer.zero_grad'
+        url: https://docs.pytorch.org/docs/stable/generated/torch.optim.Optimizer.zero_grad.html
+        locator: Parameters (set_to_none)
+      - source: d2l
+        url: https://d2l.ai/chapter_multilayer-perceptrons/backprop.html#training-neural-networks
+        locator: Sec. 5.3.4 Training Neural Networks
+    source:
+      id: ncu-intro-dl
+      ref: lecture-03/q26
+    status: reviewed
+    reviewed_by: claude

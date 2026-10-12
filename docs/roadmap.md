@@ -76,6 +76,14 @@ Versions follow [conventions.md#versioning](conventions.md#versioning).
 - [x] Vietnamese UI (EN | VI switch; questions stay in English, topic titles in both languages)
 - [x] English–Vietnamese glossary from d2l-vi (`/glossary/`, 458 terms)
 
+## v0.6.0 — CE6146 exam prep
+
+- [x] CE6146 page (`/ce6146/`): per-lecture and per-exercise practice and tests, later weeks mapped to topics
+- [x] Tests draw CE6146 course questions more often (As often / 4× / 16×)
+- [x] Every content slide of Lectures 1–3 tested (+177 questions)
+- [x] A twin question for every exercise question (+60)
+- [x] New topics for the syllabus: Graph Neural Networks (31), Explainable AI (34), with notes
+
 ## Next
 
 - [ ] CE6146 lecture questions for lectures 4+ (Path B, as the slides are published)

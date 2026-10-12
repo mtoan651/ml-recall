@@ -1,0 +1,1200 @@
+schema_version: 1
+domain: dl
+topic: gnn
+title: Graph Neural Networks
+questions:
+  - id: gnn-001
+    type: short_answer
+    difficulty: easy
+    tags:
+      - graph-basics
+      - adjacency-matrix
+      - self-loops
+    question: |
+      An undirected graph has $N = 6$ nodes and $|E| = 7$ edges, with no self-loops and no repeated
+      edges. A GCN works with $\tilde A = A + I$, the adjacency matrix with a self-loop added at every
+      node. How many entries of the $6 \times 6$ matrix $\tilde A$ are non-zero?
+    answer:
+      numeric: 20
+      tolerance: 0
+      hint: a whole number
+      model: $2|E| + N = 2 \cdot 7 + 6 = 20$
+    explanation: |
+      In an undirected graph each edge $\{i, j\}$ sets both $A_{ij}$ and $A_{ji}$, so the adjacency
+      matrix is symmetric [^1] and has $2|E| = 14$ non-zero entries, none of them on the diagonal.
+      Adding the identity puts a 1 on each of the $N = 6$ diagonal entries [^2], giving
+      $14 + 6 = 20$. Equivalently, the row sums of $\tilde A$ are the degrees plus one, and the degrees
+      add up to $2|E|$ (handshaking lemma) [^3]. The other 16 entries stay zero, which is why GCN code
+      stores $\tilde A$ as a sparse matrix.
+    references:
+      - title: 'Wikipedia: Adjacency matrix'
+        url: https://en.wikipedia.org/wiki/Adjacency_matrix
+        locator: Introduction (simple graphs; undirected graphs give a symmetric matrix); Definition
+      - title: Kipf & Welling (2017), Semi-Supervised Classification with Graph Convolutional Networks
+        url: https://arxiv.org/abs/1609.02907
+        locator: Sec. 2 Fast Approximate Convolutions on Graphs (Eq. 2)
+      - title: 'Wikipedia: Degree (graph theory)'
+        url: https://en.wikipedia.org/wiki/Degree_(graph_theory)#Handshaking_lemma
+        locator: Handshaking lemma
+    source:
+      id: original
+      ref: gnn-001
+    status: reviewed
+    reviewed_by: claude
+  - id: gnn-002
+    type: short_answer
+    difficulty: medium
+    tags:
+      - graph-basics
+      - adjacency-matrix
+      - walks
+    question: |
+      An undirected graph has nodes $0, \dots, 4$ and the six edges
+      $\{0,1\}, \{0,2\}, \{0,3\}, \{1,2\}, \{1,3\}, \{3,4\}$. Let $A$ be its adjacency matrix.
+      What is the entry $(A^2)_{01}$?
+    answer:
+      numeric: 2
+      tolerance: 0
+      hint: a whole number
+      model: $(A^2)_{01} = \sum_k A_{0k} A_{k1} = 2$, the walks $0 \to 2 \to 1$ and $0 \to 3 \to 1$
+    explanation: |
+      $(A^2)_{ij} = \sum_k A_{ik} A_{kj}$ counts the walks of length 2 from $i$ to $j$ [^1][^2]: one
+      for every node $k$ adjacent to both. Nodes 0 and 1 have the common neighbours 2 and 3, so
+      $(A^2)_{01} = 2$; the edge $\{0,1\}$ itself is a walk of length 1 and does not count. On the
+      diagonal, $(A^2)_{ii}$ is the degree of $i$ (go to a neighbour and come back). The same view
+      explains message passing: multiplying the node features by $A$ sums each node's neighbours, and
+      repeating it $k$ times reaches nodes $k$ hops away [^2].
+    references:
+      - title: 'Wikipedia: Adjacency matrix'
+        url: https://en.wikipedia.org/wiki/Adjacency_matrix#Matrix_powers
+        locator: Properties, Matrix powers
+      - title: Sanchez-Lengeling et al. (2021), A Gentle Introduction to Graph Neural Networks, Distill
+        url: https://distill.pub/2021/gnn-intro/
+        locator: Into the Weeds, Graph convolutions as matrix multiplications, and matrix multiplications as walks on a graph
+    source:
+      id: original
+      ref: gnn-002
+    status: reviewed
+    reviewed_by: claude
+  - id: gnn-003
+    type: single
+    difficulty: easy
+    tags:
+      - graph-tasks
+      - graph-classification
+    question: Which of these is a **graph-level** prediction task?
+    options:
+      - text: Predicting whether a molecule (atoms and bonds) is toxic
+        correct: true
+      - text: Predicting the research topic of every paper in a citation network
+        why: Every paper (node) gets its own label, so this is a node-level task, like classifying the members of a social network [^1].
+      - text: Predicting whether two users of a social network will become friends
+        why: This asks whether an edge exists between a pair of nodes, an edge-level task (link prediction) [^1].
+      - text: Predicting the partial charge of every atom in a molecule
+        why: Each atom (node) gets its own output, so this is node-level even though the input is one molecule [^1].
+    explanation: |
+      Graph tasks are grouped by what receives a prediction [^1]: a graph-level task predicts one
+      property of a whole graph (for a molecule, its smell or whether it binds a receptor, the analogue
+      of image classification); a node-level task predicts a property of every node (the analogue of
+      segmentation); an edge-level task predicts the presence or value of edges. For a graph-level
+      output the node embeddings are pooled into one vector by a readout such as a sum [^2]. Toxicity
+      is a property of the molecule as a whole.
+    references:
+      - title: Sanchez-Lengeling et al. (2021), A Gentle Introduction to Graph Neural Networks, Distill
+        url: https://distill.pub/2021/gnn-intro/
+        locator: What types of problems have graph structured data? (Graph-level, Node-level and Edge-level task)
+      - title: Xu, Hu, Leskovec & Jegelka (2019), How Powerful are Graph Neural Networks?
+        url: https://arxiv.org/abs/1810.00826
+        locator: Sec. 2 Preliminaries (node and graph classification, READOUT Eq. 2.4)
+    source:
+      id: original
+      ref: gnn-003
+    status: reviewed
+    reviewed_by: claude
+  - id: gnn-004
+    type: single
+    difficulty: easy
+    tags:
+      - permutation-invariance
+      - adjacency-matrix
+      - mlp
+    question: |
+      Why is "flatten the $n \times n$ adjacency matrix and feed it to an MLP" a poor way to classify
+      graphs?
+    options:
+      - text: Renumbering the nodes changes the input and can change the output
+        correct: true
+      - text: An MLP cannot be trained on inputs made only of zeros and ones
+        why: Binary inputs are fine for an MLP (one-hot features are binary); the problem is that the input depends on an arbitrary node order.
+      - text: Flattening the matrix throws away the direction of directed edges
+        why: $A_{ij}$ and $A_{ji}$ are separate entries, so the flattened matrix of a directed graph still records the direction of every edge.
+      - text: The adjacency matrix carries no information about how the nodes are connected
+        why: It encodes all of the connectivity; the trouble is that many different matrices, one per node ordering, encode the same graph [^1].
+    explanation: |
+      Nodes have no natural order, so a graph with $n$ nodes can be written down in any of $n!$
+      orderings, which permute the rows and columns of its adjacency matrix [^1][^2]. An MLP on the
+      flattened matrix treats these as different inputs and has no guarantee of giving them the same
+      output: it is not permutation invariant [^1]. It also needs a fixed $n$, while the graphs of a
+      dataset differ in size, and an $n \times n$ matrix wastes memory on sparse graphs [^1]. GNNs share
+      one function across nodes and combine neighbours with order-independent aggregations instead.
+    references:
+      - title: Sanchez-Lengeling et al. (2021), A Gentle Introduction to Graph Neural Networks, Distill
+        url: https://distill.pub/2021/gnn-intro/
+        locator: The challenges of using graphs in machine learning
+      - title: 'Wikipedia: Adjacency matrix'
+        url: https://en.wikipedia.org/wiki/Adjacency_matrix#Isomorphism_and_invariants
+        locator: Properties, Isomorphism and invariants
+    source:
+      id: original
+      ref: gnn-004
+    status: reviewed
+    reviewed_by: claude
+  - id: gnn-005
+    type: single
+    difficulty: easy
+    tags:
+      - cnn
+      - graph-structure
+      - message-passing
+    question: |
+      A $3 \times 3$ convolution kernel stores one weight for each relative position (up-left, up,
+      up-right, …). Which property of images makes this possible but fails for the nodes of a general
+      graph?
+    options:
+      - text: Every interior pixel has the same number of neighbours at fixed offsets
+        correct: true
+      - text: Every pixel carries a real-valued feature vector, such as its RGB values
+        why: Graph nodes carry feature vectors too (pixels can be seen as nodes with their RGB values as features) [^2]; features are not the obstacle.
+      - text: Images are small enough to fit into the memory of a single GPU
+        why: Size is a separate scalability issue; it does not decide whether neighbours can get position-specific weights.
+      - text: Neighbouring pixels are usually more similar than distant pixels
+        why: Smoothness is a statistical property of natural images, not what lets a kernel assign one weight per neighbour position.
+    explanation: |
+      Seen as a graph, an image is a grid in which every non-border pixel has exactly 8 neighbours [^1],
+      each identified by its offset, so a kernel can keep one weight per offset and slide everywhere.
+      In a general graph the number of neighbours varies from node to node and the neighbours have no
+      order, so "the weight of the upper-left neighbour" has no meaning [^1][^2]. GNNs therefore apply
+      one shared function to all neighbours and combine the results with an order-independent
+      aggregation such as a sum or a mean [^1].
+    references:
+      - title: Sanchez-Lengeling et al. (2021), A Gentle Introduction to Graph Neural Networks, Distill
+        url: https://distill.pub/2021/gnn-intro/
+        locator: Images as graphs; Passing messages between parts of the graph
+      - title: Daigavane, Ravindran & Aggarwal (2021), Understanding Convolutions on Graphs, Distill
+        url: https://distill.pub/2021/understanding-gnns/
+        locator: The Challenges of Computation on Graphs (Node-Order Equivariance); Extending Convolutions to Graphs
+    source:
+      id: original
+      ref: gnn-005
+    status: reviewed
+    reviewed_by: claude
+  - id: gnn-006
+    type: single
+    difficulty: medium
+    tags:
+      - permutation-equivariance
+      - message-passing
+    question: |
+      A permutation matrix $P$ renumbers the $n$ nodes of a graph with node features
+      $X \in \mathbb{R}^{n \times d}$ and adjacency matrix $A$. A GNN layer $F(X, A)$ outputs one row
+      per node. Which equation says that $F$ is permutation **equivariant**?
+    options:
+      - text: $F(PX, PAP^\top) = P F(X, A)$
+        correct: true
+      - text: $F(PX, PAP^\top) = F(X, A)$
+        why: This is invariance; row $i$ of the output would then describe a different node after renumbering. Invariance is what a graph-level readout needs, not a layer with one output per node [^2].
+      - text: $F(PX, A) = P\,F(X, A)$
+        why: Renumbering the nodes permutes both the rows and the columns of $A$; permuting only $X$ describes a different graph [^1].
+      - text: $F(X, PAP^\top) = P\,F(X, A)$
+        why: The feature rows must be permuted together with $A$; permuting only the adjacency matrix attaches each feature vector to a different node [^1].
+    explanation: |
+      Renumbering the nodes with $P$ reorders the rows of $X$ ($X \to PX$) and both the rows and the
+      columns of the adjacency matrix ($A \to PAP^\top$) [^1]. A node-level layer should then return
+      the same node outputs in the new order, $F(PX, PAP^\top) = P\,F(X, A)$: node-order
+      equivariance [^1][^2]. Message-passing layers have this property because every node applies the
+      same functions and aggregates its neighbours with an order-independent operation [^2]. A
+      graph-level readout must instead be invariant, giving the same vector for every node order [^2].
+    references:
+      - title: Daigavane, Ravindran & Aggarwal (2021), Understanding Convolutions on Graphs, Distill
+        url: https://distill.pub/2021/understanding-gnns/
+        locator: Node-Order Equivariance; Polynomial Filters are Node-Order Equivariant
+      - title: 'Wikipedia: Graph neural network'
+        url: https://en.wikipedia.org/wiki/Graph_neural_network#Architecture
+        locator: Introduction; Architecture
+    source:
+      id: original
+      ref: gnn-006
+    status: reviewed
+    reviewed_by: claude
+  - id: gnn-007
+    type: single
+    difficulty: easy
+    tags:
+      - readout
+      - permutation-invariance
+      - graph-classification
+    question: |
+      A GNN computes final node embeddings $h_v$ for graphs with different numbers of nodes. Which
+      readout gives a graph embedding $h_G$ of fixed size that does not depend on how the nodes are
+      numbered?
+    options:
+      - text: The element-wise sum $h_G = \sum_v h_v$
+        correct: true
+      - text: The concatenation of all $h_v$ in node-index order
+        why: Its length grows with the number of nodes, and renumbering the nodes reorders the blocks, so one graph gives several different vectors.
+      - text: The embedding of the node with index 0, $h_G = h_0$
+        why: Which node gets index 0 is arbitrary, so a renumbered copy of the same graph would get a different embedding.
+      - text: The last hidden state of an LSTM run over the $h_v$ in index order
+        why: An LSTM reads a sequence, so its output depends on the order of the nodes; GraphSAGE notes that LSTMs are not permutation invariant [^3].
+    explanation: |
+      For graph classification, a readout pools the final node embeddings into one vector,
+      $h_G = \mathrm{READOUT}(\{h_v : v \in G\})$ [^1]. It must be permutation invariant, so that
+      renumbering the nodes does not change the output, and it must accept any number of nodes; the
+      element-wise sum, mean and maximum all qualify [^2]. Of the three, the sum keeps the most
+      information about the multiset of embeddings, which is why GIN uses sum readouts [^1].
+    references:
+      - title: Xu, Hu, Leskovec & Jegelka (2019), How Powerful are Graph Neural Networks?
+        url: https://arxiv.org/abs/1810.00826
+        locator: Sec. 2 Preliminaries (Eq. 2.4); Sec. 4.2 Graph-level readout of GIN; Sec. 5.2 (Figure 2, ranking of sum, mean and max)
+      - title: 'Wikipedia: Graph neural network'
+        url: https://en.wikipedia.org/wiki/Graph_neural_network#Architecture
+        locator: Architecture (Global pooling)
+      - title: Hamilton, Ying & Leskovec (2017), Inductive Representation Learning on Large Graphs
+        url: https://arxiv.org/abs/1706.02216
+        locator: Sec. 3.3 Aggregator Architectures (LSTM aggregator)
+    source:
+      id: original
+      ref: gnn-007
+    status: reviewed
+    reviewed_by: claude
+  - id: gnn-008
+    type: single
+    difficulty: easy
+    tags:
+      - message-passing
+      - aggregation
+    question: |
+      A message-passing layer updates node $i$ as
+
+      $$
+      h_i' = \gamma\Big(h_i,\ \bigoplus_{j \in \mathcal N(i)} \phi\big(h_i, h_j, e_{ji}\big)\Big),
+      $$
+
+      where $\mathcal N(i)$ is the set of neighbours of $i$ and $e_{ji}$ the feature of the edge
+      $j \to i$. What is $\bigoplus$, and which property must it have?
+    options:
+      - text: The aggregation; it must be permutation invariant and take any number of messages
+        correct: true
+      - text: The update function; it must be a trainable multi-layer perceptron
+        why: The update is $\gamma$, which combines the node's previous state with the aggregated messages [^1].
+      - text: The message function; it must be a linear function of $h_j$
+        why: The message is $\phi$, computed per edge; it can be any differentiable function, for example an MLP [^1].
+      - text: The aggregation; it must concatenate all the messages so that no information is lost
+        why: Concatenation depends on the order of the neighbours and its length grows with the degree, so it is not permutation invariant [^3].
+    explanation: |
+      In this general form, $\phi$ builds a message along every edge $j \to i$, $\bigoplus$ combines
+      the messages of all neighbours, and $\gamma$ updates the node from its previous state and the
+      combined messages [^1][^2]. Since neighbours have no order and their number varies, $\bigoplus$
+      must be a differentiable, permutation-invariant function of a variable-size set, such as sum,
+      mean or max [^1][^3]. Gilmer et al.'s MPNN, for instance, sums message functions $M_t$ over the
+      neighbours and applies an update function $U_t$ [^2].
+    references:
+      - title: 'PyTorch Geometric documentation: Creating Message Passing Networks'
+        url: https://pytorch-geometric.readthedocs.io/en/2.8.1/tutorial/create_gnn.html
+        locator: Introduction (general message passing formula); The MessagePassing Base Class
+      - title: Gilmer et al. (2017), Neural Message Passing for Quantum Chemistry
+        url: https://arxiv.org/abs/1704.01212
+        locator: Sec. 2 Message Passing Neural Networks (Eqs. 1–3)
+      - title: Sanchez-Lengeling et al. (2021), A Gentle Introduction to Graph Neural Networks, Distill
+        url: https://distill.pub/2021/gnn-intro/
+        locator: Into the Weeds, Comparing aggregation operations
+    source:
+      id: original
+      ref: gnn-008
+    status: reviewed
+    reviewed_by: claude
+  - id: gnn-009
+    type: single
+    difficulty: medium
+    tags:
+      - aggregation
+      - gin
+      - expressive-power
+    question: |
+      Node $u$ has four neighbours with scalar features $\{1, 1, 2, 2\}$; node $v$ has two neighbours
+      with features $\{1, 2\}$. Which neighbour aggregator gives $u$ and $v$ **different** values?
+    options:
+      - text: Sum
+        correct: true
+      - text: Mean
+        why: Both means are 1.5. The mean keeps the proportions of the values, not how many neighbours there are [^1].
+      - text: Max
+        why: Both maxima are 2. The max reduces the multiset to the set of distinct values and ignores how often each occurs [^1].
+      - text: Min
+        why: Both minima are 1; like the max, the min ignores multiplicities.
+    explanation: |
+      The sum gives $6$ for $u$ and $3$ for $v$; the mean gives $1.5$ for both, the max $2$ and the min
+      $1$. Xu et al. rank the aggregators by what they keep of the multiset of neighbour features: the
+      sum can capture the whole multiset, the mean only its distribution (proportions), the max only
+      the underlying set [^1]. That is why GIN aggregates with a sum followed by an MLP [^2]:
+      $h_v^{(k)} = \mathrm{MLP}^{(k)}\big((1 + \epsilon^{(k)})\,h_v^{(k-1)} + \sum_{u \in \mathcal N(v)} h_u^{(k-1)}\big)$.
+      Mean and max are still useful, e.g. when degrees vary a lot or a single salient neighbour
+      matters [^3].
+    references:
+      - title: Xu, Hu, Leskovec & Jegelka (2019), How Powerful are Graph Neural Networks?
+        url: https://arxiv.org/abs/1810.00826
+        locator: Sec. 5.2 Structures that confuse mean and max-pooling (Figure 2); 5.3 Mean learns distributions; 5.4 Max-pooling learns sets with distinct elements
+      - title: Xu, Hu, Leskovec & Jegelka (2019), How Powerful are Graph Neural Networks?
+        url: https://arxiv.org/abs/1810.00826
+        locator: Sec. 4.1 Graph Isomorphism Network (GIN), Eq. 4.1
+      - title: Sanchez-Lengeling et al. (2021), A Gentle Introduction to Graph Neural Networks, Distill
+        url: https://distill.pub/2021/gnn-intro/
+        locator: Into the Weeds, Comparing aggregation operations
+    source:
+      id: original
+      ref: gnn-009
+    status: reviewed
+    reviewed_by: claude
+  - id: gnn-010
+    type: single
+    difficulty: easy
+    tags:
+      - gcn
+      - self-loops
+    question: Why does a GCN add self-loops, using $\tilde A = A + I$ instead of the adjacency matrix $A$?
+    options:
+      - text: So that each node's own features are included in its update
+        correct: true
+      - text: So that the adjacency matrix of the graph becomes symmetric
+        why: The adjacency matrix of an undirected graph is already symmetric, and adding $I$ changes only the diagonal.
+      - text: So that the graph becomes connected, with no separate components
+        why: Self-loops add no edges between different nodes, so separate components stay separate.
+      - text: So that the degree normalisation is no longer needed
+        why: GCN still normalises with $\tilde D^{-1/2}\tilde A\tilde D^{-1/2}$; the self-loops only make every degree at least 1 [^1].
+    explanation: |
+      With $A$ alone, $(AH)_i = \sum_{j \in \mathcal N(i)} h_j$ sums only the neighbours, so a node's own
+      state would be dropped in every layer. Self-loops make each node its own neighbour, so the layer
+      mixes the node's features with those of its neighbours [^1][^2]. Kipf and Welling's rule
+      $H^{(l+1)} = \sigma(\tilde D^{-1/2}\tilde A\tilde D^{-1/2} H^{(l)} W^{(l)})$ uses
+      $\tilde A = A + I_N$ and the degrees $\tilde D_{ii} = \sum_j \tilde A_{ij}$ of that matrix [^1];
+      PyG's `GCNConv` likewise adds self-loops as its first step [^3].
+    references:
+      - title: Kipf & Welling (2017), Semi-Supervised Classification with Graph Convolutional Networks
+        url: https://arxiv.org/abs/1609.02907
+        locator: Sec. 2 Fast Approximate Convolutions on Graphs (Eq. 2)
+      - title: Li, Han & Wu (2018), Deeper Insights into Graph Convolutional Networks for Semi-Supervised Learning
+        url: https://arxiv.org/abs/1801.07606
+        locator: Sec. 3 Analysis, Why GCNs Work
+      - title: 'PyTorch Geometric documentation: Creating Message Passing Networks'
+        url: https://pytorch-geometric.readthedocs.io/en/2.8.1/tutorial/create_gnn.html
+        locator: Implementing the GCN Layer (steps 1–6)
+    source:
+      id: original
+      ref: gnn-010
+    status: reviewed
+    reviewed_by: claude
+  - id: gnn-011
+    type: single
+    difficulty: medium
+    tags:
+      - gcn
+      - normalisation
+    question: |
+      A GCN layer computes $\sigma(\tilde D^{-1/2}\tilde A\tilde D^{-1/2} H W)$, where
+      $\tilde A = A + I$ is the adjacency matrix with self-loops and $\tilde D$ its diagonal degree
+      matrix, $\tilde D_{ii} = \sum_j \tilde A_{ij}$. What would go wrong if it computed
+      $\sigma(\tilde A H W)$, without the degree normalisation?
+    options:
+      - text: Outputs would grow with node degree and could blow up across layers
+        correct: true
+      - text: The layer would stop being permutation equivariant
+        why: $\tilde A H W$ is a plain sum over each node and its neighbours, which does not depend on their order; the normalisation is about scale, not symmetry.
+      - text: The layer would need a separate weight matrix for each node of the graph
+        why: $W$ is shared by all nodes either way; the normalisation adds no parameters and removes none.
+      - text: Isolated nodes would cause a division by zero in the update
+        why: Without the normalisation there is no division at all, and with self-loops every degree in $\tilde D$ is at least 1.
+    explanation: |
+      Without normalisation, row $i$ of $\tilde A H$ is the sum of $\tilde d_i$ feature vectors, so
+      high-degree nodes get much larger values than low-degree ones, and every extra layer multiplies
+      the gap: in a star with 5 leaves, the centre's entry of $\tilde A^5 \mathbf 1$ is 576 and each
+      leaf's is 256. The symmetric normalisation weights each edge by $1/\sqrt{\tilde d_i \tilde d_j}$;
+      this is how GCN handles very different node degrees with a single weight matrix per layer [^1].
+      The eigenvalues of the normalised matrix are at most 1 in absolute value, so repeated
+      application stays bounded [^2].
+    references:
+      - title: Kipf & Welling (2017), Semi-Supervised Classification with Graph Convolutional Networks
+        url: https://arxiv.org/abs/1609.02907
+        locator: Sec. 2.2 Layer-Wise Linear Model (renormalization trick); Sec. 4.2 Neural Networks on Graphs
+      - title: Li, Han & Wu (2018), Deeper Insights into Graph Convolutional Networks for Semi-Supervised Learning
+        url: https://arxiv.org/abs/1801.07606
+        locator: Sec. 3 Analysis, When GCNs Fail (Theorem 1 and its proof)
+    source:
+      id: original
+      ref: gnn-011
+    status: reviewed
+    reviewed_by: claude
+  - id: gnn-012
+    type: single
+    difficulty: hard
+    tags:
+      - gcn
+      - renormalization-trick
+      - spectral
+    question: |
+      Kipf and Welling first derive the filter $\theta\,(I_N + D^{-1/2} A D^{-1/2})\,x$, where $D$ is
+      the diagonal degree matrix of the adjacency matrix $A$. They then replace
+      $I_N + D^{-1/2} A D^{-1/2}$ by $\tilde D^{-1/2}\tilde A\tilde D^{-1/2}$, with $\tilde A = A + I_N$
+      and $\tilde D$ the degree matrix of $\tilde A$ (the renormalisation trick). Which problem of the
+      first operator does this fix?
+    options:
+      - text: Its eigenvalues reach 2, so repeated use in deep models can explode or vanish
+        correct: true
+      - text: It leaves out each node's own features, which only the self-loops of $\tilde A$ bring back
+        why: The $I_N$ term is exactly the node's own contribution, so both operators include it.
+      - text: It is not symmetric, so it has no orthonormal basis of eigenvectors to work with
+        why: For an undirected graph it is symmetric; symmetry is not the issue.
+      - text: It needs an eigendecomposition of the graph Laplacian, which is too slow for large graphs
+        why: Both operators are first-order in the adjacency matrix and need no eigendecomposition; avoiding it was the point of the first-order approximation [^1].
+    explanation: |
+      The operator $I_N + D^{-1/2}AD^{-1/2}$ has eigenvalues in $[0, 2]$, so applying it again and again
+      in a deep network can cause numerical instabilities and exploding or vanishing gradients [^1].
+      Putting the identity inside the normalisation ($\tilde A = A + I_N$,
+      $\tilde D_{ii} = \sum_j \tilde A_{ij}$) gives a matrix whose eigenvalues lie in $(-1, 1]$ [^2]. On a
+      star with 5 leaves, $(I_N + D^{-1/2}AD^{-1/2})^{10}\mathbf 1$ has norm about 2343, while the
+      renormalised matrix gives about 2.4. The renormalised layer also scored best in the paper's
+      comparison of propagation models [^1].
+    references:
+      - title: Kipf & Welling (2017), Semi-Supervised Classification with Graph Convolutional Networks
+        url: https://arxiv.org/abs/1609.02907
+        locator: Sec. 2.2 Layer-Wise Linear Model (Eqs. 7–8); Sec. 6.2 Evaluation of Propagation Model (Table 3)
+      - title: Li, Han & Wu (2018), Deeper Insights into Graph Convolutional Networks for Semi-Supervised Learning
+        url: https://arxiv.org/abs/1801.07606
+        locator: Sec. 3 Analysis, When GCNs Fail (proof of Theorem 1)
+    source:
+      id: original
+      ref: gnn-012
+    status: reviewed
+    reviewed_by: claude
+  - id: gnn-013
+    type: short_answer
+    difficulty: medium
+    tags:
+      - gcn
+      - normalisation
+      - hand-computation
+    question: |
+      Take the undirected path graph $1 - 2 - 3$. A GCN uses
+      $\hat A = \tilde D^{-1/2}\tilde A\tilde D^{-1/2}$ with $\tilde A = A + I$ and
+      $\tilde D_{ii} = \sum_j \tilde A_{ij}$. What is the entry $\hat A_{12}$, the weight that node 1
+      gives to node 2?
+    answer:
+      numeric: 0.4082
+      tolerance: 0.003
+      hint: a number between 0 and 1, 3 decimals
+      model: $\tilde d_1 = 2$ and $\tilde d_2 = 3$, so $\hat A_{12} = 1/\sqrt{2 \cdot 3} = 1/\sqrt 6 \approx 0.408$
+    explanation: |
+      With self-loops, node 1 has degree $\tilde d_1 = 1 + 1 = 2$ and node 2 has
+      $\tilde d_2 = 2 + 1 = 3$. Entry $(i, j)$ of $\tilde D^{-1/2}\tilde A\tilde D^{-1/2}$ is
+      $\tilde A_{ij}/\sqrt{\tilde d_i \tilde d_j}$ [^1][^2], so $\hat A_{12} = 1/\sqrt 6 \approx 0.408$.
+      The diagonal of $\hat A$ is $(1/2, 1/3, 1/2)$. Unlike the mean $\tilde D^{-1}\tilde A$, the rows
+      of $\hat A$ need not sum to 1: row 2 sums to $1/3 + 2/\sqrt 6 \approx 1.15$.
+    references:
+      - title: Kipf & Welling (2017), Semi-Supervised Classification with Graph Convolutional Networks
+        url: https://arxiv.org/abs/1609.02907
+        locator: Sec. 2 Fast Approximate Convolutions on Graphs (Eq. 2)
+      - title: 'PyTorch Geometric documentation: GCNConv'
+        url: https://pytorch-geometric.readthedocs.io/en/2.8.1/generated/torch_geometric.nn.conv.GCNConv.html
+        locator: Node-wise formulation
+    source:
+      id: original
+      ref: gnn-013
+    status: reviewed
+    reviewed_by: claude
+  - id: gnn-014
+    type: short_answer
+    difficulty: hard
+    tags:
+      - gcn
+      - hand-computation
+    question: |
+      An undirected graph has nodes $0, 1, 2, 3$ and edges $\{0,1\}, \{0,2\}, \{1,2\}, \{0,3\}$: a
+      triangle with node 3 hanging off node 0. Each node has one scalar feature, $x = (1, 2, 3, 4)$.
+      One GCN layer computes
+
+      $$
+      H = \mathrm{ReLU}\big(\tilde D^{-1/2}\tilde A\tilde D^{-1/2}\, x\, W\big), \qquad \tilde A = A + I,
+      $$
+
+      where $\tilde D$ is the diagonal degree matrix of $\tilde A$ ($\tilde D_{ii} = \sum_j \tilde A_{ij}$),
+      the $1 \times 1$ weight is $W = 1$ and there is no bias. What is the output of node 0?
+    answer:
+      numeric: 3.11
+      tolerance: 0.01
+      hint: a decimal number, 2 decimals
+      model: $\tilde d = (4, 3, 3, 2)$, so $h_0 = \frac{1}{4} + \frac{2}{\sqrt{12}} + \frac{3}{\sqrt{12}} + \frac{4}{\sqrt 8} \approx 0.25 + 0.577 + 0.866 + 1.414 \approx 3.11$
+    explanation: |
+      With self-loops the degrees are $\tilde d = (4, 3, 3, 2)$. Node 0's new value is
+      $\sum_j x_j/\sqrt{\tilde d_0 \tilde d_j}$ over its closed neighbourhood $\{0, 1, 2, 3\}$ [^1][^2]:
+      $1/4 + 2/\sqrt{12} + 3/\sqrt{12} + 4/\sqrt 8 \approx 3.11$, which the ReLU leaves unchanged. It is
+      neither the plain sum $(\tilde A x)_0 = 10$ nor the mean $10/4 = 2.5$: the symmetric
+      normalisation gives the low-degree neighbour 3 the largest weight, $1/\sqrt 8 \approx 0.354$.
+      The whole layer outputs about $(3.11, 1.96, 1.96, 2.35)$.
+    references:
+      - title: Kipf & Welling (2017), Semi-Supervised Classification with Graph Convolutional Networks
+        url: https://arxiv.org/abs/1609.02907
+        locator: Sec. 2 Fast Approximate Convolutions on Graphs (Eq. 2)
+      - title: 'PyTorch Geometric documentation: GCNConv'
+        url: https://pytorch-geometric.readthedocs.io/en/2.8.1/generated/torch_geometric.nn.conv.GCNConv.html
+        locator: Node-wise formulation
+    source:
+      id: original
+      ref: gnn-014
+    status: reviewed
+    reviewed_by: claude
+  - id: gnn-015
+    type: true_false
+    difficulty: easy
+    tags:
+      - gcn
+      - parameter-count
+      - weight-sharing
+    shuffle: false
+    question: |
+      True or false: the same GCN layer (16 input and 32 output features) has more trainable
+      parameters when it runs on a graph with 10,000 nodes than on a graph with 100 nodes.
+    options:
+      - text: 'True'
+        why: The weight matrix is shared by all nodes, so the number of parameters depends only on the feature sizes, not on the graph [^1].
+      - text: 'False'
+        correct: true
+    explanation: |
+      A GCN layer has one weight matrix shared by all nodes, here $W \in \mathbb{R}^{16 \times 32}$; the graph
+      enters only through the normalised adjacency matrix $\tilde D^{-1/2}\tilde A\tilde D^{-1/2}$,
+      which is computed, not learned [^1]. With PyG's default bias, `GCNConv(16, 32)` has
+      $16 \cdot 32 + 32 = 544$ parameters on every graph [^3]. Earlier designs that learned a weight
+      matrix per node degree did not scale to graphs with wide degree distributions; GCN uses a single
+      matrix per layer and handles degrees by normalisation [^2].
+    references:
+      - title: Kipf & Welling (2017), Semi-Supervised Classification with Graph Convolutional Networks
+        url: https://arxiv.org/abs/1609.02907
+        locator: Sec. 2.2 Layer-Wise Linear Model (Eq. 8)
+      - title: Kipf & Welling (2017), Semi-Supervised Classification with Graph Convolutional Networks
+        url: https://arxiv.org/abs/1609.02907
+        locator: Sec. 4.2 Neural Networks on Graphs
+      - title: 'PyTorch Geometric documentation: GCNConv'
+        url: https://pytorch-geometric.readthedocs.io/en/2.8.1/generated/torch_geometric.nn.conv.GCNConv.html
+        locator: Parameters (in_channels, out_channels, bias)
+    source:
+      id: original
+      ref: gnn-015
+    status: reviewed
+    reviewed_by: claude
+  - id: gnn-016
+    type: short_answer
+    difficulty: medium
+    tags:
+      - gcn
+      - parameter-count
+      - pyg
+    question: |
+      Kipf and Welling's two-layer GCN for Cora maps each node's 1,433 bag-of-words features to 16
+      hidden units and then to the 7 classes. It is built in PyTorch Geometric as `GCNConv(1433, 16)`
+      followed by `GCNConv(16, 7)`, and each layer keeps PyG's default `bias=True`, so it has a weight
+      matrix **and** a bias vector. How many trainable parameters does the model have in total?
+    answer:
+      numeric: 23063
+      tolerance: 0
+      hint: a whole number
+      model: $(1433 \cdot 16 + 16) + (16 \cdot 7 + 7) = 22944 + 119 = 23063$
+    explanation: |
+      Each `GCNConv(C, F)` holds a $C \times F$ weight matrix and a bias of size $F$ [^1], so the two
+      layers have $1433 \cdot 16 + 16 = 22{,}944$ and $16 \cdot 7 + 7 = 119$ parameters. Cora's 2,708
+      nodes and 5,429 edges [^2] do not appear: the normalised adjacency matrix comes from the graph
+      and has no parameters. The paper's model is
+      $Z = \mathrm{softmax}\big(\hat A\,\mathrm{ReLU}(\hat A X W^{(0)})\,W^{(1)}\big)$ with 16 hidden
+      units on Cora [^2]; its equation has no bias terms, so without biases the count would be
+      $1433 \cdot 16 + 16 \cdot 7 = 23{,}040$.
+    references:
+      - title: 'PyTorch Geometric documentation: GCNConv'
+        url: https://pytorch-geometric.readthedocs.io/en/2.8.1/generated/torch_geometric.nn.conv.GCNConv.html
+        locator: Formula; Parameters (in_channels, out_channels, bias)
+      - title: Kipf & Welling (2017), Semi-Supervised Classification with Graph Convolutional Networks
+        url: https://arxiv.org/abs/1609.02907
+        locator: Sec. 3.1 Example (Eq. 9); Sec. 5.1 Datasets (Table 1); Sec. 6.1 Semi-Supervised Node Classification
+    source:
+      id: original
+      ref: gnn-016
+    status: reviewed
+    reviewed_by: claude
+  - id: gnn-017
+    type: short_answer
+    difficulty: medium
+    tags:
+      - receptive-field
+      - message-passing
+    question: |
+      An undirected graph has nodes $0, \dots, 6$ and the seven edges
+      $\{0,1\}, \{0,2\}, \{1,3\}, \{2,4\}, \{3,5\}, \{4,5\}, \{5,6\}$. A 2-layer message-passing GNN
+      (each layer combines a node with its direct neighbours) computes the output of node 0. How many
+      nodes, counting node 0 itself, have input features that can influence this output?
+    answer:
+      numeric: 5
+      tolerance: 0
+      hint: a whole number
+      model: the nodes within 2 hops of node 0, $\{0, 1, 2, 3, 4\}$
+    explanation: |
+      Each message-passing layer moves information one hop, so after $k$ layers a node's
+      representation depends on its $k$-hop neighbourhood [^1][^2]. Node 0 reaches nodes 1 and 2 in
+      one hop and nodes 3 and 4 in two, so 5 nodes count; nodes 5 and 6 are 3 and 4 hops away and would
+      need 3 and 4 layers. In matrix form, the non-zero entries in row 0 of $(A + I)^2$ are exactly
+      these 5 nodes [^3].
+    references:
+      - title: 'Wikipedia: Graph neural network'
+        url: https://en.wikipedia.org/wiki/Graph_neural_network#Message_passing_layers
+        locator: Message passing layers
+      - title: Kipf & Welling (2017), Semi-Supervised Classification with Graph Convolutional Networks
+        url: https://arxiv.org/abs/1609.02907
+        locator: Sec. 2.2 Layer-Wise Linear Model (k-th order neighbourhood)
+      - title: Sanchez-Lengeling et al. (2021), A Gentle Introduction to Graph Neural Networks, Distill
+        url: https://distill.pub/2021/gnn-intro/
+        locator: Into the Weeds, Graph convolutions as matrix multiplications, and matrix multiplications as walks on a graph
+    source:
+      id: original
+      ref: gnn-017
+    status: reviewed
+    reviewed_by: claude
+  - id: gnn-018
+    type: true_false
+    difficulty: easy
+    tags:
+      - over-smoothing
+      - depth
+      - gcn
+    shuffle: false
+    question: |
+      True or false: because every extra GCN layer widens each node's receptive field by one hop, a
+      10-layer GCN without residual connections usually classifies the nodes of a citation graph
+      better than a 2-layer GCN.
+    options:
+      - text: 'True'
+        why: Kipf and Welling got their best results with 2 or 3 layers, and beyond about 7 layers training without residual connections became difficult [^1].
+      - text: 'False'
+        correct: true
+    explanation: |
+      In Kipf and Welling's depth experiments on Cora, Citeseer and Pubmed, 2- or 3-layer models did
+      best, and deeper models without residual connections were hard to train [^1]. A GCN layer is a
+      form of Laplacian smoothing: a few rounds make the nodes of a cluster similar, which helps, but
+      many rounds mix the features of different clusters until they are indistinguishable,
+      the problem called over-smoothing [^2]. A larger receptive field only helps while the
+      representations stay distinguishable.
+    references:
+      - title: Kipf & Welling (2017), Semi-Supervised Classification with Graph Convolutional Networks
+        url: https://arxiv.org/abs/1609.02907
+        locator: Appendix B Experiments on Model Depth (Figure 5)
+      - title: Li, Han & Wu (2018), Deeper Insights into Graph Convolutional Networks for Semi-Supervised Learning
+        url: https://arxiv.org/abs/1801.07606
+        locator: Sec. 3 Analysis, Why GCNs Work; When GCNs Fail
+    source:
+      id: original
+      ref: gnn-018
+    status: reviewed
+    reviewed_by: claude
+  - id: gnn-019
+    type: single
+    difficulty: medium
+    tags:
+      - over-smoothing
+      - depth
+    question: What does **over-smoothing** mean for a GNN with many message-passing layers?
+    options:
+      - text: All node representations become almost the same, so nodes look alike
+        correct: true
+      - text: The weights grow so large during training that the loss diverges
+        why: That describes exploding gradients. Over-smoothing comes from repeated neighbourhood averaging and shows up even in untrained GCNs with random weights [^2].
+      - text: The model memorises the labelled nodes and then fails on the test nodes
+        why: That is overfitting, a separate risk of deep models that Kipf and Welling mention next to the training difficulty [^3].
+      - text: Information from distant nodes is squeezed into fixed-size vectors
+        why: That is over-squashing, the bottleneck created by long-range dependencies [^1].
+    explanation: |
+      Every layer averages each node with its neighbours. Li et al. show that GCN propagation is a
+      special form of Laplacian smoothing, and that repeating it drives the features of all nodes in a
+      connected component towards the same values (up to a degree factor), so they become
+      indistinguishable [^2]. Over-smoothing and over-squashing are both listed as problems of deep
+      message-passing stacks; skip connections, gated updates and jumping knowledge can mitigate
+      over-smoothing [^1].
+    references:
+      - title: 'Wikipedia: Graph neural network'
+        url: https://en.wikipedia.org/wiki/Graph_neural_network#Message_passing_layers
+        locator: Message passing layers
+      - title: Li, Han & Wu (2018), Deeper Insights into Graph Convolutional Networks for Semi-Supervised Learning
+        url: https://arxiv.org/abs/1801.07606
+        locator: Sec. 3 Analysis, When GCNs Fail (Figure 2, Theorem 1)
+      - title: Kipf & Welling (2017), Semi-Supervised Classification with Graph Convolutional Networks
+        url: https://arxiv.org/abs/1609.02907
+        locator: Appendix B Experiments on Model Depth
+    source:
+      id: original
+      ref: gnn-019
+    status: reviewed
+    reviewed_by: claude
+  - id: gnn-020
+    type: single
+    difficulty: hard
+    tags:
+      - over-smoothing
+      - gcn
+      - spectral
+    question: |
+      On a connected undirected graph with adjacency matrix $A$, let $\tilde A = A + I$ (self-loops
+      added), $\tilde D$ its diagonal degree matrix and $\tilde d_i = \tilde D_{ii}$. A feature vector
+      $x$ is multiplied again and again by $\hat A = \tilde D^{-1/2}\tilde A\tilde D^{-1/2}$ (no weights,
+      no nonlinearity). What does $\hat A^k x$ approach as $k \to \infty$, for a generic $x$?
+    options:
+      - text: A vector whose entry at node $i$ is proportional to $\sqrt{\tilde d_i}$
+        correct: true
+      - text: A constant vector, the same value at every node
+        why: That is the limit for the random-walk (mean) normalisation $\tilde D^{-1}\tilde A$, whose eigenvector for eigenvalue 1 is the all-ones vector [^1].
+      - text: The zero vector, because every eigenvalue of $\hat A$ is strictly below 1
+        why: The largest eigenvalue of $\hat A$ is exactly 1, with eigenvector $\tilde D^{1/2}\mathbf 1$, so that component of $x$ survives.
+      - text: The vector $x$ itself, since $\hat A$ is normalised
+        why: Normalisation bounds the eigenvalues by 1 in absolute value but does not make $\hat A$ the identity; every other component of $x$ shrinks.
+    explanation: |
+      $\hat A\,\tilde D^{1/2}\mathbf 1 = \tilde D^{-1/2}\tilde A\mathbf 1 = \tilde D^{-1/2}\tilde D\mathbf 1 = \tilde D^{1/2}\mathbf 1$,
+      so $\tilde D^{1/2}\mathbf 1$ is an eigenvector with eigenvalue 1 (equivalently, eigenvalue 0 of
+      the symmetric normalised Laplacian $I - \hat A$) [^2]. With self-loops the graph has no
+      bipartite component, all other eigenvalues have absolute value below 1, and their components
+      vanish under repeated multiplication [^1]. Li et al. conclude that symmetric Laplacian smoothing
+      makes the features of a connected component proportional to the square root of the degree,
+      while the random-walk version makes them equal [^1]; the $D^{-1/2}$ printed in the statement of
+      their Theorem 1 should read $D^{1/2}$, as the eigenvector above shows. Either way the features
+      stop carrying node-specific information: over-smoothing.
+    references:
+      - title: Li, Han & Wu (2018), Deeper Insights into Graph Convolutional Networks for Semi-Supervised Learning
+        url: https://arxiv.org/abs/1801.07606
+        locator: Sec. 3 Analysis, When GCNs Fail (the text before Theorem 1, and its proof)
+      - title: von Luxburg (2007), A Tutorial on Spectral Clustering
+        url: https://arxiv.org/abs/0711.0189
+        locator: Sec. 3.2 The normalized graph Laplacians (Propositions 3 and 4)
+    source:
+      id: original
+      ref: gnn-020
+    status: reviewed
+    reviewed_by: claude
+  - id: gnn-021
+    type: single
+    difficulty: medium
+    tags:
+      - graphsage
+      - inductive
+    question: |
+      What allows GraphSAGE to compute embeddings for nodes that were **not** in the graph during
+      training?
+    options:
+      - text: It learns shared aggregators that compute embeddings from neighbourhoods
+        correct: true
+      - text: It samples a fixed number of neighbours for every node
+        why: Sampling keeps the cost of each batch fixed [^1]; a method that samples could still learn one embedding per node and be transductive.
+      - text: It trains one embedding vector for each node and stores them in a lookup table
+        why: That is what transductive methods such as DeepWalk do, and a lookup table has no entry for an unseen node [^1].
+      - text: It rescales every embedding to unit length after each layer
+        why: The $\ell_2$ normalisation in Algorithm 1 only rescales embeddings; it has nothing to do with unseen nodes.
+    explanation: |
+      Instead of training a separate embedding for each node, GraphSAGE learns $K$ aggregator
+      functions and weight matrices that compute an embedding from the features of a node's (sampled)
+      neighbourhood [^1]. These functions are shared by all nodes, so they can be applied to new nodes
+      or to entirely new graphs, such as new Reddit posts or the protein-interaction graphs of unseen
+      tissues [^1]. This is inductive learning; methods that optimise per-node embeddings on one fixed
+      graph are transductive [^1].
+    references:
+      - title: Hamilton, Ying & Leskovec (2017), Inductive Representation Learning on Large Graphs
+        url: https://arxiv.org/abs/1706.02216
+        locator: Abstract; Sec. 2 Related work (Factorization-based embedding approaches); Sec. 3.1 Embedding generation (Algorithm 1); Sec. 4.2 Generalizing across graphs (protein-protein interactions)
+    source:
+      id: original
+      ref: gnn-021
+    status: reviewed
+    reviewed_by: claude
+  - id: gnn-022
+    type: short_answer
+    difficulty: medium
+    tags:
+      - graphsage
+      - neighbour-sampling
+    question: |
+      GraphSAGE with $K = 2$ layers uses the neighbourhood sample sizes $S_1 = 25$ and $S_2 = 10$ of the
+      paper's experiments; neighbours are drawn uniformly, with replacement when a node has fewer
+      neighbours than needed. For one target node, how many 2-hop neighbour samples are drawn, however
+      large the graph is?
+    answer:
+      numeric: 250
+      tolerance: 0
+      hint: a whole number
+      model: $S_1 \cdot S_2 = 25 \cdot 10 = 250$ (on top of $S_2 = 10$ immediate neighbours)
+    explanation: |
+      GraphSAGE replaces each full neighbourhood by a fixed-size uniform sample, so the cost of a batch
+      is $O(\prod_{i=1}^K S_i)$ instead of growing with the node degrees [^1]. Seen from a target node,
+      $K = 2$ with $S_1 = 25$ and $S_2 = 10$ means $S_2 = 10$ sampled immediate neighbours and
+      $S_1 \cdot S_2 = 250$ sampled 2-hop neighbours, drawn with replacement when a degree is smaller
+      than the sample size [^2]. The authors found that $K = 2$ with $S_1 \cdot S_2 \le 500$ already
+      performs well [^1].
+    references:
+      - title: Hamilton, Ying & Leskovec (2017), Inductive Representation Learning on Large Graphs
+        url: https://arxiv.org/abs/1706.02216
+        locator: Sec. 3.1 Embedding generation (Neighborhood definition); Sec. 4 Experiments (Experimental set-up)
+      - title: Hamilton, Ying & Leskovec (2017), Inductive Representation Learning on Large Graphs
+        url: https://arxiv.org/abs/1706.02216
+        locator: Appendix A Minibatch pseudocode
+    source:
+      id: original
+      ref: gnn-022
+    status: reviewed
+    reviewed_by: claude
+  - id: gnn-023
+    type: single
+    difficulty: easy
+    tags:
+      - transductive
+      - inductive
+      - gcn
+    question: |
+      A GCN is trained on the Cora citation graph: all 2,708 papers, their features and their
+      citations are in the graph during training, but only 140 labels are used. The model is then
+      evaluated on 1,000 other papers of that same graph, whose labels were hidden. What is this
+      setting, in which the test nodes are already part of the training graph, called?
+    options:
+      - text: Transductive learning
+        correct: true
+      - text: Inductive learning
+        why: Inductive learning evaluates on nodes or whole graphs that were not seen during training, such as GAT's unseen protein–protein interaction test graphs [^2].
+      - text: Self-supervised learning
+        why: The labels of 140 nodes are used directly in the loss; no pretext task built from the unlabelled data is involved.
+      - text: Transfer learning
+        why: Nothing is transferred to another task or dataset; training and test nodes come from the same graph.
+    explanation: |
+      In the transductive setting the test nodes are part of the graph during training: their
+      features and edges are visible, only their labels are hidden [^1][^2]. Kipf and Welling's
+      semi-supervised GCN works this way on Cora, with 20 labels per class (140 in total), 500
+      validation and 1,000 test nodes [^1][^3]. Inductive methods such as GraphSAGE must instead
+      generalise to nodes or graphs never seen in training [^2].
+    references:
+      - title: Kipf & Welling (2017), Semi-Supervised Classification with Graph Convolutional Networks
+        url: https://arxiv.org/abs/1609.02907
+        locator: Sec. 4.2 Neural Networks on Graphs (transductive node classification); Sec. 5.1 Datasets; Sec. 5.2 Experimental Set-Up
+      - title: Veličković et al. (2018), Graph Attention Networks
+        url: https://arxiv.org/abs/1710.10903
+        locator: Sec. 3.1 Datasets (Transductive learning; Inductive learning)
+      - title: 'PyTorch Geometric documentation: Introduction by Example'
+        url: https://pytorch-geometric.readthedocs.io/en/2.8.1/get_started/introduction.html
+        locator: Common Benchmark Datasets (Cora masks)
+    source:
+      id: original
+      ref: gnn-023
+    status: reviewed
+    reviewed_by: claude
+  - id: gnn-024
+    type: single
+    difficulty: medium
+    tags:
+      - gat
+      - gcn
+      - attention
+    question: How does a GAT layer weight the neighbours of a node differently from a GCN layer?
+    options:
+      - text: GAT learns them from node features by attention; GCN fixes them from degrees
+        correct: true
+      - text: GAT attends to every node of the graph, while GCN uses only direct neighbours
+        why: GAT uses masked attention; $e_{ij}$ is computed only for $j$ in the neighbourhood of $i$, including $i$ itself [^1].
+      - text: GAT weights neighbours with eigenvectors of the graph Laplacian, GCN with degrees
+        why: GAT needs no eigendecomposition or other costly matrix operation; its weights come from a small shared network applied to pairs of nodes [^1].
+      - text: GAT gives every neighbour the weight $1/|\mathcal N(i)|$, while GCN learns its weights
+        why: It is the other way round; GCN's weights are fixed by the graph and GAT's are learned [^2].
+    explanation: |
+      GAT computes a score $e_{ij} = \mathrm{LeakyReLU}\big(\mathbf a^\top [W h_i \,\Vert\, W h_j]\big)$
+      for every neighbour $j$ of $i$ (including $i$), normalises the scores with a softmax over the
+      neighbourhood, $\alpha_{ij} = \mathrm{softmax}_j(e_{ij})$, and outputs the weighted sum
+      $\sum_j \alpha_{ij} W h_j$ [^1]. The weights depend on the features, so neighbours of the same
+      node can get different importance [^1]. GCN's weights $1/\sqrt{\tilde d_i \tilde d_j}$, with
+      $\tilde d_i$ the degree of $i$ counting its self-loop, are fixed by the graph: a GCN is
+      like a GAT whose coefficients are not learned [^2].
+    references:
+      - title: Veličković et al. (2018), Graph Attention Networks
+        url: https://arxiv.org/abs/1710.10903
+        locator: Sec. 2.1 Graph Attentional Layer (Eqs. 1–4); Sec. 2.2 Comparisons to Related Work
+      - title: 'Wikipedia: Graph neural network'
+        url: https://en.wikipedia.org/wiki/Graph_neural_network#Graph_attention_network
+        locator: Message passing layers, Graph attention network
+    source:
+      id: original
+      ref: gnn-024
+    status: reviewed
+    reviewed_by: claude
+  - id: gnn-025
+    type: short_answer
+    difficulty: hard
+    tags:
+      - gat
+      - attention
+      - hand-computation
+    question: |
+      In a single-head GAT layer, node $i$ attends over $\mathcal N(i) = \{i, u, w\}$ (itself and two
+      neighbours). After the shared linear map the features are scalars: $Wh_i = 0.5$, $Wh_u = 1.5$ and
+      $Wh_w = -2.0$. The attention vector is $\mathbf a = (1, 1)$, so the raw score is
+      $s_{ij} = \mathbf a^\top [Wh_i \,\Vert\, Wh_j] = Wh_i + Wh_j$, and
+
+      $$
+      \alpha_{ij} = \frac{\exp\big(\mathrm{LeakyReLU}(s_{ij})\big)}{\sum_{k \in \mathcal N(i)} \exp\big(\mathrm{LeakyReLU}(s_{ik})\big)}
+      $$
+
+      with negative slope 0.2. What is $\alpha_{iu}$?
+    answer:
+      numeric: 0.68
+      tolerance: 0.01
+      hint: a number between 0 and 1, 2 decimals
+      model: scores $(1, 2, -1.5) \to$ LeakyReLU $(1, 2, -0.3)$; $\alpha_{iu} = e^{2}/(e^{1} + e^{2} + e^{-0.3}) \approx 7.389/10.848 \approx 0.68$
+    explanation: |
+      The raw scores are $s_{ii} = 1.0$, $s_{iu} = 2.0$ and $s_{iw} = -1.5$. The LeakyReLU with slope
+      0.2 keeps the positive scores and turns $-1.5$ into $-0.3$ [^1]. The softmax over the
+      neighbourhood gives $\alpha \approx (0.25, 0.68, 0.07)$ for $(i, u, w)$, so
+      $\alpha_{iu} \approx 0.68$; skipping the LeakyReLU would give 0.72, and leaving out the
+      self-loop 0.91. The new feature is $\sum_j \alpha_{ij} W h_j \approx 1.01$ before the
+      nonlinearity [^1]. PyG's `GATConv` uses the same formula, with self-loops added by default [^2].
+    references:
+      - title: Veličković et al. (2018), Graph Attention Networks
+        url: https://arxiv.org/abs/1710.10903
+        locator: Sec. 2.1 Graph Attentional Layer (Eqs. 1–4)
+      - title: 'PyTorch Geometric documentation: GATConv'
+        url: https://pytorch-geometric.readthedocs.io/en/2.8.1/generated/torch_geometric.nn.conv.GATConv.html
+        locator: Formulas; Parameters (negative_slope, add_self_loops)
+    source:
+      id: original
+      ref: gnn-025
+    status: reviewed
+    reviewed_by: claude
+  - id: gnn-026
+    type: true_false
+    difficulty: medium
+    tags:
+      - gat
+      - attention
+      - masked-attention
+    shuffle: false
+    question: |
+      True or false: like self-attention in a Transformer, a GAT layer computes an attention
+      coefficient between every pair of nodes in the graph.
+    options:
+      - text: 'True'
+        why: GAT uses masked attention; $e_{ij}$ is computed only for the nodes $j$ in the neighbourhood $\mathcal N(i)$ of $i$, its first-order neighbours and itself [^1].
+      - text: 'False'
+        correct: true
+    explanation: |
+      Letting every node attend to every other node would throw away the graph structure, so GAT
+      computes $e_{ij}$ only for $j \in \mathcal N(i)$, the first-order neighbours of $i$ including $i$,
+      and the softmax normalises over that neighbourhood only [^1]. This keeps the cost of one head
+      that maps $F$ input to $F'$ output features at $O(|V|FF' + |E|F')$, linear in the number of
+      edges [^1]. With $K$ heads the outputs are
+      concatenated, e.g. $8 \times 8 = 64$ features per node in the first layer of the Cora model,
+      while a multi-head output layer averages them instead [^1].
+    references:
+      - title: Veličković et al. (2018), Graph Attention Networks
+        url: https://arxiv.org/abs/1710.10903
+        locator: Sec. 2.1 Graph Attentional Layer (Eqs. 1–6); Sec. 2.2 Comparisons to Related Work; Sec. 3.3 Experimental Setup
+    source:
+      id: original
+      ref: gnn-026
+    status: reviewed
+    reviewed_by: claude
+  - id: gnn-027
+    type: short_answer
+    difficulty: medium
+    tags:
+      - pyg
+      - edge-index
+      - code-reading
+    question: |
+      What is the **second** number printed?
+
+      ```python
+      import torch
+      from torch_geometric.data import Data
+
+      edge_index = torch.tensor([[0, 1, 1, 2, 2, 3],
+                                 [1, 0, 2, 1, 3, 2]])
+      x = torch.randn(4, 8)
+      data = Data(x=x, edge_index=edge_index)
+      print(data.num_nodes, data.num_edges)
+      ```
+    answer:
+      numeric: 6
+      tolerance: 0
+      hint: a whole number
+      model: '`4 6`: each of the 3 undirected edges is stored in both directions'
+    explanation: |
+      PyG stores connectivity in COO format: `edge_index` has shape `[2, num_edges]`, with source
+      nodes in row 0 and target nodes in row 1 [^1]. An undirected graph needs both directions of every
+      edge, so the path $0 - 1 - 2 - 3$ with 3 undirected edges takes 6 columns, and `num_edges` counts
+      columns [^1]: the script prints `4 6`. `num_nodes` comes from the 4 rows of `x`, and
+      `data.is_undirected()` would return `True`.
+    references:
+      - title: 'PyTorch Geometric documentation: Introduction by Example'
+        url: https://pytorch-geometric.readthedocs.io/en/2.8.1/get_started/introduction.html
+        locator: Data Handling of Graphs
+    source:
+      id: original
+      ref: gnn-027
+    status: reviewed
+    reviewed_by: claude
+  - id: gnn-028
+    type: short_answer
+    difficulty: medium
+    tags:
+      - pyg
+      - edge-index
+      - message-passing
+      - directed-graph
+    question: |
+      A directed graph with 5 nodes is stored in PyTorch Geometric as
+
+      ```python
+      edge_index = torch.tensor([[0, 0, 1, 3, 2],
+                                 [1, 2, 2, 2, 4]])
+      ```
+
+      A `MessagePassing` layer with the default `flow="source_to_target"` and `aggr="add"` runs on this
+      graph without adding self-loops. How many messages does node 2 aggregate?
+    answer:
+      numeric: 3
+      tolerance: 0
+      hint: a whole number
+      model: 'the columns with target 2: $0 \to 2$, $1 \to 2$ and $3 \to 2$'
+    explanation: |
+      Each column of `edge_index` is one edge, with its source in row 0 and its target in row 1 [^1].
+      With `flow="source_to_target"`, a message is built for node $i$ along every edge $(j, i)$, so
+      node 2 receives one message per column whose second entry is 2 [^2]: from nodes 0, 1 and 3. The
+      edge $2 \to 4$ carries a message from node 2 to node 4, not to node 2. Node 2 therefore
+      aggregates 3 messages (its in-degree), nodes 1 and 4 one each, and nodes 0 and 3 none.
+    references:
+      - title: 'PyTorch Geometric documentation: Introduction by Example'
+        url: https://pytorch-geometric.readthedocs.io/en/2.8.1/get_started/introduction.html
+        locator: Data Handling of Graphs
+      - title: 'PyTorch Geometric documentation: Creating Message Passing Networks'
+        url: https://pytorch-geometric.readthedocs.io/en/2.8.1/tutorial/create_gnn.html
+        locator: The MessagePassing Base Class (flow)
+    source:
+      id: original
+      ref: gnn-028
+    status: reviewed
+    reviewed_by: claude
+  - id: gnn-029
+    type: short_answer
+    difficulty: easy
+    tags:
+      - pyg
+      - readout
+      - pooling
+      - code-reading
+    question: |
+      Five nodes of a mini-batch of two graphs have one feature each. What is the **second** value
+      printed?
+
+      ```python
+      import torch
+      from torch_geometric.nn import global_mean_pool
+
+      x = torch.tensor([[1.0], [2.0], [3.0], [4.0], [10.0]])
+      batch = torch.tensor([0, 0, 0, 1, 1])
+      print(global_mean_pool(x, batch))
+      ```
+    answer:
+      numeric: 7
+      tolerance: 0
+      hint: a number
+      model: graph 1 holds the nodes with features 4 and 10, so its mean is $(4 + 10)/2 = 7$
+    explanation: |
+      The `batch` vector assigns every node to its graph in the mini-batch [^1], and
+      `global_mean_pool` averages the node features of each graph separately [^2]: graph 0 has the
+      features $1, 2, 3$ (mean 2) and graph 1 has $4, 10$ (mean 7), so the output is the $2 \times 1$
+      tensor `[[2.], [7.]]`. The mean of all five nodes, 4.0, would mix the two graphs. A mean
+      readout does not depend on the node order and works for any graph size, so it turns node
+      embeddings into one embedding per graph for graph classification.
+    references:
+      - title: 'PyTorch Geometric documentation: Introduction by Example'
+        url: https://pytorch-geometric.readthedocs.io/en/2.8.1/get_started/introduction.html
+        locator: Mini-batches
+      - title: 'PyTorch Geometric documentation: global_mean_pool'
+        url: https://pytorch-geometric.readthedocs.io/en/2.8.1/generated/torch_geometric.nn.pool.global_mean_pool.html
+        locator: Formula and parameters (x, batch)
+    source:
+      id: original
+      ref: gnn-029
+    status: reviewed
+    reviewed_by: claude
+  - id: gnn-030
+    type: single
+    difficulty: medium
+    tags:
+      - pyg
+      - mini-batching
+    question: How does PyTorch Geometric put several graphs of different sizes into one mini-batch?
+    options:
+      - text: As one big graph with a block-diagonal adjacency matrix and a `batch` vector
+        correct: true
+      - text: By padding every graph with dummy nodes up to the size of the largest graph
+        why: No padding is needed; the graphs become disconnected parts of one big graph, so no messages flow between them [^1].
+      - text: By resampling the graphs so that each one has the same number of nodes
+        why: Every graph keeps all of its own nodes and edges; the graphs are only placed side by side in one big graph [^1].
+      - text: By stacking the dense adjacency matrices into one tensor of shape $(B, n, n)$
+        why: That needs the same $n$ for all graphs (or padding); PyG concatenates along the node dimension and keeps a sparse `edge_index` [^1].
+    explanation: |
+      PyG builds a mini-batch as a single graph whose adjacency matrix is block-diagonal, one block per
+      graph, with node features and targets concatenated along the node dimension [^1]. Because there
+      are no edges between the blocks, message passing on the big graph is the same as on each graph
+      separately, and no padding is needed. The extra `batch` vector maps each node to its graph, so a
+      readout such as a per-graph mean returns one vector per graph [^1].
+    references:
+      - title: 'PyTorch Geometric documentation: Introduction by Example'
+        url: https://pytorch-geometric.readthedocs.io/en/2.8.1/get_started/introduction.html
+        locator: Mini-batches
+    source:
+      id: original
+      ref: gnn-030
+    status: reviewed
+    reviewed_by: claude
+  - id: gnn-031
+    type: true_false
+    difficulty: easy
+    tags:
+      - gcn
+      - complexity
+      - sparse-matrix
+    shuffle: false
+    question: |
+      True or false: with the adjacency matrix stored as a sparse matrix, the cost of one GCN layer
+      $\hat A X W$ on a graph with $N$ nodes and $|E|$ edges, where
+      $\hat A = \tilde D^{-1/2}\tilde A\tilde D^{-1/2}$, $\tilde A = A + I$ and $\tilde D$ is the
+      degree matrix of $\tilde A$, grows linearly with $|E|$ (for fixed feature sizes), not with $N^2$.
+    options:
+      - text: 'True'
+        correct: true
+      - text: 'False'
+        why: The product $\hat A (XW)$ touches only the non-zero entries of $\hat A$, one per edge direction plus one per self-loop; the dense $N \times N$ matrix is never formed [^1].
+    explanation: |
+      Kipf and Welling compute $\tilde A X$ as a sparse–dense matrix product, so filtering a
+      $C$-channel signal into $F$ feature maps costs $O(|E|FC)$, and full-batch training needs
+      $O(|E|)$ memory for the graph [^1]. Most real graphs are sparse, with a number of edges roughly
+      linear in the number of nodes [^2], so this is far cheaper than a dense $N \times N$
+      multiplication. A GAT head has the same order of cost, $O(|V|FF' + |E|F')$ with $|V| = N$ [^3].
+    references:
+      - title: Kipf & Welling (2017), Semi-Supervised Classification with Graph Convolutional Networks
+        url: https://arxiv.org/abs/1609.02907
+        locator: Sec. 2.2 Layer-Wise Linear Model (after Eq. 8); Sec. 3.1 Example
+      - title: Daigavane, Ravindran & Aggarwal (2021), Understanding Convolutions on Graphs, Distill
+        url: https://distill.pub/2021/understanding-gnns/
+        locator: The Challenges of Computation on Graphs (Scalability)
+      - title: Veličković et al. (2018), Graph Attention Networks
+        url: https://arxiv.org/abs/1710.10903
+        locator: Sec. 2.2 Comparisons to Related Work
+    source:
+      id: original
+      ref: gnn-031
+    status: reviewed
+    reviewed_by: claude

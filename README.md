@@ -9,16 +9,19 @@ mock exams and spaced repetition. Free static site on GitHub Pages.
 
 ## What's inside
 
-- **3025 questions** across 10 domains — 985 imported from open-licensed quiz sets, 1226 adapted
+- **3327 questions** across 10 domains — 985 imported from open-licensed quiz sets, 1226 adapted
   from open-licensed exercises, courses, books and code (d2l, OpenIntro, Hands-On ML notebooks, Gutmann, Deep Learning Interviews,
   UBC, Neuromatch, Kaggle Learn, forall x, LLMs-from-scratch, Tensor Puzzles, …), 374 adapted
-  from non-commercial course material (MIT OpenCourseWare, NPTEL), 132 paraphrased from the
-  CE6146 course exercises and lectures, 308 original. All are reviewed: 56 by the owner and 2969
+  from non-commercial course material (MIT OpenCourseWare, NPTEL), 369 paraphrased from the
+  CE6146 course exercises and lectures, 373 original. All are reviewed: 56 by the owner and 3271
   by Claude at the owner's request (shown as "AI-checked").
 - Four question types: `single`, `multiple` (select all), `true_false`, `short_answer`
   (auto-graded fill-in: a number, a word or phrase, or a gap-fill with several blanks).
 - **Timed tests** for every topic and tag: up to 20 random questions, one minute each, scored and
   explained at the end. **Mixed tests** draw 10–50 questions from any topics, tags and difficulties.
+- **CE6146 exam prep** (`/ce6146/`): every content slide of Lectures 1–3 and every in-class
+  exercise has questions (plus a "twin" per exercise question), practised per lecture or as one
+  test; tests draw these course questions 4× (or 16×) as often as others.
 - **Review** brings questions back with spaced repetition (FSRS): each one returns just before
   you would forget it, sooner after a wrong answer.
 - **My mistakes** collects every question you last answered wrong, to practice until it is right;
@@ -34,17 +37,17 @@ mock exams and spaced repetition. Free static site on GitHub Pages.
 
 | Domain | Topics | Questions | Reviewed |
 | --- | ---: | ---: | ---: |
-| Artificial Intelligence | 6 | 303 | 303 |
-| Mathematics for ML | 5 | 422 | 422 |
-| Machine Learning | 14 | 907 | 907 |
-| Deep Learning | 8 | 502 | 502 |
-| Computer Vision | 3 | 119 | 119 |
+| Artificial Intelligence | 6 | 307 | 307 |
+| Mathematics for ML | 5 | 481 | 481 |
+| Machine Learning | 14 | 963 | 963 |
+| Deep Learning | 10 | 677 | 677 |
+| Computer Vision | 3 | 121 | 121 |
 | Natural Language Processing | 5 | 213 | 213 |
 | Generative Models | 3 | 95 | 95 |
 | Large Language Models | 4 | 138 | 138 |
-| Reinforcement Learning | 3 | 95 | 95 |
-| Practical Tools | 3 | 231 | 231 |
-| **Total** | | **3025** | **3025** |
+| Reinforcement Learning | 3 | 96 | 96 |
+| Practical Tools | 3 | 236 | 236 |
+| **Total** | | **3327** | **3327** |
 
 Questions come from 54 external sources: importers for the Hugging Face LLM, Deep RL, AI Agents
 and Audio courses, Microsoft AI, ML and Data Science for Beginners, Google's ML Crash Course and
