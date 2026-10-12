@@ -5,6 +5,8 @@ versioning: [SemVer](https://semver.org) as defined in [docs/conventions.md](doc
 
 ## [Unreleased]
 
+## [0.4.0] — 2026-10-12
+
 ### Added
 
 - **Mixed tests** (`/exam/`): pick topics (by domain), difficulties and a length of 10–50
@@ -39,6 +41,10 @@ versioning: [SemVer](https://semver.org) as defined in [docs/conventions.md](doc
   `## Page N` section per page (so questions can cite slides), via pdfminer.six. `--colors`
   marks coloured text as `[red: …]`, which recovers answer keys printed in red (CE6146
   exercises) that plain text extraction loses.
+
+Bank: 2897 questions, all reviewed (56 by the owner, 2841 by Claude, "AI-checked"), 8 retired —
+ml 864, dl 474, math 372, ai 303, practice 230, nlp 212, llm 138, cv 119, rl 93, gen 92;
+questions from 54 external sources (66 registered, 9 of them reference-only).
 
 ## [0.3.0] — 2026-10-12
 
@@ -256,7 +262,8 @@ llm 20, rl 12, cv 10, gen 10.
 Bank: 333 questions (328 draft, 5 reviewed) — ml 97, dl 77, nlp 47, practice 27, ai 20, llm 20,
 math 13, rl 12, cv 10, gen 10.
 
-[Unreleased]: https://github.com/mtoan651/ml-recall/compare/v0.3.0...HEAD
+[Unreleased]: https://github.com/mtoan651/ml-recall/compare/v0.4.0...HEAD
+[0.4.0]: https://github.com/mtoan651/ml-recall/releases/tag/v0.4.0
 [0.3.0]: https://github.com/mtoan651/ml-recall/releases/tag/v0.3.0
 [0.2.0]: https://github.com/mtoan651/ml-recall/releases/tag/v0.2.0
 [0.1.0]: https://github.com/mtoan651/ml-recall/releases/tag/v0.1.0
