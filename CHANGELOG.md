@@ -13,8 +13,11 @@ versioning: [SemVer](https://semver.org) as defined in [docs/conventions.md](doc
   without ND (CC BY-NC-SA) may be adapted; those questions keep their licence
   (`LICENSE-CONTENT.md`, `THIRD_PARTY_NOTICES.md`). MMLU subsets are imported selectively.
 - `mlr check` is ~5× faster: the near-duplicate scan only compares texts of similar length.
-- Source decisions: no further MMLU subsets (its questions come from copyrighted tests and
-  books); AI clauses are judged by what they cover (a training ban doesn't affect us, an
+- CI re-renders every figure (`mlr figs --force`) and fails if a committed SVG differs from
+  its generator; `astral-sh/setup-uv` v6 → v10.3.0 (Node 24 runtime; pinned to the exact tag,
+  as the action no longer publishes major-version tags).
+- Source decisions: MMLU subsets only as hand-picked keep-lists, not wholesale (its questions
+  come from practice tests and books); AI clauses are judged by what they cover (a training ban doesn't affect us, an
   ingestion ban does); OpenIntro stays usable from its GitHub repo; Deep-ML is reference-only
   (educational-use licence). `docs/sources.md` lists the surveyed candidates and why the rest
   are not usable.
@@ -24,9 +27,9 @@ versioning: [SemVer](https://semver.org) as defined in [docs/conventions.md](doc
   (942 of 1139): numpy-100 +34, MS Data Science +55, MS AI +49, MS ML +52, MMLU-Redux +53, HF
   LLM/Agents/Deep RL +29, Google +15. Every fix is a curation `fix`, so a fresh import
   reproduces the bank.
-- Deep Learning Interviews is no longer an `adapt` source: arXiv lists CC BY 4.0, but the
-  book's own copyright page reserves all rights and forbids quoting or paraphrasing. d2l
-  (pinned at d2l-en 23d7a5a) is used instead.
+- Deep Learning Interviews is used from arXiv v2 only (`pinned: 2201.00650v2`), under the CC BY
+  4.0 licence arXiv lists for that version; the book's own copyright page reserves all rights,
+  so no other copy is used (see Added).
 - Practice and timed tests share one question bank: tests draw from every question of the
   topic or tag (e.g. NumPy: 1 → 64 questions to draw from, Q-learning: 8 → 20).
 - Short answers are always fill-ins, graded automatically: one number or word/phrase, or a
@@ -131,7 +134,7 @@ versioning: [SemVer](https://semver.org) as defined in [docs/conventions.md](doc
 - Source registry: `hf-deep-rl-course`, `hf-agents-course`, `ms-ds-for-beginners`,
   `openintro-stats` (CC BY-SA 3.0) and `openstax-intro-stats` (reference only, see Changed) — 25
   external sources.
-- Cited explanations for all 395 imported questions that had none (all still `draft`):
+- Cited explanations for all 395 imported questions that had none (then `draft`, reviewed since):
   each answer key re-solved first, every `[^n]` reference opened and checked, `difficulty` set,
   lesson references narrowed to the section that covers the point. Main sources: d2l, the
   course lessons, OpenIntro *Introduction to Modern Statistics*, Penn State STAT notes, Sutton &
@@ -157,6 +160,12 @@ versioning: [SemVer](https://semver.org) as defined in [docs/conventions.md](doc
   recorded as curation fixes.
 - Dollar amounts in imported statistics questions are escaped (`\$`) so KaTeX does not treat them
   as math.
+
+### Security
+
+- KaTeX 0.16.47 → 0.19.0 for GHSA-238p-pmpm-9mq7 (prototype pollution could bypass `trust`;
+  low severity). A pnpm override makes `rehype-katex` and `remark-math`, which ask for `^0.16`,
+  use the same version; every question still renders, with no KaTeX warnings.
 
 ## [0.2.0] — 2026-10-10
 
