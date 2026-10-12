@@ -79,4 +79,3 @@ Versions follow [conventions.md#versioning](conventions.md#versioning).
 ## Next
 
 - [ ] CE6146 lecture questions for lectures 4+ (Path B, as the slides are published)
-- [ ] Owner review of AI-checked questions, topic by topic (`reviewed_by: owner`)
