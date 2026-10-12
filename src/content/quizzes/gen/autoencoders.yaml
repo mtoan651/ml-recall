@@ -1261,3 +1261,100 @@ questions:
       url: https://arxiv.org/abs/2201.00650v2
     status: reviewed
     reviewed_by: claude
+  - id: autoencoders-035
+    type: single
+    difficulty: medium
+    tags:
+      - unsupervised-pretraining
+      - transfer-learning
+      - encoder
+    question: |
+      You have a million unlabeled images but only 2,000 labeled ones. You first train a deep
+      autoencoder on all the images. How should you use it to build a classifier?
+    options:
+      - text: Reuse its encoder as the classifier's lower layers and add a new output layer
+        correct: true
+      - text: Reuse the decoder as the classifier's lower layers, since it was trained last
+        why: The decoder maps codings back to pixels. It is the encoder that maps images to the compact features a classifier needs.
+      - text: Train the classifier on the autoencoder's reconstructions instead of the original images
+        why: Reconstructions are approximate copies of the same 2,000 labeled images; they add no labels and lose some detail.
+      - text: Use the reconstruction error of each unlabeled image as its class label
+        why: Reconstruction error measures how typical an image is (useful for anomaly detection), not which class it belongs to.
+    explanation: |
+      This is unsupervised pretraining. The encoder half, trained on all the images, has learned
+      useful features; you keep its layers up to the codings layer, add a new output layer, and train
+      on the labeled data [^1]. With so few labels it is usually best to freeze the reused layers, so
+      the new layer can learn without wrecking them [^1]. It is the same recipe as
+      fine-tuning a pretrained network: copy the source model's layers except its output layer, add
+      a randomly initialized output layer for the new task, and train on the (small) target dataset
+      [^2].
+    references:
+      - source: handson-ml3
+        locator: 17_autoencoders_gans_and_diffusion_models.ipynb, Exercise Solutions, 2.
+        url: https://github.com/ageron/handson-ml3/blob/ef1c9f5ab11083584635b9b3a7846f49c58a6084/17_autoencoders_gans_and_diffusion_models.ipynb
+      - source: d2l
+        locator: Sec. 14.2.1 Steps (fine-tuning)
+        url: https://d2l.ai/chapter_computer-vision/fine-tuning.html
+    source:
+      id: handson-ml3
+      ref: 17_autoencoders_gans_and_diffusion_models#ex2
+      url: https://github.com/ageron/handson-ml3/blob/ef1c9f5ab11083584635b9b3a7846f49c58a6084/17_autoencoders_gans_and_diffusion_models.ipynb
+    status: reviewed
+    reviewed_by: claude
+  - id: autoencoders-036
+    type: short_answer
+    difficulty: medium
+    tags:
+      - tied-weights
+      - parameter-count
+      - pytorch
+    question: |
+      This autoencoder ties its decoder weights to the transpose of its encoder weights. How many
+      trainable parameters does it have?
+
+      ```python
+      import torch
+      import torch.nn as nn
+
+      class TiedAutoencoder(nn.Module):
+          def __init__(self):
+              super().__init__()
+              self.encoder = nn.Linear(784, 128)
+              self.decoder_bias = nn.Parameter(torch.zeros(784))
+
+          def forward(self, x):
+              codings = torch.relu(self.encoder(x))
+              return torch.sigmoid(codings @ self.encoder.weight + self.decoder_bias)
+
+      print(sum(p.numel() for p in TiedAutoencoder().parameters()))
+      ```
+    answer:
+      numeric: 101264
+      tolerance: 0
+      hint: An integer, without separators
+      model: $784 \times 128 + 128 + 784 = 101{,}264$ (an untied decoder would add another $100{,}352$ weights)
+    explanation: |
+      `nn.Linear(784, 128)` stores a weight matrix of shape `(128, 784)` and 128 biases [^3]:
+      $100{,}352 + 128$ parameters. The decoder reuses that matrix (`codings @ self.encoder.weight`
+      multiplies the 128 codings by the $128 \times 784$ matrix, i.e. applies the transpose of the
+      encoder's linear map) and only adds its own 784 biases, so the total is
+      $100{,}352 + 128 + 784 = 101{,}264$. An untied `nn.Linear(128, 784)` decoder would bring
+      $128 \times 784 + 784$ parameters, for 201,616 in all. Tying ($W' = W^\top$) is the most common
+      choice for autoencoders [^2]; it roughly halves the weights, which speeds up training and
+      reduces the risk of overfitting [^1].
+    references:
+      - source: handson-ml3
+        locator: 17_autoencoders_gans_and_diffusion_models.ipynb, Exercise Solutions, 5.
+        url: https://github.com/ageron/handson-ml3/blob/ef1c9f5ab11083584635b9b3a7846f49c58a6084/17_autoencoders_gans_and_diffusion_models.ipynb
+      - title: 'Bengio, Courville and Vincent (2013): Representation Learning: A Review and New Perspectives'
+        locator: Sec. 7.1 Auto-Encoders (weight-tying)
+        url: https://arxiv.org/abs/1206.5538
+      - title: 'PyTorch documentation: torch.nn.Linear'
+        locator: Variables (weight and bias shapes)
+        url: https://docs.pytorch.org/docs/stable/generated/torch.nn.Linear.html
+    source:
+      id: handson-ml3
+      ref: 17_autoencoders_gans_and_diffusion_models#ex5
+      url: https://github.com/ageron/handson-ml3/blob/ef1c9f5ab11083584635b9b3a7846f49c58a6084/17_autoencoders_gans_and_diffusion_models.ipynb
+    status: reviewed
+    reviewed_by: claude

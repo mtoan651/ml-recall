@@ -4276,3 +4276,86 @@ questions:
       ref: lecture-03/q14
     status: reviewed
     reviewed_by: claude
+  - id: ml-basics-130
+    type: single
+    difficulty: medium
+    tags:
+      - train-dev-set
+      - data-mismatch
+      - error-analysis
+    question: |
+      Your training images are scraped from the web, but the validation and test images come from
+      the phone app in which the model will run. You hold out part of the training set as a
+      *train-dev* set, which the model never trains on. Accuracies: training 98%, train-dev 97%,
+      validation 85%. What is the most likely diagnosis?
+    options:
+      - text: The web images differ from the app images (a data mismatch)
+        correct: true
+      - text: The model overfits the training set
+        why: An overfitting model would do much worse on the train-dev set, which comes from the same distribution as the training data but was never trained on; here train-dev is almost as good as training.
+      - text: The model underfits because it is too simple
+        why: An underfitting model has a high error on the training data too; 98% training accuracy rules that out.
+      - text: The learning rate is too high, so training has not converged
+        why: A diverging or unconverged optimizer would not reach 98% on the training set and 97% on held-out training data.
+    explanation: |
+      The train-dev set separates two causes of a gap. It comes from the training distribution but
+      is not used for training, so a large *training → train-dev* gap means overfitting, while a
+      large *train-dev → validation* gap means the validation/test data (which should look like
+      production data) differ from the training data [^1]. Here only the second gap is large
+      (97% vs 85%), so the fix is to make the training data look more like the app data rather than
+      to regularize. This is a case of distribution shift: the inputs seen in deployment are drawn
+      from a different distribution than the training inputs (covariate shift) [^2].
+    references:
+      - source: handson-ml3
+        locator: 01_the_machine_learning_landscape.ipynb, Exercise Solutions, 18.
+        url: https://github.com/ageron/handson-ml3/blob/ef1c9f5ab11083584635b9b3a7846f49c58a6084/01_the_machine_learning_landscape.ipynb
+      - source: d2l
+        locator: Sec. 4.7.1.1 Covariate Shift
+        url: https://d2l.ai/chapter_linear-classification/environment-and-distribution-shift.html
+    source:
+      id: handson-ml3
+      ref: 01_the_machine_learning_landscape#ex18
+      url: https://github.com/ageron/handson-ml3/blob/ef1c9f5ab11083584635b9b3a7846f49c58a6084/01_the_machine_learning_landscape.ipynb
+    status: reviewed
+    reviewed_by: claude
+  - id: ml-basics-131
+    type: short_answer
+    difficulty: medium
+    tags:
+      - randomized-search
+      - hyperparameter-tuning
+      - log-uniform
+    question: |
+      A randomized hyperparameter search draws the SVR regularization parameter from
+      `scipy.stats.loguniform(20, 200_000)`. What fraction of the sampled values of `C` will be
+      below 2,000 (in expectation)?
+    answer:
+      numeric: 0.5
+      tolerance: 0.01
+      hint: A fraction between 0 and 1, e.g. 0.25
+      model: '$0.5$: the range spans 4 decades (20 to 200,000) and 20 to 2,000 is 2 of them.'
+    explanation: |
+      A log-uniform variable has a uniformly distributed logarithm [^2]. Here
+      $\log_{10} C$ is uniform on $[\log_{10} 20, \log_{10} 200{,}000] = [1.30, 5.30]$, a width of
+      4, and $C < 2{,}000$ means $\log_{10} C < 3.30$, a width of 2, so the probability is
+      $2/4 = 0.5$ (`loguniform(20, 200_000).cdf(2000)` returns 0.5). Each of the four decades
+      (20–200, 200–2,000, 2,000–20,000 and 20,000–200,000) gets the same share of the samples,
+      which is what you want when you do not even know the order of magnitude of a good `C` [^1].
+      scikit-learn recommends such continuous log-uniform distributions as the continuous version
+      of a log-spaced grid like `[1, 10, 100]` [^3].
+    references:
+      - source: handson-ml3
+        locator: 02_end_to_end_machine_learning_project.ipynb, Exercise solutions, 2.
+        url: https://github.com/ageron/handson-ml3/blob/ef1c9f5ab11083584635b9b3a7846f49c58a6084/02_end_to_end_machine_learning_project.ipynb
+      - title: 'Wikipedia: Reciprocal distribution'
+        locator: Relationship between the log-uniform and the uniform distribution
+        url: https://en.wikipedia.org/wiki/Reciprocal_distribution
+      - title: 'scikit-learn user guide: Tuning the hyper-parameters of an estimator'
+        locator: Sec. 3.2.2 Randomized Parameter Optimization
+        url: https://scikit-learn.org/stable/modules/grid_search.html#randomized-parameter-optimization
+    source:
+      id: handson-ml3
+      ref: 02_end_to_end_machine_learning_project#ex2
+      url: https://github.com/ageron/handson-ml3/blob/ef1c9f5ab11083584635b9b3a7846f49c58a6084/02_end_to_end_machine_learning_project.ipynb
+    status: reviewed
+    reviewed_by: claude

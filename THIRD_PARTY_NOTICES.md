@@ -26,6 +26,16 @@ adapted into code-reading questions: short excerpts, shortened or with changed i
 text is not used). Licensed under the Apache License, Version 2.0 — full text in
 [LICENSES/Apache-2.0.txt](LICENSES/Apache-2.0.txt).
 
+## Hands-On Machine Learning notebooks — `handson-ml3`
+
+Questions written from the "Exercise solutions" sections of the companion notebooks of
+*Hands-On Machine Learning with Scikit-Learn, Keras and TensorFlow* (3rd ed.) by Aurélien Géron
+(<https://github.com/ageron/handson-ml3>, commit `ef1c9f5`). The notebooks are licensed under the
+[Apache License 2.0](https://github.com/ageron/handson-ml3/blob/main/LICENSE); the printed book is
+not, and no book text is used. Question stems are our own wording; code snippets are adapted
+from or inspired by the notebooks' solutions (TensorFlow code rewritten in PyTorch or
+scikit-learn).
+
 ## Kaggle Learn — `kaggle-learn`
 
 Exercises and tutorial notebooks from <https://github.com/Kaggle/learntools> (the Kaggle Learn

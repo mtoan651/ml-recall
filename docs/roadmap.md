@@ -67,6 +67,7 @@ Versions follow [conventions.md#versioning](conventions.md#versioning).
 ## v0.5.0 — Retention
 
 - [x] OpenIntro Statistics exercises (59 questions)
+- [x] Hands-On ML notebook exercises (57 questions)
 - [x] Spaced repetition (FSRS) over question ids (`/review/`)
 - [ ] Topic notes / cheat sheets
 - [x] Pagefind search (`/search/`) and a page per question (`/q/<id>/`)

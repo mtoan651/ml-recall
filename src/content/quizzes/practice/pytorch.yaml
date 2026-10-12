@@ -3623,3 +3623,56 @@ questions:
       ref: lecture-03/q25
     status: reviewed
     reviewed_by: claude
+  - id: pytorch-086
+    type: single
+    difficulty: medium
+    tags:
+      - dtype
+      - numpy-interop
+      - float32
+    question: |
+      What happens when this code runs?
+
+      ```python
+      import numpy as np
+      import torch
+      import torch.nn as nn
+
+      X = np.random.rand(4, 2)              # features prepared with NumPy
+      layer = nn.Linear(2, 1)
+      out = layer(torch.from_numpy(X))
+      ```
+    options:
+      - text: 'It raises a `RuntimeError`: the input is float64 but the weights are float32'
+        correct: true
+      - text: It works, and `out` has dtype float64 like the input
+        why: PyTorch does not promote the layer's float32 weights to the input's float64 inside the matrix multiplication; the dtypes must match.
+      - text: It works, because `nn.Linear` converts its input to float32
+        why: Modules do not cast their inputs; you must convert them yourself, e.g. with `.float()`.
+      - text: It raises a `TypeError`, because modules do not accept tensors that share memory with NumPy
+        why: "`torch.from_numpy` returns an ordinary tensor (sharing the array's memory); modules accept it like any other tensor."
+    explanation: |
+      NumPy creates float64 arrays by default, and `torch.from_numpy` keeps the array's dtype and
+      even shares its memory [^2]. PyTorch's default floating-point dtype, used for the parameters of
+      `nn.Linear`, is float32 [^3]. The matrix multiplication then fails with a `RuntimeError`
+      about mismatched dtypes (Double vs Float); recent versions say
+      `mat1 and mat2 must have the same dtype`. Convert first,
+      e.g. `torch.from_numpy(X).float()` or `torch.tensor(X, dtype=torch.float32)`. The handson-ml3
+      exercise points out the same trap between TensorFlow and NumPy, which use different default
+      precisions (32-bit vs 64-bit) [^1].
+    references:
+      - source: handson-ml3
+        locator: 12_custom_models_and_training_with_tensorflow.ipynb, Exercises, 3. (and 2.)
+        url: https://github.com/ageron/handson-ml3/blob/ef1c9f5ab11083584635b9b3a7846f49c58a6084/12_custom_models_and_training_with_tensorflow.ipynb
+      - title: 'PyTorch documentation: torch.from_numpy'
+        locator: torch.from_numpy
+        url: https://docs.pytorch.org/docs/stable/generated/torch.from_numpy.html
+      - title: 'PyTorch documentation: torch.get_default_dtype'
+        locator: Example (initial default is torch.float32)
+        url: https://docs.pytorch.org/docs/stable/generated/torch.get_default_dtype.html
+    source:
+      id: handson-ml3
+      ref: 12_custom_models_and_training_with_tensorflow#ex3
+      url: https://github.com/ageron/handson-ml3/blob/ef1c9f5ab11083584635b9b3a7846f49c58a6084/12_custom_models_and_training_with_tensorflow.ipynb
+    status: reviewed
+    reviewed_by: claude

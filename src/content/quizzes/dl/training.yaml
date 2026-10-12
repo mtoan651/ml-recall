@@ -3410,3 +3410,276 @@ questions:
       ref: lecture-03/q24
     status: reviewed
     reviewed_by: claude
+  - id: training-094
+    type: single
+    difficulty: easy
+    tags:
+      - learning-rate
+      - divergence
+      - learning-curves
+    question: |
+      From the very first epochs, the validation error goes up after every epoch. You look at the
+      training error and see that it goes up after every epoch too. What is the most likely cause?
+    options:
+      - text: The learning rate is too high and training diverges
+        correct: true
+      - text: The model is overfitting the training set
+        why: Overfitting shows a training error that keeps going down while the validation error goes up; here both rise.
+      - text: The model is too simple for the data
+        why: An underfitting model has errors that stay high, but training still makes them go down or level off rather than rise every epoch.
+      - text: The validation set comes from a different distribution than the training set
+        why: A distribution mismatch would hurt validation performance only; it cannot make the training error grow.
+    explanation: |
+      Gradient descent should lower the training loss at almost every epoch. If the *training*
+      error itself climbs steadily, the steps are overshooting: with an excessively large learning
+      rate the update jumps past the minimum and the iterates can diverge [^2]. The fix is a smaller
+      learning rate. If only the validation error rose while the training error kept falling, the
+      diagnosis would instead be overfitting, and you would stop training early [^1].
+    references:
+      - source: handson-ml3
+        locator: 04_training_linear_models.ipynb, Exercise solutions, 5.
+        url: https://github.com/ageron/handson-ml3/blob/ef1c9f5ab11083584635b9b3a7846f49c58a6084/04_training_linear_models.ipynb
+      - source: d2l
+        locator: Sec. 12.3.1.1 Learning Rate
+        url: https://d2l.ai/chapter_optimization/gd.html
+    source:
+      id: handson-ml3
+      ref: 04_training_linear_models#ex5
+      url: https://github.com/ageron/handson-ml3/blob/ef1c9f5ab11083584635b9b3a7846f49c58a6084/04_training_linear_models.ipynb
+    status: reviewed
+    reviewed_by: claude
+  - id: training-095
+    type: short_answer
+    difficulty: medium
+    tags:
+      - learning-rate-finder
+      - lr-scheduler
+      - exponential-lr
+    question: |
+      To find a good learning rate, you train for 500 iterations while growing the learning rate
+      exponentially, record the loss at each iteration, and later look for where the loss shoots
+      up:
+
+      ```python
+      opt = torch.optim.SGD(model.parameters(), lr=1e-5)
+      sched = torch.optim.lr_scheduler.ExponentialLR(opt, gamma=g)
+      for step in range(500):
+          ...                # train on one batch, record the loss
+          opt.step()
+          sched.step()
+      ```
+
+      Which value of `g` makes the learning rate reach 10 after the 500 scheduler steps? Give 4
+      decimals.
+    answer:
+      numeric: 1.0280
+      tolerance: 0.0005
+      hint: A number with 4 decimals, e.g. 1.0123
+      model: $g = (10 / 10^{-5})^{1/500} = 10^{6/500} \approx 1.0280$
+    explanation: |
+      `ExponentialLR` multiplies the learning rate by `gamma` at every `sched.step()` [^2], so after
+      500 steps the rate is $10^{-5} g^{500}$. Setting this to 10 gives
+      $g = (10^6)^{1/500} = 10^{0.012} \approx 1.0280$ (running the loop confirms a final rate of
+      10.0). Growing the rate geometrically spends the same number of iterations on each order of
+      magnitude, from $10^{-5}$ to 10. Plotting the loss against the learning rate (log scale) and
+      picking a rate somewhat below the point where the loss shoots up is the approach of the
+      handson-ml3 MNIST exercise [^1]; it is a variant of Smith's "LR range test", which increases
+      the rate linearly during a short run [^3].
+    references:
+      - source: handson-ml3
+        locator: 10_neural_nets_with_keras.ipynb, Exercise solutions, 10.
+        url: https://github.com/ageron/handson-ml3/blob/ef1c9f5ab11083584635b9b3a7846f49c58a6084/10_neural_nets_with_keras.ipynb
+      - title: 'PyTorch documentation: torch.optim.lr_scheduler.ExponentialLR'
+        locator: ExponentialLR (gamma)
+        url: https://docs.pytorch.org/docs/stable/generated/torch.optim.lr_scheduler.ExponentialLR.html
+      - title: 'Smith (2017): Cyclical Learning Rates for Training Neural Networks'
+        locator: Sec. 3.3 How can one estimate reasonable minimum and maximum boundary values?
+        url: https://arxiv.org/abs/1506.01186
+    source:
+      id: handson-ml3
+      ref: 10_neural_nets_with_keras#ex10
+      url: https://github.com/ageron/handson-ml3/blob/ef1c9f5ab11083584635b9b3a7846f49c58a6084/10_neural_nets_with_keras.ipynb
+    status: reviewed
+    reviewed_by: claude
+  - id: training-096
+    type: multiple
+    difficulty: medium
+    tags:
+      - dropout
+      - mc-dropout
+      - inference-cost
+    question: Which statements about the computational cost of dropout are true? Select all that apply.
+    options:
+      - text: Dropout usually slows down training, since the network needs more epochs to converge
+        correct: true
+      - text: Standard dropout adds no cost at prediction time, because it is switched off in evaluation mode
+        correct: true
+      - text: MC Dropout averaging 10 stochastic forward passes makes each prediction roughly 10 times slower
+        correct: true
+      - text: At prediction time standard dropout must rescale every activation by the keep probability, which slows inference down
+        why: In the usual (inverted) implementation the rescaling by 1/(1 − p) happens during training, so in evaluation mode the layer is just the identity.
+    explanation: |
+      Dropout slows down training, typically by roughly a factor of two, because the noisier
+      network takes longer to converge [^1]. It costs nothing at inference: `nn.Dropout` scales the kept units
+      by $1/(1 - p)$ during training, so in evaluation mode it computes the identity function [^2].
+      MC Dropout keeps dropout active at test time and averages many stochastic forward passes to
+      get better predictions and an uncertainty estimate [^3]; with 10 passes each prediction costs
+      about 10 forward passes [^1].
+    references:
+      - source: handson-ml3
+        locator: 11_training_deep_neural_networks.ipynb, Exercises, 7.
+        url: https://github.com/ageron/handson-ml3/blob/ef1c9f5ab11083584635b9b3a7846f49c58a6084/11_training_deep_neural_networks.ipynb
+      - title: 'PyTorch documentation: torch.nn.Dropout'
+        locator: Dropout (description)
+        url: https://docs.pytorch.org/docs/stable/generated/torch.nn.Dropout.html
+      - title: 'Gal and Ghahramani (2016): Dropout as a Bayesian Approximation'
+        locator: Abstract; Sec. 4 Obtaining Model Uncertainty (MC dropout = averaging T stochastic forward passes)
+        url: https://arxiv.org/abs/1506.02142
+    source:
+      id: handson-ml3
+      ref: 11_training_deep_neural_networks#ex7
+      url: https://github.com/ageron/handson-ml3/blob/ef1c9f5ab11083584635b9b3a7846f49c58a6084/11_training_deep_neural_networks.ipynb
+    status: reviewed
+    reviewed_by: claude
+  - id: training-097
+    type: multiple
+    difficulty: hard
+    tags:
+      - selu
+      - self-normalizing-networks
+      - initialization
+    question: |
+      You replace batch normalization in a deep stack of dense layers by SELU activations and want
+      the network to self-normalize. Which of these are required? Select all that apply.
+    options:
+      - text: Standardize the input features (mean 0, standard deviation 1)
+        correct: true
+      - text: Initialize the weights with LeCun normal initialization (variance 1/fan-in)
+        correct: true
+      - text: Initialize the weights with He initialization (variance 2/fan-in)
+        why: The factor 2 of He initialization compensates for ReLU zeroing half its inputs. With SELU it inflates the variance layer after layer; SNNs need variance 1/fan-in.
+      - text: Keep a batch-normalization layer after each SELU layer
+        why: The point of SELU networks is that activations converge to zero mean and unit variance on their own, without explicit normalization layers.
+    explanation: |
+      Self-normalizing networks rely on a fixed point at zero mean and unit variance: if the
+      inputs to a layer are standardized and the weights have zero mean and variance $1/n$
+      (LeCun normal), SELU keeps the activations near mean 0 and variance 1 through many layers,
+      with no batch norm needed [^2]. The paper contrasts this with the "MSRA" (He) initialization,
+      whose variance $2/n$ is meant for ReLU [^2]; PyTorch's docs likewise tell you to use
+      `nonlinearity='linear'` (not the ReLU gain) with Kaiming init for SNNs [^3]. The handson-ml3
+      CIFAR-10 exercise lists the conditions: standardized inputs, LeCun normal initialization and
+      a plain sequence of dense layers [^1]. You can check it with 50 dense SELU layers of width 100
+      on standard-normal inputs: with LeCun normal init the activations stay close to mean 0 and
+      standard deviation 1, while with He init their standard deviation grows layer after layer to
+      far above 1 (the exact value depends on the random seed).
+    references:
+      - source: handson-ml3
+        locator: 11_training_deep_neural_networks.ipynb, Exercises, 8. Deep Learning on CIFAR10, d.
+        url: https://github.com/ageron/handson-ml3/blob/ef1c9f5ab11083584635b9b3a7846f49c58a6084/11_training_deep_neural_networks.ipynb
+      - title: 'Klambauer et al. (2017): Self-Normalizing Neural Networks'
+        locator: Section "Self-normalizing Neural Networks (SNNs)", paragraph "Initialization"; Abstract
+        url: https://arxiv.org/abs/1706.02515
+      - title: 'PyTorch documentation: torch.nn.SELU'
+        locator: Warning (initialization for Self-Normalizing Neural Networks)
+        url: https://docs.pytorch.org/docs/stable/generated/torch.nn.SELU.html
+    source:
+      id: handson-ml3
+      ref: 11_training_deep_neural_networks#ex8d
+      url: https://github.com/ageron/handson-ml3/blob/ef1c9f5ab11083584635b9b3a7846f49c58a6084/11_training_deep_neural_networks.ipynb
+    status: reviewed
+    reviewed_by: claude
+  - id: training-098
+    type: single
+    difficulty: hard
+    tags:
+      - layer-normalization
+      - autograd
+      - numerical-stability
+      - epsilon
+    question: |
+      A hand-written layer normalization puts its smoothing term outside the square root. What does
+      the last line print?
+
+      ```python
+      import torch
+
+      x = torch.tensor([2.0, 2.0, 2.0], requires_grad=True)   # all features equal
+      mean = x.mean()
+      var = x.var(correction=0)
+      z = (x - mean) / (torch.sqrt(var) + 1e-3)
+      z.sum().backward()
+      print(x.grad)
+      ```
+    options:
+      - text: '`tensor([nan, nan, nan])`'
+        correct: true
+      - text: '`tensor([0., 0., 0.])`'
+        why: 'That is what you get with `torch.sqrt(var + 1e-3)`: the square root is then differentiated at 0.001, not at 0.'
+      - text: '`tensor([inf, inf, inf])`'
+        why: The infinite derivative of `sqrt` at 0 is multiplied by zero factors of the chain rule, and inf × 0 gives nan, not inf.
+      - text: A `ZeroDivisionError` is raised
+        why: The forward pass divides by 0 + 0.001, which is fine; and a floating-point tensor divided by zero gives inf or nan rather than raising an exception.
+    explanation: |
+      The forward pass is fine: the variance is 0, the denominator is $0 + 0.001$ and `z` is all
+      zeros. In the backward pass, autograd multiplies local derivatives along the path
+      `x → var → sqrt(var) → z`: the derivative of $\sqrt{v}$ is $1/(2\sqrt{v})$, which is infinite
+      at $v = 0$, while the other factors on that path are 0 (the gradient arriving from `z` is
+      proportional to $x_i - \bar{x} = 0$, and so is $\partial v/\partial x_i = 2(x_i - \bar{x})/n$).
+      In floating point $\infty \times 0 = \text{nan}$, and the nan spreads to every gradient, so
+      training breaks as soon as one instance has constant features. The handson-ml3 solution
+      therefore computes $\sqrt{\sigma^2 + \varepsilon}$ instead of $\sqrt{\sigma^2} + \varepsilon$
+      [^1], which is also the formula of `nn.LayerNorm` [^2]; with it the same code prints
+      `tensor([0., 0., 0.])`.
+    references:
+      - source: handson-ml3
+        locator: 12_custom_models_and_training_with_tensorflow.ipynb, Exercises, 12. Implement a custom layer that performs Layer Normalization
+        url: https://github.com/ageron/handson-ml3/blob/ef1c9f5ab11083584635b9b3a7846f49c58a6084/12_custom_models_and_training_with_tensorflow.ipynb
+      - title: 'PyTorch documentation: torch.nn.LayerNorm'
+        locator: LayerNorm (formula and eps parameter)
+        url: https://docs.pytorch.org/docs/stable/generated/torch.nn.LayerNorm.html
+    source:
+      id: handson-ml3
+      ref: 12_custom_models_and_training_with_tensorflow#ex12
+      url: https://github.com/ageron/handson-ml3/blob/ef1c9f5ab11083584635b9b3a7846f49c58a6084/12_custom_models_and_training_with_tensorflow.ipynb
+    status: reviewed
+    reviewed_by: claude
+  - id: training-099
+    type: single
+    difficulty: medium
+    tags:
+      - quantization
+      - quantization-aware-training
+      - deployment
+    question: |
+      A model loses too much accuracy when its weights are quantized to 8 bits after training, so
+      you switch to quantization-aware training. What does quantization-aware training do?
+    options:
+      - text: It simulates 8-bit rounding in the forward pass while training, so the weights adapt to it
+        correct: true
+      - text: It quantizes the trained float model once at the end, calibrating ranges on a small dataset
+        why: That describes post-training quantization, the approach that already lost too much accuracy here.
+      - text: It trains with 8-bit integer weights, gradients and optimizer states from the start
+        why: In quantization-aware training, weights and gradients stay in floating point so they can be nudged by small updates; only the forward pass simulates the rounding.
+      - text: It prunes the weights that would round to zero and then retrains the remaining weights
+        why: That is pruning, a different compression technique; it does not make the model robust to quantization noise.
+    explanation: |
+      Quantization-aware training simulates quantized inference in the forward pass ("fake
+      quantization" of weights and activations, implemented in floating point), while
+      backpropagation and the stored weights stay in floating point [^2]. The model therefore
+      learns weights that are robust to the quantization noise, so the final conversion to 8-bit
+      integers costs much less accuracy [^1]. The paper introducing the integer-only inference scheme notes that
+      simple post-training quantization works for large models but causes significant accuracy
+      drops for small ones, which motivates training with simulated quantization [^2].
+    references:
+      - source: handson-ml3
+        locator: 19_training_and_deploying_at_scale.ipynb, Exercise Solutions, 6.
+        url: https://github.com/ageron/handson-ml3/blob/ef1c9f5ab11083584635b9b3a7846f49c58a6084/19_training_and_deploying_at_scale.ipynb
+      - title: 'Jacob et al. (2018): Quantization and Training of Neural Networks for Efficient Integer-Arithmetic-Only Inference'
+        locator: Sec. 3 Training with simulated quantization
+        url: https://arxiv.org/abs/1712.05877
+    source:
+      id: handson-ml3
+      ref: 19_training_and_deploying_at_scale#ex6
+      url: https://github.com/ageron/handson-ml3/blob/ef1c9f5ab11083584635b9b3a7846f49c58a6084/19_training_and_deploying_at_scale.ipynb
+    status: reviewed
+    reviewed_by: claude

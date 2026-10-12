@@ -1680,3 +1680,98 @@ questions:
       ref: lecture-01/q12
     status: reviewed
     reviewed_by: claude
+  - id: logistic-regression-045
+    type: single
+    difficulty: medium
+    tags:
+      - multilabel
+      - softmax
+      - binary-classifiers
+    question: |
+      You want to tag photos as outdoor or indoor **and** as daytime or nighttime; all four
+      combinations occur. Which setup fits this task?
+    options:
+      - text: Two logistic regression classifiers, one per attribute
+        correct: true
+      - text: One softmax regression with the classes outdoor, indoor, daytime and nighttime
+        why: Softmax regression assumes each instance belongs to exactly one class (its probabilities sum to 1), but every photo here carries two labels at once.
+      - text: One logistic regression classifier with a single output
+        why: One sigmoid output answers a single yes/no question, so it cannot predict both attributes.
+      - text: K-Means with four clusters on the image features
+        why: Clustering ignores the labels you have and gives no guarantee that the clusters line up with the four label combinations.
+    explanation: |
+      The two attributes are not mutually exclusive, so this is a multilabel problem: each sample
+      gets one binary decision per attribute, which is comparable to running one binary classifier
+      per label [^2]. Softmax regression, in contrast, is built for mutually exclusive classes: its
+      outputs form a single probability distribution over the classes [^3]. Hence two binary
+      logistic regression classifiers [^1]. (A softmax over the four *combinations* would also
+      produce valid labels, but it is not what the four-class option above describes.)
+    references:
+      - source: handson-ml3
+        locator: 04_training_linear_models.ipynb, Exercise solutions, 11.
+        url: https://github.com/ageron/handson-ml3/blob/ef1c9f5ab11083584635b9b3a7846f49c58a6084/04_training_linear_models.ipynb
+      - title: 'scikit-learn user guide: Multiclass and multioutput algorithms'
+        locator: Sec. 1.12.2 Multilabel classification
+        url: https://scikit-learn.org/stable/modules/multiclass.html#multilabel-classification
+      - source: d2l
+        locator: Sec. 4.1.1.2 The Softmax
+        url: https://d2l.ai/chapter_linear-classification/softmax-regression.html
+    source:
+      id: handson-ml3
+      ref: 04_training_linear_models#ex11
+      url: https://github.com/ageron/handson-ml3/blob/ef1c9f5ab11083584635b9b3a7846f49c58a6084/04_training_linear_models.ipynb
+    status: reviewed
+    reviewed_by: claude
+  - id: logistic-regression-046
+    type: short_answer
+    difficulty: hard
+    tags:
+      - softmax-regression
+      - gradient
+      - cross-entropy
+      - numpy
+    question: |
+      One batch gradient descent step of softmax regression in NumPy starts like this. What does
+      the last line print?
+
+      ```python
+      import numpy as np
+
+      X = np.array([[1.0, 2.0], [1.0, -1.0]])   # column 0 is the bias feature x0 = 1
+      y = np.array([0, 1])                      # class indices
+      Theta = np.zeros((2, 2))                  # one column of parameters per class
+
+      logits = X @ Theta
+      P = np.exp(logits) / np.exp(logits).sum(axis=1, keepdims=True)
+      Y = np.diag(np.ones(2))[y]                # one-hot targets
+      grad = X.T @ (P - Y) / len(X)
+      print(grad[1, 0])
+      ```
+    answer:
+      numeric: -0.75
+      tolerance: 0.001
+      hint: A number, e.g. 0.25
+      model: $\tfrac{1}{2}\left[2\,(0.5 - 1) + (-1)\,(0.5 - 0)\right] = -0.75$
+    explanation: |
+      With all-zero parameters every logit is 0, so the softmax gives $\hat{p}_k = 0.5$ for both
+      classes. `np.diag(np.ones(2))[y]` picks rows of the identity matrix, giving the one-hot targets
+      `[[1, 0], [0, 1]]`. The cross-entropy gradient for the parameters of class $k$ is
+      $\frac{1}{m}\sum_i (\hat{p}^{(i)}_k - y^{(i)}_k)\,\mathbf{x}^{(i)}$ [^1], because the derivative of
+      softmax + cross-entropy with respect to a logit is "predicted probability minus target" [^2].
+      Entry `[1, 0]` is feature $x_1$, class 0:
+      $\frac{1}{2}\big[2 \cdot (0.5 - 1) + (-1) \cdot (0.5 - 0)\big] = \frac{1}{2}(-1 - 0.5) = -0.75$.
+      The negative value means a descent step will *increase* this weight, raising class 0's score
+      for the first instance (which has $x_1 = 2$ and is of class 0).
+    references:
+      - source: handson-ml3
+        locator: 04_training_linear_models.ipynb, Exercise solutions, 12. Batch Gradient Descent with early stopping for Softmax Regression
+        url: https://github.com/ageron/handson-ml3/blob/ef1c9f5ab11083584635b9b3a7846f49c58a6084/04_training_linear_models.ipynb
+      - source: d2l
+        locator: Sec. 4.1.2.2 Softmax and Cross-Entropy Loss
+        url: https://d2l.ai/chapter_linear-classification/softmax-regression.html
+    source:
+      id: handson-ml3
+      ref: 04_training_linear_models#ex12
+      url: https://github.com/ageron/handson-ml3/blob/ef1c9f5ab11083584635b9b3a7846f49c58a6084/04_training_linear_models.ipynb
+    status: reviewed
+    reviewed_by: claude

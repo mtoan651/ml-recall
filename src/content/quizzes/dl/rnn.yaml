@@ -1661,3 +1661,142 @@ questions:
       url: https://archive.nptel.ac.in/content/storage2/courses/downloads_new/106102576/noc25_cs45_assignment_Week_5.png
     status: reviewed
     reviewed_by: claude
+  - id: rnn-045
+    type: short_answer
+    difficulty: easy
+    tags:
+      - rnn
+      - tensor-shapes
+      - batch-first
+      - pytorch
+    question: |
+      A batch contains 8 weather sequences, each covering 20 hours, with 3 measurements per hour
+      (temperature, humidity and wind speed).
+
+      ```python
+      import torch
+      import torch.nn as nn
+
+      rnn = nn.RNN(input_size=3, hidden_size=16, batch_first=True)
+      out, h_n = rnn(torch.randn(8, 20, 3))
+      ```
+
+      The shape of `out` is {{1}} and the shape of `h_n` is {{2}}.
+    answer:
+      blanks:
+        - accept:
+            - (8, 20, 16)
+          pattern: (torch\.size)?\(?\[?\s*8\s*[,x×]\s*20\s*[,x×]\s*16\s*\]?\)?
+          hint: a shape, e.g. (2, 3, 4)
+        - accept:
+            - (1, 8, 16)
+          pattern: (torch\.size)?\(?\[?\s*1\s*[,x×]\s*8\s*[,x×]\s*16\s*\]?\)?
+          hint: a shape, e.g. (2, 3, 4)
+      model: '`out`: $(8, 20, 16)$, one 16-dim output per time step; `h_n`: $(1, 8, 16)$, the last hidden state per layer'
+    explanation: |
+      A recurrent layer takes 3-D input: batch, time steps and features per step, here
+      `(8, 20, 3)` with `batch_first=True` [^2][^1]. `out` keeps the batch and time dimensions and
+      replaces the features by the hidden size: `(8, 20, 16)`, the output features of the last
+      layer at *every* time step [^2]. `h_n` holds only the final hidden state, with shape
+      `(num_layers × num_directions, batch, hidden)` = `(1, 8, 16)`; note that `batch_first` does
+      not apply to it [^2]. A sequence-to-vector model would use `out[:, -1]` (or `h_n[-1]`), a
+      sequence-to-sequence model the whole `out`.
+    references:
+      - source: handson-ml3
+        locator: 15_processing_sequences_using_rnns_and_cnns.ipynb, Exercise solutions, 2.
+        url: https://github.com/ageron/handson-ml3/blob/ef1c9f5ab11083584635b9b3a7846f49c58a6084/15_processing_sequences_using_rnns_and_cnns.ipynb
+      - title: 'PyTorch documentation: torch.nn.RNN'
+        locator: Inputs and Outputs (output, h_n)
+        url: https://docs.pytorch.org/docs/stable/generated/torch.nn.RNN.html
+    source:
+      id: handson-ml3
+      ref: 15_processing_sequences_using_rnns_and_cnns#ex2
+      url: https://github.com/ageron/handson-ml3/blob/ef1c9f5ab11083584635b9b3a7846f49c58a6084/15_processing_sequences_using_rnns_and_cnns.ipynb
+    status: reviewed
+    reviewed_by: claude
+  - id: rnn-046
+    type: multiple
+    difficulty: medium
+    tags:
+      - conv1d
+      - rnn
+      - parallelism
+      - sequence-modeling
+    question: |
+      Compared with a recurrent layer, which statements about a 1D convolutional layer applied to
+      a sequence are true? Select all that apply.
+    options:
+      - text: Its outputs at all time steps can be computed in parallel
+        correct: true
+      - text: It keeps no state between time steps, so it suffers less from unstable gradients
+        correct: true
+      - text: With a stride above 1 it can downsample a long sequence before an RNN
+        correct: true
+      - text: A single such layer can relate time steps that are arbitrarily far apart
+        why: Each output only sees a window of `kernel_size` steps; long-range dependencies need many stacked (or dilated) layers, with a path length of about n/k.
+    explanation: |
+      An RNN must compute step $t - 1$ before step $t$, so it has $O(n)$ sequential operations that
+      cannot be parallelized; a convolution has $O(1)$ sequential operations, because each output
+      depends only on a fixed window of inputs [^2]. Having no memory also means no long chain of
+      recurrent multiplications for the gradients to traverse, so it suffers less from unstable
+      gradients [^1]. Strided 1D convolutions are a cheap way to shorten a sequence (say, audio with
+      thousands of samples per second) before recurrent layers, helping them detect
+      longer-term patterns [^1]. The price is a limited receptive field: the maximum path length
+      between two positions is $O(n/k)$ layers for kernel size $k$ [^2].
+    references:
+      - source: handson-ml3
+        locator: 15_processing_sequences_using_rnns_and_cnns.ipynb, Exercise solutions, 7. (and 8.)
+        url: https://github.com/ageron/handson-ml3/blob/ef1c9f5ab11083584635b9b3a7846f49c58a6084/15_processing_sequences_using_rnns_and_cnns.ipynb
+      - source: d2l
+        locator: Sec. 11.6.2 Comparing CNNs, RNNs, and Self-Attention
+        url: https://d2l.ai/chapter_attention-mechanisms-and-transformers/self-attention-and-positional-encoding.html
+    source:
+      id: handson-ml3
+      ref: 15_processing_sequences_using_rnns_and_cnns#ex7
+      url: https://github.com/ageron/handson-ml3/blob/ef1c9f5ab11083584635b9b3a7846f49c58a6084/15_processing_sequences_using_rnns_and_cnns.ipynb
+    status: reviewed
+    reviewed_by: claude
+  - id: rnn-047
+    type: single
+    difficulty: medium
+    tags:
+      - stateless-rnn
+      - stateful-rnn
+      - truncated-bptt
+    question: |
+      An RNN is trained on random windows of 50 consecutive time steps cut from a long series, and
+      its hidden state starts from zeros at the beginning of every window (a *stateless* RNN). What
+      is the longest pattern it can learn to exploit?
+    options:
+      - text: Patterns spanning at most 50 time steps
+        correct: true
+      - text: Patterns of any length, because the hidden state carries information forward
+        why: The state is reset to zeros at the start of each window, so nothing carries over from one window to the next.
+      - text: Patterns of up to 50 × batch size time steps, since a whole batch is processed together
+        why: The windows in a batch are processed side by side, independently; they are not chained one after the other.
+      - text: Only patterns of a single time step, since the state is reset
+        why: The state is reset per window, not per step; within a window it accumulates information over all 50 steps.
+    explanation: |
+      A stateless RNN starts every training sequence from an initial state, by default zeros [^2],
+      and gradients flow only within the window, so it can only capture patterns no longer than the
+      window. A *stateful* RNN keeps the final state of one batch as the initial state of the next,
+      which lets it capture longer patterns, but it is harder to set up (consecutive batches must
+      continue each other's sequences) and the batches are no longer independent [^1]. Cutting the
+      backpropagation after a fixed number of steps (truncated BPTT) similarly makes a model focus
+      on short-term influences [^3].
+    references:
+      - source: handson-ml3
+        locator: 16_nlp_with_rnns_and_attention.ipynb, Exercise solutions, 1.
+        url: https://github.com/ageron/handson-ml3/blob/ef1c9f5ab11083584635b9b3a7846f49c58a6084/16_nlp_with_rnns_and_attention.ipynb
+      - title: 'PyTorch documentation: torch.nn.RNN'
+        locator: Inputs (h_0 defaults to zeros)
+        url: https://docs.pytorch.org/docs/stable/generated/torch.nn.RNN.html
+      - source: d2l
+        locator: Sec. 9.7.1.2 Truncating Time Steps
+        url: https://d2l.ai/chapter_recurrent-neural-networks/bptt.html
+    source:
+      id: handson-ml3
+      ref: 16_nlp_with_rnns_and_attention#ex1
+      url: https://github.com/ageron/handson-ml3/blob/ef1c9f5ab11083584635b9b3a7846f49c58a6084/16_nlp_with_rnns_and_attention.ipynb
+    status: reviewed
+    reviewed_by: claude

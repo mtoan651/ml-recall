@@ -1648,3 +1648,43 @@ questions:
       url: https://archive.nptel.ac.in/content/storage2/courses/downloads_new/106102576/noc25_cs45_assignment_Week_2.png
     status: reviewed
     reviewed_by: claude
+  - id: language-models-045
+    type: single
+    difficulty: medium
+    tags:
+      - sampled-softmax
+      - large-vocabulary
+      - training-speed
+    question: |
+      You train a model whose output layer predicts the next word over a 50,000-word vocabulary,
+      and computing the full softmax at every training step is too slow. What does *sampled
+      softmax* do?
+    options:
+      - text: It estimates the loss from the target word's logit and those of a random sample of other words
+        correct: true
+      - text: It computes the exact softmax but samples the training examples it is applied to
+        why: Sampling training examples does not reduce the cost per example, which is dominated by the normalization over all 50,000 words.
+      - text: It samples the next word from the predicted distribution during generation instead of taking the argmax
+        why: That is sampling-based decoding at inference time; sampled softmax is a training-time approximation of the loss.
+      - text: It keeps only the 50 most frequent words in the output layer for good
+        why: A permanent shortlist would make all other words impossible to predict; sampled softmax still uses the full vocabulary after training.
+    explanation: |
+      The cost of a softmax output layer comes from its normalization constant, a sum over every
+      word of the vocabulary. Sampled softmax approximates the cross-entropy loss and its gradient
+      using the logit of the correct word plus those of a small sample of other words, so each
+      update only touches a small subset of the output vectors [^2]. This speeds training up
+      considerably; after training, the model uses the regular softmax over the full vocabulary to
+      compute all the probabilities [^1][^2].
+    references:
+      - source: handson-ml3
+        locator: 16_nlp_with_rnns_and_attention.ipynb, Exercise solutions, 7.
+        url: https://github.com/ageron/handson-ml3/blob/ef1c9f5ab11083584635b9b3a7846f49c58a6084/16_nlp_with_rnns_and_attention.ipynb
+      - title: 'Jean et al. (2015): On Using Very Large Target Vocabulary for Neural Machine Translation'
+        locator: Sec. 3 Approximate Learning Approach to Very Large Target Vocabulary, 3.1 Description
+        url: https://arxiv.org/abs/1412.2007
+    source:
+      id: handson-ml3
+      ref: 16_nlp_with_rnns_and_attention#ex7
+      url: https://github.com/ageron/handson-ml3/blob/ef1c9f5ab11083584635b9b3a7846f49c58a6084/16_nlp_with_rnns_and_attention.ipynb
+    status: reviewed
+    reviewed_by: claude

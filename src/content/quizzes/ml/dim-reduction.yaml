@@ -1205,3 +1205,221 @@ questions:
       url: https://ocw.mit.edu/courses/18-065-matrix-methods-in-data-analysis-signal-processing-and-machine-learning-spring-2018/resources/18065-all-problem-sets-in-one-file/
     status: reviewed
     reviewed_by: claude
+  - id: dim-reduction-032
+    type: short_answer
+    difficulty: medium
+    tags:
+      - curse-of-dimensionality
+      - euclidean-distance
+      - numpy
+    question: |
+      What does this print, approximately (one decimal)?
+
+      ```python
+      import numpy as np
+
+      rng = np.random.default_rng(0)
+      a = rng.random((10_000, 600))   # 10,000 random points in the 600-D unit hypercube
+      b = rng.random((10_000, 600))   # 10,000 more
+      print(np.linalg.norm(a - b, axis=1).mean().round(1))
+      ```
+    answer:
+      numeric: 10.0
+      tolerance: 0.15
+      hint: A number with one decimal, e.g. 3.7
+      model: $\approx \sqrt{600/6} = 10.0$
+    explanation: |
+      For two independent uniform coordinates on $[0, 1]$,
+      $\mathbb{E}[(x - y)^2] = \mathrm{Var}(x) + \mathrm{Var}(y) = 1/12 + 1/12 = 1/6$. Summing over $d$
+      coordinates gives a squared distance of
+      about $d/6$, and since it concentrates tightly around its mean, the distance is about
+      $\sqrt{d/6} = \sqrt{100} = 10$ for $d = 600$ (the script prints `10.0`; in 2-D the same mean
+      distance is only about 0.52). Random points in a high-dimensional hypercube are far apart,
+      and most of the volume lies far from the centre [^2], so a training set covers the space very
+      sparsely and new instances are likely to be far from any training instance; this raises the
+      risk of overfitting [^1].
+    references:
+      - source: handson-ml3
+        locator: 08_dimensionality_reduction.ipynb, Exercise solutions, 2.
+        url: https://github.com/ageron/handson-ml3/blob/ef1c9f5ab11083584635b9b3a7846f49c58a6084/08_dimensionality_reduction.ipynb
+      - title: 'Wikipedia: Curse of dimensionality'
+        locator: Domains, Distance function
+        url: https://en.wikipedia.org/wiki/Curse_of_dimensionality#Distance_function
+    source:
+      id: handson-ml3
+      ref: 08_dimensionality_reduction#ex2
+      url: https://github.com/ageron/handson-ml3/blob/ef1c9f5ab11083584635b9b3a7846f49c58a6084/08_dimensionality_reduction.ipynb
+    status: reviewed
+    reviewed_by: claude
+  - id: dim-reduction-033
+    type: multiple
+    difficulty: medium
+    tags:
+      - inverse-transform
+      - pca
+      - kernel-pca
+      - t-sne
+      - lle
+    question: |
+      After reducing a dataset's dimensionality, you want to map the reduced points back to the
+      original feature space, for example to measure the reconstruction error. Which scikit-learn
+      estimators provide such a reverse mapping? Select all that apply.
+    options:
+      - text: '`PCA`'
+        correct: true
+      - text: '`KernelPCA(fit_inverse_transform=True)`'
+        correct: true
+      - text: '`TSNE`'
+        why: 't-SNE only offers `fit` and `fit_transform`: it embeds the training points but has no `transform` for new points and no `inverse_transform`.'
+      - text: '`LocallyLinearEmbedding`'
+        why: LLE can embed new points with `transform`, but it has no `inverse_transform` to map embeddings back to the input space.
+    explanation: |
+      Dimensionality reduction loses information, so going back is at best approximate, and only
+      some algorithms define a reverse mapping at all: PCA has a simple one, t-SNE has none [^1]
+      (`PCA.inverse_transform` exists, while `TSNE` offers only `fit` and `fit_transform`).
+      `KernelPCA` learns an approximate reverse mapping, a kernel ridge regression that finds the
+      "pre-image" of a point, but only when created with `fit_inverse_transform=True` [^2].
+      `LocallyLinearEmbedding` can `transform` new points but has no `inverse_transform` [^3].
+    references:
+      - source: handson-ml3
+        locator: 08_dimensionality_reduction.ipynb, Exercise solutions, 3.
+        url: https://github.com/ageron/handson-ml3/blob/ef1c9f5ab11083584635b9b3a7846f49c58a6084/08_dimensionality_reduction.ipynb
+      - title: 'scikit-learn API reference: KernelPCA'
+        locator: Parameters (fit_inverse_transform); Methods, inverse_transform
+        url: https://scikit-learn.org/stable/modules/generated/sklearn.decomposition.KernelPCA.html
+      - title: 'scikit-learn API reference: LocallyLinearEmbedding'
+        locator: Methods (fit, fit_transform, transform)
+        url: https://scikit-learn.org/stable/modules/generated/sklearn.manifold.LocallyLinearEmbedding.html
+    source:
+      id: handson-ml3
+      ref: 08_dimensionality_reduction#ex3
+      url: https://github.com/ageron/handson-ml3/blob/ef1c9f5ab11083584635b9b3a7846f49c58a6084/08_dimensionality_reduction.ipynb
+    status: reviewed
+    reviewed_by: claude
+  - id: dim-reduction-034
+    type: single
+    difficulty: medium
+    tags:
+      - pca
+      - manifold-learning
+      - swiss-roll
+      - lle
+    question: |
+      Your 3-D data lie on a Swiss roll: a 2-D sheet rolled up into a spiral, with no direction of
+      the space that is useless. Why is PCA down to 2 dimensions a poor choice here?
+    options:
+      - text: It can only project onto a plane, which squashes the roll instead of unrolling it
+        correct: true
+      - text: Two principal components always keep less than half of the variance of 3-D data
+        why: The kept variance depends on the data, and two of three components often keep most of it; the problem is the structure that a linear projection destroys, not the variance figure.
+      - text: PCA needs labels to find directions that separate the different layers of the roll
+        why: PCA is unsupervised; it picks directions of maximum variance and never uses labels.
+      - text: PCA cannot be fitted on data with fewer features than samples
+        why: PCA works for any number of samples and features; three features and thousands of points are no problem.
+    explanation: |
+      PCA is a linear method: it picks the plane that keeps the most variance and projects onto it,
+      and linear methods often miss non-linear structure [^2]. A rolled-up sheet has no useless
+      direction to drop, so any projection collapses parts of the roll that are far apart along
+      the sheet. Manifold learning methods such as LLE instead try to *unroll* it by preserving local
+      neighbourhoods [^2][^1]. You can measure this on scikit-learn's `make_swiss_roll`: compare each
+      point's nearest neighbours in the 2-D embedding with its nearest neighbours on the unrolled
+      sheet; PCA typically preserves far fewer of them than `LocallyLinearEmbedding` does.
+    references:
+      - source: handson-ml3
+        locator: 08_dimensionality_reduction.ipynb, Exercise solutions, 4.
+        url: https://github.com/ageron/handson-ml3/blob/ef1c9f5ab11083584635b9b3a7846f49c58a6084/08_dimensionality_reduction.ipynb
+      - title: 'scikit-learn user guide: Manifold learning'
+        locator: Sec. 2.2.1 Introduction; Sec. 2.2.3 Locally Linear Embedding
+        url: https://scikit-learn.org/stable/modules/manifold.html#introduction
+    source:
+      id: handson-ml3
+      ref: 08_dimensionality_reduction#ex4
+      url: https://github.com/ageron/handson-ml3/blob/ef1c9f5ab11083584635b9b3a7846f49c58a6084/08_dimensionality_reduction.ipynb
+    status: reviewed
+    reviewed_by: claude
+  - id: dim-reduction-035
+    type: single
+    difficulty: easy
+    tags:
+      - incremental-pca
+      - out-of-core
+      - pca
+    question: |
+      You want to apply PCA to a dataset that is far too large to fit in memory. Which option is
+      designed for this?
+    options:
+      - text: '`IncrementalPCA`, fed with one mini-batch at a time via `partial_fit`'
+        correct: true
+      - text: '`PCA(svd_solver="randomized")`, which approximates the first components quickly'
+        why: Randomized PCA is fast when you keep few components, but it is still a batch method that needs the whole dataset in memory.
+      - text: '`KernelPCA` with an RBF kernel, which works with a kernel matrix instead of the data'
+        why: The kernel matrix has one entry per pair of instances, so it needs even more memory than the data.
+      - text: '`PCA(n_components=0.95)`, which keeps fewer components and so less of the data'
+        why: Choosing how many components to keep does not change the fact that `PCA` must see all the data at once during `fit`.
+    explanation: |
+      Regular `PCA` only supports batch processing, so all the data must fit in main memory.
+      `IncrementalPCA` processes the data in mini-batches with `partial_fit` (or `fit` on a
+      `numpy.memmap`), giving almost the same components out-of-core [^2]. It is also handy for
+      online settings where new instances keep arriving; when the data do fit in memory, regular or
+      randomized PCA is faster [^1].
+    references:
+      - source: handson-ml3
+        locator: 08_dimensionality_reduction.ipynb, Exercise solutions, 6.
+        url: https://github.com/ageron/handson-ml3/blob/ef1c9f5ab11083584635b9b3a7846f49c58a6084/08_dimensionality_reduction.ipynb
+      - title: 'scikit-learn user guide: Decomposing signals in components'
+        locator: Sec. 2.5.1.2 Incremental PCA
+        url: https://scikit-learn.org/stable/modules/decomposition.html#incremental-pca
+    source:
+      id: handson-ml3
+      ref: 08_dimensionality_reduction#ex6
+      url: https://github.com/ageron/handson-ml3/blob/ef1c9f5ab11083584635b9b3a7846f49c58a6084/08_dimensionality_reduction.ipynb
+    status: reviewed
+    reviewed_by: claude
+  - id: dim-reduction-036
+    type: short_answer
+    difficulty: medium
+    tags:
+      - pca
+      - reconstruction-error
+      - anomaly-detection
+    question: |
+      PCA is fitted on normal data and then used to score a new point by its reconstruction error.
+      What does the last line print?
+
+      ```python
+      import numpy as np
+      from sklearn.decomposition import PCA
+
+      X = np.array([[1, 1], [2, 2], [-1, -1], [-2, -2]], dtype=float)   # normal data
+      pca = PCA(n_components=1).fit(X)
+
+      x_new = np.array([[1.0, -1.0]])
+      x_rec = pca.inverse_transform(pca.transform(x_new))
+      print(round(float(((x_new - x_rec) ** 2).sum()), 2))
+      ```
+    answer:
+      numeric: 2.0
+      tolerance: 0.01
+      hint: A number, e.g. 0.5
+      model: '2.0: $(1, -1)$ projects onto the origin, so the squared error is $1^2 + 1^2$'
+    explanation: |
+      The normal points lie on the line $y = x$, with mean $(0, 0)$, so the single principal
+      component is $(1, 1)/\sqrt{2}$. The new point $(1, -1)$ is orthogonal to it: its projection is
+      0, `inverse_transform` maps that back to the mean $(0, 0)$ [^2], and the squared reconstruction
+      error is $1^2 + (-1)^2 = 2$. A point on the line, such as $(3, 3)$, would be rebuilt exactly
+      (error 0). PCA keeps the directions of normal variation, so instances that do not follow
+      them, such as rotated or darkened faces in the handson-ml3 Olivetti exercise, get much larger
+      reconstruction errors and can be flagged as anomalies [^1].
+    references:
+      - source: handson-ml3
+        locator: 09_unsupervised_learning.ipynb, Exercise solutions, 13. Using Dimensionality Reduction Techniques for Anomaly Detection
+        url: https://github.com/ageron/handson-ml3/blob/ef1c9f5ab11083584635b9b3a7846f49c58a6084/09_unsupervised_learning.ipynb
+      - title: 'scikit-learn API reference: PCA'
+        locator: Methods, transform and inverse_transform
+        url: https://scikit-learn.org/stable/modules/generated/sklearn.decomposition.PCA.html
+    source:
+      id: handson-ml3
+      ref: 09_unsupervised_learning#ex13
+      url: https://github.com/ageron/handson-ml3/blob/ef1c9f5ab11083584635b9b3a7846f49c58a6084/09_unsupervised_learning.ipynb
+    status: reviewed
+    reviewed_by: claude

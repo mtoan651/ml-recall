@@ -1504,3 +1504,53 @@ questions:
       url: https://arxiv.org/abs/2201.00650v2
     status: reviewed
     reviewed_by: claude
+  - id: nonparametric-039
+    type: short_answer
+    difficulty: medium
+    tags:
+      - k-nearest-neighbors
+      - distance-weighting
+      - scikit-learn
+    question: |
+      ```python
+      from sklearn.neighbors import KNeighborsClassifier
+
+      X = [[0.0], [1.0], [4.0]]
+      y = [0, 0, 1]
+      for w in ["uniform", "distance"]:
+          knn = KNeighborsClassifier(n_neighbors=3, weights=w).fit(X, y)
+          print(w, knn.predict([[3.5]])[0])
+      ```
+
+      The loop prints the class predicted for $x = 3.5$: with `"uniform"` it prints {{1}}, and with
+      `"distance"` it prints {{2}}.
+    answer:
+      blanks:
+        - numeric: 0
+          tolerance: 0
+          hint: a class label, 0 or 1
+        - numeric: 1
+          tolerance: 0
+          hint: a class label, 0 or 1
+      model: uniform → 0 (two votes against one); distance → 1 (weight 2 against 0.29 + 0.4)
+    explanation: |
+      With $k = 3$ all three training points are neighbours of $x = 3.5$. Uniform weights give a
+      plain majority vote: two points of class 0 against one of class 1, so class 0. With
+      `weights="distance"` each neighbour's vote is proportional to the inverse of its distance [^2]:
+      class 1 gets $1/0.5 = 2$, while class 0 gets $1/3.5 + 1/2.5 \approx 0.29 + 0.40 = 0.69$, so
+      class 1 wins (`predict_proba` gives about 0.74 for class 1). Trying both `weights` values (and
+      several `n_neighbors`) in a grid search is how the handson-ml3 solution pushes a k-NN MNIST
+      classifier above 97% accuracy [^1].
+    references:
+      - source: handson-ml3
+        locator: 03_classification.ipynb, Exercise solutions, 1. An MNIST Classifier With Over 97% Accuracy
+        url: https://github.com/ageron/handson-ml3/blob/ef1c9f5ab11083584635b9b3a7846f49c58a6084/03_classification.ipynb
+      - title: 'scikit-learn user guide: Nearest Neighbors'
+        locator: Sec. 1.6.2 Nearest Neighbors Classification
+        url: https://scikit-learn.org/stable/modules/neighbors.html#nearest-neighbors-classification
+    source:
+      id: handson-ml3
+      ref: 03_classification#ex1
+      url: https://github.com/ageron/handson-ml3/blob/ef1c9f5ab11083584635b9b3a7846f49c58a6084/03_classification.ipynb
+    status: reviewed
+    reviewed_by: claude

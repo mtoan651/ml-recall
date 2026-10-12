@@ -1302,3 +1302,47 @@ questions:
       ref: frameworks-030
     status: reviewed
     reviewed_by: claude
+  - id: frameworks-031
+    type: single
+    difficulty: medium
+    tags:
+      - data-parallelism
+      - model-parallelism
+      - multi-gpu
+    question: |
+      Your model fits comfortably on one GPU, and you have 8 GPUs to speed up training. Why is data
+      parallelism usually preferred over model parallelism here?
+    options:
+      - text: Each GPU runs a full replica on its share of the batch; only gradients are exchanged
+        correct: true
+      - text: Data parallelism needs no communication at all between the GPUs
+        why: The replicas must aggregate (e.g. all-reduce) their gradients at every step so that they keep identical parameters.
+      - text: Model parallelism can never use more than two GPUs
+        why: A network can be split into many pieces across many devices; the problem is the heavy, tightly synchronized traffic between the pieces.
+      - text: Data parallelism lets you train a model that is larger than the memory of any single GPU
+        why: Each data-parallel replica holds the full model, so adding GPUs does not allow larger models; that is what model parallelism is for.
+    explanation: |
+      Model parallelism splits the network itself across devices, so activations and gradients must
+      cross devices at every layer boundary, the pieces must be balanced, and each model needs its
+      own split [^2][^1]. Data parallelism gives every GPU a full replica and a different slice of
+      the batch; the only synchronization is aggregating the gradients after each mini-batch, and it
+      works the same for any model. It is the simplest and generally the fastest option, mainly
+      because it needs less communication [^1], but it cannot train models larger than one device's
+      memory [^2]. In PyTorch's `DistributedDataParallel`, each process computes local gradients
+      and an all-reduce averages them, keeping all replicas in sync [^3].
+    references:
+      - source: handson-ml3
+        locator: 19_training_and_deploying_at_scale.ipynb, Exercise Solutions, 7.
+        url: https://github.com/ageron/handson-ml3/blob/ef1c9f5ab11083584635b9b3a7846f49c58a6084/19_training_and_deploying_at_scale.ipynb
+      - source: d2l
+        locator: Sec. 13.5.1 Splitting the Problem
+        url: https://d2l.ai/chapter_computational-performance/multiple-gpus.html
+      - title: 'PyTorch documentation: Distributed Data Parallel (notes)'
+        locator: Internal Design, Backward Pass
+        url: https://docs.pytorch.org/docs/stable/notes/ddp.html
+    source:
+      id: handson-ml3
+      ref: 19_training_and_deploying_at_scale#ex7
+      url: https://github.com/ageron/handson-ml3/blob/ef1c9f5ab11083584635b9b3a7846f49c58a6084/19_training_and_deploying_at_scale.ipynb
+    status: reviewed
+    reviewed_by: claude

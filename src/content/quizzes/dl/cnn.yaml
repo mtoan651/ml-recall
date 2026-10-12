@@ -2414,3 +2414,109 @@ questions:
       ref: lecture-01/q27
     status: reviewed
     reviewed_by: claude
+  - id: cnn-064
+    type: short_answer
+    difficulty: medium
+    tags:
+      - conv2d
+      - output-shape
+      - stride
+      - padding
+    question: |
+      What does this print?
+
+      ```python
+      import torch
+      import torch.nn as nn
+
+      cnn = nn.Sequential(
+          nn.Conv2d(3, 32, kernel_size=3, stride=2, padding=1), nn.ReLU(),
+          nn.Conv2d(32, 64, kernel_size=3, stride=2, padding=1), nn.ReLU(),
+          nn.Conv2d(64, 128, kernel_size=3, stride=2, padding=1))
+      print(cnn(torch.randn(1, 3, 200, 300)).shape)
+      ```
+    answer:
+      accept:
+        - (1, 128, 25, 38)
+      pattern: (torch\.size)?\(?\[?\s*1\s*[,x×]\s*128\s*[,x×]\s*25\s*[,x×]\s*38\s*\]?\)?
+      hint: Four dimensions in order, e.g. (1, 16, 10, 10)
+      model: '`torch.Size([1, 128, 25, 38])`: 200 → 100 → 50 → 25 and 300 → 150 → 75 → 38'
+    explanation: |
+      For each layer $H_{out} = \lfloor (H_{in} + 2p - k)/s \rfloor + 1$ [^2]; with $k = 3$, $p = 1$,
+      $s = 2$ this is $\lfloor (H_{in} - 1)/2 \rfloor + 1 = \lceil H_{in}/2 \rceil$, i.e. each layer
+      halves the size, rounding up. Heights: $200 \to 100 \to 50 \to 25$. Widths:
+      $300 \to 150 \to 75 \to 38$ (75 is odd, so it rounds up to 38). The channel count is that of the
+      last layer, 128, and the batch dimension stays 1. The handson-ml3 exercise uses the same
+      halving ("same" padding, stride 2) to size the feature maps when estimating how much RAM a
+      CNN needs: each float32 value takes 4 bytes, so this last feature map alone takes
+      $4 \times 128 \times 25 \times 38 = 486{,}400$ bytes per image [^1].
+    references:
+      - source: handson-ml3
+        locator: 14_deep_computer_vision_with_cnns.ipynb, Exercises, 2.
+        url: https://github.com/ageron/handson-ml3/blob/ef1c9f5ab11083584635b9b3a7846f49c58a6084/14_deep_computer_vision_with_cnns.ipynb
+      - title: 'PyTorch documentation: torch.nn.Conv2d'
+        locator: Shape
+        url: https://docs.pytorch.org/docs/stable/generated/torch.nn.Conv2d.html
+    source:
+      id: handson-ml3
+      ref: 14_deep_computer_vision_with_cnns#ex2
+      url: https://github.com/ageron/handson-ml3/blob/ef1c9f5ab11083584635b9b3a7846f49c58a6084/14_deep_computer_vision_with_cnns.ipynb
+    status: reviewed
+    reviewed_by: claude
+  - id: cnn-065
+    type: short_answer
+    difficulty: hard
+    tags:
+      - fully-convolutional-network
+      - dense-to-conv
+      - output-shape
+    question: |
+      A dense layer on top of a $64 \times 7 \times 7$ feature map is converted into a convolutional
+      layer:
+
+      ```python
+      import torch
+      import torch.nn as nn
+
+      torch.manual_seed(0)
+      dense = nn.Linear(64 * 7 * 7, 10)
+      conv = nn.Conv2d(64, 10, kernel_size=7)            # "valid" padding, stride 1
+      conv.weight.data = dense.weight.data.view(10, 64, 7, 7)
+      conv.bias.data = dense.bias.data
+
+      x = torch.randn(1, 64, 7, 7)
+      print(torch.allclose(dense(x.flatten(1)), conv(x).flatten(1), atol=1e-5))
+      print(conv(torch.randn(1, 64, 9, 9)).shape)
+      ```
+
+      The first line prints `True`. What does the second line print?
+    answer:
+      accept:
+        - (1, 10, 3, 3)
+      pattern: (torch\.size)?\(?\[?\s*1\s*[,x×]\s*10\s*[,x×]\s*3\s*[,x×]\s*3\s*\]?\)?
+      hint: Four dimensions in order, e.g. (1, 16, 10, 10)
+      model: '`torch.Size([1, 10, 3, 3])`: a $3 \times 3$ grid of 10 class scores'
+    explanation: |
+      A dense layer reading a $64 \times 7 \times 7$ input is the same as a convolution whose
+      $7 \times 7$ kernel covers the whole input, with one filter per output neuron; reshaping the
+      weight matrix `(10, 3136)` to `(10, 64, 7, 7)` makes the two compute identical outputs (the
+      first `True`) [^1][^2]. Unlike the dense layer, the convolution also accepts larger inputs: on a
+      $9 \times 9$ map it slides to $9 - 7 + 1 = 3$ positions in each direction [^3], producing a
+      $3 \times 3$ map of 10 scores, `torch.Size([1, 10, 3, 3])`. This is how a classifier becomes a
+      fully convolutional network that scores many windows of a bigger image in one pass [^1].
+    references:
+      - source: handson-ml3
+        locator: 14_deep_computer_vision_with_cnns.ipynb, Exercises, 7.
+        url: https://github.com/ageron/handson-ml3/blob/ef1c9f5ab11083584635b9b3a7846f49c58a6084/14_deep_computer_vision_with_cnns.ipynb
+      - title: 'Long, Shelhamer and Darrell (2015): Fully Convolutional Networks for Semantic Segmentation'
+        locator: Sec. 3.1 Adapting classifiers for dense prediction
+        url: https://arxiv.org/abs/1411.4038
+      - title: 'PyTorch documentation: torch.nn.Conv2d'
+        locator: Shape
+        url: https://docs.pytorch.org/docs/stable/generated/torch.nn.Conv2d.html
+    source:
+      id: handson-ml3
+      ref: 14_deep_computer_vision_with_cnns#ex7
+      url: https://github.com/ageron/handson-ml3/blob/ef1c9f5ab11083584635b9b3a7846f49c58a6084/14_deep_computer_vision_with_cnns.ipynb
+    status: reviewed
+    reviewed_by: claude
