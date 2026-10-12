@@ -5,10 +5,20 @@ versioning: [SemVer](https://semver.org) as defined in [docs/conventions.md](doc
 
 ## [Unreleased]
 
+## [0.4.1] — 2026-10-12
+
+Finishes what the v0.4.0 roadmap promised. The tag filter is a new capability, which the
+conventions would make a MINOR bump; it ships as a PATCH because it completes the v0.4.0
+mixed-test item rather than starting new work.
+
+Bank: 2909 questions, all reviewed (56 by the owner, 2853 by Claude, "AI-checked"), 8 retired —
+ml 864, dl 486, math 372, ai 303, practice 230, nlp 212, llm 138, cv 119, rl 93, gen 92; every
+topic has at least 26 questions, so every topic test has the full 20.
+
 ### Added
 
 - **Tags in mixed tests** — the part of the v0.4.0 roadmap item ("across topics, difficulty and
-  tags") that v0.4.0 left out: search any of the 2233 tags or pick one of the largest, and a
+  tags") that v0.4.0 left out: search any of the 2258 tags or pick one of the largest, and a
   mixed test draws only questions with at least one chosen tag (within the chosen topics and
   difficulties). A tag page with more than 20 questions links to `/exam/?tag=<tag>` for a
   longer test or one by difficulty — e.g. all 132 `ce6146` questions, up to 50 at a time.
@@ -285,7 +295,8 @@ llm 20, rl 12, cv 10, gen 10.
 Bank: 333 questions (328 draft, 5 reviewed) — ml 97, dl 77, nlp 47, practice 27, ai 20, llm 20,
 math 13, rl 12, cv 10, gen 10.
 
-[Unreleased]: https://github.com/mtoan651/ml-recall/compare/v0.4.0...HEAD
+[Unreleased]: https://github.com/mtoan651/ml-recall/compare/v0.4.1...HEAD
+[0.4.1]: https://github.com/mtoan651/ml-recall/releases/tag/v0.4.1
 [0.4.0]: https://github.com/mtoan651/ml-recall/releases/tag/v0.4.0
 [0.3.0]: https://github.com/mtoan651/ml-recall/releases/tag/v0.3.0
 [0.2.0]: https://github.com/mtoan651/ml-recall/releases/tag/v0.2.0
