@@ -120,16 +120,23 @@ export default function MixedExam({ catalog, tags }: { catalog: Catalog; tags: C
       setDifficulties(new Set(prefs.difficulties));
       if (MIXED_SIZES.includes(prefs.size)) setSize(prefs.size);
     }
-    // A link from a tag page: that tag over everything, remembered like a choice on the form.
-    const linked = new URLSearchParams(window.location.search).get("tag");
-    if (linked !== null) {
-      if (knownTag(linked)) {
-        setTopics(new Set(allTopics));
-        setChosenTags([linked]);
+    // A link from a tag page (`?tag=`: that tag over everything) or a preset (`?topics=a,b`:
+    // those topics, no tag), remembered like a choice on the form.
+    const params = new URLSearchParams(window.location.search);
+    const linked = params.get("tag");
+    const linkedTopics = params.get("topics");
+    if (linked !== null || linkedTopics !== null) {
+      const known = new Set(allTopics);
+      const preset =
+        linked !== null
+          ? knownTag(linked) && { topics: allTopics, tags: [linked] }
+          : { topics: linkedTopics?.split(",").filter((t) => known.has(t)) ?? [], tags: [] };
+      if (preset && preset.topics.length > 0) {
+        setTopics(new Set(preset.topics));
+        setChosenTags(preset.tags);
         setDifficulties(new Set(DIFFICULTIES));
         saveMixedPrefs({
-          topics: allTopics,
-          tags: [linked],
+          ...preset,
           difficulties: [...DIFFICULTIES],
           size: prefs && MIXED_SIZES.includes(prefs.size) ? prefs.size : DEFAULT_MIXED_SIZE,
         });

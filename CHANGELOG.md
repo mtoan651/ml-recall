@@ -5,6 +5,14 @@ versioning: [SemVer](https://semver.org) as defined in [docs/conventions.md](doc
 
 ## [Unreleased]
 
+### Added
+
+- CE6146 exam-prep page (`/ce6146/`, linked from the header and the home page): a timed test
+  over every question written from the course's slides and exercises, a card per lecture and
+  exercise (practice, tag test, progress), and the later syllabus weeks mapped to bank topics
+  with their notes and tests.
+- Mixed-test topic preset: `/exam/?topics=<id>,<id>` opens the form with those topics.
+
 ## [0.5.0] — 2026-10-12
 
 Retention: spaced repetition, topic notes, search, offline use, export/import and a Vietnamese
