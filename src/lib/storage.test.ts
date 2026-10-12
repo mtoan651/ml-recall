@@ -115,7 +115,12 @@ describe("settings", () => {
   it("round-trips and falls back to defaults", () => {
     const store = memoryStore();
     expect(loadSettings(store)).toEqual(DEFAULT_SETTINGS);
-    const custom = { shuffleQuestions: false, reviewedOnly: true, examLayout: "all" } as const;
+    const custom = {
+      shuffleQuestions: false,
+      reviewedOnly: true,
+      examLayout: "all",
+      courseWeight: 16,
+    } as const;
     saveSettings(custom, store);
     expect(loadSettings(store)).toEqual(custom);
     expect(loadSettings(memoryStore({ [SETTINGS_KEY]: '{"reviewedOnly":"x"}' }))).toEqual(
@@ -132,9 +137,18 @@ describe("settings", () => {
       shuffleQuestions: false,
       reviewedOnly: true,
       examLayout: "one",
+      courseWeight: 4,
     });
     const bad = memoryStore({ [SETTINGS_KEY]: '{"examLayout":"grid"}' });
     expect(loadSettings(bad).examLayout).toBe("one");
+  });
+
+  it("draws course questions 4× as often unless changed", () => {
+    expect(DEFAULT_SETTINGS.courseWeight).toBe(4);
+    const off = memoryStore({ [SETTINGS_KEY]: '{"courseWeight":1}' });
+    expect(loadSettings(off).courseWeight).toBe(1);
+    const bad = memoryStore({ [SETTINGS_KEY]: '{"courseWeight":7}' });
+    expect(loadSettings(bad).courseWeight).toBe(4);
   });
 });
 

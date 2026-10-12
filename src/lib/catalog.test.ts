@@ -12,6 +12,7 @@ import {
   scopeTitle,
   selectionPool,
   tagCounts,
+  taggedIds,
 } from "./catalog";
 import type { ExamAttempt } from "./exam";
 import { mulberry32 } from "./shuffle";
@@ -147,6 +148,18 @@ describe("mixed test pool", () => {
     expect(drawIds(pool, 50, mulberry32(7))).toHaveLength(6);
     expect(drawIds(pool, 0)).toEqual([]);
     expect(drawIds(pool, 4, mulberry32(7))).toEqual(drawn);
+  });
+
+  it("draws by weight when given weights", () => {
+    const pool = selectionPool(catalog, all);
+    const only = (id: string) => (id === "cnn-001" || id === "rnn-002" ? 1 : 0);
+    expect(drawIds(pool, 4, mulberry32(7), only).sort()).toEqual(["cnn-001", "rnn-002"]);
+  });
+
+  it("lists the ids that carry a tag", () => {
+    const entries = catalogEntries(catalog);
+    expect([...taggedIds(entries, tags, "conv")].sort()).toEqual(["cnn-001", "cnn-002", "seg-001"]);
+    expect(taggedIds(entries, tags, "unknown").size).toBe(0);
   });
 });
 

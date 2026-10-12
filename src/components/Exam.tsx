@@ -1,4 +1,5 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { COURSE_TAG, type CourseWeight, courseWeight, DEFAULT_COURSE_WEIGHT } from "../lib/course";
 import {
   createExam,
   DEFAULT_EXAM_LAYOUT,
@@ -104,6 +105,12 @@ export default function Exam({
   );
   const poolCount = questions.length;
   const reviewedCount = useMemo(() => examPool(questions, true).length, [questions]);
+  const courseIds = useMemo(
+    () => new Set(questions.filter((q) => q.tags.includes(COURSE_TAG)).map((q) => q.id)),
+    [questions],
+  );
+  /** Boosting course questions changes the draw only when the pool mixes them with others. */
+  const boostable = courseIds.size > 0 && courseIds.size < poolCount;
 
   // The server renders the start screen; the browser then restores settings, history and a
   // test in progress before showing anything (see `.quiz[data-ready]` in global.css).
@@ -111,6 +118,8 @@ export default function Exam({
   const [reviewedOnlySetting, setReviewedOnlySetting] = useState(false);
   const reviewedOnly = reviewedOnlySetting && reviewedCount > 0;
   const [layout, setLayout] = useState<ExamLayout>(DEFAULT_EXAM_LAYOUT);
+  const [courseWeightSetting, setCourseWeightSetting] =
+    useState<CourseWeight>(DEFAULT_COURSE_WEIGHT);
   const [history, setHistory] = useState<ExamHistory>(EMPTY_HISTORY);
   const [exam, setExam] = useState<ExamState | null>(null);
   const [finished, setFinished] = useState<FinishedExam | null>(null);
@@ -216,7 +225,7 @@ export default function Exam({
 
   /** A new test drawn from the pool. */
   const begin = useCallback(
-    (only: boolean, chosenLayout: ExamLayout) => {
+    (only: boolean, chosenLayout: ExamLayout, boost: CourseWeight) => {
       const pool = examPool(questions, only).map(toInput);
       const state = createExam(pool, {
         scope: scopeKey,
@@ -224,6 +233,7 @@ export default function Exam({
         layout: chosenLayout,
         now: Date.now(),
         max: maxQuestions,
+        weight: boost > 1 && boostable ? courseWeight(courseIds, boost) : undefined,
       });
       if (state.items.length === 0) return;
       setFinished(null);
@@ -234,7 +244,7 @@ export default function Exam({
       const top = rootRef.current?.getBoundingClientRect().top ?? 0;
       if (top < 0) rootRef.current?.scrollIntoView({ block: "start" });
     },
-    [questions, scopeKey, maxQuestions],
+    [questions, scopeKey, maxQuestions, boostable, courseIds],
   );
   const autoStarted = useRef(false);
 
@@ -243,6 +253,7 @@ export default function Exam({
     const settings = loadSettings();
     setReviewedOnlySetting(settings.reviewedOnly);
     setLayout(settings.examLayout);
+    setCourseWeightSetting(settings.courseWeight);
     setHistory(loadExamHistory(scopeKey));
     const stored = loadExam(scopeKey, storedInfo);
     // A stored test whose questions changed (retired, new options) cannot be resumed: drop it
@@ -260,7 +271,7 @@ export default function Exam({
       });
     } else if (autoStart && !autoStarted.current) {
       autoStarted.current = true;
-      begin(settings.reviewedOnly && reviewedCount > 0, settings.examLayout);
+      begin(settings.reviewedOnly && reviewedCount > 0, settings.examLayout, settings.courseWeight);
     }
     setReady(true);
   }, [scopeKey, storedInfo, finish, autoStart, begin, reviewedCount]);
@@ -302,7 +313,10 @@ export default function Exam({
     if (top < 0) rootRef.current?.scrollIntoView({ block: "start" });
   }, [view]);
 
-  const start = useCallback(() => begin(reviewedOnly, layout), [begin, reviewedOnly, layout]);
+  const start = useCallback(
+    () => begin(reviewedOnly, layout, courseWeightSetting),
+    [begin, reviewedOnly, layout, courseWeightSetting],
+  );
 
   const changeReviewedOnly = (value: boolean) => {
     setReviewedOnlySetting(value);
@@ -313,6 +327,12 @@ export default function Exam({
   const changeLayout = (value: ExamLayout) => {
     setLayout(value);
     saveSettings({ ...loadSettings(), examLayout: value });
+  };
+
+  const changeCourseWeight = (value: CourseWeight) => {
+    setCourseWeightSetting(value);
+    // Shared with the mixed test.
+    saveSettings({ ...loadSettings(), courseWeight: value });
   };
 
   return (
@@ -372,6 +392,9 @@ export default function Exam({
               reviewedCount={reviewedCount}
               draftCount={poolCount - reviewedCount}
               layout={layout}
+              courseCount={boostable ? courseIds.size : 0}
+              courseWeight={courseWeightSetting}
+              onCourseWeight={changeCourseWeight}
               history={history}
               onReviewedOnly={changeReviewedOnly}
               onLayout={changeLayout}

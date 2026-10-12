@@ -4,7 +4,7 @@
  * progress. The pages fetch only the questions they show (src/lib/fetch.ts).
  */
 import type { ExamHistory } from "./exam";
-import { type Rng, shuffled } from "./shuffle";
+import { type Rng, shuffled, weightedSample } from "./shuffle";
 import type { QuestionResult } from "./storage";
 import type { Catalog, CatalogTags, CatalogTopic, Difficulty } from "./types";
 
@@ -132,9 +132,28 @@ export function selectionPool(
     .map((e) => e.id);
 }
 
-/** `count` ids drawn uniformly at random from `pool`, in random order. */
-export function drawIds(pool: readonly string[], count: number, rng: Rng = Math.random): string[] {
-  return shuffled(pool, rng).slice(0, Math.max(0, count));
+/**
+ * `count` ids drawn at random from `pool`, in random order: uniformly, or with `weight` each
+ * id's chance proportional to its weight (`weightedSample`).
+ */
+export function drawIds(
+  pool: readonly string[],
+  count: number,
+  rng: Rng = Math.random,
+  weight?: (id: string) => number,
+): string[] {
+  return weight
+    ? weightedSample(pool, count, weight, rng)
+    : shuffled(pool, rng).slice(0, Math.max(0, count));
+}
+
+/** Ids of the questions carrying `tag`, from the catalog's tag index. */
+export function taggedIds(
+  entries: readonly CatalogEntry[],
+  tags: TagIndex,
+  tag: string,
+): Set<string> {
+  return new Set((tags.get(tag) ?? []).flatMap((i) => entries[i]?.id ?? []));
 }
 
 // --------------------------------------------------------------------------- mistakes

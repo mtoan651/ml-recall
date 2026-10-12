@@ -9,6 +9,23 @@ import { msg } from "./i18n";
 
 export const COURSE_TAG = "ce6146";
 
+/**
+ * How many times as often timed and mixed tests draw a course question as any other question
+ * (`QuizSettings.courseWeight`): as often, more, mostly.
+ */
+export const COURSE_WEIGHTS = [1, 4, 16] as const;
+export type CourseWeight = (typeof COURSE_WEIGHTS)[number];
+export const DEFAULT_COURSE_WEIGHT: CourseWeight = 4;
+
+export const isCourseWeight = (value: unknown): value is CourseWeight =>
+  COURSE_WEIGHTS.includes(value as CourseWeight);
+
+/** Draw weights for a test: `weight` for the ids in `courseIds`, 1 for the rest. */
+export const courseWeight =
+  (courseIds: ReadonlySet<string>, weight: number) =>
+  (id: string): number =>
+    courseIds.has(id) ? weight : 1;
+
 export interface CourseUnit {
   /** Translation key of the label. */
   label: string;

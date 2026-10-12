@@ -25,6 +25,29 @@ export function shuffled<T>(items: readonly T[], rng: Rng = Math.random): T[] {
   return out;
 }
 
+/**
+ * `count` items drawn without replacement where, at every draw, each remaining item's chance is
+ * proportional to its weight (Efraimidis–Spirakis: keep the largest `log(u) / w`). Returned in
+ * uniformly random order, so heavier items do not cluster at the front. Items with weight ≤ 0
+ * are never drawn.
+ */
+export function weightedSample<T>(
+  items: readonly T[],
+  count: number,
+  weight: (item: T) => number,
+  rng: Rng = Math.random,
+): T[] {
+  const keyed = items.flatMap((item) => {
+    const w = weight(item);
+    return w > 0 ? [{ item, key: Math.log(rng()) / w }] : [];
+  });
+  keyed.sort((a, b) => b.key - a.key);
+  return shuffled(
+    keyed.slice(0, Math.max(0, count)).map((k) => k.item),
+    rng,
+  );
+}
+
 /** `[0, 1, …, count − 1]`, shuffled when `shuffle` is true. */
 export function order(count: number, shuffle: boolean, rng: Rng = Math.random): number[] {
   const identity = Array.from({ length: count }, (_, i) => i);

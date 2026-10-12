@@ -107,6 +107,24 @@ describe("selectExamItems", () => {
     }
   });
 
+  it("draws weighted questions more often when given weights", () => {
+    const rng = mulberry32(21);
+    const course = new Set(["q-001", "q-002", "q-003", "q-004", "q-005"]);
+    const weight = (id: string) => (course.has(id) ? 4 : 1);
+    let uniform = 0;
+    let weighted = 0;
+    const runs = 2000;
+    for (let r = 0; r < runs; r++) {
+      uniform += selectExamItems(pool(40), rng).filter((i) => course.has(i.id)).length;
+      weighted += selectExamItems(pool(40), rng, 20, weight).filter((i) => course.has(i.id)).length;
+    }
+    // 20 of 40: 2.5 of the 5 on average uniformly; with weight 4 most of them make it.
+    expect(uniform / runs).toBeCloseTo(2.5, 1);
+    expect(weighted / runs).toBeGreaterThan(4.2);
+    const items = selectExamItems(pool(40), mulberry32(1), 20, weight);
+    expect(new Set(items.map((i) => i.id)).size).toBe(20);
+  });
+
   it("shuffles options unless the question keeps file order", () => {
     const items = selectExamItems(
       [

@@ -169,8 +169,15 @@ the random draw happens in the browser from the questions embedded at build time
   `reviewed`.
 - **Size and time.** N = min(20, pool); time limit = N minutes. A smaller pool says so on the
   start screen ("This topic has 8 questions, so this test has 8 questions · 8 minutes").
-- **Draw.** A uniformly random subset in random order; options shuffled with the practice
-  rules (`shuffle: false` and true/false keep file order). Each test is a new draw.
+- **Draw.** A random subset in random order; options shuffled with the practice rules
+  (`shuffle: false` and true/false keep file order). Each test is a new draw. Uniform, except
+  for **CE6146 course questions** (tag `ce6146`, written from the owner's course slides and
+  exercises): when the pool mixes them with other questions, the start screen offers **As often
+  as others / More (4×) / Mostly (16×)** — a course question's chance at every draw is that many
+  times another's (`weightedSample` in src/lib/shuffle.ts, Efraimidis–Spirakis; the drawn set
+  is then shuffled so course questions don't come first). Default 4×; the choice is remembered
+  (`courseWeight` in the settings) and shared with the mixed test. Measured on
+  `neural-networks` (45 course questions of 123): 6.7 / 13.5 / 16.9 of 20.
 - **Layout.** The start screen offers **One at a time** (default) and **All on one page**;
   the choice is remembered (`examLayout` in the settings) and saved in the test in progress,
   so a reload resumes in the same layout. Results look the same either way.
@@ -254,7 +261,10 @@ learner picks.
   syllabus weeks still to come.
 - **Pool** (`selectionPool` in src/lib/catalog.ts): questions of the chosen topics that carry
   at least one chosen tag (when any is chosen) and whose difficulty is chosen; a question
-  without a difficulty is drawn only when all three are chosen. **Draw:** `drawIds` picks N ids uniformly at random, the page fetches them, and the
+  without a difficulty is drawn only when all three are chosen. **Draw:** `drawIds` picks N ids
+  at random — uniformly, or with the [CE6146 weight](#timed-tests) when the pool mixes course
+  questions with others (the form shows the same picker; whole bank, 132 course questions:
+  0.7 / 3.7 / 9.2 of 20) — the page fetches them, and the
   usual `Exam` island starts at once (`autoStart`, `maxQuestions = N`) — the
   [timed test](#timed-tests) rules apply unchanged, with the topic shown on each question.
 - **Scope** `mixed:custom`: one test in progress and one history for all mixed tests. On load
