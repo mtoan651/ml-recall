@@ -130,7 +130,8 @@ export interface CatalogTopic {
 
 /**
  * Tag → the questions with that tag, as one string: `tag:p.p.p tag2:p …`, where each `p` is a
- * position in catalog order (`catalogEntries`) in base 36. One flat string keeps the mixed-test
- * page small (every tag, ~60 KB) — island props would wrap and escape each entry of an object.
+ * position in catalog order (`catalogEntries`) in base 36. Tags are kebab-case slugs (schema), so
+ * they contain neither ` ` nor `:`. One flat string keeps the mixed-test page small (every tag,
+ * ~60 KB) — island props would wrap and escape each entry of an object.
  */
 export type CatalogTags = string;
