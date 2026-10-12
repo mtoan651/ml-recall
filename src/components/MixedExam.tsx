@@ -580,11 +580,13 @@ function TagPicker({
           value={query}
           onChange={(e) => {
             const value = e.target.value;
-            // Picking a suggestion fills the box with an exact tag: add it at once.
+            // Picking a suggestion fills the box with an exact tag: add it at once. Typing an
+            // exact tag does not, since it may be the start of a longer one (ce6146 → ce6146-l01).
             const tag = value.trim().replace(/^#/, "").toLowerCase();
             if (size.has(tag) && !selected.includes(tag)) {
               const picked = (e.nativeEvent as InputEvent).inputType;
-              if (picked === undefined || picked === "insertReplacementText") {
+              // Browsers report a pick as "insertReplacementText", none or "" (never typing).
+              if (!picked || picked === "insertReplacementText") {
                 add(tag);
                 setQuery("");
                 return;
