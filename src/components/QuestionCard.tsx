@@ -66,7 +66,10 @@ export function QuestionCard({
       aria-labelledby={headingId}
       className="scroll-mt-4 rounded-2xl border border-line bg-surface p-4 shadow-xs outline-none sm:p-6"
     >
-      <header className="flex flex-wrap items-center gap-x-2 gap-y-1.5 text-xs">
+      <header
+        data-pagefind-ignore
+        className="flex flex-wrap items-center gap-x-2 gap-y-1.5 text-xs"
+      >
         <h2 id={headingId} className="font-medium text-muted">
           <span className="sr-only">Question {number}: </span>
           {TYPE_LABEL[q.type]}
@@ -162,7 +165,7 @@ function OptionList({
 
   return (
     <fieldset className="min-w-0">
-      <legend className="sr-only">
+      <legend data-pagefind-ignore className="sr-only">
         {multiple ? "Select all options that apply" : "Choose one option"}
       </legend>
       <ul className={pictures ? "grid gap-2.5 sm:grid-cols-2" : "space-y-2.5"}>
@@ -334,7 +337,7 @@ function InputMessages({
 }) {
   if (graded) return null;
   return (
-    <div id={`q-${q.id}-blanks-help`} className="text-sm">
+    <div id={`q-${q.id}-blanks-help`} data-pagefind-ignore className="text-sm">
       <p className="text-muted">
         Fill in every blank
         {q.answer && inputKeys(q.answer).some((k) => k.hint) ? " (hints in the boxes)" : ""}. Enter

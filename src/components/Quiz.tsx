@@ -205,7 +205,7 @@ export default function Quiz({ questions, scope, showTopic = false, rating }: Qu
 
   return (
     <section className="quiz" data-ready={ready} aria-label={`Practice: ${scope}`}>
-      <div className="mb-4 space-y-3">
+      <div data-pagefind-ignore className="mb-4 space-y-3">
         <div className="flex items-center justify-between gap-4 text-sm">
           <span className="font-medium tabular-nums">
             {session.finished ? "Done" : `Q ${score.current} / ${score.total}`}
@@ -300,7 +300,10 @@ export default function Quiz({ questions, scope, showTopic = false, rating }: Qu
                 onSubmitText={primary}
               />
 
-              <div className="sticky bottom-0 z-10 -mx-4 mt-4 border-t border-line bg-canvas/90 px-4 py-3 backdrop-blur sm:mx-0 sm:rounded-b-xl sm:border-t-0 sm:px-0">
+              <div
+                data-pagefind-ignore
+                className="sticky bottom-0 z-10 -mx-4 mt-4 border-t border-line bg-canvas/90 px-4 py-3 backdrop-blur sm:mx-0 sm:rounded-b-xl sm:border-t-0 sm:px-0"
+              >
                 {rating && answer.outcome && (
                   <div className="mb-2.5">{rating(question.id, answer.outcome)}</div>
                 )}

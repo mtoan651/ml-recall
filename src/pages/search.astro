@@ -1,0 +1,74 @@
+---
+/**
+ * Full-text search over every question (and topic note) with Pagefind: the index is built
+ * after `astro build` (`pnpm build` runs `pagefind --site dist`), so this page searches only
+ * in a built site, not under `astro dev`.
+ */
+import Base from "../layouts/Base.astro";
+import { url } from "../lib/url";
+
+const bundle = url("pagefind/");
+---
+
+<Base
+  title="Search"
+  description="Search every question and topic note by its words, filtered by domain, topic, type and difficulty."
+>
+  <link rel="stylesheet" href={`${bundle}pagefind-ui.css`} />
+  <h1 class="text-2xl font-semibold tracking-tight sm:text-3xl">Search</h1>
+  <p class="mt-2 text-muted">
+    Every question and topic note, by the words in it. Filter by domain, topic, type and
+    difficulty; open a result to answer the question.
+  </p>
+  <noscript>
+    <p class="mt-4 text-muted">Search needs JavaScript.</p>
+  </noscript>
+  <div id="search" class="search-ui mt-6" data-bundle={bundle}></div>
+  <p id="search-missing" hidden class="mt-6 rounded-xl border border-dashed border-line px-4 py-6 text-center text-muted">
+    The search index is created by <code>pnpm build</code>; it is not available in
+    <code>astro dev</code>.
+  </p>
+  <script>
+    interface PagefindUIOptions {
+      element: string;
+      bundlePath: string;
+      showSubResults: boolean;
+      showImages: boolean;
+      resetStyles: boolean;
+      pageSize: number;
+      autofocus: boolean;
+    }
+    type PagefindUIConstructor = new (options: PagefindUIOptions) => unknown;
+
+    const root = document.getElementById("search");
+    const bundle = root?.dataset.bundle ?? "";
+    const missing = () => {
+      document.getElementById("search-missing")?.removeAttribute("hidden");
+    };
+    const script = document.createElement("script");
+    script.src = `${bundle}pagefind-ui.js`;
+    script.onerror = missing;
+    script.onload = () => {
+      const PagefindUI = (window as unknown as { PagefindUI?: PagefindUIConstructor }).PagefindUI;
+      if (!PagefindUI) return missing();
+      new PagefindUI({
+        element: "#search",
+        bundlePath: bundle,
+        showSubResults: false,
+        showImages: false,
+        resetStyles: false,
+        pageSize: 10,
+        autofocus: true,
+      });
+      const query = new URLSearchParams(window.location.search).get("q");
+      if (query) {
+        const input = root?.querySelector<HTMLInputElement>("input");
+        if (input) {
+          input.value = query;
+          input.dispatchEvent(new Event("input", { bubbles: true }));
+        }
+      }
+    };
+    document.head.append(script);
+  </script>
+</Base>
