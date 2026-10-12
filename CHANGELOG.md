@@ -7,6 +7,15 @@ versioning: [SemVer](https://semver.org) as defined in [docs/conventions.md](doc
 
 ### Added
 
+- 302 reviewed questions for CE6146 exam prep (bank 3025 → 3327):
+  - **Every content slide of Lectures 1–3 is now tested** (Lecture 1: 61 → 95 of 95 content
+    slides, Lecture 2: 65 → 87 of 87, Lecture 3: 52 → 66 of 66) — 177 new exam-style questions,
+    worked examples re-asked with new numbers, slide errors stated correctly (Lecture 3 slides 9,
+    17, 23, 24; the (1−β) momentum form).
+  - **A twin for every exercise question** (60): the same idea with a new scenario, new numbers
+    or the question turned around.
+  - New topics for the later syllabus weeks: **Graph Neural Networks** (31 questions) and
+    **Explainable AI** (34), each with a topic note.
 - CE6146 exam-prep page (`/ce6146/`, linked from the header and the home page): a timed test
   over every question written from the course's slides and exercises, a card per lecture and
   exercise (practice, tag test, progress), and the later syllabus weeks mapped to bank topics

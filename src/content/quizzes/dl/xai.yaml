@@ -1,0 +1,1226 @@
+schema_version: 1
+domain: dl
+topic: xai
+title: Explainable AI
+questions:
+  - id: xai-001
+    type: single
+    difficulty: medium
+    tags:
+      - why-explain
+      - incompleteness
+    question: |
+      Doshi-Velez and Kim argue that not every machine learning system needs to explain itself. In
+      which situation is an explanation most clearly needed?
+    options:
+      - text: When goals like fairness or safety cannot be fully put into the loss
+        correct: true
+      - text: When wrong outputs have no significant consequences, as for an ad server
+        why: Their ad-server example needs no explanation precisely because a bad output there costs little [^1].
+      - text: When the uncertainty of each prediction can be quantified precisely
+        why: They separate quantified uncertainty, which can be reasoned about formally, from incompleteness of the problem statement; only the latter calls for explanations [^1].
+      - text: When the system has been validated extensively in real use for years
+        why: A well-studied and validated system is trusted even without explanations, which is their second example of a system that does not need them [^1].
+    explanation: |
+      Doshi-Velez and Kim argue that explanations are needed when the problem statement is
+      *incomplete*: some goals (scientific understanding, safety, ethics such as non-discrimination)
+      cannot be written fully into the objective, so humans must check them by looking at how the
+      model decides [^1]. Uncertainty that can be quantified, low-stakes outputs and thoroughly
+      validated systems do not create this need [^1]. The same gap is why explanations are used to
+      build trust, catch models that learned unintended rules, and meet regulation such as the
+      GDPR [^2].
+    references:
+      - title: Doshi-Velez & Kim (2017), Towards A Rigorous Science of Interpretable Machine Learning, arXiv:1702.08608
+        url: https://arxiv.org/abs/1702.08608
+        locator: Sec. 2 Why interpretability? Incompleteness
+      - title: 'Wikipedia: Explainable artificial intelligence'
+        url: https://en.wikipedia.org/wiki/Explainable_artificial_intelligence
+        locator: Goals; Regulation
+    source:
+      id: original
+      ref: xai-001
+    status: reviewed
+    reviewed_by: claude
+  - id: xai-002
+    type: single
+    difficulty: easy
+    tags:
+      - local-explanation
+      - global-explanation
+      - regulation
+    question: |
+      A bank uses a neural network to decide on loans and must tell each rejected applicant why
+      their own application was refused. What kind of explanation does this call for?
+    options:
+      - text: A local explanation of that applicant's individual prediction
+        correct: true
+      - text: A global explanation of how the model behaves on average over all applicants
+        why: Global methods such as permutation importance or partial dependence summarise the model over a whole dataset; they do not say why this applicant was refused [^1].
+      - text: A higher test accuracy reported on a held-out set of past applicants
+        why: Accuracy says how often the model is right, not why it made a particular decision.
+      - text: A sanity check showing that the network's saliency maps depend on its weights
+        why: A sanity check tests whether an explanation method can be trusted; it does not itself explain any decision.
+    explanation: |
+      A local method accounts for a single prediction, whereas a global method summarises the
+      model's behaviour over a whole dataset, e.g. the average effect of each feature [^1]. The
+      applicant needs the former: the GDPR's right to explanation likewise covers only this local
+      aspect of an automated decision about one person [^2]. A typical local answer is a
+      counterfactual, e.g. "with a higher income the loan would have been approved" [^3].
+    references:
+      - title: Molnar, Interpretable Machine Learning (3rd ed., CC BY-NC-SA 4.0)
+        url: https://christophm.github.io/interpretable-ml-book/overview.html
+        locator: Ch. 4 Methods Overview (local vs global model-agnostic post-hoc methods)
+      - title: 'Wikipedia: Explainable artificial intelligence'
+        url: https://en.wikipedia.org/wiki/Explainable_artificial_intelligence
+        locator: Regulation
+      - title: Wachter, Mittelstadt & Russell (2017), Counterfactual Explanations without Opening the Black Box, arXiv:1711.00399
+        url: https://arxiv.org/abs/1711.00399
+        locator: Sec. II Counterfactuals
+    source:
+      id: original
+      ref: xai-002
+    status: reviewed
+    reviewed_by: claude
+  - id: xai-003
+    type: single
+    difficulty: easy
+    tags:
+      - intrinsic-interpretability
+      - post-hoc
+    question: |
+      A hospital replaces a deep network, which it explained with saliency maps, by a sparse logistic
+      regression whose few coefficients doctors can read directly. How is this change best described?
+    options:
+      - text: From post-hoc explanation to an interpretable-by-design model
+        correct: true
+      - text: From a local post-hoc method to a global post-hoc method
+        why: After the switch no separate method explains the model afterwards; the readable coefficients of the model itself are the explanation [^1].
+      - text: From a model-agnostic to a model-specific explanation method
+        why: Saliency maps are already model-specific, since they need the network's gradients; the change concerns the model, not the explainer [^1].
+      - text: From a faithful explanation to a merely plausible explanation
+        why: The opposite holds — an interpretable model's own parameters describe exactly how it computes, so its explanation is faithful by construction [^2].
+    explanation: |
+      Interpretability by design (intrinsic interpretability) restricts learning to models whose
+      structure people can read, such as sparse linear models or short trees; post-hoc methods are
+      applied to a model after it has been trained [^1]. Rudin argues that for high-stakes decisions
+      such inherently interpretable models should be preferred, because a post-hoc explanation of a
+      black box can never be perfectly faithful to what the black box computes [^2].
+    references:
+      - title: Molnar, Interpretable Machine Learning (3rd ed., CC BY-NC-SA 4.0)
+        url: https://christophm.github.io/interpretable-ml-book/overview.html
+        locator: Ch. 4 Methods Overview (Interpretable models by design; Post-hoc interpretability)
+      - title: Rudin (2019), Stop Explaining Black Box Machine Learning Models for High Stakes Decisions and Use Interpretable Models Instead, arXiv:1811.10154
+        url: https://arxiv.org/abs/1811.10154
+        locator: Sec. 2 Key Issues with Explainable ML
+    source:
+      id: original
+      ref: xai-003
+    status: reviewed
+    reviewed_by: claude
+  - id: xai-004
+    type: multiple
+    difficulty: medium
+    tags:
+      - model-agnostic
+      - model-specific
+      - post-hoc
+    question: |
+      Which of these explanation methods are both post-hoc and model-agnostic, i.e. they only need to
+      query a trained model's outputs? Select all that apply.
+    options:
+      - text: LIME
+        correct: true
+      - text: Permutation feature importance
+        correct: true
+      - text: Grad-CAM
+        why: Grad-CAM is post-hoc but model-specific; it needs the activations and gradients of a convolutional layer [^2].
+      - text: A vanilla gradient saliency map
+        why: It needs the gradient of the class score with respect to the input, so it only works for differentiable models such as neural networks [^2].
+    explanation: |
+      Model-agnostic methods treat the trained model as a black box: they change the inputs and
+      watch how the outputs change [^1]. LIME fits a local surrogate to the model's outputs on
+      perturbed samples, and permutation importance compares the model's score before and after a
+      feature is shuffled; neither looks inside the model [^1][^3]. Gradient saliency maps and
+      Grad-CAM read gradients and layer activations, so they are specific to neural networks [^2].
+    references:
+      - title: Molnar, Interpretable Machine Learning (3rd ed., CC BY-NC-SA 4.0)
+        url: https://christophm.github.io/interpretable-ml-book/overview.html
+        locator: Ch. 4 Methods Overview (Post-hoc interpretability; Model-agnostic post-hoc methods)
+      - title: 'Captum docs: Algorithm Descriptions'
+        url: https://github.com/meta-pytorch/captum/blob/7aefa21cf9c3f1fb8bae757fd4f3a5fdc3c400a6/docs/attribution_algorithms.md
+        locator: Primary Attribution (Saliency, Lime); Layer Attribution (GradCAM)
+      - title: scikit-learn User Guide
+        url: https://scikit-learn.org/stable/modules/permutation_importance.html
+        locator: Sec. 5.2 Permutation feature importance
+    source:
+      id: original
+      ref: xai-004
+    status: reviewed
+    reviewed_by: claude
+  - id: xai-005
+    type: short_answer
+    difficulty: easy
+    tags:
+      - permutation-importance
+    question: |
+      A classifier has validation accuracy 0.92. You shuffle the column `age` three times, each time
+      re-scoring the model on the shuffled validation set, and get accuracies 0.81, 0.84 and 0.78.
+      What is the permutation importance of `age`?
+    answer:
+      numeric: 0.11
+      tolerance: 0.001
+      hint: a number, 2 decimals
+      model: $0.92 - \frac{0.81 + 0.84 + 0.78}{3} = 0.92 - 0.81 = 0.11$
+    explanation: |
+      Permutation importance is the reference score minus the mean score over the $K$ shuffles,
+      $i_j = s - \frac{1}{K}\sum_k s_{k,j}$ [^1], here $0.92 - 0.81 = 0.11$ (not the largest single
+      drop, 0.14). Shuffling breaks the link between the feature and the target, so the drop measures
+      how much *this model* relies on the feature; computed on held-out data it shows which features
+      matter for generalisation [^1].
+    references:
+      - title: scikit-learn User Guide
+        url: https://scikit-learn.org/stable/modules/permutation_importance.html
+        locator: Sec. 5.2 Permutation feature importance; Sec. 5.2.1 Outline of the permutation importance algorithm
+    source:
+      id: original
+      ref: xai-005
+    status: reviewed
+    reviewed_by: claude
+  - id: xai-006
+    type: short_answer
+    difficulty: medium
+    tags:
+      - partial-dependence
+      - ice
+    question: |
+      A fitted regression model computes $f(x_1, x_2) = 3x_1 - x_1 x_2 + x_2^2$. The data used for
+      the plot has three rows, with $x_2 = 0$, $x_2 = 1$ and $x_2 = 2$ (their $x_1$ values do not
+      matter here). What is the partial dependence of the prediction on $x_1$ at $x_1 = 2$? Round to
+      2 decimals.
+    answer:
+      numeric: 5.67
+      tolerance: 0.01
+      hint: a number, 2 decimals
+      model: $\frac{f(2,0) + f(2,1) + f(2,2)}{3} = \frac{6 + 5 + 6}{3} \approx 5.67$
+    explanation: |
+      The partial dependence at $x_S$ is estimated by fixing the feature of interest and averaging
+      the predictions over the observed values of the other features,
+      $\frac{1}{n}\sum_i f(x_S, x_C^{(i)})$ [^1]. Each term $f(2, x_2^{(i)})$ is one ICE curve
+      evaluated at $x_1 = 2$ (6, 5 and 6), and the PDP is the average of the ICE curves [^1][^2].
+      It is not $f(2, \bar{x}_2) = f(2, 1) = 5$: because $f$ is nonlinear in $x_2$, averaging the
+      predictions differs from predicting at the average.
+    references:
+      - title: scikit-learn User Guide
+        url: https://scikit-learn.org/stable/modules/partial_dependence.html
+        locator: Sec. 5.1.3 Mathematical Definition; Sec. 5.1.4 Computation methods
+      - title: Molnar, Interpretable Machine Learning (3rd ed., CC BY-NC-SA 4.0)
+        url: https://christophm.github.io/interpretable-ml-book/pdp.html
+        locator: Ch. 19 Partial Dependence Plot, Definition and estimation
+    source:
+      id: original
+      ref: xai-006
+    status: reviewed
+    reviewed_by: claude
+  - id: xai-007
+    type: single
+    difficulty: medium
+    tags:
+      - ice
+      - partial-dependence
+      - interactions
+    question: |
+      The partial dependence plot of a feature $x_j$ is almost flat, but you suspect that $x_j$
+      raises the prediction for some rows and lowers it for others. Which plot shows this directly?
+    options:
+      - text: An ICE plot, with one curve per row as $x_j$ is varied
+        correct: true
+      - text: The same PDP recomputed on a much finer grid of $x_j$ values
+        why: A finer grid still plots the average over rows, so opposite effects keep cancelling out [^1].
+      - text: A bar chart of permutation importances of all features
+        why: It gives one number per feature; it can show that $x_j$ matters, but not in which direction for which rows [^2].
+      - text: A histogram of the observed values of $x_j$
+        why: A histogram describes the data, not how the model's prediction responds to $x_j$.
+    explanation: |
+      An individual conditional expectation (ICE) plot draws one line per sample,
+      $f(x_j, x_C^{(i)})$ as $x_j$ varies, and the PDP is the average of these lines [^1]. When
+      interactions make the effect differ between rows, the average can hide them (here it is
+      nearly flat), while the ICE lines show the heterogeneous, even opposite, effects [^1].
+    references:
+      - title: scikit-learn User Guide
+        url: https://scikit-learn.org/stable/modules/partial_dependence.html
+        locator: Sec. 5.1.2 Individual conditional expectation (ICE) plot; Sec. 5.1.4 Computation methods
+      - title: scikit-learn User Guide
+        url: https://scikit-learn.org/stable/modules/permutation_importance.html
+        locator: Sec. 5.2 Permutation feature importance
+    source:
+      id: original
+      ref: xai-007
+    status: reviewed
+    reviewed_by: claude
+  - id: xai-008
+    type: true_false
+    difficulty: medium
+    tags:
+      - partial-dependence
+      - correlated-features
+    question: |
+      True or false: a partial dependence plot stays trustworthy when the feature of interest is
+      strongly correlated with the other features, because the other features are averaged over
+      their observed values.
+    options:
+      - text: 'True'
+        why: Averaging over the observed values of the other features pairs them with values of the feature of interest that never occur together, so the plot is built on unrealistic inputs [^1][^2].
+      - text: 'False'
+        correct: true
+    explanation: |
+      PDPs (and ICE plots) assume that the features of interest are independent of the others [^1].
+      With correlated features, setting $x_S$ to a grid value while keeping each row's other features
+      creates combinations that never occur (e.g. a one-room flat with 300 m² of floor space when
+      rooms and area are correlated), and the model's predictions on those points can distort the
+      curve [^1][^2].
+    references:
+      - title: scikit-learn User Guide
+        url: https://scikit-learn.org/stable/modules/partial_dependence.html
+        locator: Sec. 5.1 Partial Dependence and Individual Conditional Expectation plots (introduction)
+      - title: Molnar, Interpretable Machine Learning (3rd ed., CC BY-NC-SA 4.0)
+        url: https://christophm.github.io/interpretable-ml-book/pdp.html
+        locator: Ch. 19 Partial Dependence Plot, Limitations
+    source:
+      id: original
+      ref: xai-008
+    status: reviewed
+    reviewed_by: claude
+  - id: xai-009
+    type: single
+    difficulty: easy
+    tags:
+      - lime
+      - local-surrogate
+    question: How does LIME explain the prediction of a black-box classifier for one input $x$?
+    options:
+      - text: It fits a proximity-weighted simple model to the outputs on perturbed copies of $x$
+        correct: true
+      - text: It back-propagates the class score and uses the input gradient at $x$ as the explanation
+        why: That is a gradient saliency map; LIME never needs gradients, it only queries the model [^1].
+      - text: It averages each feature's marginal contribution over all possible orderings of the features
+        why: That is the definition of the Shapley value, which SHAP estimates [^2].
+      - text: It trains one global decision tree that imitates the black box on the whole training set
+        why: That is a global surrogate; LIME is local, weighting samples by their closeness to $x$ [^1].
+    explanation: |
+      LIME (Local Interpretable Model-agnostic Explanations) samples perturbed instances around $x$,
+      gets the black box's predictions for them, weights them by a proximity kernel $\pi_x$, and fits
+      an interpretable model, usually a sparse linear model, that is faithful in that neighbourhood:
+      $\xi(x) = \operatorname*{arg\,min}_{g} L(f, g, \pi_x) + \Omega(g)$ [^1]. Because it only
+      queries the model, it works with any classifier [^1].
+    references:
+      - title: 'Ribeiro, Singh & Guestrin (2016), "Why Should I Trust You?": Explaining the Predictions of Any Classifier, arXiv:1602.04938'
+        url: https://arxiv.org/abs/1602.04938
+        locator: Sec. 3.2 Fidelity-Interpretability Trade-off; Sec. 3.3 Sampling for Local Exploration
+      - title: Lundberg & Lee (2017), A Unified Approach to Interpreting Model Predictions, arXiv:1705.07874
+        url: https://arxiv.org/abs/1705.07874
+        locator: Sec. 4, Figure 1 caption (SHAP values average over all feature orderings)
+    source:
+      id: original
+      ref: xai-009
+    status: reviewed
+    reviewed_by: claude
+  - id: xai-010
+    type: single
+    difficulty: hard
+    tags:
+      - lime
+      - kernel-width
+      - local-fidelity
+    question: |
+      LIME weights each perturbed sample $z$ by $\pi_x(z) = \exp(-D(x, z)^2 / \sigma^2)$ before
+      fitting its linear surrogate. What is the main risk of choosing a very large kernel width
+      $\sigma$?
+    options:
+      - text: Distant samples count almost fully, so the fit can miss or flip the local effect
+        correct: true
+      - text: All samples get weights close to zero, so the surrogate has almost no data left to fit
+        why: Large $\sigma$ pushes the weights towards 1, not 0; it is a very small width that makes distant samples negligible [^1].
+      - text: The surrogate becomes a nonlinear model, which makes the explanation harder to read
+        why: The surrogate family (e.g. sparse linear models) is chosen separately; the kernel width only changes the sample weights [^1].
+      - text: The black-box model has to be retrained on the newly weighted perturbed samples
+        why: LIME never retrains the black box; it only queries it for predictions on the samples [^1].
+    explanation: |
+      The kernel $\pi_x$ defines what "local" means in LIME's loss $L(f, g, \pi_x)$ [^1]. With a very
+      wide kernel, distant samples weigh almost as much as nearby ones, so the linear surrogate tracks
+      the model's global trend rather than its behaviour around $x$; Molnar shows that changing the
+      width can turn an explanation around, and calls the choice of neighbourhood LIME's biggest
+      problem for tabular data [^2]. For example, $f(x) = 0.5x + \sin 3x$ has local slope
+      $0.5 + 3\cos 3 \approx -2.5$ at $x = 1$; with perturbations spread widely around $x$, a
+      surrogate fitted with a narrow kernel ($\sigma = 0.1$) finds a slope of about $-2.4$, but one
+      fitted with a very wide kernel finds the global trend $+0.5$.
+    references:
+      - title: 'Ribeiro, Singh & Guestrin (2016), "Why Should I Trust You?": Explaining the Predictions of Any Classifier, arXiv:1602.04938'
+        url: https://arxiv.org/abs/1602.04938
+        locator: Sec. 3.2 Fidelity-Interpretability Trade-off; Sec. 3.4 Sparse Linear Explanations
+      - title: Molnar, Interpretable Machine Learning (3rd ed., CC BY-NC-SA 4.0)
+        url: https://christophm.github.io/interpretable-ml-book/lime.html
+        locator: Ch. 14 LIME, LIME for tabular data (kernel width, Figure 14.2); Limitations
+    source:
+      id: original
+      ref: xai-010
+    status: reviewed
+    reviewed_by: claude
+  - id: xai-011
+    type: single
+    difficulty: medium
+    tags:
+      - lime
+      - superpixels
+      - images
+    question: |
+      When LIME explains a prediction of an image classifier, what are the input features of its
+      interpretable surrogate model?
+    options:
+      - text: Whether each super-pixel is kept or greyed out (1 or 0)
+        correct: true
+      - text: The raw RGB colour values of every pixel in the image
+        why: LIME switches to an interpretable representation; per-pixel colour values are far too many to read and are what the classifier uses, not the explanation [^1].
+      - text: The activations of the network's last convolutional layer
+        why: Reading internal activations is what model-specific methods such as Grad-CAM do; LIME only queries the classifier [^2].
+      - text: The gradients of the class score with respect to each pixel
+        why: LIME computes no gradients; it learns its weights from the model's outputs on perturbed images [^1].
+    explanation: |
+      LIME separates the model's features from an interpretable representation
+      $x' \in \{0, 1\}^{d'}$. For images it is a binary vector saying, for each super-pixel (a
+      connected region of similar-coloured pixels), whether it is kept [^1]. Perturbed samples grey
+      out random subsets of super-pixels, the classifier scores them, and the weights of a sparse
+      linear model on these indicators show which super-pixels support the class [^1][^2].
+    references:
+      - title: 'Ribeiro, Singh & Guestrin (2016), "Why Should I Trust You?": Explaining the Predictions of Any Classifier, arXiv:1602.04938'
+        url: https://arxiv.org/abs/1602.04938
+        locator: Sec. 3.1 Interpretable Data Representations; Sec. 3.4 Sparse Linear Explanations
+      - title: Molnar, Interpretable Machine Learning (3rd ed., CC BY-NC-SA 4.0)
+        url: https://christophm.github.io/interpretable-ml-book/lime.html
+        locator: Ch. 14 LIME, LIME for image data
+    source:
+      id: original
+      ref: xai-011
+    status: reviewed
+    reviewed_by: claude
+  - id: xai-012
+    type: single
+    difficulty: easy
+    tags:
+      - lime
+      - shortcut-learning
+      - clever-hans
+      - debugging
+    question: |
+      A classifier separates photos of huskies from photos of wolves with high accuracy, but LIME
+      explanations of its "wolf" predictions mostly highlight the snowy background instead of the
+      animal. What is the most likely cause?
+    options:
+      - text: Training photos of wolves showed snow, so snow became a shortcut
+        correct: true
+      - text: LIME cannot handle images, so its highlights carry no information
+        why: LIME explains images through super-pixels; in its original paper it exposed exactly this kind of flaw [^1].
+      - text: The model is underfitting and would focus on the animal after more epochs
+        why: Accuracy is already high on photos with the same bias; the problem is which cue the model uses, and more training on those photos does not remove it [^2].
+      - text: The explanation is unfaithful, because the model really looks at the animal
+        why: In Ribeiro et al.'s experiment the classifier did predict "wolf" whenever there was snow, so the highlight was faithful to it [^1].
+    explanation: |
+      Ribeiro et al. deliberately trained a classifier on hand-picked photos in which every wolf
+      stood in snow and no husky did; it then called any snowy picture "wolf", and LIME's
+      explanations made this visible to users [^1]. Such a shortcut is a decision rule that works on
+      data with the same bias but fails under other conditions, e.g. a wolf on grass [^2]; spotting
+      it is a typical debugging use of explanations.
+    references:
+      - title: 'Ribeiro, Singh & Guestrin (2016), "Why Should I Trust You?": Explaining the Predictions of Any Classifier, arXiv:1602.04938'
+        url: https://arxiv.org/abs/1602.04938
+        locator: Sec. 6.4 Do explanations lead to insights?
+      - title: Geirhos et al. (2020), Shortcut Learning in Deep Neural Networks, arXiv:2004.07780
+        url: https://arxiv.org/abs/2004.07780
+        locator: Abstract (definition of shortcuts)
+    source:
+      id: original
+      ref: xai-012
+    status: reviewed
+    reviewed_by: claude
+  - id: xai-013
+    type: short_answer
+    difficulty: medium
+    tags:
+      - shapley-values
+      - shap
+    question: |
+      A model computes $f(x_1, x_2) = 3x_1 + 2x_1 x_2$. You explain the input $x = (2, 1)$ with exact
+      Shapley values; a feature outside a coalition is set to the baseline value 0. What is the
+      Shapley value $\phi_1$ of feature 1?
+    answer:
+      numeric: 8
+      tolerance: 0
+      hint: a whole number
+      model: $v(\emptyset) = 0$, $v(\{1\}) = 6$, $v(\{2\}) = 0$, $v(\{1,2\}) = 10$; $\phi_1 = \frac{1}{2}[(6 - 0) + (10 - 0)] = 8$ and $\phi_2 = 2$
+    explanation: |
+      A Shapley value averages a feature's marginal contribution over all coalitions $S$ of the other
+      features, with weights $\frac{|S|!(M - |S| - 1)!}{M!}$ [^1][^2]; with two features that is
+      $\frac{1}{2}$ for $S = \emptyset$ and $\frac{1}{2}$ for $S = \{2\}$. Feature 1 adds 6 alone and
+      10 when feature 2 is present, so $\phi_1 = 8$; the interaction term $2x_1x_2 = 4$ is split
+      equally between the two features. The values add up to $f(x) - f(\text{baseline}) = 10$
+      (efficiency / local accuracy) [^1][^2].
+    references:
+      - title: Lundberg & Lee (2017), A Unified Approach to Interpreting Model Predictions, arXiv:1705.07874
+        url: https://arxiv.org/abs/1705.07874
+        locator: Sec. 2.4 Classic Shapley Value Estimation, Eq. (4); Sec. 3, Property 1 (Local accuracy)
+      - title: 'Wikipedia: Shapley value'
+        url: https://en.wikipedia.org/wiki/Shapley_value
+        locator: Definition; Properties – Efficiency
+    source:
+      id: original
+      ref: xai-013
+    status: reviewed
+    reviewed_by: claude
+  - id: xai-014
+    type: short_answer
+    difficulty: hard
+    tags:
+      - shapley-values
+      - shap
+    question: |
+      A model computes $f(x_1, x_2, x_3) = \max(x_1, x_2) + x_1 x_3$. You explain the input
+      $x = (3, 2, 1)$ with exact Shapley values; features outside a coalition are set to the baseline
+      value 0. What is $\phi_1$?
+    answer:
+      numeric: 3.5
+      tolerance: 0.001
+      hint: a number, 1 decimal
+      model: $\phi_1 = \frac{1}{3}(3 - 0) + \frac{1}{6}(3 - 2) + \frac{1}{6}(6 - 0) + \frac{1}{3}(6 - 2) = 3.5$ (and $\phi_2 = 1$, $\phi_3 = 1.5$)
+    explanation: |
+      With $M = 3$ features the weights $\frac{|S|!(M-|S|-1)!}{M!}$ are $\frac{1}{3}$ for
+      $S = \emptyset$, $\frac{1}{6}$ for each one-feature coalition and $\frac{1}{3}$ for
+      $S = \{2, 3\}$ [^1][^2]. The coalition values are $v(\{1\}) = 3$, $v(\{2\}) = 2$,
+      $v(\{3\}) = 0$, $v(\{1,2\}) = 3$, $v(\{1,3\}) = 6$, $v(\{2,3\}) = 2$ and $v(\{1,2,3\}) = 6$.
+      Feature 1 adds 3, 1, 6 and 4 to these coalitions, giving $\phi_1 = 3.5$. Feature 2 only helps
+      when feature 1 is absent ($\phi_2 = 1$), and $\phi_3 = 1.5$; the three sum to
+      $f(x) - f(0) = 6$, as efficiency requires [^2].
+    references:
+      - title: Lundberg & Lee (2017), A Unified Approach to Interpreting Model Predictions, arXiv:1705.07874
+        url: https://arxiv.org/abs/1705.07874
+        locator: Sec. 2.4 Classic Shapley Value Estimation, Eq. (4); Sec. 3, Theorem 1
+      - title: 'Wikipedia: Shapley value'
+        url: https://en.wikipedia.org/wiki/Shapley_value
+        locator: Definition; Properties – Efficiency
+    source:
+      id: original
+      ref: xai-014
+    status: reviewed
+    reviewed_by: claude
+  - id: xai-015
+    type: single
+    difficulty: medium
+    tags:
+      - shap
+      - linear-shap
+    question: |
+      A linear model $f(x) = 2x_1 - 3x_2 + 1$ is explained with SHAP, assuming independent features.
+      On the background data $\mathbb{E}[x_1] = 1$ and $\mathbb{E}[x_2] = 3$. For the input
+      $x = (4, 1)$, what is the SHAP value of $x_2$?
+    options:
+      - text: $+6$
+        correct: true
+      - text: $-3$
+        why: That is $w_2 x_2$, the contribution measured from $x_2 = 0$; SHAP measures it from the average input [^1].
+      - text: $-6$
+        why: This flips the sign, computing $w_2(\mathbb{E}[x_2] - x_2)$ instead of $w_2(x_2 - \mathbb{E}[x_2])$ [^1].
+      - text: $-9$
+        why: That is $w_2\,\mathbb{E}[x_2]$, the feature's average contribution, not how this input deviates from it [^1].
+    explanation: |
+      For a linear model with independent features, SHAP values are
+      $\phi_i = w_i(x_i - \mathbb{E}[x_i])$ [^1], so $\phi_2 = -3 \cdot (1 - 3) = +6$: the weight is
+      negative, but $x_2$ is below its average, which pushes the prediction *up*. With
+      $\phi_1 = 2 \cdot (4 - 1) = 6$, the values add up to $f(x) - \mathbb{E}[f(X)] = 6 - (-6) = 12$,
+      as local accuracy requires when the base value is $\phi_0 = \mathbb{E}[f(X)] = f(1, 3) = -6$
+      [^1]. (The paper's Corollary 1 writes $\phi_0 = b$, which equals this base value only when
+      $\sum_j w_j \mathbb{E}[x_j] = 0$.)
+    references:
+      - title: Lundberg & Lee (2017), A Unified Approach to Interpreting Model Predictions, arXiv:1705.07874
+        url: https://arxiv.org/abs/1705.07874
+        locator: Sec. 3, Property 1 (Local accuracy); Sec. 4, Figure 1 (base value E[f(z)]); Sec. 4.2 Model-Specific Approximations, Corollary 1 (Linear SHAP)
+    source:
+      id: original
+      ref: xai-015
+    status: reviewed
+    reviewed_by: claude
+  - id: xai-016
+    type: short_answer
+    difficulty: medium
+    tags:
+      - saliency-map
+      - gradients
+      - code-reading
+    question: |
+      What does this code print?
+
+      ```python
+      import torch
+      import torch.nn as nn
+
+      lin = nn.Linear(3, 2, bias=False)
+      with torch.no_grad():
+          lin.weight.copy_(torch.tensor([[1.0, -2.0, 0.5],
+                                         [0.3, 0.7, -1.5]]))
+      x = torch.tensor([[5.0, 1.0, 0.2]], requires_grad=True)
+      score = lin(x)[0, 1]
+      score.backward()
+      sal = x.grad.abs()
+      print(sal.argmax().item())
+      ```
+    answer:
+      numeric: 2
+      tolerance: 0
+      hint: an integer index
+      model: '`x.grad` is row 1 of the weight matrix, $(0.3, 0.7, -1.5)$; its absolute values $(0.3, 0.7, 1.5)$ peak at index 2'
+    explanation: |
+      For a linear class score $S_c(x) = w_c^\top x$ the gradient with respect to the input is just
+      $w_c$, whatever the input; a vanilla saliency map reads the magnitude of this gradient [^1].
+      Here the score of class 1 gives `x.grad` $= (0.3, 0.7, -1.5)$, so the largest magnitude is at
+      index 2. The input values do not matter: *input × gradient* would give $(1.5, 0.7, -0.3)$ and
+      pick index 0 [^2], and using class 0's row would pick index 1.
+    references:
+      - title: Simonyan, Vedaldi & Zisserman (2014), Deep Inside Convolutional Networks, arXiv:1312.6034
+        url: https://arxiv.org/abs/1312.6034
+        locator: Sec. 3 Image-Specific Class Saliency Visualisation, Eqs. (2)–(4)
+      - title: 'Captum docs: Algorithm Descriptions'
+        url: https://github.com/meta-pytorch/captum/blob/7aefa21cf9c3f1fb8bae757fd4f3a5fdc3c400a6/docs/attribution_algorithms.md
+        locator: Saliency; Input X Gradient
+    source:
+      id: original
+      ref: xai-016
+    status: reviewed
+    reviewed_by: claude
+  - id: xai-017
+    type: single
+    difficulty: easy
+    tags:
+      - saliency-map
+      - gradients
+    question: |
+      In the saliency map of Simonyan et al., the class score $S_c$ is differentiated with respect to
+      an RGB image. At one pixel the derivatives for the R, G and B channels are $0.12$, $-0.45$ and
+      $0.30$. What saliency value does this pixel get?
+    options:
+      - text: $0.45$
+        correct: true
+      - text: $0.30$
+        why: That is the largest signed derivative; the map uses magnitudes, since a large negative derivative also means high sensitivity [^1].
+      - text: $0.29$
+        why: That is the mean of the three magnitudes; the method keeps the largest one instead of averaging [^1].
+      - text: $0.87$
+        why: That sums the magnitudes over the channels; the method takes their maximum [^1].
+    explanation: |
+      For an RGB image the derivative has three entries per pixel, one per colour channel, and
+      Simonyan et al. reduce them to one number by taking the largest magnitude:
+      $M_{ij} = \max_k |w_{h(i,j,k)}|$ with $w = \partial S_c / \partial I$ at the image $I_0$ [^1].
+      Here $\max(0.12, 0.45, 0.30) = 0.45$; the sign is dropped because a large negative derivative
+      also means the score is sensitive to that pixel, following a first-order Taylor expansion of
+      $S_c$ around $I_0$ [^1][^2]. Summing (0.87) or averaging (0.29) the magnitudes would be other
+      possible choices, but not the one this method makes.
+    references:
+      - title: Simonyan, Vedaldi & Zisserman (2014), Deep Inside Convolutional Networks, arXiv:1312.6034
+        url: https://arxiv.org/abs/1312.6034
+        locator: Sec. 3 Image-Specific Class Saliency Visualisation (Eqs. 3–4); Sec. 3.1 Class Saliency Extraction
+      - title: 'Captum docs: Algorithm Descriptions'
+        url: https://github.com/meta-pytorch/captum/blob/7aefa21cf9c3f1fb8bae757fd4f3a5fdc3c400a6/docs/attribution_algorithms.md
+        locator: Saliency
+    source:
+      id: original
+      ref: xai-017
+    status: reviewed
+    reviewed_by: claude
+  - id: xai-018
+    type: single
+    difficulty: medium
+    tags:
+      - integrated-gradients
+      - saturation
+      - gradients
+    question: |
+      A one-input network computes $f(x) = 4 - \mathrm{ReLU}(4 - 2x)$, which equals $\min(2x, 4)$.
+      For the input $x = 3$ and the baseline $x' = 0$, what attributions do the plain gradient and
+      integrated gradients give to $x$?
+    options:
+      - text: Gradient 0, integrated gradients 4
+        correct: true
+      - text: Gradient 2, integrated gradients 4
+        why: At $x = 3$ the function is flat because $2x > 4$; the slope 2 only holds for $x < 2$ [^1].
+      - text: Gradient 0, integrated gradients 0
+        why: Integrated gradients accumulates the gradient along the whole path from 0 to 3, where the slope is 2 for the first two thirds [^1].
+      - text: Gradient 0, integrated gradients 6
+        why: That assumes a slope of 2 along the whole path; the function stops rising at $x = 2$, so the path integral is only $3 \times \frac{2}{3} \times 2 = 4$ [^1].
+    explanation: |
+      The function saturates for $x \ge 2$, so the gradient at $x = 3$ is 0 although the output rose
+      from 0 to 4 — gradients violate the *sensitivity* axiom, as in the paper's example
+      $f(x) = 1 - \mathrm{ReLU}(1 - x)$ [^1]. Integrated gradients,
+      $(x - x')\int_0^1 f'(x' + \alpha(x - x'))\,d\alpha = 3 \cdot \frac{2}{3} \cdot 2 = 4$, equals
+      $f(x) - f(x')$ as *completeness* requires [^1][^2].
+    references:
+      - title: Sundararajan, Taly & Yan (2017), Axiomatic Attribution for Deep Networks, arXiv:1703.01365
+        url: https://arxiv.org/abs/1703.01365
+        locator: Sec. 2.1 Axiom Sensitivity(a) ("Gradients violate Sensitivity"); Sec. 3 Our Method (Eq. 1, Completeness)
+      - title: Sturmfels, Lundberg & Lee (2020), Visualizing the Impact of Feature Attribution Baselines, Distill
+        url: https://distill.pub/2020/attribution-baselines/
+        locator: A Better Understanding of Integrated Gradients (saturation)
+    source:
+      id: original
+      ref: xai-018
+    status: reviewed
+    reviewed_by: claude
+  - id: xai-019
+    type: short_answer
+    difficulty: hard
+    tags:
+      - integrated-gradients
+      - completeness
+    question: |
+      For the model $F(x_1, x_2) = x_1^2 x_2$, the input $x = (2, 3)$ and the all-zero baseline,
+      what is the integrated-gradients attribution of $x_1$?
+    answer:
+      numeric: 8
+      tolerance: 0.001
+      hint: a number
+      model: 'On the path $\alpha x$: $\partial F / \partial x_1 = 2x_1x_2 = 12\alpha^2$, so $\mathrm{IG}_1 = 2\int_0^1 12\alpha^2\,d\alpha = 8$ (and $\mathrm{IG}_2 = 3\int_0^1 4\alpha^2\,d\alpha = 4$)'
+    explanation: |
+      Integrated gradients is
+      $\mathrm{IG}_i(x) = (x_i - x'_i)\int_0^1 \frac{\partial F(x' + \alpha(x - x'))}{\partial x_i}\,d\alpha$
+      [^1]. On the straight path from 0 to $(2, 3)$ the point is $(2\alpha, 3\alpha)$, so
+      $\partial F/\partial x_1 = 2 \cdot 2\alpha \cdot 3\alpha = 12\alpha^2$ and
+      $\mathrm{IG}_1 = 2 \cdot 4 = 8$; likewise $\mathrm{IG}_2 = 4$. They add up to
+      $F(x) - F(x') = 12$ (completeness) [^1]. By contrast, the plain gradient at $x$ is $(12, 4)$
+      and gradient × input is $(24, 12)$, which sums to 36 rather than 12 [^2].
+    references:
+      - title: Sundararajan, Taly & Yan (2017), Axiomatic Attribution for Deep Networks, arXiv:1703.01365
+        url: https://arxiv.org/abs/1703.01365
+        locator: 'Sec. 3 Our Method: Integrated Gradients (Eq. 1, Axiom Completeness)'
+      - title: 'Captum docs: Algorithm Descriptions'
+        url: https://github.com/meta-pytorch/captum/blob/7aefa21cf9c3f1fb8bae757fd4f3a5fdc3c400a6/docs/attribution_algorithms.md
+        locator: Integrated Gradients; Saliency; Input X Gradient
+    source:
+      id: original
+      ref: xai-019
+    status: reviewed
+    reviewed_by: claude
+  - id: xai-020
+    type: single
+    difficulty: medium
+    tags:
+      - integrated-gradients
+      - completeness
+      - riemann-sum
+    question: |
+      You compute integrated gradients with a Riemann sum of $m = 20$ steps. The attributions add up
+      to 0.62, but $F(x) - F(x')$ is 0.87. What should you do?
+    options:
+      - text: Increase $m$ until the sum is close to $F(x) - F(x')$
+        correct: true
+      - text: Rescale all attributions by the same factor so that they add up to 0.87
+        why: Rescaling hides the error of the integral instead of fixing it; each feature's attribution stays wrong [^1].
+      - text: Nothing, since integrated gradients need not add up to $F(x) - F(x')$
+        why: Completeness is a defining property of integrated gradients; a gap shows that the integral is approximated poorly [^1].
+      - text: Switch to the plain gradient at $x$, which needs no integral at all
+        why: Plain gradients satisfy neither completeness nor sensitivity, so they would be a worse explanation [^1].
+    explanation: |
+      Integrated gradients satisfy completeness: the attributions sum to $F(x) - F(x')$ [^1]. In
+      practice the path integral is replaced by a sum over $m$ points between the baseline and the
+      input; the authors found 20–300 steps usually enough to be within 5%, and recommend checking
+      the sum and increasing $m$ when it is off [^1]. Libraries such as Captum offer Riemann or
+      Gauss–Legendre rules for this approximation [^2].
+    references:
+      - title: Sundararajan, Taly & Yan (2017), Axiomatic Attribution for Deep Networks, arXiv:1703.01365
+        url: https://arxiv.org/abs/1703.01365
+        locator: Sec. 3 (Axiom Completeness); Sec. 5 Applying Integrated Gradients (Computing Integrated Gradients, Eq. 3)
+      - title: 'Captum docs: Algorithm Descriptions'
+        url: https://github.com/meta-pytorch/captum/blob/7aefa21cf9c3f1fb8bae757fd4f3a5fdc3c400a6/docs/attribution_algorithms.md
+        locator: Integrated Gradients
+    source:
+      id: original
+      ref: xai-020
+    status: reviewed
+    reviewed_by: claude
+  - id: xai-021
+    type: single
+    difficulty: medium
+    tags:
+      - integrated-gradients
+      - baseline
+    question: |
+      Integrated gradients with an all-black baseline image (every channel 0) explains a classifier's
+      prediction on a photo of a pure-black cat lying on a white sofa. Which pixels are guaranteed to
+      get zero attribution?
+    options:
+      - text: The cat's black pixels, because they equal the baseline
+        correct: true
+      - text: The white sofa pixels, because they are the farthest from the baseline
+        why: A large difference $x_i - x'_i$ allows a large attribution; it does not force zero [^1].
+      - text: The pixels whose gradient at the input image is zero
+        why: Integrated gradients sums gradients along the whole path, so a zero gradient at the input does not imply zero attribution [^1].
+      - text: None, because completeness gives every pixel a nonzero share
+        why: Completeness fixes the sum of the attributions, not the value of each pixel [^1].
+    explanation: |
+      Each attribution has the factor $(x_i - x'_i)$, so a pixel equal to the baseline gets exactly
+      zero, whatever the model does [^1]. With a black baseline, integrated gradients is therefore
+      blind to black pixels even when they make up the object; this motivates other baselines
+      (blurred, uniform, Gaussian noise) or averaging over many baselines [^2].
+    references:
+      - title: Sundararajan, Taly & Yan (2017), Axiomatic Attribution for Deep Networks, arXiv:1703.01365
+        url: https://arxiv.org/abs/1703.01365
+        locator: Sec. 3 Our Method (Eq. 1); Sec. 5 Applying Integrated Gradients (Selecting a Benchmark)
+      - title: Sturmfels, Lundberg & Lee (2020), Visualizing the Impact of Feature Attribution Baselines, Distill
+        url: https://distill.pub/2020/attribution-baselines/
+        locator: Game Theory and Missingness; Alternative Baseline Choices; Averaging Over Multiple Baselines
+    source:
+      id: original
+      ref: xai-021
+    status: reviewed
+    reviewed_by: claude
+  - id: xai-022
+    type: short_answer
+    difficulty: easy
+    tags:
+      - smoothgrad
+    question: |
+      SmoothGrad states its noise level as $\sigma / (x_{\max} - x_{\min})$. For images with pixel
+      values in $[0, 255]$, which standard deviation $\sigma$ gives a noise level of 15%?
+    answer:
+      numeric: 38.25
+      tolerance: 0.06
+      hint: a number
+      model: $\sigma = 0.15 \times (255 - 0) = 38.25$
+    explanation: |
+      SmoothGrad averages the gradient maps of $n$ noisy copies $x + \mathcal{N}(0, \sigma^2)$, and
+      reports the noise as a fraction of the input range, $\sigma/(x_{\max} - x_{\min})$ [^1]. The
+      authors found 10–20% noise a good balance between a sharp map and keeping the image's
+      structure, so $\sigma = 0.15 \times 255 = 38.25$ is a typical choice for 8-bit images (0.15 for
+      images scaled to $[0, 1]$) [^1].
+    references:
+      - title: 'Smilkov et al. (2017), SmoothGrad: removing noise by adding noise, arXiv:1706.03825'
+        url: https://arxiv.org/abs/1706.03825
+        locator: Sec. 2.2 Smoothing noisy gradients; Sec. 3.2 Effect of noise level and sample size (Fig. 3 caption)
+    source:
+      id: original
+      ref: xai-022
+    status: reviewed
+    reviewed_by: claude
+  - id: xai-023
+    type: single
+    difficulty: easy
+    tags:
+      - smoothgrad
+      - saliency-map
+    question: What does SmoothGrad compute to reduce the visual noise of a gradient saliency map?
+    options:
+      - text: The average of the gradient maps of many copies of the input with Gaussian noise added
+        correct: true
+      - text: The gradient map of a model that was retrained with Gaussian noise added to its training images
+        why: Training with noise is a separate idea the paper also tries; SmoothGrad itself explains a fixed trained model [^1].
+      - text: The integral of the gradients along a straight path from a baseline to the input
+        why: That is integrated gradients, which targets saturation rather than noisy maps [^1].
+      - text: The gradient map of a Gaussian-blurred version of the input image
+        why: SmoothGrad does not blur the image; it averages gradients taken at many noisy points around it [^1].
+    explanation: |
+      SmoothGrad computes $\hat{M}_c(x) = \frac{1}{n}\sum_{i=1}^{n} M_c(x + \mathcal{N}(0, \sigma^2))$
+      [^1]. Raw gradients fluctuate sharply at small scales, so a local average of gradients is more
+      meaningful than the gradient at one point; the authors saw little change beyond about
+      $n = 50$ samples [^1]. Captum's NoiseTunnel offers the same averaging on top of any attribution
+      method [^2].
+    references:
+      - title: 'Smilkov et al. (2017), SmoothGrad: removing noise by adding noise, arXiv:1706.03825'
+        url: https://arxiv.org/abs/1706.03825
+        locator: Sec. 2.1 Previous work; Sec. 2.2 Smoothing noisy gradients; Sec. 3.2; Sec. 3.5 Adding noise during training
+      - title: 'Captum docs: Algorithm Descriptions'
+        url: https://github.com/meta-pytorch/captum/blob/7aefa21cf9c3f1fb8bae757fd4f3a5fdc3c400a6/docs/attribution_algorithms.md
+        locator: Noise Tunnel
+    source:
+      id: original
+      ref: xai-023
+    status: reviewed
+    reviewed_by: claude
+  - id: xai-024
+    type: short_answer
+    difficulty: medium
+    tags:
+      - grad-cam
+    question: |
+      A convolutional layer has two $2 \times 2$ feature maps $A^1, A^2$. The gradients of the class
+      score $y^c$ (before the softmax) with respect to them are given next to them:
+
+      $$A^1 = \begin{pmatrix} 1 & 2 \\ 0 & 4 \end{pmatrix}, \quad \frac{\partial y^c}{\partial A^1} = \begin{pmatrix} 0.1 & 0.3 \\ 0.2 & 0.2 \end{pmatrix}, \quad A^2 = \begin{pmatrix} 2 & 0 \\ 1 & 1 \end{pmatrix}, \quad \frac{\partial y^c}{\partial A^2} = \begin{pmatrix} -0.1 & 0.1 \\ -0.2 & -0.2 \end{pmatrix}$$
+
+      What is the Grad-CAM value at the bottom-right position?
+    answer:
+      numeric: 0.7
+      tolerance: 0.001
+      hint: a number, 1 decimal
+      model: '$\alpha_1 = 0.8/4 = 0.2$, $\alpha_2 = -0.4/4 = -0.1$; bottom-right: $\mathrm{ReLU}(0.2 \cdot 4 - 0.1 \cdot 1) = 0.7$'
+    explanation: |
+      Grad-CAM weights each channel by its global-average-pooled gradient,
+      $\alpha_k^c = \frac{1}{Z}\sum_{i,j} \partial y^c / \partial A^k_{ij}$, and outputs
+      $L^c = \mathrm{ReLU}(\sum_k \alpha_k^c A^k)$ [^1]. Here $\alpha_1 = 0.2$ and $\alpha_2 = -0.1$,
+      so the map is $\begin{pmatrix} 0 & 0.4 \\ 0 & 0.7 \end{pmatrix}$ (the bottom-left value $-0.1$
+      is cut by the ReLU). Summing instead of averaging the gradients would give 2.8 here; the average
+      over positions is what Captum's implementation uses too [^2].
+    references:
+      - title: 'Selvaraju et al. (2017), Grad-CAM: Visual Explanations from Deep Networks via Gradient-based Localization, arXiv:1610.02391'
+        url: https://arxiv.org/abs/1610.02391
+        locator: Sec. 3 Grad-CAM, Eqs. (1)–(2)
+      - title: 'Captum docs: Algorithm Descriptions'
+        url: https://github.com/meta-pytorch/captum/blob/7aefa21cf9c3f1fb8bae757fd4f3a5fdc3c400a6/docs/attribution_algorithms.md
+        locator: Layer Attribution – GradCAM
+    source:
+      id: original
+      ref: xai-024
+    status: reviewed
+    reviewed_by: claude
+  - id: xai-025
+    type: single
+    difficulty: easy
+    tags:
+      - grad-cam
+    question: Why is Grad-CAM usually computed at the last convolutional layer of a CNN?
+    options:
+      - text: It still keeps spatial layout but already encodes high-level concepts
+        correct: true
+      - text: It has the most channels, so the resulting heatmap has the highest resolution
+        why: Resolution is the spatial size of the maps, which is small there (e.g. 14 × 14 for VGG), so the heatmap is coarse and must be upsampled [^1].
+      - text: It is the only layer whose gradients survive the ReLU activations
+        why: Back-propagation gives gradients for every layer; nothing restricts them to the last convolutional one.
+      - text: Its activations are already class probabilities, so no gradients are needed
+        why: Convolutional activations are features, not probabilities, and Grad-CAM explicitly uses gradients of the class score [^1].
+    explanation: |
+      Two things are wanted at once: features that mean something at the level of objects, which
+      emerge in the deeper layers, and a spatial grid, which is lost once the fully connected layers
+      flatten the maps. The last convolutional layer is where both are still available, so
+      Grad-CAM takes its gradients and activations there [^1]. The price is resolution: the map is as
+      small as that layer's feature maps (14 × 14 for VGG-16) and has to be upsampled to the image
+      size before it is laid over the image [^1][^2].
+    references:
+      - title: 'Selvaraju et al. (2017), Grad-CAM: Visual Explanations from Deep Networks via Gradient-based Localization, arXiv:1610.02391'
+        url: https://arxiv.org/abs/1610.02391
+        locator: Sec. 3 Grad-CAM; Sec. 3.2 Guided Grad-CAM (bilinear upsampling)
+      - title: 'Captum docs: Algorithm Descriptions'
+        url: https://github.com/meta-pytorch/captum/blob/7aefa21cf9c3f1fb8bae757fd4f3a5fdc3c400a6/docs/attribution_algorithms.md
+        locator: Layer Attribution – GradCAM
+    source:
+      id: original
+      ref: xai-025
+    status: reviewed
+    reviewed_by: claude
+  - id: xai-026
+    type: single
+    difficulty: medium
+    tags:
+      - grad-cam
+    question: |
+      Grad-CAM applies a ReLU to the weighted sum of feature maps,
+      $L^c = \mathrm{ReLU}\left(\sum_k \alpha_k^c A^k\right)$. What is the purpose of this ReLU?
+    options:
+      - text: To keep only the regions whose evidence raises the score of class $c$
+        correct: true
+      - text: To make the heatmap differentiable so that it can be back-propagated through
+        why: The heatmap is an output for people to look at; nothing is back-propagated through it, and a ReLU adds no differentiability.
+      - text: To rescale the heatmap into the range $[0, 1]$ before it is overlaid on the image
+        why: A ReLU only sets negative values to zero; scaling to $[0, 1]$ is a separate display step.
+      - text: To undo the global average pooling that was applied to the gradients
+        why: Pooling the gradients produces the channel weights $\alpha_k^c$; the ReLU does not invert it [^1].
+    explanation: |
+      A positive value of $\sum_k \alpha_k^c A^k$ marks a location that pushes the score $y^c$ up; a
+      negative value marks evidence against $c$, which usually comes from other objects in the
+      image. Setting the negative part to zero keeps the map about class $c$ alone; the authors
+      report that without it the maps spill over onto other classes and localise the object less
+      well [^1]. Flipping the sign of the gradients instead gives Grad-CAM's "counterfactual" maps,
+      which show the regions whose removal would make the model more sure of its prediction [^1].
+    references:
+      - title: 'Selvaraju et al. (2017), Grad-CAM: Visual Explanations from Deep Networks via Gradient-based Localization, arXiv:1610.02391'
+        url: https://arxiv.org/abs/1610.02391
+        locator: Sec. 3 Grad-CAM (Eq. 2 and the paragraph after it); Sec. 3.3 Counterfactual Explanations
+    source:
+      id: original
+      ref: xai-026
+    status: reviewed
+    reviewed_by: claude
+  - id: xai-027
+    type: short_answer
+    difficulty: medium
+    tags:
+      - occlusion
+      - perturbation
+    question: |
+      To build an occlusion map for a $32 \times 32$ image, you slide an $8 \times 8$ grey patch over
+      it with a stride of 4 pixels in both directions, keeping the patch inside the image, and run the
+      classifier once per patch position. How many occluded images are evaluated?
+    answer:
+      numeric: 49
+      tolerance: 0
+      hint: a whole number
+      model: $(32 - 8)/4 + 1 = 7$ positions per direction, $7 \times 7 = 49$
+    explanation: |
+      Occlusion sensitivity hides one part of the image at a time behind a grey square and watches
+      the classifier's output: the correct class loses probability when the object itself is hidden
+      [^1]. The window fits $(32 - 8)/4 + 1 = 7$ times along each axis, and each position needs its
+      own forward pass, so $7 \times 7 = 49$ occluded images (plus one pass for the original image).
+      Where windows overlap, a pixel's attribution averages the output differences of the windows
+      covering it [^2]. Using only forward passes makes occlusion model-agnostic, but it is far more
+      expensive than a gradient map, which needs a single backward pass.
+    references:
+      - title: Zeiler & Fergus (2014), Visualizing and Understanding Convolutional Networks, arXiv:1311.2901
+        url: https://arxiv.org/abs/1311.2901
+        locator: Sec. 4.2 Occlusion Sensitivity
+      - title: 'Captum docs: Algorithm Descriptions'
+        url: https://github.com/meta-pytorch/captum/blob/7aefa21cf9c3f1fb8bae757fd4f3a5fdc3c400a6/docs/attribution_algorithms.md
+        locator: Occlusion; Feature Ablation
+    source:
+      id: original
+      ref: xai-027
+    status: reviewed
+    reviewed_by: claude
+  - id: xai-028
+    type: single
+    difficulty: medium
+    tags:
+      - attention
+      - faithfulness
+    question: |
+      Jain and Wallace tested whether the attention weights of recurrent (BiLSTM) text classifiers
+      explain their predictions. What did they find?
+    options:
+      - text: Permuted or adversarial attention weights often left the prediction almost unchanged
+        correct: true
+      - text: Attention weights agreed closely with gradient-based and leave-one-out importance scores
+        why: They found these correlations to be weak and inconsistent for recurrent encoders [^1].
+      - text: Removing the attention layer always destroyed accuracy, which proves attention is the explanation
+        why: They did not test this, and a layer that helps accuracy need not explain which inputs drove a prediction [^1].
+      - text: Attention became a reliable explanation once its weights were normalised by a softmax
+        why: Attention weights are already softmax-normalised distributions over the inputs; this is exactly what they examined [^1].
+    explanation: |
+      Jain and Wallace measured how attention correlates with gradient and leave-one-out importance
+      (weakly) and built counterfactual attention: randomly permuted weights and adversarial
+      distributions far from the original that keep the prediction within a small $\epsilon$ [^1].
+      Such distributions were easy to find, so an attention heatmap is not a unique, faithful account
+      of the prediction [^1]. Faithfulness means accurately reflecting the model's true reasoning [^2].
+    references:
+      - title: Jain & Wallace (2019), Attention is not Explanation, arXiv:1902.10186
+        url: https://arxiv.org/abs/1902.10186
+        locator: Sec. 1 Introduction (summary of findings); Sec. 4.1 Correlation Between Attention and Feature Importance Measures; Sec. 4.2 Counterfactual Attention Weights
+      - title: 'Jacovi & Goldberg (2020), Towards Faithfully Interpretable NLP Systems: How should we define and evaluate faithfulness?, arXiv:2004.03685'
+        url: https://arxiv.org/abs/2004.03685
+        locator: Sec. 2 Faithfulness vs. Plausibility
+    source:
+      id: original
+      ref: xai-028
+    status: reviewed
+    reviewed_by: claude
+  - id: xai-029
+    type: single
+    difficulty: medium
+    tags:
+      - sanity-checks
+      - saliency-map
+    question: |
+      A saliency method produces almost the same maps for a trained CNN and for the same architecture
+      with randomly re-initialised weights. What does this sanity check tell you?
+    options:
+      - text: The method ignores what the model learned, so it is useless for debugging
+        correct: true
+      - text: The model is robust, because its explanations survive changes to its weights
+        why: The test is about the explanation method; a random network has learned nothing, yet the maps did not change [^1].
+      - text: The method is faithful, since stable explanations are a sign of reliability
+        why: Staying the same when the model is destroyed is insensitivity to the model, the opposite of faithfulness [^1].
+      - text: The randomly initialised network must already compute the same features
+        why: Random weights encode nothing from the data; similar maps show that the method mostly reflects the input, much like an edge detector [^1].
+    explanation: |
+      In the model parameter randomization test, maps from the trained model are compared with maps
+      from a randomly initialised copy; if they are similar, the method does not depend on the learned
+      parameters and is useless for model debugging [^1]. Adebayo et al. found that gradients and
+      Grad-CAM pass, while Guided Backprop and Guided Grad-CAM are largely invariant to the higher
+      layers' weights and resemble edge detectors, so visual appeal alone is a poor guide [^1].
+    references:
+      - title: Adebayo et al. (2018), Sanity Checks for Saliency Maps, arXiv:1810.03292
+        url: https://arxiv.org/abs/1810.03292
+        locator: Sec. 1 Introduction (contributions, Fig. 1); Sec. 3 Model Parameter Randomization Test
+    source:
+      id: original
+      ref: xai-029
+    status: reviewed
+    reviewed_by: claude
+  - id: xai-030
+    type: true_false
+    difficulty: medium
+    tags:
+      - sanity-checks
+      - data-randomization
+    question: |
+      True or false: in the data randomization test, a network is trained on the same images with
+      randomly permuted labels; an explanation method passes if its maps for this network differ
+      clearly from those of the network trained on the true labels.
+    options:
+      - text: 'True'
+        correct: true
+      - text: 'False'
+        why: If the maps stayed the same after the labels were scrambled, the method could not be explaining anything about the link between images and labels [^1].
+    explanation: |
+      Permuting the labels destroys the relationship between inputs and labels; the network can only
+      memorise them [^1]. An explanation method that depends on what the model learned from that
+      relationship should therefore produce clearly different maps; one that does not change cannot
+      explain the input–label mechanism [^1]. Gradients and SmoothGrad changed substantially, while
+      Guided Backprop still highlighted plausible-looking parts of the digits [^1].
+    references:
+      - title: Adebayo et al. (2018), Sanity Checks for Saliency Maps, arXiv:1810.03292
+        url: https://arxiv.org/abs/1810.03292
+        locator: Sec. 1 Introduction; Sec. 4 Data Randomization Test
+    source:
+      id: original
+      ref: xai-030
+    status: reviewed
+    reviewed_by: claude
+  - id: xai-031
+    type: short_answer
+    difficulty: easy
+    tags:
+      - counterfactual-explanations
+    question: |
+      A loan model approves an application when
+      $0.05 \cdot \text{income} + 0.8 \cdot \text{years employed} - 4 \ge 0$, with income in thousands.
+      An applicant with income 50 and 1 year of employment is rejected. Keeping years employed fixed,
+      what is the smallest income (in thousands) that would get the loan approved?
+    answer:
+      numeric: 64
+      tolerance: 0.01
+      hint: a number (in thousands)
+      model: $0.05 \cdot I + 0.8 \cdot 1 - 4 \ge 0 \iff I \ge 64$
+    explanation: |
+      The current score is $2.5 + 0.8 - 4 = -0.7$, so income must add $0.7$ more, i.e. rise by
+      $0.7 / 0.05 = 14$ thousand to 64. Such a statement — "had your income been 64 instead of 50,
+      the loan would have been approved" — is a counterfactual explanation: the smallest change that
+      produces the desired outcome, the "closest possible world" [^1]. It can be found by querying
+      the model's outputs alone (any optimiser works; gradients are optional), so it explains a
+      decision without opening the black box [^1][^2].
+    references:
+      - title: Wachter, Mittelstadt & Russell (2017), Counterfactual Explanations without Opening the Black Box, arXiv:1711.00399
+        url: https://arxiv.org/abs/1711.00399
+        locator: Sec. II Counterfactuals; Sec. III Generating Counterfactuals
+      - title: Molnar, Interpretable Machine Learning (3rd ed., CC BY-NC-SA 4.0)
+        url: https://christophm.github.io/interpretable-ml-book/counterfactual.html
+        locator: Ch. 15 Counterfactual Explanations (introduction; Method by Wachter et al.)
+    source:
+      id: original
+      ref: xai-031
+    status: reviewed
+    reviewed_by: claude
+  - id: xai-032
+    type: single
+    difficulty: medium
+    tags:
+      - counterfactual-explanations
+      - mad
+    question: |
+      Wachter et al. search for a counterfactual $x'$ close to the input $x$, measuring closeness by
+      an L1 distance in which each feature's change is divided by that feature's median absolute
+      deviation (MAD). What reasons do the authors give for this choice?
+    options:
+      - text: L1 favours changing few features; MAD puts features on comparable scales
+        correct: true
+      - text: The L1 norm is differentiable everywhere, which makes the search easier than with L2
+        why: The L1 norm is not differentiable at zero; it is chosen for the sparse solutions it induces [^1].
+      - text: Dividing by the MAD forces the counterfactual to stay inside the training data
+        why: The MAD only rescales the distance; making sure that $x'$ is a valid data point is a separate challenge the authors discuss [^1].
+      - text: MAD weighting makes features with a large spread expensive to change
+        why: Dividing by a large MAD makes changes in volatile features *cheap*, which matches how much they vary in the data [^1].
+    explanation: |
+      The counterfactual minimises $\lambda (f(x') - y')^2 + d(x, x')$ with
+      $d(x, x') = \sum_k |x_k - x'_k| / \mathrm{MAD}_k$ [^1][^2]. The MAD reflects how much each
+      feature naturally varies and, unlike the standard deviation, is robust to outliers; the L1 norm
+      tends to produce sparse changes, so the counterfactual alters only a few variables and is easy
+      to communicate [^1]. (Molnar notes that the distance alone treats one large change and many
+      small ones alike [^2]; the few-feature solutions appear once it is minimised together with the
+      prediction loss, e.g. for a linear model only the feature with the largest
+      $|w_k| \cdot \mathrm{MAD}_k$ changes.)
+    references:
+      - title: Wachter, Mittelstadt & Russell (2017), Counterfactual Explanations without Opening the Black Box, arXiv:1711.00399
+        url: https://arxiv.org/abs/1711.00399
+        locator: Sec. III Generating Counterfactuals (Eqs. 2–4)
+      - title: Molnar, Interpretable Machine Learning (3rd ed., CC BY-NC-SA 4.0)
+        url: https://christophm.github.io/interpretable-ml-book/counterfactual.html
+        locator: Ch. 15 Counterfactual Explanations, Method by Wachter et al.
+    source:
+      id: original
+      ref: xai-032
+    status: reviewed
+    reviewed_by: claude
+  - id: xai-033
+    type: single
+    difficulty: medium
+    tags:
+      - faithfulness
+      - plausibility
+      - ablation-test
+    question: |
+      Doctors find a saliency map convincing because it highlights the tumour. Yet deleting the
+      highlighted pixels barely changes the model's prediction, while blanking a small corner patch
+      changes it a lot. How is this explanation best described?
+    options:
+      - text: Plausible but not faithful
+        correct: true
+      - text: Faithful but not plausible
+        why: This swaps the terms; convincing people is plausibility, matching the model's actual reasoning is faithfulness [^1].
+      - text: Both faithful and plausible
+        why: The ablation shows the model relies on the corner, not the highlighted region, so the map does not reflect its reasoning [^2].
+      - text: Neither faithful nor plausible
+        why: The doctors find it convincing, which is exactly what plausibility means [^1].
+    explanation: |
+      Plausibility is how convincing an explanation is to humans; faithfulness is how accurately it
+      reflects the model's true reasoning, and one can hold without the other [^1]. Ablation tests
+      check faithfulness: removing the features ranked most important should lower the output the
+      most [^2]. Here it does not, and the corner patch suggests a shortcut, much like the decoy
+      MNIST example where a corner encodes the label [^2].
+    references:
+      - title: 'Jacovi & Goldberg (2020), Towards Faithfully Interpretable NLP Systems: How should we define and evaluate faithfulness?, arXiv:2004.03685'
+        url: https://arxiv.org/abs/2004.03685
+        locator: Sec. 2 Faithfulness vs. Plausibility
+      - title: Sturmfels, Lundberg & Lee (2020), Visualizing the Impact of Feature Attribution Baselines, Distill
+        url: https://distill.pub/2020/attribution-baselines/
+        locator: Comparing Saliency Methods (The Dangers of Qualitative Assessment; Top K Ablation Tests)
+    source:
+      id: original
+      ref: xai-033
+    status: reviewed
+    reviewed_by: claude
+  - id: xai-034
+    type: true_false
+    difficulty: easy
+    tags:
+      - clever-hans
+      - shortcut-learning
+      - debugging
+    question: |
+      True or false: if an image classifier reaches high accuracy on a held-out test set drawn from
+      the same data collection as its training set, it cannot be relying on a spurious cue such as a
+      watermark.
+    options:
+      - text: 'True'
+        why: The test set shares the artefacts of the collection, so a classifier that uses the watermark scores well there too [^1].
+      - text: 'False'
+        correct: true
+    explanation: |
+      Lapuschkin et al. examined a Fisher-vector image classifier (not a deep network) trained on
+      PASCAL VOC 2007 with excellent test accuracy on the "horse" class, yet its relevance heatmaps
+      pointed at a source tag (a copyright watermark) present on about a fifth of the horse photos.
+      Cutting the tag out weakened the "horse" decision, and pasting it onto a car photo turned the
+      prediction into "horse"; a fine-tuned deep network on the same data looked at the horse and
+      rider instead [^1]. Such "Clever Hans" behaviour stays hidden as long as the cue is present
+      and fails once it is absent; explanation methods help to detect it [^2].
+    references:
+      - title: Lapuschkin et al. (2019), Unmasking Clever Hans Predictors and Assessing What Machines Really Learn, arXiv:1902.10178
+        url: https://arxiv.org/abs/1902.10178
+        locator: Results, "Identifying valid and invalid problem-solving behaviors" (Fig. 2a)
+      - title: 'Wikipedia: Clever Hans'
+        url: https://en.wikipedia.org/wiki/Clever_Hans
+        locator: Clever Hans effect in artificial intelligence
+    source:
+      id: original
+      ref: xai-034
+    status: reviewed
+    reviewed_by: claude

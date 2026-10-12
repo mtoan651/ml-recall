@@ -2039,3 +2039,447 @@ questions:
       url: https://github.com/ageron/handson-ml3/blob/ef1c9f5ab11083584635b9b3a7846f49c58a6084/12_custom_models_and_training_with_tensorflow.ipynb
     status: reviewed
     reviewed_by: claude
+  - id: metrics-058
+    type: single
+    difficulty: medium
+    tags:
+      - ce6146
+      - ce6146-ex01
+      - ce6146-l01
+      - mse
+      - regression
+    question: |
+      A regression model predicts $[3, 5, 9]$ for three examples whose true values are $[4, 7, 6]$. What
+      is the mean squared error?
+    options:
+      - text: $14/3 \approx 4.67$
+        correct: true
+      - text: '0'
+        why: The signed errors $-1$, $-2$ and $+3$ cancel, but squared errors cannot cancel.
+      - text: '2'
+        why: That is the mean absolute error.
+      - text: $7/3 \approx 2.33$
+        why: That is half the MSE, as in the loss $\tfrac12(\hat y - y)^2$; the MSE itself has no factor $\tfrac12$.
+    explanation: |
+      The errors are $-1, -2, 3$, their squares $1, 4, 9$, and the mean of the squares is
+      $14/3 \approx 4.67$ [^1][^2]. Squaring keeps positive and negative errors from cancelling and
+      weights large errors more heavily; the MSE averages the squares without any factor $\tfrac12$.
+    references:
+      - source: ncu-intro-dl
+        locator: Exercise 1, question 13; Lecture 1, slide 87
+      - source: google-mlcc
+        url: https://developers.google.com/machine-learning/crash-course/linear-regression/loss
+        locator: 'Linear regression: Loss — Types of loss'
+    source:
+      id: ncu-intro-dl
+      ref: exercise-01/q13-v2
+    status: reviewed
+    reviewed_by: claude
+  - id: metrics-059
+    type: single
+    difficulty: easy
+    tags:
+      - ce6146
+      - ce6146-ex02
+      - ce6146-l01
+      - mse
+      - rmse
+      - regression
+    question: |
+      A model predicts tomorrow's electricity demand in megawatts (MW). On the test set its mean squared
+      error is 25 MW². Which statement is correct?
+    options:
+      - text: Its RMSE is 5 MW, in the same unit as the target
+        correct: true
+      - text: Its typical error is about 25 MW, the value of the MSE itself
+        why: The MSE is in squared units (MW²); its square root gives a typical error in MW.
+      - text: Its accuracy is 75%, that is, 100 minus the MSE
+        why: Accuracy counts correct class decisions and does not apply to numeric predictions.
+      - text: Its F1 score can be computed from the MSE
+        why: F1 combines precision and recall of a classifier; it cannot be derived from a regression error.
+    explanation: |
+      Regression models are evaluated with error measures such as MAE, MSE and RMSE [^1][^2]. The MSE is in
+      squared units, and the root mean squared error, $\mathrm{RMSE} = \sqrt{\mathrm{MSE}} = \sqrt{25} = 5$ MW, brings it back to the unit of the target.
+      Accuracy, precision and F1 are classification metrics.
+    references:
+      - source: ncu-intro-dl
+        locator: Exercise 2, question 10; Lecture 1, slide 87
+      - source: google-mlcc
+        url: https://developers.google.com/machine-learning/crash-course/linear-regression/loss
+        locator: 'Linear regression: Loss — Types of loss'
+    source:
+      id: ncu-intro-dl
+      ref: exercise-02/q10-v2
+    status: reviewed
+    reviewed_by: claude
+  - id: metrics-060
+    type: single
+    difficulty: medium
+    tags:
+      - ce6146
+      - ce6146-l01
+      - r-squared
+    question: |
+      Observed values are $y = [2, 4, 6]$ and a regression model predicts $[6, 4, 2]$. What is its
+      coefficient of determination $R^2$?
+    options:
+      - text: $-3$
+        correct: true
+      - text: $0$
+        why: $R^2 = 0$ is the score of always predicting the mean (4); this model does worse than that.
+      - text: $0.75$
+        why: This swaps the numerator and denominator, $1 - 8/32$.
+      - text: $1$
+        why: The predictions contain the right values but in the wrong order; $R^2$ compares each prediction with its own target.
+    explanation: |
+      $R^2 = 1 - \sum_i (y_i - \hat y_i)^2 / \sum_i (y_i - \bar y)^2$ [^1][^2]. The residuals are
+      $-4, 0, 4$, so the numerator is 32; with $\bar y = 4$ the denominator is $4 + 0 + 4 = 8$,
+      giving $R^2 = 1 - 32/8 = -3$. A negative $R^2$ means the model's squared error exceeds that
+      of always predicting the mean, which scores 0 [^2].
+    references:
+      - source: ncu-intro-dl
+        locator: Lecture 1, slide 88
+      - title: 'scikit-learn API reference: r2_score'
+        url: https://scikit-learn.org/stable/modules/generated/sklearn.metrics.r2_score.html
+        locator: Description (best score 1.0, can be negative; constant mean model scores 0.0)
+    source:
+      id: ncu-intro-dl
+      ref: lecture-01/q82
+    status: reviewed
+    reviewed_by: claude
+  - id: metrics-061
+    type: short_answer
+    difficulty: easy
+    tags:
+      - ce6146
+      - ce6146-l01
+      - precision
+      - recall
+    question: |
+      A fraud detector is tested on 500 transactions, 40 of which are fraudulent. It flags 50
+      transactions, 30 of them fraudulent. Its precision is {{1}} and its recall is {{2}}.
+    answer:
+      blanks:
+        - numeric: 0.6
+          tolerance: 0.001
+          hint: a decimal, e.g. 0.42
+        - numeric: 0.75
+          tolerance: 0.001
+          hint: a decimal, e.g. 0.42
+      model: 'TP = 30, FP = 20, FN = 10: precision $30/50 = 0.6$, recall $30/40 = 0.75$.'
+    explanation: |
+      Precision, $TP/(TP + FP)$, is the fraction of flagged transactions that are fraud; recall,
+      $TP/(TP + FN)$, is the fraction of fraud that gets flagged [^1][^2]. With $TP = 30$,
+      $FP = 50 - 30 = 20$ and $FN = 40 - 30 = 10$, precision is 0.6 and recall 0.75. Accuracy would
+      be $(30 + 440)/500 = 0.94$, which looks high mainly because most transactions are
+      legitimate [^2].
+    references:
+      - source: ncu-intro-dl
+        locator: Lecture 1, slides 89–90
+      - title: 'Google Machine Learning Crash Course: Classification: Accuracy, recall, precision, and related metrics'
+        url: https://developers.google.com/machine-learning/crash-course/classification/accuracy-precision-recall
+        locator: Accuracy; Recall, or true positive rate; Precision
+    source:
+      id: ncu-intro-dl
+      ref: lecture-01/q83
+    status: reviewed
+    reviewed_by: claude
+  - id: metrics-062
+    type: single
+    difficulty: easy
+    tags:
+      - ce6146
+      - ce6146-l01
+      - mcc
+      - f1-score
+    question: |
+      On a test set where defects are rare, a team wants one summary number that takes every cell
+      of the confusion matrix (TP, FP, FN and TN) into account. Which metric fits?
+    options:
+      - text: Matthews correlation coefficient (MCC)
+        correct: true
+      - text: F1 score, the harmonic mean of precision and recall
+        why: $F_1 = 2TP/(2TP + FP + FN)$ does not use the true negatives at all.
+      - text: Precision, the positive predictive value
+        why: Precision uses only TP and FP.
+      - text: Specificity, the true negative rate
+        why: Specificity uses only TN and FP.
+    explanation: |
+      F1 combines precision and recall, $2TP/(2TP + FP + FN)$, so the number of true negatives has
+      no effect on it [^1]. MCC, $(TP \cdot TN - FP \cdot FN)/\sqrt{(TP + FP)(TP + FN)(TN + FP)(TN +
+      FN)}$, uses all four counts and is regarded as a balanced measure even when the classes
+      differ greatly in size [^2][^3].
+    references:
+      - source: ncu-intro-dl
+        locator: Lecture 1, slide 91
+      - title: 'Wikipedia: Phi coefficient'
+        url: https://en.wikipedia.org/wiki/Phi_coefficient#Machine_learning
+        locator: Machine learning
+      - title: 'scikit-learn User Guide: Matthews correlation coefficient'
+        url: https://scikit-learn.org/stable/modules/model_evaluation.html#matthews-correlation-coefficient
+        locator: Sec. 3.4.4.13 Matthews correlation coefficient
+    source:
+      id: ncu-intro-dl
+      ref: lecture-01/q84
+    status: reviewed
+    reviewed_by: claude
+  - id: metrics-063
+    type: single
+    difficulty: medium
+    tags:
+      - ce6146
+      - ce6146-l01
+      - decision-threshold
+    question: |
+      A defect detector flags an item if its score is $t$ or higher. On a fixed
+      validation set, $t$ is raised from 0.4 to 0.7. Which statement must hold?
+    options:
+      - text: Recall cannot rise, because every item flagged at 0.7 was also flagged at 0.4
+        correct: true
+      - text: Precision must rise, because the alerts that remain are the more confident ones
+        why: Precision usually rises but can fall, e.g. if a defect scored 0.5 drops out while a normal item scored 0.8 stays flagged.
+      - text: Recall must rise, because the model is now more certain about each flagged item
+        why: Raising $t$ can only remove items from the flagged set, so the true positives cannot increase.
+      - text: Nothing changes, because the predicted scores stay the same
+        why: The scores are unchanged, but the decisions, and with them TP, FP, precision and recall, depend on $t$.
+    explanation: |
+      The items flagged at $t = 0.7$ are a subset of those flagged at 0.4, so the number of true
+      positives can only fall or stay, and recall $TP/(TP + FN)$ cannot increase; fewer items are
+      sent to inspection [^1][^2]. Precision depends on how many of the dropped items were false
+      alarms, so it usually, but not always, rises. The threshold is chosen on validation data
+      according to the cost of missed defects versus extra inspections [^1][^2][^3].
+    references:
+      - source: ncu-intro-dl
+        locator: Lecture 1, slide 92
+      - title: 'Google Machine Learning Crash Course: Thresholds and the confusion matrix'
+        url: https://developers.google.com/machine-learning/crash-course/classification/thresholding
+        locator: Effect of threshold on true and false positives and negatives
+      - title: 'Google Machine Learning Crash Course: Classification: Accuracy, recall, precision, and related metrics'
+        url: https://developers.google.com/machine-learning/crash-course/classification/accuracy-precision-recall
+        locator: Choice of metric and tradeoffs
+    source:
+      id: ncu-intro-dl
+      ref: lecture-01/q85
+    status: reviewed
+    reviewed_by: claude
+  - id: metrics-064
+    type: short_answer
+    difficulty: medium
+    tags:
+      - ce6146
+      - ce6146-l01
+      - decision-threshold
+      - precision
+      - recall
+    question: |
+      On a validation set, the 5 defective items have scores 0.95, 0.85, 0.70, 0.60 and 0.30, and
+      the 8 normal items have scores 0.90, 0.65, 0.55, 0.40, 0.20, 0.10, 0.05 and 0.02. An item is
+      flagged if its score is $t$ or higher. At $t = 0.5$, precision is $4/7$ and recall is 0.8.
+      At $t = 0.75$, precision is {{1}} and recall is {{2}}. Give 3 decimals.
+    answer:
+      blanks:
+        - numeric: 0.667
+          tolerance: 0.002
+          hint: 3 decimals
+        - numeric: 0.4
+          tolerance: 0.001
+          hint: 3 decimals
+      model: 'At $t = 0.75$: flagged 0.95, 0.85 (defects) and 0.90 (normal), so TP = 2, FP = 1, FN = 3; precision $2/3 \approx 0.667$, recall $2/5 = 0.4$.'
+    explanation: |
+      At $t = 0.75$ the flagged items are the defects scored 0.95 and 0.85 and the normal item
+      scored 0.90, so $TP = 2$, $FP = 1$ and $FN = 3$ [^1][^2]. Precision is $2/3 \approx 0.667$
+      (up from 0.571) and recall $2/5 = 0.4$ (down from 0.8): fewer items go to inspection, but more
+      defects are missed. Which threshold is better depends on the cost of a missed defect versus
+      an unnecessary inspection [^1][^3].
+    references:
+      - source: ncu-intro-dl
+        locator: Lecture 1, slides 89–92
+      - title: 'Google Machine Learning Crash Course: Classification: Accuracy, recall, precision, and related metrics'
+        url: https://developers.google.com/machine-learning/crash-course/classification/accuracy-precision-recall
+        locator: Recall, or true positive rate; Precision
+      - title: 'Google Machine Learning Crash Course: Thresholds and the confusion matrix'
+        url: https://developers.google.com/machine-learning/crash-course/classification/thresholding
+        locator: Effect of threshold on true and false positives and negatives
+    source:
+      id: ncu-intro-dl
+      ref: lecture-01/q86
+    status: reviewed
+    reviewed_by: claude
+  - id: metrics-065
+    type: short_answer
+    difficulty: medium
+    tags:
+      - ce6146
+      - ce6146-l01
+      - roc-auc
+    question: |
+      A classifier gives three positive examples the scores 0.9, 0.6 and 0.4, and two negative
+      examples the scores 0.7 and 0.3. Estimate the ROC AUC as the fraction of (positive, negative)
+      pairs in which the positive example has the higher score. Give 3 decimals.
+    answer:
+      numeric: 0.667
+      tolerance: 0.002
+      hint: 3 decimals
+      model: '0.9 beats both negatives, 0.6 and 0.4 beat only 0.3: 4 of 6 pairs, $4/6 \approx 0.667$.'
+    explanation: |
+      The ROC curve plots the true positive rate against the false positive rate as the threshold
+      varies, and the area under it equals the probability that a randomly chosen positive is
+      ranked above a randomly chosen negative [^1][^2]. The estimator
+      $\widehat{\mathrm{AUC}} = \frac{1}{n_x n_y}\sum_i \sum_j \mathbf{1}(X_i > Y_j)$ counts the
+      winning pairs: 4 of the $3 \cdot 2 = 6$ pairs, so AUC $\approx 0.667$ [^2]. It depends only on
+      how the scores are ranked, not on any particular threshold.
+    references:
+      - source: ncu-intro-dl
+        locator: Lecture 1, slide 93
+      - title: 'Wikipedia: Receiver operating characteristic'
+        url: https://en.wikipedia.org/wiki/Receiver_operating_characteristic#Probabilistic_interpretation
+        locator: Further interpretations > Probabilistic interpretation; Area under the curve
+    source:
+      id: ncu-intro-dl
+      ref: lecture-01/q87
+    status: reviewed
+    reviewed_by: claude
+  - id: metrics-066
+    type: single
+    difficulty: easy
+    tags:
+      - ce6146
+      - ce6146-l01
+      - imbalanced-data
+    question: |
+      You are planning a model that flags defective parts from photos. Defects are rare, and every
+      flagged part is re-checked by a worker. How should the model's success be measured?
+    options:
+      - text: Recall on defective parts, together with how many parts get flagged for re-checking
+        correct: true
+      - text: Overall accuracy, because it sums up every prediction in a single easy-to-read number
+        why: With rare defects, a model that never flags anything still has very high accuracy.
+      - text: The training loss that the model reaches at the end of its final training epoch
+        why: Training loss measures fit to the training data, not usefulness on new parts.
+      - text: Precision alone, the share of flagged parts that are truly defective
+        why: Precision ignores the defects that are missed; a model that flags only a few obvious defects can have precision 1 and still miss most of them.
+    explanation: |
+      When defects are rare, accuracy is dominated by the many normal parts, so a useless model can
+      look excellent [^1][^2]. What matters in operation is how many defects are caught (recall) and
+      how many parts are sent for re-inspection (the workload, which precision reflects) [^1][^2]. A
+      good plan also fixes the unit (the physical part), splits by part with later production kept
+      for testing, compares with a baseline and records data, parameters and evaluation settings
+      [^1].
+    references:
+      - source: ncu-intro-dl
+        locator: Lecture 1, slides 89–90, 95
+      - title: 'Google Machine Learning Crash Course: Classification: Accuracy, recall, precision, and related metrics'
+        url: https://developers.google.com/machine-learning/crash-course/classification/accuracy-precision-recall
+        locator: Accuracy; Choice of metric and tradeoffs
+    source:
+      id: ncu-intro-dl
+      ref: lecture-01/q89
+    status: reviewed
+    reviewed_by: claude
+  - id: metrics-067
+    type: single
+    difficulty: easy
+    tags:
+      - ce6146
+      - ce6146-l01
+      - loss-vs-metric
+    question: |
+      A delivery-time model is trained by minimizing mean squared error, but the team reports its
+      mean absolute error in minutes. Which statement is correct?
+    options:
+      - text: The loss guides the parameter updates, while the metric judges usefulness; the two may differ
+        correct: true
+      - text: This is a mistake, because a model must always be evaluated with exactly the loss it was trained on
+        why: Loss and metric serve different roles; they can coincide but need not.
+      - text: The reported MAE is the quantity whose gradient was used to update the weights
+        why: The gradients came from the squared-error loss; MAE is only computed for reporting.
+      - text: MAE cannot be computed for a model whose training loss was squared error
+        why: MAE only needs predictions and targets, which any regression model provides.
+    explanation: |
+      The loss is the numerical objective that training minimizes, here squared error; the
+      evaluation metric tells you whether the model is useful, here the average error in minutes,
+      which is easy to interpret [^1]. The two may be the same but often are not: classifiers, for
+      instance, are trained on cross-entropy while accuracy, which is not differentiable, is the
+      measure people usually care about [^2].
+    references:
+      - source: ncu-intro-dl
+        locator: Lecture 1, slide 47
+      - source: d2l
+        url: https://d2l.ai/chapter_linear-classification/classification.html#accuracy
+        locator: Sec. 4.3.2 Accuracy
+    source:
+      id: ncu-intro-dl
+      ref: lecture-01/q58
+    status: reviewed
+    reviewed_by: claude
+  - id: metrics-068
+    type: single
+    difficulty: medium
+    tags:
+      - ce6146
+      - ce6146-l02
+      - accuracy
+      - cross-entropy
+    question: |
+      Two classifiers use the threshold 0.5. On two positive examples, model A predicts 0.55 and 0.60,
+      and model B predicts 0.90 and 0.95. How do they compare?
+    options:
+      - text: Same accuracy, but B has a much lower mean cross-entropy (0.08 vs 0.55)
+        correct: true
+      - text: Same accuracy, and therefore the same mean cross-entropy as well
+        why: Cross-entropy depends on the probability values, not only on which side of 0.5 they fall.
+      - text: B has the higher accuracy, because its probabilities are closer to 1
+        why: Both models put both examples on the correct side of 0.5, so both have 100% accuracy.
+      - text: Same accuracy, but A has the lower mean cross-entropy, as its outputs are less extreme
+        why: For positive examples a larger $p$ means a smaller $-\ln p$, so B's loss is lower.
+    explanation: |
+      Both models classify both examples correctly, so each has 100% accuracy [^1]. Cross-entropy also
+      scores the probabilities: A's mean is $-\frac12(\ln 0.55 + \ln 0.60) \approx 0.554$ and B's is
+      $-\frac12(\ln 0.90 + \ln 0.95) \approx 0.078$ [^2]. A thresholded decision discards the
+      confidence that the loss keeps — the loss is the fitting criterion, accuracy one summary of
+      performance.
+    references:
+      - source: ncu-intro-dl
+        locator: Lecture 2, slides 54–55
+      - title: 'Wikipedia: Cross-entropy'
+        url: https://en.wikipedia.org/wiki/Cross-entropy
+        locator: Cross-entropy loss function and logistic regression
+    source:
+      id: ncu-intro-dl
+      ref: lecture-02/q65
+    status: reviewed
+    reviewed_by: claude
+  - id: metrics-069
+    type: true_false
+    difficulty: easy
+    tags:
+      - ce6146
+      - ce6146-l02
+      - calibration
+    question: |
+      True or false: because a sigmoid output always lies strictly between 0 and 1, the predicted
+      probabilities of a trained classifier are automatically calibrated.
+    options:
+      - text: 'True'
+        why: The sigmoid only guarantees a valid probability; it does not make events predicted at 0.8 happen 80% of the time.
+      - text: 'False'
+        correct: true
+    explanation: |
+      Calibration means that among the examples given a probability of about $p$, roughly a fraction
+      $p$ turn out positive [^1][^2]. The sigmoid only ensures that the output is a valid
+      probability; whether it is calibrated depends on the model and its training, and modern deep
+      networks are often poorly calibrated [^3].
+    references:
+      - source: ncu-intro-dl
+        locator: Lecture 2, slide 55
+      - title: scikit-learn User Guide, Probability calibration
+        url: https://scikit-learn.org/stable/modules/calibration.html
+        locator: Sec. 1.16 Probability calibration
+      - title: Guo et al. (2017), On Calibration of Modern Neural Networks, arXiv:1706.04599
+        url: https://arxiv.org/abs/1706.04599
+        locator: Abstract
+    source:
+      id: ncu-intro-dl
+      ref: lecture-02/q66
+    status: reviewed
+    reviewed_by: claude
