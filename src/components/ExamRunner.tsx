@@ -445,7 +445,7 @@ export function ExamRunner({
                   <span aria-hidden="true">← </span>
                   {t("Previous")}
                 </button>
-                <span className="mx-auto hidden text-center text-xs text-muted md:inline">
+                <span className="mx-auto hidden text-center text-xs text-muted md:inline pointer-coarse:hidden">
                   {currentQuestion.options
                     ? t("Keys: 1–9 select · ←/→ move · F flag")
                     : t("Keys: ←/→ move · F flag")}

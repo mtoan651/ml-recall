@@ -451,7 +451,7 @@ export default function MixedExam({ catalog, tags }: { catalog: Catalog; tags: C
             </button>
             <a
               href={mistakesUrl()}
-              className="text-sm text-muted underline-offset-2 hover:text-ink hover:underline"
+              className="text-sm text-muted underline-offset-2 hover:text-ink hover:underline pointer-coarse:py-2"
             >
               {t("Practice your mistakes instead")}
             </a>
@@ -537,7 +537,7 @@ function TopicPicker({
                   {domain.topics.map((topic) => (
                     <label
                       key={topic.id}
-                      className="flex cursor-pointer items-center gap-2 py-0.5 text-sm"
+                      className="flex cursor-pointer items-center gap-2 py-0.5 text-sm pointer-coarse:py-2"
                     >
                       <input
                         type="checkbox"
@@ -711,16 +711,19 @@ function DomainCheckbox({
   useEffect(() => {
     if (ref.current) ref.current.indeterminate = state === "some";
   }, [state]);
+  // The padded label widens the tap target; a click on it must not also open or close the
+  // <details>.
   return (
-    <input
-      ref={ref}
-      type="checkbox"
-      className="size-4 shrink-0"
-      aria-label={label}
-      checked={state === "all"}
-      // A click on the checkbox must not also open or close the <details>.
-      onClick={(e) => e.stopPropagation()}
-      onChange={onToggle}
-    />
+    // biome-ignore lint/a11y/useKeyWithClickEvents: only stops a pointer click from bubbling.
+    <label className="-m-2 flex shrink-0 cursor-pointer p-2" onClick={(e) => e.stopPropagation()}>
+      <input
+        ref={ref}
+        type="checkbox"
+        className="size-4"
+        aria-label={label}
+        checked={state === "all"}
+        onChange={onToggle}
+      />
+    </label>
   );
 }

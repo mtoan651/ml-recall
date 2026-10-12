@@ -247,7 +247,7 @@ export default function Quiz({ questions, scope, showTopic = false, rating }: Qu
           />
         </div>
         <div className="flex flex-wrap gap-x-5 gap-y-2 text-sm text-muted">
-          <label className="inline-flex cursor-pointer items-center gap-2">
+          <label className="inline-flex cursor-pointer items-center gap-2 pointer-coarse:py-1.5">
             <input
               type="checkbox"
               className="size-4"
@@ -334,7 +334,7 @@ export default function Quiz({ questions, scope, showTopic = false, rating }: Qu
                   <div className="mb-2.5">{rating(question.id, answer.outcome)}</div>
                 )}
                 <div className="flex items-center justify-end gap-2">
-                  <span className="mr-auto hidden text-xs text-muted sm:inline">
+                  <span className="mr-auto hidden text-xs text-muted sm:inline pointer-coarse:hidden">
                     {question.options
                       ? t("Keys: 1–9 select · Enter check / next")
                       : t("Enter: check / next")}
