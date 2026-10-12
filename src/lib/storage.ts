@@ -6,6 +6,7 @@
  * Changing the stored format is a breaking change: bump the key version and migrate.
  */
 
+import { type CourseWeight, DEFAULT_COURSE_WEIGHT, isCourseWeight } from "./course";
 import {
   addAttempt,
   DEFAULT_EXAM_LAYOUT,
@@ -49,12 +50,15 @@ export interface QuizSettings {
   reviewedOnly: boolean;
   /** Timed tests: one question at a time, or all on one page. */
   examLayout: ExamLayout;
+  /** Timed and mixed tests draw CE6146 course questions this many times as often (course.ts). */
+  courseWeight: CourseWeight;
 }
 
 export const DEFAULT_SETTINGS: QuizSettings = {
   shuffleQuestions: true,
   reviewedOnly: false,
   examLayout: DEFAULT_EXAM_LAYOUT,
+  courseWeight: DEFAULT_COURSE_WEIGHT,
 };
 
 /** The subset of the Web Storage API we use (lets tests pass an in-memory store). */
@@ -167,6 +171,8 @@ export function loadSettings(store: KeyValueStore | null = browserStore()): Quiz
       typeof s.reviewedOnly === "boolean" ? s.reviewedOnly : DEFAULT_SETTINGS.reviewedOnly,
     // Added in v0.3: settings saved before have no layout and get the default.
     examLayout: isExamLayout(s.examLayout) ? s.examLayout : DEFAULT_SETTINGS.examLayout,
+    // Added in v0.6.
+    courseWeight: isCourseWeight(s.courseWeight) ? s.courseWeight : DEFAULT_SETTINGS.courseWeight,
   };
 }
 

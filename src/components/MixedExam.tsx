@@ -9,7 +9,9 @@ import {
   selectionPool,
   type TagCount,
   tagCounts,
+  taggedIds,
 } from "../lib/catalog";
+import { COURSE_TAG, type CourseWeight, courseWeight, DEFAULT_COURSE_WEIGHT } from "../lib/course";
 import {
   DEFAULT_EXAM_LAYOUT,
   EMPTY_HISTORY,
@@ -37,7 +39,7 @@ import type { Catalog, CatalogTags, Difficulty, ExamScopeView, QuizQuestion } fr
 import { mistakesUrl } from "../lib/url";
 import { useT } from "../lib/use-lang";
 import Exam from "./Exam";
-import { AttemptTile, LayoutPicker } from "./ExamStart";
+import { AttemptTile, CoursePicker, LayoutPicker } from "./ExamStart";
 import { ClockIcon } from "./Icons";
 import { DIFFICULTY_LABEL } from "./QuestionCard";
 import { DomainTitle, TopicTitle } from "./Title";
@@ -89,6 +91,7 @@ export default function MixedExam({ catalog, tags }: { catalog: Catalog; tags: C
   );
   const entries = useMemo(() => catalogEntries(catalog), [catalog]);
   const tagIndex = useMemo(() => decodeTags(tags), [tags]);
+  const courseIds = useMemo(() => taggedIds(entries, tagIndex, COURSE_TAG), [entries, tagIndex]);
   const counts = useMemo(() => tagCounts(tagIndex), [tagIndex]);
   const [view, setView] = useState<View>({ name: "loading" });
   const [topics, setTopics] = useState<ReadonlySet<string>>(() => new Set(allTopics));
@@ -99,6 +102,8 @@ export default function MixedExam({ catalog, tags }: { catalog: Catalog; tags: C
   const [size, setSize] = useState(DEFAULT_MIXED_SIZE);
   const [layout, setLayout] = useState<ExamLayout>(DEFAULT_EXAM_LAYOUT);
   const [reviewedOnly, setReviewedOnly] = useState(false);
+  const [courseWeightSetting, setCourseWeightSetting] =
+    useState<CourseWeight>(DEFAULT_COURSE_WEIGHT);
   const [history, setHistory] = useState<ExamHistory>(EMPTY_HISTORY);
   const [notice, setNotice] = useState("");
   const headingRef = useRef<HTMLHeadingElement>(null);
@@ -146,6 +151,7 @@ export default function MixedExam({ catalog, tags }: { catalog: Catalog; tags: C
     const settings = loadSettings();
     setLayout(settings.examLayout);
     setReviewedOnly(settings.reviewedOnly);
+    setCourseWeightSetting(settings.courseWeight);
     const ids = storedExamIds(SCOPE);
     if (!ids) {
       toBuilder();
@@ -188,6 +194,12 @@ export default function MixedExam({ catalog, tags }: { catalog: Catalog; tags: C
     [catalog, selection, tagIndex],
   );
   const plan = planExam(pool.length, size);
+  const courseInPool = useMemo(
+    () => pool.filter((id) => courseIds.has(id)).length,
+    [pool, courseIds],
+  );
+  /** Boosting course questions changes the draw only when the pool mixes them with others. */
+  const boostable = courseInPool > 0 && courseInPool < pool.length;
   const draftsInSelection = useMemo(() => {
     const chosen = new Set(selectionPool(catalog, { ...selection, reviewedOnly: false }, tagIndex));
     return entries.filter((e) => chosen.has(e.id) && !e.reviewed).length;
@@ -241,9 +253,17 @@ export default function MixedExam({ catalog, tags }: { catalog: Catalog; tags: C
     setReviewedOnly(value);
     saveSettings({ ...loadSettings(), reviewedOnly: value });
   };
+  const changeCourseWeight = (value: CourseWeight) => {
+    setCourseWeightSetting(value);
+    saveSettings({ ...loadSettings(), courseWeight: value });
+  };
 
   const start = async () => {
-    const ids = drawIds(pool, plan.count);
+    const weight =
+      courseWeightSetting > 1 && boostable
+        ? courseWeight(courseIds, courseWeightSetting)
+        : undefined;
+    const ids = drawIds(pool, plan.count, Math.random, weight);
     if (ids.length === 0) return;
     setNotice("");
     setView({ name: "fetching", count: ids.length });
@@ -373,6 +393,15 @@ export default function MixedExam({ catalog, tags }: { catalog: Catalog; tags: C
           </fieldset>
 
           <LayoutPicker layout={layout} onLayout={changeLayout} className="mt-5" />
+
+          {boostable && (
+            <CoursePicker
+              count={courseInPool}
+              weight={courseWeightSetting}
+              onChange={changeCourseWeight}
+              className="mt-5"
+            />
+          )}
 
           {draftsInSelection > 0 && (
             <label className="mt-5 inline-flex cursor-pointer items-center gap-2 text-sm">

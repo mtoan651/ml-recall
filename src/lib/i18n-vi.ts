@@ -349,6 +349,12 @@ export const VI: Readonly<Record<string, string>> = {
   "Show only incorrect ({n})": "Chỉ hiện câu sai ({n})",
   "Every answer is correct — well done.": "Bạn trả lời đúng tất cả — làm tốt lắm!",
 
+  "CE6146 course questions ({n} here)": "Câu hỏi môn CE6146 ({n} câu ở đây)",
+  "Written from the course's lecture slides and in-class exercises.":
+    "Soạn từ slide bài giảng và bài tập trên lớp của môn học.",
+  "As often as others": "Như các câu khác",
+  "More (4×)": "Nhiều hơn (gấp 4)",
+  "Mostly (16×)": "Phần lớn (gấp 16)",
   // ------------------------------------------------------------------ mixed test
   "your selection": "lựa chọn của bạn",
   "Practice your mistakes": "Luyện tập câu sai",

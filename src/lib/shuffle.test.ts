@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { mulberry32, order, shuffled, shufflesOptions } from "./shuffle";
+import { mulberry32, order, shuffled, shufflesOptions, weightedSample } from "./shuffle";
 
 describe("shuffled", () => {
   it("returns a permutation and leaves the input untouched", () => {
@@ -39,6 +39,42 @@ describe("shuffled", () => {
   it("handles empty and single-item lists", () => {
     expect(shuffled([], mulberry32(1))).toEqual([]);
     expect(shuffled(["x"], mulberry32(1))).toEqual(["x"]);
+  });
+});
+
+describe("weightedSample", () => {
+  const items = ["a", "b", "c", "d", "e", "f"];
+
+  it("draws count distinct items, all of them when count is larger, none with weight 0", () => {
+    const drawn = weightedSample(items, 4, () => 1, mulberry32(2));
+    expect(drawn).toHaveLength(4);
+    expect(new Set(drawn).size).toBe(4);
+    expect([...weightedSample(items, 99, () => 1, mulberry32(2))].sort()).toEqual(items);
+    expect(weightedSample(items, 99, (x) => (x === "c" ? 0 : 1), mulberry32(2))).not.toContain("c");
+    expect(weightedSample(items, 0, () => 1)).toEqual([]);
+    expect(weightedSample(items, 4, () => 1, mulberry32(2))).toEqual(drawn);
+  });
+
+  it("picks an item with probability proportional to its weight", () => {
+    const rng = mulberry32(11);
+    let heavy = 0;
+    const runs = 10000;
+    for (let r = 0; r < runs; r++) {
+      if (weightedSample(["h", "l"], 1, (x) => (x === "h" ? 4 : 1), rng)[0] === "h") heavy++;
+    }
+    expect(Math.abs(heavy / runs - 0.8)).toBeLessThan(0.02);
+  });
+
+  it("returns the drawn items in random order, heavy ones not first", () => {
+    const rng = mulberry32(5);
+    let heavyFirst = 0;
+    const runs = 4000;
+    for (let r = 0; r < runs; r++) {
+      if (weightedSample(["h", "l"], 2, (x) => (x === "h" ? 1000 : 1), rng)[0] === "h") {
+        heavyFirst++;
+      }
+    }
+    expect(Math.abs(heavyFirst / runs - 0.5)).toBeLessThan(0.04);
   });
 });
 

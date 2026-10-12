@@ -1,4 +1,5 @@
 import type { Ref } from "react";
+import { COURSE_WEIGHTS, type CourseWeight } from "../lib/course";
 import {
   describeAttempt,
   type ExamAttempt,
@@ -22,6 +23,10 @@ interface ExamStartProps {
   reviewedCount: number;
   draftCount: number;
   layout: ExamLayout;
+  /** Course questions in the pool when the pool also has others (0: no boost choice). */
+  courseCount: number;
+  courseWeight: CourseWeight;
+  onCourseWeight: (value: CourseWeight) => void;
   history: ExamHistory;
   onReviewedOnly: (value: boolean) => void;
   onLayout: (value: ExamLayout) => void;
@@ -57,6 +62,9 @@ export function ExamStart({
   reviewedCount,
   draftCount,
   layout,
+  courseCount,
+  courseWeight,
+  onCourseWeight,
   history,
   onReviewedOnly,
   onLayout,
@@ -125,6 +133,15 @@ export function ExamStart({
 
       <LayoutPicker layout={layout} onLayout={onLayout} className="mt-5" />
 
+      {courseCount > 0 && (
+        <CoursePicker
+          count={courseCount}
+          weight={courseWeight}
+          onChange={onCourseWeight}
+          className="mt-5"
+        />
+      )}
+
       {draftCount > 0 && (
         <label
           className={`mt-5 inline-flex items-center gap-2 text-sm ${reviewedCount === 0 ? "text-muted opacity-60" : "cursor-pointer"}`}
@@ -165,6 +182,63 @@ export function ExamStart({
         </a>
       </div>
     </section>
+  );
+}
+
+const COURSE_CHOICES: Record<CourseWeight, string> = {
+  1: msg("As often as others"),
+  4: msg("More (4×)"),
+  16: msg("Mostly (16×)"),
+};
+
+/**
+ * How often a test draws the CE6146 course questions of its pool (remembered in the settings;
+ * src/lib/course.ts).
+ */
+export function CoursePicker({
+  count,
+  weight,
+  onChange,
+  className = "",
+}: {
+  /** Course questions in the pool. */
+  count: number;
+  weight: CourseWeight;
+  onChange: (value: CourseWeight) => void;
+  className?: string;
+}) {
+  const t = useT();
+  return (
+    <fieldset className={`min-w-0 ${className}`}>
+      <legend className="text-xs font-semibold tracking-wide text-muted uppercase">
+        {t("CE6146 course questions ({n} here)", { n: count })}
+      </legend>
+      <p className="mt-1 text-sm text-muted">
+        {t("Written from the course's lecture slides and in-class exercises.")}
+      </p>
+      <div className="mt-2 flex flex-wrap gap-2">
+        {COURSE_WEIGHTS.map((value) => (
+          <label
+            key={value}
+            className={`flex cursor-pointer items-center gap-2 rounded-xl border px-3 py-2 text-sm whitespace-nowrap transition-colors ${
+              weight === value
+                ? "border-accent bg-accent-soft"
+                : "border-line hover:border-line-strong hover:bg-subtle"
+            }`}
+          >
+            <input
+              type="radio"
+              name="course-weight"
+              value={value}
+              checked={weight === value}
+              onChange={() => onChange(value)}
+              className="size-4 shrink-0"
+            />
+            <span>{t(COURSE_CHOICES[value])}</span>
+          </label>
+        ))}
+      </div>
+    </fieldset>
   );
 }
 

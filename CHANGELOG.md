@@ -12,6 +12,9 @@ versioning: [SemVer](https://semver.org) as defined in [docs/conventions.md](doc
   exercise (practice, tag test, progress), and the later syllabus weeks mapped to bank topics
   with their notes and tests.
 - Mixed-test topic preset: `/exam/?topics=<id>,<id>` opens the form with those topics.
+- Timed and mixed tests draw CE6146 course questions more often: **As often as others / More
+  (4×) / Mostly (16×)** on the start screen and the mixed-test form (default 4×, remembered).
+  On `neural-networks` a 20-question test now has about 13 course questions instead of 7.
 
 ## [0.5.0] — 2026-10-12
 

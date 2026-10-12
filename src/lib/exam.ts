@@ -13,7 +13,7 @@ import {
   toggleOption,
   typedInputs,
 } from "./session";
-import { order, type Rng, shuffled } from "./shuffle";
+import { order, type Rng, shuffled, weightedSample } from "./shuffle";
 import type { QuestionType } from "./types";
 
 /** At most this many questions per test. */
@@ -55,17 +55,23 @@ export function planExam(available: number, max: number = EXAM_MAX_QUESTIONS): E
 }
 
 /**
- * Picks the questions of a new test: a uniformly random subset of `max` questions in random
- * order, each with its option order (shuffled unless the question keeps file order).
+ * Picks the questions of a new test: a random subset of `max` questions in random order, each
+ * with its option order (shuffled unless the question keeps file order). Uniform, or with
+ * `weight` (by id) a question's chance is proportional to its weight (`weightedSample`).
  */
 export function selectExamItems(
   pool: readonly SessionInput[],
   rng: Rng = Math.random,
   max: number = EXAM_MAX_QUESTIONS,
+  weight?: (id: string) => number,
 ): SessionItem[] {
-  return shuffled(pool, rng)
-    .slice(0, max)
-    .map((q) => ({ id: q.id, optionOrder: order(q.optionCount, q.shuffleOptions, rng) }));
+  const chosen = weight
+    ? weightedSample(pool, max, (q) => weight(q.id), rng)
+    : shuffled(pool, rng).slice(0, max);
+  return chosen.map((q) => ({
+    id: q.id,
+    optionOrder: order(q.optionCount, q.shuffleOptions, rng),
+  }));
 }
 
 // --------------------------------------------------------------------------- state
@@ -130,11 +136,13 @@ export interface CreateExamOptions {
   layout?: ExamLayout;
   rng?: Rng;
   max?: number;
+  /** Draw weight by id (see `selectExamItems`); uniform when absent. */
+  weight?: (id: string) => number;
 }
 
 /** A new test over `pool` (already filtered with `examPool`). */
 export function createExam(pool: readonly SessionInput[], options: CreateExamOptions): ExamState {
-  const items = selectExamItems(pool, options.rng, options.max);
+  const items = selectExamItems(pool, options.rng, options.max, options.weight);
   return {
     scope: options.scope,
     items,
