@@ -3,8 +3,9 @@
 Active-recall quiz bank for AI/ML/DL: exam-style questions with LaTeX, cited explanations, timed
 mock exams and spaced repetition. Free static site on GitHub Pages.
 
-> **Status: v0.5.0 — 3025 questions, all reviewed, with spaced repetition, topic notes, search,
-> offline use and a Vietnamese interface; live at <https://mtoan651.github.io/ml-recall/>.**
+> **Status: v0.6.0 — 3327 questions, all reviewed, with CE6146 exam prep (every lecture slide and
+> exercise covered, course questions drawn more often in tests), spaced repetition, topic notes,
+> search, offline use and a Vietnamese interface; live at <https://mtoan651.github.io/ml-recall/>.**
 > Next: CE6146 lectures 4+ as the course publishes them ([roadmap](docs/roadmap.md)).
 
 ## What's inside
