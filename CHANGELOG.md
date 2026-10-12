@@ -7,6 +7,13 @@ versioning: [SemVer](https://semver.org) as defined in [docs/conventions.md](doc
 
 ### Added
 
+- **59 questions from OpenIntro Statistics** (CC BY-SA 3.0, from its GitHub LaTeX source):
+  odd-numbered exercises with printed answers — probability 19, statistics 30 (sampling, inference,
+  power, χ², ANOVA), linear regression 10 — keys re-derived with scipy and tolerances that reject
+  common mistakes; reviewed by a second, independent pass (10 fixed).
+
+### Added
+
 - **Review with spaced repetition** (`/review/`): every answered question gets an FSRS card
   (wrong = Again, right = Good, from practice, tests, My mistakes and reviews alike); the page
   lists what is due today, most overdue first, by topic, with a 7-day forecast, and after a

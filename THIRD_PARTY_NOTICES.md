@@ -148,6 +148,16 @@ questions with worked answers; many explanations also cite the book by section w
 quotations. Licensed under [CC BY-SA 4.0](https://creativecommons.org/licenses/by-sa/4.0/); the
 adapted questions are shared under the same licence.
 
+## OpenIntro Statistics — `openintro-stats`
+
+Questions adapted from end-of-chapter exercises of *OpenIntro Statistics*, 4th edition, by David
+Diez, Mine Çetinkaya-Rundel and Christopher Barr (LaTeX source
+<https://github.com/OpenIntroStat/openintro-statistics>, commit `fee2509`), using only the
+odd-numbered exercises whose answers are printed in the book. Licensed under
+[CC BY-SA 3.0](https://creativecommons.org/licenses/by-sa/3.0/); the adapted questions are shared
+under the same licence. Stems are paraphrased; data and numbers are kept; one plot is redrawn
+from synthetic data.
+
 ## UBC CPSC 330 — `ubc-cpsc330` and UBC MDS DSCI 575 — `ubc-dsci575`
 
 Exam-prep and in-class (iClicker) exercises from *CPSC 330: Applied Machine Learning*

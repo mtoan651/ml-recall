@@ -9,7 +9,7 @@ Every question records its origin in `source.id`, which points to an entry in
 - **Original questions** (`source.id: original`) — © 2026 Toan M. Dinh, licensed under
   [Creative Commons Attribution-ShareAlike 4.0 International (CC BY-SA 4.0)](https://creativecommons.org/licenses/by-sa/4.0/).
 - **Imported or adapted questions** — remain under the license of their source (MIT, Apache-2.0,
-  BSD, CC BY 4.0, CC BY-SA 4.0, or CC BY-NC-SA 4.0). Attributions and required notices are in
+  BSD, CC BY 4.0, CC BY-SA 3.0 or 4.0, or CC BY-NC-SA 4.0). Attributions and required notices are in
   [THIRD_PARTY_NOTICES.md](THIRD_PARTY_NOTICES.md).
 - **NonCommercial questions** — questions whose source is licensed CC BY-NC-SA (e.g. MIT
   OpenCourseWare) may only be reused for non-commercial purposes, and adaptations must keep that
