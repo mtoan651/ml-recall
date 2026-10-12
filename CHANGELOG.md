@@ -18,6 +18,23 @@ versioning: [SemVer](https://semver.org) as defined in [docs/conventions.md](doc
   pages fetch only the questions they show instead of embedding the bank.
 - Figures can be enlarged (click, or the corner button on option images; Esc closes), and
   questions whose options are all pictures show them as a 2 × 2 grid.
+- **271 new questions** (2626 → 2897), each reviewed by a second, independent pass (every key
+  re-derived by script or by running the code, every reference opened; 18 dropped, 141 fixed
+  before they went in) and marked `reviewed_by: claude`:
+  - **CE6146 lectures 1–3** (81, `ncu-intro-dl`): extracted with `mlr extract`, paraphrased (no
+    run of 8+ words shared with the slides), each citing its slides plus an open source —
+    forward/backward passes by hand, activations and losses, initialization, optimizers
+    (momentum, RMSProp, Adam, AdamW), regularization, batch norm, evaluation.
+  - **Code reading** (55): Tensor Puzzles (12), LLMs-from-scratch code (20: tokenizer, sliding
+    windows, attention masks and scaling, GPT shapes, top-k/temperature, LoRA), NumPy (17
+    original) and PyTorch autograd/modules — the output of every snippet comes from running it.
+  - **Computer vision** (68, original): cv-basics 15 → 35, object detection 20 → 46,
+    segmentation 16 → 38 — IoU and NMS step by step (with two figures), anchors, AP/mAP, RoI
+    pooling, FCN/transposed convolution, U-Net, dilated convolution, Dice/IoU/PQ, Sobel,
+    histogram equalization, colour and memory computations.
+  - **Thin topics** (67, original): AI intro 12 → 34 (agents, PEAS, environments, Turing test),
+    NLP basics 22 → 37, NLP tasks 24 → 40 (BIO, entity F1, BLEU, ROUGE), tokenization 25 → 44
+    (BPE, WordPiece and Unigram by hand).
 - `mlr extract <pdf|dir> [--colors]`: PDF → Markdown in the git-ignored `.cache/extract/`, one
   `## Page N` section per page (so questions can cite slides), via pdfminer.six. `--colors`
   marks coloured text as `[red: …]`, which recovers answer keys printed in red (CE6146

@@ -741,3 +741,1032 @@ questions:
       url: https://d2l.ai/chapter_computer-vision/rcnn.html#exercises
     status: reviewed
     reviewed_by: claude
+  - id: object-detection-021
+    type: short_answer
+    difficulty: easy
+    tags:
+      - iou
+      - bounding-boxes
+    question: |
+      The figure shows two boxes in pixel coordinates (origin at the top-left, $y$ pointing down),
+      in $(x_1, y_1, x_2, y_2)$ format: $A = (0, 0, 6, 4)$ and $B = (2, 1, 8, 5)$. What is their
+      intersection over union (IoU)?
+    figure:
+      src: ./object-detection/object-detection-021.svg
+      alt: Pixel grid with x from 0 to 9 and y from 0 to 6, y pointing down. Box A (solid blue) spans x 0–6 and y 0–4; box B (dashed orange) spans x 2–8 and y 1–5; the two boxes overlap.
+    answer:
+      numeric: 0.3333
+      tolerance: 0.001
+      hint: a number between 0 and 1, 3 decimals
+      model: Intersection $[2, 6] \times [1, 4]$ has area $4 \cdot 3 = 12$; union $24 + 24 - 12 = 36$; IoU $= 12/36 = 1/3$.
+    explanation: |
+      IoU, the Jaccard index of the two pixel sets, is the area of the intersection divided by the area
+      of the union; it is 0 for disjoint boxes and 1 for identical ones [^1]. The overlap runs from
+      $x = 2$ to $6$ and from $y = 1$ to $4$, an area of 12. Both boxes have area 24, so the union is
+      $24 + 24 - 12 = 36$ (the overlap would otherwise be counted twice), and IoU $= 1/3$. Although
+      half of each box lies inside the other, the IoU stays well below the 0.5 that is commonly used
+      to call two boxes a match [^1][^2].
+    references:
+      - source: d2l
+        url: https://d2l.ai/chapter_computer-vision/anchor.html#intersection-over-union-iou
+        locator: Sec. 14.4.2 Intersection over Union (IoU)
+      - source: d2l
+        url: https://d2l.ai/chapter_computer-vision/anchor.html#an-example
+        locator: Sec. 14.4.3.3 An Example (threshold 0.5)
+    source:
+      id: original
+      ref: object-detection-021
+    status: reviewed
+    reviewed_by: claude
+  - id: object-detection-022
+    type: short_answer
+    difficulty: medium
+    tags:
+      - iou
+      - bounding-boxes
+    question: |
+      A ground-truth box is $(0, 0, 100, 80)$ and a predicted box is $(20, 10, 70, 60)$, both in
+      $(x_1, y_1, x_2, y_2)$ pixel coordinates. The prediction lies entirely inside the ground truth.
+      What is their IoU?
+    answer:
+      numeric: 0.3125
+      tolerance: 0.001
+      hint: a number between 0 and 1, 4 decimals
+      model: Intersection = prediction $= 50 \cdot 50 = 2500$; union = ground truth $= 100 \cdot 80 = 8000$; IoU $= 0.3125$.
+    explanation: |
+      When one box contains the other, the intersection is the smaller box and the union is the
+      larger one, so IoU is the ratio of their areas [^1]: $2500/8000 = 0.3125$. Every predicted pixel
+      lies on the object, yet the box would not count as a correct detection at the usual threshold
+      of 0.5 [^2], because IoU penalizes missing parts of the object as much as extra background.
+      This is what makes IoU a measure of localization quality rather than of overlap alone.
+    references:
+      - source: d2l
+        url: https://d2l.ai/chapter_computer-vision/anchor.html#intersection-over-union-iou
+        locator: Sec. 14.4.2 Intersection over Union (IoU)
+      - title: Padilla, Object-Detection-Metrics (GitHub README)
+        url: https://github.com/rafaelpadilla/Object-Detection-Metrics/blob/803ec11ce5996629bbabd18e1bab6bf563d284fa/README.md#true-positive-false-positive-false-negative-and-true-negative
+        locator: Sections "Intersection Over Union (IOU)" and "True Positive, False Positive, False Negative and True Negative"
+    source:
+      id: original
+      ref: object-detection-022
+    status: reviewed
+    reviewed_by: claude
+  - id: object-detection-023
+    type: multiple
+    difficulty: hard
+    tags:
+      - non-maximum-suppression
+      - iou
+    question: |
+      A detector outputs the five boxes in the figure for one class, in $(x_1, y_1, x_2, y_2)$ format:
+
+      | box | coordinates | score |
+      | --- | --- | --- |
+      | A | (0, 0, 40, 40) | 0.90 |
+      | B | (8, 2, 48, 42) | 0.80 |
+      | C | (16, 4, 56, 44) | 0.70 |
+      | D | (64, 56, 104, 96) | 0.65 |
+      | E | (66, 54, 106, 94) | 0.60 |
+
+      The pairwise IoUs are A–B 0.61, A–C 0.37, B–C 0.61 and D–E 0.82; all other pairs do not overlap.
+      Greedy non-maximum suppression with an IoU threshold of 0.5 is applied. Which boxes remain?
+      Select all that apply.
+    figure:
+      src: ./object-detection/object-detection-023.svg
+      alt: 'Five rectangles on a grid with x from 0 to 110 and y from 0 to 100, y pointing down. A, B and C form a staircase at the top left, each shifted right and down from the previous one; D and E overlap almost completely at the bottom right. Labels: A (0.90), B (0.80), C (0.70), D (0.65), E (0.60).'
+    options:
+      - text: A
+        correct: true
+      - text: B
+        why: B has IoU 0.61 with A, which is kept first because it has the highest score, so B is removed [^1].
+      - text: C
+        correct: true
+      - text: D
+        correct: true
+      - text: E
+        why: E has IoU 0.82 with D, which has the higher score and is kept, so E is removed [^1].
+    explanation: |
+      NMS sorts the boxes by score, keeps the best one, removes every remaining box whose IoU with it
+      exceeds the threshold, and repeats with the next box still in the list [^1]. A is kept and removes
+      B (IoU 0.61), but not C (IoU 0.37). C is the next box left: B, the only box overlapping it by more
+      than 0.5, has already been removed, so C is kept as well. Then D is kept and removes E. Result:
+      A, C, D, and no two of them overlap by more than 0.5. `torchvision.ops.nms` returns the same
+      indices [^2]. Removed boxes no longer suppress anything; treating B as able to remove C is the
+      usual mistake.
+    references:
+      - source: d2l
+        url: https://d2l.ai/chapter_computer-vision/anchor.html#predicting-bounding-boxes-with-non-maximum-suppression
+        locator: Sec. 14.4.4 Predicting Bounding Boxes with Non-Maximum Suppression
+      - title: 'torchvision documentation: torchvision.ops.nms'
+        url: https://docs.pytorch.org/vision/stable/generated/torchvision.ops.nms.html
+        locator: Function description
+    source:
+      id: original
+      ref: object-detection-023
+    status: reviewed
+    reviewed_by: claude
+  - id: object-detection-024
+    type: single
+    difficulty: medium
+    tags:
+      - non-maximum-suppression
+      - batched-nms
+      - code-reading
+    question: |
+      Three detections, two dogs and one cat, are post-processed with torchvision:
+
+      ```python
+      import torch
+      from torchvision.ops import batched_nms
+
+      boxes = torch.tensor([[10., 10., 110., 110.],   # dog
+                            [20., 20., 120., 120.],   # cat
+                            [15., 12., 112., 115.]])  # dog
+      scores = torch.tensor([0.9, 0.8, 0.7])
+      labels = torch.tensor([0, 1, 0])               # 0 = dog, 1 = cat
+      keep = batched_nms(boxes, scores, labels, iou_threshold=0.5)
+      print(keep.tolist())
+      ```
+
+      The pairwise IoUs are 0.68 (boxes 0 and 1), 0.87 (boxes 0 and 2) and 0.78 (boxes 1 and 2).
+      What is printed?
+    options:
+      - text: '`[0, 1]`'
+        correct: true
+      - text: '`[0]`'
+        why: This is what class-agnostic `nms` would return, since box 1 overlaps box 0 by 0.68; `batched_nms` never suppresses across categories [^1].
+      - text: '`[0, 1, 2]`'
+        why: Box 2 is a dog with IoU 0.87 with the higher-scoring dog box 0, so it is suppressed [^1].
+      - text: '`[0, 2]`'
+        why: Box 2 is the suppressed one; box 1 is a cat, so no dog box can suppress it [^1].
+    explanation: |
+      `batched_nms` treats each value in `idxs` (here the class labels) as a separate category and
+      does not apply NMS between elements of different categories; it returns the kept indices sorted
+      by decreasing score [^1]. Within the dog class, box 0 (0.9) removes box 2 (IoU 0.87 > 0.5); the
+      cat box 1 is alone in its class and stays, even though it overlaps box 0 by 0.68. d2l's NMS,
+      by contrast, sorts all predicted non-background boxes into one list regardless of their
+      class [^2]; such class-agnostic NMS, like a plain `nms` call, would delete the cat too [^3].
+    references:
+      - title: 'torchvision documentation: torchvision.ops.batched_nms'
+        url: https://docs.pytorch.org/vision/stable/generated/torchvision.ops.batched_nms.html
+        locator: Function description
+      - source: d2l
+        url: https://d2l.ai/chapter_computer-vision/anchor.html#predicting-bounding-boxes-with-non-maximum-suppression
+        locator: Sec. 14.4.4 Predicting Bounding Boxes with Non-Maximum Suppression
+      - title: 'torchvision documentation: torchvision.ops.nms'
+        url: https://docs.pytorch.org/vision/stable/generated/torchvision.ops.nms.html
+        locator: Function description
+    source:
+      id: original
+      ref: object-detection-024
+    status: reviewed
+    reviewed_by: claude
+  - id: object-detection-025
+    type: short_answer
+    difficulty: medium
+    tags:
+      - faster-r-cnn
+      - region-proposal-network
+      - anchor-boxes
+    question: |
+      Faster R-CNN's region proposal network (RPN) places $k = 9$ anchors (3 scales × 3 aspect
+      ratios) at every position of a $40 \times 60$ convolutional feature map, so there are {{1}}
+      anchors in total. On top of the 512-dimensional features of VGG-16, two sibling $1 \times 1$
+      convolutions output $2k$ objectness scores and $4k$ box coordinates per position; together
+      they have {{2}} weights (ignoring biases).
+    answer:
+      blanks:
+        - numeric: 21600
+          tolerance: 0
+          hint: a whole number
+        - numeric: 27648
+          tolerance: 0
+          hint: a whole number
+      model: $40 \cdot 60 \cdot 9 = 21\,600$ anchors; $512 \cdot (4 + 2) \cdot 9 = 27\,648$ weights.
+    explanation: |
+      For a $W \times H$ feature map there are $WHk$ anchors, and the paper's typical map has about
+      2,400 positions [^1]; here $2400 \cdot 9 = 21\,600$. The reg layer has $4k$ outputs and the cls
+      layer $2k$ scores per position, so the output layers map 512 features to $(4 + 2) \cdot 9 = 54$
+      channels with $512 \cdot 54 = 27\,648 \approx 2.8 \times 10^4$ weights, which the paper contrasts
+      with the millions of parameters of MultiBox's fully connected output layer [^1]. Because the
+      same $1 \times 1$ weights are applied at every position, the proposals are translation
+      invariant [^1]. d2l summarizes the RPN the same way: a $3 \times 3$ convolution, then a binary
+      class and a box prediction for every anchor centred on each feature-map position [^2].
+    references:
+      - title: 'Ren, He, Girshick & Sun (2015), Faster R-CNN: Towards Real-Time Object Detection with Region Proposal Networks'
+        url: https://arxiv.org/abs/1506.01497
+        locator: Sec. 3.1 Region Proposal Networks and Sec. 3.1.1 Anchors (Translation-Invariant Anchors)
+      - source: d2l
+        url: https://d2l.ai/chapter_computer-vision/rcnn.html#faster-r-cnn
+        locator: Sec. 14.8.3 Faster R-CNN
+    source:
+      id: original
+      ref: object-detection-025
+    status: reviewed
+    reviewed_by: claude
+  - id: object-detection-026
+    type: short_answer
+    difficulty: medium
+    tags:
+      - anchor-boxes
+      - aspect-ratio
+    question: |
+      d2l generates an anchor box of scale $s \in (0, 1]$ and aspect ratio $r$ (width / height)
+      with width $ws\sqrt{r}$ and height $hs/\sqrt{r}$, where $w$ and $h$ are the image width and
+      height. For a $400 \times 400$ image, $s = 0.5$ and $r = 2$, what is the anchor's width in
+      pixels?
+    answer:
+      numeric: 282.84
+      tolerance: 0.05
+      hint: a number, 2 decimals
+      model: $400 \cdot 0.5 \cdot \sqrt{2} \approx 282.84$; the height is $400 \cdot 0.5/\sqrt{2} \approx 141.42$.
+    explanation: |
+      The width is $400 \cdot 0.5 \cdot \sqrt{2} \approx 282.84$ and the height
+      $400 \cdot 0.5/\sqrt{2} \approx 141.42$, so the box is twice as wide as tall, as $r = 2$
+      requires [^1]. Their product is $whs^2 = 40\,000$ whatever $r$ is: the scale fixes the area
+      (on a square image) and the ratio only changes the shape. d2l combines $n$ scales and $m$ ratios
+      into $n + m - 1$ anchors per pixel, keeping the combinations that contain $s_1$ or $r_1$ [^1].
+    references:
+      - source: d2l
+        url: https://d2l.ai/chapter_computer-vision/anchor.html#generating-multiple-anchor-boxes
+        locator: Sec. 14.4.1 Generating Multiple Anchor Boxes
+    source:
+      id: original
+      ref: object-detection-026
+    status: reviewed
+    reviewed_by: claude
+  - id: object-detection-027
+    type: short_answer
+    difficulty: medium
+    tags:
+      - anchor-boxes
+      - offsets
+      - bounding-box-regression
+    question: |
+      d2l labels the offset of an anchor $A$ (centre $(x_a, y_a)$, size $w_a \times h_a$) towards its
+      ground-truth box $B$ (centre $(x_b, y_b)$, size $w_b \times h_b$) as
+      $\left(\frac{(x_b - x_a)/w_a}{\sigma_x}, \frac{(y_b - y_a)/h_a}{\sigma_y}, \frac{\log(w_b/w_a)}{\sigma_w}, \frac{\log(h_b/h_a)}{\sigma_h}\right)$
+      with $\sigma_x = \sigma_y = 0.1$ and $\sigma_w = \sigma_h = 0.2$. The anchor has centre
+      $(100, 100)$ and size $50 \times 100$; the ground truth has centre $(110, 90)$ and size
+      $60 \times 80$ (width × height).
+
+      The $x$ offset is {{1}} and the width offset is {{2}}.
+    answer:
+      blanks:
+        - numeric: 2
+          tolerance: 0.01
+          hint: a number
+        - numeric: 0.912
+          tolerance: 0.005
+          hint: a number, 3 decimals
+      model: $x$ offset $= (10/50)/0.1 = 2$; width offset $= \ln(60/50)/0.2 = 0.1823/0.2 \approx 0.912$ (the $y$ and height offsets are $-1$ and $\approx -1.116$).
+    explanation: |
+      The centre shift is measured in units of the anchor's size, $(110 - 100)/50 = 0.2$, and divided
+      by $\sigma_x = 0.1$, giving 2. The size change is a log ratio, $\ln(60/50) \approx 0.182$, divided
+      by $\sigma_w = 0.2$, giving about 0.912 [^1]. Dividing by the anchor size makes the offsets
+      comparable across anchors of different scales, and the constants rescale them to a range that is
+      easier to fit [^1]. At prediction time the inverse transformation turns predicted offsets back
+      into a box [^2].
+    references:
+      - source: d2l
+        url: https://d2l.ai/chapter_computer-vision/anchor.html#labeling-classes-and-offsets
+        locator: Sec. 14.4.3.2 Labeling Classes and Offsets (Eq. 14.4.3)
+      - source: d2l
+        url: https://d2l.ai/chapter_computer-vision/anchor.html#predicting-bounding-boxes-with-non-maximum-suppression
+        locator: Sec. 14.4.4 (offset_inverse)
+    source:
+      id: original
+      ref: object-detection-027
+    status: reviewed
+    reviewed_by: claude
+  - id: object-detection-028
+    type: single
+    difficulty: medium
+    tags:
+      - bounding-box-regression
+      - offsets
+      - faster-r-cnn
+    question: |
+      Faster R-CNN and d2l encode the width of a box relative to its anchor as $t_w = \log(w/w_a)$
+      rather than as $(w - w_a)/w_a$ or $w - w_a$. What is a property of this log encoding?
+    options:
+      - text: Doubling and halving give $\pm\log 2$, and $\exp$ decoding always yields a positive width
+        correct: true
+      - text: The offset always lies between 0 and 1, so it can be predicted with a sigmoid output
+        why: $\log(w/w_a)$ is negative for boxes narrower than the anchor and unbounded in both directions [^1].
+      - text: It converts the $\ell_1$ loss on the offsets into a squared loss, which is easier to optimize
+        why: The encoding changes the regression target, not the loss; Faster R-CNN uses a smooth $\ell_1$ loss on these targets [^1].
+      - text: It bounds the decoded width, so a predicted box can never extend beyond the image
+        why: $w = w_a e^{t_w}$ grows without bound as $t_w$ grows; Faster R-CNN clips proposals that cross the image boundary [^1].
+    explanation: |
+      With $t_w = \log(w/w_a)$, a box twice as wide as its anchor gives $\log 2$ and a box half as wide
+      gives $-\log 2$: relative size changes are treated symmetrically, independent of the anchor's
+      absolute size [^1]. Decoding with $w = w_a e^{t_w}$ can never produce a zero or negative width.
+      The centre offsets are likewise divided by the anchor's width and height [^1]. d2l motivates
+      such transformations as giving more uniformly distributed offsets that are easier to fit [^3],
+      while the labels themselves are ordinary pixel coordinates of the box corners [^2].
+    references:
+      - title: 'Ren, He, Girshick & Sun (2015), Faster R-CNN: Towards Real-Time Object Detection with Region Proposal Networks'
+        url: https://arxiv.org/abs/1506.01497
+        locator: Sec. 3.1.2 Loss Function (Eq. 2, smooth L1 loss) and Sec. 3.3 Implementation Details (clipping cross-boundary proposals)
+      - source: d2l
+        url: https://d2l.ai/chapter_computer-vision/bounding-box.html#bounding-boxes
+        locator: Sec. 14.3.1 Bounding Boxes
+      - source: d2l
+        url: https://d2l.ai/chapter_computer-vision/anchor.html#labeling-classes-and-offsets
+        locator: Sec. 14.4.3.2 Labeling Classes and Offsets
+    source:
+      id: original
+      ref: object-detection-028
+    status: reviewed
+    reviewed_by: claude
+  - id: object-detection-029
+    type: short_answer
+    difficulty: hard
+    tags:
+      - average-precision
+      - precision-recall
+      - evaluation
+    question: |
+      A detector is evaluated on one class with 4 ground-truth objects, GT1 to GT4. Its six detections,
+      sorted by confidence, are listed with the ground-truth box each overlaps most and that IoU:
+
+      | rank | confidence | best ground truth | IoU |
+      | --- | --- | --- | --- |
+      | 1 | 0.95 | GT1 | 0.82 |
+      | 2 | 0.90 | GT1 | 0.65 |
+      | 3 | 0.80 | GT2 | 0.71 |
+      | 4 | 0.70 | GT3 | 0.42 |
+      | 5 | 0.60 | GT4 | 0.55 |
+      | 6 | 0.40 | none | 0 |
+
+      A detection is a true positive if its IoU is at least 0.5 and its ground truth has not already
+      been matched by a higher-ranked detection; otherwise it is a false positive. AP is the sum of the
+      precisions at the ranks of the true positives, divided by the number of ground-truth objects.
+      What is AP?
+    answer:
+      numeric: 0.5667
+      tolerance: 0.002
+      hint: a number between 0 and 1, 3 decimals
+      model: True positives at ranks 1, 3 and 5 with precisions $1/1$, $2/3$, $3/5$; AP $= (1 + 0.667 + 0.6)/4 \approx 0.567$.
+    explanation: |
+      Rank 1 matches GT1 (TP). Rank 2 also overlaps GT1, but GT1 is taken, so it is a duplicate and
+      counts as a false positive, as in PASCAL VOC, where 5 detections of one object count as 1 correct
+      and 4 false detections [^2]. Rank 3 is a TP, rank 4 misses the threshold (FP), rank 5 is a TP and
+      rank 6 is an FP. Summing the precision at each relevant rank and dividing by the total number of
+      relevant items gives AP [^1]: $(1 + 2/3 + 3/5)/4 \approx 0.567$. GT3 is never found, so recall
+      stops at 0.75 and the missing quarter contributes 0. Here the precision only falls from one TP to
+      the next, so VOC's all-point interpolated AP gives the same value [^2].
+    references:
+      - title: 'Wikipedia: Evaluation measures (information retrieval)'
+        url: https://en.wikipedia.org/wiki/Evaluation_measures_(information_retrieval)#Average_precision
+        locator: Offline metrics — Average precision
+      - title: Padilla, Object-Detection-Metrics (GitHub README)
+        url: https://github.com/rafaelpadilla/Object-Detection-Metrics/blob/803ec11ce5996629bbabd18e1bab6bf563d284fa/README.md#average-precision
+        locator: Sections "Average Precision" (interpolating all points) and "An ilustrated example"
+    source:
+      id: original
+      ref: object-detection-029
+    status: reviewed
+    reviewed_by: claude
+  - id: object-detection-030
+    type: short_answer
+    difficulty: medium
+    tags:
+      - precision-recall
+      - iou-threshold
+      - evaluation
+    question: |
+      An image contains 6 ground-truth objects. A detector outputs 5 boxes, each overlapping a
+      different object, with IoUs 0.92, 0.81, 0.74, 0.66 and 0.52. At an IoU threshold of 0.5 all five
+      are true positives, so precision is 1 and recall is $5/6$. At an IoU threshold of 0.75, precision
+      is {{1}} and recall is {{2}}.
+    answer:
+      blanks:
+        - numeric: 0.4
+          tolerance: 0.005
+          hint: a number between 0 and 1
+        - numeric: 0.3333
+          tolerance: 0.005
+          hint: a number between 0 and 1
+      model: Only 0.92 and 0.81 reach 0.75, so TP $= 2$, FP $= 3$, FN $= 4$; precision $= 2/5 = 0.4$, recall $= 2/6 \approx 0.333$.
+    explanation: |
+      Whether a detection is a true positive depends on the IoU threshold [^1]. At 0.75 only two
+      boxes qualify; the other three become false positives, and the four objects without a
+      qualifying box are false negatives. Precision is TP over all detections, $2/5$, and recall is TP
+      over all ground truths, $2/6$ [^1]. The same boxes thus look perfect at 0.5 and mediocre at 0.75,
+      which is why COCO reports AP at several thresholds, such as AP50 and AP75, and averages AP over
+      thresholds from 0.5 to 0.95 [^2].
+    references:
+      - title: Padilla, Object-Detection-Metrics (GitHub README)
+        url: https://github.com/rafaelpadilla/Object-Detection-Metrics/blob/803ec11ce5996629bbabd18e1bab6bf563d284fa/README.md#precision
+        locator: Sections "True Positive, False Positive, ...", "Precision" and "Recall"
+      - title: He, Gkioxari, Dollár & Girshick (2017), Mask R-CNN
+        url: https://arxiv.org/abs/1703.06870
+        locator: Sec. 4 Experiments (COCO metrics AP, AP50, AP75)
+    source:
+      id: original
+      ref: object-detection-030
+    status: reviewed
+    reviewed_by: claude
+  - id: object-detection-031
+    type: single
+    difficulty: easy
+    tags:
+      - evaluation
+      - duplicates
+      - precision-recall
+    question: |
+      Two detections overlap the same ground-truth car: one with confidence 0.9 and IoU 0.8, the other
+      with confidence 0.7 and IoU 0.6. With an IoU threshold of 0.5, how are they counted when
+      precision is computed?
+    options:
+      - text: The 0.9 detection is a true positive and the 0.7 detection a false positive
+        correct: true
+      - text: Each is a true positive, since each has an IoU over 0.5
+        why: Each ground-truth object can be matched only once; a second detection of the same car is a duplicate [^1].
+      - text: Each is a false positive, since the car was detected twice
+        why: The car was found, so one detection is correct; only the extra one is penalized [^1].
+      - text: The 0.7 detection is ignored, counting neither as a true nor as a false positive
+        why: Duplicates are not ignored; they count as false detections and lower precision [^1].
+    explanation: |
+      Detection metrics match each ground-truth box to at most one detection. In PASCAL VOC, five
+      detections of a single object count as one correct detection and four false detections [^1].
+      Here the 0.9 box comes first and also has the higher IoU, so it is the true positive and the 0.7
+      box is a false positive. This is one reason why detectors apply non-maximum suppression before
+      reporting their boxes: duplicates directly cost precision [^2].
+    references:
+      - title: Padilla, Object-Detection-Metrics (GitHub README)
+        url: https://github.com/rafaelpadilla/Object-Detection-Metrics/blob/803ec11ce5996629bbabd18e1bab6bf563d284fa/README.md#an-ilustrated-example
+        locator: Section "An ilustrated example" (PASCAL VOC rule for multiple detections)
+      - source: d2l
+        url: https://d2l.ai/chapter_computer-vision/anchor.html#predicting-bounding-boxes-with-non-maximum-suppression
+        locator: Sec. 14.4.4 Predicting Bounding Boxes with Non-Maximum Suppression
+    source:
+      id: original
+      ref: object-detection-031
+    status: reviewed
+    reviewed_by: claude
+  - id: object-detection-032
+    type: short_answer
+    difficulty: medium
+    tags:
+      - map
+      - coco
+      - evaluation
+    question: |
+      On a test set, a detector outputs exactly one box for each ground-truth object, with the right
+      class, and no other boxes. Each box has an IoU of exactly 0.72 with its object, and a box counts
+      as a true positive when its IoU reaches the threshold. What is the detector's COCO-style
+      AP@[.5:.95], the AP averaged over the IoU thresholds that COCO uses?
+    answer:
+      numeric: 0.5
+      tolerance: 0.001
+      hint: a number between 0 and 1
+      model: The thresholds are $0.50, 0.55, \ldots, 0.95$ (ten values). At $0.50$–$0.70$ (five thresholds) every box is a true positive and AP $= 1$; at $0.75$–$0.95$ every box is a false positive and AP $= 0$. Mean $= 5/10 = 0.5$.
+    explanation: |
+      COCO's standard metric, written mAP@[.5, .95], averages AP over the ten IoU thresholds
+      $0.50, 0.55, \ldots, 0.95$, while PASCAL VOC uses the single threshold 0.5 [^1]. With all boxes
+      at IoU 0.72, the five thresholds up to 0.70 see a perfect detector (AP 1) and the five from 0.75
+      on see only false positives and missed objects (AP 0), so the average is 0.5 even though AP50
+      is 1. The metric thus rewards tight localization, which is why papers report AP together with
+      AP50 and AP75 [^2].
+    references:
+      - title: 'Ren, He, Girshick & Sun (2015), Faster R-CNN: Towards Real-Time Object Detection with Region Proposal Networks'
+        url: https://arxiv.org/abs/1506.01497
+        locator: Sec. 4.2 Experiments on MS COCO
+      - title: He, Gkioxari, Dollár & Girshick (2017), Mask R-CNN
+        url: https://arxiv.org/abs/1703.06870
+        locator: Sec. 4 Experiments (COCO metrics)
+    source:
+      id: original
+      ref: object-detection-032
+    status: reviewed
+    reviewed_by: claude
+  - id: object-detection-033
+    type: single
+    difficulty: easy
+    tags:
+      - fast-r-cnn
+      - r-cnn
+      - roi-pooling
+      - two-stage-detectors
+    question: |
+      R-CNN runs a CNN forward pass separately on each of about 2000 region proposals per image.
+      What is the main change in Fast R-CNN?
+    options:
+      - text: It runs the CNN once per image and pools each proposal's features from that map
+        correct: true
+      - text: It replaces selective search with a learned region proposal network sharing the CNN
+        why: That is the step from Fast R-CNN to Faster R-CNN; Fast R-CNN still uses selective search proposals [^1].
+      - text: It adds a branch that predicts a pixel mask for each proposal
+        why: The mask branch is Mask R-CNN's addition on top of Faster R-CNN [^1].
+      - text: It drops region proposals and predicts boxes directly on a fixed grid
+        why: That describes one-stage detectors such as YOLO; Fast R-CNN still classifies proposals [^1].
+    explanation: |
+      R-CNN's bottleneck is the independent forward pass for each proposal, which repeats work because
+      proposals overlap. Fast R-CNN feeds the entire image to the CNN once and uses an RoI pooling layer
+      to extract a fixed-size feature map for every proposal from the shared output [^1]. This made it
+      213 times faster than R-CNN at test time with VGG-16 [^2]. Faster R-CNN later replaced selective
+      search with a region proposal network, and Mask R-CNN added a mask branch [^1].
+    references:
+      - source: d2l
+        url: https://d2l.ai/chapter_computer-vision/rcnn.html#fast-r-cnn
+        locator: Sec. 14.8.2 Fast R-CNN (and 14.8.1, 14.8.3, 14.8.4)
+      - title: Girshick (2015), Fast R-CNN
+        url: https://arxiv.org/abs/1504.08083
+        locator: Abstract and Sec. 2 Fast R-CNN architecture and training
+    source:
+      id: original
+      ref: object-detection-033
+    status: reviewed
+    reviewed_by: claude
+  - id: object-detection-034
+    type: short_answer
+    difficulty: medium
+    tags:
+      - roi-pooling
+      - fast-r-cnn
+    question: |
+      A single-channel feature map is
+      $$
+      \begin{bmatrix}1&3&2&8&0&4\\6&2&7&1&5&3\\0&9&4&6&2&8\\5&1&3&2&9&7\\8&4&1&5&6&0\\2&7&6&3&1&4\end{bmatrix}
+      $$
+      with rows and columns numbered from 0. A region of interest covers rows 1–4 and columns 2–5
+      (a $4 \times 4$ window). RoI max pooling with a $2 \times 2$ output splits the window into four
+      $2 \times 2$ sub-windows and keeps the maximum of each. What is the output, row by row?
+    answer:
+      accept:
+        - 7, 8, 5, 9
+      pattern: \[?\s*\[?\s*7\s*[,;\s]\s*8\s*\]?\s*[,;\s]\s*\[?\s*5\s*[,;\s]\s*9\s*\]?\s*\]?
+      hint: four numbers row by row, e.g. 1, 2, 3, 4
+      model: $\begin{bmatrix}\max(7,1,4,6) & \max(5,3,2,8)\\ \max(3,2,1,5) & \max(9,7,6,0)\end{bmatrix} = \begin{bmatrix}7&8\\5&9\end{bmatrix}$
+    explanation: |
+      The window is rows 1–4, columns 2–5:
+      $\begin{bmatrix}7&1&5&3\\4&6&2&8\\3&2&9&7\\1&5&6&0\end{bmatrix}$. Split into four $2 \times 2$
+      sub-windows, the maxima are 7, 8, 5 and 9; the 9 at row 2, column 1 lies outside the region and
+      is ignored. RoI pooling divides an $h \times w$ region into an $h_2 \times w_2$ grid of
+      sub-windows and max-pools each one, so regions of any shape yield features of the same shape
+      $h_2 \times w_2$ [^1][^2]; `torchvision.ops.roi_pool` gives the same output here.
+    references:
+      - source: d2l
+        url: https://d2l.ai/chapter_computer-vision/rcnn.html#fast-r-cnn
+        locator: Sec. 14.8.2 Fast R-CNN (region of interest pooling layer)
+      - title: Girshick (2015), Fast R-CNN
+        url: https://arxiv.org/abs/1504.08083
+        locator: Sec. 2.1 The RoI pooling layer
+    source:
+      id: original
+      ref: object-detection-034
+    status: reviewed
+    reviewed_by: claude
+  - id: object-detection-035
+    type: short_answer
+    difficulty: easy
+    tags:
+      - yolo
+      - output-shape
+      - one-stage-detectors
+    question: |
+      YOLO (v1) divides the image into an $S \times S$ grid. Each cell predicts $B$ boxes, each with
+      4 coordinates and a confidence, plus one set of $C$ class probabilities. Its output is an
+      $S \times S \times D$ tensor. With $S = 7$, $B = 3$ and $C = 80$, what is $D$?
+    answer:
+      numeric: 95
+      tolerance: 0
+      hint: a whole number
+      model: $D = 5B + C = 15 + 80 = 95$
+    explanation: |
+      Each box contributes 5 numbers ($x, y, w, h$ and confidence) and each cell adds $C$ conditional
+      class probabilities, so the predictions form an $S \times S \times (5B + C)$ tensor; on PASCAL
+      VOC with $S = 7$, $B = 2$, $C = 20$ this is $7 \times 7 \times 30$ [^1]. Here
+      $D = 15 + 80 = 95$. The class probabilities are predicted once per cell, regardless of $B$, so
+      all boxes of a cell share one class distribution [^1].
+    references:
+      - title: 'Redmon, Divvala, Girshick & Farhadi (2016), You Only Look Once: Unified, Real-Time Object Detection'
+        url: https://arxiv.org/abs/1506.02640
+        locator: Sec. 2 Unified Detection (Figure 2)
+    source:
+      id: original
+      ref: object-detection-035
+    status: reviewed
+    reviewed_by: claude
+  - id: object-detection-036
+    type: single
+    difficulty: medium
+    tags:
+      - yolo
+      - limitations
+      - one-stage-detectors
+    question: |
+      In YOLO (v1), each cell of a $7 \times 7$ grid predicts two boxes and only one set of class
+      probabilities. Which kind of scene does the YOLO paper name as a weakness of this design?
+    options:
+      - text: Many small objects close together, such as a flock of birds
+        correct: true
+      - text: A single large object that fills most of the image
+        why: YOLO uses features from the entire image to predict each box, so large objects are not its stated weakness [^1].
+      - text: A cluttered background around a few objects
+        why: Because it sees the whole image, YOLO makes less than half as many background errors as Fast R-CNN [^1].
+      - text: Input images whose size differs from the network's input size
+        why: YOLO simply resizes every input image to $448 \times 448$ before running the network [^1].
+    explanation: |
+      Each grid cell predicts only $B = 2$ boxes and can only have one class, which limits the number
+      of nearby objects the model can predict; the paper names small objects that appear in groups,
+      such as flocks of birds, as a case it struggles with [^1]. It also reports coarse features and
+      poor generalization to unusual aspect ratios as limitations, but sees the whole image, which
+      reduces background errors compared with Fast R-CNN [^1]. Later detectors relax this constraint
+      with many anchors per position and predictions at several scales [^2].
+    references:
+      - title: 'Redmon, Divvala, Girshick & Farhadi (2016), You Only Look Once: Unified, Real-Time Object Detection'
+        url: https://arxiv.org/abs/1506.02640
+        locator: Sec. 1 Introduction and Sec. 2.4 Limitations of YOLO
+      - source: d2l
+        url: https://d2l.ai/chapter_computer-vision/multiscale-object-detection.html#multiscale-detection
+        locator: Sec. 14.5.2 Multiscale Detection
+    source:
+      id: original
+      ref: object-detection-036
+    status: reviewed
+    reviewed_by: claude
+  - id: object-detection-037
+    type: short_answer
+    difficulty: medium
+    tags:
+      - yolo
+      - grid-cells
+    question: |
+      YOLO resizes images to $448 \times 448$ and uses a $7 \times 7$ grid, so each cell is 64 pixels
+      wide. The cell containing an object's centre is responsible for detecting it and predicts the
+      centre relative to the cell's bounds, as a fraction between 0 and 1. An object's centre is at
+      $(x, y) = (300, 100)$. Counting rows and columns from 0, the responsible cell is in row {{1}}
+      and column {{2}}, and its predicted $x$ coordinate should be {{3}}.
+    answer:
+      blanks:
+        - numeric: 1
+          tolerance: 0
+          hint: a row index
+        - numeric: 4
+          tolerance: 0
+          hint: a column index
+        - numeric: 0.6875
+          tolerance: 0.001
+          hint: a number between 0 and 1
+      model: Row $\lfloor 100/64 \rfloor = 1$, column $\lfloor 300/64 \rfloor = 4$; the cell starts at $x = 256$, so $x = (300 - 256)/64 = 0.6875$.
+    explanation: |
+      The grid cell that contains an object's centre is the one responsible for detecting the object.
+      Its predicted $(x, y)$ give the centre as offsets within that cell's bounds, whereas the box
+      width and height are expressed as fractions of the full image [^1]. The centre lies in column
+      $\lfloor 300/64 \rfloor = 4$ (pixels 256–319) and row $\lfloor 100/64 \rfloor = 1$ (pixels
+      64–127), and $(300 - 256)/64 = 0.6875$ of the way across the cell. Each cell predicts only a few boxes, so two
+      objects whose centres fall into the same cell compete for them [^1].
+    references:
+      - title: 'Redmon, Divvala, Girshick & Farhadi (2016), You Only Look Once: Unified, Real-Time Object Detection'
+        url: https://arxiv.org/abs/1506.02640
+        locator: Sec. 2 Unified Detection and Sec. 2.4 Limitations of YOLO
+    source:
+      id: original
+      ref: object-detection-037
+    status: reviewed
+    reviewed_by: claude
+  - id: object-detection-038
+    type: short_answer
+    difficulty: hard
+    tags:
+      - focal-loss
+      - class-imbalance
+      - retinanet
+    question: |
+      During training, one image yields 100,000 easy background anchors, each classified correctly
+      with probability $p_t = 0.99$, and 100 hard anchors with $p_t = 0.3$. Under the cross-entropy
+      loss $-\log p_t$, the easy anchors contribute a fraction {{1}} of the total loss. Under the focal
+      loss $-(1 - p_t)^2 \log p_t$, they contribute a fraction {{2}}.
+    answer:
+      blanks:
+        - numeric: 0.893
+          tolerance: 0.005
+          hint: a fraction between 0 and 1
+        - numeric: 0.0017
+          tolerance: 0.0003
+          hint: a fraction between 0 and 1
+      model: 'CE: $100\,000 \cdot 0.01005 = 1005$ vs $100 \cdot 1.204 = 120.4$, fraction $\approx 0.893$. FL: $100\,000 \cdot 10^{-4} \cdot 0.01005 = 0.1005$ vs $100 \cdot 0.49 \cdot 1.204 = 59.0$, fraction $\approx 0.0017$.'
+    explanation: |
+      Cross-entropy still gives a noticeable loss to examples that are already classified well, and
+      added up over an enormous number of easy negatives these small losses swamp the few hard
+      examples [^1]: here the easy anchors make up about 89% of the loss although each one is already
+      handled correctly. The focal loss multiplies the cross-entropy by $(1 - p_t)^\gamma$, which
+      shrinks the loss of well-classified examples most [^2]; with $\gamma = 2$ an example with
+      $p_t = 0.99$ is down-weighted by a factor $10^4$, while the hard ones keep about half their
+      loss, so the easy anchors drop to about 0.17% of the total [^1]. One-stage detectors face this
+      imbalance because they score roughly 100k candidate locations per image [^1].
+    references:
+      - title: Lin, Goyal, Girshick, He & Dollár (2017), Focal Loss for Dense Object Detection
+        url: https://arxiv.org/abs/1708.02002
+        locator: Sec. 1 Introduction, Sec. 3 Focal Loss and Sec. 3.2 Focal Loss Definition
+      - source: d2l
+        url: https://d2l.ai/chapter_computer-vision/ssd.html#exercises
+        locator: Sec. 14.7.5 Exercises (focal loss)
+    source:
+      id: original
+      ref: object-detection-038
+    status: reviewed
+    reviewed_by: claude
+  - id: object-detection-039
+    type: short_answer
+    difficulty: medium
+    tags:
+      - retinanet
+      - initialization
+      - class-imbalance
+    question: |
+      RetinaNet's final classification layer outputs a logit per anchor and class, turned into a
+      foreground probability by the sigmoid $\sigma(z) = 1/(1 + e^{-z})$. Its bias $b$ is initialized
+      so that every anchor starts with the foreground probability $\sigma(b) = \pi = 0.01$. What is
+      $b$ (natural logarithm)?
+    answer:
+      numeric: -4.595
+      tolerance: 0.005
+      hint: a number, 3 decimals
+      model: Solving $1/(1 + e^{-b}) = 0.01$ gives $e^{-b} = 99$, so $b = -\ln 99 = -\ln\frac{1 - \pi}{\pi} \approx -4.595$.
+    explanation: |
+      With the default initialization every anchor would start with $p = 0.5$ for each class, and the
+      loss of the many background anchors would dominate and destabilize early training. RetinaNet
+      therefore sets a prior $\pi$ for the rare foreground class, with $\pi = 0.01$, by initializing
+      the bias to $b = -\log((1 - \pi)/\pi) = -\ln 99 \approx -4.595$ [^1]. This changes the
+      initialization only, not the loss, and the authors found it improved training stability for both
+      cross-entropy and focal loss [^1].
+    references:
+      - title: Lin, Goyal, Girshick, He & Dollár (2017), Focal Loss for Dense Object Detection
+        url: https://arxiv.org/abs/1708.02002
+        locator: Sec. 3.3 Class Imbalance and Model Initialization; Sec. 4.1 Inference and Training (Initialization)
+    source:
+      id: original
+      ref: object-detection-039
+    status: reviewed
+    reviewed_by: claude
+  - id: object-detection-040
+    type: single
+    difficulty: medium
+    tags:
+      - feature-pyramid-network
+      - multiscale-detection
+    question: |
+      A Feature Pyramid Network (FPN) adds a top-down pathway with lateral connections to a ResNet
+      backbone and predicts from the resulting maps P2–P5 instead of the backbone's own maps C2–C5.
+      What problem does this solve?
+    options:
+      - text: Fine maps such as C2 have weak semantics; the top-down path adds deep semantics to them
+        correct: true
+      - text: The backbone maps are too small for anchors, so FPN upsamples every level to the input resolution
+        why: Each P level has the same spatial size as the corresponding C level; nothing is upsampled to the input size [^1].
+      - text: It saves computation by skipping the deepest backbone stage C5
+        why: C5 is used; a $1 \times 1$ convolution on it starts the top-down pathway [^1].
+      - text: It removes the need for anchors, since each pyramid level predicts boxes directly
+        why: FPN keeps anchors; in its RPN every pyramid level gets anchors of one scale [^2].
+    explanation: |
+      In a CNN, early high-resolution maps are well localized but semantically weak, while deep maps
+      are semantically strong but coarse. FPN's top-down pathway upsamples the coarser, semantically
+      stronger maps by a factor of 2 (nearest neighbour) and merges them by element-wise addition with
+      the bottom-up map of the same size after a $1 \times 1$ convolution; a $3 \times 3$ convolution
+      then smooths each merged map [^1]. Every level of the resulting pyramid thus has strong
+      semantics, and small objects can be detected on the fine levels [^1]. With an RPN, FPN places
+      anchors of one scale on each level [^2].
+    references:
+      - title: Lin, Dollár, Girshick, He, Hariharan & Belongie (2017), Feature Pyramid Networks for Object Detection
+        url: https://arxiv.org/abs/1612.03144
+        locator: Sec. 3 Feature Pyramid Networks (Top-down pathway and lateral connections)
+      - title: Lin, Dollár, Girshick, He, Hariharan & Belongie (2017), Feature Pyramid Networks for Object Detection
+        url: https://arxiv.org/abs/1612.03144
+        locator: Sec. 4.1 Feature Pyramid Networks for RPN
+    source:
+      id: original
+      ref: object-detection-040
+    status: reviewed
+    reviewed_by: claude
+  - id: object-detection-041
+    type: short_answer
+    difficulty: medium
+    tags:
+      - feature-pyramid-network
+      - roi-pooling
+    question: |
+      In an FPN-based Fast R-CNN, an RoI of width $w$ and height $h$ (in input pixels) is pooled from
+      pyramid level $P_k$ with $k = \left\lfloor 4 + \log_2\left(\sqrt{wh}/224\right)\right\rfloor$.
+      A $64 \times 100$ RoI uses level $P$ {{1}}, and a $300 \times 500$ RoI uses level $P$ {{2}}.
+    answer:
+      blanks:
+        - numeric: 2
+          tolerance: 0
+          hint: a level number
+        - numeric: 4
+          tolerance: 0
+          hint: a level number
+      model: $\sqrt{6400} = 80$, $\log_2(80/224) \approx -1.49$, $\lfloor 2.51 \rfloor = 2$; $\sqrt{150\,000} \approx 387$, $\log_2(387/224) \approx 0.79$, $\lfloor 4.79 \rfloor = 4$.
+    explanation: |
+      The constant 224 is the input size used for ImageNet pre-training, and $k_0 = 4$ is the level
+      that receives an RoI of that size; halving the RoI's scale moves it one level finer, to
+      $k = 3$ [^1]. The $64 \times 100$ RoI has scale $\sqrt{wh} = 80$, about $2^{-1.49}$ of 224, so
+      it goes to $P_2$, the finest level, with stride 4. The $300 \times 500$ RoI has scale about 387, so $\lfloor 4.79 \rfloor = 4$ and it
+      goes to $P_4$. Small RoIs are thus pooled from high-resolution maps, large RoIs from coarse
+      ones [^1].
+    references:
+      - title: Lin, Dollár, Girshick, He, Hariharan & Belongie (2017), Feature Pyramid Networks for Object Detection
+        url: https://arxiv.org/abs/1612.03144
+        locator: Sec. 4.2 Feature Pyramid Networks for Fast R-CNN (Eq. 1)
+    source:
+      id: original
+      ref: object-detection-041
+    status: reviewed
+    reviewed_by: claude
+  - id: object-detection-042
+    type: short_answer
+    difficulty: medium
+    tags:
+      - ssd
+      - anchor-boxes
+      - multiscale-detection
+    question: |
+      SSD300 predicts from six feature maps of sizes $38 \times 38$, $19 \times 19$, $10 \times 10$,
+      $5 \times 5$, $3 \times 3$ and $1 \times 1$, with 4, 6, 6, 6, 4 and 4 default boxes per
+      location respectively. How many default boxes does it evaluate per image?
+    answer:
+      numeric: 8732
+      tolerance: 0
+      hint: a whole number
+      model: $1444 \cdot 4 + 361 \cdot 6 + 100 \cdot 6 + 25 \cdot 6 + 9 \cdot 4 + 1 \cdot 4 = 5776 + 2166 + 600 + 150 + 36 + 4 = 8732$
+    explanation: |
+      Each location of a feature map is the centre of a fixed set of default boxes, so a map with
+      $f \times f$ locations and $k$ boxes per location contributes $f^2 k$ boxes; SSD300 uses 4 boxes
+      on conv4_3, conv10_2 and conv11_2 and 6 elsewhere, 8732 in total [^1]. Two-thirds of them come
+      from the largest, $38 \times 38$ map, which handles small objects; deeper, smaller maps have larger
+      receptive fields and detect fewer but larger objects [^2]. d2l's TinySSD follows the same scheme
+      with $(32^2 + 16^2 + 8^2 + 4^2 + 1) \cdot 4 = 5444$ anchors [^2].
+    references:
+      - title: 'Liu et al. (2016), SSD: Single Shot MultiBox Detector'
+        url: https://arxiv.org/abs/1512.02325
+        locator: Sec. 2.1 Model (Fig. 2) and Sec. 3.1 PASCAL VOC2007 (default boxes per layer)
+      - source: d2l
+        url: https://d2l.ai/chapter_computer-vision/ssd.html#the-complete-model
+        locator: Sec. 14.7.1 Model and 14.7.1.6 The Complete Model
+    source:
+      id: original
+      ref: object-detection-042
+    status: reviewed
+    reviewed_by: claude
+  - id: object-detection-043
+    type: short_answer
+    difficulty: easy
+    tags:
+      - data-augmentation
+      - horizontal-flip
+      - bounding-boxes
+    question: |
+      An image 640 pixels wide is flipped horizontally as data augmentation for a detector. One of its
+      boxes is $(x_1, y_1, x_2, y_2) = (100, 50, 300, 200)$, with $x$ measured from the left edge. What
+      is the box after the flip, in the same format with $x_1 < x_2$?
+    answer:
+      accept:
+        - (340, 50, 540, 200)
+      pattern: '[(\[]?\s*340\s*[,\s]\s*50\s*[,\s]\s*540\s*[,\s]\s*200\s*[)\]]?'
+      hint: four numbers, e.g. (10, 20, 30, 40)
+      model: $x_1' = 640 - 300 = 340$, $x_2' = 640 - 100 = 540$; $y$ is unchanged.
+    explanation: |
+      A horizontal flip maps $x$ to $W - x$, so the old right edge becomes the new left edge:
+      $x_1' = W - x_2 = 340$ and $x_2' = W - x_1 = 540$, while $y_1$ and $y_2$ stay the same. In
+      detection, a label is a class plus box coordinates relative to the image [^1], so every geometric
+      augmentation has to transform the boxes together with the pixels; torchvision's v2
+      `RandomHorizontalFlip` accepts bounding boxes for this reason [^2].
+    references:
+      - source: d2l
+        url: https://d2l.ai/chapter_computer-vision/bounding-box.html#bounding-boxes
+        locator: Sec. 14.3.1 Bounding Boxes
+      - title: 'torchvision documentation: transforms.v2.RandomHorizontalFlip'
+        url: https://docs.pytorch.org/vision/stable/generated/torchvision.transforms.v2.RandomHorizontalFlip.html
+        locator: Class description
+    source:
+      id: original
+      ref: object-detection-043
+    status: reviewed
+    reviewed_by: claude
+  - id: object-detection-044
+    type: true_false
+    difficulty: medium
+    tags:
+      - map
+      - coco
+      - evaluation
+    shuffle: false
+    question: |
+      True or false: if detector A has a higher AP at IoU 0.5 than detector B on a dataset, then A
+      also has a higher COCO-style AP averaged over the IoU thresholds 0.50 to 0.95.
+    options:
+      - text: 'True'
+        why: In the Faster R-CNN paper, one Fast R-CNN implementation has the higher mAP@0.5 on COCO test-dev (39.3 vs 35.9) but the lower mAP@[.5, .95] (19.3 vs 19.7) [^1].
+      - text: 'False'
+        correct: true
+    explanation: |
+      AP at 0.5 only asks whether boxes overlap their objects by half; the COCO average also scores the
+      stricter thresholds up to 0.95, so it rewards precise localization [^1]. A detector with more
+      loosely placed boxes can win at 0.5 and lose on the average. The Faster R-CNN paper shows such a
+      pair: its own Fast R-CNN implementation reaches 39.3% mAP@0.5 against 35.9% for the original,
+      but 19.3% against 19.7% mAP@[.5, .95] [^1]. This is why results are reported as AP together with
+      AP50 and AP75 [^2].
+    references:
+      - title: 'Ren, He, Girshick & Sun (2015), Faster R-CNN: Towards Real-Time Object Detection with Region Proposal Networks'
+        url: https://arxiv.org/abs/1506.01497
+        locator: Sec. 4.2 Experiments on MS COCO (Table 11)
+      - title: He, Gkioxari, Dollár & Girshick (2017), Mask R-CNN
+        url: https://arxiv.org/abs/1703.06870
+        locator: Sec. 4 Experiments (COCO metrics)
+    source:
+      id: original
+      ref: object-detection-044
+    status: reviewed
+    reviewed_by: claude
+  - id: object-detection-045
+    type: single
+    difficulty: medium
+    tags:
+      - class-imbalance
+      - two-stage-detectors
+      - faster-r-cnn
+    question: |
+      Almost all candidate locations in an image are background. How do two-stage detectors such as
+      Faster R-CNN keep background from dominating the training of their final classifier?
+    options:
+      - text: Proposals cut the candidates to about 1–2k, and minibatches use a fixed foreground-to-background ratio
+        correct: true
+      - text: They apply the focal loss to all of the roughly 100k anchors in each image
+        why: That is RetinaNet's approach for one-stage detectors; two-stage detectors are usually trained with plain cross-entropy [^1].
+      - text: They train the classifier on foreground regions only, leaving background out of the loss
+        why: The classifier must learn to reject background, so background regions are sampled into every minibatch, for example at a 1:3 ratio [^1].
+      - text: They weight each region's loss by its area, so that the few large objects outweigh the many background regions
+        why: No such area weighting is used; the balance comes from the cascade and biased sampling [^1].
+    explanation: |
+      Two-stage detectors handle the imbalance with a cascade and biased sampling: the proposal stage
+      narrows the nearly infinite set of locations down to one or two thousand likely objects, removing
+      most easy negatives, and the second stage is trained on minibatches with, for example, a 1:3
+      ratio of positives to negatives [^1]. The RPN itself is trained the same way, sampling 256
+      anchors per image with up to a 1:1 ratio of positives to negatives [^2]. One-stage detectors
+      cannot filter like this, which motivated the focal loss [^1].
+    references:
+      - title: Lin, Goyal, Girshick, He & Dollár (2017), Focal Loss for Dense Object Detection
+        url: https://arxiv.org/abs/1708.02002
+        locator: Sec. 1 Introduction and Sec. 3.4 Class Imbalance and Two-stage Detectors
+      - title: 'Ren, He, Girshick & Sun (2015), Faster R-CNN: Towards Real-Time Object Detection with Region Proposal Networks'
+        url: https://arxiv.org/abs/1506.01497
+        locator: Sec. 3.1.3 Training RPNs
+    source:
+      id: original
+      ref: object-detection-045
+    status: reviewed
+    reviewed_by: claude
+  - id: object-detection-046
+    type: multiple
+    difficulty: medium
+    tags:
+      - faster-r-cnn
+      - anchor-boxes
+      - region-proposal-network
+    question: |
+      Faster R-CNN labels an anchor positive if it has the highest IoU with some ground-truth box, or
+      an IoU above 0.7 with any ground-truth box. A non-positive anchor is negative if its IoU is
+      below 0.3 for all ground-truth boxes; all other anchors are ignored. An image has two
+      ground-truth boxes, G1 and G2, and no other anchor overlaps them more than these four:
+
+      | anchor | IoU with G1 | IoU with G2 |
+      | --- | --- | --- |
+      | A1 | 0.82 | 0.00 |
+      | A2 | 0.55 | 0.10 |
+      | A3 | 0.12 | 0.05 |
+      | A4 | 0.00 | 0.45 |
+
+      Which anchors are labelled positive? Select all that apply.
+    options:
+      - text: A1
+        correct: true
+      - text: A2
+        why: Its best IoU, 0.55, is neither above 0.7 nor the highest for G1 (A1 has 0.82), and not below 0.3, so A2 is ignored in training [^1].
+      - text: A3
+        why: Its IoU is below 0.3 for both ground-truth boxes, so A3 is a negative example [^1].
+      - text: A4
+        correct: true
+    explanation: |
+      A1 qualifies through the 0.7 rule. A4 overlaps G2 by only 0.45, but it is the anchor with the
+      highest IoU for G2, and the first rule makes it positive so that every ground-truth box gets at
+      least one positive anchor; the paper keeps this rule for the rare cases where the 0.7 rule finds
+      none [^1]. A2 falls between 0.3 and 0.7 and is ignored, and A3 is negative. Ignored anchors
+      are left out of the RPN loss altogether [^1]. d2l's assignment algorithm likewise first gives
+      every ground-truth box its best anchor and then uses a threshold [^2].
+    references:
+      - title: 'Ren, He, Girshick & Sun (2015), Faster R-CNN: Towards Real-Time Object Detection with Region Proposal Networks'
+        url: https://arxiv.org/abs/1506.01497
+        locator: Sec. 3.1.2 Loss Function
+      - source: d2l
+        url: https://d2l.ai/chapter_computer-vision/anchor.html#assigning-ground-truth-bounding-boxes-to-anchor-boxes
+        locator: Sec. 14.4.3.1 Assigning Ground-Truth Bounding Boxes to Anchor Boxes
+    source:
+      id: original
+      ref: object-detection-046
+    status: reviewed
+    reviewed_by: claude

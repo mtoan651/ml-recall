@@ -966,3 +966,803 @@ questions:
       url: https://ocw.mit.edu/courses/6-7960-deep-learning-fall-2024/resources/mit6_7960_f24_hw3_pdf/
     status: reviewed
     reviewed_by: claude
+  - id: tokenization-026
+    type: short_answer
+    difficulty: easy
+    tags:
+      - word-tokenization
+      - regex
+      - llms-from-scratch
+    question: |
+      What does the last line print?
+
+      ```python
+      import re
+
+      text = "Hello, world. Is this-- a test?"
+      result = re.split(r'([,.:;?_!"()\']|--|\s)', text)
+      result = [item.strip() for item in result if item.strip()]
+      print(len(result))
+      ```
+    answer:
+      numeric: 10
+      tolerance: 0
+      hint: an integer
+      model: "10: `['Hello', ',', 'world', '.', 'Is', 'this', '--', 'a', 'test', '?']`"
+    explanation: |
+      The whole pattern is a capturing group, so `re.split` returns the pieces *between* the
+      delimiters and also the delimiters themselves [^1]: punctuation marks, the double dash `--` and
+      single whitespace characters. The list comprehension then drops the empty strings and the
+      whitespace-only items. What remains are 6 words (`Hello`, `world`, `Is`, `this`, `a`, `test`)
+      and 4 punctuation tokens (`,`, `.`, `--`, `?`): 10 tokens. This simple word-level splitter is
+      the first tokenizer the book builds before switching to BPE [^2]; splitting off punctuation
+      and whitespace is the same idea as the pre-tokenization step of subword tokenizers [^3].
+    references:
+      - title: 'Python documentation: re.split'
+        locator: re.split (capturing parentheses in the pattern)
+        url: https://docs.python.org/3/library/re.html#re.split
+      - source: llms-from-scratch
+        locator: ch02/01_main-chapter-code/ch02.ipynb, Sec. 2.2 Tokenizing text
+        url: https://github.com/rasbt/LLMs-from-scratch/blob/cdbd33e6d57a71e20ea31434841095fac50cecd8/ch02/01_main-chapter-code/ch02.ipynb
+      - source: hf-llm-course
+        locator: Chapter 6.4, Pre-tokenization
+        url: https://huggingface.co/learn/llm-course/chapter6/4
+    source:
+      id: llms-from-scratch
+      ref: ch02/regex-split-tokens
+      url: https://github.com/rasbt/LLMs-from-scratch/blob/cdbd33e6d57a71e20ea31434841095fac50cecd8/ch02/01_main-chapter-code/ch02.ipynb
+    status: reviewed
+    reviewed_by: claude
+  - id: tokenization-027
+    type: short_answer
+    difficulty: medium
+    tags:
+      - vocabulary
+      - word-tokenization
+      - llms-from-scratch
+    question: |
+      ```python
+      import re
+
+      text = "The cat sat. the cat ran!"
+      tokens = re.split(r'([,.:;?_!"()\']|--|\s)', text)
+      tokens = [t.strip() for t in tokens if t.strip()]
+      vocab = {tok: i for i, tok in enumerate(sorted(set(tokens)))}
+      print(len(vocab), vocab["the"])
+      ```
+
+      The last line prints {{1}} and {{2}}.
+    answer:
+      blanks:
+        - numeric: 7
+          hint: an integer
+        - numeric: 6
+          hint: an integer
+      model: '`7 6`: the sorted vocabulary is `!`, `.`, `The`, `cat`, `ran`, `sat`, `the`.'
+    explanation: |
+      The text splits into 8 tokens, `The cat sat . the cat ran !`; `set` removes the repeated `cat`,
+      leaving 7 distinct tokens. The vocabulary is built as in the book: sort the unique tokens and
+      number them in that order [^1]. `sorted` compares strings by their Unicode code points [^2], so
+      punctuation (`!` = 33, `.` = 46) comes first, then capitalised words (`T` = 84), then lowercase
+      words. No lowercasing happens, so `The` (id 2) and `the` are different entries, and `the` is
+      last, id 6.
+    references:
+      - source: llms-from-scratch
+        locator: ch02/01_main-chapter-code/ch02.ipynb, Sec. 2.3 Converting tokens into token IDs
+        url: https://github.com/rasbt/LLMs-from-scratch/blob/cdbd33e6d57a71e20ea31434841095fac50cecd8/ch02/01_main-chapter-code/ch02.ipynb
+      - title: 'Python language reference: Expressions'
+        locator: 6.10.1 Value comparisons (strings compare by Unicode code points)
+        url: https://docs.python.org/3/reference/expressions.html#value-comparisons
+    source:
+      id: llms-from-scratch
+      ref: ch02/vocab-sorted-ids
+      url: https://github.com/rasbt/LLMs-from-scratch/blob/cdbd33e6d57a71e20ea31434841095fac50cecd8/ch02/01_main-chapter-code/ch02.ipynb
+    status: reviewed
+    reviewed_by: claude
+  - id: tokenization-028
+    type: short_answer
+    difficulty: medium
+    tags:
+      - tiktoken
+      - special-tokens
+      - gpt-2
+      - llms-from-scratch
+    question: |
+      ```python
+      import tiktoken
+
+      tokenizer = tiktoken.get_encoding("gpt2")
+      ids = tokenizer.encode("<|endoftext|>", allowed_special={"<|endoftext|>"})
+      print(ids, tokenizer.n_vocab)
+      ```
+
+      The last line prints `[` {{1}} `]` and then {{2}}.
+    answer:
+      blanks:
+        - numeric: 50256
+          hint: an integer
+        - numeric: 50257
+          hint: an integer
+      model: '`[50256] 50257`: the end-of-text token is the last of the 50,257 ids.'
+    explanation: |
+      GPT-2's tokenizer has 50,257 token ids, numbered 0 to 50,256, and its single special token
+      `<|endoftext|>` is the very last one, id 50256; tiktoken's GPT-2 definition sets
+      `explicit_n_vocab` to 50257 and the special token to 50256 [^1]. Because the string is passed
+      in `allowed_special`, it is encoded as that one special id instead of being split into
+      ordinary text pieces [^2]. The book places this token between independent texts [^3] and later
+      pads instruction-tuning batches with it, `pad_token_id=50256` [^4].
+    references:
+      - title: tiktoken source, tiktoken_ext/openai_public.py, gpt2()
+        locator: gpt2() (explicit_n_vocab, special_tokens)
+        url: https://github.com/openai/tiktoken/blob/4e71bbe0c078468e00fefbf94b39849389f346e5/tiktoken_ext/openai_public.py
+      - title: tiktoken source, tiktoken/core.py
+        locator: Encoding.encode docstring (allowed_special, disallowed_special)
+        url: https://github.com/openai/tiktoken/blob/4e71bbe0c078468e00fefbf94b39849389f346e5/tiktoken/core.py
+      - source: llms-from-scratch
+        locator: ch02/01_main-chapter-code/ch02.ipynb, Sec. 2.4 Adding special context tokens; Sec. 2.5 BytePair encoding
+        url: https://github.com/rasbt/LLMs-from-scratch/blob/cdbd33e6d57a71e20ea31434841095fac50cecd8/ch02/01_main-chapter-code/ch02.ipynb
+      - source: llms-from-scratch
+        locator: pkg/llms_from_scratch/ch07.py, custom_collate_fn signature (lines 154-160)
+        url: https://github.com/rasbt/LLMs-from-scratch/blob/cdbd33e6d57a71e20ea31434841095fac50cecd8/pkg/llms_from_scratch/ch07.py#L154-L160
+    source:
+      id: llms-from-scratch
+      ref: ch02/tiktoken-endoftext-id
+      url: https://github.com/rasbt/LLMs-from-scratch/blob/cdbd33e6d57a71e20ea31434841095fac50cecd8/ch02/01_main-chapter-code/ch02.ipynb
+    status: reviewed
+    reviewed_by: claude
+  - id: tokenization-029
+    type: single
+    difficulty: medium
+    tags:
+      - tiktoken
+      - special-tokens
+      - llms-from-scratch
+    question: |
+      What happens when the last line runs?
+
+      ```python
+      import tiktoken
+
+      tokenizer = tiktoken.get_encoding("gpt2")
+      ids = tokenizer.encode("Hello <|endoftext|>")
+      ```
+    options:
+      - text: It raises a `ValueError`
+        correct: true
+      - text: '`<|endoftext|>` is encoded as the single special id 50256'
+        why: That needs `allowed_special={"<|endoftext|>"}`; by default no special token is allowed.
+      - text: "`<|endoftext|>` is encoded as ordinary text pieces (`' <'`, `'|'`, `'end'`, …)"
+        why: tiktoken does this only when you opt out of the check with `disallowed_special=()`.
+      - text: The marker is silently dropped and only "Hello " is encoded
+        why: tiktoken never drops input text; encoding is lossless.
+    explanation: |
+      By default `encode` uses `allowed_special=set()` and `disallowed_special="all"`, so any text
+      that matches a special token raises `ValueError: Encountered text corresponding to disallowed
+      special token '<|endoftext|>'` [^1]. This guards against user text injecting control tokens.
+      You either allow the token explicitly, which the book does with
+      `allowed_special={"<|endoftext|>"}` [^2], or pass `disallowed_special=()` to encode the
+      characters as normal text [^1].
+    references:
+      - title: tiktoken source, tiktoken/core.py
+        locator: Encoding.encode docstring (allowed_special, disallowed_special)
+        url: https://github.com/openai/tiktoken/blob/4e71bbe0c078468e00fefbf94b39849389f346e5/tiktoken/core.py
+      - source: llms-from-scratch
+        locator: ch02/01_main-chapter-code/ch02.ipynb, Sec. 2.5 BytePair encoding
+        url: https://github.com/rasbt/LLMs-from-scratch/blob/cdbd33e6d57a71e20ea31434841095fac50cecd8/ch02/01_main-chapter-code/ch02.ipynb
+    source:
+      id: llms-from-scratch
+      ref: ch02/tiktoken-disallowed-special
+      url: https://github.com/rasbt/LLMs-from-scratch/blob/cdbd33e6d57a71e20ea31434841095fac50cecd8/ch02/01_main-chapter-code/ch02.ipynb
+    status: reviewed
+    reviewed_by: claude
+  - id: tokenization-030
+    type: single
+    difficulty: medium
+    tags:
+      - bpe
+      - tiktoken
+      - gpt-2
+      - llms-from-scratch
+    question: |
+      What does the last line print?
+
+      ```python
+      import tiktoken
+
+      tokenizer = tiktoken.get_encoding("gpt2")
+      ids = tokenizer.encode("Hello world")
+      print([tokenizer.decode([i]) for i in ids])
+      ```
+    options:
+      - text: "`['Hello', ' world']`"
+        correct: true
+      - text: "`['Hello', ' ', 'world']`"
+        why: GPT-2's pre-tokenizer attaches a single leading space to the word after it, so the space is not a token of its own here.
+      - text: "`['Hello ', 'world']`"
+        why: The space is glued to the *following* word, not to the end of the previous one.
+      - text: "`['Hello', 'world']`"
+        why: Byte-level BPE is lossless; the space must appear in some token, otherwise decoding could not restore the text.
+    explanation: |
+      GPT-2 splits text into words that keep their **leading** space (shown as `Ġ` in the byte-level
+      vocabulary) before applying BPE [^1]. Both `Hello` and `Ġworld` are frequent enough to be
+      single tokens, so the text becomes two ids, `[15496, 995]`, and decoding each id alone gives
+      `'Hello'` and `' world'`. Keeping the spaces inside tokens is what lets `decode` reproduce the
+      original string exactly [^1][^2].
+    references:
+      - source: hf-llm-course
+        locator: Chapter 6.4, Pre-tokenization (GPT-2 example)
+        url: https://huggingface.co/learn/llm-course/chapter6/4
+      - source: llms-from-scratch
+        locator: ch02/01_main-chapter-code/ch02.ipynb, Sec. 2.5 BytePair encoding
+        url: https://github.com/rasbt/LLMs-from-scratch/blob/cdbd33e6d57a71e20ea31434841095fac50cecd8/ch02/01_main-chapter-code/ch02.ipynb
+    source:
+      id: llms-from-scratch
+      ref: ch02/bpe-leading-space
+      url: https://github.com/rasbt/LLMs-from-scratch/blob/cdbd33e6d57a71e20ea31434841095fac50cecd8/ch02/01_main-chapter-code/ch02.ipynb
+    status: reviewed
+    reviewed_by: claude
+  - id: tokenization-031
+    type: short_answer
+    difficulty: hard
+    tags:
+      - bpe
+      - merges
+      - sequence-length
+    question: |
+      BPE is trained on a corpus with these word counts:
+
+      | word | hat | hats | that | chat | chats | at |
+      | --- | --- | --- | --- | --- | --- | --- |
+      | count | 5 | 2 | 4 | 3 | 2 | 3 |
+
+      Split into characters, the corpus is 67 tokens long. The first three merges are `a t` → `at`,
+      `h at` → `hat` and `c hat` → `chat`. How many tokens long is the corpus after these three
+      merges (counting every occurrence of every word)?
+    answer:
+      numeric: 27
+      tolerance: 0
+      hint: a whole number
+      model: hat 5×1 + hats 2×2 (hat s) + that 4×2 (t hat) + chat 3×1 + chats 2×2 (chat s) + at 3×1 = 27
+    explanation: |
+      Each merge replaces every occurrence of a pair by one new symbol, so the corpus gets shorter
+      by the pair's count: $67 - 19 = 48$ after `at`, $48 - 16 = 32$ after `hat`, and
+      $32 - 5 = 27$ after `chat` [^1]. Counting directly gives the same: "hat" (1 token) × 5,
+      "hats" (`hat s`) × 2, "that" (`t hat`) × 4, "chat" × 3, "chats" (`chat s`) × 2 and "at" × 3,
+      that is $5 + 4 + 8 + 3 + 4 + 3 = 27$. Each merge also adds one symbol to the vocabulary, so
+      BPE trades a bigger vocabulary for shorter sequences [^1][^2].
+    references:
+      - source: hf-llm-course
+        url: https://huggingface.co/learn/llm-course/chapter6/5#training-algorithm
+        locator: Chapter 6.5 Byte-Pair Encoding tokenization, sec. Training algorithm
+      - title: 'Kudo (2018), Subword Regularization: Improving Neural Network Translation Models with Multiple Subword Candidates'
+        url: https://arxiv.org/abs/1804.10959
+        locator: Sec. 3.1 Byte-Pair-Encoding (BPE) (balances vocabulary size and number of tokens)
+    source:
+      id: original
+      ref: tokenization-031
+    status: reviewed
+    reviewed_by: claude
+  - id: tokenization-032
+    type: single
+    difficulty: medium
+    tags:
+      - bpe
+      - wordpiece
+      - encoding
+      - longest-match
+    question: |
+      Two tokenizers share the vocabulary {t, e, s, es, st, te}. The BPE tokenizer learned its
+      merges in this order: (1) `e s` → `es`, (2) `s t` → `st`, (3) `t e` → `te`. The WordPiece-style
+      tokenizer instead takes, again and again, the longest vocabulary entry that starts at the
+      current position (ignore `##` prefixes). How do they tokenize "test"?
+    options:
+      - text: 'BPE: `t` `es` `t`; longest match: `te` `st`'
+        correct: true
+      - text: 'BPE: `te` `st`; longest match: `t` `es` `t`'
+        why: The two results are swapped; BPE applies `e s` first, and longest match grabs `te` at the start.
+      - text: 'Both: `te` `st`'
+        why: BPE does not look for the longest entry; it replays its merges in order, and `e s` comes first.
+      - text: 'Both: `t` `es` `t`'
+        why: Longest match starts from the left and takes `te`, the longest entry beginning at position 0.
+    explanation: |
+      A BPE tokenizer splits a word into characters and applies the learned merges in the order
+      they were learned [^1]. Merge 1 turns `t e s t` into `t es t`; then no `s t` or `t e` pair is
+      left, so the result is `t es t`. WordPiece stores only the vocabulary and, from the start of
+      the word, takes the longest subword in the vocabulary, then continues with the rest [^2].
+      Here it takes `te`, then `st`. The same vocabulary can thus give different tokenizations;
+      the Hugging Face course shows "hugs" becoming `hu ##gs` with BPE but `hug ##s` with WordPiece [^2].
+    references:
+      - source: hf-llm-course
+        url: https://huggingface.co/learn/llm-course/chapter6/5#tokenization-algorithm
+        locator: Chapter 6.5 Byte-Pair Encoding tokenization, sec. Tokenization algorithm
+      - source: hf-llm-course
+        url: https://huggingface.co/learn/llm-course/chapter6/6#tokenization-algorithm
+        locator: Chapter 6.6 WordPiece tokenization, sec. Tokenization algorithm
+    source:
+      id: original
+      ref: tokenization-032
+    status: reviewed
+    reviewed_by: claude
+  - id: tokenization-033
+    type: single
+    difficulty: hard
+    tags:
+      - wordpiece
+      - merges
+      - pair-score
+    question: |
+      WordPiece (as described in the Hugging Face course) splits each word into a first character
+      and `##`-prefixed continuation characters, e.g. `s ##p ##i ##n`, and merges the pair with the
+      highest
+
+      $$\mathrm{score} = \frac{\mathrm{freq}(\text{pair})}{\mathrm{freq}(\text{first}) \times \mathrm{freq}(\text{second})}.$$
+
+      The corpus has the word counts pin 6, pins 2, spin 3, tin 4 and zip 1. Which pair is merged
+      first?
+    options:
+      - text: '`s` + `##p`'
+        correct: true
+      - text: '`##i` + `##n`'
+        why: This is the most frequent pair (15 times), the one BPE would merge, but `##i` and `##n` are so frequent that its score is only $15/(16 \cdot 15) = 1/16$.
+      - text: '`##n` + `##s`'
+        why: Its score is $2/(15 \cdot 2) = 1/15$, lower than the $1/4$ of `s` + `##p`, because `##n` occurs 15 times.
+      - text: '`p` + `##i`'
+        why: '`##i` occurs 16 times, which pushes the score down to $8/(8 \cdot 16) = 1/16$.'
+    explanation: |
+      Unit frequencies: `p` 8, `##i` 16, `##n` 15, `##s` 2, `s` 3, `##p` 4, `t` 4, `z` 1. The pair
+      `s ##p` occurs 3 times (in "spin"), so its score is $3/(3 \cdot 4) = 1/4$, the highest. The most
+      frequent pair, `##i ##n` (15 times), scores only $15/(16 \cdot 15) = 1/16$ [^1]. Dividing by the
+      frequencies of the parts favours pairs whose parts are rarely seen elsewhere, unlike BPE,
+      which merges the most frequent pair [^1][^2].
+    references:
+      - source: hf-llm-course
+        url: https://huggingface.co/learn/llm-course/chapter6/6#training-algorithm
+        locator: Chapter 6.6 WordPiece tokenization, sec. Training algorithm
+      - source: hf-llm-course
+        url: https://huggingface.co/learn/llm-course/chapter6/4#algorithm-overview
+        locator: Chapter 6.4 Normalization and pre-tokenization, sec. Algorithm overview
+    source:
+      id: original
+      ref: tokenization-033
+    status: reviewed
+    reviewed_by: claude
+  - id: tokenization-034
+    type: single
+    difficulty: medium
+    tags:
+      - wordpiece
+      - unknown-token
+      - out-of-vocabulary
+    question: |
+      A WordPiece tokenizer has the vocabulary
+      `[UNK]`, `p`, `s`, `t`, `z`, `##i`, `##n`, `##s`, `##p`, `sp`, `spin`, `##in`, `pin`.
+      It encodes "spins" as `spin ##s`. How does it encode "spit"?
+    options:
+      - text: '`[UNK]`'
+        correct: true
+      - text: '`sp` `##i` `[UNK]`'
+        why: WordPiece does not mark only the missing piece; once no vocabulary entry fits, the whole word becomes `[UNK]`.
+      - text: '`s` `##p` `##i` `[UNK]`'
+        why: Longest match starts with `sp`, not `s`; and in any case WordPiece replaces the whole word, not one piece.
+      - text: '`sp` `##i` `##t`'
+        why: '`##t` is not in the vocabulary (only `t` at the start of a word is), so this split is impossible.'
+    explanation: |
+      WordPiece tokenizes by taking the longest vocabulary entry from the start of the word:
+      `sp`, then `##i`; the rest, `##t`, is not in the vocabulary. When it reaches a point where no
+      subword fits, WordPiece tokenizes the whole word as unknown [^1]. BPE differs here: it marks
+      only the individual characters that are missing from its base vocabulary as unknown, so it keeps
+      the known parts [^1][^2]. For "spins" every piece is found: `spin`, then `##s`.
+    references:
+      - source: hf-llm-course
+        url: https://huggingface.co/learn/llm-course/chapter6/6#tokenization-algorithm
+        locator: Chapter 6.6 WordPiece tokenization, sec. Tokenization algorithm
+      - source: hf-llm-course
+        url: https://huggingface.co/learn/llm-course/chapter6/5#tokenization-algorithm
+        locator: Chapter 6.5 Byte-Pair Encoding tokenization, sec. Tokenization algorithm ("mug" → [UNK] ug)
+    source:
+      id: original
+      ref: tokenization-034
+    status: reviewed
+    reviewed_by: claude
+  - id: tokenization-035
+    type: single
+    difficulty: medium
+    tags:
+      - unigram
+      - sentencepiece
+      - segmentation
+      - viterbi
+    question: |
+      A Unigram tokenizer has these token probabilities:
+
+      | token | s | e | a | t | se | at | sea | eat |
+      | --- | --- | --- | --- | --- | --- | --- | --- | --- |
+      | $p$ | 0.03 | 0.1 | 0.1 | 0.02 | 0.02 | 0.1 | 0.05 | 0.03 |
+
+      It picks the segmentation with the highest product of token probabilities. How does it
+      segment "seat"?
+    options:
+      - text: '`se` `at`'
+        correct: true
+      - text: '`sea` `t`'
+        why: This is the greedy longest-prefix split, but $0.05 \times 0.02 = 0.001$ is lower than $0.02 \times 0.1 = 0.002$.
+      - text: '`s` `eat`'
+        why: $0.03 \times 0.03 = 0.0009$, less than the 0.002 of `se` `at`.
+      - text: '`s` `e` `at`'
+        why: A third factor below 1 shrinks the product; $0.03 \times 0.1 \times 0.1 = 0.0003$.
+    explanation: |
+      A unigram model treats tokens as independent, so a segmentation's probability is the product
+      of its token probabilities, and the tokenizer picks the most probable one (found with the
+      Viterbi algorithm on longer words) [^1][^2]. Here: `se at` $= 0.002$, `sea t` $= 0.001$,
+      `s eat` $= 0.0009$, `s e at` $= 0.0003$, and splits with more tokens are smaller still. Fewer
+      tokens usually win, because every extra factor is below 1, but among two-token splits the
+      probabilities decide, not the length of the first piece [^1].
+    references:
+      - source: hf-llm-course
+        url: https://huggingface.co/learn/llm-course/chapter6/7#tokenization-algorithm
+        locator: Chapter 6.7 Unigram tokenization, sec. Tokenization algorithm
+      - title: 'Kudo (2018), Subword Regularization: Improving Neural Network Translation Models with Multiple Subword Candidates'
+        url: https://arxiv.org/abs/1804.10959
+        locator: Sec. 3.2 Unigram language model (Eq. 7, Viterbi segmentation)
+    source:
+      id: original
+      ref: tokenization-035
+    status: reviewed
+    reviewed_by: claude
+  - id: tokenization-036
+    type: single
+    difficulty: medium
+    tags:
+      - unigram
+      - subword-regularization
+      - bpe
+    question: |
+      Kudo (2018) introduced the Unigram language-model tokenizer to support *subword
+      regularization*. What does a Unigram tokenizer provide for this that BPE does not?
+    options:
+      - text: Probabilities over all segmentations of a sentence, so several can be sampled
+        correct: true
+      - text: A smaller vocabulary for the same corpus, so the embedding layer has fewer parameters
+        why: Both methods let you choose the vocabulary size; subword regularization is about multiple segmentations, not size.
+      - text: Tokens that may cross word boundaries, so multi-word phrases become single tokens
+        why: Like BPE, Kudo's Unigram model builds its subwords inside words only; it never joins words into one token.
+      - text: A base vocabulary of 256 bytes, so that no input ever produces an unknown token
+        why: That is byte-level BPE; the Unigram model's advantage is probabilistic segmentation.
+    explanation: |
+      BPE merges symbols greedily and deterministically, so it gives one segmentation and no
+      probabilities [^1]. The unigram language model scores a segmentation by the product of its
+      subword probabilities, so it can rank all possible segmentations and output several of them
+      with their probabilities [^1][^2]. Subword regularization samples a new segmentation of each
+      training sentence at every update, using the segmentation ambiguity as noise; Kudo relates
+      this to ensemble training and reports more robust translation models, above all when training
+      data is scarce or the test text comes from a different domain [^1].
+    references:
+      - title: 'Kudo (2018), Subword Regularization: Improving Neural Network Translation Models with Multiple Subword Candidates'
+        url: https://arxiv.org/abs/1804.10959
+        locator: Abstract; Sec. 3.1 BPE (deterministic); Sec. 3.2 Unigram language model; Sec. 3.3 Subword sampling; Sec. 3.4 BPE vs. Unigram language model; Sec. 4 Related Work (ensemble training)
+      - source: hf-llm-course
+        url: https://huggingface.co/learn/llm-course/chapter6/7#tokenization-algorithm
+        locator: Chapter 6.7 Unigram tokenization, sec. Tokenization algorithm
+    source:
+      id: original
+      ref: tokenization-036
+    status: reviewed
+    reviewed_by: claude
+  - id: tokenization-037
+    type: single
+    difficulty: easy
+    tags:
+      - byte-level-bpe
+      - unknown-token
+      - utf-8
+    question: |
+      A BPE tokenizer whose base vocabulary is the set of characters seen in an English training
+      corpus maps an emoji in new text to `[UNK]`. GPT-2's byte-level BPE never needs `[UNK]`. Why?
+    options:
+      - text: It starts from the 256 byte values, and any text can be written as UTF-8 bytes
+        correct: true
+      - text: Its base vocabulary lists every Unicode character, including all emojis
+        why: There are far too many Unicode characters for that; the base vocabulary has only 256 entries.
+      - text: It deletes characters it did not see during training before tokenizing
+        why: Deleting input would lose information; byte-level BPE represents every character.
+      - text: It replaces an unseen character with the most similar character it has already seen
+        why: No such substitution happens; the unseen character is written as its UTF-8 bytes.
+    explanation: |
+      A character-based BPE converts characters that were missing from the training corpus into the
+      unknown token, which is one reason many models handle emojis badly [^1]. Byte-level BPE instead
+      treats text as UTF-8 bytes: the base vocabulary has only 256 symbols, yet every character can
+      be encoded, so nothing becomes unknown [^1][^2][^3]. Merges then learn frequent byte
+      sequences, such as the 2- and 3-byte UTF-8 codes of common characters [^3].
+    references:
+      - source: hf-llm-course
+        url: https://huggingface.co/learn/llm-course/chapter6/5#training-algorithm
+        locator: Chapter 6.5 Byte-Pair Encoding tokenization, sec. Training algorithm (byte-level BPE tip)
+      - title: 'Wikipedia: Byte-pair encoding'
+        url: https://en.wikipedia.org/wiki/Byte-pair_encoding#Byte-level_BPE
+        locator: Modified algorithm, Byte-level BPE
+      - title: Jurafsky & Martin, Speech and Language Processing, 3rd ed. draft (Aug 2026), Ch. 2 Words and Tokens
+        url: https://web.stanford.edu/~jurafsky/slp3/2.pdf
+        locator: Sec. 2.4.3 BPE in practice
+    source:
+      id: original
+      ref: tokenization-037
+    status: reviewed
+    reviewed_by: claude
+  - id: tokenization-038
+    type: short_answer
+    difficulty: easy
+    tags:
+      - multilingual
+      - tokens-per-word
+      - fertility
+    question: |
+      A textbook runs a large multilingual BPE tokenizer on a recipe: the 14-word English version
+      becomes 19 tokens, while the 16-word Spanish original becomes 33 tokens. How many tokens per
+      word does the Spanish text need (2 decimals)?
+    answer:
+      numeric: 2.06
+      tolerance: 0.01
+      hint: a number with 2 decimals
+      model: Spanish $33/16 \approx 2.06$ tokens per word, versus $19/14 \approx 1.36$ for English
+    explanation: |
+      Spanish needs $33/16 \approx 2.06$ tokens per word, English only $19/14 \approx 1.36$ [^1].
+      Multilingual tokenizers are trained mostly on English text, so most merges serve English words,
+      and other languages are split into shorter pieces; even common Spanish words such as "jugo"
+      were broken up [^1]. Lower-resource languages can be cut down to single characters. Such
+      fragmentation can give poorer representations of meaning, needs longer contexts and makes
+      models more costly to train [^1].
+    references:
+      - title: Jurafsky & Martin, Speech and Language Processing, 3rd ed. draft (Aug 2026), Ch. 2 Words and Tokens
+        url: https://web.stanford.edu/~jurafsky/slp3/2.pdf
+        locator: Sec. 2.4.3 BPE in practice (English vs Spanish token counts)
+    source:
+      id: original
+      ref: tokenization-038
+    status: reviewed
+    reviewed_by: claude
+  - id: tokenization-039
+    type: short_answer
+    difficulty: medium
+    tags:
+      - vocabulary-size
+      - embedding
+      - parameter-count
+    question: |
+      A language model has hidden size 4096. Its tokenizer's vocabulary grows from 32,000 to
+      128,000 tokens. By how many parameters does the input embedding matrix grow?
+    answer:
+      numeric: 393216000
+      tolerance: 0
+      hint: a whole number, no separators
+      model: $(128000 - 32000) \times 4096 = 393{,}216{,}000$
+    explanation: |
+      An embedding layer stores one learnable vector per token, a matrix of shape
+      (vocabulary size, embedding dimension) [^1]. The 96,000 new tokens therefore add
+      $96000 \times 4096 = 393{,}216{,}000$ parameters; an untied output layer of the same shape
+      would add as many again. In return, a larger vocabulary encodes text in fewer tokens, since
+      more words become single tokens [^2]. Choosing the vocabulary size is a trade-off between the
+      two [^2].
+    references:
+      - title: 'PyTorch documentation: torch.nn.Embedding'
+        url: https://docs.pytorch.org/docs/stable/generated/torch.nn.Embedding.html
+        locator: Parameters and Variables (weight of shape (num_embeddings, embedding_dim))
+      - title: 'Kudo (2018), Subword Regularization: Improving Neural Network Translation Models with Multiple Subword Candidates'
+        url: https://arxiv.org/abs/1804.10959
+        locator: Sec. 3.1 Byte-Pair-Encoding (BPE) (balancing vocabulary size and number of tokens)
+    source:
+      id: original
+      ref: tokenization-039
+    status: reviewed
+    reviewed_by: claude
+  - id: tokenization-040
+    type: single
+    difficulty: medium
+    tags:
+      - vocabulary-size
+      - subword
+      - sequence-length
+    question: |
+      You retrain a BPE tokenizer with many more merges, raising the vocabulary from 16,000 to
+      64,000 tokens. Which effect should you expect?
+    options:
+      - text: Texts are encoded in fewer tokens, but the embedding and output layers get bigger
+        correct: true
+      - text: Texts are encoded in more tokens, since each merge splits words into finer pieces
+        why: Merges join symbols; more merges make longer tokens and therefore shorter sequences.
+      - text: Unknown words appear again, because large vocabularies drop the character base
+        why: A BPE vocabulary keeps its base characters (or bytes), so unseen words still decompose into known pieces.
+      - text: Nothing changes in the model, since only the tokenizer was retrained
+        why: The model has one embedding row (and one output logit) per token, so its size follows the vocabulary.
+    explanation: |
+      Each BPE merge adds one token, and the final vocabulary is the initial symbols plus the
+      number of merges [^1]. With more merges, more frequent words and longer word pieces become single
+      tokens, so the number of tokens needed to encode a sentence drops [^2][^3]. The cost is a
+      larger vocabulary: the embedding matrix has one row per token, and so has an untied output
+      layer. Kudo counts this balance between vocabulary size and the number of tokens per sentence
+      as a strength of BPE: even a fixed vocabulary of 16k–32k subwords keeps sequences short enough
+      for efficient decoding [^2].
+    references:
+      - title: Sennrich, Haddow & Birch (2016), Neural Machine Translation of Rare Words with Subword Units
+        url: https://arxiv.org/abs/1508.07909
+        locator: Sec. 3.2 Byte Pair Encoding (BPE) (final vocabulary size = initial vocabulary + merges)
+      - title: 'Kudo (2018), Subword Regularization: Improving Neural Network Translation Models with Multiple Subword Candidates'
+        url: https://arxiv.org/abs/1804.10959
+        locator: Sec. 3.1 Byte-Pair-Encoding (BPE)
+      - title: Jurafsky & Martin, Speech and Language Processing, 3rd ed. draft (Aug 2026), Ch. 2 Words and Tokens
+        url: https://web.stanford.edu/~jurafsky/slp3/2.pdf
+        locator: Sec. 2.4.2 BPE encoder (large vocabularies make most words single tokens)
+    source:
+      id: original
+      ref: tokenization-040
+    status: reviewed
+    reviewed_by: claude
+  - id: tokenization-041
+    type: single
+    difficulty: easy
+    tags:
+      - subword
+      - agglutinative-languages
+      - word-tokenization
+    question: |
+      Turkish builds long words by chaining suffixes onto a stem: *evlerinizden* ("from your
+      houses") is *ev* "house" followed by a chain of suffixes (*ev-ler-i-n-iz-den*). Which kind of
+      tokenizer suits such a language best?
+    options:
+      - text: Subword, so frequent stems and suffixes become tokens and rare words are built from them
+        correct: true
+      - text: Word-level, so that each inflected form gets its own vocabulary entry
+        why: Every combination of stem and suffixes would need its own entry; the vocabulary explodes and many forms are never seen in training.
+      - text: Character-level, since one token per letter loses no information at all
+        why: It avoids unknown words, but makes sequences very long and gives tokens that carry little meaning on their own.
+      - text: Whitespace splitting followed by lowercasing, which removes the variation between word forms
+        why: Lowercasing does nothing about suffix chains; each form remains a separate word.
+    explanation: |
+      In an agglutinative language such as Turkish, each morpheme adds one piece of meaning, so a
+      single root yields a very large number of word forms, and any corpus contains only a small
+      fraction of them [^3]. Word-based tokenizers need an entry for every word form and treat
+      related forms such as "dog" and "dogs" as unrelated, while character-based ones produce many
+      tokens of little meaning each [^1]. Subword tokenization keeps frequent words whole and splits
+      rare words into meaningful pieces, which gives good coverage with a small vocabulary; the
+      course singles out agglutinative languages such as Turkish as a case where this helps [^1].
+      Subwords can be meaning-bearing units such as morphemes [^2].
+    references:
+      - source: hf-llm-course
+        url: https://huggingface.co/learn/llm-course/chapter2/4#subword-tokenization
+        locator: Chapter 2.4 Tokenizers, secs. Word-based, Character-based, Subword tokenization
+      - title: Jurafsky & Martin, Speech and Language Processing, 3rd ed. draft (Aug 2026), Ch. 2 Words and Tokens
+        url: https://web.stanford.edu/~jurafsky/slp3/2.pdf
+        locator: 'Sec. 2.4 Subword Tokenization: Byte-Pair Encoding (subwords and morphemes)'
+      - title: 'Wikipedia: Agglutination'
+        url: https://en.wikipedia.org/wiki/Agglutination#Agglutinative_languages_in_natural_language_processing
+        locator: Introduction (Turkish evlerinizden "from your houses" = ev-ler-i-n-iz-den); Agglutinative languages in natural language processing
+    source:
+      id: original
+      ref: tokenization-041
+    status: reviewed
+    reviewed_by: claude
+  - id: tokenization-042
+    type: single
+    difficulty: medium
+    tags:
+      - pre-tokenization
+      - reversibility
+      - whitespace
+    question: |
+      A text reads "how are you?" but is typed with two spaces between "are" and "you". Which
+      tokenizer cannot give back this exact text, double space included, when its tokens are
+      decoded?
+    options:
+      - text: A BERT tokenizer, whose pre-tokenizer drops the spaces it splits on
+        correct: true
+      - text: The GPT-2 tokenizer, whose pre-tokenizer keeps each space as a `Ġ` marker on a token
+        why: GPT-2 keeps spaces (even the second one becomes its own `Ġ` token), so decoding restores the text.
+      - text: A tokenizer that splits the UTF-8 encoding into single bytes, one token per byte
+        why: Every byte, including both spaces, is kept, so decoding is exact.
+      - text: A character-level tokenizer that keeps every character, spaces included
+        why: Keeping every character, including both spaces, makes decoding exact.
+    explanation: |
+      BERT's pre-tokenizer splits on whitespace and punctuation and keeps only offsets, so the two
+      spaces disappear from the tokens and its tokenization is not reversible [^1]. GPT-2's
+      pre-tokenizer also splits on whitespace and punctuation but turns spaces into a `Ġ` symbol and
+      does not ignore the double space, so the original spaces can be recovered [^1]. SentencePiece
+      goes further and treats the space as an ordinary symbol `▁`, so decoding is just concatenation
+      (of the normalized text) [^1][^2].
+    references:
+      - source: hf-llm-course
+        url: https://huggingface.co/learn/llm-course/chapter6/4#pre-tokenization
+        locator: Chapter 6.4 Normalization and pre-tokenization, secs. Pre-tokenization and SentencePiece
+      - title: 'Kudo & Richardson (2018), SentencePiece: A simple and language independent subword tokenizer and detokenizer for Neural Text Processing'
+        url: https://arxiv.org/abs/1808.06226
+        locator: Sec. 3.1 Lossless Tokenization
+    source:
+      id: original
+      ref: tokenization-042
+    status: reviewed
+    reviewed_by: claude
+  - id: tokenization-043
+    type: single
+    difficulty: medium
+    tags:
+      - pre-tokenization
+      - gpt-2
+      - regular-expressions
+    question: |
+      GPT-2 pre-tokenizes text with this regular expression before running BPE (`regex` is a
+      third-party module in which `\p{L}` matches any Unicode letter and `\p{N}` any number
+      character, such as a digit):
+
+      ```python
+      import regex as re
+      pat = re.compile(r"""'s|'t|'re|'ve|'m|'ll|'d| ?\p{L}+| ?\p{N}+| ?[^\s\p{L}\p{N}]+|\s+(?!\S)|\s+""")
+      print(pat.findall("She'll pay 1500 dollars!! OK?"))
+      ```
+
+      What does it print?
+    options:
+      - text: "`['She', \"'ll\", ' pay', ' 1500', ' dollars', '!!', ' OK', '?']`"
+        correct: true
+      - text: "`[\"She'll\", ' pay', ' 1500', ' dollars', '!!', ' OK', '?']`"
+        why: At the apostrophe the first branches match contractions such as `'ll`, so "She" and "'ll" become separate pieces.
+      - text: "`['She', \"'ll\", ' pay', ' 1500', ' dollars', '!', '!', ' OK', '?']`"
+        why: '`[^\s\p{L}\p{N}]+` matches a run of punctuation, so "!!" stays one piece.'
+      - text: "`['She', \"'ll\", 'pay', '1500', 'dollars', '!!', 'OK', '?']`"
+        why: The optional space ` ?` at the start of the word, number and punctuation branches attaches each space to the following piece.
+    explanation: |
+      The pattern first splits off contractions such as `'ll`, then takes runs of letters, of digits
+      or of other symbols, each with one optional leading space; so pieces such as `' pay'` start
+      with a space while "She" and "!!" do not [^1]. BPE then runs inside each piece and never merges
+      across them [^1]. The Hugging Face course shows the same behaviour for GPT-2, where the kept
+      space is displayed as `Ġ` [^2]. The pattern is the one in GPT-2's released encoder code [^3].
+    references:
+      - title: Jurafsky & Martin, Speech and Language Processing, 3rd ed. draft (Aug 2026), Ch. 2 Words and Tokens
+        url: https://web.stanford.edu/~jurafsky/slp3/2.pdf
+        locator: Sec. 2.6.9 Regular Expressions for BPE pre-tokenization (Fig. 2.15)
+      - source: hf-llm-course
+        url: https://huggingface.co/learn/llm-course/chapter6/4#pre-tokenization
+        locator: Chapter 6.4 Normalization and pre-tokenization, sec. Pre-tokenization (GPT-2)
+      - title: OpenAI GPT-2 source code, src/encoder.py
+        url: https://github.com/openai/gpt-2/blob/9b63575ef42771a015060c964af2c3da4cf7c8ab/src/encoder.py#L53
+        locator: Encoder.__init__, the pre-tokenizer pattern self.pat (line 53)
+    source:
+      id: original
+      ref: tokenization-043
+    status: reviewed
+    reviewed_by: claude
+  - id: tokenization-044
+    type: single
+    difficulty: medium
+    tags:
+      - unigram
+      - vocabulary-pruning
+      - out-of-vocabulary
+    question: |
+      Unigram tokenizer training starts from a large seed vocabulary and repeatedly removes the
+      tokens whose removal increases the corpus loss least, but it never removes single-character
+      tokens. Why?
+    options:
+      - text: So that any word written with the training alphabet can still be segmented
+        correct: true
+      - text: Because single characters always have the highest unigram probability
+        why: Single characters often have low probabilities; they are kept for coverage, not for their scores.
+      - text: Because removing them would make the vocabulary grow instead of shrink
+        why: Removing a token always shrinks the vocabulary; the reason is coverage.
+      - text: Because the EM algorithm cannot estimate probabilities for single characters
+        why: EM estimates the probabilities of all tokens, single characters included.
+    explanation: |
+      The algorithm alternates between estimating token probabilities (with EM) and pruning the
+      tokens whose removal hurts the likelihood least, keeping for example the top 80% each round
+      [^1][^2]. Single-character subwords are always kept to avoid out-of-vocabulary words: as long
+      as every character is in the vocabulary, every word can be segmented, in the worst case into
+      characters [^1][^2]. The final vocabulary therefore mixes characters, subwords and whole words [^1].
+    references:
+      - title: 'Kudo (2018), Subword Regularization: Improving Neural Network Translation Models with Multiple Subword Candidates'
+        url: https://arxiv.org/abs/1804.10959
+        locator: Sec. 3.2 Unigram language model (training steps, always keep single characters)
+      - source: hf-llm-course
+        url: https://huggingface.co/learn/llm-course/chapter6/7#training-algorithm
+        locator: Chapter 6.7 Unigram tokenization, sec. Training algorithm
+    source:
+      id: original
+      ref: tokenization-044
+    status: reviewed
+    reviewed_by: claude

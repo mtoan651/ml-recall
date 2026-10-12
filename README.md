@@ -8,11 +8,12 @@ mock exams and spaced repetition. Free static site on GitHub Pages.
 
 ## What's inside
 
-- **2626 questions** across 10 domains — 985 imported from open-licensed quiz sets, 1078 adapted
-  from open-licensed exercises, courses and books (d2l, Gutmann, Deep Learning Interviews, UBC,
-  Neuromatch, Kaggle Learn, forall x, …), 374 adapted from non-commercial course material (MIT
-  OpenCourseWare, NPTEL), 51 paraphrased from CE6146 course exercises, 138 original. All are
-  reviewed: 56 by the owner and 2570 by Claude at the owner's request (shown as "AI-checked").
+- **2897 questions** across 10 domains — 985 imported from open-licensed quiz sets, 1110 adapted
+  from open-licensed exercises, courses, books and code (d2l, Gutmann, Deep Learning Interviews,
+  UBC, Neuromatch, Kaggle Learn, forall x, LLMs-from-scratch, Tensor Puzzles, …), 374 adapted
+  from non-commercial course material (MIT OpenCourseWare, NPTEL), 132 paraphrased from the
+  CE6146 course exercises and lectures, 296 original. All are reviewed: 56 by the owner and 2841
+  by Claude at the owner's request (shown as "AI-checked").
 - Four question types: `single`, `multiple` (select all), `true_false`, `short_answer`
   (auto-graded fill-in: a number, a word or phrase, or a gap-fill with several blanks).
 - **Timed tests** for every topic and tag: up to 20 random questions, one minute each, scored and
@@ -25,24 +26,25 @@ mock exams and spaced repetition. Free static site on GitHub Pages.
 
 | Domain | Topics | Questions | Reviewed |
 | --- | ---: | ---: | ---: |
-| Artificial Intelligence | 6 | 281 | 281 |
-| Mathematics for ML | 5 | 351 | 351 |
-| Machine Learning | 14 | 851 | 851 |
-| Deep Learning | 8 | 419 | 419 |
-| Computer Vision | 3 | 51 | 51 |
-| Natural Language Processing | 5 | 162 | 162 |
+| Artificial Intelligence | 6 | 303 | 303 |
+| Mathematics for ML | 5 | 372 | 372 |
+| Machine Learning | 14 | 864 | 864 |
+| Deep Learning | 8 | 474 | 474 |
+| Computer Vision | 3 | 119 | 119 |
+| Natural Language Processing | 5 | 212 | 212 |
 | Generative Models | 3 | 92 | 92 |
-| Large Language Models | 4 | 131 | 131 |
+| Large Language Models | 4 | 138 | 138 |
 | Reinforcement Learning | 3 | 93 | 93 |
-| Practical Tools | 3 | 195 | 195 |
-| **Total** | | **2626** | **2626** |
+| Practical Tools | 3 | 230 | 230 |
+| **Total** | | **2897** | **2897** |
 
-Questions come from 52 external sources: importers for the Hugging Face LLM, Deep RL, AI Agents
+Questions come from 54 external sources: importers for the Hugging Face LLM, Deep RL, AI Agents
 and Audio courses, Microsoft AI, ML and Data Science for Beginners, Google's ML Crash Course and
 ML courses, MMLU-Redux and 100 NumPy exercises; exercises adapted from *Dive into Deep Learning*,
 Gutmann's pen-and-paper exercises, *Deep Learning Interviews*, MIT OpenCourseWare, NPTEL,
-Neuromatch Academy, Kaggle Learn, UBC courses and more; and the CE6146 course exercises. See
-[docs/sources.md](docs/sources.md) for all 66 registered external sources and their licenses.
+Neuromatch Academy, Kaggle Learn, UBC courses, LLMs-from-scratch, Tensor Puzzles and more; and the
+CE6146 course exercises and lectures. See [docs/sources.md](docs/sources.md) for all 66
+registered external sources and their licenses.
 
 ## Quick start
 

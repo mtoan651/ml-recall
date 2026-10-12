@@ -632,3 +632,880 @@ questions:
       ref: segmentation-016
     status: reviewed
     reviewed_by: claude
+  - id: segmentation-017
+    type: single
+    difficulty: easy
+    tags:
+      - panoptic-segmentation
+      - instance-segmentation
+      - semantic-segmentation
+    question: |
+      A street image contains sky, road and three cars. What output does panoptic segmentation
+      require for it?
+    options:
+      - text: 'A class and an instance id per pixel: one segment each for sky and road, one per car'
+        correct: true
+      - text: A class label for every pixel only, so touching cars merge into one "car" region
+        why: That is semantic segmentation, which treats thing classes like stuff and does not separate instances [^1].
+      - text: A mask for each detected car, possibly overlapping, with no labels for sky and road pixels
+        why: That is instance segmentation; panoptic segmentation also labels stuff and allows no overlaps, since each pixel gets exactly one label [^1].
+      - text: A bounding box with a class for every object, including the sky and the road
+        why: Boxes are object detection; sky and road are amorphous stuff regions, labelled per pixel, not boxed [^1].
+    explanation: |
+      Panoptic segmentation maps each pixel $i$ to a pair $(l_i, z_i)$: a semantic class and an
+      instance id [^1]. For stuff classes (sky, road) the instance id is irrelevant and all pixels form
+      one segment, while for thing classes (cars) pixels with the same $(l_i, z_i)$ form one object [^1].
+      It thus unifies semantic segmentation, which labels every pixel but does not separate objects of
+      the same class, and instance segmentation, which separates objects but ignores stuff [^1][^2].
+    references:
+      - title: Kirillov, He, Girshick, Rother & Dollár (2019), Panoptic Segmentation
+        url: https://arxiv.org/abs/1801.00868
+        locator: Sec. 1 Introduction and Sec. 3 Panoptic Segmentation Format
+      - source: d2l
+        url: https://d2l.ai/chapter_computer-vision/semantic-segmentation-and-dataset.html#image-segmentation-and-instance-segmentation
+        locator: Sec. 14.9.1 Image Segmentation and Instance Segmentation
+    source:
+      id: original
+      ref: segmentation-017
+    status: reviewed
+    reviewed_by: claude
+  - id: segmentation-018
+    type: multiple
+    difficulty: easy
+    tags:
+      - panoptic-segmentation
+      - stuff-and-things
+    question: |
+      Panoptic segmentation splits classes into countable "things" and amorphous "stuff". In a
+      street-scene dataset, which of these classes would normally be stuff? Select all that apply.
+    options:
+      - text: Sky
+        correct: true
+      - text: Road
+        correct: true
+      - text: Pedestrian
+        why: Pedestrians are countable objects, so they are things, and each one gets its own instance id [^1].
+      - text: Grass
+        correct: true
+      - text: Bicycle
+        why: Bicycles are countable objects with a definite shape, so they are things [^1].
+    explanation: |
+      Things are objects you can count, such as people, animals and tools; stuff consists of
+      shapeless areas of a uniform texture or material, such as grass, sky and road [^1]. Stuff is
+      usually handled by semantic segmentation (one label per pixel) and things by detection or instance
+      segmentation; panoptic segmentation covers both, giving stuff pixels a class only and thing
+      pixels a class plus an instance id [^1]. Which classes count as stuff is ultimately a design
+      choice of the dataset [^1].
+    references:
+      - title: Kirillov, He, Girshick, Rother & Dollár (2019), Panoptic Segmentation
+        url: https://arxiv.org/abs/1801.00868
+        locator: Sec. 1 Introduction and Sec. 3 Panoptic Segmentation Format (Stuff and thing labels)
+    source:
+      id: original
+      ref: segmentation-018
+    status: reviewed
+    reviewed_by: claude
+  - id: segmentation-019
+    type: short_answer
+    difficulty: hard
+    tags:
+      - panoptic-quality
+      - panoptic-segmentation
+      - metrics
+    question: |
+      For the class "person", an image has three ground-truth segments and the prediction has three
+      segments. Two predicted segments overlap ground-truth persons with IoU 0.9 and 0.6; the third
+      overlaps the remaining ground-truth person with IoU 0.4. A predicted and a ground-truth segment
+      match only if their IoU is strictly greater than 0.5. Panoptic quality is
+      $$
+      \text{PQ} = \frac{\sum_{(p, g) \in TP} \text{IoU}(p, g)}{|TP| + \tfrac12 |FP| + \tfrac12 |FN|}.
+      $$
+      What is PQ for this class?
+    answer:
+      numeric: 0.5
+      tolerance: 0.005
+      hint: a number between 0 and 1
+      model: $|TP| = 2$, $|FP| = 1$, $|FN| = 1$; $\text{PQ} = (0.9 + 0.6)/(2 + 0.5 + 0.5) = 1.5/3 = 0.5$
+    explanation: |
+      Matching requires IoU above 0.5, so the pair with IoU 0.4 is not a match: its predicted segment
+      is a false positive and its ground-truth segment a false negative [^1]. Then
+      $\text{PQ} = 1.5/3 = 0.5$. PQ factors into segmentation quality, the mean IoU of the matched
+      pairs ($0.75$), times recognition quality, an F1-like term $2/(2 + 0.5 + 0.5) = 2/3$ [^1]. PQ is
+      computed per class and averaged over classes, and every segment counts equally regardless of
+      its area [^1].
+    references:
+      - title: Kirillov, He, Girshick, Rother & Dollár (2019), Panoptic Segmentation
+        url: https://arxiv.org/abs/1801.00868
+        locator: Sec. 4.1 Segment Matching and Sec. 4.2 PQ Computation (Eqs. 1–2)
+    source:
+      id: original
+      ref: segmentation-019
+    status: reviewed
+    reviewed_by: claude
+  - id: segmentation-020
+    type: short_answer
+    difficulty: medium
+    tags:
+      - metrics
+      - pixel-accuracy
+      - iou
+      - dice
+    question: |
+      A $4 \times 4$ binary mask (1 = foreground) is predicted for an image:
+      $$
+      \text{ground truth} = \begin{bmatrix}0&0&0&0\\0&1&1&0\\0&1&1&1\\0&0&1&1\end{bmatrix}, \qquad
+      \text{prediction} = \begin{bmatrix}0&0&0&0\\0&1&1&1\\0&1&1&0\\0&0&0&1\end{bmatrix}
+      $$
+      The pixel accuracy is {{1}}, the IoU of the foreground class is {{2}}, and the Dice
+      coefficient of the foreground, $2|X \cap Y|/(|X| + |Y|)$, is {{3}}.
+    answer:
+      blanks:
+        - numeric: 0.8125
+          tolerance: 0.001
+          hint: a number between 0 and 1
+        - numeric: 0.625
+          tolerance: 0.001
+          hint: a number between 0 and 1
+        - numeric: 0.7692
+          tolerance: 0.001
+          hint: a number between 0 and 1
+      model: 13 of 16 pixels agree, $13/16 = 0.8125$; foreground intersection 5, union $7 + 6 - 5 = 8$, IoU $= 5/8 = 0.625$; Dice $= 2 \cdot 5/(7 + 6) = 10/13 \approx 0.769$.
+    explanation: |
+      Pixel accuracy is the fraction of pixels whose predicted class is correct [^1]: three pixels
+      differ (two missed foreground pixels and one false alarm), so it is $13/16$. The ground truth
+      has 7 foreground pixels and the prediction 6, of which 5 overlap. The foreground IoU divides the
+      overlap by the pixels that are foreground in either mask, $5/8$ [^1][^2]; Dice counts the
+      overlap twice and divides by the sum of the two sizes, $10/13$, in line with
+      $D = 2J/(1 + J) = 1.25/1.625$ [^3]. Both overlap measures ignore the many easy background
+      pixels, so they are lower and more informative about the object than pixel accuracy, and
+      Dice is never smaller than IoU.
+    references:
+      - title: Long, Shelhamer & Darrell (2015), Fully Convolutional Networks for Semantic Segmentation
+        url: https://arxiv.org/abs/1411.4038
+        locator: Sec. 5 Results, Metrics (pixel accuracy, mean IU)
+      - title: 'Wikipedia: Jaccard index'
+        url: https://en.wikipedia.org/wiki/Jaccard_index#Overview
+        locator: Introduction and Overview
+      - title: 'Wikipedia: Sørensen–Dice coefficient'
+        url: https://en.wikipedia.org/wiki/S%C3%B8rensen%E2%80%93Dice_coefficient#Difference_from_Jaccard
+        locator: Formula and Difference from Jaccard
+    source:
+      id: original
+      ref: segmentation-020
+    status: reviewed
+    reviewed_by: claude
+  - id: segmentation-021
+    type: short_answer
+    difficulty: medium
+    tags:
+      - metrics
+      - class-imbalance
+      - mean-iou
+      - pixel-accuracy
+      - mean-accuracy
+    question: |
+      In a medical segmentation dataset, 95% of the pixels are background and 5% are lesion. A model
+      predicts background for every pixel. Over the two classes (background and lesion), its pixel
+      accuracy is {{1}}, its mean (per-class) accuracy, the average of the fraction of each class's
+      pixels predicted correctly, is {{2}}, and its mean IoU is {{3}}.
+    answer:
+      blanks:
+        - numeric: 0.95
+          tolerance: 0.001
+          hint: a number between 0 and 1
+        - numeric: 0.5
+          tolerance: 0.001
+          hint: a number between 0 and 1
+        - numeric: 0.475
+          tolerance: 0.001
+          hint: a number between 0 and 1
+      model: Pixel accuracy $= 0.95$; class accuracies 1 (background) and 0 (lesion), mean $= 0.5$; background IoU $= 0.95/1 = 0.95$, lesion IoU $= 0/0.05 = 0$, mean IoU $= 0.475$.
+    explanation: |
+      FCN defines pixel accuracy as $\sum_i n_{ii} / \sum_i t_i$, mean accuracy as
+      $\frac{1}{n_{cl}}\sum_i n_{ii}/t_i$ and mean IU by averaging each class's intersection over
+      union, where $t_i$ is the number of pixels of class $i$ [^1]. Pixel accuracy counts correct
+      pixels, so a model that never finds a lesion still scores 0.95. Mean accuracy gives each class
+      equal weight: background is found completely (1) and the lesion not at all (0), so it is 0.5.
+      For mean IoU, the background's intersection is all background pixels (95%) and its union every
+      pixel, giving 0.95, while the lesion's intersection is empty, giving 0; the mean, 0.475,
+      exposes the useless model. With such imbalance, per-class metrics and losses that do not let
+      the background dominate, such as Dice-based losses, are preferred [^2].
+    references:
+      - title: Long, Shelhamer & Darrell (2015), Fully Convolutional Networks for Semantic Segmentation
+        url: https://arxiv.org/abs/1411.4038
+        locator: Sec. 5 Results, Metrics
+      - title: 'Milletari, Navab & Ahmadi (2016), V-Net: Fully Convolutional Neural Networks for Volumetric Medical Image Segmentation'
+        url: https://arxiv.org/abs/1606.04797
+        locator: Sec. 3 Dice loss layer
+    source:
+      id: original
+      ref: segmentation-021
+    status: reviewed
+    reviewed_by: claude
+  - id: segmentation-022
+    type: single
+    difficulty: medium
+    tags:
+      - dice-loss
+      - class-imbalance
+      - v-net
+      - medical-imaging
+    question: |
+      V-Net segments a prostate that occupies only a small part of each 3D MRI scan. Why did its
+      authors train with a loss based on the Dice coefficient instead of a voxel-wise cross-entropy?
+    options:
+      - text: Dice is normalized by the foreground's size, so background voxels cannot swamp it
+        correct: true
+      - text: The Dice loss is convex in the network weights, so training reaches the global minimum
+        why: No loss makes a deep network's training convex; the motivation was the background–foreground imbalance [^1].
+      - text: The Dice loss can be computed without the ground-truth mask, so unlabelled scans can be used
+        why: Dice compares the prediction with the ground-truth volume, so labels are required [^1].
+      - text: Cross-entropy cannot be used when a volume has more than two classes
+        why: Cross-entropy handles any number of classes; the problem is the imbalance between them [^1].
+    explanation: |
+      When the structure to segment fills only a tiny part of the volume, a voxel-wise loss is
+      dominated by background voxels: training can settle on predictions that favour background and
+      miss much of the foreground, and earlier methods countered this by giving foreground voxels
+      larger weights [^1]. V-Net instead maximizes a differentiable Dice coefficient
+      $D = \frac{2\sum_i p_i g_i}{\sum_i p_i^2 + \sum_i g_i^2}$, which is normalized by the size of the
+      predicted and true foreground, and the authors found that it needs no class weights and works
+      better than a re-weighted logistic loss [^1]. The same imbalance makes plain pixel accuracy a
+      misleading metric [^2].
+    references:
+      - title: 'Milletari, Navab & Ahmadi (2016), V-Net: Fully Convolutional Neural Networks for Volumetric Medical Image Segmentation'
+        url: https://arxiv.org/abs/1606.04797
+        locator: Abstract and Sec. 3 Dice loss layer
+      - title: Long, Shelhamer & Darrell (2015), Fully Convolutional Networks for Semantic Segmentation
+        url: https://arxiv.org/abs/1411.4038
+        locator: Sec. 5 Results, Metrics
+    source:
+      id: original
+      ref: segmentation-022
+    status: reviewed
+    reviewed_by: claude
+  - id: segmentation-023
+    type: short_answer
+    difficulty: medium
+    tags:
+      - dice-loss
+      - soft-dice
+    question: |
+      V-Net's Dice coefficient for soft predictions is
+      $D = \frac{2\sum_i p_i g_i}{\sum_i p_i^2 + \sum_i g_i^2}$. Four voxels have predicted foreground
+      probabilities $p = (0.9, 0.8, 0.3, 0.1)$ and ground truth $g = (1, 1, 0, 0)$. What is $D$?
+    answer:
+      numeric: 0.958
+      tolerance: 0.002
+      hint: a number between 0 and 1, 3 decimals
+      model: $2(0.9 + 0.8) = 3.4$; $0.81 + 0.64 + 0.09 + 0.01 + 2 = 3.55$; $D = 3.4/3.55 \approx 0.958$
+    explanation: |
+      The numerator counts the overlap, $2(0.9 \cdot 1 + 0.8 \cdot 1) = 3.4$; the denominator sums the
+      squared predictions ($1.55$) and the squared labels ($2$) [^1]. $D \approx 0.958$, so the Dice
+      loss $1 - D \approx 0.042$. Unlike the hard Dice coefficient this version is differentiable in
+      each $p_j$, so it can be used as a training objective; the two background voxels lower $D$ only
+      through their squared probabilities in the denominator [^1].
+    references:
+      - title: 'Milletari, Navab & Ahmadi (2016), V-Net: Fully Convolutional Neural Networks for Volumetric Medical Image Segmentation'
+        url: https://arxiv.org/abs/1606.04797
+        locator: Sec. 3 Dice loss layer
+    source:
+      id: original
+      ref: segmentation-023
+    status: reviewed
+    reviewed_by: claude
+  - id: segmentation-024
+    type: single
+    difficulty: medium
+    tags:
+      - transposed-convolution
+      - output-shape
+      - code-reading
+    question: |
+      A decoder upsamples an $8 \times 8$ feature map:
+
+      ```python
+      import torch
+      from torch import nn
+
+      up = nn.ConvTranspose2d(16, 16, kernel_size=3, stride=2, padding=1)
+      print(up(torch.rand(1, 16, 8, 8)).shape)
+      ```
+
+      What is printed?
+    options:
+      - text: '`torch.Size([1, 16, 15, 15])`'
+        correct: true
+      - text: '`torch.Size([1, 16, 16, 16])`'
+        why: Doubling exactly needs `output_padding=1` here, or another combination such as kernel 4, stride 2, padding 1 [^1].
+      - text: '`torch.Size([1, 16, 17, 17])`'
+        why: That would be the size without padding, $(8 - 1) \cdot 2 + 3 = 17$; padding 1 removes one row and column on each side [^1][^2].
+      - text: '`torch.Size([1, 16, 4, 4])`'
+        why: A regular convolution with stride 2 would shrink the map; a transposed convolution enlarges it [^2].
+    explanation: |
+      For a transposed convolution, $H_{out} = (H_{in} - 1)\cdot s - 2p + (k - 1) + \text{output\_padding} + 1$
+      [^1]: $(8 - 1) \cdot 2 - 2 + 2 + 0 + 1 = 15$. In a transposed convolution the stride spaces out
+      the intermediate results and the padding removes rows and columns from the output [^2], so
+      kernel 3 with stride 2 and padding 1 maps 8 to 15, not 16. A regular stride-2 convolution maps
+      both 15 and 16 to 8, and `output_padding` exists to resolve exactly this ambiguity [^1].
+    references:
+      - title: 'PyTorch documentation: torch.nn.ConvTranspose2d'
+        url: https://docs.pytorch.org/docs/stable/generated/torch.nn.ConvTranspose2d.html
+        locator: Shape (H_out formula) and the note on output_padding
+      - source: d2l
+        url: https://d2l.ai/chapter_computer-vision/transposed-conv.html#padding-strides-and-multiple-channels
+        locator: Sec. 14.10.2 Padding, Strides, and Multiple Channels
+    source:
+      id: original
+      ref: segmentation-024
+    status: reviewed
+    reviewed_by: claude
+  - id: segmentation-025
+    type: single
+    difficulty: medium
+    tags:
+      - transposed-convolution
+      - upsampling
+    question: |
+      A transposed convolution with a $2 \times 2$ kernel of all ones, stride 2 and no padding is
+      applied to the input $\begin{bmatrix}1&2\\3&4\end{bmatrix}$. What is the output?
+    options:
+      - text: $\begin{bmatrix}1&1&2&2\\1&1&2&2\\3&3&4&4\\3&3&4&4\end{bmatrix}$
+        correct: true
+      - text: $\begin{bmatrix}1&3&2\\4&10&6\\3&7&4\end{bmatrix}$
+        why: This is the result with stride 1, where the $2 \times 2$ blocks overlap and add up [^1].
+      - text: $\begin{bmatrix}1&0&2&0\\0&0&0&0\\3&0&4&0\\0&0&0&0\end{bmatrix}$
+        why: Each input value is multiplied by the whole kernel, so it fills a $2 \times 2$ block, not a single position [^1].
+      - text: $\begin{bmatrix}1&1.5&2&2\\2&2.5&3&3\\3&3.5&4&4\\3&3.5&4&4\end{bmatrix}$
+        why: An all-ones kernel copies values without blending them; interpolated values need a bilinear kernel [^2].
+    explanation: |
+      A transposed convolution broadcasts each input element through the kernel: element
+      $x_{ij}$ times the kernel is added to the output block whose position corresponds to $(i, j)$,
+      and with stride 2 these blocks are placed two positions apart [^1]. With a $2 \times 2$ kernel and
+      stride 2 the blocks tile the output without overlapping, so each value is simply copied into a
+      $2 \times 2$ block: nearest-neighbour upsampling. Other kernels give other upsamplers; FCN, for
+      example, initializes its transposed convolution with a bilinear-interpolation kernel [^2].
+    references:
+      - source: d2l
+        url: https://d2l.ai/chapter_computer-vision/transposed-conv.html#basic-operation
+        locator: Sec. 14.10.1 Basic Operation and 14.10.2 Padding, Strides, and Multiple Channels
+      - source: d2l
+        url: https://d2l.ai/chapter_computer-vision/fcn.html#initializing-transposed-convolutional-layers
+        locator: Sec. 14.11.2 Initializing Transposed Convolutional Layers
+    source:
+      id: original
+      ref: segmentation-025
+    status: reviewed
+    reviewed_by: claude
+  - id: segmentation-026
+    type: single
+    difficulty: hard
+    tags:
+      - transposed-convolution
+      - checkerboard-artifacts
+    question: |
+      `nn.ConvTranspose2d(1, 1, kernel_size=3, stride=2, bias=False)` with all weights equal to 1 is
+      applied to a $3 \times 3$ input of all ones, giving a $7 \times 7$ output. What is row 2 of the
+      output (rows counted from 0)?
+    options:
+      - text: '`[2, 2, 4, 2, 4, 2, 2]`'
+        correct: true
+      - text: '`[1, 1, 1, 1, 1, 1, 1]`'
+        why: A constant output would require every output position to be covered equally often; with kernel 3 and stride 2 the blocks overlap only at every other position [^1].
+      - text: '`[2, 2, 2, 2, 2, 2, 2]`'
+        why: Along the row the overlap also alternates, so columns 2 and 4 receive two contributions while the others receive one [^1].
+      - text: '`[1, 2, 3, 3, 3, 2, 1]`'
+        why: This ramp is what overlapping blocks placed one position apart would produce; with stride 2 they are two positions apart [^1].
+    explanation: |
+      Input element $i$ (per axis) is spread over output positions $2i, 2i + 1, 2i + 2$ [^1]. Along each
+      axis the coverage counts are therefore $1, 1, 2, 1, 2, 1, 1$: positions 2 and 4 are reached by two
+      neighbouring inputs. A 2D output value is the product of its row and column counts, and row 2 has
+      count 2, giving $[2, 2, 4, 2, 4, 2, 2]$. Even a perfectly uniform input thus produces an uneven grid
+      pattern whenever the kernel size is not divisible by the stride. This deconvolution overlap is one
+      source of the checkerboard artifacts that transposed convolutions are known for [^2].
+    references:
+      - source: d2l
+        url: https://d2l.ai/chapter_computer-vision/transposed-conv.html#padding-strides-and-multiple-channels
+        locator: Sec. 14.10.1 Basic Operation and 14.10.2 Padding, Strides, and Multiple Channels
+      - title: Aitken et al. (2017), Checkerboard artifact free sub-pixel convolution
+        url: https://arxiv.org/abs/1707.02937
+        locator: Abstract
+    source:
+      id: original
+      ref: segmentation-026
+    status: reviewed
+    reviewed_by: claude
+  - id: segmentation-027
+    type: single
+    difficulty: medium
+    tags:
+      - fcn
+      - skip-connections
+    question: |
+      FCN-32s upsamples its stride-32 class scores straight back to the image size, and its masks are
+      coarse. How do FCN-16s and FCN-8s produce finer masks?
+    options:
+      - text: They add class scores from pool4 and pool3 (strides 16 and 8) to the upsampled coarse scores
+        correct: true
+      - text: They are trained on larger input images, so that the stride-32 map contains more pixels
+        why: The output stride stays 32 for the coarse layer; the fix is to fuse predictions from finer layers [^1].
+      - text: They remove all pooling from the backbone so that every layer keeps the full input resolution
+        why: The backbone keeps its pooling layers; FCN-16s and FCN-8s add skip links from pool4 and pool3 [^1].
+      - text: They replace the final upsampling by a fully connected layer that outputs one score per pixel
+        why: FCNs contain no fully connected layers; the finer predictions come from $1 \times 1$ convolutions on pool4 and pool3 [^1].
+    explanation: |
+      The 32-pixel stride of the final prediction layer limits the detail of the upsampled output [^1].
+      FCN-16s adds a $1 \times 1$ convolution on pool4 (stride 16) to predict extra class scores, upsamples
+      the conv7 predictions by 2 and sums the two; FCN-8s repeats this with pool3 (stride 8) [^1].
+      The shallow layers contribute precise locations and the deep layers the semantic context, so the
+      fused predictions are both detailed and consistent with the whole scene; the skips raised mean
+      IU on the validation set [^1]. d2l's basic FCN uses only the final stride-32 map and lists these
+      intermediate layers as an exercise [^2].
+    references:
+      - title: Long, Shelhamer & Darrell (2015), Fully Convolutional Networks for Semantic Segmentation
+        url: https://arxiv.org/abs/1411.4038
+        locator: Sec. 4.2 Combining what and where
+      - source: d2l
+        url: https://d2l.ai/chapter_computer-vision/fcn.html#exercises
+        locator: Sec. 14.11.7 Exercises, Exercise 4
+    source:
+      id: original
+      ref: segmentation-027
+    status: reviewed
+    reviewed_by: claude
+  - id: segmentation-028
+    type: short_answer
+    difficulty: medium
+    tags:
+      - bilinear-interpolation
+      - upsampling
+    question: |
+      A $2 \times 2$ image has pixel values $f(0, 0) = 10$, $f(0, 1) = 30$, $f(1, 0) = 50$ and
+      $f(1, 1) = 90$, indexed as $f(\text{row}, \text{column})$ with pixel centres at integer
+      coordinates. What is the bilinearly interpolated value at row 0.5, column 0.25?
+    answer:
+      numeric: 37.5
+      tolerance: 0.01
+      hint: a number
+      model: Row 0 at column 0.25 is $10 + 0.25 \cdot 20 = 15$; row 1 is $50 + 0.25 \cdot 40 = 60$; halfway between the rows, $15 + 0.5 \cdot 45 = 37.5$.
+    explanation: |
+      Bilinear interpolation interpolates linearly in one direction and then in the other; the order
+      does not matter [^1]. Equivalently, it is a weighted average of the four neighbours with weights
+      $(1 - r)(1 - c)$, $(1 - r)c$, $r(1 - c)$ and $rc$, here $0.375, 0.125, 0.375, 0.125$:
+      $3.75 + 3.75 + 18.75 + 11.25 = 37.5$ [^1]. Segmentation networks use it to upsample coarse score
+      maps; d2l initializes an FCN's transposed convolution as bilinear upsampling [^2].
+    references:
+      - title: 'Wikipedia: Bilinear interpolation'
+        url: https://en.wikipedia.org/wiki/Bilinear_interpolation#On_the_unit_square
+        locator: Computation — Repeated linear interpolation and On the unit square
+      - source: d2l
+        url: https://d2l.ai/chapter_computer-vision/fcn.html#initializing-transposed-convolutional-layers
+        locator: Sec. 14.11.2 Initializing Transposed Convolutional Layers
+    source:
+      id: original
+      ref: segmentation-028
+    status: reviewed
+    reviewed_by: claude
+  - id: segmentation-029
+    type: short_answer
+    difficulty: hard
+    tags:
+      - bilinear-interpolation
+      - align-corners
+      - code-reading
+    question: |
+      A two-pixel signal is upsampled by linear interpolation:
+
+      ```python
+      import torch
+      import torch.nn.functional as F
+
+      x = torch.tensor([[[0.0, 10.0]]])          # shape (1, 1, 2)
+      a = F.interpolate(x, scale_factor=2, mode="linear", align_corners=False)
+      b = F.interpolate(x, scale_factor=2, mode="linear", align_corners=True)
+      ```
+
+      Both outputs have 4 values. The second value of `a` is {{1}} and the second value of `b`
+      is {{2}}.
+    answer:
+      blanks:
+        - numeric: 2.5
+          tolerance: 0.01
+          hint: a number
+        - numeric: 3.333
+          tolerance: 0.01
+          hint: a number, 3 decimals
+      model: '`a` = [0, 2.5, 7.5, 10]: output pixel 1 maps to input position $(1 + 0.5)/2 - 0.5 = 0.25$. `b` = [0, 3.33, 6.67, 10]: the corners are aligned, so output pixel 1 maps to $1 \cdot (2 - 1)/(4 - 1) = 1/3$.'
+    explanation: |
+      With `align_corners=False`, pixels are treated as squares and the outer edges of the input and
+      output are aligned; positions outside the input use the edge value [^1]. Output pixel $i$ then
+      samples input position $(i + 0.5)/2 - 0.5$: $-0.25$ (clamped to 0), $0.25$, $0.75$, $1.25$
+      (clamped), giving $0, 2.5, 7.5, 10$. With `align_corners=True`, the centres of the corner pixels
+      are aligned, so the output samples $0, 1/3, 2/3, 1$ and preserves the corner values exactly:
+      $0, 3.33, 6.67, 10$ [^1]. Bilinear upsampling always starts by mapping each output coordinate to
+      a real-valued input coordinate according to the size ratio [^2]; the two settings differ only in
+      that mapping, but mixing them between training and inference shifts upsampled masks slightly.
+    references:
+      - title: 'PyTorch documentation: torch.nn.functional.interpolate'
+        url: https://docs.pytorch.org/docs/stable/generated/torch.nn.functional.interpolate.html
+        locator: Parameters — align_corners
+      - source: d2l
+        url: https://d2l.ai/chapter_computer-vision/fcn.html#initializing-transposed-convolutional-layers
+        locator: Sec. 14.11.2 Initializing Transposed Convolutional Layers
+    source:
+      id: original
+      ref: segmentation-029
+    status: reviewed
+    reviewed_by: claude
+  - id: segmentation-030
+    type: single
+    difficulty: medium
+    tags:
+      - u-net
+      - fcn
+      - skip-connections
+    question: |
+      Both FCN and U-Net combine coarse, deep features with finer, earlier ones. How does U-Net's
+      combination differ from FCN's skip connections?
+    options:
+      - text: It concatenates cropped encoder maps with upsampled decoder maps, then convolves them
+        correct: true
+      - text: It adds class-score maps from several layers, as FCN does, but at more resolution levels
+        why: Summing class scores is FCN's fusion; U-Net concatenates feature maps, not scores [^1][^2].
+      - text: It passes only the max-pooling indices from each encoder level to the decoder
+        why: Passing pooling indices to guide upsampling is SegNet's decoder design [^3].
+      - text: It joins encoder and decoder only once, at the lowest resolution
+        why: U-Net links every level of the contracting path to the matching level of the expanding path [^1].
+    explanation: |
+      At each level of U-Net's expansive path, a $2 \times 2$ up-convolution doubles the resolution and
+      halves the number of channels; the encoder map of the same level, cropped to the same size, is
+      stacked onto it along the channel axis, and two $3 \times 3$ convolutions process the result [^1].
+      The decoder thus learns how to use the high-resolution features. FCN instead predicts class
+      scores from pool4 and pool3 with $1 \times 1$ convolutions and sums them with upsampled coarser
+      scores [^2]. SegNet takes a third
+      route and reuses the encoder's max-pooling indices for upsampling [^3].
+    references:
+      - title: 'Ronneberger, Fischer & Brox (2015), U-Net: Convolutional Networks for Biomedical Image Segmentation'
+        url: https://arxiv.org/abs/1505.04597
+        locator: Sec. 2 Network Architecture
+      - title: Long, Shelhamer & Darrell (2015), Fully Convolutional Networks for Semantic Segmentation
+        url: https://arxiv.org/abs/1411.4038
+        locator: Sec. 4.2 Combining what and where
+      - title: 'Badrinarayanan, Kendall & Cipolla (2017), SegNet: A Deep Convolutional Encoder-Decoder Architecture for Image Segmentation'
+        url: https://arxiv.org/abs/1511.00561
+        locator: Abstract
+    source:
+      id: original
+      ref: segmentation-030
+    status: reviewed
+    reviewed_by: claude
+  - id: segmentation-031
+    type: short_answer
+    difficulty: medium
+    tags:
+      - u-net
+      - output-shape
+      - skip-connections
+    question: |
+      The original U-Net uses unpadded $3 \times 3$ convolutions, so feature maps shrink. Its lowest
+      level ends with a $28 \times 28$ map, and the encoder map one level up is $64 \times 64$. After a
+      $2 \times 2$ up-convolution with stride 2, the decoder map has side length {{1}}, so the encoder
+      map is cropped by {{2}} pixels on each side before the two are concatenated.
+    answer:
+      blanks:
+        - numeric: 56
+          tolerance: 0
+          hint: pixels
+        - numeric: 4
+          tolerance: 0
+          hint: pixels per side
+      model: $28 \cdot 2 = 56$; $(64 - 56)/2 = 4$ pixels per side.
+    explanation: |
+      The up-convolution doubles the side from 28 to 56. The encoder map at that level is 64 pixels
+      wide, so a centred crop removes $(64 - 56)/2 = 4$ pixels from each border; cropping is needed
+      because every unpadded convolution loses border pixels [^1]. In the paper's figure a
+      $572 \times 572$ input tile gives a $388 \times 388$ output map, and the network predicts the
+      borders of large images with an overlap-tile strategy [^1]. Frameworks that pad their
+      convolutions keep the sizes equal and need no cropping.
+    references:
+      - title: 'Ronneberger, Fischer & Brox (2015), U-Net: Convolutional Networks for Biomedical Image Segmentation'
+        url: https://arxiv.org/abs/1505.04597
+        locator: Sec. 1 Introduction (overlap-tile strategy), Fig. 1 and Sec. 2 Network Architecture
+    source:
+      id: original
+      ref: segmentation-031
+    status: reviewed
+    reviewed_by: claude
+  - id: segmentation-032
+    type: short_answer
+    difficulty: hard
+    tags:
+      - dilated-convolution
+      - receptive-field
+      - context
+    question: |
+      Four $3 \times 3$ convolutions with stride 1 are stacked, with dilation rates 1, 2, 4 and 8.
+      What is the side length of the receptive field of one output unit on the input?
+    answer:
+      numeric: 31
+      tolerance: 0
+      hint: a whole number (pixels)
+      model: $1 + 2 \cdot (1 + 2 + 4 + 8) = 31$
+    explanation: |
+      A $3 \times 3$ filter with dilation $d$ spans $2d + 1$ positions, so each layer widens the receptive
+      field by $2d$: $3, 7, 15, 31$. Yu and Koltun show that with exponentially increasing dilation the
+      receptive field grows exponentially, $(2^{i+2} - 1) \times (2^{i+2} - 1)$ after layer $i + 1$,
+      while the number of parameters grows only linearly and the resolution is not reduced [^1]. Four
+      undilated $3 \times 3$ layers would see only $9 \times 9$ pixels with the same 36 weights per
+      channel pair. DeepLab uses atrous (dilated) convolution for the same reason, to enlarge the field
+      of view without pooling away resolution [^2].
+    references:
+      - title: Yu & Koltun (2016), Multi-Scale Context Aggregation by Dilated Convolutions
+        url: https://arxiv.org/abs/1511.07122
+        locator: Sec. 2 Dilated Convolutions (Fig. 1)
+      - title: 'Chen et al. (2016), DeepLab: Semantic Image Segmentation with Deep Convolutional Nets, Atrous Convolution, and Fully Connected CRFs'
+        url: https://arxiv.org/abs/1606.00915
+        locator: Sec. 3.1 Atrous Convolution for Dense Feature Extraction and Field-of-View Enlargement
+    source:
+      id: original
+      ref: segmentation-032
+    status: reviewed
+    reviewed_by: claude
+  - id: segmentation-033
+    type: single
+    difficulty: medium
+    tags:
+      - deeplab
+      - aspp
+      - atrous-convolution
+      - multiscale
+    question: What does atrous spatial pyramid pooling (ASPP) in DeepLab do?
+    options:
+      - text: It runs parallel atrous convolutions with different rates on one feature map and fuses them
+        correct: true
+      - text: It runs the whole network on several rescaled copies of the image and keeps the strongest response
+        why: DeepLab tries this multi-scale input approach too, but it is costly because all layers run at every scale; ASPP resamples features from a single scale [^1].
+      - text: It replaces every pooling layer by an atrous convolution with rate 2 to keep the full resolution
+        why: Setting strides to 1 and dilating later filters is DeepLab's dense feature extraction, not ASPP [^2].
+      - text: It upsamples the score map with learned transposed convolutions at several scales
+        why: DeepLab recovers full resolution with bilinear interpolation of the score map, not with learned transposed convolutions [^2].
+    explanation: |
+      Objects appear at many sizes. Inspired by spatial pyramid pooling, ASPP probes one convolutional
+      feature map with several parallel atrous convolutions with different sampling rates; each branch
+      sees context at a different scale, and the branches are fused into the final result [^1]. The
+      larger-rate variant uses rates 6, 12, 18 and 24 [^1]. This differs from computing features on
+      several rescaled images, which costs a full forward pass per scale, and from the atrous
+      convolutions that keep the feature maps dense, which are combined with bilinear upsampling of the
+      score map [^2].
+    references:
+      - title: 'Chen et al. (2016), DeepLab: Semantic Image Segmentation with Deep Convolutional Nets, Atrous Convolution, and Fully Connected CRFs'
+        url: https://arxiv.org/abs/1606.00915
+        locator: Sec. 3.2 Multiscale Image Representations using Atrous Spatial Pyramid Pooling; Sec. 4.1.2 (Table 3, ASPP-L)
+      - title: 'Chen et al. (2016), DeepLab: Semantic Image Segmentation with Deep Convolutional Nets, Atrous Convolution, and Fully Connected CRFs'
+        url: https://arxiv.org/abs/1606.00915
+        locator: Sec. 3.1 Atrous Convolution for Dense Feature Extraction and Field-of-View Enlargement
+    source:
+      id: original
+      ref: segmentation-033
+    status: reviewed
+    reviewed_by: claude
+  - id: segmentation-034
+    type: single
+    difficulty: medium
+    tags:
+      - mask-r-cnn
+      - instance-segmentation
+      - loss-functions
+    question: |
+      Mask R-CNN's mask branch outputs $K$ binary masks per RoI, one per class, applies a per-pixel
+      sigmoid, and computes the loss only on the mask of the RoI's ground-truth class. Why this design
+      instead of a per-pixel softmax over the $K$ classes, as in FCN?
+    options:
+      - text: It decouples masks from classes; classes don't compete, and the box branch picks the class
+        correct: true
+      - text: Sigmoid outputs need less memory than softmax outputs, which allows larger masks
+        why: Both produce $K$ numbers per pixel; the reason is the decoupling of mask and class prediction [^1].
+      - text: It lets one RoI hold several object classes at once, merging overlapping objects into one mask
+        why: Each RoI has one class, chosen by the classification branch; only that class's mask is used [^1].
+      - text: It makes the mask loss identical to FCN's segmentation loss, so FCN weights can be reused
+        why: It is deliberately different from FCN's per-pixel softmax with a multinomial loss [^1].
+    explanation: |
+      Mask R-CNN adds a small fully convolutional mask branch to Faster R-CNN, next to the class and
+      box branches [^2]. With a sigmoid per pixel and a binary cross-entropy on the $k$-th mask only,
+      the masks of different classes do not compete with each other, and choosing the class is left
+      to the classification branch [^1]. In the paper's ablation, a per-pixel softmax with a
+      multinomial loss, as in FCN, lowered mask AP by 5.5 points: once the box branch has classified
+      the instance, a binary object-versus-background mask is all that remains to predict [^1].
+    references:
+      - title: He, Gkioxari, Dollár & Girshick (2017), Mask R-CNN
+        url: https://arxiv.org/abs/1703.06870
+        locator: Sec. 3 Mask R-CNN (mask loss) and Sec. 4.2 Ablation Experiments (Multinomial vs. Independent Masks)
+      - source: d2l
+        url: https://d2l.ai/chapter_computer-vision/rcnn.html#mask-r-cnn
+        locator: Sec. 14.8.4 Mask R-CNN
+    source:
+      id: original
+      ref: segmentation-034
+    status: reviewed
+    reviewed_by: claude
+  - id: segmentation-035
+    type: true_false
+    difficulty: medium
+    tags:
+      - metrics
+      - mean-iou
+      - evaluation
+    shuffle: false
+    question: |
+      True or false: for one class, averaging the IoU of each test image gives the same value as
+      computing a single IoU from the intersection and union pixel counts summed over all test images.
+    options:
+      - text: 'True'
+        why: The two differ in general. With intersection 90 and union 100 in one image and 1 and 10 in another, the per-image mean is 0.5 but the pooled IoU is $91/110 \approx 0.83$ [^1].
+      - text: 'False'
+        correct: true
+    explanation: |
+      IoU is a ratio of counts [^1]. Averaging ratios image by image gives every image the same weight,
+      so a tiny, badly segmented object counts as much as a large, well segmented one; pooling the
+      counts first weights images by how many pixels the class covers. In the example, image 1 has
+      $90/100 = 0.9$ and image 2 has $1/10 = 0.1$: the per-image mean is 0.5, while the pooled value is
+      $91/110 \approx 0.83$. FCN's metrics are defined from pixel counts $n_{ij}$ [^2], so a reported
+      mean IU depends on whether these counts are accumulated over the dataset or per image, and
+      benchmark code must fix the convention.
+    references:
+      - title: 'Wikipedia: Jaccard index'
+        url: https://en.wikipedia.org/wiki/Jaccard_index#Overview
+        locator: Introduction and Overview
+      - title: Long, Shelhamer & Darrell (2015), Fully Convolutional Networks for Semantic Segmentation
+        url: https://arxiv.org/abs/1411.4038
+        locator: Sec. 5 Results, Metrics
+    source:
+      id: original
+      ref: segmentation-035
+    status: reviewed
+    reviewed_by: claude
+  - id: segmentation-036
+    type: short_answer
+    difficulty: medium
+    tags:
+      - u-net
+      - class-imbalance
+      - weighted-loss
+    question: |
+      U-Net weights its pixel-wise cross-entropy with
+      $w(x) = w_c(x) + w_0 \exp\left(-\frac{(d_1(x) + d_2(x))^2}{2\sigma^2}\right)$, where $d_1$ and
+      $d_2$ are the distances to the borders of the nearest and the second nearest cell, $w_0 = 10$
+      and $\sigma = 5$ pixels. A background pixel between two touching cells has $w_c(x) = 1$,
+      $d_1 = 2$ and $d_2 = 4$. What is $w(x)$?
+    answer:
+      numeric: 5.868
+      tolerance: 0.005
+      hint: a number, 3 decimals
+      model: $1 + 10 \exp(-36/50) = 1 + 10 \cdot 0.4868 \approx 5.868$
+    explanation: |
+      The weight map has two parts [^1]. $w_c$ balances the class frequencies, and the second term
+      boosts pixels in the narrow gaps between touching cells: here $(2 + 4)^2 / (2 \cdot 25) = 0.72$,
+      so the border term is $10 e^{-0.72} \approx 4.87$ and $w(x) \approx 5.87$. Far from any border the
+      exponential vanishes and only $w_c$ remains, so a thin separating line counts several times more
+      than ordinary background. This forces the network to learn the small borders between touching
+      cells, which a frequency-balanced loss alone would neglect [^1].
+    references:
+      - title: 'Ronneberger, Fischer & Brox (2015), U-Net: Convolutional Networks for Biomedical Image Segmentation'
+        url: https://arxiv.org/abs/1505.04597
+        locator: Sec. 3 Training (Eq. 2 and weight map)
+    source:
+      id: original
+      ref: segmentation-036
+    status: reviewed
+    reviewed_by: claude
+  - id: segmentation-037
+    type: short_answer
+    difficulty: medium
+    tags:
+      - label-maps
+      - totensor
+      - code-reading
+    question: |
+      A segmentation label mask stores class indices as `uint8`. It is converted like an input image:
+
+      ```python
+      import numpy as np
+      from torchvision import transforms
+
+      mask = np.full((4, 4, 1), 15, dtype=np.uint8)   # every pixel has class 15
+      t = transforms.ToTensor()(mask)
+      print(round(t[0, 0, 0].item(), 4))
+      ```
+
+      What is printed?
+    answer:
+      numeric: 0.0588
+      tolerance: 0.0005
+      hint: a number, 4 decimals
+      model: '`ToTensor` divides `uint8` values by 255: $15/255 \approx 0.0588$.'
+    explanation: |
+      `ToTensor` converts an $H \times W \times C$ `uint8` array to a float tensor of shape
+      $C \times H \times W$ scaled to $[0, 1]$, and its documentation warns that for this reason it
+      should not be used to transform target masks [^1]. The class index 15 becomes
+      $15/255 \approx 0.0588$, which is no longer a valid target for cross-entropy. Masks should be converted without scaling,
+      e.g. `torch.as_tensor(mask).long()`; d2l likewise maps each label colour to an integer class
+      index [^2].
+    references:
+      - title: 'torchvision documentation: transforms.ToTensor'
+        url: https://docs.pytorch.org/vision/stable/generated/torchvision.transforms.ToTensor.html
+        locator: Class description and Note
+      - source: d2l
+        url: https://d2l.ai/chapter_computer-vision/semantic-segmentation-and-dataset.html#the-pascal-voc2012-semantic-segmentation-dataset
+        locator: Sec. 14.9.2 The Pascal VOC2012 Semantic Segmentation Dataset
+    source:
+      id: original
+      ref: segmentation-037
+    status: reviewed
+    reviewed_by: claude
+  - id: segmentation-038
+    type: short_answer
+    difficulty: medium
+    tags:
+      - fcn
+      - resnet
+      - output-shape
+      - stride
+    question: |
+      An FCN for Pascal VOC runs a ResNet-18 backbone, a $1 \times 1$ convolution and a transposed
+      convolution that multiplies the height and width by exactly 32. The backbone halves the
+      resolution five times in a row with stride-2 layers, each padded so that it turns a side of
+      $n$ pixels into $\lceil n/2 \rceil$. A test image is 375 pixels high. The backbone's last
+      feature map is {{1}} pixels high, and the score map produced by the transposed convolution is
+      {{2}} pixels high.
+    answer:
+      blanks:
+        - numeric: 12
+          tolerance: 0
+          hint: a whole number
+        - numeric: 384
+          tolerance: 0
+          hint: a whole number
+      model: $375 \to 188 \to 94 \to 47 \to 24 \to 12$, and $12 \cdot 32 = 384$, nine rows more than the image.
+    explanation: |
+      ResNet-18 halves the height and width in its $7 \times 7$ stride-2 stem convolution, in the
+      following stride-2 max-pooling, and in the first block of each of its last three stages [^1].
+      With kernel $k$, total padding $p$ and stride $s$ a layer outputs $\lfloor (n - k + p + s)/s \rfloor$
+      rows [^2]; for these layers that is $\lceil n/2 \rceil$, so 375 becomes 188, 94, 47, 24 and 12.
+      Multiplying by 32 gives 384 rows, not 375, because every odd size was rounded up on the way
+      down. The score map matches the image only when the image's sides are multiples of 32, which is
+      why d2l trains its FCN on random $320 \times 480$ crops and, at test time, predicts on crops
+      whose sides are multiples of 32 and that together cover the image [^3].
+    references:
+      - source: d2l
+        url: https://d2l.ai/chapter_convolutional-modern/resnet.html#resnet-model
+        locator: Sec. 8.6.3 ResNet Model
+      - source: d2l
+        url: https://d2l.ai/chapter_convolutional-neural-networks/padding-and-strides.html#stride
+        locator: Sec. 7.3.2 Stride (Eq. 7.3.2)
+      - source: d2l
+        url: https://d2l.ai/chapter_computer-vision/fcn.html#prediction
+        locator: Sec. 14.11.3 Reading the Dataset and Sec. 14.11.5 Prediction
+    source:
+      id: original
+      ref: segmentation-038
+    status: reviewed
+    reviewed_by: claude

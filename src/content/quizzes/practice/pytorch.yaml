@@ -2795,3 +2795,831 @@ questions:
       url: https://arxiv.org/abs/2201.00650v2
     status: reviewed
     reviewed_by: claude
+  - id: pytorch-068
+    type: short_answer
+    difficulty: medium
+    tags:
+      - matmul
+      - tensor-shapes
+      - tensor-puzzles
+    question: |
+      Tensor Puzzle 2 asks for the sum of a vector without calling `sum`. What is `s.shape`?
+
+      ```python
+      def arange(i):
+          return torch.tensor(range(i))
+
+      def ones(i):
+          return arange(i) * 0 + 1
+
+      a = torch.tensor([3, 1, 4, 1])
+      s = a @ ones(4)[:, None]
+      ```
+    answer:
+      accept:
+        - (1,)
+      pattern: (torch\.size)?\(?\[?\s*1\s*,?\s*\]?\)?
+      hint: A shape in parentheses, e.g. (5,) or (5, 6)
+      model: '$(1,)$: `s` is `tensor([9])`.'
+    explanation: |
+      `ones(4)[:, None]` is a (4, 1) column of ones. `@` with a 1-D first argument treats it as a
+      row: a 1 is prepended to its shape, giving (1, 4) @ (4, 1) = (1, 1), and the prepended
+      dimension is removed after the product [^1]. What remains is shape (1,), holding
+      $3 + 1 + 4 + 1 = 9$, which is exactly the `TT[1]` output the puzzle asks for [^2]. With
+      `ones(4)` (no `[:, None]`) both operands would be 1-D and `@` would return a 0-d scalar
+      instead [^1].
+    references:
+      - title: 'PyTorch documentation: torch.matmul'
+        locator: torch.matmul (1-D and 2-D arguments)
+        url: https://docs.pytorch.org/docs/stable/generated/torch.matmul.html
+      - source: tensor-puzzles
+        locator: Puzzle 2 - sum
+        url: https://github.com/srush/Tensor-Puzzles/blob/ad5069f7ef48523f733d445a7f94e93427d64f2d/README.md?plain=1#L142-L170
+    source:
+      id: tensor-puzzles
+      ref: puzzle-02-sum
+      url: https://github.com/srush/Tensor-Puzzles/blob/ad5069f7ef48523f733d445a7f94e93427d64f2d/README.md?plain=1#L142-L170
+    status: reviewed
+    reviewed_by: claude
+  - id: pytorch-069
+    type: single
+    difficulty: easy
+    tags:
+      - broadcasting
+      - outer-product
+      - tensor-puzzles
+    question: |
+      `a` has shape `(i,)` and `b` has shape `(j,)` with $i \neq j$. Which one-liner returns their
+      outer product, `out[m, n] = a[m] * b[n]` with shape `(i, j)`, using only broadcasting?
+    options:
+      - text: '`a[:, None] * b`'
+        correct: true
+      - text: '`a * b[:, None]`'
+        why: 'This makes `b` the column: the result has shape (j, i), the transpose of the outer product.'
+      - text: '`a @ b`'
+        why: '`@` of two 1-D tensors is a dot product, which needs equal lengths; with $i \neq j$ it raises an error.'
+      - text: '`a[:, None] @ b[:, None]`'
+        why: This multiplies an (i, 1) matrix by a (j, 1) matrix; the inner sizes 1 and j do not match, so it raises an error.
+    explanation: |
+      `a[:, None]` has shape (i, 1). Broadcasting it against `b`, read as (1, j), stretches both
+      size-1 axes and gives an (i, j) result whose entry `[m, n]` is `a[m] * b[n]` [^1]. This is the
+      one-line solution of Tensor Puzzle 3 (outer), whose spec loops over `out[i][j] = a[i] * b[j]`
+      [^2]. A matrix product also works if the inner dimensions match: `a[:, None] @ b[None, :]` is
+      (i, 1) @ (1, j) = (i, j), whereas `a @ b` of two 1-D tensors is a dot product [^3].
+    references:
+      - title: 'PyTorch documentation: Broadcasting semantics'
+        locator: General semantics
+        url: https://docs.pytorch.org/docs/stable/notes/broadcasting.html#general-semantics
+      - source: tensor-puzzles
+        locator: Puzzle 3 - outer
+        url: https://github.com/srush/Tensor-Puzzles/blob/ad5069f7ef48523f733d445a7f94e93427d64f2d/README.md?plain=1#L171-L198
+      - title: 'PyTorch documentation: torch.matmul'
+        locator: torch.matmul (1-D and 2-D arguments)
+        url: https://docs.pytorch.org/docs/stable/generated/torch.matmul.html
+    source:
+      id: tensor-puzzles
+      ref: puzzle-03-outer
+      url: https://github.com/srush/Tensor-Puzzles/blob/ad5069f7ef48523f733d445a7f94e93427d64f2d/README.md?plain=1#L171-L198
+    status: reviewed
+    reviewed_by: claude
+  - id: pytorch-070
+    type: single
+    difficulty: medium
+    tags:
+      - advanced-indexing
+      - diagonal
+      - tensor-puzzles
+    question: |
+      ```python
+      def arange(i):
+          return torch.tensor(range(i))
+
+      m = torch.arange(9).reshape(3, 3)   # [[0, 1, 2], [3, 4, 5], [6, 7, 8]]
+      ```
+
+      Which expression returns the diagonal `tensor([0, 4, 8])`?
+    options:
+      - text: '`m[arange(3), arange(3)]`'
+        correct: true
+      - text: '`m[arange(3)][:, arange(3)]`'
+        why: 'Indexing one axis at a time selects all rows, then all columns: the result is the whole 3 × 3 matrix.'
+      - text: '`m[:, arange(3)]`'
+        why: 'Every row with every column: again the whole matrix.'
+      - text: '`m[arange(3), :][0]`'
+        why: This takes all rows and then row 0, i.e. `[0, 1, 2]`.
+    explanation: |
+      When several integer index arrays appear in one indexing operation, they are broadcast together
+      and iterated *as one*: element `k` of the result is `m[rows[k], cols[k]]` [^1]. With both index
+      arrays equal to `[0, 1, 2]` this picks `m[0, 0]`, `m[1, 1]`, `m[2, 2]`, which solves Tensor
+      Puzzle 4 (diag) [^2]. Indexing the axes in two separate steps applies each index to a whole
+      axis instead and keeps the full grid (that is what `np.ix_` builds on purpose) [^1]. PyTorch
+      follows NumPy's indexing rules here.
+    references:
+      - title: 'NumPy user guide: Indexing on ndarrays'
+        locator: Integer array indexing
+        url: https://numpy.org/doc/stable/user/basics.indexing.html#integer-array-indexing
+      - source: tensor-puzzles
+        locator: Puzzle 4 - diag
+        url: https://github.com/srush/Tensor-Puzzles/blob/ad5069f7ef48523f733d445a7f94e93427d64f2d/README.md?plain=1#L199-L226
+    source:
+      id: tensor-puzzles
+      ref: puzzle-04-diag
+      url: https://github.com/srush/Tensor-Puzzles/blob/ad5069f7ef48523f733d445a7f94e93427d64f2d/README.md?plain=1#L199-L226
+    status: reviewed
+    reviewed_by: claude
+  - id: pytorch-071
+    type: single
+    difficulty: medium
+    tags:
+      - broadcasting
+      - boolean-masks
+      - tensor-puzzles
+    question: |
+      The Tensor Puzzles replace an if-statement with this `where`. What is `out.tolist()`?
+
+      ```python
+      def where(q, a, b):
+          return (q * a) + (~q) * b
+
+      q = torch.tensor([[False, True], [True, False]])
+      out = where(q, torch.tensor([[0], [10]]), torch.tensor([-10, 0]))
+      ```
+    options:
+      - text: '`[[-10, 0], [10, 0]]`'
+        correct: true
+      - text: '`[[0, 0], [-10, 10]]`'
+        why: This takes `a` where `q` is False and `b` where it is True, the reverse of `q * a + (~q) * b`.
+      - text: '`[[-10, 10], [0, 0]]`'
+        why: This treats `a` as the row `[0, 10]`; but `[[0], [10]]` has shape (2, 1), a column, so row 0 gets 0 and row 1 gets 10.
+      - text: It raises an error because `a`, `b` and `q` have different shapes
+        why: '(2, 2), (2, 1) and (2,) are all broadcast-compatible: missing or size-1 axes are stretched.'
+    explanation: |
+      `q * a` keeps `a` where `q` is True and gives 0 elsewhere; `(~q) * b` keeps `b` where `q` is
+      False; the sum therefore picks `a` or `b` element by element [^2]. The column `a = [[0], [10]]`
+      broadcasts to `[[0, 0], [10, 10]]` and the row `b = [-10, 0]` to `[[-10, 0], [-10, 0]]` [^1].
+      With `q = [[F, T], [T, F]]`: position (0, 0) takes `b` = −10, (0, 1) takes `a` = 0, (1, 0) takes
+      `a` = 10 and (1, 1) takes `b` = 0. `torch.where(q, a, b)` gives the same result here [^3].
+    references:
+      - title: 'PyTorch documentation: Broadcasting semantics'
+        locator: General semantics
+        url: https://docs.pytorch.org/docs/stable/notes/broadcasting.html#general-semantics
+      - source: tensor-puzzles
+        locator: Rules (the `where` helper and its examples)
+        url: https://github.com/srush/Tensor-Puzzles/blob/ad5069f7ef48523f733d445a7f94e93427d64f2d/README.md?plain=1#L89-L105
+      - title: 'PyTorch documentation: torch.where'
+        locator: torch.where
+        url: https://docs.pytorch.org/docs/stable/generated/torch.where.html
+    source:
+      id: tensor-puzzles
+      ref: rules-where
+      url: https://github.com/srush/Tensor-Puzzles/blob/ad5069f7ef48523f733d445a7f94e93427d64f2d/README.md?plain=1#L89-L105
+    status: reviewed
+    reviewed_by: claude
+  - id: pytorch-072
+    type: single
+    difficulty: easy
+    tags:
+      - broadcasting
+      - triangular-matrix
+      - tensor-puzzles
+    question: |
+      With `arange(j)` returning `torch.tensor(range(j))`, the one-liner
+
+      `triu = 1 * (arange(j)[:, None] OP arange(j))`
+
+      should return the upper triangular matrix of ones (`out[r, c] = 1` when `r <= c`, else 0), as
+      in Tensor Puzzle 6. Which operator `OP` is correct?
+    options:
+      - text: '`<=`'
+        correct: true
+      - text: '`>=`'
+        why: '`r >= c` marks the diagonal and everything *below* it, the lower triangle (`tril`).'
+      - text: '`<`'
+        why: '`r < c` leaves the diagonal at 0: the strictly upper triangle (`triu` with `diagonal=1`).'
+      - text: '`==`'
+        why: '`r == c` is the identity matrix (Puzzle 5, eye).'
+    explanation: |
+      `arange(j)[:, None]` is a column holding the row index `r` and `arange(j)` a row holding the
+      column index `c`; broadcasting compares every pair and gives a (j, j) boolean matrix [^1].
+      Puzzle 6's spec sets `out[i][j] = 1` exactly when `i <= j` [^2], so the comparison is `<=`, and
+      `1 *` turns the booleans into integers. The strict version `<` is the mask that a causal
+      attention layer fills with $-\infty$ (`torch.triu(..., diagonal=1)`) [^3].
+    references:
+      - title: 'PyTorch documentation: Broadcasting semantics'
+        locator: General semantics
+        url: https://docs.pytorch.org/docs/stable/notes/broadcasting.html#general-semantics
+      - source: tensor-puzzles
+        locator: Puzzle 6 - triu
+        url: https://github.com/srush/Tensor-Puzzles/blob/ad5069f7ef48523f733d445a7f94e93427d64f2d/README.md?plain=1#L254-L285
+      - title: 'PyTorch documentation: torch.triu'
+        locator: torch.triu (diagonal argument)
+        url: https://docs.pytorch.org/docs/stable/generated/torch.triu.html
+    source:
+      id: tensor-puzzles
+      ref: puzzle-06-triu
+      url: https://github.com/srush/Tensor-Puzzles/blob/ad5069f7ef48523f733d445a7f94e93427d64f2d/README.md?plain=1#L254-L285
+    status: reviewed
+    reviewed_by: claude
+  - id: pytorch-073
+    type: short_answer
+    difficulty: hard
+    tags:
+      - matmul
+      - cumulative-sum
+      - tensor-puzzles
+    question: |
+      `a @ t` returns the cumulative sum `tensor([1, 3, 6, 10])` (Tensor Puzzle 7). What does `t @ a`
+      return?
+
+      ```python
+      def arange(i):
+          return torch.tensor(range(i))
+
+      a = torch.tensor([1, 2, 3, 4])
+      t = 1 * (arange(4)[:, None] <= arange(4))   # t[r, c] = 1 if r <= c
+      print(a @ t)
+      print(t @ a)
+      ```
+    answer:
+      accept:
+        - '[10, 9, 7, 4]'
+      pattern: (tensor\()?\[?\s*10(?:\s*,\s*|\s+)9(?:\s*,\s*|\s+)7(?:\s*,\s*|\s+)4\s*\]?\)?
+      hint: Four integers, e.g. [3, 1, 0, 2]
+      model: '`tensor([10, 9, 7, 4])`, the suffix sums of `a`.'
+    explanation: |
+      `t` is the upper triangle of ones. In `a @ t` the vector is a row, so entry `c` is
+      $\sum_r a_r t_{rc} = \sum_{r \le c} a_r$, the running (prefix) sum that Puzzle 7 asks for
+      [^2]. In `t @ a` the vector is a column, so entry `r` is $\sum_c t_{rc} a_c = \sum_{c \ge r} a_c$:
+      the sum from position `r` to the end, i.e. $[1+2+3+4, 2+3+4, 3+4, 4] = [10, 9, 7, 4]$. A 1-D
+      tensor on the left of `@` acts as a row and on the right as a column [^1], so swapping the
+      operands is the same as using the transposed (lower-triangular) matrix.
+    references:
+      - title: 'PyTorch documentation: torch.matmul'
+        locator: torch.matmul (1-D and 2-D arguments)
+        url: https://docs.pytorch.org/docs/stable/generated/torch.matmul.html
+      - source: tensor-puzzles
+        locator: Puzzle 7 - cumsum
+        url: https://github.com/srush/Tensor-Puzzles/blob/ad5069f7ef48523f733d445a7f94e93427d64f2d/README.md?plain=1#L286-L314
+    source:
+      id: tensor-puzzles
+      ref: puzzle-07-cumsum
+      url: https://github.com/srush/Tensor-Puzzles/blob/ad5069f7ef48523f733d445a7f94e93427d64f2d/README.md?plain=1#L286-L314
+    status: reviewed
+    reviewed_by: claude
+  - id: pytorch-074
+    type: short_answer
+    difficulty: medium
+    tags:
+      - advanced-indexing
+      - negative-indices
+      - tensor-puzzles
+    question: |
+      A first attempt at Tensor Puzzle 8 (running difference) needs the previous element of each
+      position. What is `prev`?
+
+      ```python
+      def arange(i):
+          return torch.tensor(range(i))
+
+      a = torch.tensor([5, 7, 2, 9])
+      prev = a[arange(4) - 1]
+      ```
+    answer:
+      accept:
+        - '[9, 5, 7, 2]'
+      pattern: (tensor\()?\[?\s*9(?:\s*,\s*|\s+)5(?:\s*,\s*|\s+)7(?:\s*,\s*|\s+)2\s*\]?\)?
+      hint: Four integers, e.g. [3, 1, 0, 2]
+      model: '`tensor([9, 5, 7, 2])`: the index −1 wraps around to the last element.'
+    explanation: |
+      `arange(4) - 1` is `[-1, 0, 1, 2]`. Negative indices count from the end of the axis [^1], so
+      `a[-1]` is the *last* element, 9, rather than an error or a zero. The other positions get
+      their left neighbour: `[9, 5, 7, 2]`. Puzzle 8's spec wants `out[0] = a[0]` and
+      `out[i] = a[i] - a[i - 1]` [^2], so a correct one-liner must override position 0, e.g.
+      `a - where(arange(4) != 0, a[arange(4) - 1], 0)`, which gives `[5, 2, -5, 7]`.
+    references:
+      - title: 'NumPy user guide: Indexing on ndarrays'
+        locator: Slicing and striding (negative indices)
+        url: https://numpy.org/doc/stable/user/basics.indexing.html#slicing-and-striding
+      - source: tensor-puzzles
+        locator: Puzzle 8 - diff
+        url: https://github.com/srush/Tensor-Puzzles/blob/ad5069f7ef48523f733d445a7f94e93427d64f2d/README.md?plain=1#L315-L342
+    source:
+      id: tensor-puzzles
+      ref: puzzle-08-diff
+      url: https://github.com/srush/Tensor-Puzzles/blob/ad5069f7ef48523f733d445a7f94e93427d64f2d/README.md?plain=1#L315-L342
+    status: reviewed
+    reviewed_by: claude
+  - id: pytorch-075
+    type: single
+    difficulty: medium
+    tags:
+      - advanced-indexing
+      - off-by-one
+      - tensor-puzzles
+    question: |
+      An attempt at Tensor Puzzle 11 (reverse a vector of length `i`) is written as `a[i - arange(i)]`.
+      What happens here?
+
+      ```python
+      def arange(i):
+          return torch.tensor(range(i))
+
+      a = torch.tensor([10, 20, 30, 40])
+      out = a[4 - arange(4)]
+      ```
+    options:
+      - text: It raises an `IndexError`, because the first index is 4
+        correct: true
+      - text: '`out` is `[40, 30, 20, 10]`'
+        why: That needs the indices `[3, 2, 1, 0]`, i.e. `a[4 - arange(4) - 1]`; this code computes `[4, 3, 2, 1]`.
+      - text: '`out` is `[10, 40, 30, 20]`, because index 4 wraps around to 0'
+        why: Only negative indices count from the end; a positive index past the last position is not wrapped. (`a[-arange(4)]` would give this result.)
+      - text: '`out` is `[0, 40, 30, 20]`, because out-of-range positions are filled with 0'
+        why: Integer-tensor indexing never pads; an out-of-range index is an error.
+    explanation: |
+      `4 - arange(4)` is `[4, 3, 2, 1]`. Valid indices for a length-4 axis are 0 to 3, or −4 to −1
+      counting from the end [^1]; 4 is out of bounds, so PyTorch raises
+      `IndexError: index 4 is out of bounds for dimension 0 with size 4`. Puzzle 11's spec is
+      `out[k] = a[len(out) - k - 1]` [^2], so the fix subtracts one more: `a[i - arange(i) - 1]`
+      returns `[40, 30, 20, 10]`.
+    references:
+      - title: 'NumPy user guide: Indexing on ndarrays'
+        locator: Single element indexing (negative indices); Integer array indexing (out-of-bounds IndexError)
+        url: https://numpy.org/doc/stable/user/basics.indexing.html#single-element-indexing
+      - source: tensor-puzzles
+        locator: Puzzle 11 - flip
+        url: https://github.com/srush/Tensor-Puzzles/blob/ad5069f7ef48523f733d445a7f94e93427d64f2d/README.md?plain=1#L403-L430
+    source:
+      id: tensor-puzzles
+      ref: puzzle-11-flip
+      url: https://github.com/srush/Tensor-Puzzles/blob/ad5069f7ef48523f733d445a7f94e93427d64f2d/README.md?plain=1#L403-L430
+    status: reviewed
+    reviewed_by: claude
+  - id: pytorch-076
+    type: short_answer
+    difficulty: hard
+    tags:
+      - broadcasting
+      - matmul
+      - tensor-puzzles
+    question: |
+      This solves Tensor Puzzle 12 (compress: keep the masked entries, left-aligned, pad with 0),
+      using only the puzzles' helpers and the Puzzle 7 solution `cumsum`. What is `out`?
+
+      ```python
+      def arange(i):
+          return torch.tensor(range(i))
+
+      def where(q, a, b):
+          return (q * a) + (~q) * b
+
+      def cumsum(a):                            # Puzzle 7: a @ (upper triangle of ones)
+          return a @ (1 * (arange(a.shape[0])[:, None] <= arange(a.shape[0])))
+
+      g = torch.tensor([True, False, True, True])
+      v = torch.tensor([5, 6, 7, 8])
+      pos = cumsum(1 * g) - 1                   # target slot of each element
+      out = v @ where(g[:, None], arange(4) == pos[:, None], 0)
+      ```
+    answer:
+      accept:
+        - '[5, 7, 8, 0]'
+      pattern: (tensor\()?\[?\s*5(?:\s*,\s*|\s+)7(?:\s*,\s*|\s+)8(?:\s*,\s*|\s+)0\s*\]?\)?
+      hint: Four integers, e.g. [3, 1, 0, 2]
+      model: '`tensor([5, 7, 8, 0])`'
+    explanation: |
+      `pos` is `[1, 1, 2, 3] - 1 = [0, 0, 1, 2]`: the slot each kept element should move to. The
+      (4, 4) matrix `M = where(g[:, None], arange(4) == pos[:, None], 0)` has row `r` equal to the
+      one-hot vector of `pos[r]` when `g[r]` is True and a row of zeros otherwise (broadcasting a
+      column against a row [^1]). Then `(v @ M)[c]` adds up every `v[r]` routed to slot `c`: slot 0
+      gets 5, slot 1 gets 7, slot 2 gets 8, and slot 3 gets nothing. This matches Puzzle 12's spec,
+      which copies the kept values to `out[0], out[1], …` in order [^2]. The rules allow only `@`,
+      arithmetic, comparisons, indexing and earlier puzzle functions, which is why `cumsum` is the
+      Puzzle 7 solution rather than `torch.cumsum` [^3].
+    references:
+      - title: 'PyTorch documentation: Broadcasting semantics'
+        locator: General semantics
+        url: https://docs.pytorch.org/docs/stable/notes/broadcasting.html#general-semantics
+      - source: tensor-puzzles
+        locator: Puzzle 12 - compress
+        url: https://github.com/srush/Tensor-Puzzles/blob/ad5069f7ef48523f733d445a7f94e93427d64f2d/README.md?plain=1#L431-L462
+      - source: tensor-puzzles
+        locator: Rules 2-4 (allowed operations)
+        url: https://github.com/srush/Tensor-Puzzles/blob/ad5069f7ef48523f733d445a7f94e93427d64f2d/README.md?plain=1#L42-L50
+    source:
+      id: tensor-puzzles
+      ref: puzzle-12-compress
+      url: https://github.com/srush/Tensor-Puzzles/blob/ad5069f7ef48523f733d445a7f94e93427d64f2d/README.md?plain=1#L431-L462
+    status: reviewed
+    reviewed_by: claude
+  - id: pytorch-077
+    type: single
+    difficulty: medium
+    tags:
+      - broadcasting
+      - sequence-mask
+      - tensor-puzzles
+    question: |
+      Tensor Puzzle 14 keeps `values[r, c]` when `c < length[r]` and sets it to 0 otherwise.
+
+      ```python
+      def arange(i):
+          return torch.tensor(range(i))
+
+      def where(q, a, b):
+          return (q * a) + (~q) * b
+
+      values = torch.ones(3, 4, dtype=torch.long)
+      length = torch.tensor([1, 3, 0])
+      ```
+
+      Which line computes it correctly?
+    options:
+      - text: '`out = where(arange(4) < length[:, None], values, 0)`'
+        correct: true
+      - text: '`out = where(arange(4) < length, values, 0)`'
+        why: Shapes (4,) and (3,) are aligned on their last axis, 4 against 3, so broadcasting fails with an error.
+      - text: '`out = where(arange(4)[:, None] < length, values, 0)`'
+        why: This builds a (4, 3) mask (positions down, sequences across), which does not broadcast against the (3, 4) `values`.
+      - text: '`out = where(arange(4) <= length[:, None], values, 0)`'
+        why: '`<=` keeps one position too many: row 0 would keep 2 entries and row 2 one entry, although their lengths are 1 and 0.'
+    explanation: |
+      `length[:, None]` is a (3, 1) column (one length per row) and `arange(4)` a (4,) row of column
+      positions; broadcasting compares every position with its row's length and yields the (3, 4)
+      mask `[[1, 0, 0, 0], [1, 1, 1, 0], [0, 0, 0, 0]]` [^1]. Positions `c` with `c < length[r]` are
+      kept, as the puzzle's spec requires [^2]. Without the `[:, None]` the two 1-D tensors are lined
+      up on the same (last) axis, where 4 and 3 are incompatible [^1].
+    references:
+      - title: 'PyTorch documentation: Broadcasting semantics'
+        locator: General semantics
+        url: https://docs.pytorch.org/docs/stable/notes/broadcasting.html#general-semantics
+      - source: tensor-puzzles
+        locator: Puzzle 14 - sequence_mask
+        url: https://github.com/srush/Tensor-Puzzles/blob/ad5069f7ef48523f733d445a7f94e93427d64f2d/README.md?plain=1#L493-L532
+    source:
+      id: tensor-puzzles
+      ref: puzzle-14-sequence-mask
+      url: https://github.com/srush/Tensor-Puzzles/blob/ad5069f7ef48523f733d445a7f94e93427d64f2d/README.md?plain=1#L493-L532
+    status: reviewed
+    reviewed_by: claude
+  - id: pytorch-078
+    type: short_answer
+    difficulty: medium
+    tags:
+      - broadcasting
+      - one-hot
+      - tensor-puzzles
+    question: |
+      What is `out`?
+
+      ```python
+      def arange(i):
+          return torch.tensor(range(i))
+
+      def ones(i):
+          return arange(i) * 0 + 1
+
+      a = torch.tensor([1, 1, 3, 0, 1])
+      out = ones(5) @ (1 * (a[:, None] == arange(4)))
+      ```
+    answer:
+      accept:
+        - '[1, 3, 0, 1]'
+      pattern: (tensor\()?\[?\s*1(?:\s*,\s*|\s+)3(?:\s*,\s*|\s+)0(?:\s*,\s*|\s+)1\s*\]?\)?
+      hint: Four integers, e.g. [3, 1, 0, 2]
+      model: '`tensor([1, 3, 0, 1])`: how often each value 0–3 occurs in `a`.'
+    explanation: |
+      `a[:, None] == arange(4)` broadcasts a (5, 1) column against a (4,) row [^1] and gives a (5, 4)
+      matrix whose row `r` is the one-hot encoding of `a[r]`. Multiplying by a row of five ones sums
+      the rows, i.e. counts, for every value `j`, how many entries equal `j`: value 0 once, 1 three
+      times, 2 never, 3 once. That is Tensor Puzzle 15, `bincount` [^2]; `torch.bincount(a,
+      minlength=4)` returns the same counts.
+    references:
+      - title: 'PyTorch documentation: Broadcasting semantics'
+        locator: General semantics
+        url: https://docs.pytorch.org/docs/stable/notes/broadcasting.html#general-semantics
+      - source: tensor-puzzles
+        locator: Puzzle 15 - bincount
+        url: https://github.com/srush/Tensor-Puzzles/blob/ad5069f7ef48523f733d445a7f94e93427d64f2d/README.md?plain=1#L533-L567
+    source:
+      id: tensor-puzzles
+      ref: puzzle-15-bincount
+      url: https://github.com/srush/Tensor-Puzzles/blob/ad5069f7ef48523f733d445a7f94e93427d64f2d/README.md?plain=1#L533-L567
+    status: reviewed
+    reviewed_by: claude
+  - id: pytorch-079
+    type: short_answer
+    difficulty: medium
+    tags:
+      - broadcasting
+      - bucketize
+      - tensor-puzzles
+    question: |
+      What is `out`?
+
+      ```python
+      def arange(i):
+          return torch.tensor(range(i))
+
+      def ones(i):
+          return arange(i) * 0 + 1
+
+      v = torch.tensor([4, 0, 3, 9])
+      boundaries = torch.tensor([1, 3, 5])
+      out = (1 * (v[:, None] >= boundaries)) @ ones(3)
+      ```
+    answer:
+      accept:
+        - '[2, 0, 2, 3]'
+      pattern: (tensor\()?\[?\s*2(?:\s*,\s*|\s+)0(?:\s*,\s*|\s+)2(?:\s*,\s*|\s+)3\s*\]?\)?
+      hint: Four integers, e.g. [3, 1, 0, 2]
+      model: '`tensor([2, 0, 2, 3])`: for each value, the number of boundaries it has reached.'
+    explanation: |
+      `v[:, None] >= boundaries` is a (4, 3) matrix comparing every value with every boundary [^1];
+      summing each row (the `@ ones(3)`) counts the boundaries a value is at or above: 4 → 2
+      (1 and 3), 0 → 0, 3 → 2 (a value equal to a boundary counts), 9 → 3. That is the bucket index of
+      Tensor Puzzle 21 [^2], the same as `torch.bucketize(v, boundaries, right=True)`, whose buckets
+      are `boundaries[i-1] <= x < boundaries[i]` [^3]. With the default `right=False` the value 3
+      would land in bucket 1 instead.
+    references:
+      - title: 'PyTorch documentation: Broadcasting semantics'
+        locator: General semantics
+        url: https://docs.pytorch.org/docs/stable/notes/broadcasting.html#general-semantics
+      - source: tensor-puzzles
+        locator: Puzzle 21 - bucketize
+        url: https://github.com/srush/Tensor-Puzzles/blob/ad5069f7ef48523f733d445a7f94e93427d64f2d/README.md?plain=1#L714-L741
+      - title: 'PyTorch documentation: torch.bucketize'
+        locator: torch.bucketize (right argument)
+        url: https://docs.pytorch.org/docs/stable/generated/torch.bucketize.html
+    source:
+      id: tensor-puzzles
+      ref: puzzle-21-bucketize
+      url: https://github.com/srush/Tensor-Puzzles/blob/ad5069f7ef48523f733d445a7f94e93427d64f2d/README.md?plain=1#L714-L741
+    status: reviewed
+    reviewed_by: claude
+  - id: pytorch-080
+    type: single
+    difficulty: hard
+    tags:
+      - nan
+      - floating-point
+      - tensor-puzzles
+    question: |
+      The Tensor Puzzles build `where` from arithmetic. What does `where(q, a, b)` return, and how
+      does it differ from `torch.where(q, a, b)`?
+
+      ```python
+      def where(q, a, b):
+          return (q * a) + (~q) * b
+
+      q = torch.tensor([True, False])
+      a = torch.tensor([1.0, float("inf")])
+      b = torch.tensor([2.0, 3.0])
+      ```
+    options:
+      - text: '`tensor([1., nan])`, while `torch.where` returns `tensor([1., 3.])`'
+        correct: true
+      - text: '`tensor([1., 3.])`, the same as `torch.where`'
+        why: The unselected `inf` is not skipped; it is multiplied by 0, and $0 \times \infty$ is NaN, which then poisons the sum.
+      - text: '`tensor([1., inf])`, while `torch.where` returns `tensor([1., 3.])`'
+        why: Position 1 computes $0 \cdot \infty + 1 \cdot 3$; the first term is NaN, not $\infty$, and NaN plus anything is NaN.
+      - text: An error, because a boolean tensor cannot be multiplied by a float tensor
+        why: Booleans are promoted to 0/1 numbers in arithmetic, so `q * a` is valid.
+    explanation: |
+      The arithmetic `where` evaluates *both* branches everywhere. At position 1 it computes
+      `False * inf + True * 3.0` = $0 \cdot \infty + 3$. In IEEE floating point $0 \times \infty$ is an
+      indeterminate form that yields NaN [^1], and NaN propagates through the addition. `torch.where`
+      selects elements instead of multiplying, so the unselected `inf` never matters [^2]. The puzzle
+      helper is fine for their integer exercises [^3], but the same trick on real data (for example
+      masking with `-inf` in attention) needs a real selection.
+    references:
+      - title: NaN (Wikipedia)
+        locator: Operations generating NaN
+        url: https://en.wikipedia.org/wiki/NaN#Operations_generating_NaN
+      - title: 'PyTorch documentation: torch.where'
+        locator: torch.where
+        url: https://docs.pytorch.org/docs/stable/generated/torch.where.html
+      - source: tensor-puzzles
+        locator: Rules (the `where` helper)
+        url: https://github.com/srush/Tensor-Puzzles/blob/ad5069f7ef48523f733d445a7f94e93427d64f2d/README.md?plain=1#L89-L105
+    source:
+      id: original
+      ref: pytorch-080
+    status: reviewed
+    reviewed_by: claude
+  - id: pytorch-081
+    type: single
+    difficulty: medium
+    tags:
+      - view
+      - contiguous
+      - multi-head-attention
+      - llms-from-scratch
+    question: |
+      Multi-head attention ends by merging the heads back into one dimension:
+
+      ```python
+      b, num_tokens, num_heads, head_dim = 2, 6, 3, 4
+      context = torch.randn(b, num_heads, num_tokens, head_dim)   # attn_weights @ values
+      out = context.transpose(1, 2).view(b, num_tokens, num_heads * head_dim)
+      ```
+
+      What happens on the last line?
+    options:
+      - text: It raises a `RuntimeError` about incompatible size and stride
+        correct: true
+      - text: '`out` has shape (2, 6, 12) with the heads concatenated per token'
+        why: That is what `.reshape(...)` or `.contiguous().view(...)` return; `view` itself refuses the non-contiguous input.
+      - text: '`out` has shape (2, 6, 12) but the heads of different tokens are mixed up'
+        why: '`view` never silently reorders data; it either reinterprets the existing strides or raises an error.'
+      - text: '`view` makes a contiguous copy first and then returns shape (2, 6, 12)'
+        why: '`view` never copies. Copying when needed is exactly the difference between `reshape` and `view`.'
+    explanation: |
+      `transpose(1, 2)` returns a view with swapped strides, so the tensor is no longer contiguous in
+      memory. `view` can only reinterpret the existing memory layout and requires the new shape to be
+      compatible with the size and stride; merging the last two axes would span two non-adjacent
+      memory blocks, so PyTorch raises `view size is not compatible with input tensor's size and
+      stride` [^1]. LLMs-from-scratch therefore merges the heads with `.reshape(b, num_tokens,
+      self.d_out)` in `MultiHeadAttention` and with `.contiguous().view(...)` in the bonus
+      implementation [^2]; `reshape` copies only when a view is impossible [^1].
+    references:
+      - title: 'PyTorch documentation: torch.Tensor.view'
+        locator: torch.Tensor.view
+        url: https://docs.pytorch.org/docs/stable/generated/torch.Tensor.view.html
+      - source: llms-from-scratch
+        locator: pkg/llms_from_scratch/ch03.py, MultiHeadAttention.forward (lines 144-149) and PyTorchMultiHeadAttention.forward (line 194)
+        url: https://github.com/rasbt/LLMs-from-scratch/blob/cdbd33e6d57a71e20ea31434841095fac50cecd8/pkg/llms_from_scratch/ch03.py#L144-L149
+    source:
+      id: llms-from-scratch
+      ref: ch03/mha-merge-heads-view
+      url: https://github.com/rasbt/LLMs-from-scratch/blob/cdbd33e6d57a71e20ea31434841095fac50cecd8/pkg/llms_from_scratch/ch03.py#L144-L149
+    status: reviewed
+    reviewed_by: claude
+  - id: pytorch-082
+    type: multiple
+    difficulty: medium
+    tags:
+      - ce6146
+      - ce6146-l01
+      - pytorch
+      - broadcasting
+      - tensor-shapes
+    question: |
+      A dense layer produces pre-activations `Z` of shape `(32, 10)` (32 examples, 10 output
+      units). Which tensor shapes can be added elementwise to `Z` under PyTorch's broadcasting
+      rules (the same as NumPy's)? Select all that apply.
+    options:
+      - text: '`(10,)`'
+        correct: true
+      - text: '`(1, 10)`'
+        correct: true
+      - text: '`(32, 1)`'
+        correct: true
+      - text: '`(32,)`'
+        why: Shapes are aligned from the right, so the 32 is compared with the trailing size 10; they differ and neither is 1, so the addition fails.
+    explanation: |
+      Broadcasting compares shapes starting from the trailing dimension; two sizes are compatible
+      when they are equal or one of them is 1, and missing leading dimensions count as 1 [^1][^2].
+      `(10,)` and `(1, 10)` both match the trailing 10 and are stretched over the 32 rows — this is
+      how one bias per output unit is added to every example [^2][^3]. `(32, 1)` is also legal (it adds
+      one offset per example), whereas `(32,)` lines up 32 against 10 and raises an error [^2].
+    references:
+      - source: ncu-intro-dl
+        locator: Lecture 1, slides 36–37
+      - title: 'NumPy documentation: Broadcasting'
+        url: https://numpy.org/doc/stable/user/basics.broadcasting.html
+        locator: General broadcasting rules; Broadcastable arrays
+      - source: d2l
+        url: https://d2l.ai/chapter_preliminaries/ndarray.html
+        locator: Sec. 2.1.4 Broadcasting
+    source:
+      id: ncu-intro-dl
+      ref: lecture-01/q01
+    status: reviewed
+    reviewed_by: claude
+  - id: pytorch-083
+    type: multiple
+    difficulty: medium
+    tags:
+      - ce6146
+      - ce6146-l01
+      - pytorch
+      - reshape
+      - flatten
+      - tensor-shapes
+    question: |
+      A batch of 8 RGB images is stored as `x = torch.randn(8, 3, 32, 32)`. A dense layer needs it
+      as a matrix with one row of $3 \cdot 32 \cdot 32 = 3072$ values per image. Which expressions
+      give a tensor of shape `(8, 3072)` whose row `i` holds exactly the values of image `i`? Select
+      all that apply.
+    options:
+      - text: '`x.reshape(8, -1)`'
+        correct: true
+      - text: '`x.flatten(start_dim=1)`'
+        correct: true
+      - text: '`x.reshape(-1, 8).T`'
+        why: The shape is right, but `reshape(-1, 8)` regroups the values eight at a time in memory order and the transpose then collects every eighth value, so each row mixes values of all eight images.
+      - text: '`x.flatten()`'
+        why: Without a start dimension it merges the batch axis as well and returns one vector of shape `(24576,)`.
+    explanation: |
+      `reshape` keeps the elements in row-major order (last index fastest) and only regroups them;
+      one size may be given as `-1` and is then inferred [^1][^2][^4]. `flatten(start_dim=1)` merges
+      every axis from dimension 1 on [^3]. Because the batch index is the first axis, keeping it and
+      merging the other three — `reshape(8, -1)` or `flatten(start_dim=1)` — puts the 3072 values of
+      each image, in order, into its own row. `reshape(-1, 8).T` has the right shape but the wrong
+      contents: a reshape is not a transpose, so its rows no longer correspond to images. Keeping the
+      batch axis separate when flattening is what keeps every example identifiable.
+    references:
+      - source: ncu-intro-dl
+        locator: Lecture 1, slides 38–39
+      - title: torch.reshape (PyTorch documentation)
+        url: https://docs.pytorch.org/docs/stable/generated/torch.reshape.html
+        locator: Function description (same data and number of elements; a single dimension may be -1)
+      - title: torch.flatten (PyTorch documentation)
+        url: https://docs.pytorch.org/docs/stable/generated/torch.flatten.html
+        locator: Function description (flattens the dimensions from start_dim to end_dim)
+      - source: d2l
+        url: https://d2l.ai/chapter_preliminaries/ndarray.html
+        locator: Sec. 2.1.1 Getting Started (reshape, inferring a dimension with -1)
+    source:
+      id: ncu-intro-dl
+      ref: lecture-01/q03
+    status: reviewed
+    reviewed_by: claude
+  - id: pytorch-084
+    type: true_false
+    difficulty: easy
+    tags:
+      - ce6146
+      - ce6146-l01
+      - reproducibility
+      - random-seed
+      - pytorch
+    question: |
+      True or false: calling `torch.manual_seed(0)` at the start of a training script guarantees
+      bit-identical results on every machine, GPU model and PyTorch release.
+    options:
+      - text: 'True'
+        why: Seeding fixes the random number streams, but results can still differ across releases, platforms and devices, and some GPU operations are nondeterministic.
+      - text: 'False'
+        correct: true
+    explanation: |
+      A seed controls the pseudo-random draws (initialization, shuffling, dropout masks), which is
+      necessary for reproducibility but not sufficient [^1]. PyTorch states that completely
+      reproducible results are not guaranteed across releases, commits or platforms, or between
+      CPU and GPU runs, and that some operations are nondeterministic unless deterministic
+      algorithms are requested [^2]. Recording software versions, hardware and settings helps
+      others recreate an experiment.
+    references:
+      - source: ncu-intro-dl
+        locator: Lecture 1, slide 102
+      - title: 'PyTorch documentation: Reproducibility'
+        url: https://docs.pytorch.org/docs/stable/notes/randomness.html
+        locator: Introduction; Controlling sources of randomness; Avoiding nondeterministic algorithms
+    source:
+      id: ncu-intro-dl
+      ref: lecture-01/q28
+    status: reviewed
+    reviewed_by: claude
+  - id: pytorch-085
+    type: short_answer
+    difficulty: hard
+    tags:
+      - ce6146
+      - ce6146-l03
+      - pytorch
+      - batched-matmul
+      - broadcasting
+    question: |
+      What shape does this expression produce?
+
+      ```python
+      import torch
+      torch.matmul(torch.randn(4, 1, 3, 5), torch.randn(6, 5, 2)).shape
+      ```
+    answer:
+      accept:
+        - (4, 6, 3, 2)
+      pattern: (torch\.Size\(\[|\(|\[)?\s*4\s*[,x×]\s*6\s*[,x×]\s*3\s*[,x×]\s*2\s*(\]\)|\)|\])?
+      hint: Four dimensions in order, e.g. (8, 1, 7, 9)
+      model: '`torch.Size([4, 6, 3, 2])`'
+    explanation: |
+      `torch.matmul` treats the last two dimensions as matrices — a $3 \times 5$ matrix times a
+      $5 \times 2$ matrix gives $3 \times 2$ — and broadcasts all leading dimensions as batch
+      dimensions [^1][^2]. The batch shapes $(4, 1)$ and $(6,)$ are aligned from the right, as in
+      elementwise broadcasting: $1$ against $6$ gives $6$, and the missing dimension against $4$
+      gives $4$ [^3]. The result is $(4, 6, 3, 2)$: 24 independent $3 \times 2$ products.
+    references:
+      - source: ncu-intro-dl
+        locator: Lecture 3, slide 9
+      - title: torch.matmul (PyTorch documentation)
+        url: https://docs.pytorch.org/docs/stable/generated/torch.matmul.html
+        locator: Function description (batched matrix multiply; the batch dimensions are broadcast)
+      - title: 'NumPy documentation: Broadcasting'
+        url: https://numpy.org/doc/stable/user/basics.broadcasting.html
+        locator: General broadcasting rules
+    source:
+      id: ncu-intro-dl
+      ref: lecture-03/q25
+    status: reviewed
+    reviewed_by: claude

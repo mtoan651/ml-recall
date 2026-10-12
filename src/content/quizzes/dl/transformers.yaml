@@ -2072,3 +2072,335 @@ questions:
       url: https://archive.nptel.ac.in/content/storage2/courses/downloads_new/106102576/noc25_cs45_assignment_Week_6.png
     status: reviewed
     reviewed_by: claude
+  - id: transformers-058
+    type: short_answer
+    difficulty: easy
+    tags:
+      - embeddings
+      - positional-embeddings
+      - tensor-shapes
+      - llms-from-scratch
+    question: |
+      What is `input_embeddings.shape`?
+
+      ```python
+      vocab_size, output_dim, context_length = 50257, 256, 4
+      token_embedding_layer = nn.Embedding(vocab_size, output_dim)
+      pos_embedding_layer = nn.Embedding(context_length, output_dim)
+
+      inputs = torch.randint(0, vocab_size, (8, context_length))   # 8 sequences of 4 token IDs
+      token_embeddings = token_embedding_layer(inputs)
+      pos_embeddings = pos_embedding_layer(torch.arange(context_length))
+      input_embeddings = token_embeddings + pos_embeddings
+      ```
+    answer:
+      accept:
+        - (8, 4, 256)
+      pattern: (torch\.size)?\(?\[?\s*8\s*[,x×]\s*4\s*[,x×]\s*256\s*\]?\)?
+      hint: Three dimensions in order, e.g. (5, 6, 7)
+      model: '$(8, 4, 256)$: one 256-dimensional vector per token of every sequence.'
+    explanation: |
+      `nn.Embedding` is a lookup table: an input of IDs with shape `(*)` returns `(*, H)`, one row of
+      the weight matrix per ID [^1]. The (8, 4) batch of token IDs therefore becomes (8, 4, 256). The
+      positional layer is indexed with `arange(4)` and returns one vector per *position*, shape
+      (4, 256); broadcasting adds the same position vectors to all 8 sequences [^2], so the sum keeps
+      shape (8, 4, 256). This is how GPT-style models build their input embeddings [^3].
+    references:
+      - title: 'PyTorch documentation: torch.nn.Embedding'
+        locator: Shape
+        url: https://docs.pytorch.org/docs/stable/generated/torch.nn.Embedding.html
+      - title: 'PyTorch documentation: Broadcasting semantics'
+        locator: General semantics
+        url: https://docs.pytorch.org/docs/stable/notes/broadcasting.html#general-semantics
+      - source: llms-from-scratch
+        locator: ch02/01_main-chapter-code/ch02.ipynb, Sec. 2.8 Encoding word positions
+        url: https://github.com/rasbt/LLMs-from-scratch/blob/cdbd33e6d57a71e20ea31434841095fac50cecd8/ch02/01_main-chapter-code/ch02.ipynb
+    source:
+      id: llms-from-scratch
+      ref: ch02/token-plus-position-embeddings
+      url: https://github.com/rasbt/LLMs-from-scratch/blob/cdbd33e6d57a71e20ea31434841095fac50cecd8/ch02/01_main-chapter-code/ch02.ipynb
+    status: reviewed
+    reviewed_by: claude
+  - id: transformers-059
+    type: true_false
+    difficulty: medium
+    tags:
+      - causal-mask
+      - softmax
+      - llms-from-scratch
+    question: |
+      Two ways to apply a causal mask to the same random scores:
+
+      ```python
+      torch.manual_seed(0)
+      scores = torch.randn(4, 4)
+
+      w1 = torch.softmax(scores.masked_fill(torch.triu(torch.ones(4, 4), diagonal=1).bool(),
+                                            -torch.inf), dim=-1)
+
+      w2 = torch.softmax(scores, dim=-1) * torch.tril(torch.ones(4, 4))
+      w2 = w2 / w2.sum(dim=-1, keepdim=True)
+
+      print(torch.allclose(w1, w2))
+      ```
+
+      True or false: the last line prints `True`.
+    options:
+      - text: 'True'
+        correct: true
+      - text: 'False'
+        why: Renormalizing the kept weights by their row sum cancels the softmax denominator, so the two results agree up to rounding.
+    explanation: |
+      Write $e_j = \exp(s_j)$ for the scores of one row. The `-inf` version gives
+      $w_{1,j} = e_j / \sum_{k \le i} e_k$ for the allowed positions $j \le i$ and 0 elsewhere. The
+      second version first computes $e_j / \sum_{k} e_k$ over *all* positions, zeroes the future
+      ones and divides by the row sum $\sum_{k \le i} e_k / \sum_k e_k$; the full denominator cancels
+      and leaves exactly $w_{1,j}$. LLMs-from-scratch shows both variants and their identical
+      weights [^1]; the code uses the `-inf` version because it needs one softmax and no extra
+      normalization [^2]. Zeroing *without* renormalizing would leave rows that sum to less than 1.
+    references:
+      - source: llms-from-scratch
+        locator: ch03/01_main-chapter-code/ch03.ipynb, Sec. 3.5.1 Applying a causal attention mask
+        url: https://github.com/rasbt/LLMs-from-scratch/blob/cdbd33e6d57a71e20ea31434841095fac50cecd8/ch03/01_main-chapter-code/ch03.ipynb
+      - source: llms-from-scratch
+        locator: pkg/llms_from_scratch/ch03.py, CausalAttention.forward
+        url: https://github.com/rasbt/LLMs-from-scratch/blob/cdbd33e6d57a71e20ea31434841095fac50cecd8/pkg/llms_from_scratch/ch03.py#L64-L83
+    source:
+      id: llms-from-scratch
+      ref: ch03/mask-then-renormalize
+      url: https://github.com/rasbt/LLMs-from-scratch/blob/cdbd33e6d57a71e20ea31434841095fac50cecd8/ch03/01_main-chapter-code/ch03.ipynb
+    status: reviewed
+    reviewed_by: claude
+  - id: transformers-060
+    type: short_answer
+    difficulty: medium
+    tags:
+      - scaled-dot-product-attention
+      - softmax
+      - llms-from-scratch
+    question: |
+      Attention divides the scores by $\sqrt{d_k}$ before the softmax. What is the larger of the two
+      weights printed by the last line? Round to 3 decimals.
+
+      ```python
+      s = torch.tensor([8.0, 16.0])      # two attention scores q·k
+      d_k = 64                           # keys.shape[-1]
+      print(torch.softmax(s, dim=-1))              # tensor([3.3535e-04, 9.9966e-01])
+      print(torch.softmax(s / d_k**0.5, dim=-1))
+      ```
+    answer:
+      numeric: 0.731
+      tolerance: 0.001
+      hint: a number between 0 and 1, 3 decimals
+      model: '0.731: the scaled scores are 1 and 2, and $e^2/(e^1 + e^2) \approx 0.731$.'
+    explanation: |
+      $\sqrt{64} = 8$, so the scaled scores are 1 and 2 and the weights are
+      $\operatorname{softmax}(1, 2) = (0.269, 0.731)$. Unscaled, the gap of 8 makes the softmax almost
+      one-hot (0.9997), where its gradients are tiny. Dot products of $d_k$-dimensional vectors grow
+      with $d_k$, which is why the Transformer divides them by $\sqrt{d_k}$ [^1]; the book's code does
+      the same with `attn_scores / keys.shape[-1]**0.5` [^2].
+    references:
+      - title: Attention Is All You Need (Vaswani et al., 2017)
+        locator: Sec. 3.2.1 Scaled Dot-Product Attention
+        url: https://arxiv.org/abs/1706.03762
+      - source: llms-from-scratch
+        locator: pkg/llms_from_scratch/ch03.py, MultiHeadAttention.forward (line 141)
+        url: https://github.com/rasbt/LLMs-from-scratch/blob/cdbd33e6d57a71e20ea31434841095fac50cecd8/pkg/llms_from_scratch/ch03.py#L141
+    source:
+      id: llms-from-scratch
+      ref: ch03/scaled-softmax
+      url: https://github.com/rasbt/LLMs-from-scratch/blob/cdbd33e6d57a71e20ea31434841095fac50cecd8/pkg/llms_from_scratch/ch03.py#L141
+    status: reviewed
+    reviewed_by: claude
+  - id: transformers-061
+    type: short_answer
+    difficulty: medium
+    tags:
+      - multi-head-attention
+      - tensor-shapes
+      - llms-from-scratch
+    question: |
+      What is `attn_scores.shape`?
+
+      ```python
+      b, num_tokens, d_out, num_heads = 2, 6, 12, 3
+      head_dim = d_out // num_heads
+
+      queries = torch.randn(b, num_tokens, d_out)     # output of W_query
+      keys = torch.randn(b, num_tokens, d_out)        # output of W_key
+
+      queries = queries.view(b, num_tokens, num_heads, head_dim).transpose(1, 2)
+      keys = keys.view(b, num_tokens, num_heads, head_dim).transpose(1, 2)
+      attn_scores = queries @ keys.transpose(2, 3)
+      ```
+    answer:
+      accept:
+        - (2, 3, 6, 6)
+      pattern: (torch\.size)?\(?\[?\s*2\s*[,x×]\s*3\s*[,x×]\s*6\s*[,x×]\s*6\s*\]?\)?
+      hint: Four dimensions in order, e.g. (8, 1, 28, 28)
+      model: '$(2, 3, 6, 6)$: batch, heads, query tokens, key tokens.'
+    explanation: |
+      `view` splits the last dimension 12 into 3 heads of size 4, giving (2, 6, 3, 4), and
+      `transpose(1, 2)` moves the head axis forward: (2, 3, 6, 4), i.e. (batch, heads, tokens,
+      head_dim) [^1]. `keys.transpose(2, 3)` is (2, 3, 4, 6), and `@` treats the leading (2, 3) as
+      batch dimensions and multiplies the last two: (6, 4) @ (4, 6) = (6, 6) [^2]. So every head of
+      every sequence gets its own 6 × 6 matrix of query–key scores.
+    references:
+      - source: llms-from-scratch
+        locator: pkg/llms_from_scratch/ch03.py, MultiHeadAttention.forward (lines 121-133)
+        url: https://github.com/rasbt/LLMs-from-scratch/blob/cdbd33e6d57a71e20ea31434841095fac50cecd8/pkg/llms_from_scratch/ch03.py#L121-L133
+      - title: 'PyTorch documentation: torch.matmul'
+        locator: torch.matmul (batched matrix multiply)
+        url: https://docs.pytorch.org/docs/stable/generated/torch.matmul.html
+    source:
+      id: llms-from-scratch
+      ref: ch03/mha-score-shape
+      url: https://github.com/rasbt/LLMs-from-scratch/blob/cdbd33e6d57a71e20ea31434841095fac50cecd8/pkg/llms_from_scratch/ch03.py#L121-L133
+    status: reviewed
+    reviewed_by: claude
+  - id: transformers-062
+    type: single
+    difficulty: hard
+    tags:
+      - multi-head-attention
+      - view
+      - tensor-shapes
+      - llms-from-scratch
+    question: |
+      `x` holds the keys of 3 tokens with 4 features each; token `t` has the features
+      `4t, …, 4t + 3`. Both lines below give shape (1, 2, 3, 2), i.e. (batch, heads, tokens, head_dim):
+
+      ```python
+      x = torch.arange(12).reshape(1, 3, 4)        # (batch, tokens, d_out)
+      right = x.view(1, 3, 2, 2).transpose(1, 2)   # as in MultiHeadAttention
+      wrong = x.view(1, 2, 3, 2)                   # skips the transpose
+      ```
+
+      What does `wrong[0, 0]`, the keys that "head 0" would use, contain?
+    options:
+      - text: '`[[0, 1], [2, 3], [4, 5]]`'
+        correct: true
+      - text: '`[[0, 1], [4, 5], [8, 9]]`'
+        why: That is `right[0, 0]`, the first two features of each of the 3 tokens, which is what head 0 should see.
+      - text: '`[[0, 2], [4, 6], [8, 10]]`'
+        why: Neither line takes every second feature; `view` keeps the memory order and cuts consecutive blocks.
+      - text: '`[[0, 1, 2], [3, 4, 5]]`'
+        why: The last two dimensions of `wrong` are (3, 2), not (2, 3).
+    explanation: |
+      `view` never moves data: it re-reads the 12 numbers `0, 1, …, 11` in memory order with a new
+      shape [^1]. `wrong = x.view(1, 2, 3, 2)` cuts them into 2 blocks of 3 rows of 2, so "head 0" gets
+      `0..5`: all four features of token 0 plus the first half of token 1, and the "token" axis no
+      longer means tokens. The correct code first splits each token's own features into heads,
+      `(1, 3, 2, 2)`, and then swaps the token and head axes, so head 0 gets features 0–1 of every
+      token [^2]. Both versions have the same shape, so this bug raises no error.
+    references:
+      - title: 'PyTorch documentation: torch.Tensor.view'
+        locator: torch.Tensor.view
+        url: https://docs.pytorch.org/docs/stable/generated/torch.Tensor.view.html
+      - source: llms-from-scratch
+        locator: pkg/llms_from_scratch/ch03.py, MultiHeadAttention.forward (lines 121-130)
+        url: https://github.com/rasbt/LLMs-from-scratch/blob/cdbd33e6d57a71e20ea31434841095fac50cecd8/pkg/llms_from_scratch/ch03.py#L121-L130
+    source:
+      id: llms-from-scratch
+      ref: ch03/mha-view-without-transpose
+      url: https://github.com/rasbt/LLMs-from-scratch/blob/cdbd33e6d57a71e20ea31434841095fac50cecd8/pkg/llms_from_scratch/ch03.py#L121-L130
+    status: reviewed
+    reviewed_by: claude
+  - id: transformers-063
+    type: short_answer
+    difficulty: medium
+    tags:
+      - feed-forward
+      - parameter-count
+      - gpt-2
+      - llms-from-scratch
+    question: |
+      The feed-forward module of each GPT-2 small block (embedding size 768). What does the last line
+      print?
+
+      ```python
+      emb_dim = 768
+      ff = nn.Sequential(
+          nn.Linear(emb_dim, 4 * emb_dim),
+          nn.GELU(approximate="tanh"),
+          nn.Linear(4 * emb_dim, emb_dim),
+      )
+      print(sum(p.numel() for p in ff.parameters()))
+      ```
+    answer:
+      numeric: 4722432
+      tolerance: 0
+      hint: an integer
+      model: $768 \cdot 3072 + 3072 + 3072 \cdot 768 + 768 = 4{,}722{,}432$
+    explanation: |
+      An `nn.Linear(in, out)` layer has an `out × in` weight and `out` biases [^1]; GELU has no
+      parameters. The expansion layer has $768 \cdot 3072 + 3072 = 2{,}362{,}368$ parameters and the
+      projection back $3072 \cdot 768 + 768 = 2{,}360{,}064$, together 4,722,432. Because of the 4×
+      hidden width that GPT models use [^2], that is about twice the block's attention module, which
+      in the book's version (query, key and value projections without bias, output projection with
+      bias) has $3 \cdot 768^2 + 768^2 + 768 = 2{,}360{,}064$ parameters [^3].
+    references:
+      - title: 'PyTorch documentation: torch.nn.Linear'
+        locator: Variables (weight, bias)
+        url: https://docs.pytorch.org/docs/stable/generated/torch.nn.Linear.html
+      - source: llms-from-scratch
+        locator: pkg/llms_from_scratch/ch04.py, FeedForwardFast (lines 137-147)
+        url: https://github.com/rasbt/LLMs-from-scratch/blob/cdbd33e6d57a71e20ea31434841095fac50cecd8/pkg/llms_from_scratch/ch04.py#L137-L147
+      - source: llms-from-scratch
+        locator: pkg/llms_from_scratch/ch03.py, MultiHeadAttention.__init__ (lines 99-112)
+        url: https://github.com/rasbt/LLMs-from-scratch/blob/cdbd33e6d57a71e20ea31434841095fac50cecd8/pkg/llms_from_scratch/ch03.py#L99-L112
+    source:
+      id: llms-from-scratch
+      ref: ch04/feedforward-param-count
+      url: https://github.com/rasbt/LLMs-from-scratch/blob/cdbd33e6d57a71e20ea31434841095fac50cecd8/pkg/llms_from_scratch/ch04.py#L137-L147
+    status: reviewed
+    reviewed_by: claude
+  - id: transformers-064
+    type: short_answer
+    difficulty: medium
+    tags:
+      - layer-normalization
+      - llms-from-scratch
+    question: |
+      The book's `LayerNorm` (freshly initialized, so `scale` is 1 and `shift` is 0). What is the
+      first element of the output? Round to 3 decimals.
+
+      ```python
+      class LayerNorm(nn.Module):
+          def __init__(self, emb_dim):
+              super().__init__()
+              self.eps = 1e-5
+              self.scale = nn.Parameter(torch.ones(emb_dim))
+              self.shift = nn.Parameter(torch.zeros(emb_dim))
+
+          def forward(self, x):
+              mean = x.mean(dim=-1, keepdim=True)
+              var = x.var(dim=-1, keepdim=True, unbiased=False)
+              return self.scale * (x - mean) / torch.sqrt(var + self.eps) + self.shift
+
+      print(LayerNorm(4)(torch.tensor([[1.0, 2.0, 3.0, 4.0]])))
+      ```
+    answer:
+      numeric: -1.342
+      tolerance: 0.001
+      hint: a decimal number, e.g. -0.577
+      model: '$-1.342$: $(1 - 2.5)/\sqrt{1.25}$.'
+    explanation: |
+      The row has mean 2.5 and, with `unbiased=False`, variance
+      $(2.25 + 0.25 + 0.25 + 2.25)/4 = 1.25$, so the first entry becomes
+      $(1 - 2.5)/\sqrt{1.25 + 10^{-5}} \approx -1.342$ [^1]. Dividing by $N$ rather than $N - 1$
+      matches how layer normalization is defined (and what `nn.LayerNorm` computes) [^2]; with the
+      unbiased variance 5/3 the result would be $-1.162$.
+    references:
+      - source: llms-from-scratch
+        locator: pkg/llms_from_scratch/ch04.py, LayerNorm (lines 11-22)
+        url: https://github.com/rasbt/LLMs-from-scratch/blob/cdbd33e6d57a71e20ea31434841095fac50cecd8/pkg/llms_from_scratch/ch04.py#L11-L22
+      - title: 'PyTorch documentation: torch.nn.LayerNorm'
+        locator: torch.nn.LayerNorm (biased variance estimator)
+        url: https://docs.pytorch.org/docs/stable/generated/torch.nn.LayerNorm.html
+    source:
+      id: llms-from-scratch
+      ref: ch04/layernorm-biased-variance
+      url: https://github.com/rasbt/LLMs-from-scratch/blob/cdbd33e6d57a71e20ea31434841095fac50cecd8/pkg/llms_from_scratch/ch04.py#L11-L22
+    status: reviewed
+    reviewed_by: claude

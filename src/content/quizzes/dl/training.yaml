@@ -2800,3 +2800,613 @@ questions:
       url: https://arxiv.org/abs/2201.00650v2
     status: reviewed
     reviewed_by: claude
+  - id: training-079
+    type: short_answer
+    difficulty: medium
+    tags:
+      - ce6146
+      - ce6146-l01
+      - epochs
+      - mini-batch
+    question: |
+      A training set of 2,000 examples is processed in mini-batches of 128, and the last, smaller
+      batch of each epoch is kept. Training stops after 1,000 parameter updates. How many complete
+      epochs have been finished?
+    answer:
+      numeric: 62
+      tolerance: 0
+      hint: an integer
+      model: $\lceil 2000/128 \rceil = 16$ updates per epoch (15 full batches and one of 80); $62 \cdot 16 = 992 \le 1000 < 63 \cdot 16$, so 62 complete epochs.
+    explanation: |
+      Each mini-batch gives one parameter update, and an epoch is one pass over the whole training
+      set [^1][^2]. Fifteen batches of 128 cover 1,920 examples and a sixteenth holds the remaining
+      80, so one epoch takes 16 updates. After 1,000 updates, $\lfloor 1000/16 \rfloor = 62$ epochs
+      are complete (992 updates) and the 63rd has just started. Counting $2000/128 = 15.625$ updates
+      per epoch would give 64, but the partial batch still costs a whole update; only with
+      `drop_last=True` in a PyTorch `DataLoader` is it skipped [^3].
+    references:
+      - source: ncu-intro-dl
+        locator: Lecture 1, slide 54
+      - source: d2l
+        url: https://d2l.ai/chapter_linear-regression/linear-regression-scratch.html
+        locator: Sec. 3.4.4 Training
+      - title: torch.utils.data (PyTorch documentation)
+        url: https://docs.pytorch.org/docs/stable/data.html
+        locator: torch.utils.data.DataLoader — parameter drop_last
+    source:
+      id: ncu-intro-dl
+      ref: lecture-01/q07
+    status: reviewed
+    reviewed_by: claude
+  - id: training-080
+    type: short_answer
+    difficulty: easy
+    tags:
+      - ce6146
+      - ce6146-l01
+      - dropout
+    question: |
+      A layer uses inverted dropout with drop probability $p = 0.25$. A hidden activation equals 6.
+      During training, if this unit is kept, its output is {{1}}; in evaluation mode its output is
+      {{2}}.
+    answer:
+      blanks:
+        - numeric: 8
+          tolerance: 0.001
+          hint: a number
+        - numeric: 6
+          tolerance: 0.001
+          hint: a number
+      model: When kept in training, $6/(1 - 0.25) = 8$; in evaluation dropout is off, so the output is 6.
+    explanation: |
+      Inverted dropout zeroes each unit with probability $p$ and divides the kept ones by $1 - p$,
+      so the expected activation is unchanged: $0.25 \cdot 0 + 0.75 \cdot 8 = 6$ [^1][^2]. Because
+      the rescaling already happens during training, nothing needs to be rescaled at test time;
+      dropout is simply switched off and the full network is used [^3].
+    references:
+      - source: ncu-intro-dl
+        locator: Lecture 1, slides 84–85
+      - source: d2l
+        url: https://d2l.ai/chapter_multilayer-perceptrons/dropout.html
+        locator: Sec. 5.6 Dropout (introduction, Eq. (5.6.1)); Sec. 5.6.1 Dropout in Practice
+      - title: torch.nn.Dropout (PyTorch documentation)
+        url: https://docs.pytorch.org/docs/stable/generated/torch.nn.Dropout.html
+        locator: Class description (outputs scaled by 1/(1-p) during training; identity in evaluation)
+    source:
+      id: ncu-intro-dl
+      ref: lecture-01/q17
+    status: reviewed
+    reviewed_by: claude
+  - id: training-081
+    type: multiple
+    difficulty: medium
+    tags:
+      - ce6146
+      - ce6146-l01
+      - data-augmentation
+      - data-leakage
+    question: Which of these data-augmentation setups are flawed? Select all that apply.
+    options:
+      - text: Random horizontal flips for a handwriting model that must tell the letters "b" and "d" apart
+        correct: true
+      - text: Augmenting all photos first, then randomly splitting the originals and their copies into training and test sets
+        correct: true
+      - text: Small random changes in brightness and contrast for a model that detects scratches on polished metal parts
+        why: A mild lighting change keeps a scratched part scratched and a clean part clean, so the labels stay valid.
+      - text: Random crops that always keep the whole animal in view, for an animal-species classifier
+        why: The animal, and hence its class, is still fully visible after cropping.
+    explanation: |
+      Augmentation adds transformed copies of training inputs and assumes that every copy keeps the
+      original label [^1][^2]. A mirrored "b" looks like a "d", so the flip creates examples with
+      wrong labels. Augmenting before splitting puts near-copies of the same photo into both
+      training and test data, so the test score partly measures memorization — the same leakage as
+      a random split over repeated items [^3]. Split the original items first and augment only the
+      training data.
+    references:
+      - source: ncu-intro-dl
+        locator: Lecture 1, slide 86
+      - source: d2l
+        url: https://d2l.ai/chapter_computer-vision/image-augmentation.html
+        locator: Sec. 14.1 Image Augmentation (introduction); Sec. 14.1.1.1 Flipping and Cropping
+      - title: 'Wikipedia: Leakage (machine learning)'
+        url: https://en.wikipedia.org/wiki/Leakage_(machine_learning)
+        locator: Training example leakage
+    source:
+      id: ncu-intro-dl
+      ref: lecture-01/q18
+    status: reviewed
+    reviewed_by: claude
+  - id: training-082
+    type: short_answer
+    difficulty: medium
+    tags:
+      - ce6146
+      - ce6146-l01
+      - memory
+      - adam
+    question: |
+      A model has 25 million parameters, each a 32-bit float. During training with Adam you must
+      hold the weights, their gradients and Adam's two moment estimates per parameter. Ignoring
+      activations and other buffers, how many megabytes ($1\ \text{MB} = 10^6$ bytes) does this
+      take?
+    answer:
+      numeric: 400
+      tolerance: 0.5
+      hint: a number of MB
+      model: 25,000,000 × 4 bytes = 100 MB per copy; weights + gradients + 2 Adam moments = 4 copies = 400 MB.
+    explanation: |
+      A 32-bit float takes 4 bytes, so one copy of 25 million values is 100 MB [^1][^2]. Training
+      needs a gradient for every weight, and Adam keeps a running first-moment and second-moment
+      estimate per parameter [^3], so there are four copies: 400 MB. Activations stored for the
+      backward pass come on top and grow with the batch size, which is why a model that fits for
+      inference can run out of memory in training.
+    references:
+      - source: ncu-intro-dl
+        locator: Lecture 1, slide 100
+      - title: 'Wikipedia: Single-precision floating-point format'
+        url: https://en.wikipedia.org/wiki/Single-precision_floating-point_format
+        locator: Introduction (32 bits = 4 bytes)
+      - source: d2l
+        url: https://d2l.ai/chapter_optimization/adam.html
+        locator: Sec. 12.10.1 The Algorithm (state variables v_t and s_t)
+    source:
+      id: ncu-intro-dl
+      ref: lecture-01/q24
+    status: reviewed
+    reviewed_by: claude
+  - id: training-083
+    type: single
+    difficulty: medium
+    tags:
+      - ce6146
+      - ce6146-l02
+      - dead-relu
+      - vanishing-gradients
+    question: |
+      After some training, a ReLU unit in the first hidden layer has a negative pre-activation for
+      every training example. What happens to it under further gradient descent on the training
+      set?
+    options:
+      - text: All of its weights and its bias get zero gradient, so it stays inactive
+        correct: true
+      - text: Its gradients explode, because the ReLU function is unbounded above
+        why: On the inactive side the ReLU slope is 0, so the unit passes no gradient at all.
+      - text: It behaves like a linear unit with slope 1 until it becomes active again
+        why: Slope 1 applies only to positive pre-activations; here the slope is 0 on every example.
+      - text: Its outgoing weight keeps growing until the unit becomes active again
+        why: The outgoing weight's gradient is the unit's output (0) times the upstream gradient, so it does not change.
+    explanation: |
+      For an inactive ReLU the local derivative is 0, so the gradients of its incoming weights and
+      bias ($x_i\delta$ and $\delta$) vanish, and its outgoing weight's gradient is its activation,
+      0, times the upstream gradient [^1][^2]. If this holds on every example the unit is "dead":
+      its inputs are the fixed training data, so nothing can make its pre-activation positive
+      again (a unit in a deeper layer can still be revived when the layers below it change). Too
+      large a learning rate makes this more likely; leaky variants keep a small slope on the
+      negative side so that some gradient always flows [^3].
+    references:
+      - source: ncu-intro-dl
+        locator: Lecture 2, slides 77, 91
+      - source: d2l
+        url: https://d2l.ai/chapter_multilayer-perceptrons/mlp.html
+        locator: Sec. 5.1.2.1 ReLU Function
+      - title: 'Wikipedia: Rectified linear unit'
+        url: https://en.wikipedia.org/wiki/Rectified_linear_unit
+        locator: Potential problems (dying ReLU)
+    source:
+      id: ncu-intro-dl
+      ref: lecture-02/q27
+    status: reviewed
+    reviewed_by: claude
+  - id: training-084
+    type: short_answer
+    difficulty: medium
+    tags:
+      - ce6146
+      - ce6146-l03
+      - momentum
+      - pytorch
+    question: |
+      `torch.optim.SGD` implements momentum without the $(1 - \beta)$ factor of the moving-average
+      form: with momentum $\beta$ it keeps a buffer $b_t = \beta\,b_{t-1} + g_t$ (starting with
+      $b_1 = g_1$) and updates $w \leftarrow w - \eta\,b_t$. What does this code print?
+
+      ```python
+      import torch
+      w = torch.tensor(1.0, requires_grad=True)
+      opt = torch.optim.SGD([w], lr=0.1, momentum=0.9)
+      for _ in range(2):
+          opt.zero_grad()
+          loss = w ** 2
+          loss.backward()
+          opt.step()
+      print(round(w.item(), 4))
+      ```
+    answer:
+      numeric: 0.46
+      tolerance: 0.0002
+      hint: a number with up to 4 decimals
+      model: $b_t = 0.9\,b_{t-1} + g_t$ with $b_1 = g_1$. Step 1 — $g = 2$, $b = 2$, $w = 0.8$. Step 2 — $g = 1.6$, $b = 1.8 + 1.6 = 3.4$, $w = 0.8 - 0.34 = 0.46$.
+    explanation: |
+      With its default dampening of 0, `torch.optim.SGD` keeps the buffer
+      $b_t = \beta b_{t-1} + g_t$, with $b_1 = g_1$, and steps $w \leftarrow w - \eta\,b_t$ [^2].
+      With $g = 2w$, step 1 gives $b = 2$ and $w = 0.8$; step 2 gives $g = 1.6$,
+      $b = 0.9 \cdot 2 + 1.6 = 3.4$ and $w = 0.8 - 0.34 = 0.46$. The moving-average form
+      $v_t = \beta v_{t-1} + (1 - \beta)g_t$ [^1] would give $0.9424$ with the same $\eta$: it
+      scales each gradient by $1 - \beta$, so PyTorch's version moves about $1/(1 - \beta) = 10$
+      times further once the buffer has built up [^3]. The two forms are equivalent once $\eta$ is
+      rescaled by that factor.
+    references:
+      - source: ncu-intro-dl
+        locator: Lecture 3, slide 37
+      - title: torch.optim.SGD (PyTorch documentation)
+        url: https://docs.pytorch.org/docs/stable/generated/torch.optim.SGD.html
+        locator: Algorithm (momentum buffer, dampening)
+      - source: d2l
+        url: https://d2l.ai/chapter_optimization/momentum.html
+        locator: Sec. 12.6.1.4 Effective Sample Weight
+    source:
+      id: ncu-intro-dl
+      ref: lecture-03/q07
+    status: reviewed
+    reviewed_by: claude
+  - id: training-085
+    type: multiple
+    difficulty: hard
+    tags:
+      - ce6146
+      - ce6146-l03
+      - optimizers
+      - momentum
+      - adam
+      - rmsprop
+      - adagrad
+    question: |
+      Two parameters receive gradients of the same size: one always gets $+1$, the other alternates
+      $+1, -1, +1, -1, \dots$, as when the iterates zig-zag across a narrow valley. With the usual
+      settings (momentum coefficient and decay rates around 0.9 or above), which optimizers end up
+      moving the alternating parameter by much smaller steps than the steady one? Select all that
+      apply.
+    options:
+      - text: SGD with momentum
+        correct: true
+      - text: Adam
+        correct: true
+      - text: RMSProp
+        why: It divides each gradient by the root of a moving average of squared gradients, which tends to 1 for both parameters, so both keep steps of about η.
+      - text: AdaGrad
+        why: Both parameters accumulate the same sum of squared gradients, so their step sizes shrink in exactly the same way.
+    explanation: |
+      Momentum steps along a running average of the gradients themselves [^1][^2]: for a constant
+      gradient the velocity builds up, while alternating signs largely cancel, so the zig-zag
+      direction is damped and the consistent one is not — about 19 times smaller steps here with
+      coefficient 0.9. Adam's first moment is the same kind of average, so it damps the
+      oscillation as well [^3]. RMSProp and AdaGrad only rescale each step by the size of past
+      gradients — squaring removes the sign — and the two parameters have gradients of identical
+      size, so they get identical step sizes [^1][^4][^5].
+    references:
+      - source: ncu-intro-dl
+        locator: Lecture 3, slides 36–37, 43, 46
+      - source: d2l
+        url: https://d2l.ai/chapter_optimization/momentum.html
+        locator: Sec. 12.6.1.2 An Ill-conditioned Problem; Sec. 12.6.1.3 The Momentum Method
+      - source: d2l
+        url: https://d2l.ai/chapter_optimization/adam.html
+        locator: Sec. 12.10.1 The Algorithm
+      - source: d2l
+        url: https://d2l.ai/chapter_optimization/rmsprop.html
+        locator: Sec. 12.8.1 The Algorithm
+      - source: d2l
+        url: https://d2l.ai/chapter_optimization/adagrad.html
+        locator: Sec. 12.7.3 The Algorithm
+    source:
+      id: ncu-intro-dl
+      ref: lecture-03/q12
+    status: reviewed
+    reviewed_by: claude
+  - id: training-086
+    type: short_answer
+    difficulty: medium
+    tags:
+      - ce6146
+      - ce6146-l03
+      - l2-regularization
+      - weight-decay
+    question: |
+      A network is trained by SGD on the penalized loss $L_{\text{new}} = L + \lambda\sum_i w_i^2$
+      with $\lambda = 0.005$ and $\eta = 0.1$. For a weight $w = 3$ whose data-loss gradient is
+      $\partial L/\partial w = 0.5$, what is $w$ after one step?
+    answer:
+      numeric: 2.947
+      tolerance: 0.0005
+      hint: a number
+      model: $w \leftarrow w - \eta(\partial L/\partial w + 2\lambda w) = (1 - 2\eta\lambda)w - \eta\,\partial L/\partial w = 0.999 \cdot 3 - 0.05 = 2.947$
+    explanation: |
+      The penalty adds $2\lambda w$ to the gradient, so one SGD step is
+      $w \leftarrow (1 - 2\eta\lambda)w - \eta\,\partial L/\partial w$ [^1]: the weight is first
+      shrunk by the factor $0.999$ and then moved by the data gradient, giving $2.997 - 0.05 =
+      2.947$. This multiplicative shrinkage is why the L2 penalty is called weight decay; with the
+      common convention $\tfrac{\lambda}{2}\lVert w\rVert^2$ the factor is $1 - \eta\lambda$
+      [^2]. The equivalence holds for plain SGD only: with adaptive optimizers such as Adam, an L2
+      penalty and a direct (decoupled) weight decay behave differently [^3].
+    references:
+      - source: ncu-intro-dl
+        locator: Lecture 3, slides 59, 62
+      - source: d2l
+        url: https://d2l.ai/chapter_linear-regression/weight-decay.html
+        locator: Sec. 3.7.1 Norms and Weight Decay, Eq. (3.7.3)
+      - title: Loshchilov & Hutter (2019), Decoupled Weight Decay Regularization, arXiv:1711.05101
+        url: https://arxiv.org/abs/1711.05101
+        locator: Abstract; Sec. 2 Decoupling the weight decay from the gradient-based update
+    source:
+      id: ncu-intro-dl
+      ref: lecture-03/q15
+    status: reviewed
+    reviewed_by: claude
+  - id: training-087
+    type: true_false
+    difficulty: medium
+    tags:
+      - ce6146
+      - ce6146-l03
+      - weight-decay
+      - adam
+      - adamw
+    question: |
+      True or false: with plain SGD, adding an L2 penalty $\lambda\lVert w\rVert^2$ to the loss is
+      equivalent to weight decay (shrinking the weights by a constant factor each step), but with
+      Adam it is not.
+    options:
+      - text: 'True'
+        correct: true
+      - text: 'False'
+        why: For Adam the penalty's gradient is divided by the adaptive per-parameter scale, so the shrinkage differs from parameter to parameter; only SGD gives the plain constant-factor decay.
+    explanation: |
+      With SGD the penalty's gradient $2\lambda w$ simply shrinks each weight by $1 - 2\eta\lambda$,
+      which is weight decay [^1]. With Adam the penalty's gradient passes through the adaptive
+      per-parameter scaling, so weights with large gradient history are decayed less than intended
+      [^2]. Decoupled weight decay (AdamW) applies the shrinkage directly to the weights, outside the
+      adaptive step, restoring the intended behaviour [^2]. Calling L2 regularization "weight decay"
+      is therefore exact only for plain SGD.
+    references:
+      - source: ncu-intro-dl
+        locator: Lecture 3, slide 62
+      - title: Loshchilov & Hutter (2019), Decoupled Weight Decay Regularization, arXiv:1711.05101
+        url: https://arxiv.org/abs/1711.05101
+        locator: Sec. 1 Introduction; Sec. 2 Decoupling the weight decay from the gradient-based update
+    source:
+      id: ncu-intro-dl
+      ref: lecture-03/q16
+    status: reviewed
+    reviewed_by: claude
+  - id: training-088
+    type: single
+    difficulty: medium
+    tags:
+      - ce6146
+      - ce6146-l03
+      - l1-regularization
+      - sparsity
+    question: |
+      Why does an L1 penalty $\lambda\sum_i |w_i|$ tend to drive some weights exactly to zero,
+      while an L2 penalty $\lambda\sum_i w_i^2$ only makes them small?
+    options:
+      - text: L1 pushes each nonzero weight toward 0 with constant force λ; the L2 push 2λw fades near 0
+        correct: true
+      - text: The L1 penalty punishes large weights more strongly than the L2 penalty does
+        why: It is the reverse — squaring makes L2 grow faster for large weights; L1 is relatively stronger for small weights.
+      - text: The L1 penalty is applied only to biases, and units whose bias reaches zero are then pruned
+        why: Both penalties are normally applied to weights; sparsity concerns the weights themselves.
+      - text: The L1 penalty makes the loss non-convex, and non-convex losses have minima at zero
+        why: The L1 penalty is convex; sparsity comes from its kink at zero, not from non-convexity.
+    explanation: |
+      The (sub)gradient of $\lambda|w|$ has constant magnitude $\lambda$ for every $w \neq 0$, so
+      small weights keep being pushed toward zero until they reach it; the kink at 0 lets them
+      stay there [^1][^2]. The L2 gradient $2\lambda w$ becomes tiny for small weights, which are
+      shrunk but rarely become exactly zero. L1 therefore acts as feature selection, while L2
+      spreads weight across many features [^3]; elastic net combines both.
+    references:
+      - source: ncu-intro-dl
+        locator: Lecture 3, slides 62–63, 71
+      - title: 'Wikipedia: Lasso (statistics)'
+        url: https://en.wikipedia.org/wiki/Lasso_(statistics)
+        locator: Basic form — Orthonormal covariates (soft thresholding); Interpretations — Geometric interpretation
+      - source: d2l
+        url: https://d2l.ai/chapter_linear-regression/weight-decay.html
+        locator: Sec. 3.7.1 Norms and Weight Decay
+    source:
+      id: ncu-intro-dl
+      ref: lecture-03/q17
+    status: reviewed
+    reviewed_by: claude
+  - id: training-089
+    type: short_answer
+    difficulty: easy
+    tags:
+      - ce6146
+      - ce6146-l03
+      - elastic-net
+      - regularization
+    question: |
+      An elastic-net penalty $\lambda_1\sum_i |w_i| + \lambda_2\sum_i w_i^2$ uses $\lambda_1 = 0.1$
+      and $\lambda_2 = 0.05$. What is its value for the weights $w = (3, -1, 0, 2)$?
+    answer:
+      numeric: 1.3
+      tolerance: 0.001
+      hint: a number
+      model: $0.1(3 + 1 + 0 + 2) + 0.05(9 + 1 + 0 + 4) = 0.6 + 0.7 = 1.3$
+    explanation: |
+      Elastic net adds an L1 term (sum of absolute values, which encourages sparsity) and an L2
+      term (sum of squares, which shrinks large weights) to the loss [^1][^2]. Here
+      $\sum|w_i| = 6$ and $\sum w_i^2 = 14$, so the penalty is $0.6 + 0.7 = 1.3$. Note that the
+      $-1$ contributes positively to both terms.
+    references:
+      - source: ncu-intro-dl
+        locator: Lecture 3, slides 62–63
+      - title: 'Wikipedia: Elastic net regularization'
+        url: https://en.wikipedia.org/wiki/Elastic_net_regularization
+        locator: Specification
+    source:
+      id: ncu-intro-dl
+      ref: lecture-03/q18
+    status: reviewed
+    reviewed_by: claude
+  - id: training-090
+    type: single
+    difficulty: easy
+    tags:
+      - ce6146
+      - ce6146-l03
+      - regularization-strength
+      - underfitting
+    question: |
+      You raise the L2 regularization strength $\lambda$ far above the value that gave the best
+      validation loss. What do you expect to see?
+    options:
+      - text: Training and validation losses both increase, because the model underfits
+        correct: true
+      - text: Training loss falls while validation loss rises, because the model overfits
+        why: That pattern belongs to too little regularization; a large penalty restricts the model instead.
+      - text: Both losses fall toward zero, because smaller weights always generalize better
+        why: Beyond some point small weights cannot represent the data's structure, so even the training fit gets worse.
+      - text: Only the validation loss changes; the training loss is unaffected by λ
+        why: The penalty is part of the training objective, so it directly changes the fit to the training data.
+    explanation: |
+      $\lambda$ trades fitting the data against keeping weights small [^1]. Too small a value
+      leaves the model free to overfit; too large a value forces the weights toward zero, so the
+      model can no longer capture important patterns and both training and validation errors rise
+      — underfitting [^2][^3]. $\lambda$ is a hyperparameter, chosen with validation data or
+      cross-validation.
+    references:
+      - source: ncu-intro-dl
+        locator: Lecture 3, slide 65
+      - source: d2l
+        url: https://d2l.ai/chapter_linear-regression/weight-decay.html
+        locator: Sec. 3.7.1 Norms and Weight Decay; Sec. 3.7.3.3 Training without Regularization
+      - source: d2l
+        url: https://d2l.ai/chapter_linear-regression/generalization.html
+        locator: Sec. 3.6.2 Underfitting or Overfitting?
+    source:
+      id: ncu-intro-dl
+      ref: lecture-03/q19
+    status: reviewed
+    reviewed_by: claude
+  - id: training-091
+    type: short_answer
+    difficulty: medium
+    tags:
+      - ce6146
+      - ce6146-l03
+      - batch-normalization
+    question: |
+      In training mode, a batch-normalization layer sees one feature with the mini-batch values
+      $[1, 2, 3, 6]$. It normalizes with the batch mean and the variance computed by dividing by
+      $n$ (ignore $\varepsilon$), then applies $\gamma = 2$ and $\beta = 0.5$. What is the output for
+      the value 6? Give 3 decimals.
+    answer:
+      numeric: 3.707
+      tolerance: 0.002
+      hint: 3 decimals
+      model: $\mu = 3$, $\sigma^2 = (4 + 1 + 0 + 9)/4 = 3.5$; $\hat x = 3/\sqrt{3.5} \approx 1.604$; $y = 2(1.604) + 0.5 \approx 3.707$.
+    explanation: |
+      Batch normalization standardizes each feature with the current mini-batch's mean and variance,
+      $\hat x = (x - \mu_B)/\sqrt{\sigma_B^2 + \varepsilon}$, and then rescales and shifts it with the
+      learned $\gamma$ and $\beta$ [^1][^2]. Here $\mu_B = 3$ and $\sigma_B^2 = 3.5$, so
+      $\hat x \approx 1.604$ and the output is $\approx 3.707$. PyTorch uses this biased (divide by
+      $n$) variance for normalizing in training, while its running variance is updated with the
+      unbiased estimate [^3].
+    references:
+      - source: ncu-intro-dl
+        locator: Lecture 3, slide 69
+      - source: d2l
+        url: https://d2l.ai/chapter_convolutional-modern/batch-norm.html
+        locator: Sec. 8.5.1 Training Deep Networks, Eqs. (8.5.1)–(8.5.2)
+      - title: torch.nn.BatchNorm1d (PyTorch documentation)
+        url: https://docs.pytorch.org/docs/stable/generated/torch.nn.BatchNorm1d.html
+        locator: Class description (biased variance in training; unbiased running variance)
+    source:
+      id: ncu-intro-dl
+      ref: lecture-03/q21
+    status: reviewed
+    reviewed_by: claude
+  - id: training-092
+    type: multiple
+    difficulty: medium
+    tags:
+      - ce6146
+      - ce6146-l03
+      - batch-normalization
+    question: Which statements about batch normalization are accurate? Select all that apply.
+    options:
+      - text: During training, each feature is normalized with its mean and variance over the current mini-batch
+        correct: true
+      - text: In evaluation mode, PyTorch normalizes with running averages of the mean and variance collected during training
+        correct: true
+      - text: The scale γ and shift β are fixed at 1 and 0 so that outputs stay exactly standardized
+        why: γ and β are learned parameters (only initialized to 1 and 0), so the layer can undo the normalization if that helps.
+      - text: Each example is normalized over its own features, independently of the other examples in the batch
+        why: That describes layer normalization; batch normalization computes each feature's statistics across the examples of the mini-batch.
+    explanation: |
+      During training BN standardizes each feature with statistics of the current mini-batch and
+      then applies the learned scale $\gamma$ and shift $\beta$, which keep the layer expressive
+      [^1][^2]. At prediction time batch statistics would make an example's output depend on the
+      other examples in its batch, so running averages estimated during training are used instead
+      [^2][^3]. Normalizing each example over its own features is layer normalization [^2]. BN was
+      originally motivated by reducing "internal covariate shift", but that explanation is disputed:
+      experiments found its benefit has little to do with stabilizing layer-input distributions and
+      pointed to a smoother optimization landscape instead [^4]. BN is used because it speeds up and
+      stabilizes training and often regularizes a little.
+    references:
+      - source: ncu-intro-dl
+        locator: Lecture 3, slides 69, 72
+      - source: d2l
+        url: https://d2l.ai/chapter_convolutional-modern/batch-norm.html
+        locator: Sec. 8.5.1 Training Deep Networks; Sec. 8.5.2.3 Layer Normalization; Sec. 8.5.2.4 Batch Normalization During Prediction; Sec. 8.5.3 Implementation from Scratch; Sec. 8.5.6 Discussion
+      - title: torch.nn.BatchNorm1d (PyTorch documentation)
+        url: https://docs.pytorch.org/docs/stable/generated/torch.nn.BatchNorm1d.html
+        locator: Class description (learnable γ and β, running estimates used in evaluation)
+      - title: Santurkar et al. (2018), How Does Batch Normalization Help Optimization?, arXiv:1805.11604
+        url: https://arxiv.org/abs/1805.11604
+        locator: Abstract
+    source:
+      id: ncu-intro-dl
+      ref: lecture-03/q22
+    status: reviewed
+    reviewed_by: claude
+  - id: training-093
+    type: short_answer
+    difficulty: easy
+    tags:
+      - ce6146
+      - ce6146-l03
+      - max-norm
+      - regularization
+    question: |
+      Max-norm regularization caps the Euclidean length of every unit's incoming weight vector at $c = 2$:
+      after an update, a vector whose norm exceeds $c$ is rescaled to norm $c$. An update leaves the
+      weights $w = (3, 4)$. After the constraint is applied, the first weight is {{1}} and the
+      second is {{2}}.
+    answer:
+      blanks:
+        - numeric: 1.2
+          tolerance: 0.001
+          hint: a number
+        - numeric: 1.6
+          tolerance: 0.001
+          hint: a number
+      model: $\lVert w\rVert_2 = 5 > 2$, so $w \leftarrow w \cdot 2/5 = (1.2, 1.6)$.
+    explanation: |
+      The norm of $(3, 4)$ is 5, above the cap, so the vector is divided by $5/2$: its direction is
+      kept and its length becomes exactly 2 [^1][^2]. Vectors already within the cap are left
+      unchanged. Unlike a penalty, the constraint bounds the weights however large an update is,
+      which is why it combines well with dropout and large learning rates [^2].
+    references:
+      - source: ncu-intro-dl
+        locator: Lecture 3, slide 70
+      - title: Hinton et al. (2012), Improving neural networks by preventing co-adaptation of feature detectors, arXiv:1207.0580
+        url: https://arxiv.org/abs/1207.0580
+        locator: Main text, opening pages (an upper bound on the L2 norm of each hidden unit's incoming weight vector)
+    source:
+      id: ncu-intro-dl
+      ref: lecture-03/q24
+    status: reviewed
+    reviewed_by: claude

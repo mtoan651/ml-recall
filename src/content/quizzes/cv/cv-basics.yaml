@@ -538,3 +538,789 @@ questions:
       url: https://arxiv.org/abs/2201.00650v2
     status: reviewed
     reviewed_by: claude
+  - id: cv-basics-016
+    type: short_answer
+    difficulty: medium
+    tags:
+      - image-representation
+      - memory
+      - float32
+    question: |
+      A training batch holds 64 RGB images of $224 \times 224$ pixels as a `float32` tensor of shape
+      `(64, 3, 224, 224)`, as produced by `transforms.ToTensor()` and stacking. How much memory do the
+      tensor's values take, in MiB ($1$ MiB $= 2^{20}$ bytes)?
+    answer:
+      numeric: 36.75
+      tolerance: 0.01
+      hint: a number in MiB, 2 decimals
+      model: $64 \cdot 3 \cdot 224 \cdot 224 = 9\,633\,792$ values $\times$ 4 bytes $= 38\,535\,168$ bytes $= 36.75$ MiB.
+    explanation: |
+      `ToTensor` converts a `uint8` image of shape $H \times W \times C$ with values 0–255 into a
+      `float32` tensor of shape $C \times H \times W$ with values in $[0, 1]$ [^1], and d2l feeds such
+      minibatches to the network with shape (batch size, channels, height, width) [^2]. The batch has
+      $64 \cdot 3 \cdot 224 \cdot 224 = 9\,633\,792$ values; at 4 bytes each that is $38\,535\,168$
+      bytes, or exactly 36.75 MiB. The same images kept as `uint8` would need a quarter of that,
+      about 9.19 MiB, one reason to keep images in 8 bits and convert them to floats only batch by
+      batch.
+    references:
+      - title: 'torchvision documentation: transforms.ToTensor'
+        url: https://docs.pytorch.org/vision/stable/generated/torchvision.transforms.ToTensor.html
+        locator: Class description
+      - source: d2l
+        url: https://d2l.ai/chapter_computer-vision/image-augmentation.html#training-with-image-augmentation
+        locator: Sec. 14.1.2 Training with Image Augmentation
+    source:
+      id: original
+      ref: cv-basics-016
+    status: reviewed
+    reviewed_by: claude
+  - id: cv-basics-017
+    type: single
+    difficulty: medium
+    tags:
+      - uint8
+      - overflow
+      - numpy
+      - code-reading
+    question: |
+      You brighten an 8-bit grayscale image by adding 10 to every pixel:
+
+      ```python
+      import numpy as np
+
+      img = np.array([[250, 100], [30, 5]], dtype=np.uint8)
+      brighter = img + 10
+      print(brighter.tolist())
+      ```
+
+      What is printed?
+    options:
+      - text: '`[[4, 110], [40, 15]]`'
+        correct: true
+      - text: '`[[255, 110], [40, 15]]`'
+        why: That would be a saturating addition, which you get only by clipping explicitly (or with a library function built for it); NumPy integer arithmetic does not clip [^1].
+      - text: '`[[260, 110], [40, 15]]`'
+        why: The result stays a `uint8` array, whose largest value is 255, so 260 cannot be stored; it wraps around modulo 256 [^1].
+      - text: An `OverflowError` is raised
+        why: Overflow in NumPy array arithmetic happens silently; no exception is raised, the stored value simply wraps around [^1].
+    explanation: |
+      NumPy integer types have a fixed size, and values that do not fit overflow: NumPy follows C
+      rules, so an out-of-range result wraps around modulo $2^8 = 256$ for 8-bit types [^1]. Here
+      $250 + 10 = 260$ becomes $260 - 256 = 4$, turning the brightest pixel almost black, while the
+      other pixels are fine. To brighten safely, compute in a wider type and clip,
+      `np.clip(img.astype(np.int16) + 10, 0, 255).astype(np.uint8)`, or convert the image to floats in
+      $[0, 1]$ first, as `ToTensor` does for network inputs [^2].
+    references:
+      - title: 'NumPy documentation: Data types'
+        url: https://numpy.org/doc/stable/user/basics.types.html#overflow-errors
+        locator: Sections "Data types" (casting example 300 → 44) and "Overflow errors"
+      - title: 'torchvision documentation: transforms.ToTensor'
+        url: https://docs.pytorch.org/vision/stable/generated/torchvision.transforms.ToTensor.html
+        locator: Class description
+    source:
+      id: original
+      ref: cv-basics-017
+    status: reviewed
+    reviewed_by: claude
+  - id: cv-basics-018
+    type: short_answer
+    difficulty: easy
+    tags:
+      - hwc
+      - chw
+      - image-representation
+      - code-reading
+    question: |
+      Sixteen colour images are loaded as NumPy arrays in height × width × channels order and
+      batched for a PyTorch CNN:
+
+      ```python
+      import numpy as np
+
+      imgs = [np.zeros((120, 160, 3), dtype=np.uint8) for _ in range(16)]
+      batch = np.stack(imgs).transpose(0, 3, 1, 2)
+      print(batch.shape)
+      ```
+
+      What shape is printed?
+    answer:
+      accept:
+        - (16, 3, 120, 160)
+      pattern: '[(\[]?\s*16\s*[,x×]\s*3\s*[,x×]\s*120\s*[,x×]\s*160\s*[)\]]?'
+      hint: four numbers in order, e.g. (8, 1, 28, 28)
+      model: '`np.stack` gives (16, 120, 160, 3); `transpose(0, 3, 1, 2)` moves channels to axis 1: (16, 3, 120, 160).'
+    explanation: |
+      `np.stack` adds a new first axis, giving shape $(16, 120, 160, 3)$: batch, height, width,
+      channels (HWC per image). `transpose(0, 3, 1, 2)` reorders the axes so that the old axis 3
+      (channels) comes second, which is the NCHW layout PyTorch convolutions expect: (batch size,
+      channels, height, width) [^1]. `transforms.ToTensor` does the same per image, turning an
+      $H \times W \times C$ array into a $C \times H \times W$ tensor and also scaling `uint8` values
+      to $[0, 1]$ [^2].
+    references:
+      - source: d2l
+        url: https://d2l.ai/chapter_computer-vision/image-augmentation.html#training-with-image-augmentation
+        locator: Sec. 14.1.2 Training with Image Augmentation
+      - title: 'torchvision documentation: transforms.ToTensor'
+        url: https://docs.pytorch.org/vision/stable/generated/torchvision.transforms.ToTensor.html
+        locator: Class description
+    source:
+      id: original
+      ref: cv-basics-018
+    status: reviewed
+    reviewed_by: claude
+  - id: cv-basics-019
+    type: short_answer
+    difficulty: easy
+    tags:
+      - grayscale
+      - luma
+      - color-spaces
+    question: |
+      Converting an 8-bit image to gray by averaging the channels, $(R + G + B)/3$, maps both a pure
+      green pixel $(R, G, B) = (0, 200, 0)$ and a pure blue pixel $(0, 0, 200)$ to
+      $200/3 \approx 66.7$. With the Rec. 601 luma formula $Y' = 0.299R + 0.587G + 0.114B$ instead,
+      the green pixel becomes {{1}} and the blue pixel becomes {{2}}.
+    answer:
+      blanks:
+        - numeric: 117.4
+          tolerance: 0.05
+          hint: a number, 1 decimal
+        - numeric: 22.8
+          tolerance: 0.05
+          hint: a number, 1 decimal
+      model: $0.587 \cdot 200 = 117.4$ for green and $0.114 \cdot 200 = 22.8$ for blue.
+    explanation: |
+      Luma is a weighted sum of the gamma-compressed R, G and B values; the Rec. 601 weights
+      0.299, 0.587 and 0.114 are those of the PAL and NTSC video systems [^1]. A pure green pixel
+      gives $0.587 \cdot 200 = 117.4$ and a pure blue one $0.114 \cdot 200 = 22.8$, about five times darker,
+      while the plain average makes them equally bright. The weights follow how bright each primary
+      looks to a typical human observer, who is most sensitive to green and least to blue [^2].
+      Because both sets of weights add up to 1, the two conversions agree on every gray pixel
+      $(v, v, v)$, but in general not on coloured ones. Rec. 709 (HDTV) uses $0.2126R + 0.7152G + 0.0722B$, which gives 143.0 and 14.4
+      here [^1].
+    references:
+      - title: 'Wikipedia: Grayscale'
+        url: https://en.wikipedia.org/wiki/Grayscale#Luma_coding_in_video_systems
+        locator: Converting color to grayscale — Luma coding in video systems
+      - title: 'Wikipedia: Grayscale'
+        url: https://en.wikipedia.org/wiki/Grayscale#Converting_color_to_grayscale
+        locator: Converting color to grayscale — Colorimetric (perceptual luminance-preserving) conversion to grayscale
+    source:
+      id: original
+      ref: cv-basics-019
+    status: reviewed
+    reviewed_by: claude
+  - id: cv-basics-020
+    type: single
+    difficulty: medium
+    tags:
+      - grayscale
+      - luma
+      - color-spaces
+    question: |
+      Grayscale conversions such as $Y' = 0.299R + 0.587G + 0.114B$ (Rec. 601) or
+      $0.2126R + 0.7152G + 0.0722B$ (Rec. 709) give green by far the largest weight. Why?
+    options:
+      - text: Human vision is most sensitive to green, so green dominates perceived brightness
+        correct: true
+      - text: Camera sensors have twice as many green photosites as red or blue ones
+        why: Whatever the sensor layout, the weights model how bright each primary looks to a typical human observer [^1].
+      - text: The green channel of an 8-bit image covers a wider range of values than red and blue
+        why: Each channel of an 8-bit RGB image covers the same range, 0 to 255 [^2].
+      - text: The weights must add up to 1, which only works if one of them is above 0.5
+        why: Equal weights of $1/3$ also add up to 1; the sum fixes the scale, not which channel dominates.
+    explanation: |
+      The coefficients are chosen so that the gray value matches the luminance a typical human
+      perceives: human vision is most sensitive to green, which therefore gets the largest coefficient,
+      and least sensitive to blue, which gets the smallest [^1]. A plain average $(R + G + B)/3$ would
+      make a pure green pixel look as dark as a pure blue one. The weights add up to 1 so that gray
+      inputs keep their value, and every 8-bit channel has the same range 0–255 [^2].
+    references:
+      - title: 'Wikipedia: Grayscale'
+        url: https://en.wikipedia.org/wiki/Grayscale#Converting_color_to_grayscale
+        locator: Converting color to grayscale — Colorimetric conversion and Luma coding in video systems
+      - title: 'Wikipedia: Grayscale'
+        url: https://en.wikipedia.org/wiki/Grayscale#Numerical_representations
+        locator: Numerical representations
+    source:
+      id: original
+      ref: cv-basics-020
+    status: reviewed
+    reviewed_by: claude
+  - id: cv-basics-021
+    type: short_answer
+    difficulty: medium
+    tags:
+      - hsv
+      - color-spaces
+    question: |
+      A pixel has RGB values $(R, G, B) = (0.2, 0.4, 0.8)$ in $[0, 1]$. In HSV, the value is
+      $V = \max(R, G, B)$, the saturation is $S = (\max - \min)/\max$, and, because blue is the largest
+      component, the hue is $H = 60^\circ \cdot \left(\frac{R - G}{\max - \min} + 4\right)$.
+
+      $V =$ {{1}}, $S =$ {{2}}, $H =$ {{3}} degrees.
+    answer:
+      blanks:
+        - numeric: 0.8
+          tolerance: 0.005
+          hint: a number
+        - numeric: 0.75
+          tolerance: 0.005
+          hint: a number
+        - numeric: 220
+          tolerance: 0.5
+          hint: degrees
+      model: $V = 0.8$, $S = 0.6/0.8 = 0.75$, $H = 60^\circ \cdot (-0.2/0.6 + 4) = 220^\circ$ (a blue).
+    explanation: |
+      The maximum is $0.8$ and the minimum $0.2$, so the chroma is $0.6$, $V = 0.8$ and
+      $S = 0.6/0.8 = 0.75$; with blue as the maximum the hue is
+      $60^\circ \cdot (-0.2/0.6 + 4) = 220^\circ$ [^1]. Scaling all three channels by the same factor,
+      as dimmer lighting roughly does, changes only $V$: $(0.1, 0.2, 0.4)$ has the same $H = 220^\circ$
+      and $S = 0.75$. Separating hue from brightness in this way is why HSV-like spaces are often used
+      for colour-based segmentation [^2].
+    references:
+      - title: 'Wikipedia: HSL and HSV'
+        url: https://en.wikipedia.org/wiki/HSL_and_HSV#From_RGB
+        locator: Color conversion formulae — From RGB
+      - title: 'Wikipedia: HSL and HSV'
+        url: https://en.wikipedia.org/wiki/HSL_and_HSV#Use_in_image_analysis
+        locator: Use in image analysis
+    source:
+      id: original
+      ref: cv-basics-021
+    status: reviewed
+    reviewed_by: claude
+  - id: cv-basics-022
+    type: short_answer
+    difficulty: medium
+    tags:
+      - sobel
+      - edge-detection
+      - gradient
+    question: |
+      The Sobel kernels $K_x = \begin{bmatrix}-1&0&1\\-2&0&2\\-1&0&1\end{bmatrix}$ and
+      $K_y = \begin{bmatrix}-1&-2&-1\\0&0&0\\1&2&1\end{bmatrix}$ are applied by cross-correlation
+      (no kernel flip, as in a CNN layer) to the patch
+      $\begin{bmatrix}0&10&20\\0&10&20\\20&20&40\end{bmatrix}$, giving the gradient estimates $G_x$
+      and $G_y$ at its centre. What is the gradient magnitude $\sqrt{G_x^2 + G_y^2}$?
+    answer:
+      numeric: 100
+      tolerance: 0.01
+      hint: a number
+      model: $G_x = (20 - 0) + 2(20 - 0) + (40 - 20) = 80$, $G_y = (20 - 0) + 2(20 - 10) + (40 - 20) = 60$, $\sqrt{80^2 + 60^2} = 100$
+    explanation: |
+      $K_x$ subtracts the left column from the right one with weights 1, 2, 1:
+      $G_x = 20 + 40 + 20 = 80$. $K_y$ subtracts the top row from the bottom row:
+      $G_y = 20 + 20 + 20 = 60$. The two estimates are combined into the gradient magnitude
+      $\sqrt{G_x^2 + G_y^2} = 100$, and the direction is $\operatorname{atan2}(G_y, G_x)$ [^1]. The
+      magnitude does not depend on whether the kernels are flipped: flipping a Sobel kernel only flips
+      the sign of $G_x$ or $G_y$, which is also why texts disagree on the signs printed in the
+      kernels [^1].
+    references:
+      - title: 'Wikipedia: Sobel operator'
+        url: https://en.wikipedia.org/wiki/Sobel_operator#Formulation
+        locator: Formulation
+    source:
+      id: original
+      ref: cv-basics-022
+    status: reviewed
+    reviewed_by: claude
+  - id: cv-basics-023
+    type: single
+    difficulty: medium
+    tags:
+      - sobel
+      - edge-detection
+      - separable-kernels
+    question: |
+      The Sobel kernel for horizontal changes factors as an outer product,
+      $\begin{bmatrix}-1&0&1\\-2&0&2\\-1&0&1\end{bmatrix} = \begin{bmatrix}1\\2\\1\end{bmatrix}\begin{bmatrix}-1&0&1\end{bmatrix}$.
+      What does the $[1, 2, 1]^\top$ factor contribute?
+    options:
+      - text: It smooths vertically, along the edge, so the result is less sensitive to noise
+        correct: true
+      - text: It takes a second derivative, so the kernel responds to the curvature of the edge profile
+        why: $[1, 2, 1]$ is a weighted average (all weights positive), not a difference; a second-derivative kernel looks like $[1, -2, 1]$ [^2].
+      - text: It normalizes the kernel so that a flat region keeps its brightness
+        why: The Sobel kernel sums to 0, so a flat region gives 0; it measures change, not brightness.
+      - text: It makes the kernel respond to horizontal edges as well as vertical ones
+        why: Both factors together still measure changes along $x$ only; horizontal edges are found by the transposed kernel $K_y$ [^1].
+    explanation: |
+      The Sobel kernels can be decomposed into the product of an averaging kernel and a
+      differentiation kernel, so they compute the gradient with smoothing [^1]: $[-1, 0, 1]$ takes a
+      central difference along $x$, while $[1, 2, 1]^\top$ averages three neighbouring rows, weighting
+      the middle one most. Averaging along the edge suppresses pixel noise that a bare difference would
+      amplify. The factorization also makes the kernel separable, so it can be applied as two 1D
+      passes. A second-derivative kernel, such as the discrete Laplacian, has the form
+      $[1, -2, 1]$ along each axis instead [^2].
+    references:
+      - title: 'Wikipedia: Sobel operator'
+        url: https://en.wikipedia.org/wiki/Sobel_operator#Formulation
+        locator: Formulation (decomposition into averaging and differentiation kernels)
+      - title: 'Wikipedia: Discrete Laplace operator'
+        url: https://en.wikipedia.org/wiki/Discrete_Laplace_operator#Image_processing
+        locator: Image processing — Implementation via operator discretization
+    source:
+      id: original
+      ref: cv-basics-023
+    status: reviewed
+    reviewed_by: claude
+  - id: cv-basics-024
+    type: multiple
+    difficulty: medium
+    tags:
+      - laplacian
+      - edge-detection
+      - kernels
+    question: |
+      The discrete Laplacian kernel $\begin{bmatrix}0&1&0\\1&-4&1\\0&1&0\end{bmatrix}$ is applied at
+      the centre pixel of each $3 \times 3$ patch below. For which patches is the response exactly 0?
+      Select all that apply.
+    options:
+      - text: $\begin{bmatrix}50&50&50\\50&50&50\\50&50&50\end{bmatrix}$
+        correct: true
+      - text: $\begin{bmatrix}10&20&30\\10&20&30\\10&20&30\end{bmatrix}$
+        correct: true
+      - text: $\begin{bmatrix}0&10&20\\10&20&30\\20&30&40\end{bmatrix}$
+        correct: true
+      - text: $\begin{bmatrix}0&0&0\\0&90&0\\0&0&0\end{bmatrix}$
+        why: An isolated bright pixel gives $-4 \cdot 90 = -360$, a strong response; the Laplacian highlights such points [^2].
+      - text: $\begin{bmatrix}0&0&90\\0&0&90\\0&0&90\end{bmatrix}$
+        why: Next to a step edge the horizontal second difference is $90 + 0 - 2 \cdot 0 = 90$, not zero; this response to edges is why the Laplacian is used for edge detection [^1].
+    explanation: |
+      The discrete Laplacian is the sum of the second differences along $x$ and $y$, computed from the
+      four nearest neighbours of the centre [^1]. Second differences vanish wherever the intensity is
+      constant or changes linearly, so the flat patch, the horizontal ramp and the diagonal ramp all
+      give 0; for the horizontal ramp, $20 + 20 + 10 + 30 - 4 \cdot 20 = 0$. It responds where the
+      intensity curves: at an isolated bright pixel ($-360$) or next to a step edge ($+90$). Because
+      derivative filters are sensitive to noise, the Laplacian is often applied after Gaussian
+      smoothing [^1]. The kernel table of edge-detection filters lists its negative,
+      $\begin{bmatrix}0&-1&0\\-1&4&-1\\0&-1&0\end{bmatrix}$ [^2].
+    references:
+      - title: 'Wikipedia: Discrete Laplace operator'
+        url: https://en.wikipedia.org/wiki/Discrete_Laplace_operator#Image_processing
+        locator: Image processing — Implementation via operator discretization
+      - title: 'Wikipedia: Kernel (image processing)'
+        url: https://en.wikipedia.org/wiki/Kernel_(image_processing)#Details
+        locator: Details (ridge or edge detection kernels)
+    source:
+      id: original
+      ref: cv-basics-024
+    status: reviewed
+    reviewed_by: claude
+  - id: cv-basics-025
+    type: short_answer
+    difficulty: medium
+    tags:
+      - histogram-equalization
+      - contrast
+    question: |
+      A $4 \times 4$ image with 3-bit gray levels ($L = 8$ levels, 0 to 7) is
+      $\begin{bmatrix}2&3&3&4\\3&2&4&5\\4&3&6&3\\2&4&5&6\end{bmatrix}$.
+      Histogram equalization maps level $v$ to
+      $h(v) = \operatorname{round}\left(\frac{\operatorname{cdf}(v) - \operatorname{cdf}_{\min}}{N - \operatorname{cdf}_{\min}}(L - 1)\right)$,
+      where $\operatorname{cdf}(v)$ counts the pixels with level $\le v$, $\operatorname{cdf}_{\min}$ is
+      its smallest nonzero value and $N$ is the number of pixels. What is $h(4)$?
+    answer:
+      numeric: 5
+      tolerance: 0
+      hint: a whole number from 0 to 7
+      model: Counts 2:3, 3:5, 4:4, 5:2, 6:2, so $\operatorname{cdf}(4) = 12$ and $\operatorname{cdf}_{\min} = 3$; $h(4) = \operatorname{round}(9/13 \cdot 7) = \operatorname{round}(4.85) = 5$.
+    explanation: |
+      The histogram is 3 pixels at level 2, 5 at 3, 4 at 4, 2 at 5 and 2 at 6, so the cumulative counts
+      are 3, 8, 12, 14, 16 and $\operatorname{cdf}_{\min} = 3$. The general formula [^1] gives the
+      mapping $2 \to 0$, $3 \to 3$, $4 \to 5$, $5 \to 6$, $6 \to 7$: the levels, which used only 2–6,
+      now spread over the full range 0–7. The widest gap (3 levels) opens between 2 and the most
+      frequent level, 3, because each step of the mapping grows with the number of pixels at the
+      level it reaches. Equalization thus increases global contrast by spreading out the most
+      populated intensities [^2].
+    references:
+      - title: 'Wikipedia: Histogram equalization'
+        url: https://en.wikipedia.org/wiki/Histogram_equalization#Small_image
+        locator: Examples — Small image (general histogram equalization formula)
+      - title: 'Wikipedia: Histogram equalization'
+        url: https://en.wikipedia.org/wiki/Histogram_equalization#Overview
+        locator: Overview
+    source:
+      id: original
+      ref: cv-basics-025
+    status: reviewed
+    reviewed_by: claude
+  - id: cv-basics-026
+    type: single
+    difficulty: easy
+    tags:
+      - histogram-equalization
+      - contrast
+    question: |
+      An 8-bit X-ray image uses only the gray levels 90–140, so it looks washed out. What does global
+      histogram equalization do to it?
+    options:
+      - text: It remaps levels through the cumulative histogram, spreading frequent levels over 0–255
+        correct: true
+      - text: It replaces each pixel by the average of its neighbours, removing noise but blurring edges
+        why: That is a smoothing filter such as a box blur; equalization changes each gray level by a lookup table and ignores the neighbours [^1].
+      - text: It sets pixels above a threshold to 255 and all other pixels to 0
+        why: That is thresholding, which keeps only two levels; equalization keeps the order of all levels [^1].
+      - text: It scales the levels linearly so that 90 becomes 0 and 140 becomes 255
+        why: That is linear contrast stretching; equalization is nonlinear and gives a wider range to the levels that occur most often [^1].
+    explanation: |
+      Histogram equalization transforms each level by the image's cumulative distribution function,
+      rescaled to the full range, so that the output histogram is roughly flat [^1]. It spreads out the
+      most populated intensity values and so increases global contrast, which helps for X-rays and for
+      over- or under-exposed photographs [^2]. It works on gray levels alone, without looking at
+      neighbouring pixels. A drawback is that it is indiscriminate: it can also boost the contrast of
+      background noise [^2].
+    references:
+      - title: 'Wikipedia: Histogram equalization'
+        url: https://en.wikipedia.org/wiki/Histogram_equalization#Implementation
+        locator: Implementation
+      - title: 'Wikipedia: Histogram equalization'
+        url: https://en.wikipedia.org/wiki/Histogram_equalization#Overview
+        locator: Overview
+    source:
+      id: original
+      ref: cv-basics-026
+    status: reviewed
+    reviewed_by: claude
+  - id: cv-basics-027
+    type: short_answer
+    difficulty: easy
+    tags:
+      - normalization
+      - imagenet
+      - preprocessing
+    question: |
+      An ImageNet-pretrained model expects inputs prepared with `transforms.ToTensor()` followed by
+      `transforms.Normalize(mean=[0.485, 0.456, 0.406], std=[0.229, 0.224, 0.225])`. A pixel's red
+      value is 200 (`uint8`). What value does the model receive for it?
+    answer:
+      numeric: 1.307
+      tolerance: 0.005
+      hint: a number, 3 decimals
+      model: $200/255 = 0.7843$, then $(0.7843 - 0.485)/0.229 \approx 1.307$
+    explanation: |
+      `ToTensor` scales `uint8` values from $[0, 255]$ to $[0, 1]$ [^1], giving $200/255 = 0.7843$.
+      `Normalize` then computes $(x - \text{mean})/\text{std}$ separately for each channel [^2]; the red
+      channel uses mean 0.485 and std 0.229, so the input is $0.2993/0.229 \approx 1.307$. d2l
+      standardizes the RGB channels with exactly these values when fine-tuning an ImageNet-pretrained
+      ResNet, and uses the same normalization for training and test images [^3].
+    references:
+      - title: 'torchvision documentation: transforms.ToTensor'
+        url: https://docs.pytorch.org/vision/stable/generated/torchvision.transforms.ToTensor.html
+        locator: Class description
+      - title: 'torchvision documentation: transforms.Normalize'
+        url: https://docs.pytorch.org/vision/stable/generated/torchvision.transforms.Normalize.html
+        locator: Class description (output[channel] formula)
+      - source: d2l
+        url: https://d2l.ai/chapter_computer-vision/fine-tuning.html#reading-the-dataset
+        locator: Sec. 14.2.2.1 Reading the Dataset
+    source:
+      id: original
+      ref: cv-basics-027
+    status: reviewed
+    reviewed_by: claude
+  - id: cv-basics-028
+    type: short_answer
+    difficulty: easy
+    tags:
+      - median-filter
+      - noise
+      - salt-and-pepper
+    question: |
+      A $3 \times 3$ median filter is applied at the centre of the patch
+      $\begin{bmatrix}10&12&11\\13&255&12\\11&10&14\end{bmatrix}$, whose centre pixel is a "salt"
+      noise pixel. What is the output value?
+    answer:
+      numeric: 12
+      tolerance: 0
+      hint: a whole number
+      model: Sorted values 10, 10, 11, 11, 12, 12, 13, 14, 255; the median (5th of 9) is 12.
+    explanation: |
+      A median filter replaces each pixel by the median of the values in its window [^1]. Sorting the
+      nine values gives 10, 10, 11, 11, 12, 12, 13, 14, 255, so the output is 12 and the outlier
+      disappears completely. A $3 \times 3$ box (mean) filter would give $348/9 \approx 38.7$: the
+      outlier is spread into its neighbours instead of removed. This is why median filtering is
+      particularly effective against salt-and-pepper (impulsive) noise, while it also preserves edges
+      better than linear smoothing [^1].
+    references:
+      - title: 'Wikipedia: Median filter'
+        url: https://en.wikipedia.org/wiki/Median_filter#Edge_preservation_properties
+        locator: Introduction and Edge preservation properties
+    source:
+      id: original
+      ref: cv-basics-028
+    status: reviewed
+    reviewed_by: claude
+  - id: cv-basics-029
+    type: short_answer
+    difficulty: medium
+    tags:
+      - integral-image
+      - summed-area-table
+      - viola-jones
+    question: |
+      The summed-area table (integral image) of an image stores in $S[r, c]$ the sum of all pixels in
+      rows $\le r$ and columns $\le c$ (counting from 0). For one image, $S[0, 0] = 3$, $S[0, 3] = 9$,
+      $S[2, 0] = 13$ and $S[2, 3] = 52$. What is the sum of the pixels in rows 1–2 and columns 1–3?
+    answer:
+      numeric: 33
+      tolerance: 0
+      hint: a whole number
+      model: $S[2, 3] - S[0, 3] - S[2, 0] + S[0, 0] = 52 - 9 - 13 + 3 = 33$
+    explanation: |
+      $S[2, 3]$ covers rows 0–2 and columns 0–3. Subtracting $S[0, 3]$ removes row 0, and subtracting
+      $S[2, 0]$ removes column 0; the pixel $(0, 0)$ has then been removed twice, so $S[0, 0]$ is added
+      back: $52 - 9 - 13 + 3 = 33$. Any rectangle sum therefore costs exactly four look-ups, whatever
+      its size [^1]. In computer vision the summed-area table became known as the integral image
+      through its prominent use in the Viola–Jones object detection framework [^1].
+    references:
+      - title: 'Wikipedia: Summed-area table'
+        url: https://en.wikipedia.org/wiki/Summed-area_table#The_algorithm
+        locator: Introduction and The algorithm
+    source:
+      id: original
+      ref: cv-basics-029
+    status: reviewed
+    reviewed_by: claude
+  - id: cv-basics-030
+    type: short_answer
+    difficulty: hard
+    tags:
+      - receptive-field
+      - pooling
+      - vgg
+    question: |
+      A VGG-style stack applies, in order: a $3 \times 3$ convolution, a $3 \times 3$ convolution, a
+      $2 \times 2$ max-pooling with stride 2, a $3 \times 3$ convolution and a $3 \times 3$ convolution
+      (all convolutions with stride 1). What is the side length of the receptive field of one output
+      unit on the input image?
+    answer:
+      numeric: 14
+      tolerance: 0
+      hint: a whole number (pixels)
+      model: $1 + 2 + 2 = 5$ after the first two convs, $5 + 1 = 6$ after pooling (jump becomes 2), then $6 + 2 \cdot 2 + 2 \cdot 2 = 14$.
+    explanation: |
+      A layer with kernel size $k$ widens the receptive field by $(k - 1)\,j$, where $j$ is the
+      distance on the input between neighbouring units of the layer's input (the product of the earlier
+      strides). The two convolutions give $3$ and $5$; the pooling window adds $1$, giving $6$, and
+      doubles $j$ to 2; each later $3 \times 3$ convolution then adds $2 \cdot 2 = 4$, giving $10$ and
+      $14$. d2l computes the same way that two $3 \times 3$ convolutions followed by $2 \times 2$
+      pooling give each output unit a $6 \times 6$ receptive field [^2]. Deeper units see larger
+      regions, which is why stacking layers lets features cover larger structures [^1].
+    references:
+      - source: d2l
+        url: https://d2l.ai/chapter_convolutional-neural-networks/conv-layer.html#feature-map-and-receptive-field
+        locator: Sec. 7.2.6 Feature Map and Receptive Field
+      - source: d2l
+        url: https://d2l.ai/chapter_computer-vision/ssd.html#downsampling-block
+        locator: Sec. 14.7.1.4 Downsampling Block
+    source:
+      id: original
+      ref: cv-basics-030
+    status: reviewed
+    reviewed_by: claude
+  - id: cv-basics-031
+    type: single
+    difficulty: easy
+    tags:
+      - hand-crafted-features
+      - representation-learning
+      - hog
+      - sift
+    question: |
+      Before 2012, a typical image classifier computed SIFT or HOG descriptors and trained a classifier
+      such as an SVM on them. What is the key difference in a CNN such as AlexNet?
+    options:
+      - text: Its features are learned from data, layer by layer, jointly with the classifier
+        correct: true
+      - text: The CNN needs no labelled images, while the SIFT/HOG pipeline needs labels
+        why: AlexNet was trained with supervision on labelled ImageNet images, like the classifier in the classic pipeline [^1].
+      - text: It feeds SIFT or HOG descriptors into a deep network, so only the classifier on top changes
+        why: That would still rely on hand-designed features; AlexNet takes raw pixels and learns every stage of the representation itself [^1].
+      - text: Its first layer holds fixed edge detectors such as Sobel kernels, and only deeper layers are trained
+        why: All layers are trained, the first included; its filters merely end up resembling edge and colour detectors after training [^1].
+    explanation: |
+      Until 2012 the representation was mostly engineered by hand: researchers designed feature
+      extractors such as SIFT, SURF, HOG and bags of visual words, and only the classifier on top was
+      learned [^1]. A HOG descriptor, for example, is a fixed recipe of gradient-orientation histograms
+      over small cells, typically fed to an SVM [^2]. The deep-learning view is that features should be
+      learned, composed hierarchically from multiple jointly trained layers: AlexNet's lowest layers
+      learned edge- and colour-like filters, and higher layers represent larger structures and whole
+      objects [^1].
+    references:
+      - source: d2l
+        url: https://d2l.ai/chapter_convolutional-modern/alexnet.html#representation-learning
+        locator: Sec. 8.1.1 Representation Learning
+      - title: 'Wikipedia: Histogram of oriented gradients'
+        url: https://en.wikipedia.org/wiki/Histogram_of_oriented_gradients#Object_recognition
+        locator: Theory and Object recognition
+    source:
+      id: original
+      ref: cv-basics-031
+    status: reviewed
+    reviewed_by: claude
+  - id: cv-basics-032
+    type: short_answer
+    difficulty: medium
+    tags:
+      - hog
+      - gradient
+      - hand-crafted-features
+    question: |
+      HOG builds, for each cell, a histogram of gradient orientations with 9 bins of $20^\circ$
+      covering $[0^\circ, 180^\circ)$ ("unsigned" gradients: bin 0 is $0$–$20^\circ$, bin 1 is
+      $20$–$40^\circ$, and so on). A pixel has gradient $(G_x, G_y) = (10, -10)$, its orientation is
+      $\theta = \operatorname{atan2}(G_y, G_x)$, and each pixel votes with its gradient magnitude.
+      Without interpolation between bins, the pixel votes into bin {{1}} with weight {{2}}.
+    answer:
+      blanks:
+        - numeric: 6
+          tolerance: 0
+          hint: bin index 0–8
+        - numeric: 14.14
+          tolerance: 0.01
+          hint: a number, 2 decimals
+      model: $\operatorname{atan2}(-10, 10) = -45^\circ \equiv 135^\circ \pmod{180^\circ}$, which lies in bin 6 ($120$–$140^\circ$); weight $\sqrt{10^2 + 10^2} \approx 14.14$.
+    explanation: |
+      HOG first computes gradients, usually with the simple masks $[-1, 0, 1]$ and
+      $[-1, 0, 1]^\top$, then lets each pixel of a cell cast a vote into an orientation bin, weighted by
+      its gradient magnitude [^1]. With unsigned gradients, directions $\theta$ and
+      $\theta + 180^\circ$ count as the same orientation, so $-45^\circ$ becomes $135^\circ$, bin
+      $\lfloor 135/20 \rfloor = 6$. Dalal and Triggs found 9 unsigned bins to work best for detecting
+      people [^1]. The cell histograms are then normalized over larger blocks and concatenated into the
+      descriptor [^2].
+    references:
+      - title: 'Wikipedia: Histogram of oriented gradients'
+        url: https://en.wikipedia.org/wiki/Histogram_of_oriented_gradients#Orientation_binning
+        locator: Algorithm implementation — Gradient computation and Orientation binning
+      - title: 'Wikipedia: Histogram of oriented gradients'
+        url: https://en.wikipedia.org/wiki/Histogram_of_oriented_gradients#Theory
+        locator: Theory
+    source:
+      id: original
+      ref: cv-basics-032
+    status: reviewed
+    reviewed_by: claude
+  - id: cv-basics-033
+    type: multiple
+    difficulty: hard
+    tags:
+      - transfer-learning
+      - grayscale
+      - input-channels
+      - imagenet
+    question: |
+      An ImageNet-pretrained CNN starts with a convolution expecting 3 input channels (RGB), and you
+      want to feed it single-channel grayscale X-rays. Which approaches make the first layer's output
+      exactly equal to feeding an RGB image whose three channels all hold the gray value? Select all
+      that apply.
+    options:
+      - text: Repeat the gray channel three times and keep the pretrained first layer unchanged
+        correct: true
+      - text: Replace the first layer by a 1-channel convolution whose kernel is the sum of the pretrained kernel over its R, G and B slices
+        correct: true
+      - text: Replace the first layer by a 1-channel convolution whose kernel is the mean of the R, G and B slices
+        why: The mean is the sum divided by 3, so every pre-activation (apart from the bias) shrinks to a third; the result is not equal [^1].
+      - text: Put the gray image in the R channel, fill G and B with zeros, and keep the pretrained layer
+        why: Then only the red slice of each kernel sees the image; the contributions of the G and B slices are lost [^1].
+    explanation: |
+      A convolution with several input channels cross-correlates each input channel with its own
+      kernel slice and sums the results over the channels [^1]. If all three channels equal the gray
+      image $x$, the output is $K_R \star x + K_G \star x + K_B \star x + b = (K_R + K_G + K_B) \star x + b$,
+      so repeating the channel and summing the kernel slices are the same computation. The mean
+      kernel gives a third of the sum, and zero-filled G and B channels drop two of the three terms. Feeding a 1-channel tensor to the unchanged layer
+      fails with a shape error, because the weight has shape $(c_o, 3, k_h, k_w)$ [^2].
+    references:
+      - source: d2l
+        url: https://d2l.ai/chapter_convolutional-neural-networks/channels.html#multiple-input-channels
+        locator: Sec. 7.4.1 Multiple Input Channels
+      - title: 'PyTorch documentation: torch.nn.Conv2d'
+        url: https://docs.pytorch.org/docs/stable/generated/torch.nn.Conv2d.html
+        locator: Description (sum over input channels) and Variables (weight shape)
+    source:
+      id: original
+      ref: cv-basics-033
+    status: reviewed
+    reviewed_by: claude
+  - id: cv-basics-034
+    type: true_false
+    difficulty: medium
+    tags:
+      - convolution
+      - cross-correlation
+      - sobel
+      - kernels
+    shuffle: false
+    question: |
+      True or false: the Sobel kernel
+      $K_y = \begin{bmatrix}-1&-2&-1\\0&0&0\\1&2&1\end{bmatrix}$ is unchanged by a left–right flip,
+      so applying it to an image as a true convolution gives the same output as applying it by
+      cross-correlation, as CNN layers do.
+    options:
+      - text: 'True'
+        why: Convolution flips the kernel left–right and also top–bottom; $K_y$ survives the first flip, but the second one turns it into $-K_y$ [^1].
+      - text: 'False'
+        correct: true
+    explanation: |
+      A strict convolution equals a cross-correlation with the kernel flipped both horizontally and
+      vertically, i.e. rotated by $180^\circ$ [^1][^2]. Flipping $K_y$ top–bottom swaps its first and
+      last rows and gives $-K_y$, so the convolution output is the cross-correlation output with every
+      sign reversed: the same edges with the same gradient magnitude, but $G_y$ points the other way.
+      Only kernels unchanged by a $180^\circ$ rotation, such as the box blur, the Gaussian kernels and
+      the Laplacian kernel, give identical results under both operations. In CNNs the distinction
+      does not matter, because a layer trained with convolution would simply learn the flipped
+      kernel [^1].
+    references:
+      - source: d2l
+        url: https://d2l.ai/chapter_convolutional-neural-networks/conv-layer.html#cross-correlation-and-convolution
+        locator: Sec. 7.2.5 Cross-Correlation and Convolution
+      - title: 'Wikipedia: Kernel (image processing)'
+        url: https://en.wikipedia.org/wiki/Kernel_(image_processing)#Convolution
+        locator: Convolution (kernels that are not symmetric are flipped around both axes)
+    source:
+      id: original
+      ref: cv-basics-034
+    status: reviewed
+    reviewed_by: claude
+  - id: cv-basics-035
+    type: single
+    difficulty: medium
+    tags:
+      - hsv
+      - color-spaces
+      - segmentation
+      - thresholding
+    question: |
+      A robot must find a red ball in camera images taken under very different lighting, by
+      thresholding pixel colours. Why is thresholding the hue in HSV usually more robust than
+      thresholding the raw R, G and B values?
+    options:
+      - text: R, G and B all scale with the lighting; hue barely changes when only brightness does
+        correct: true
+      - text: HSV stores each pixel with more bits than RGB, so small colour differences are easier to separate
+        why: HSV is a different coordinate system for the same colours, not a more precise encoding [^1].
+      - text: Hue is a linear combination of R, G and B, so thresholds on it are equivalent but simpler to choose
+        why: Hue is a nonlinear function of R, G and B (an angle computed from their differences and range) [^2].
+      - text: Hue is undefined for dark pixels, so the shadows of the ball are removed automatically
+        why: Hue is undefined only when all three channels are equal (gray pixels); dark coloured pixels still have a hue, which is often noisy [^2].
+    explanation: |
+      The R, G and B components of an object's colour are all correlated with the amount of light
+      hitting the object, which makes object discrimination in RGB difficult; descriptions in terms of
+      hue, lightness or value, and saturation are often more relevant, which is why HSV-like spaces
+      have long been used for segmentation and object detection [^1]. Hue is computed from the
+      differences between the channels relative to their range, so scaling all three channels by the
+      same factor changes $V$ but leaves $H$ and $S$ unchanged [^2]. In practice one thresholds $H$ and
+      requires a minimum $S$ and $V$, since hue becomes unreliable for very dark or gray pixels.
+    references:
+      - title: 'Wikipedia: HSL and HSV'
+        url: https://en.wikipedia.org/wiki/HSL_and_HSV#Use_in_image_analysis
+        locator: Use in image analysis
+      - title: 'Wikipedia: HSL and HSV'
+        url: https://en.wikipedia.org/wiki/HSL_and_HSV#From_RGB
+        locator: Color conversion formulae — From RGB
+    source:
+      id: original
+      ref: cv-basics-035
+    status: reviewed
+    reviewed_by: claude

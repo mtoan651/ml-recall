@@ -1720,3 +1720,246 @@ questions:
       url: https://arxiv.org/abs/2201.00650v2
     status: reviewed
     reviewed_by: claude
+  - id: metrics-050
+    type: single
+    difficulty: medium
+    tags:
+      - ce6146
+      - ce6146-l01
+      - calibration
+    question: |
+      On held-out data, a classifier assigned a probability of about 0.3 to 200 cases, and 90 of
+      them turned out to be positive. What does this say about the model in this score range?
+    options:
+      - text: It is underconfident there; positives occur more often (45%) than the predicted 30%
+        correct: true
+      - text: It is overconfident there; its scores exceed the observed positive rate
+        why: The observed frequency (0.45) is above the predicted 0.3, so the scores are too low, not too high.
+      - text: It is well calibrated, because accuracy rather than frequency is what calibration checks
+        why: Calibration compares predicted probabilities with observed outcome frequencies, which differ here.
+      - text: Its accuracy in this group must be 45%
+        why: Accuracy depends on the decision threshold; with a 0.5 threshold all 200 are predicted negative and 110 of them are correct.
+    explanation: |
+      A model is well calibrated when, among cases given probability $p$, about a fraction $p$ are
+      positive [^1][^2]. Here the observed rate is $90/200 = 0.45$, higher than the predicted 0.3,
+      so the model underestimates the risk in this range (underconfident). Calibration is a
+      different property from accuracy: a model can classify well and still give unreliable
+      probabilities [^3]. It is checked on held-out data by grouping the predictions into score
+      bins, with enough cases in each bin [^1][^2][^3].
+    references:
+      - source: ncu-intro-dl
+        locator: Lecture 1, slides 75–76
+      - title: 'scikit-learn User Guide: Probability calibration'
+        url: https://scikit-learn.org/stable/modules/calibration.html
+        locator: Sec. 1.16 Probability calibration (introduction); Sec. 1.16.1 Calibration curves
+      - title: Guo et al. (2017), On Calibration of Modern Neural Networks, arXiv:1706.04599
+        url: https://arxiv.org/abs/1706.04599
+        locator: Sec. 1 Introduction (Figure 1); Sec. 2 Definitions (reliability diagrams); Sec. 4 Calibration Methods
+    source:
+      id: ncu-intro-dl
+      ref: lecture-01/q16
+    status: reviewed
+    reviewed_by: claude
+  - id: metrics-051
+    type: short_answer
+    difficulty: easy
+    tags:
+      - ce6146
+      - ce6146-l01
+      - mae
+      - rmse
+      - regression-metrics
+    question: |
+      Observed travel times are $[3, 5, 9, 4]$ minutes and the predictions are $[4, 5, 6, 6]$
+      minutes. The mean absolute error is {{1}} minutes and the root mean squared error is {{2}}
+      minutes (3 decimals).
+    answer:
+      blanks:
+        - numeric: 1.5
+          tolerance: 0.001
+          hint: a number
+        - numeric: 1.871
+          tolerance: 0.002
+          hint: 3 decimals
+      model: Errors $1, 0, -3, 2$; MAE $= 6/4 = 1.5$; MSE $= 14/4 = 3.5$; RMSE $= \sqrt{3.5} \approx 1.871$.
+    explanation: |
+      MAE averages the absolute errors, MSE averages their squares, and RMSE is the square root of
+      MSE, which brings it back to the target's units (minutes) [^1][^2]. With errors
+      $1, 0, -3, 2$: MAE $= 1.5$, MSE $= 3.5\ \text{min}^2$ and RMSE $\approx 1.871$ minutes. RMSE
+      exceeds MAE because squaring weights the single large error of 3 more heavily [^3].
+    references:
+      - source: ncu-intro-dl
+        locator: Lecture 1, slide 87
+      - title: 'scikit-learn User Guide: Model evaluation'
+        url: https://scikit-learn.org/stable/modules/model_evaluation.html
+        locator: Sec. 3.4.6.2 Mean absolute error; Sec. 3.4.6.3 Mean squared error
+      - title: 'Wikipedia: Root mean square deviation'
+        url: https://en.wikipedia.org/wiki/Root_mean_square_deviation
+        locator: RMSD of a sample; Formulas
+    source:
+      id: ncu-intro-dl
+      ref: lecture-01/q19
+    status: reviewed
+    reviewed_by: claude
+  - id: metrics-052
+    type: short_answer
+    difficulty: medium
+    tags:
+      - ce6146
+      - ce6146-l01
+      - r-squared
+      - regression-metrics
+    question: |
+      Observed values are $y = [2, 4, 6, 8]$ and a regression model predicts $[3, 4, 5, 9]$. What
+      is the coefficient of determination $R^2$?
+    answer:
+      numeric: 0.85
+      tolerance: 0.001
+      hint: a number
+      model: $\mathrm{SS}_{\mathrm{res}} = 1 + 0 + 1 + 1 = 3$, $\bar y = 5$, $\mathrm{SS}_{\mathrm{tot}} = 9 + 1 + 1 + 9 = 20$, $R^2 = 1 - 3/20 = 0.85$
+    explanation: |
+      $R^2 = 1 - \sum_i (y_i - \hat y_i)^2 / \sum_i (y_i - \bar y)^2$ compares the model's squared
+      error with that of always predicting the mean [^1][^2]. The residual sum is 3, the total sum
+      around $\bar y = 5$ is 20, so $R^2 = 0.85$. Predicting the mean everywhere scores exactly 0,
+      and a model worse than that baseline gets a negative $R^2$ [^3].
+    references:
+      - source: ncu-intro-dl
+        locator: Lecture 1, slide 88
+      - title: 'Wikipedia: Coefficient of determination'
+        url: https://en.wikipedia.org/wiki/Coefficient_of_determination
+        locator: Definitions
+      - title: 'scikit-learn User Guide: Model evaluation'
+        url: https://scikit-learn.org/stable/modules/model_evaluation.html
+        locator: Sec. 3.4.6.1 R² score, the coefficient of determination
+    source:
+      id: ncu-intro-dl
+      ref: lecture-01/q20
+    status: reviewed
+    reviewed_by: claude
+  - id: metrics-053
+    type: short_answer
+    difficulty: medium
+    tags:
+      - ce6146
+      - ce6146-l01
+      - specificity
+      - f1-score
+      - confusion-matrix
+    question: |
+      A defect detector is tested on 1,000 items, 15 of them defective (the positive class). It
+      gets TP = 12, FN = 3, FP = 18 and TN = 967. Its specificity is {{1}} and its F1 score is
+      {{2}}. Give 3 decimals.
+    answer:
+      blanks:
+        - numeric: 0.982
+          tolerance: 0.002
+          hint: 3 decimals
+        - numeric: 0.533
+          tolerance: 0.002
+          hint: 3 decimals
+      model: Specificity $= 967/985 \approx 0.982$; precision $= 12/30 = 0.4$, recall $= 12/15 = 0.8$, F1 $= 2 \cdot 12/(2 \cdot 12 + 18 + 3) = 24/45 \approx 0.533$.
+    explanation: |
+      Specificity is the true-negative rate, $\mathrm{TN}/(\mathrm{TN} + \mathrm{FP}) = 967/985
+      \approx 0.982$ [^1][^2]. F1 is the harmonic mean of precision ($12/30 = 0.4$) and recall
+      ($12/15 = 0.8$), which simplifies to $2\mathrm{TP}/(2\mathrm{TP} + \mathrm{FP} + \mathrm{FN})
+      = 24/45 \approx 0.533$ [^3]. Because normal items dominate, specificity (and accuracy, 97.9%)
+      stays close to 1 although 18 of the 30 alarms are false; F1 ignores the true negatives and
+      shows the weakness.
+    references:
+      - source: ncu-intro-dl
+        locator: Lecture 1, slides 89–91
+      - title: 'Wikipedia: Sensitivity and specificity'
+        url: https://en.wikipedia.org/wiki/Sensitivity_and_specificity
+        locator: Definition — Specificity
+      - title: 'Wikipedia: F-score'
+        url: https://en.wikipedia.org/wiki/F-score
+        locator: Definition
+    source:
+      id: ncu-intro-dl
+      ref: lecture-01/q21
+    status: reviewed
+    reviewed_by: claude
+  - id: metrics-054
+    type: single
+    difficulty: easy
+    tags:
+      - ce6146
+      - ce6146-l01
+      - accuracy
+      - recall
+      - class-imbalance
+    question: |
+      In a test set of 1,000 items, 15 are defective. A "model" simply labels every item as normal.
+      What are its accuracy and its recall for the defective class?
+    options:
+      - text: Accuracy 98.5%, recall 0%
+        correct: true
+      - text: Accuracy 98.5%, recall 100%
+        why: Recall counts the defects that are found; this model finds none of the 15.
+      - text: Accuracy 1.5%, recall 0%
+        why: 1.5% is the share of defective items; the 985 normal items are all classified correctly.
+      - text: Accuracy 50%, recall 50%
+        why: Accuracy is the fraction of all items classified correctly, not an average over the two classes.
+    explanation: |
+      The model is right on all 985 normal items, so accuracy is $985/1000 = 98.5\%$, yet it never
+      detects a defect, so recall $= 0/15 = 0\%$ [^1][^2]. With rare positives, accuracy is
+      dominated by the majority class; precision, recall, F1 and the costs of misses and false
+      alarms are more informative [^3].
+    references:
+      - source: ncu-intro-dl
+        locator: Lecture 1, slides 89–90
+      - title: 'Wikipedia: Accuracy paradox'
+        url: https://en.wikipedia.org/wiki/Accuracy_paradox
+        locator: Introduction (lead section)
+      - title: 'Wikipedia: Precision and recall'
+        url: https://en.wikipedia.org/wiki/Precision_and_recall
+        locator: Definition; Accuracy, imbalanced data, and balanced accuracy
+    source:
+      id: ncu-intro-dl
+      ref: lecture-01/q22
+    status: reviewed
+    reviewed_by: claude
+  - id: metrics-055
+    type: multiple
+    difficulty: medium
+    tags:
+      - ce6146
+      - ce6146-l01
+      - roc-auc
+    question: |
+      A classifier outputs positive scores, and its ROC AUC is measured on a fixed test set. Which
+      of these changes are guaranteed to leave the AUC unchanged? Select all that apply.
+    options:
+      - text: Taking the logarithm of every score
+        correct: true
+      - text: Using 0.8 instead of 0.5 as the decision threshold
+        correct: true
+      - text: Replacing every score $s$ by $1 - s$
+        why: This reverses the ranking, so every correctly ordered positive–negative pair becomes misordered and the AUC turns into $1 - \mathrm{AUC}$.
+      - text: Rounding every score to one decimal place
+        why: Rounding can turn a positive–negative pair, ordered either way, into a tie, which no longer counts as a full pair, so the AUC can change.
+    explanation: |
+      The AUC is the probability that a randomly chosen positive is scored above a randomly chosen
+      negative, estimated by comparing every positive–negative pair [^1][^2]. It therefore depends
+      only on the order of the scores: a strictly increasing transformation such as the logarithm
+      keeps every comparison and the AUC. The ROC curve is traced over all thresholds, so the
+      threshold later used for decisions does not enter it [^2][^3]. Reversing the scores flips
+      every comparison, and rounding can create ties, which count as one half in the Mann–Whitney
+      statistic [^4] or not at all in the strict "$>$" pairwise count [^2].
+    references:
+      - source: ncu-intro-dl
+        locator: Lecture 1, slide 93
+      - title: 'Wikipedia: Receiver operating characteristic'
+        url: https://en.wikipedia.org/wiki/Receiver_operating_characteristic
+        locator: Introduction (lead); Further interpretations — Probabilistic interpretation; Area under the curve
+      - title: 'scikit-learn User Guide: Model evaluation'
+        url: https://scikit-learn.org/stable/modules/model_evaluation.html
+        locator: Sec. 3.4.4.15 Receiver operating characteristic (ROC)
+      - title: 'Wikipedia: Mann–Whitney U test'
+        url: https://en.wikipedia.org/wiki/Mann%E2%80%93Whitney_U_test
+        locator: Calculations (ties count one half); Area-under-curve (AUC) statistic for ROC curves
+    source:
+      id: ncu-intro-dl
+      ref: lecture-01/q23
+    status: reviewed
+    reviewed_by: claude

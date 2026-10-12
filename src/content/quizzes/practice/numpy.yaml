@@ -4993,3 +4993,625 @@ questions:
       url: https://github.com/rougier/numpy-100/blob/8ca28aaefca69a32ad3ccbbd01c7c9a785c2d5c1/100_Numpy_exercises_with_solutions.md
     status: reviewed
     reviewed_by: claude
+  - id: numpy-099
+    type: multiple
+    difficulty: hard
+    tags:
+      - views-and-copies
+      - fancy-indexing
+      - chained-indexing
+    question: |
+      Each line below runs on a fresh `a = np.arange(6)`. After which lines has `a` changed?
+      Select all that apply.
+    options:
+      - text: '`a[::2][0] = 9`'
+        correct: true
+      - text: '`a[[0, 2]] = 9`'
+        correct: true
+      - text: '`a[[0, 2]][0] = 9`'
+        why: '`a[[0, 2]]` uses an integer list, i.e. advanced indexing, which returns a copy; the second index then writes into that temporary copy, not into `a`.'
+      - text: '`a[a > 2][0] = 9`'
+        why: A boolean mask is advanced indexing too, so `a[a > 2]` is a copy and the write is lost.
+    explanation: |
+      Basic indexing (slices such as `::2`) creates a **view** that shares the data buffer, so
+      writing into `a[::2]` writes into `a` (it becomes `[9, 1, 2, 3, 4, 5]`) [^1]. Advanced indexing
+      with an integer list or a boolean mask always returns a **copy** [^1][^2], so a *chained*
+      `a[[0, 2]][0] = 9` or `a[a > 2][0] = 9` only changes a temporary array. A single
+      assignment `a[[0, 2]] = 9` is different: it is one `__setitem__` call on `a`, and the
+      assignment happens in place (giving `[9, 1, 9, 3, 4, 5]`) [^1].
+    references:
+      - title: 'NumPy user guide: Copies and views'
+        locator: Indexing operations
+        url: https://numpy.org/doc/stable/user/basics.copies.html#indexing-operations
+      - title: 'NumPy user guide: Indexing on ndarrays'
+        locator: Combining advanced and basic indexing
+        url: https://numpy.org/doc/stable/user/basics.indexing.html#combining-advanced-and-basic-indexing
+    source:
+      id: original
+      ref: numpy-099
+    status: reviewed
+    reviewed_by: claude
+  - id: numpy-100
+    type: short_answer
+    difficulty: medium
+    tags:
+      - views-and-copies
+      - ravel
+      - flatten
+    question: |
+      ```python
+      a = np.arange(6).reshape(2, 3)
+      r = a.ravel()
+      f = a.flatten()
+      r[0] = 10
+      f[1] = 20
+      print(a[0, 0], a[0, 1])
+      ```
+
+      The last line prints {{1}} and {{2}}.
+    answer:
+      blanks:
+        - numeric: 10
+          hint: an integer
+        - numeric: 1
+          hint: an integer
+      model: '`10 1`: `ravel` returned a view of the contiguous `a`, `flatten` a copy.'
+    explanation: |
+      `a` is C-contiguous, so `ravel()` can return a flattened **view** of the same buffer, and
+      `r[0] = 10` changes `a[0, 0]` [^1]. `flatten()` always returns a **copy** [^1], so `f[1] = 20`
+      leaves `a[0, 1]` at its original value 1. A view can be recognised by its `base` attribute,
+      which refers to the array whose memory it shares, while a copy has `base is None` [^1].
+    references:
+      - title: 'NumPy user guide: Copies and views'
+        locator: Other operations (ravel vs flatten); How to tell if the array is a view or a copy
+        url: https://numpy.org/doc/stable/user/basics.copies.html#other-operations
+    source:
+      id: original
+      ref: numpy-100
+    status: reviewed
+    reviewed_by: claude
+  - id: numpy-101
+    type: single
+    difficulty: medium
+    tags:
+      - broadcasting
+      - newaxis
+    question: |
+      ```python
+      a = np.zeros((4, 3))
+      b = np.arange(4)
+      ```
+
+      Which expression adds `b[i]` to every element of row `i` of `a`?
+    options:
+      - text: '`a + b[:, np.newaxis]`'
+        correct: true
+      - text: '`a + b`'
+        why: 'Broadcasting aligns trailing axes: 3 (from `a`) meets 4 (from `b`), so NumPy raises a `ValueError`.'
+      - text: '`a + b[np.newaxis, :]`'
+        why: '`b` becomes shape (1, 4); its trailing 4 still meets the 3 of `a`, so this raises a `ValueError`.'
+      - text: '`a + b.T`'
+        why: Transposing a 1-D array does nothing; `b.T` is still shape (4,) and fails like `a + b`.
+    explanation: |
+      NumPy compares shapes from the trailing (rightmost) axis; two sizes are compatible only when
+      they are equal or one of them is 1 [^1]. `(4, 3)` and `(4,)` put 3 against 4 and fail.
+      `b[:, np.newaxis]` has shape `(4, 1)`: the 1 stretches across the 3 columns and the 4 matches
+      the rows, so row `i` gets `b[i]` added, the same pattern as the `a[:, np.newaxis] + b` example
+      in the docs [^1]. `.T` reverses the axes, and a 1-D array has only one: transposing it returns
+      an unchanged view, so a column needs a new axis such as `b[:, np.newaxis]` [^2].
+    references:
+      - title: 'NumPy user guide: Broadcasting'
+        locator: General broadcasting rules; Broadcastable arrays
+        url: https://numpy.org/doc/stable/user/basics.broadcasting.html#general-broadcasting-rules
+      - title: 'NumPy API reference: numpy.transpose'
+        locator: numpy.transpose (1-D arrays)
+        url: https://numpy.org/doc/stable/reference/generated/numpy.transpose.html
+    source:
+      id: original
+      ref: numpy-101
+    status: reviewed
+    reviewed_by: claude
+  - id: numpy-102
+    type: short_answer
+    difficulty: medium
+    tags:
+      - boolean-indexing
+      - array-shapes
+    question: |
+      What is `neg.shape`?
+
+      ```python
+      a = np.array([[1, -2], [-3, 4]])
+      neg = a[a < 0]
+      ```
+    answer:
+      accept:
+        - (2,)
+      pattern: '[\[(]?\s*2\s*,?\s*[\])]?'
+      hint: A shape in parentheses, e.g. (5,) or (5, 6)
+      model: '$(2,)$: a 1-D array `[-2, -3]`.'
+    explanation: |
+      When the boolean mask has as many dimensions as the array, `a[mask]` returns a
+      **one-dimensional** array of the selected elements, read in row-major (C) order [^1]. The 2-D
+      layout is lost: the two negative entries come out as `array([-2, -3])`. To keep the shape and
+      only blank out entries, use `np.where(a < 0, a, 0)` instead [^2].
+    references:
+      - title: 'NumPy user guide: Indexing on ndarrays'
+        locator: Boolean array indexing
+        url: https://numpy.org/doc/stable/user/basics.indexing.html#boolean-array-indexing
+      - title: 'NumPy API reference: numpy.where'
+        locator: numpy.where
+        url: https://numpy.org/doc/stable/reference/generated/numpy.where.html
+    source:
+      id: original
+      ref: numpy-102
+    status: reviewed
+    reviewed_by: claude
+  - id: numpy-103
+    type: short_answer
+    difficulty: hard
+    tags:
+      - argsort
+      - ranking
+    question: |
+      ```python
+      a = np.array([30, 10, 20, 40])
+      print(a.argsort())
+      print(a.argsort().argsort())
+      ```
+
+      The first line prints `[1 2 0 3]`. What does the second line print?
+    answer:
+      accept:
+        - '[2, 0, 1, 3]'
+      pattern: (array\()?\[?\s*2(?:\s*,\s*|\s+)0(?:\s*,\s*|\s+)1(?:\s*,\s*|\s+)3\s*\]?\)?
+      hint: Four integers, e.g. [3, 1, 0, 2]
+      model: '`[2 0 1 3]`: the rank of each element of `a` (10 → 0, 20 → 1, 30 → 2, 40 → 3).'
+    explanation: |
+      `argsort` returns the indices that would sort the array: `a[a.argsort()]` is sorted [^1].
+      So `p = [1, 2, 0, 3]` lists *which* element comes first, second, …. Arg-sorting `p` again
+      inverts that permutation: position 0 of the result asks "where does index 0 appear in `p`?",
+      which is slot 2. The result is therefore the **rank** of each original element: 30 is the
+      third smallest (rank 2), 10 the smallest (rank 0), 20 rank 1 and 40 rank 3.
+    references:
+      - title: 'NumPy API reference: numpy.argsort'
+        locator: Returns (index_array)
+        url: https://numpy.org/doc/stable/reference/generated/numpy.argsort.html
+    source:
+      id: original
+      ref: numpy-103
+    status: reviewed
+    reviewed_by: claude
+  - id: numpy-104
+    type: short_answer
+    difficulty: medium
+    tags:
+      - reshape
+      - memory-order
+    question: |
+      What does the last line print?
+
+      ```python
+      b = np.arange(6).reshape(2, 3, order="F")
+      print(b[0, 1])
+      ```
+    answer:
+      numeric: 2
+      tolerance: 0
+      hint: an integer
+      model: '2: with Fortran order `b` is `[[0, 2, 4], [1, 3, 5]]`.'
+    explanation: |
+      `order` sets the index order used both to read the input and to fill the output [^1]. With
+      `'F'` the *first* index changes fastest, so 0, 1, 2, … fill the columns one after another:
+      column 0 gets 0, 1; column 1 gets 2, 3; column 2 gets 4, 5. Hence `b = [[0, 2, 4], [1, 3, 5]]`
+      and `b[0, 1] = 2`. The default `'C'` order would give `[[0, 1, 2], [3, 4, 5]]` and the value 1
+      [^1].
+    references:
+      - title: 'NumPy API reference: numpy.reshape'
+        locator: Parameter order; Notes
+        url: https://numpy.org/doc/stable/reference/generated/numpy.reshape.html
+    source:
+      id: original
+      ref: numpy-104
+    status: reviewed
+    reviewed_by: claude
+  - id: numpy-105
+    type: single
+    difficulty: medium
+    tags:
+      - reshape
+      - transpose
+    question: '`m = np.arange(6).reshape(2, 3)` is `[[0, 1, 2], [3, 4, 5]]`. What does `m.reshape(3, 2)` return?'
+    options:
+      - text: '`[[0, 1], [2, 3], [4, 5]]`'
+        correct: true
+      - text: '`[[0, 3], [1, 4], [2, 5]]`'
+        why: That is the transpose `m.T`; reshape keeps the row-major order of the elements and only regroups them.
+      - text: '`[[0, 2, 4], [1, 3, 5]]`'
+        why: This is a (2, 3) array filled in column-major order, not a (3, 2) array.
+      - text: A `ValueError`, because (2, 3) and (3, 2) are different shapes
+        why: Any shape with the same number of elements (6) is allowed.
+    explanation: |
+      Reshaping can be thought of as first raveling the array in the given index order (C order by
+      default: `0, 1, 2, 3, 4, 5`) and then filling the new shape in the same order [^1]. Grouping
+      that sequence into rows of two gives `[[0, 1], [2, 3], [4, 5]]`. A transpose instead swaps
+      the axes, so element `[i, j]` moves to `[j, i]` and the order of the data changes [^2]; the
+      two only agree when one of the dimensions is 1.
+    references:
+      - title: 'NumPy API reference: numpy.reshape'
+        locator: Notes
+        url: https://numpy.org/doc/stable/reference/generated/numpy.reshape.html
+      - title: 'NumPy API reference: numpy.transpose'
+        locator: numpy.transpose
+        url: https://numpy.org/doc/stable/reference/generated/numpy.transpose.html
+    source:
+      id: original
+      ref: numpy-105
+    status: reviewed
+    reviewed_by: claude
+  - id: numpy-106
+    type: short_answer
+    difficulty: medium
+    tags:
+      - floor-division
+      - modulo
+      - integer-arithmetic
+    question: |
+      ```python
+      a = np.array([-7, 7])
+      print(a // 2)
+      print(a % 3)
+      ```
+
+      The first line prints `[` {{1}} `3]` and the second prints `[` {{2}} `1]`.
+    answer:
+      blanks:
+        - numeric: -4
+          hint: an integer
+        - numeric: 2
+          hint: an integer
+      model: '`a // 2` is `[-4 3]` and `a % 3` is `[2 1]`.'
+    explanation: |
+      `//` is `np.floor_divide`, which returns the largest integer smaller than or equal to the
+      quotient, like Python's `//` [^1]: $-7/2 = -3.5$ is floored to $-4$, not truncated to $-3$.
+      `%` is `np.remainder`, the complement of floor division, whose result has the sign of the
+      divisor [^2]: $-7 = 3 \cdot (-3) + 2$, so the remainder is 2. The C-style remainder that keeps
+      the sign of the dividend is `np.fmod`, which gives $-1$ [^3].
+    references:
+      - title: 'NumPy API reference: numpy.floor_divide'
+        locator: numpy.floor_divide
+        url: https://numpy.org/doc/stable/reference/generated/numpy.floor_divide.html
+      - title: 'NumPy API reference: numpy.remainder'
+        locator: numpy.remainder
+        url: https://numpy.org/doc/stable/reference/generated/numpy.remainder.html
+      - title: 'NumPy API reference: numpy.fmod'
+        locator: numpy.fmod (sign of the dividend; Notes)
+        url: https://numpy.org/doc/stable/reference/generated/numpy.fmod.html
+    source:
+      id: original
+      ref: numpy-106
+    status: reviewed
+    reviewed_by: claude
+  - id: numpy-107
+    type: short_answer
+    difficulty: easy
+    tags:
+      - dtype
+      - casting
+    question: |
+      What does the last line print?
+
+      ```python
+      a = np.array([1, 2, 3])
+      a[0] = 2.9
+      print(a[0])
+      ```
+    answer:
+      numeric: 2
+      tolerance: 0
+      hint: a number
+      model: '2: `a` keeps its integer dtype, so 2.9 is cast to int (truncated).'
+    explanation: |
+      `np.array([1, 2, 3])` has an integer dtype, and assigning into an existing array never changes
+      its dtype. The value is converted to the array's type, so a float is truncated toward zero:
+      the NumPy indexing guide shows the same with `x[1] = 1.2` giving 1 [^1]. To keep 2.9, create
+      the array as float (`np.array([1., 2., 3.])` or `dtype=float`).
+    references:
+      - title: 'NumPy user guide: Indexing on ndarrays'
+        locator: Assigning values to indexed arrays
+        url: https://numpy.org/doc/stable/user/basics.indexing.html#assigning-values-to-indexed-arrays
+    source:
+      id: original
+      ref: numpy-107
+    status: reviewed
+    reviewed_by: claude
+  - id: numpy-108
+    type: single
+    difficulty: medium
+    tags:
+      - dtype
+      - casting
+      - in-place
+    question: |
+      What happens when the last line runs?
+
+      ```python
+      a = np.array([1, 2, 3])
+      a += 0.5
+      ```
+    options:
+      - text: It raises a casting error (`UFuncTypeError`)
+        correct: true
+      - text: '`a` becomes the float array `[1.5, 2.5, 3.5]`'
+        why: An in-place operation writes into the existing integer buffer; it cannot change the dtype of `a`. (`a = a + 0.5` would create a new float array.)
+      - text: '`a` silently stays `[1, 2, 3]` because 1.5, 2.5 and 3.5 are truncated'
+        why: That was the old `'unsafe'` default; since NumPy 1.10 ufuncs use `'same_kind'` casting, which refuses float → int.
+      - text: '`a` becomes `[2, 2, 4]` because the results are rounded to even'
+        why: No rounding happens; the cast from float64 to int64 is rejected altogether.
+    explanation: |
+      `a += 0.5` is `np.add(a, 0.5, out=a)`. The sum is computed as float64 and must be cast into the
+      int64 output. Ufuncs apply the `casting` policy to that output, and the default is
+      `'same_kind'` since NumPy 1.10 [^1]; float → int is a cast to a different kind, so NumPy raises
+      `UFuncTypeError: Cannot cast ufunc 'add' output from dtype('float64') to dtype('int64') with
+      casting rule 'same_kind'`. `np.can_cast(np.float64, np.int64, casting="same_kind")` is
+      `False` [^2].
+    references:
+      - title: 'NumPy API reference: Universal functions (ufunc)'
+        locator: Optional keyword arguments (casting)
+        url: https://numpy.org/doc/stable/reference/ufuncs.html#optional-keyword-arguments
+      - title: 'NumPy API reference: numpy.can_cast'
+        locator: numpy.can_cast
+        url: https://numpy.org/doc/stable/reference/generated/numpy.can_cast.html
+    source:
+      id: original
+      ref: numpy-108
+    status: reviewed
+    reviewed_by: claude
+  - id: numpy-109
+    type: short_answer
+    difficulty: medium
+    tags:
+      - dtype
+      - integer-overflow
+      - uint8
+    question: |
+      What does the last line print?
+
+      ```python
+      a = np.array([250, 5], dtype=np.uint8)
+      b = a + 10
+      print(b[0])
+      ```
+    answer:
+      numeric: 4
+      tolerance: 0
+      hint: an integer
+      model: '4: the sum stays `uint8` and wraps around, $260 - 256 = 4$.'
+    explanation: |
+      Adding a Python int to an array does not change the array's dtype. NumPy 2.0 adopted the
+      promotion rules of NEP 50 [^2], under which a Python scalar is "weakly" typed and is converted
+      to the dtype of the array it is combined with [^1], so `a + 10` is computed in `uint8`, whose
+      range is 0 to 255. Fixed-size NumPy integers cannot grow like Python ints: a result that does
+      not fit overflows [^3], and the bits that remain give $260 - 256 = 4$ (the same wrap-around as
+      the docs' cast of 300 to `int8`, which gives 44 [^3]). NumPy 1.x produced the same `uint8`
+      result here through value-based casting, because 10 fits in `uint8`; the two rules differ when
+      the Python int itself does not fit: `a + 300` gave a `uint16` array before and raises an error
+      under NEP 50 [^1].
+    references:
+      - title: 'NEP 50: Promotion rules for Python scalars'
+        locator: Abstract; Table comparing new and old behaviour
+        url: https://numpy.org/neps/nep-0050-scalar-promotion.html#abstract
+      - title: NumPy 2.0 migration guide
+        locator: Changes to NumPy data type promotion
+        url: https://numpy.org/doc/stable/numpy_2_0_migration_guide.html#changes-to-numpy-data-type-promotion
+      - title: 'NumPy user guide: Data types'
+        locator: Array types and conversions between types (C casting rules); Overflow errors
+        url: https://numpy.org/doc/stable/user/basics.types.html#overflow-errors
+    source:
+      id: original
+      ref: numpy-109
+    status: reviewed
+    reviewed_by: claude
+  - id: numpy-110
+    type: short_answer
+    difficulty: medium
+    tags:
+      - einsum
+      - trace
+    question: |
+      What does `np.einsum("ii", A)` return?
+
+      ```python
+      A = np.arange(9).reshape(3, 3)   # [[0, 1, 2], [3, 4, 5], [6, 7, 8]]
+      ```
+    answer:
+      numeric: 12
+      tolerance: 0
+      hint: an integer
+      model: 12, the trace $0 + 4 + 8$.
+    explanation: |
+      A subscript label repeated within one operand takes the diagonal, and in implicit mode (no
+      `->`) every repeated label is summed, so `np.einsum('ii', A)` equals `np.trace(A)` [^1]:
+      $0 + 4 + 8 = 12$. Keeping the label in an explicit output, `np.einsum('ii->i', A)`, returns
+      the diagonal `[0, 4, 8]` itself [^1].
+    references:
+      - title: 'NumPy API reference: numpy.einsum'
+        locator: Notes (repeated subscript labels; implicit and explicit mode)
+        url: https://numpy.org/doc/stable/reference/generated/numpy.einsum.html
+    source:
+      id: original
+      ref: numpy-110
+    status: reviewed
+    reviewed_by: claude
+  - id: numpy-111
+    type: short_answer
+    difficulty: hard
+    tags:
+      - einsum
+      - batch-matmul
+    question: |
+      What is `C[0, 0]`?
+
+      ```python
+      X = np.ones((5, 2, 3))
+      Y = np.ones((5, 3, 4))
+      C = np.einsum("bij,bjk->ik", X, Y)
+      ```
+    answer:
+      numeric: 15
+      tolerance: 0
+      hint: a number
+      model: '15: `C` has shape (2, 4) and every entry sums $5 \times 3$ products of ones.'
+    explanation: |
+      In explicit mode the labels after `->` decide which axes the output keeps; an input label left
+      out of the output is summed over, as in `np.einsum('i->', a)`, the sum of a 1-D `a` [^1]. Here
+      `j` (size 3) is the usual matrix-product index, and `b` (size 5) is also missing from `ik`, so
+      the five batch products are added together: `C` has shape (2, 4) and each entry is a sum of
+      $5 \cdot 3 = 15$ ones. Writing `'bij,bjk->bik'` instead would keep the batch axis and give a
+      (5, 2, 4) batched matrix product with entries 3 [^1].
+    references:
+      - title: 'NumPy API reference: numpy.einsum'
+        locator: Notes (explicit mode, summation over omitted labels); Examples
+        url: https://numpy.org/doc/stable/reference/generated/numpy.einsum.html
+    source:
+      id: original
+      ref: numpy-111
+    status: reviewed
+    reviewed_by: claude
+  - id: numpy-112
+    type: single
+    difficulty: hard
+    tags:
+      - boolean-masks
+      - operator-precedence
+    question: |
+      What happens when the last line runs?
+
+      ```python
+      a = np.arange(6)
+      m = a > 1 & a < 4
+      ```
+    options:
+      - text: It raises a `ValueError` about the truth value of an array being ambiguous
+        correct: true
+      - text: '`m` is `[False, False, True, True, False, False]`'
+        why: That is `(a > 1) & (a < 4)`; without parentheses `&` binds tighter than the comparisons.
+      - text: '`m` is `[0, 1, 0, 1, 0, 1]`, the bitwise AND of 1 and `a`'
+        why: '`1 & a` is only the middle operand; it is then compared on both sides.'
+      - text: It raises a `TypeError` because `&` is not defined between an int and an array
+        why: '`&` is the `bitwise_and` ufunc, which works between a Python int and an integer array.'
+    explanation: |
+      In Python, `&` has higher precedence than `<` and `>`, so the line parses as
+      `a > (1 & a) < 4` [^1][^2]. That is a *chained* comparison, which Python evaluates as
+      `(a > (1 & a)) and ((1 & a) < 4)` [^2]; the `and` needs the truth value of a 6-element boolean
+      array, and NumPy raises `ValueError: The truth value of an array with more than one element is
+      ambiguous`. The fix is the parentheses `(a > 1) & (a < 4)`, or `np.logical_and` [^1].
+    references:
+      - title: 'NumPy user guide: NumPy for MATLAB users'
+        locator: Notes, LOGICOPS (precedence of & and comparisons)
+        url: https://numpy.org/doc/stable/user/numpy-for-matlab-users.html#notes
+      - title: 'Python language reference: Expressions'
+        locator: 6.10 Comparisons (chaining; priority below bitwise operations)
+        url: https://docs.python.org/3/reference/expressions.html#comparisons
+    source:
+      id: original
+      ref: numpy-112
+    status: reviewed
+    reviewed_by: claude
+  - id: numpy-113
+    type: short_answer
+    difficulty: medium
+    tags:
+      - standard-deviation
+      - ddof
+    question: |
+      What does the line print? Round to 3 decimals.
+
+      ```python
+      print(np.std([1, 2, 3, 4]))
+      ```
+    answer:
+      numeric: 1.118
+      tolerance: 0.001
+      hint: a decimal number, e.g. 0.577
+      model: 1.118, the population standard deviation $\sqrt{5/4}$.
+    explanation: |
+      The mean is 2.5 and the squared deviations add up to $2.25 + 0.25 + 0.25 + 2.25 = 5$.
+      `np.std` divides by $N - \text{ddof}$ with `ddof=0` by default [^1], so it returns the
+      population standard deviation $\sqrt{5/4} \approx 1.118$. The sample standard deviation with
+      Bessel's correction needs `ddof=1`: $\sqrt{5/3} \approx 1.291$ [^1].
+    references:
+      - title: 'NumPy API reference: numpy.std'
+        locator: Parameter ddof; Notes
+        url: https://numpy.org/doc/stable/reference/generated/numpy.std.html
+    source:
+      id: original
+      ref: numpy-113
+    status: reviewed
+    reviewed_by: claude
+  - id: numpy-114
+    type: short_answer
+    difficulty: easy
+    tags:
+      - indexing
+      - array-shapes
+    question: |
+      `a.shape` is `(3,)`. What is `b.shape`?
+
+      ```python
+      x = np.arange(12).reshape(3, 4)
+      a = x[:, 0]
+      b = x[:, [0]]
+      ```
+    answer:
+      accept:
+        - (3, 1)
+      pattern: '[\[(]?\s*3\s*[,x×]\s*1\s*,?\s*[\])]?'
+      hint: A shape in parentheses, e.g. (5, 6)
+      model: '$(3, 1)$: a list index keeps the axis.'
+    explanation: |
+      An integer index selects one position and removes that axis, so `x[:, 0]` is 1-D [^1]. The
+      list `[0]` is an integer *array* index of length 1: advanced indexing replaces the axis by the
+      shape of the index array, here 1, so the column stays a 2-D `(3, 1)` array [^1]. The slice
+      `x[:, 0:1]` gives the same shape, as a view instead of a copy.
+    references:
+      - title: 'NumPy user guide: Indexing on ndarrays'
+        locator: Slicing and striding; Integer array indexing
+        url: https://numpy.org/doc/stable/user/basics.indexing.html#integer-array-indexing
+    source:
+      id: original
+      ref: numpy-114
+    status: reviewed
+    reviewed_by: claude
+  - id: numpy-115
+    type: short_answer
+    difficulty: hard
+    tags:
+      - arange
+      - floating-point
+    question: |
+      What does the line print?
+
+      ```python
+      print(len(np.arange(1, 1.3, 0.1)))
+      ```
+    answer:
+      numeric: 4
+      tolerance: 0
+      hint: an integer
+      model: '4: the array is `[1.0, 1.1, 1.2, 1.3]`, stop included because of rounding.'
+    explanation: |
+      For floating-point arguments the length is `ceil((stop - start) / step)` [^1]. In binary
+      floating point $(1.3 - 1)/0.1$ evaluates to slightly more than 3 ($3.0000000000000004$), so the
+      ceiling is 4 and the last element, about 1.3, lands on (or just past) `stop`, which was
+      supposed to be excluded. The docs warn that the length of the output with a non-integer step
+      is not numerically stable and recommend `np.linspace` when the number of points matters [^1].
+    references:
+      - title: 'NumPy API reference: numpy.arange'
+        locator: Returns; Warning
+        url: https://numpy.org/doc/stable/reference/generated/numpy.arange.html
+    source:
+      id: original
+      ref: numpy-115
+    status: reviewed
+    reviewed_by: claude
