@@ -1,0 +1,58 @@
+---
+/**
+ * Shown by the service worker when a page that was never opened is requested offline. Lists
+ * the pages this browser keeps (the service worker's page cache), with their titles.
+ */
+import Base from "../layouts/Base.astro";
+import { getBank } from "../lib/bank";
+import { url } from "../lib/url";
+
+const bank = await getBank();
+// Topic URLs → titles, so kept topic pages are listed by name.
+const titles = Object.fromEntries(
+  bank.domains.flatMap((d) => d.topics.map((t) => [t.url, t.title])),
+);
+---
+
+<Base title="Offline" description="You are offline; these pages are kept in this browser.">
+  <h1 class="text-2xl font-semibold tracking-tight sm:text-3xl">You're offline</h1>
+  <p class="mt-2 text-muted">
+    This page hasn't been saved in this browser yet. Pages you opened before still work offline,
+    and so do Review, Mistakes and Progress — your answers are saved as usual.
+  </p>
+  <div class="mt-6 flex flex-wrap gap-2">
+    <a href={url()} class="rounded-lg bg-accent px-4 py-2 text-sm font-medium text-accent-ink hover:bg-accent-hover">Topics</a>
+    <a href={url("review/")} class="rounded-lg border border-line-strong px-4 py-2 text-sm font-medium hover:bg-subtle">Review</a>
+    <a href={url("mistakes/")} class="rounded-lg border border-line-strong px-4 py-2 text-sm font-medium hover:bg-subtle">My mistakes</a>
+  </div>
+  <section aria-labelledby="kept-heading" class="mt-8">
+    <h2 id="kept-heading" class="font-semibold">Available offline</h2>
+    <ul id="kept" class="mt-3 space-y-1 text-sm" data-titles={JSON.stringify(titles)}></ul>
+    <p id="kept-none" class="mt-3 text-sm text-muted" hidden>
+      No topic pages kept yet: open a topic while online to practise it offline later.
+    </p>
+  </section>
+  <script>
+    const list = document.getElementById("kept");
+    const titles: Record<string, string> = JSON.parse(list?.dataset.titles ?? "{}");
+    async function show() {
+      if (!list || !("caches" in window)) return;
+      const cache = await caches.open("ml-recall-pages-v1");
+      const paths = (await cache.keys())
+        .map((request) => new URL(request.url).pathname)
+        .filter((path) => titles[path] || /\/q\/[^/]+\/$/.test(path))
+        .sort();
+      for (const path of paths) {
+        const item = document.createElement("li");
+        const link = document.createElement("a");
+        link.href = path;
+        link.className = "text-accent hover:underline";
+        link.textContent = titles[path] ?? `Question ${path.split("/").at(-2)}`;
+        item.append(link);
+        list.append(item);
+      }
+      document.getElementById("kept-none")?.toggleAttribute("hidden", paths.length > 0);
+    }
+    show();
+  </script>
+</Base>

@@ -13,7 +13,7 @@ Requires Node 24 and pnpm (see [tech-stack](tech-stack.md)); the pnpm version is
 pnpm install
 pnpm dev          # http://localhost:4321/ml-recall/ — reloads on YAML edits
 pnpm build        # static site in dist/ (fails on any schema / Markdown / math error),
-                  # then the Pagefind search index in dist/pagefind/
+                  # then dist/sw.js (offline support) and the Pagefind search index
 pnpm preview      # serve dist/ locally
 pnpm lint         # Biome (lint + format check); `pnpm format` fixes what it can
 pnpm test         # Vitest: grading, shuffle, citations, session, exam, storage, schema mirror
@@ -333,6 +333,29 @@ are not ml-recall backups, or from a newer format, are rejected with a message.
   on phones); `?q=` pre-fills the query. Under `astro dev` there is no index, and the page says
   so. "Search" is in the header (GitHub moved to the footer).
 
+## Offline (PWA)
+
+The site installs as an app and works offline (only in the built site; `astro dev` registers
+no service worker):
+
+- **Manifest** `src/pages/manifest.webmanifest.ts` (name, `start_url`/`scope` = the base path,
+  standalone, theme colour) with icons in `public/` (`icon-192.png`, `icon-512.png`,
+  `icon-maskable-512.png`, `apple-touch-icon.png`, drawn from the favicon design); linked from
+  `Base.astro`, which also registers the service worker on `load`.
+- **Service worker** `tools/web/sw.template.js` → `dist/sw.js`, written after `astro build` by
+  `tools/web/build-sw.mjs` with the list of hashed build assets (`_astro/*.js|css|svg|woff2`,
+  ~110 files, ~2.5 MB) and a version hash of template + list. On install it precaches the app
+  shell (`/`, `/review/`, `/exam/`, `/mistakes/`, `/progress/`, `/search/`, `/offline/`) and
+  every asset, so these pages hydrate offline even if never opened. Pages: network first,
+  each page opened online is kept (`ml-recall-pages-v1`, newest 400); offline the kept copy
+  is served, else `/offline/`, which lists the kept topic and question pages. `_astro/` assets:
+  cache first. Everything else (question JSON, search index, icons): stale-while-revalidate.
+  Lookups ignore `Vary` (module scripts carry an `Origin` header the precache requests lacked).
+  A new deploy with changed assets installs a new worker that takes over at once and deletes
+  the old precache.
+- Progress is in `localStorage`, so answering, Review, Mistakes and Progress work offline as
+  usual; mixed tests and review rounds need their questions' JSON (cached once fetched).
+
 ## Figures
 
 `figure`, `explanation_figure` and option `image` paths are relative to the YAML file
@@ -381,6 +404,7 @@ Actions**.
 | Fetching questions; per-question JSON | `src/lib/fetch.ts` (+ `fetch.test.ts`); `src/pages/data/q/[id].json.ts` |
 | Mixed test, My mistakes, Progress UI | `src/components/MixedExam.tsx`, `Mistakes.tsx`, `Progress.tsx`; pages `exam.astro`, `mistakes.astro`, `progress.astro` |
 | Question pages, search index, search UI | `src/pages/q/[id].astro`, `src/lib/text.ts` (+ `text.test.ts`), `src/pages/search.astro`; `build` script in `package.json`; `.search-ui` in `global.css` |
+| Offline support, install | `tools/web/sw.template.js`, `tools/web/build-sw.mjs`, `src/pages/manifest.webmanifest.ts`, `src/pages/offline.astro`, icons in `public/`; registration in `Base.astro` |
 | Export / import of progress | `src/lib/backup.ts` (+ `backup.test.ts`); panel in `src/components/Progress.tsx` |
 | Spaced repetition: cards, due, forecast, rating; review UI; due badge | `src/lib/srs.ts` (+ `srs.test.ts`), `src/lib/srs-due.ts`; `src/components/Review.tsx`, page `review.astro`; badge script in `Base.astro` |
 | Figure zoom, picture-option grid | `src/components/Figure.tsx`; `OptionList` in `QuestionCard.tsx` |

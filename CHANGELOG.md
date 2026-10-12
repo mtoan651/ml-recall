@@ -18,6 +18,9 @@ versioning: [SemVer](https://semver.org) as defined in [docs/conventions.md](doc
 - **Search** (`/search/`): full-text search over every question with filters for domain,
   topic, type and difficulty (Pagefind, built with the site), and a page per question
   (`/q/<id>/`) to answer or share it.
+- **Works offline and installs as an app**: a service worker keeps every page you open (and the
+  main pages from the start), so practice, Review, Mistakes and Progress keep working without
+  a connection; pages not kept yet show an offline page listing what is.
 
 ## [0.4.1] — 2026-10-12
 
