@@ -3,9 +3,12 @@ import {
   catalogEntries,
   DEFAULT_MIXED_SIZE,
   DIFFICULTIES,
+  decodeTags,
   drawIds,
   MIXED_SIZES,
   selectionPool,
+  type TagCount,
+  tagCounts,
 } from "../lib/catalog";
 import {
   DEFAULT_EXAM_LAYOUT,
@@ -29,7 +32,7 @@ import {
   saveSettings,
   storedExamIds,
 } from "../lib/storage";
-import type { Catalog, Difficulty, ExamScopeView, QuizQuestion } from "../lib/types";
+import type { Catalog, CatalogTags, Difficulty, ExamScopeView, QuizQuestion } from "../lib/types";
 import { mistakesUrl } from "../lib/url";
 import Exam from "./Exam";
 import { AttemptTile, LayoutPicker } from "./ExamStart";
@@ -63,19 +66,26 @@ const infoOf = (q: QuizQuestion): StoredQuestionInfo => ({
   blankCount: q.answer?.blanks?.length ?? 0,
 });
 
+/** Tags offered as one-click suggestions. */
+const SUGGESTED_TAGS = 8;
+
 /**
- * Mixed test: choose topics, difficulties and a length, then a timed test draws from all of
- * them. The page embeds only the question index; the drawn questions are fetched, then the
- * usual `Exam` runs (scope `mixed:custom`, its own history and test in progress).
+ * Mixed test: choose topics, tags, difficulties and a length, then a timed test draws from all
+ * of them. The page embeds only the question index and the tag index; the drawn questions are
+ * fetched, then the usual `Exam` runs (scope `mixed:custom`, its own history and test in
+ * progress). `?tag=<tag>` (from a tag page) starts the form with that tag and every topic.
  */
-export default function MixedExam({ catalog }: { catalog: Catalog }) {
+export default function MixedExam({ catalog, tags }: { catalog: Catalog; tags: CatalogTags }) {
   const allTopics = useMemo(
     () => catalog.domains.flatMap((d) => d.topics.map((t) => t.id)),
     [catalog],
   );
   const entries = useMemo(() => catalogEntries(catalog), [catalog]);
+  const tagIndex = useMemo(() => decodeTags(tags), [tags]);
+  const counts = useMemo(() => tagCounts(tagIndex), [tagIndex]);
   const [view, setView] = useState<View>({ name: "loading" });
   const [topics, setTopics] = useState<ReadonlySet<string>>(() => new Set(allTopics));
+  const [chosenTags, setChosenTags] = useState<readonly string[]>([]);
   const [difficulties, setDifficulties] = useState<ReadonlySet<Difficulty>>(
     () => new Set(DIFFICULTIES),
   );
@@ -95,11 +105,29 @@ export default function MixedExam({ catalog }: { catalog: Catalog }) {
   // Restore the form, then resume a test in progress (its questions must be fetched first).
   useEffect(() => {
     const prefs = loadMixedPrefs();
+    const knownTag = (t: string) => tagIndex.has(t);
     if (prefs) {
       const known = new Set(allTopics);
       setTopics(new Set(prefs.topics.filter((t) => known.has(t))));
+      setChosenTags(prefs.tags.filter(knownTag));
       setDifficulties(new Set(prefs.difficulties));
       if (MIXED_SIZES.includes(prefs.size)) setSize(prefs.size);
+    }
+    // A link from a tag page: that tag over everything, remembered like a choice on the form.
+    const linked = new URLSearchParams(window.location.search).get("tag");
+    if (linked !== null) {
+      if (knownTag(linked)) {
+        setTopics(new Set(allTopics));
+        setChosenTags([linked]);
+        setDifficulties(new Set(DIFFICULTIES));
+        saveMixedPrefs({
+          topics: allTopics,
+          tags: [linked],
+          difficulties: [...DIFFICULTIES],
+          size: prefs && MIXED_SIZES.includes(prefs.size) ? prefs.size : DEFAULT_MIXED_SIZE,
+        });
+      }
+      window.history.replaceState(window.history.state, "", window.location.pathname);
     }
     const settings = loadSettings();
     setLayout(settings.examLayout);
@@ -130,37 +158,44 @@ export default function MixedExam({ catalog }: { catalog: Catalog }) {
     return () => {
       cancelled = true;
     };
-  }, [allTopics, toBuilder]);
+  }, [allTopics, tagIndex, toBuilder]);
 
   const selection = useMemo(
-    () => ({ topics: [...topics], difficulties: [...difficulties], reviewedOnly }),
-    [topics, difficulties, reviewedOnly],
+    () => ({
+      topics: [...topics],
+      tags: chosenTags,
+      difficulties: [...difficulties],
+      reviewedOnly,
+    }),
+    [topics, chosenTags, difficulties, reviewedOnly],
   );
-  const pool = useMemo(() => selectionPool(catalog, selection), [catalog, selection]);
+  const pool = useMemo(
+    () => selectionPool(catalog, selection, tagIndex),
+    [catalog, selection, tagIndex],
+  );
   const plan = planExam(pool.length, size);
   const draftsInSelection = useMemo(() => {
-    const chosen = new Set(selectionPool(catalog, { ...selection, reviewedOnly: false }));
+    const chosen = new Set(selectionPool(catalog, { ...selection, reviewedOnly: false }, tagIndex));
     return entries.filter((e) => chosen.has(e.id) && !e.reviewed).length;
-  }, [catalog, entries, selection]);
+  }, [catalog, entries, selection, tagIndex]);
+  // Questions per difficulty within the chosen topics and tags (those without one not counted).
   const perDifficulty = useMemo(() => {
-    const counts: Record<Difficulty, number> = { easy: 0, medium: 0, hard: 0 };
-    for (const e of entries) {
-      if (topics.has(e.topic.id) && e.difficulty && (!reviewedOnly || e.reviewed)) {
-        counts[e.difficulty]++;
-      }
-    }
-    return counts;
-  }, [entries, topics, reviewedOnly]);
+    const count = (d: Difficulty) =>
+      selectionPool(catalog, { ...selection, difficulties: [d] }, tagIndex).length;
+    return { easy: count("easy"), medium: count("medium"), hard: count("hard") };
+  }, [catalog, selection, tagIndex]);
 
   const remember = (
     next: Partial<{
       topics: ReadonlySet<string>;
+      tags: readonly string[];
       difficulties: ReadonlySet<Difficulty>;
       size: number;
     }>,
   ) => {
     saveMixedPrefs({
       topics: [...(next.topics ?? topics)],
+      tags: [...(next.tags ?? chosenTags)],
       difficulties: [...(next.difficulties ?? difficulties)],
       size: next.size ?? size,
     });
@@ -168,6 +203,10 @@ export default function MixedExam({ catalog }: { catalog: Catalog }) {
   const changeTopics = (next: ReadonlySet<string>) => {
     setTopics(next);
     remember({ topics: next });
+  };
+  const changeTags = (next: readonly string[]) => {
+    setChosenTags(next);
+    remember({ tags: next });
   };
   const toggleDifficulty = (d: Difficulty) => {
     const next = new Set(difficulties);
@@ -254,11 +293,13 @@ export default function MixedExam({ catalog }: { catalog: Catalog }) {
               : "No questions selected"}
           </h2>
           <p className="mt-2 text-muted">
-            Random questions from the topics and difficulties you pick, a new set every time. No
-            feedback until you submit; then every answer is explained.
+            Random questions from the topics, tags and difficulties you pick, a new set every time.
+            No feedback until you submit; then every answer is explained.
           </p>
 
           <TopicPicker catalog={catalog} selected={topics} onChange={changeTopics} />
+
+          <TagPicker counts={counts} selected={chosenTags} onChange={changeTags} ready={ready} />
 
           <fieldset className="mt-5 min-w-0">
             <legend className="text-xs font-semibold tracking-wide text-muted uppercase">
@@ -330,7 +371,9 @@ export default function MixedExam({ catalog }: { catalog: Catalog }) {
 
           <p className="mt-5 rounded-xl bg-subtle px-3.5 py-2.5 text-sm tabular-nums">
             {pool.length === 0
-              ? "No questions match — pick at least one topic and one difficulty."
+              ? topics.size > 0 && difficulties.size > 0 && chosenTags.length > 0
+                ? "No questions match — the chosen tags have none in these topics and difficulties."
+                : "No questions match — pick at least one topic and one difficulty."
               : plan.short
                 ? `${plural(pool.length, "question")} match, so this test has ${plural(plan.count, "question")}.`
                 : `${plural(pool.length, "question")} match; the test draws ${plan.count} of them.`}
@@ -455,6 +498,137 @@ function TopicPicker({
           );
         })}
       </ul>
+    </fieldset>
+  );
+}
+
+/**
+ * Optional tag filter: a search box over every tag (native suggestions from a datalist), the
+ * chosen tags as removable chips, and the largest tags as one-click suggestions.
+ */
+function TagPicker({
+  counts,
+  selected,
+  onChange,
+  ready,
+}: {
+  counts: readonly TagCount[];
+  selected: readonly string[];
+  onChange: (next: readonly string[]) => void;
+  /** Hydrated: the suggestion list (thousands of options) is not server-rendered. */
+  ready: boolean;
+}) {
+  const [query, setQuery] = useState("");
+  const size = useMemo(() => new Map(counts.map((c) => [c.tag, c.count])), [counts]);
+  const add = (tag: string) => {
+    if (size.has(tag) && !selected.includes(tag)) onChange([...selected, tag]);
+  };
+  const remove = (tag: string) => onChange(selected.filter((t) => t !== tag));
+  const typed = query.trim().replace(/^#/, "").toLowerCase();
+  const suggestions = counts.filter((c) => !selected.includes(c.tag)).slice(0, SUGGESTED_TAGS);
+  return (
+    <fieldset className="mt-5 min-w-0">
+      <legend className="text-xs font-semibold tracking-wide text-muted uppercase">
+        Tags <span className="font-normal normal-case tracking-normal">· optional</span>
+      </legend>
+      <p className="mt-1 text-sm text-muted">
+        Only questions with at least one of these tags, from the topics above. None chosen: no tag
+        filter.
+      </p>
+      {selected.length > 0 && (
+        <ul className="mt-2 flex flex-wrap items-center gap-2" aria-label="Chosen tags">
+          {selected.map((tag) => (
+            <li key={tag}>
+              <button
+                type="button"
+                onClick={() => remove(tag)}
+                aria-label={`Remove tag ${tag}`}
+                className="flex items-center gap-1.5 rounded-lg border border-accent bg-accent-soft px-2.5 py-1 text-sm hover:bg-subtle"
+              >
+                #{tag}
+                <span className="text-muted tabular-nums">{size.get(tag)}</span>
+                <span aria-hidden="true" className="text-muted">
+                  ×
+                </span>
+              </button>
+            </li>
+          ))}
+          <li>
+            <button
+              type="button"
+              onClick={() => onChange([])}
+              className="rounded-md px-1.5 py-0.5 text-sm font-medium text-accent hover:bg-subtle"
+            >
+              Clear
+            </button>
+          </li>
+        </ul>
+      )}
+      <form
+        className="mt-2 flex max-w-md gap-2"
+        onSubmit={(e) => {
+          e.preventDefault();
+          if (size.has(typed)) {
+            add(typed);
+            setQuery("");
+          }
+        }}
+      >
+        <input
+          type="search"
+          list="mixed-tag-list"
+          value={query}
+          onChange={(e) => {
+            const value = e.target.value;
+            // Picking a suggestion fills the box with an exact tag: add it at once. Typing an
+            // exact tag does not, since it may be the start of a longer one (ce6146 → ce6146-l01).
+            const tag = value.trim().replace(/^#/, "").toLowerCase();
+            if (size.has(tag) && !selected.includes(tag)) {
+              const picked = (e.nativeEvent as InputEvent).inputType;
+              // Browsers report a pick as "insertReplacementText", none or "" (never typing).
+              if (!picked || picked === "insertReplacementText") {
+                add(tag);
+                setQuery("");
+                return;
+              }
+            }
+            setQuery(value);
+          }}
+          aria-label="Add a tag"
+          placeholder={`Search ${counts.length.toLocaleString("en")} tags`}
+          autoComplete="off"
+          className="min-w-0 flex-1 rounded-lg border border-line bg-surface px-3 py-1.5 text-sm placeholder:text-muted"
+        />
+        <button
+          type="submit"
+          disabled={!size.has(typed) || selected.includes(typed)}
+          className="shrink-0 rounded-lg border border-line px-3 py-1.5 text-sm font-medium hover:border-line-strong hover:bg-subtle disabled:cursor-not-allowed disabled:opacity-50"
+        >
+          Add
+        </button>
+        {ready && (
+          <datalist id="mixed-tag-list">
+            {counts.map((c) => (
+              <option key={c.tag} value={c.tag} label={`${c.count}`} />
+            ))}
+          </datalist>
+        )}
+      </form>
+      {suggestions.length > 0 && (
+        <div className="mt-2 flex flex-wrap items-center gap-2 text-sm">
+          <span className="text-muted">Most used:</span>
+          {suggestions.map((c) => (
+            <button
+              key={c.tag}
+              type="button"
+              onClick={() => add(c.tag)}
+              className="rounded-md px-1.5 py-0.5 text-accent hover:bg-subtle"
+            >
+              #{c.tag} <span className="text-muted tabular-nums">{c.count}</span>
+            </button>
+          ))}
+        </div>
+      )}
     </fieldset>
   );
 }

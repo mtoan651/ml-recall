@@ -14,8 +14,9 @@ export const tagUrl = (tag: string): string => url(`tags/${tag}/`);
 /** Timed test of a topic or tag (docs/web-app.md#timed-tests). */
 export const topicExamUrl = (topicId: string): string => url(`topics/${topicId}/exam/`);
 export const tagExamUrl = (tag: string): string => url(`tags/${tag}/exam/`);
-/** Timed test over a chosen mix of topics and difficulties. */
-export const mixedExamUrl = (): string => url("exam/");
+/** Timed test over a chosen mix of topics, tags and difficulties; `tag` preselects one tag. */
+export const mixedExamUrl = (tag?: string): string =>
+  url(tag ? `exam/?tag=${encodeURIComponent(tag)}` : "exam/");
 /** Questions answered wrong last time, to practise again. */
 export const mistakesUrl = (): string => url("mistakes/");
 export const progressUrl = (): string => url("progress/");

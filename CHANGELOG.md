@@ -5,6 +5,14 @@ versioning: [SemVer](https://semver.org) as defined in [docs/conventions.md](doc
 
 ## [Unreleased]
 
+### Added
+
+- **Tags in mixed tests** — the part of the v0.4.0 roadmap item ("across topics, difficulty and
+  tags") that v0.4.0 left out: search any of the 2233 tags or pick one of the largest, and a
+  mixed test draws only questions with at least one chosen tag (within the chosen topics and
+  difficulties). A tag page with more than 20 questions links to `/exam/?tag=<tag>` for a
+  longer test or one by difficulty — e.g. all 132 `ce6146` questions, up to 50 at a time.
+
 ## [0.4.0] — 2026-10-12
 
 ### Added

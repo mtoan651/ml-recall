@@ -3,12 +3,15 @@ import {
   attemptPercents,
   catalogEntries,
   DIFFICULTIES,
+  decodeTags,
   drawIds,
+  encodeTags,
   mistakesByTopic,
   mistakesOf,
   progressOf,
   scopeTitle,
   selectionPool,
+  tagCounts,
 } from "./catalog";
 import type { ExamAttempt } from "./exam";
 import { mulberry32 } from "./shuffle";
@@ -22,6 +25,8 @@ const topic = (id: string, ids: string[], difficulty: string, status: string) =>
   difficulty,
   status,
 });
+
+const ids40 = Array.from({ length: 40 }, (_, i) => `t-${String(i).padStart(3, "0")}`);
 
 const catalog: Catalog = {
   domains: [
@@ -83,6 +88,54 @@ describe("mixed test pool", () => {
     expect(selectionPool(catalog, { ...all, topics: ["rnn"], difficulties: ["medium"] })).toEqual([
       "rnn-002",
     ]);
+  });
+
+  const encoded = encodeTags(catalog, [
+    ["conv", ["seg-001", "cnn-002", "cnn-001", "gone-001"]],
+    ["seq", ["rnn-002"]],
+    ["empty", ["gone-002"]],
+  ]);
+  const tags = decodeTags(encoded);
+
+  it("encodes each tag as sorted base-36 catalog positions, and decodes them", () => {
+    expect(encoded).toBe("conv:0.1.5 seq:4");
+    expect([...tags]).toEqual([
+      ["conv", [0, 1, 5]],
+      ["seq", [4]],
+    ]);
+    const many = encodeTags(
+      { domains: [{ id: "d", title: "D", topics: [topic("t", ids40, "", "")] }] },
+      [["late", ["t-039", "t-036"]]],
+    );
+    expect(many).toBe("late:10.13");
+    expect(decodeTags(many).get("late")).toEqual([36, 39]);
+    expect(decodeTags("").size).toBe(0);
+  });
+
+  it("counts questions per tag, the largest first", () => {
+    expect(tagCounts(decodeTags(`${encoded} also:2.3.4`))).toEqual([
+      { tag: "also", count: 3 },
+      { tag: "conv", count: 3 },
+      { tag: "seq", count: 1 },
+    ]);
+  });
+
+  it("keeps questions with at least one chosen tag, within the other filters", () => {
+    expect(selectionPool(catalog, { ...all, tags: ["conv"] }, tags)).toEqual([
+      "cnn-001",
+      "cnn-002",
+      "seg-001",
+    ]);
+    expect(selectionPool(catalog, { ...all, tags: ["conv", "seq"] }, tags)).toHaveLength(4);
+    expect(selectionPool(catalog, { ...all, topics: ["cnn"], tags: ["conv"] }, tags)).toEqual([
+      "cnn-001",
+      "cnn-002",
+    ]);
+    expect(
+      selectionPool(catalog, { ...all, tags: ["conv"], difficulties: ["hard"] }, tags),
+    ).toEqual(["seg-001"]);
+    expect(selectionPool(catalog, { ...all, tags: [] }, tags)).toHaveLength(6);
+    expect(selectionPool(catalog, { ...all, tags: ["unknown"] }, tags)).toEqual([]);
   });
 
   it("draws a uniformly random subset of the requested size", () => {

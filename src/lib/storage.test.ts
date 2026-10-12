@@ -26,6 +26,7 @@ import {
   storedExamStart,
   summarize,
 } from "./storage";
+import type { Difficulty } from "./types";
 
 function memoryStore(initial: Record<string, string> = {}): KeyValueStore & {
   data: Record<string, string>;
@@ -270,17 +271,30 @@ describe("cross-topic pages", () => {
   it("remembers the mixed-test form and sanitizes what it reads back", () => {
     const store = memoryStore();
     expect(loadMixedPrefs(store)).toBeNull();
-    saveMixedPrefs({ topics: ["cnn", "rnn"], difficulties: ["easy", "hard"], size: 30 }, store);
-    expect(loadMixedPrefs(store)).toEqual({
+    const prefs = {
       topics: ["cnn", "rnn"],
-      difficulties: ["easy", "hard"],
+      tags: ["ce6146"],
+      difficulties: ["easy", "hard"] as Difficulty[],
       size: 30,
-    });
+    };
+    saveMixedPrefs(prefs, store);
+    expect(loadMixedPrefs(store)).toEqual(prefs);
+    // Stored before tags existed (v0.4.0): no tag filter.
     store.setItem(
       MIXED_KEY,
       JSON.stringify({ topics: ["cnn", 4, "cnn"], difficulties: ["extreme", "medium"], size: 20 }),
     );
-    expect(loadMixedPrefs(store)).toEqual({ topics: ["cnn"], difficulties: ["medium"], size: 20 });
+    expect(loadMixedPrefs(store)).toEqual({
+      topics: ["cnn"],
+      tags: [],
+      difficulties: ["medium"],
+      size: 20,
+    });
+    store.setItem(
+      MIXED_KEY,
+      JSON.stringify({ topics: [], tags: ["a", 1, "a"], difficulties: [], size: 10 }),
+    );
+    expect(loadMixedPrefs(store)?.tags).toEqual(["a"]);
     store.setItem(MIXED_KEY, JSON.stringify({ topics: [], difficulties: [], size: -1 }));
     expect(loadMixedPrefs(store)).toBeNull();
   });

@@ -36,7 +36,8 @@ src/content/sources.yaml ──────────────────�
                                                      ▼
               pages: /  ·  /topics/<topic>/  ·  /tags/  ·  /tags/<tag>/
                      /topics/<topic>/exam/  ·  /tags/<tag>/exam/
-                     /exam/ · /mistakes/ · /progress/  (question index only: toCatalog)
+                     /exam/ · /mistakes/ · /progress/  (question index only: toCatalog;
+                                                        /exam/ also the tag index: toCatalogTags)
               data:  /data/q/<id>.json  (one rendered question each, fetched by those three)
                                                      │  client:load
                                                      ▼
@@ -145,7 +146,7 @@ entries (the Zod mirror in `src/lib/schema.ts`; `mlr check` checks the same in P
 | `ml-recall:settings:v1` | `{ shuffleQuestions, reviewedOnly, examLayout }`; "Reviewed only" is shared with tests; `examLayout` (`"one"` · `"all"`, default `"one"`) is the test layout last chosen — settings saved without it get the default |
 | `ml-recall:exam:v1:<scope>` | the [test in progress](#timed-tests) of one topic, tag or the mixed test |
 | `ml-recall:exam-history:v1` | scope → `{ attempts, best }`: the last 10 tests and the best one |
-| `ml-recall:mixed:v1` | `{ topics, difficulties, size }`: the last choices on the [mixed test](#mixed-tests) form |
+| `ml-recall:mixed:v1` | `{ topics, tags, difficulties, size }`: the last choices on the [mixed test](#mixed-tests) form (`tags` absent before v0.4.1: no tag filter) |
 
 `<scope>` is `topic:<id>`, `tag:<tag>` or `mixed:custom` (prefixed: a topic and a tag may share
 a name, e.g. `pytorch`). All access is wrapped in `try/catch`; the app works without storage. The index
@@ -225,18 +226,29 @@ questions they show from **`/data/q/<id>.json`**: one file per visible question 
 
 ### Mixed tests
 
-`/exam/` (`MixedExam.tsx`): a timed test drawn from the topics and difficulties the learner
-picks.
+`/exam/` (`MixedExam.tsx`): a timed test drawn from the topics, tags and difficulties the
+learner picks.
 
 - **Form.** Topics grouped by domain (a checkbox per domain — all / some / none of its topics —
-  and the topics inside a `<details>`), **Select all** / **Clear**; difficulty (easy, medium,
-  hard, with the count in the chosen topics); length **10 / 20 / 30 / 40 / 50** questions
-  (default 20; N minutes); the [layout](#timed-tests); "Reviewed questions only" when the
-  selection has drafts. A line says how many questions match. Topics, difficulties and length
-  are remembered (`ml-recall:mixed:v1`; unknown topic ids are dropped). Default: everything.
-- **Pool** (`selectionPool` in src/lib/catalog.ts): questions of the chosen topics whose
-  difficulty is chosen; a question without a difficulty is drawn only when all three are
-  chosen. **Draw:** `drawIds` picks N ids uniformly at random, the page fetches them, and the
+  and the topics inside a `<details>`), **Select all** / **Clear**; optional **tags** (below);
+  difficulty (easy, medium, hard, with the count in the chosen topics and tags); length
+  **10 / 20 / 30 / 40 / 50** questions (default 20; N minutes); the [layout](#timed-tests);
+  "Reviewed questions only" when the selection has drafts. A line says how many questions
+  match. Topics, tags, difficulties and length are remembered (`ml-recall:mixed:v1`; unknown
+  topic ids and tags are dropped). Default: everything, no tag filter.
+- **Tags.** A search box over every tag (a `<datalist>`, rendered only after hydration — it
+  has thousands of options), the chosen tags as removable chips, and the eight largest tags as
+  one-click suggestions. Picking a suggestion adds the tag; a typed tag is added with Enter or
+  **Add** when it matches exactly. The page embeds the tag index as one string
+  (`CatalogTags`: `tag:p.p.p …`, base-36 positions in catalog order — `encodeTags` /
+  `decodeTags`), about 60 KB for every tag instead of an object that island props would wrap
+  and escape entry by entry.
+- **Link from a tag page.** A tag with more questions than a tag test uses (20) links to
+  `/exam/?tag=<tag>`: the form opens with that tag, every topic and every difficulty (saved as
+  the form's choices), and the query is removed from the address.
+- **Pool** (`selectionPool` in src/lib/catalog.ts): questions of the chosen topics that carry
+  at least one chosen tag (when any is chosen) and whose difficulty is chosen; a question
+  without a difficulty is drawn only when all three are chosen. **Draw:** `drawIds` picks N ids uniformly at random, the page fetches them, and the
   usual `Exam` island starts at once (`autoStart`, `maxQuestions = N`) — the
   [timed test](#timed-tests) rules apply unchanged, with the topic shown on each question.
 - **Scope** `mixed:custom`: one test in progress and one history for all mixed tests. On load

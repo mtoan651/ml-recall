@@ -1,12 +1,12 @@
 /**
  * Pure logic of the cross-topic pages, over the question index (`Catalog`, built in bank.ts):
- * the pool of a mixed test (topics × difficulties), the "My mistakes" deck and per-topic
+ * the pool of a mixed test (topics × tags × difficulties), the "My mistakes" deck and per-topic
  * progress. The pages fetch only the questions they show (src/lib/fetch.ts).
  */
 import type { ExamHistory } from "./exam";
 import { type Rng, shuffled } from "./shuffle";
 import type { QuestionResult } from "./storage";
-import type { Catalog, CatalogTopic, Difficulty } from "./types";
+import type { Catalog, CatalogTags, CatalogTopic, Difficulty } from "./types";
 
 export const DIFFICULTIES: readonly Difficulty[] = ["easy", "medium", "hard"];
 const DIFFICULTY_CODE: Record<string, Difficulty> = { e: "easy", m: "medium", h: "hard" };
@@ -48,21 +48,84 @@ export function catalogEntries(catalog: Catalog): CatalogEntry[] {
 export interface MixedSelection {
   /** Topic ids to draw from. */
   topics: readonly string[];
+  /** Tags: a question needs at least one of them. None (or absent): no tag filter. */
+  tags?: readonly string[];
   /** Difficulties to draw from. A question without a difficulty is drawn only when all three
    *  are selected (no difficulty filter). */
   difficulties: readonly Difficulty[];
   reviewedOnly: boolean;
 }
 
-/** Ids of the questions a mixed test with `selection` draws from, in catalog order. */
-export function selectionPool(catalog: Catalog, selection: MixedSelection): string[] {
+/**
+ * The tag index (`CatalogTags`) of `catalog`, from each tag's question ids. Ids that are not in
+ * the catalog are left out, and so are tags left with no question.
+ */
+export function encodeTags(
+  catalog: Catalog,
+  tagged: Iterable<readonly [string, readonly string[]]>,
+): CatalogTags {
+  const position = new Map(catalogEntries(catalog).map((e, i) => [e.id, i]));
+  const entries: string[] = [];
+  for (const [tag, ids] of tagged) {
+    const at = ids
+      .flatMap((id) => position.get(id) ?? [])
+      .sort((a, b) => a - b)
+      .map((n) => n.toString(36));
+    if (at.length > 0) entries.push(`${tag}:${at.join(".")}`);
+  }
+  return entries.join(" ");
+}
+
+/** Tag → positions (in catalog order) of its questions. */
+export type TagIndex = ReadonlyMap<string, readonly number[]>;
+
+/** Reads `CatalogTags` back into a map. */
+export function decodeTags(encoded: CatalogTags): TagIndex {
+  const index = new Map<string, number[]>();
+  for (const entry of encoded.split(" ")) {
+    const colon = entry.lastIndexOf(":");
+    if (colon <= 0) continue;
+    const at = entry
+      .slice(colon + 1)
+      .split(".")
+      .map((n) => Number.parseInt(n, 36));
+    index.set(entry.slice(0, colon), at);
+  }
+  return index;
+}
+
+export interface TagCount {
+  tag: string;
+  count: number;
+}
+
+/** Every tag with its number of questions, the largest first (ties by name). */
+export function tagCounts(index: TagIndex): TagCount[] {
+  return [...index]
+    .map(([tag, at]) => ({ tag, count: at.length }))
+    .sort((a, b) => b.count - a.count || a.tag.localeCompare(b.tag));
+}
+
+/**
+ * Ids of the questions a mixed test with `selection` draws from, in catalog order. `tags` is the
+ * tag index; it is needed only when the selection names tags.
+ */
+export function selectionPool(
+  catalog: Catalog,
+  selection: MixedSelection,
+  tags: TagIndex = new Map(),
+): string[] {
   const topics = new Set(selection.topics);
   const difficulties = new Set(selection.difficulties);
   const anyDifficulty = DIFFICULTIES.every((d) => difficulties.has(d));
+  const tagged = selection.tags?.length
+    ? new Set(selection.tags.flatMap((tag) => tags.get(tag) ?? []))
+    : null;
   return catalogEntries(catalog)
     .filter(
-      (e) =>
+      (e, i) =>
         topics.has(e.topic.id) &&
+        (!tagged || tagged.has(i)) &&
         (e.difficulty ? difficulties.has(e.difficulty) : anyDifficulty) &&
         (!selection.reviewedOnly || e.reviewed),
     )

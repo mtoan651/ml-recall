@@ -8,11 +8,19 @@
 
 import { getCollection } from "astro:content";
 import { posix } from "node:path";
+import { encodeTags } from "./catalog";
 import { referenceAnchor } from "./citations";
 import { renderMarkdown } from "./markdown";
 import type { AnswerKey, Figure, Question, Source } from "./schema";
 import { shufflesOptions } from "./shuffle";
-import type { Catalog, FigureView, InputKeyView, QuizQuestion, ReferenceView } from "./types";
+import type {
+  Catalog,
+  CatalogTags,
+  FigureView,
+  InputKeyView,
+  QuizQuestion,
+  ReferenceView,
+} from "./types";
 import { topicUrl } from "./url";
 
 /** Figures next to the YAML files, bundled by Vite: "/src/content/quizzes/dl/cnn/x.svg" → URL. */
@@ -215,6 +223,14 @@ export function toCatalog(bank: Bank): Catalog {
       }))
       .filter((d) => d.topics.length > 0),
   };
+}
+
+/** Tag index of the mixed-test page, over the questions of `catalog` (`CatalogTags`). */
+export function toCatalogTags(bank: Bank, catalog: Catalog): CatalogTags {
+  return encodeTags(
+    catalog,
+    [...bank.tags].map(([tag, questions]) => [tag, questions.map((bq) => bq.question.id)]),
+  );
 }
 
 // --------------------------------------------------------------------------- rendering
