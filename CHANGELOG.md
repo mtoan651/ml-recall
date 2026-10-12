@@ -11,9 +11,6 @@ versioning: [SemVer](https://semver.org) as defined in [docs/conventions.md](doc
   odd-numbered exercises with printed answers — probability 19, statistics 30 (sampling, inference,
   power, χ², ANOVA), linear regression 10 — keys re-derived with scipy and tolerances that reject
   common mistakes; reviewed by a second, independent pass (10 fixed).
-
-### Added
-
 - **Review with spaced repetition** (`/review/`): every answered question gets an FSRS card
   (wrong = Again, right = Good, from practice, tests, My mistakes and reviews alike); the page
   lists what is due today, most overdue first, by topic, with a 7-day forecast, and after a
@@ -28,6 +25,15 @@ versioning: [SemVer](https://semver.org) as defined in [docs/conventions.md](doc
 - **Works offline and installs as an app**: a service worker keeps every page you open (and the
   main pages from the start), so practice, Review, Mistakes and Progress keep working without
   a connection; pages not kept yet show an offline page listing what is.
+
+### Fixed
+
+- Three imported questions whose wording made the key debatable, found while reviewing the topic
+  notes (each recorded as a curation fix): `gans-006` (Google calls GAN training alternating,
+  Goodfellow et al. "simultaneous" — now asks about updating both in every step),
+  `probabilistic-models-010` ("always increase" vs `-007`'s reading of the same word — now "never
+  decreases"), `nlp-basics-006` (stop words were defined as never changing the sentiment, but
+  lists can contain "not").
 
 ## [0.4.1] — 2026-10-12
 
