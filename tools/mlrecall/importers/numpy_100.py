@@ -1,8 +1,9 @@
 """Importer for rougier/numpy-100 (`source/exercises100.ktx`).
 
 The keyed text file holds blocks `< qN` (question, difficulty as ★☆☆/★★☆/★★★), `< hN` (hint) and
-`< aN` (solution code). Each exercise becomes a self-graded `short_answer` whose model answer is the
-solution code; the hint is not shown, since it would give the answer away.
+`< aN` (solution code). Each exercise becomes an open `short_answer` whose model answer is the
+solution code; the hint is not shown, since it would give the answer away. The site grades only
+fill-ins, so curation (`tools/curation/numpy-100.yaml`) turns each kept exercise into one.
 """
 
 from __future__ import annotations

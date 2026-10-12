@@ -13,7 +13,7 @@ original questions. See [content-pipeline.md](content-pipeline.md#copyright-rule
 
 | # | Source | What it offers | License | Status |
 | --- | --- | --- | --- | --- |
-| 1 | [Hugging Face LLM Course](https://huggingface.co/learn/llm-course) | end-of-chapter MCQ with per-option explanations; transformers, tokenizers, fine-tuning, reasoning | Apache-2.0 | **v0.1 imported** (106) |
+| 1 | [Hugging Face LLM Course](https://huggingface.co/learn/llm-course) | end-of-chapter MCQ with per-option explanations; transformers, tokenizers, fine-tuning, reasoning | Apache-2.0 | **v0.1 imported** (99; 7 API-trivia questions retired) |
 | 2 | [Microsoft AI for Beginners](https://github.com/microsoft/AI-For-Beginners) | pre/post-lecture quizzes: NN, CV, NLP, GANs, RL, ethics | MIT | **v0.1 imported** (141) |
 | 3 | [Microsoft ML for Beginners](https://github.com/microsoft/ML-For-Beginners) | pre/post-lecture quizzes: classical ML, time series, NLP basics | MIT | **v0.1 imported** (112) |
 | 4 | [MMLU-Redux 2.0](https://huggingface.co/datasets/edinburgh-dawg/mmlu-redux-2.0) — machine_learning, high_school_statistics, college_mathematics, econometrics, college_computer_science | exam-style MCQ with expert error labels (MMLU itself is MIT) | CC-BY-4.0 | **imported** (machine_learning 95, high_school_statistics 97, college_mathematics 59, econometrics 20 and college_computer_science 9 as keep-lists) |
@@ -21,12 +21,12 @@ original questions. See [content-pipeline.md](content-pipeline.md#copyright-rule
 | 7 | [Đắm mình vào Học Sâu](https://d2l.aivivn.com/) | Vietnamese d2l translation | CC-BY-SA-4.0 | later — VI terminology |
 | 8 | [Google ML Crash Course](https://developers.google.com/machine-learning/crash-course) | page quizzes with per-option feedback: regression, classification metrics, data, overfitting, production ML, fairness | CC-BY-4.0 | **v0.3 imported** (58) |
 | 8b | [Google ML courses](https://developers.google.com/machine-learning) — Intro to ML, Decision Forests, Clustering, GANs, Problem Framing | same quiz format | CC-BY-4.0 | **v0.3 imported** (48) |
-| 9 | [Hands-On ML 3 notebooks](https://github.com/ageron/handson-ml3) | exercise solutions (notebooks only — book text is copyrighted) | Apache-2.0 | v0.3+ |
+| 9 | [Hands-On ML 3 notebooks](https://github.com/ageron/handson-ml3) | exercise solutions (notebooks only — book text is copyrighted) | Apache-2.0 | later |
 | 10 | [LLMs from Scratch](https://github.com/rasbt/LLMs-from-scratch) | chapter exercises + solutions (repo only) | Apache-2.0 | **v0.4 used** (20 code-reading questions on tokenizers, attention, GPT, LoRA; code only, pinned `cdbd33e`) |
 | 11 | [Tensor / Autodiff / GPU Puzzles](https://github.com/srush/Tensor-Puzzles) | broadcasting & autodiff puzzles | MIT | **v0.4 used** (12 broadcasting puzzles as code-reading questions, pinned `ad5069f`) |
 | 12 | [100 NumPy exercises](https://github.com/rougier/numpy-100) | NumPy drills with solution code | MIT | **v0.3 imported** (97, fill-ins) |
 | 13 | [Hugging Face Deep RL Course](https://huggingface.co/learn/deep-rl-course) | unit quizzes: MCQ + open questions with solutions (RL basics, Q-learning, policy gradient, multi-agent) | Apache-2.0 | **v0.3 imported** (43) |
-| 14 | [Hugging Face AI Agents Course](https://huggingface.co/learn/agents-course) | unit quizzes on agents, tools, ReAct, agentic RAG, observability | Apache-2.0 | **v0.3 imported** (26) |
+| 14 | [Hugging Face AI Agents Course](https://huggingface.co/learn/agents-course) | unit quizzes on agents, tools, ReAct, agentic RAG, observability | Apache-2.0 | **v0.3 imported** (25; 1 retired as a duplicate) |
 | 15 | [Microsoft Data Science for Beginners](https://github.com/microsoft/Data-Science-For-Beginners) | pre/post-lecture quizzes; only data types, probability, statistics items kept | MIT | **v0.3 imported** (70) |
 | 26 | [Hugging Face Audio Course](https://huggingface.co/learn/audio-course) | chapter quizzes: sampling, spectrograms, CTC, seq2seq, vocoders | Apache-2.0 | **v0.3 imported** (12) |
 | 27 | [UBC CPSC 330 Applied ML](https://github.com/UBC-CS/cpsc330-2025W1) (Kolhatkar et al.) | midterm/final prep MCQs (keys in red) and lecture iClicker exercises | CC-BY-4.0 | **v0.3 used** (66) |
