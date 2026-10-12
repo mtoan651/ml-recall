@@ -68,4 +68,6 @@ Versions follow [conventions.md#versioning](conventions.md#versioning).
 
 - [x] Spaced repetition (FSRS) over question ids (`/review/`)
 - [ ] Topic notes / cheat sheets (MDX), Pagefind search
-- [ ] Export/import progress; PWA offline; Vietnamese UI
+- [x] Export/import progress (merging, on `/progress/`)
+- [ ] PWA offline
+- [ ] Vietnamese UI
